@@ -1,14 +1,15 @@
 /// <reference types="node" />
 /**
- * Slice ① headless scenario (GDD: "after each slice, write a tiny scenario in
- * src/sim exercising it headlessly"). Runs one blind with the real stub lexicon,
- * proving the engine runs in pure Node — no DOM, no Math.random.
+ * Slices ①–② headless scenario (GDD: "after each slice, write a tiny scenario
+ * in src/sim exercising it headlessly"). Runs one blind with the real stub
+ * lexicon, proving the engine runs in pure Node — no DOM, no Math.random.
+ * Shows suit-multiplied settlement (§3.1) and the projected≥target early end (§7.2).
  *
  *   npm run sim
  */
 
 import { newRun } from '../engine/run';
-import { startBlind, exchangeTiles, submitWord } from '../engine/loop';
+import { startBlind, exchangeTiles, submitWord, canEndEarly } from '../engine/loop';
 import { makeRng } from '../engine/rng';
 import type { Lexicon } from '../engine/lexicon';
 import type { BlindState, Tile } from '../engine/types';
@@ -31,9 +32,10 @@ function findWord(hand: readonly Tile[], lex: Lexicon, maxLen = 4): Tile[] | nul
 function main(): void {
   const lex = loadStubLexicon();
   const run = newRun('slice1-demo');
-  let blind: BlindState = startBlind(run, makeRng(run.seed));
+  const target = 10;
+  let blind: BlindState = startBlind(run, makeRng(run.seed), { target });
 
-  console.log(`Slice ① demo — seed "${run.seed}"`);
+  console.log(`Slices ①–② demo — seed "${run.seed}", target ${target}`);
   console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter).join('')}`);
   console.log(`  bag remaining: ${blind.bag.length}, exchanges: ${blind.exchangesLeft}\n`);
 
@@ -43,22 +45,31 @@ function main(): void {
   console.log(`Exchanged 3 tiles → new hand: ${blind.hand.map((t) => t.letter).join('')}`);
   console.log(`  exchanges left: ${blind.exchangesLeft}\n`);
 
-  // Play until phases run out: a real word if we can find one, else gibberish.
+  // Play until phases run out — or stop early once projected ≥ target (§7.2).
+  let endedEarly = false;
   while (blind.phasesUsed < blind.phasesTotal && blind.hand.length > 0) {
     const word = findWord(blind.hand, lex) ?? blind.hand.slice(0, Math.min(3, blind.hand.length));
     const ids = word.map((t) => t.id);
     const { blind: after, submission } = submitWord(blind, run, lex, ids);
     blind = after;
-    const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `word [${submission.suit}]`;
+    const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `[${submission.suit} suit]`;
     console.log(
       `Phase ${blind.phasesUsed}: "${submission.text}" → +${submission.settledScore} ${tag}` +
-        `  (committed ${blind.committedScore})`,
+        `  (projected ${blind.projectedScore}/${target})`,
     );
+    if (canEndEarly(blind)) {
+      endedEarly = true;
+      console.log(`  ✔ projected ≥ target — early end available, cashing out.`);
+      break;
+    }
   }
 
-  console.log(`\nBlind over. Sequence: ${blind.sequence.map((s) => s.text).join(' · ')}`);
-  console.log(`  committed score: ${blind.committedScore}`);
+  const phasesLeft = blind.phasesTotal - blind.phasesUsed;
+  console.log(`\nBlind over (${endedEarly ? 'early end' : 'phases exhausted'}).`);
+  console.log(`  sequence: ${blind.sequence.map((s) => s.text).join(' · ')}`);
+  console.log(`  committed score: ${blind.committedScore} vs target ${target}`);
   console.log(`  holes (gibberish): ${blind.sequence.filter((s) => s.isGibberish).length}`);
+  console.log(`  phases left (→ future gold, §9.1): ${phasesLeft}`);
 }
 
 main();

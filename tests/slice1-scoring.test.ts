@@ -30,9 +30,9 @@ describe('slice1 scoring — letter chips (GDD §2.1, §7.1 layer 1)', () => {
     expect(s.suit).toBe('slang');
   });
 
-  it('does NOT yet apply the suit multiplier (that is slice ②)', () => {
-    // RUN = R(1)+U(1)+N(1) = 3; slang ×2 would be 6 — must still be 3 in slice ①
-    expect(scoreWord(tiles('run'), lex).settledScore).toBe(3);
+  it('applies the register suit multiplier in layer 1 (slice ②, GDD §3.1)', () => {
+    // RUN = R(1)+U(1)+N(1) = 3 chips; slang ×2.0 = 6
+    expect(scoreWord(tiles('run'), lex).settledScore).toBe(6);
   });
 
   it('leaves POS unresolved in slice ① (resolved by pattern matching, slice ③)', () => {

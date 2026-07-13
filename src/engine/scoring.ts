@@ -1,12 +1,12 @@
 /**
  * Word scoring — layer 1 of the settlement pipeline (GDD §7.1).
  *
- * Slice ① scope: letter-chip sum + the gibberish path (GDD §6.4).
- *   - valid word     → chips; carries its register suit for slice ② to multiply
+ * Layer 1 = chips × mult, settled immediately (GDD §7.1):
+ *   - valid word     → chips × suit multiplier (GDD §3.1)
  *   - gibberish      → chips × 1.0, no suit, no POS; recorded as a hole (§6.4 b-2)
  *
- * The suit multiplier (slice ②) and joker hooks (slice ④) wrap this later;
- * POS resolution (slice ③) fills posUsed from the pattern match. Keeping those
+ * Joker hooks (slice ④) will mutate chips/mult before the final multiply;
+ * POS resolution (slice ③) fills posUsed from the pattern match. Keeping that
  * null here is intentional, not a stub.
  */
 
@@ -49,14 +49,15 @@ export function scoreWord(tiles: readonly Tile[], lexicon: Lexicon): WordSubmiss
     };
   }
 
-  // Valid word. Suit is carried for slice ②'s multiplier; slice ① settles raw
-  // chips only. POS is resolved later by pattern matching (slice ③).
+  // Valid word: chips × register-suit multiplier (GDD §3.1). POS is resolved
+  // later by pattern matching (slice ③).
+  const mult = BALANCE.suitMult[entry.suit];
   return {
     tiles: tiles.slice(),
     text,
     isGibberish: false,
     suit: entry.suit,
     posUsed: null,
-    settledScore: chips,
+    settledScore: chips * mult,
   };
 }

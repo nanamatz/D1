@@ -46,6 +46,16 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   };
 }
 
+/**
+ * Early-end trigger (GDD §7.2): the end button activates once the projected
+ * score reaches the blind target. projectedScore is committed + the sentence
+ * bonus projection, re-judged (overwritten) each phase — the bonus half arrives
+ * in slice ③, so for now projected mirrors committed.
+ */
+export function canEndEarly(blind: BlindState): boolean {
+  return blind.projectedScore >= blind.target;
+}
+
 /** Pick tiles from hand by id, preserving the given order; throws on any miss. */
 function takeFromHand(hand: readonly Tile[], ids: readonly string[]): Tile[] {
   const byId = new Map(hand.map((t) => [t.id, t]));
