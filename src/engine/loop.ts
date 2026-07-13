@@ -18,6 +18,8 @@ import type { Lexicon } from './lexicon';
 import { baseScore } from './scoring';
 import { finalizeScore, judgeSentence } from './patterns';
 import { defaultJokerBus } from './jokers';
+import { blindTarget } from './economy';
+import { kindForIndex } from './progression';
 import type {
   BlindKind,
   BlindState,
@@ -32,18 +34,20 @@ import type {
 export interface StartBlindOptions {
   kind?: BlindKind;
   bossId?: string | null;
-  /** blind target; the real ante/blind curve is slice ⑤, so this defaults to 0 */
+  /** blind target; defaults to the ante-curve value for the run's position (§8.2) */
   target?: number;
 }
 
-/** Set up a blind: shuffle a copy of the run bag, deal the opening hand (§6.1). */
+/** Set up a blind: shuffle a copy of the run bag, deal the opening hand (§6.1).
+ *  Kind and target default to the run's position on the ante curve (GDD §8.2). */
 export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}): BlindState {
   const shuffled = rng.shuffle(run.bag);
   const { drawn: hand, bag } = drawTiles(shuffled, run.handSize);
+  const kind = opts.kind ?? kindForIndex(run.blindIndex);
   return {
-    kind: opts.kind ?? 'small',
+    kind,
     bossId: opts.bossId ?? null,
-    target: opts.target ?? 0,
+    target: opts.target ?? blindTarget(run.ante, kind),
     phasesTotal: run.basePhases,
     phasesUsed: 0,
     exchangesLeft: run.baseExchanges,

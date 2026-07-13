@@ -12,6 +12,7 @@ import { newRun } from '../engine/run';
 import { startBlind, exchangeTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
 import { judgeSentence } from '../engine/patterns';
 import { JOKER_REGISTRY } from '../engine/jokers';
+import { resolveBlind, currentTarget, kindForIndex } from '../engine/progression';
 import { makeRng } from '../engine/rng';
 import type { Lexicon } from '../engine/lexicon';
 import type { BlindState, Tile } from '../engine/types';
@@ -40,12 +41,12 @@ function main(): void {
     { defId: 'jackOfAllTrades', state: {} }, // layer 1
     { defId: 'grammarian', state: {} }, // layer 3
   ];
-  const target = 400;
-  let blind: BlindState = startBlind(run, makeRng(run.seed), { target });
+  let blind: BlindState = startBlind(run, makeRng(run.seed)); // target from the ante curve
+  const target = blind.target;
 
   const jokerNames = run.jokers.map((j) => JOKER_REGISTRY.get(j.defId)?.nameEn ?? j.defId);
-  console.log(`Slices ①–④ demo — seed "${run.seed}", target ${target}`);
-  console.log(`  jokers: ${jokerNames.join(', ')}`);
+  console.log(`Slices ①–⑤ demo — seed "${run.seed}", ante ${run.ante} ${blind.kind} (target ${target})`);
+  console.log(`  jokers: ${jokerNames.join(', ')} · gold ${run.gold}`);
   console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter).join('')}`);
   console.log(`  bag remaining: ${blind.bag.length}, exchanges: ${blind.exchangesLeft}\n`);
 
@@ -85,10 +86,24 @@ function main(): void {
     `  final pattern: ${final.judgment.match?.pattern ?? 'none'}` +
       `${final.judgment.unison ? ` + unison(${final.judgment.unison.suit})` : ''}`,
   );
-  console.log(`  final score: ${final.finalScore} vs target ${target}` +
-    `  → ${final.finalScore >= target ? 'CLEARED' : 'missed'}`);
+  console.log(`  final score: ${final.finalScore} vs target ${target}`);
   console.log(`  holes (gibberish): ${blind.sequence.filter((s) => s.isGibberish).length}`);
-  console.log(`  phases left (→ future gold, §9.1): ${final.phasesLeft}`);
+
+  // Slice ⑤: resolve the blind into gold + progression (GDD §9.1).
+  const outcome = resolveBlind(run, blind, final.finalScore);
+  if (outcome.cleared) {
+    const e = outcome.earned;
+    console.log(
+      `  CLEARED → +${e.total} gold (reward ${e.reward} + ${final.phasesLeft} phases + ${e.interest} interest)` +
+        `  → gold ${outcome.run.gold}`,
+    );
+    console.log(
+      `  next: ante ${outcome.run.ante} ${kindForIndex(outcome.run.blindIndex)} blind` +
+        ` (target ${currentTarget(outcome.run)})`,
+    );
+  } else {
+    console.log(`  MISSED target → game over.`);
+  }
 }
 
 main();
