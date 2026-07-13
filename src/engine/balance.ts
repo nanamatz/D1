@@ -74,6 +74,7 @@ export const BALANCE = {
   runAntes: 8,
 
   // ----- Economy (GDD §9.1) -----
+  startingGold: 4, // Balatro-parity starting stake (placeholder)
   clearReward: { small: 3, big: 4, boss: 5 },
   goldPerRemainingPhase: 1,
   interest: { per: 5, rate: 1, cap: 5 },

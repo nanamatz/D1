@@ -1,0 +1,92 @@
+{
+  "_comment": "DEV STUB (GDD §3.2). Everything in dictionary.txt not listed here defaults to {suit:'standard', pos:[]}. This hand-tagged set covers all four suits and all ten POS so slices ①–③ (esp. pattern matching) are testable. The real baked table comes from the offline frequency→LLM pipeline.",
+
+  "i": { "suit": "standard", "pos": ["noun"] },
+  "you": { "suit": "standard", "pos": ["noun"] },
+  "he": { "suit": "standard", "pos": ["noun"] },
+  "she": { "suit": "standard", "pos": ["noun"] },
+  "it": { "suit": "standard", "pos": ["noun"] },
+  "we": { "suit": "standard", "pos": ["noun"] },
+  "they": { "suit": "standard", "pos": ["noun"] },
+
+  "a": { "suit": "standard", "pos": ["article"] },
+  "an": { "suit": "standard", "pos": ["article"] },
+  "the": { "suit": "standard", "pos": ["article"] },
+  "this": { "suit": "standard", "pos": ["article", "noun"] },
+  "that": { "suit": "standard", "pos": ["article", "noun", "conjunction"] },
+
+  "and": { "suit": "standard", "pos": ["conjunction"] },
+  "but": { "suit": "standard", "pos": ["conjunction"] },
+  "or": { "suit": "standard", "pos": ["conjunction"] },
+  "because": { "suit": "standard", "pos": ["conjunction"] },
+
+  "in": { "suit": "standard", "pos": ["preposition"] },
+  "on": { "suit": "standard", "pos": ["preposition"] },
+  "at": { "suit": "standard", "pos": ["preposition"] },
+  "to": { "suit": "standard", "pos": ["preposition"] },
+  "with": { "suit": "standard", "pos": ["preposition"] },
+  "of": { "suit": "standard", "pos": ["preposition"] },
+
+  "run": { "suit": "standard", "pos": ["verbIntransitive", "verbTransitive", "noun"] },
+  "walk": { "suit": "standard", "pos": ["verbIntransitive", "verbTransitive", "noun"] },
+  "sleep": { "suit": "standard", "pos": ["verbIntransitive", "noun"] },
+  "go": { "suit": "standard", "pos": ["verbIntransitive"] },
+  "sing": { "suit": "standard", "pos": ["verbIntransitive", "verbTransitive"] },
+
+  "eat": { "suit": "standard", "pos": ["verbTransitive", "verbIntransitive"] },
+  "throw": { "suit": "standard", "pos": ["verbTransitive", "noun"] },
+  "give": { "suit": "standard", "pos": ["verbTransitive"] },
+  "make": { "suit": "standard", "pos": ["verbTransitive"] },
+  "hit": { "suit": "standard", "pos": ["verbTransitive", "noun"] },
+  "love": { "suit": "standard", "pos": ["verbTransitive", "noun"] },
+  "taste": { "suit": "standard", "pos": ["verbLinking", "verbTransitive", "noun"] },
+  "tastes": { "suit": "standard", "pos": ["verbLinking", "verbTransitive"] },
+
+  "is": { "suit": "standard", "pos": ["verbLinking"] },
+  "are": { "suit": "standard", "pos": ["verbLinking"] },
+  "was": { "suit": "standard", "pos": ["verbLinking"] },
+  "seem": { "suit": "standard", "pos": ["verbLinking"] },
+  "feel": { "suit": "standard", "pos": ["verbLinking", "verbTransitive", "noun"] },
+  "look": { "suit": "standard", "pos": ["verbLinking", "verbIntransitive", "noun"] },
+
+  "pizza": { "suit": "standard", "pos": ["noun"] },
+  "dog": { "suit": "standard", "pos": ["noun"] },
+  "cat": { "suit": "standard", "pos": ["noun"] },
+  "ball": { "suit": "standard", "pos": ["noun"] },
+  "gift": { "suit": "standard", "pos": ["noun"] },
+  "friend": { "suit": "standard", "pos": ["noun"] },
+
+  "good": { "suit": "standard", "pos": ["adjective"] },
+  "big": { "suit": "standard", "pos": ["adjective"] },
+  "red": { "suit": "standard", "pos": ["adjective", "noun"] },
+  "happy": { "suit": "standard", "pos": ["adjective"] },
+  "quick": { "suit": "standard", "pos": ["adjective"] },
+
+  "quickly": { "suit": "standard", "pos": ["adverb"] },
+  "slowly": { "suit": "standard", "pos": ["adverb"] },
+  "very": { "suit": "standard", "pos": ["adverb"] },
+  "really": { "suit": "standard", "pos": ["adverb"] },
+
+  "oh": { "suit": "standard", "pos": ["interjection"] },
+  "wow": { "suit": "slang", "pos": ["interjection"] },
+  "hey": { "suit": "slang", "pos": ["interjection"] },
+  "alas": { "suit": "formal", "pos": ["interjection"] },
+
+  "commence": { "suit": "formal", "pos": ["verbIntransitive", "verbTransitive"] },
+  "utilize": { "suit": "formal", "pos": ["verbTransitive"] },
+  "purchase": { "suit": "formal", "pos": ["verbTransitive", "noun"] },
+  "endeavor": { "suit": "formal", "pos": ["verbIntransitive", "noun"] },
+  "magnificent": { "suit": "formal", "pos": ["adjective"] },
+  "gentleman": { "suit": "formal", "pos": ["noun"] },
+
+  "gonna": { "suit": "slang", "pos": ["verbIntransitive"] },
+  "kinda": { "suit": "slang", "pos": ["adverb"] },
+  "cool": { "suit": "slang", "pos": ["adjective", "verbIntransitive"] },
+  "buddy": { "suit": "slang", "pos": ["noun"] },
+  "grub": { "suit": "slang", "pos": ["noun", "verbIntransitive"] },
+
+  "damn": { "suit": "vulgar", "pos": ["interjection", "adjective", "verbTransitive"] },
+  "crap": { "suit": "vulgar", "pos": ["noun", "interjection"] },
+  "hell": { "suit": "vulgar", "pos": ["noun", "interjection"] },
+  "sucks": { "suit": "vulgar", "pos": ["verbIntransitive"] }
+}
