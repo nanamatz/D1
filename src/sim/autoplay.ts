@@ -9,7 +9,8 @@
  */
 
 import { newRun } from '../engine/run';
-import { startBlind, exchangeTiles, submitWord, canEndEarly } from '../engine/loop';
+import { startBlind, exchangeTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
+import { judgeSentence } from '../engine/patterns';
 import { makeRng } from '../engine/rng';
 import type { Lexicon } from '../engine/lexicon';
 import type { BlindState, Tile } from '../engine/types';
@@ -32,10 +33,10 @@ function findWord(hand: readonly Tile[], lex: Lexicon, maxLen = 4): Tile[] | nul
 function main(): void {
   const lex = loadStubLexicon();
   const run = newRun('slice1-demo');
-  const target = 10;
+  const target = 400;
   let blind: BlindState = startBlind(run, makeRng(run.seed), { target });
 
-  console.log(`Slices ①–② demo — seed "${run.seed}", target ${target}`);
+  console.log(`Slices ①–③ demo — seed "${run.seed}", target ${target}`);
   console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter).join('')}`);
   console.log(`  bag remaining: ${blind.bag.length}, exchanges: ${blind.exchangesLeft}\n`);
 
@@ -53,9 +54,12 @@ function main(): void {
     const { blind: after, submission } = submitWord(blind, run, lex, ids);
     blind = after;
     const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `[${submission.suit} suit]`;
+    const judged = judgeSentence(blind.sequence, lex);
+    const patt = judged.match ? judged.match.pattern.toUpperCase() : '—';
+    const uni = judged.unison ? ` +unison(${judged.unison.suit})` : '';
     console.log(
-      `Phase ${blind.phasesUsed}: "${submission.text}" → +${submission.settledScore} ${tag}` +
-        `  (projected ${blind.projectedScore}/${target})`,
+      `Phase ${blind.phasesUsed}: "${submission.text}" +${submission.settledScore} ${tag}` +
+        `  → pattern ${patt}${uni}  (projected ${blind.projectedScore}/${target})`,
     );
     if (canEndEarly(blind)) {
       endedEarly = true;
@@ -64,12 +68,18 @@ function main(): void {
     }
   }
 
-  const phasesLeft = blind.phasesTotal - blind.phasesUsed;
+  // Finalize the blind (GDD §7.4).
+  const final = endBlind(blind, run, lex);
   console.log(`\nBlind over (${endedEarly ? 'early end' : 'phases exhausted'}).`);
   console.log(`  sequence: ${blind.sequence.map((s) => s.text).join(' · ')}`);
-  console.log(`  committed score: ${blind.committedScore} vs target ${target}`);
+  console.log(
+    `  final pattern: ${final.judgment.match?.pattern ?? 'none'}` +
+      `${final.judgment.unison ? ` + unison(${final.judgment.unison.suit})` : ''}`,
+  );
+  console.log(`  final score: ${final.finalScore} vs target ${target}` +
+    `  → ${final.finalScore >= target ? 'CLEARED' : 'missed'}`);
   console.log(`  holes (gibberish): ${blind.sequence.filter((s) => s.isGibberish).length}`);
-  console.log(`  phases left (→ future gold, §9.1): ${phasesLeft}`);
+  console.log(`  phases left (→ future gold, §9.1): ${final.phasesLeft}`);
 }
 
 main();

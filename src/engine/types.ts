@@ -121,6 +121,14 @@ export interface UnisonResult {
   suit: Suit;
 }
 
+/** Result of judging a whole sequence (GDD §5): best pattern + unison. */
+export interface SentenceJudgment {
+  /** the highest-rank matching pattern, or null (no match / a gibberish hole) */
+  match: PatternMatch | null;
+  /** unison bonus if 2+ words share one suit, else null */
+  unison: UnisonResult | null;
+}
+
 // ---------- Scoring (GDD §7) ----------
 
 /**

@@ -16,7 +16,15 @@ import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { scoreWord } from './scoring';
-import type { BlindKind, BlindState, RunState, Tile, WordSubmission } from './types';
+import { finalizeScore, judgeSentence } from './patterns';
+import type {
+  BlindKind,
+  BlindState,
+  RunState,
+  SentenceJudgment,
+  Tile,
+  WordSubmission,
+} from './types';
 
 export interface StartBlindOptions {
   kind?: BlindKind;
@@ -106,7 +114,7 @@ export interface SubmitResult {
  */
 export function submitWord(
   blind: BlindState,
-  _run: RunState,
+  run: RunState,
   lexicon: Lexicon,
   tileIds: readonly string[],
 ): SubmitResult {
@@ -121,6 +129,11 @@ export function submitWord(
   const { drawn, bag } = drawTiles(blind.bag, used.length);
 
   const committedScore = blind.committedScore + submission.settledScore;
+  const sequence = [...blind.sequence, submission];
+  // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
+  // sentence bonus is a projection, never accumulated per phase.
+  const judgment = judgeSentence(sequence, lexicon);
+  const projectedScore = finalizeScore(committedScore, judgment, run.patternLevels).total;
 
   return {
     submission,
@@ -130,11 +143,30 @@ export function submitWord(
       bag,
       // used tiles are spent for the blind; they return to the bag at blind end (§6.1)
       discardedThisBlind: [...blind.discardedThisBlind, ...used],
-      sequence: [...blind.sequence, submission],
+      sequence,
       committedScore,
-      // no sentence bonus yet (slices ②–③); projected == committed for now
-      projectedScore: committedScore,
+      projectedScore,
       phasesUsed: blind.phasesUsed + 1,
     },
   };
+}
+
+export interface EndBlindResult {
+  judgment: SentenceJudgment;
+  /** the settled blind score after finalizing the sentence bonus (GDD §7.4) */
+  finalScore: number;
+  /** unused phases → gold on ending (economy lands in slice ⑤) */
+  phasesLeft: number;
+}
+
+/**
+ * Finalize the blind (GDD §7.4): judge the final sequence and fold the sentence
+ * bonus into the committed total. Tiles need no explicit return — each blind
+ * reshuffles the run's permanent bag from scratch, so used tiles are back next
+ * blind automatically (§6.1, §6.6).
+ */
+export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
+  const judgment = judgeSentence(blind.sequence, lexicon);
+  const finalScore = finalizeScore(blind.committedScore, judgment, run.patternLevels).total;
+  return { judgment, finalScore, phasesLeft: blind.phasesTotal - blind.phasesUsed };
 }
