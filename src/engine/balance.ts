@@ -84,6 +84,16 @@ export const BALANCE = {
   shop: { itemSlots: 2, packSlots: 2, rerollBase: 5, rerollIncrement: 1 },
   jokerPrice: { common: 5, uncommon: 7, rare: 9, legendary: 20 },
 
+  // ----- Jokers (GDD §11) — per-joker knobs (proof set for slice ④) -----
+  jokers: {
+    vowelPraise: { multPerVowel: 2 }, // #1
+    consonantBricklayer: { chipsPerConsonant: 4 }, // #2
+    jackOfAllTrades: { mult: 4 }, // #10
+    hipster: { mult: 7 }, // #12, layer 2 (Slang)
+    grammarian: { totalMult: 2 }, // #22, layer 3 (any pattern)
+    rushSpecialist: { totalMult: 4, minPhasesLeft: 2 }, // #24, layer 3
+  },
+
   // ----- Consumables (GDD §10) -----
   consumableSlots: 2,
   piggyBankCap: 20,

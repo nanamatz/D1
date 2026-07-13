@@ -15,14 +15,17 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { scoreWord } from './scoring';
+import { baseScore } from './scoring';
 import { finalizeScore, judgeSentence } from './patterns';
+import { defaultJokerBus } from './jokers';
 import type {
   BlindKind,
   BlindState,
   RunState,
   SentenceJudgment,
+  SentenceScoringContext,
   Tile,
+  WordScoringContext,
   WordSubmission,
 } from './types';
 
@@ -107,6 +110,49 @@ export interface SubmitResult {
   submission: WordSubmission;
 }
 
+/** Layer 1 & 2: base chips/mult → jokers mutate (wordScoring) → settle chips × mult. */
+function scoreSubmission(
+  tiles: readonly Tile[],
+  lexicon: Lexicon,
+  run: RunState,
+  blind: BlindState,
+): WordSubmission {
+  const b = baseScore(tiles, lexicon);
+  const submission: WordSubmission = {
+    tiles: tiles.slice(),
+    text: b.text,
+    isGibberish: b.isGibberish,
+    suit: b.suit,
+    posUsed: null,
+    settledScore: 0,
+  };
+  const ctx: WordScoringContext = { submission, chips: b.chips, mult: b.mult };
+  defaultJokerBus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+  submission.settledScore = ctx.chips * ctx.mult;
+  return submission;
+}
+
+/** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total. */
+function scoreSentence(
+  committed: number,
+  sequence: readonly WordSubmission[],
+  judgment: SentenceJudgment,
+  run: RunState,
+  blind: BlindState,
+): number {
+  const base = finalizeScore(committed, judgment, run.patternLevels);
+  const ctx: SentenceScoringContext = {
+    sequence: sequence.slice(),
+    match: judgment.match,
+    unison: judgment.unison,
+    totalBefore: committed,
+    flatBonus: base.flatBonus,
+    totalMultiplier: base.totalMultiplier,
+  };
+  defaultJokerBus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
+  return (ctx.totalBefore + ctx.flatBonus) * ctx.totalMultiplier;
+}
+
 /**
  * Submit a word (one phase, §6.1): score it (layer 1, settled immediately §7.1),
  * append to the sentence sequence, then draw back up by the number of tiles used
@@ -122,7 +168,7 @@ export function submitWord(
     throw new Error('no phases remain in this blind');
   }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
-  const submission = scoreWord(used, lexicon);
+  const submission = scoreSubmission(used, lexicon, run, blind);
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));
@@ -130,25 +176,27 @@ export function submitWord(
 
   const committedScore = blind.committedScore + submission.settledScore;
   const sequence = [...blind.sequence, submission];
+
+  // Build the post-phase blind first so layer-3 jokers (e.g. Rush Specialist)
+  // read the correct phases-remaining when projecting.
+  const afterBlind: BlindState = {
+    ...blind,
+    hand: [...keptHand, ...drawn],
+    bag,
+    // used tiles are spent for the blind; they return to the bag at blind end (§6.1)
+    discardedThisBlind: [...blind.discardedThisBlind, ...used],
+    sequence,
+    committedScore,
+    projectedScore: 0,
+    phasesUsed: blind.phasesUsed + 1,
+  };
+
   // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
   // sentence bonus is a projection, never accumulated per phase.
   const judgment = judgeSentence(sequence, lexicon);
-  const projectedScore = finalizeScore(committedScore, judgment, run.patternLevels).total;
+  const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind);
 
-  return {
-    submission,
-    blind: {
-      ...blind,
-      hand: [...keptHand, ...drawn],
-      bag,
-      // used tiles are spent for the blind; they return to the bag at blind end (§6.1)
-      discardedThisBlind: [...blind.discardedThisBlind, ...used],
-      sequence,
-      committedScore,
-      projectedScore,
-      phasesUsed: blind.phasesUsed + 1,
-    },
-  };
+  return { submission, blind: { ...afterBlind, projectedScore } };
 }
 
 export interface EndBlindResult {
@@ -167,6 +215,6 @@ export interface EndBlindResult {
  */
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
   const judgment = judgeSentence(blind.sequence, lexicon);
-  const finalScore = finalizeScore(blind.committedScore, judgment, run.patternLevels).total;
+  const finalScore = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind);
   return { judgment, finalScore, phasesLeft: blind.phasesTotal - blind.phasesUsed };
 }

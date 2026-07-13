@@ -12,7 +12,7 @@
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
-import type { Tile, WordSubmission } from './types';
+import type { Suit, Tile, WordSubmission } from './types';
 
 /** Spell the tiles as displayed, honoring each tile's case. */
 export function spell(tiles: readonly Tile[]): string {
@@ -28,36 +28,43 @@ export function letterChips(tiles: readonly Tile[]): number {
   return sum;
 }
 
+export interface BaseScore {
+  text: string;
+  isGibberish: boolean;
+  suit: Suit | null;
+  /** base chips before joker mutation (letter sum) */
+  chips: number;
+  /** base mult before joker mutation (suit multiplier, or 1.0 for gibberish) */
+  mult: number;
+}
+
 /**
- * Score one submitted tile set into a settled WordSubmission (layer 1).
- * Validity (and thus the gibberish routing) is decided by the lexicon.
+ * The pre-joker chips/mult for a tile set (GDD §3.1, §6.4). This is the seam
+ * layer-1/2 jokers mutate (via the wordScoring event) before the final
+ * chips × mult settlement in the loop pipeline.
  */
-export function scoreWord(tiles: readonly Tile[], lexicon: Lexicon): WordSubmission {
+export function baseScore(tiles: readonly Tile[], lexicon: Lexicon): BaseScore {
   const text = spell(tiles);
   const chips = letterChips(tiles);
   const entry = lexicon.lookup(text);
-
   if (entry === null) {
-    // Gibberish: intrinsic chips × 1.0, no suit/POS, leaves a hole (GDD §6.4).
-    return {
-      tiles: tiles.slice(),
-      text,
-      isGibberish: true,
-      suit: null,
-      posUsed: null,
-      settledScore: chips * BALANCE.gibberish.mult,
-    };
+    return { text, isGibberish: true, suit: null, chips, mult: BALANCE.gibberish.mult };
   }
+  return { text, isGibberish: false, suit: entry.suit, chips, mult: BALANCE.suitMult[entry.suit] };
+}
 
-  // Valid word: chips × register-suit multiplier (GDD §3.1). POS is resolved
-  // later by pattern matching (slice ③).
-  const mult = BALANCE.suitMult[entry.suit];
+/**
+ * Score one submitted tile set into a settled WordSubmission (layer 1) with NO
+ * jokers. The loop wires jokers around baseScore; this stays the pure reference.
+ */
+export function scoreWord(tiles: readonly Tile[], lexicon: Lexicon): WordSubmission {
+  const b = baseScore(tiles, lexicon);
   return {
     tiles: tiles.slice(),
-    text,
-    isGibberish: false,
-    suit: entry.suit,
+    text: b.text,
+    isGibberish: b.isGibberish,
+    suit: b.suit,
     posUsed: null,
-    settledScore: chips * mult,
+    settledScore: b.chips * b.mult,
   };
 }

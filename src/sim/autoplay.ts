@@ -11,6 +11,7 @@
 import { newRun } from '../engine/run';
 import { startBlind, exchangeTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
 import { judgeSentence } from '../engine/patterns';
+import { JOKER_REGISTRY } from '../engine/jokers';
 import { makeRng } from '../engine/rng';
 import type { Lexicon } from '../engine/lexicon';
 import type { BlindState, Tile } from '../engine/types';
@@ -33,10 +34,18 @@ function findWord(hand: readonly Tile[], lex: Lexicon, maxLen = 4): Tile[] | nul
 function main(): void {
   const lex = loadStubLexicon();
   const run = newRun('slice1-demo');
+  // Slice ④: equip a proof-set of jokers spanning all three layers.
+  run.jokers = [
+    { defId: 'consonantBricklayer', state: {} }, // layer 1
+    { defId: 'jackOfAllTrades', state: {} }, // layer 1
+    { defId: 'grammarian', state: {} }, // layer 3
+  ];
   const target = 400;
   let blind: BlindState = startBlind(run, makeRng(run.seed), { target });
 
-  console.log(`Slices ①–③ demo — seed "${run.seed}", target ${target}`);
+  const jokerNames = run.jokers.map((j) => JOKER_REGISTRY.get(j.defId)?.nameEn ?? j.defId);
+  console.log(`Slices ①–④ demo — seed "${run.seed}", target ${target}`);
+  console.log(`  jokers: ${jokerNames.join(', ')}`);
   console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter).join('')}`);
   console.log(`  bag remaining: ${blind.bag.length}, exchanges: ${blind.exchangesLeft}\n`);
 
