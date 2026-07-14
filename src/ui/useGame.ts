@@ -236,9 +236,20 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'playing' || prev.selected.length === 0) return prev;
       if (prev.blind.phasesUsed >= prev.blind.phasesTotal) return prev;
-      const { blind, events, submission } = submitWord(prev.blind, prev.run, lexicon, prev.selected);
+      let result;
+      try {
+        result = submitWord(prev.blind, prev.run, lexicon, prev.selected);
+      } catch {
+        // Boss legality (e.g. The Noun Lock) — surface, don't crash.
+        return { ...prev, message: { key: 'boss.blocked' } };
+      }
+      const { blind, events, submission, goldDelta } = result;
+      const run = goldDelta
+        ? { ...prev.run, gold: Math.max(0, prev.run.gold + goldDelta) }
+        : prev.run;
       const next: GameState = {
         ...prev,
+        run,
         blind,
         selected: [],
         message: null,

@@ -150,6 +150,7 @@ export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter; chips: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
 
 export interface SentenceScoringContext {
@@ -183,6 +184,9 @@ export interface BlindState {
   bag: Tile[]; // shuffled at blind start; NO refill when empty (GDD §6.6)
   hand: Tile[];
   discardedThisBlind: Tile[]; // used tiles; return to bag at blind end
+  /** boss flags applied at setup (GDD §8.3) */
+  earlyEndDisabled?: boolean; // The Perfectionist
+  previewHidden?: boolean; // The Blindfold (UI hides the projected preview)
 }
 
 export interface RunState {

@@ -63,7 +63,7 @@ export function useSettle(events: readonly ScoreEvent[], key: number): SettleDis
     for (const e of events) {
       if (e.kind === 'tile') chips += e.chips;
       else if (e.kind === 'suit') mult = e.mult;
-      else if (e.kind === 'joker') {
+      else if (e.kind === 'joker' || e.kind === 'boss') {
         chips += e.chipsDelta;
         mult += e.multDelta;
       } else continue; // settle frame == last accumulated

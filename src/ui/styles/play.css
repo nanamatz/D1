@@ -146,9 +146,15 @@
   letter-spacing: 0.12em;
 }
 .blind-badge .boss {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--mult);
   font-weight: 700;
+}
+.blind-badge .bosseff {
+  font-size: 10px;
+  color: var(--ink-dim);
+  line-height: 1.2;
+  margin: 2px 0 4px;
 }
 .blind-badge .target {
   font-family: 'Jersey 10';

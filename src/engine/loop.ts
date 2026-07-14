@@ -15,9 +15,10 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { baseScore } from './scoring';
+import { baseScore, spell } from './scoring';
 import { finalizeScore, judgeSentence } from './patterns';
 import { defaultJokerBus } from './jokers';
+import { BOSS_REGISTRY, drawBoss } from './bosses';
 import { blindTarget } from './economy';
 import { kindForIndex } from './progression';
 import type {
@@ -45,9 +46,11 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   const shuffled = rng.shuffle(run.bag);
   const { drawn: hand, bag } = drawTiles(shuffled, run.handSize);
   const kind = opts.kind ?? kindForIndex(run.blindIndex);
-  return {
+  const bossId = kind === 'boss' ? (opts.bossId ?? drawBoss(rng)) : (opts.bossId ?? null);
+
+  let blind: BlindState = {
     kind,
-    bossId: opts.bossId ?? null,
+    bossId,
     target: opts.target ?? blindTarget(run.ante, kind),
     phasesTotal: run.basePhases,
     phasesUsed: 0,
@@ -59,7 +62,13 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     bag,
     hand,
     discardedThisBlind: [],
+    earlyEndDisabled: false,
+    previewHidden: false,
   };
+
+  // Apply the boss's setup effect (phases, exchanges, flags — GDD §8.3).
+  if (bossId) blind = BOSS_REGISTRY.get(bossId)?.setup?.(blind) ?? blind;
+  return blind;
 }
 
 /**
@@ -69,6 +78,7 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
  * in slice ③, so for now projected mirrors committed.
  */
 export function canEndEarly(blind: BlindState): boolean {
+  if (blind.earlyEndDisabled) return false; // The Perfectionist (GDD §8.3)
   return blind.projectedScore >= blind.target;
 }
 
@@ -115,6 +125,8 @@ export interface SubmitResult {
   submission: WordSubmission;
   /** ordered settle steps for the UI to replay (UI_DESIGN §4.1) */
   events: ScoreEvent[];
+  /** run-gold change from this submission (The Taxman = −1); 0 normally */
+  goldDelta: number;
 }
 
 /**
@@ -160,8 +172,23 @@ function scoreSubmission(
     }
   }
 
-  submission.settledScore = ctx.chips * ctx.mult;
-  events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total: submission.settledScore });
+  // Boss word-scoring effects run after jokers (GDD §8.3).
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  if (boss?.wordScoring) {
+    const beforeChips = ctx.chips;
+    const beforeMult = ctx.mult;
+    boss.wordScoring(ctx);
+    const chipsDelta = ctx.chips - beforeChips;
+    const multDelta = ctx.mult - beforeMult;
+    if (chipsDelta !== 0 || multDelta !== 0) {
+      events.push({ kind: 'boss', bossId: blind.bossId!, chipsDelta, multDelta });
+    }
+  }
+
+  let total = ctx.chips * ctx.mult;
+  if (boss?.voids?.(submission, blind.sequence)) total = 0; // The Purist
+  submission.settledScore = total;
+  events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
   return { submission, events };
 }
 
@@ -183,6 +210,8 @@ function scoreSentence(
     totalMultiplier: base.totalMultiplier,
   };
   defaultJokerBus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
+  // Boss sentence effects run after jokers (The Anarchist voids the bonus).
+  if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
   return (ctx.totalBefore + ctx.flatBonus) * ctx.totalMultiplier;
 }
 
@@ -201,6 +230,14 @@ export function submitWord(
     throw new Error('no phases remain in this blind');
   }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
+
+  // Boss legality (The Noun Lock blocks verbs) + economy drain (The Taxman).
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  if (boss?.blocks?.(spell(used), lexicon)) {
+    throw new Error('boss: this word cannot be submitted');
+  }
+  const goldDelta = boss?.goldPerWord ? -boss.goldPerWord : 0;
+
   const { submission, events } = scoreSubmission(used, lexicon, run, blind);
 
   const usedIds = new Set(tileIds);
@@ -229,7 +266,7 @@ export function submitWord(
   const judgment = judgeSentence(sequence, lexicon);
   const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind);
 
-  return { submission, events, blind: { ...afterBlind, projectedScore } };
+  return { submission, events, goldDelta, blind: { ...afterBlind, projectedScore } };
 }
 
 export interface EndBlindResult {

@@ -9,6 +9,16 @@ import { TileView } from './Tile';
 function PreviewLine({ preview }: { preview: StagePreview | null }) {
   const { t } = useI18n();
   if (!preview) return <span className="muted">{t('stage.selectPrompt')}</span>;
+  if (preview.blocked) {
+    return (
+      <>
+        <span>
+          <b>{preview.text}</b>
+        </span>
+        <span className="warn">{t('boss.blockedWord')}</span>
+      </>
+    );
+  }
   // Gibberish escape valve made explicit (playtest-01 P0-3, GDD §6.4).
   if (preview.isGibberish) {
     return (
@@ -120,7 +130,11 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
           </button>
         ) : (
           <>
-            <button className="btn play" onClick={g.playWord} disabled={!g.canPlay}>
+            <button
+              className="btn play"
+              onClick={g.playWord}
+              disabled={!g.canPlay || !!preview?.blocked}
+            >
               {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
             </button>
             <button className="btn exchange" onClick={g.exchange} disabled={!g.canExchange}>

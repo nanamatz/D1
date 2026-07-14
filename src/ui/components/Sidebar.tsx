@@ -1,5 +1,6 @@
 import type { BlindState, RunState, ScoreEvent } from '../../engine/types';
 import type { StagePreview } from '../game';
+import { BOSS_REGISTRY } from '../../engine/bosses';
 import { useCountUp, useSettle } from '../useAnim';
 import { useI18n } from '../i18n';
 
@@ -46,7 +47,19 @@ export function Sidebar({ run, blind, preview, projectedBreakdown, events, settl
       </div>
       <div className="blind-badge">
         <div className="kind">{t(`blind.${blind.kind}`)}</div>
-        {blind.bossId && <div className="boss">{blind.bossId}</div>}
+        {blind.bossId &&
+          (() => {
+            const boss = BOSS_REGISTRY.get(blind.bossId!);
+            if (!boss) return null;
+            return (
+              <>
+                <div className="boss">
+                  {boss.emoji} {lang === 'ko' ? boss.nameKo : boss.nameEn}
+                </div>
+                <div className="bosseff">{t(`bossdesc.${boss.id}`)}</div>
+              </>
+            );
+          })()}
         <div className="tlabel">{t('sidebar.target')}</div>
         <div className="target">{blind.target}</div>
       </div>
@@ -63,11 +76,11 @@ export function Sidebar({ run, blind, preview, projectedBreakdown, events, settl
         </div>
         <div className="committed">{Math.round(committed)}</div>
 
-        <div className={['projected', beaten && 'beaten'].filter(Boolean).join(' ')}>
+        <div className={['projected', beaten && !blind.previewHidden && 'beaten'].filter(Boolean).join(' ')}>
           <div className="label">{t('sidebar.projected')}</div>
-          <div className="num">{Math.round(projected)}</div>
-          {beaten && <span className="beat">{t('sidebar.beaten')}</span>}
-          <div className="breakdown">{projectedBreakdown}</div>
+          <div className="num">{blind.previewHidden ? '???' : Math.round(projected)}</div>
+          {beaten && !blind.previewHidden && <span className="beat">{t('sidebar.beaten')}</span>}
+          {!blind.previewHidden && <div className="breakdown">{projectedBreakdown}</div>}
         </div>
       </div>
 

@@ -6,6 +6,7 @@
 import { baseScore, scoreWord } from '../engine/scoring';
 import { judgeSentence } from '../engine/patterns';
 import { BALANCE } from '../engine/balance';
+import { BOSS_REGISTRY } from '../engine/bosses';
 import { isVowel } from '../engine/types';
 import type { Lexicon } from '../engine/lexicon';
 import type {
@@ -60,6 +61,8 @@ export interface StagePreview {
   suitMult: number;
   /** the pattern this play would complete for the whole sequence, if any */
   completes: { pattern: PatternId; label: string } | null;
+  /** true if the active boss forbids this word (The Noun Lock) */
+  blocked: boolean;
 }
 
 /** Preview the staged word: validity, suit, chips, and pattern completion. */
@@ -73,6 +76,9 @@ export function stagePreview(
   const base = baseScore(tiles, lexicon);
   const hypothetical: WordSubmission = scoreWord(tiles, lexicon);
   const judged = judgeSentence([...blind.sequence, hypothetical], lexicon);
+  const blocked = blind.bossId
+    ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
+    : false;
   return {
     text: base.text,
     isGibberish: base.isGibberish,
@@ -80,6 +86,7 @@ export function stagePreview(
     chips: base.chips,
     suitMult: base.mult,
     completes: judged.match ? { pattern: judged.match.pattern, label: patternLabel(judged.match.pattern) } : null,
+    blocked,
   };
 }
 
