@@ -5,19 +5,21 @@ interface Props {
   tile: Tile;
   mini?: boolean;
   selected?: boolean;
+  hinted?: boolean;
   onSelect?: (id: string) => void;
   /** enables HTML5 drag-reorder; called with (draggedId, dropTargetId) */
   onReorder?: (fromId: string, toId: string) => void;
 }
 
 /** A ceramic letter tile (UI_DESIGN §3). Interactive unless `mini` or no handler. */
-export function TileView({ tile, mini = false, selected = false, onSelect, onReorder }: Props) {
+export function TileView({ tile, mini = false, selected = false, hinted = false, onSelect, onReorder }: Props) {
   const interactive = !mini && !!onSelect;
   const draggable = !!onReorder;
   const className = [
     'tile',
     mini && 'mini',
     selected && 'sel',
+    hinted && 'hint',
     draggable && 'draggable',
     materialClass(tile.material),
     fontClass(tile.font),

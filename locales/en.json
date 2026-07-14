@@ -40,6 +40,8 @@
   "btn.exchange": "Exchange",
   "btn.cash": "Cash out · +1 phase = $1",
   "btn.newGame": "New game",
+  "consumable.magnifier": "Magnifier",
+  "hint.none": "No words found — exchange or submit gibberish.",
   "msg.cleared": "Cleared! +${total}  (reward {reward} · {phases} phases · {interest} interest)",
   "msg.gameover": "Game over — scored {score} of {target}. Reached ante {ante}.",
   "suit.standard": "Standard",

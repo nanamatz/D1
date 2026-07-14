@@ -230,7 +230,7 @@ export type ConsumableFamily = 'stationery' | 'punctuation' | 'forbidden';
 export type ConsumableId =
   // stationery
   | 'kiln' | 'fountainPen' | 'shift' | 'eraser' | 'correctionTape'
-  | 'carvingKnife' | 'photocopier' | 'piggyBank'
+  | 'carvingKnife' | 'photocopier' | 'piggyBank' | 'magnifier'
   // punctuation (1:1 with patterns, GDD §5.4)
   | 'ellipsis' | 'exclamation' | 'doubleExclamation' | 'period'
   | 'colon' | 'semicolon' | 'dash' | 'comma'

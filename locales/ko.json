@@ -40,6 +40,8 @@
   "btn.exchange": "교환",
   "btn.cash": "정산 · 남은 페이즈당 $1",
   "btn.newGame": "새 게임",
+  "consumable.magnifier": "돋보기",
+  "hint.none": "가능한 단어 없음 — 교환하거나 횡설수설을 제출하세요.",
   "msg.cleared": "클리어! +${total}  (보상 {reward} · 페이즈 {phases} · 이자 {interest})",
   "msg.gameover": "게임 오버 — {target}점 중 {score}점. 앤티 {ante} 도달.",
   "suit.standard": "표준",

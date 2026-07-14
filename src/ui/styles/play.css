@@ -274,6 +274,15 @@
   gap: 4px;
   box-shadow: var(--shadow);
 }
+.consumable.use {
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.consumable.use:hover,
+.consumable.use:focus-visible {
+  transform: translateY(-4px) rotate(-1deg);
+  outline: none;
+}
 .consumable .e {
   font-size: 26px;
 }
@@ -618,6 +627,21 @@
   outline: 3px solid var(--gold);
   outline-offset: 2px;
   animation: none;
+}
+/* Magnifier hint highlight (P2-1) */
+.tile.hint {
+  outline: 3px dashed var(--gold);
+  outline-offset: 2px;
+  animation: none;
+}
+.hintbar {
+  background: #0f1b22;
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 700;
+  color: var(--gold);
+  box-shadow: var(--shadow);
 }
 @keyframes wob {
   0%,

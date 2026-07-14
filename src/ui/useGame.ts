@@ -14,7 +14,8 @@ import {
   endBlind,
 } from '../engine/loop';
 import { resolveBlind } from '../engine/progression';
-import type { BlindState, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
+import type { BlindState, ConsumableId, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
+import { findSpellableWords, type HintWord } from '../engine/hint';
 import { loadBrowserLexicon } from './lexicon.browser';
 import { recordWord } from './collection';
 import { reorderIds, type MessageSpec, type Phase } from './game';
@@ -34,6 +35,8 @@ export interface GameState {
   settleId: number;
   /** last played word (for collection tracking); null on a fresh blind */
   lastPlayed: { text: string; isGibberish: boolean } | null;
+  /** Magnifier result: up to 3 spellable words to highlight, or null */
+  hint: HintWord[] | null;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -43,7 +46,10 @@ function equip(run: RunState, defIds: readonly string[]): RunState {
 
 function bootstrap(): GameState {
   const seed = Math.random().toString(36).slice(2);
-  const run = equip(newRun(seed), STARTING_JOKERS);
+  const run: RunState = {
+    ...equip(newRun(seed), STARTING_JOKERS),
+    consumables: ['magnifier'] as ConsumableId[], // one hint to start (economy in a later slice)
+  };
   const blind = startBlind(run, makeRng(`${seed}#0`));
   return {
     seed,
@@ -56,6 +62,7 @@ function bootstrap(): GameState {
     lastEvents: [],
     settleId: 0,
     lastPlayed: null,
+    hint: null,
   };
 }
 
@@ -68,6 +75,8 @@ export interface UseGame {
   toggleTile: (id: string) => void;
   reorderHand: (fromId: string, toId: string) => void;
   reorderStaged: (fromId: string, toId: string) => void;
+  useMagnifier: () => void;
+  canMagnify: boolean;
   playWord: () => void;
   exchange: () => void;
   cashOut: () => void;
@@ -125,7 +134,7 @@ export function useGame(): UseGame {
       const selected = prev.selected.includes(id)
         ? prev.selected.filter((x) => x !== id)
         : [...prev.selected, id];
-      return { ...prev, selected };
+      return { ...prev, selected, hint: null };
     });
   }, []);
 
@@ -139,15 +148,28 @@ export function useGame(): UseGame {
       );
       const byId = new Map(prev.blind.hand.map((t) => [t.id, t]));
       const hand = ids.map((id) => byId.get(id)!);
-      return { ...prev, blind: { ...prev.blind, hand } };
+      return { ...prev, blind: { ...prev.blind, hand }, hint: null };
     });
   }, []);
 
   const reorderStaged = useCallback((fromId: string, toId: string) => {
     setState((prev) =>
-      prev.phase !== 'playing' ? prev : { ...prev, selected: reorderIds(prev.selected, fromId, toId) },
+      prev.phase !== 'playing'
+        ? prev
+        : { ...prev, selected: reorderIds(prev.selected, fromId, toId), hint: null },
     );
   }, []);
+
+  const useMagnifier = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== 'playing' || !prev.run.consumables.includes('magnifier')) return prev;
+      const idx = prev.run.consumables.indexOf('magnifier');
+      const consumables = prev.run.consumables.slice();
+      consumables.splice(idx, 1);
+      const hint = findSpellableWords(prev.blind.hand, lexicon, 3);
+      return { ...prev, run: { ...prev.run, consumables }, hint };
+    });
+  }, [lexicon]);
 
   const playWord = useCallback(() => {
     setState((prev) => {
@@ -162,6 +184,7 @@ export function useGame(): UseGame {
         lastEvents: events,
         settleId: prev.settleId + 1,
         lastPlayed: { text: submission.text, isGibberish: submission.isGibberish },
+        hint: null,
       };
       // No phases left → the blind ends automatically (GDD §7.2).
       return blind.phasesUsed >= blind.phasesTotal ? finalize(next) : next;
@@ -174,7 +197,7 @@ export function useGame(): UseGame {
       if (prev.selected.length > prev.blind.exchangeSize || prev.blind.exchangesLeft <= 0) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const blind = exchangeTiles(prev.blind, prev.selected, rng);
-      return { ...prev, blind, selected: [], rngCounter: prev.rngCounter + 1, message: null };
+      return { ...prev, blind, selected: [], rngCounter: prev.rngCounter + 1, message: null, hint: null };
     });
   }, []);
 
@@ -199,6 +222,8 @@ export function useGame(): UseGame {
     toggleTile,
     reorderHand,
     reorderStaged,
+    useMagnifier,
+    canMagnify: state.phase === 'playing' && state.run.consumables.includes('magnifier'),
     playWord,
     exchange,
     cashOut,

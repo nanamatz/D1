@@ -32,7 +32,7 @@ export function App() {
         settleId={g.state.settleId}
       />
       <main className="main">
-        <JokerShelf run={run} />
+        <JokerShelf run={run} onUseConsumable={() => g.useMagnifier()} />
         <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
         <StagePanel g={g} preview={preview} />
       </main>

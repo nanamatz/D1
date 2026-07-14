@@ -26,6 +26,8 @@ export interface Lexicon {
   isWord(text: string): boolean;
   /** baked entry, or null if `text` is not a valid word */
   lookup(text: string): LexiconEntry | null;
+  /** iterate all valid words (for the per-hand solver, P2-1) */
+  words(): IterableIterator<string>;
 }
 
 const norm = (text: string): string => text.trim().toLowerCase();
@@ -101,6 +103,9 @@ export function makeLexicon(
   return {
     get size() {
       return valid.size;
+    },
+    words() {
+      return valid.values();
     },
     isWord(text) {
       return valid.has(norm(text));

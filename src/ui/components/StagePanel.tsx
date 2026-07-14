@@ -49,6 +49,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
     blind.hand.filter((t) => !selectedSet.has(t.id)),
     sortMode,
   );
+  const hintIds = new Set(g.state.hint?.flatMap((w) => w.tileIds) ?? []);
   const handRef = useRef<HTMLDivElement>(null);
   const stagedRef = useRef<HTMLDivElement>(null);
   useFlip(handRef, `${sortMode}|${hand.map((t) => t.id).join(',')}`);
@@ -77,6 +78,15 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         ))}
       </div>
 
+      {g.state.hint && (
+        <div className="hintbar">
+          🔍{' '}
+          {g.state.hint.length > 0
+            ? g.state.hint.map((w) => w.word.toUpperCase()).join('  ·  ')
+            : t('hint.none')}
+        </div>
+      )}
+
       <div className="sortbar">
         <span className="label">{t('stage.sort')}</span>
         {SORT_MODES.map((m) => (
@@ -93,7 +103,13 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
 
       <div className="hand" ref={handRef}>
         {hand.map((t) => (
-          <TileView key={t.id} tile={t} onSelect={g.toggleTile} onReorder={dragHandTile} />
+          <TileView
+            key={t.id}
+            tile={t}
+            hinted={hintIds.has(t.id)}
+            onSelect={g.toggleTile}
+            onReorder={dragHandTile}
+          />
         ))}
       </div>
 
