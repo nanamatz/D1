@@ -18,6 +18,7 @@ export function TileView({ tile, mini = false, selected = false, onSelect }: Pro
   return (
     <div
       className={className}
+      data-flip-id={tile.id}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}

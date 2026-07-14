@@ -1,5 +1,7 @@
-import type { StagePreview } from '../game';
-import { tilesByIds } from '../game';
+import { useRef } from 'react';
+import type { SortMode, StagePreview } from '../game';
+import { SORT_LABEL, SORT_MODES, sortHand, tilesByIds } from '../game';
+import { usePersistedState, useFlip } from '../hooks';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
 
@@ -39,9 +41,15 @@ function PreviewLine({ preview }: { preview: StagePreview | null }) {
 /** Staged word preview, hand, and the action buttons (UI_DESIGN §2). */
 export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview | null }) {
   const { blind, selected, phase, message } = g.state;
+  const [sortMode, setSortMode] = usePersistedState<SortMode>('wj.sortMode', 'vowel');
   const staged = tilesByIds(blind.hand, selected);
   const selectedSet = new Set(selected);
-  const hand = blind.hand.filter((t) => !selectedSet.has(t.id));
+  const hand = sortHand(
+    blind.hand.filter((t) => !selectedSet.has(t.id)),
+    sortMode,
+  );
+  const handRef = useRef<HTMLDivElement>(null);
+  useFlip(handRef, `${sortMode}|${hand.map((t) => t.id).join(',')}`);
 
   return (
     <div className="panel stage">
@@ -57,7 +65,21 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         ))}
       </div>
 
-      <div className="hand">
+      <div className="sortbar">
+        <span className="label">Sort</span>
+        {SORT_MODES.map((m) => (
+          <button
+            key={m}
+            className={['sortbtn', m === sortMode ? 'on' : ''].filter(Boolean).join(' ')}
+            onClick={() => setSortMode(m)}
+            aria-pressed={m === sortMode}
+          >
+            {SORT_LABEL[m]}
+          </button>
+        ))}
+      </div>
+
+      <div className="hand" ref={handRef}>
         {hand.map((t) => (
           <TileView key={t.id} tile={t} onSelect={g.toggleTile} />
         ))}

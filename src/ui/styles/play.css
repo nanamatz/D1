@@ -522,6 +522,38 @@
   outline: 3px solid var(--gold);
   outline-offset: 2px;
 }
+.sortbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sortbar .label {
+  margin-right: 2px;
+}
+.sortbtn {
+  font-family: 'Baloo 2';
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink-dim);
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: transform 0.08s;
+}
+.sortbtn:hover {
+  color: var(--ink);
+}
+.sortbtn.on {
+  color: #15242c;
+  background: var(--ink-dim);
+  border-color: var(--ink-dim);
+}
+.sortbtn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
 .hand {
   display: flex;
   gap: 10px;
