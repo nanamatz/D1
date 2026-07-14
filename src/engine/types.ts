@@ -213,6 +213,19 @@ export interface ScalingCounters {
   nonBaseFontTilesUsed: number;
 }
 
+// ---------- Shop (GDD §9.2) ----------
+
+/** One purchasable in a shop item slot. `null` in a slot means bought/empty. */
+export type ShopItem =
+  | { kind: 'joker'; id: string; price: number }
+  | { kind: 'consumable'; id: ConsumableId; price: number };
+
+export interface ShopState {
+  items: (ShopItem | null)[];
+  /** rerolls done this visit — drives the escalating reroll cost */
+  rerolls: number;
+}
+
 // ---------- Jokers (GDD §11) ----------
 
 export type JokerRarity = 'common' | 'uncommon' | 'rare' | 'legendary';

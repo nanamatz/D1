@@ -10,6 +10,84 @@
   min-height: 100vh;
 }
 
+/* ---------- shop (GDD §9) ---------- */
+.shop-frame {
+  display: block;
+}
+.shop {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.shop-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.shop-head .kind {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+}
+.shop-head .money {
+  font-family: 'Jersey 10';
+  font-size: 30px;
+  color: var(--gold);
+  margin-left: auto;
+}
+.shop-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: stretch;
+  margin-top: 8px;
+}
+.shopitem {
+  background: #2c4358;
+  border-radius: 12px;
+  border-top: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+}
+.shopitem.uncommon {
+  border: 2px solid var(--chips);
+}
+.shopitem.rare {
+  border: 2px solid var(--mult);
+}
+.shopitem .e {
+  font-size: 32px;
+}
+.shopitem .n {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.shopitem .price {
+  font-family: 'Jersey 10';
+  font-size: 22px;
+  color: var(--gold);
+}
+.shopitem.empty {
+  color: var(--ink-dim);
+  font-style: italic;
+  justify-content: center;
+}
+.btn.sm {
+  font-size: 13px;
+  padding: 6px 14px;
+}
+.reroll {
+  align-self: center;
+}
+
 /* ---------- panels ---------- */
 .panel {
   background: var(--panel);

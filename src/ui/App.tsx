@@ -6,11 +6,20 @@ import { Sidebar } from './components/Sidebar';
 import { JokerShelf } from './components/JokerShelf';
 import { SentenceTray } from './components/SentenceTray';
 import { StagePanel } from './components/StagePanel';
+import { Shop } from './components/Shop';
 
 export function App() {
   const g = useGame();
   const { t } = useI18n();
   const { blind, run, selected } = g.state;
+
+  if (g.state.phase === 'shop') {
+    return (
+      <div className="frame shop-frame">
+        <Shop g={g} />
+      </div>
+    );
+  }
 
   const preview = stagePreview(blind, g.lexicon, selected);
   const judgment = judgeSentence(blind.sequence, g.lexicon);

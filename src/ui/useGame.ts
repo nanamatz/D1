@@ -14,7 +14,15 @@ import {
   endBlind,
 } from '../engine/loop';
 import { resolveBlind } from '../engine/progression';
-import type { BlindState, ConsumableId, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
+import type {
+  BlindState,
+  ConsumableId,
+  OwnedJoker,
+  RunState,
+  ScoreEvent,
+  ShopState,
+} from '../engine/types';
+import { rollShopStock, buyItem, sellJoker, rerollShop } from '../engine/shop';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import { loadBrowserLexicon } from './lexicon.browser';
 import { recordWord } from './collection';
@@ -37,6 +45,8 @@ export interface GameState {
   lastPlayed: { text: string; isGibberish: boolean } | null;
   /** Magnifier result: up to 3 spellable words to highlight, or null */
   hint: HintWord[] | null;
+  /** shop stock while phase === 'shop', else null */
+  shop: ShopState | null;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -63,6 +73,7 @@ function bootstrap(): GameState {
     settleId: 0,
     lastPlayed: null,
     hint: null,
+    shop: null,
   };
 }
 
@@ -77,6 +88,10 @@ export interface UseGame {
   reorderStaged: (fromId: string, toId: string) => void;
   useMagnifier: () => void;
   canMagnify: boolean;
+  buy: (index: number) => void;
+  sell: (index: number) => void;
+  reroll: () => void;
+  leaveShop: () => void;
   playWord: () => void;
   exchange: () => void;
   cashOut: () => void;
@@ -110,14 +125,17 @@ export function useGame(): UseGame {
           },
         };
       }
+      // Cleared → enter the shop before the next blind (GDD §9).
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
-      const nextBlind = startBlind(outcome.run, rng);
+      const shop = rollShopStock(outcome.run, rng);
       const e = outcome.earned;
       return {
         ...s,
         run: outcome.run,
-        blind: nextBlind,
+        phase: 'shop',
+        shop,
         selected: [],
+        hint: null,
         rngCounter: s.rngCounter + 1,
         message: {
           key: 'msg.cleared',
@@ -127,6 +145,49 @@ export function useGame(): UseGame {
     },
     [lexicon],
   );
+
+  const buy = useCallback((index: number) => {
+    setState((prev) => {
+      if (prev.phase !== 'shop' || !prev.shop) return prev;
+      const res = buyItem(prev.run, prev.shop, index);
+      return res.ok ? { ...prev, run: res.run, shop: res.shop } : prev;
+    });
+  }, []);
+
+  const sell = useCallback((index: number) => {
+    setState((prev) => {
+      if (prev.phase !== 'shop') return prev;
+      const res = sellJoker(prev.run, index);
+      return res.ok ? { ...prev, run: res.run } : prev;
+    });
+  }, []);
+
+  const reroll = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== 'shop' || !prev.shop) return prev;
+      const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
+      const res = rerollShop(prev.run, prev.shop, rng);
+      return res.ok ? { ...prev, run: res.run, shop: res.shop, rngCounter: prev.rngCounter + 1 } : prev;
+    });
+  }, []);
+
+  const leaveShop = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== 'shop') return prev;
+      const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
+      const blind = startBlind(prev.run, rng);
+      return {
+        ...prev,
+        phase: 'playing',
+        blind,
+        shop: null,
+        selected: [],
+        hint: null,
+        message: null,
+        rngCounter: prev.rngCounter + 1,
+      };
+    });
+  }, []);
 
   const toggleTile = useCallback((id: string) => {
     setState((prev) => {
@@ -224,6 +285,10 @@ export function useGame(): UseGame {
     reorderStaged,
     useMagnifier,
     canMagnify: state.phase === 'playing' && state.run.consumables.includes('magnifier'),
+    buy,
+    sell,
+    reroll,
+    leaveShop,
     playWord,
     exchange,
     cashOut,

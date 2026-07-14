@@ -16,7 +16,7 @@ import type {
   WordSubmission,
 } from '../engine/types';
 
-export type Phase = 'playing' | 'gameover';
+export type Phase = 'playing' | 'shop' | 'gameover';
 
 /** A localizable toast: a locale key + interpolation params (P1-4). */
 export interface MessageSpec {

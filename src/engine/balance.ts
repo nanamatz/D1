@@ -83,6 +83,8 @@ export const BALANCE = {
   // ----- Shop (GDD §9.2) -----
   shop: { itemSlots: 2, packSlots: 2, rerollBase: 5, rerollIncrement: 1 },
   jokerPrice: { common: 5, uncommon: 7, rare: 9, legendary: 20 },
+  jokerSlots: 5, // Balatro-parity joker cap (placeholder)
+  consumablePrice: 3, // flat consumable price (placeholder, GDD §9.2)
 
   // ----- Jokers (GDD §11) — per-joker knobs (proof set for slice ④) -----
   jokers: {
