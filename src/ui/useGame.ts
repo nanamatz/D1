@@ -16,7 +16,7 @@ import {
 import { resolveBlind } from '../engine/progression';
 import type { BlindState, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
 import { loadBrowserLexicon } from './lexicon.browser';
-import type { Phase } from './game';
+import { reorderIds, type Phase } from './game';
 
 const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
 
@@ -62,6 +62,8 @@ export interface UseGame {
   canExchange: boolean;
   canCash: boolean;
   toggleTile: (id: string) => void;
+  reorderHand: (fromId: string, toId: string) => void;
+  reorderStaged: (fromId: string, toId: string) => void;
   playWord: () => void;
   exchange: () => void;
   cashOut: () => void;
@@ -107,6 +109,26 @@ export function useGame(): UseGame {
         : [...prev.selected, id];
       return { ...prev, selected };
     });
+  }, []);
+
+  const reorderHand = useCallback((fromId: string, toId: string) => {
+    setState((prev) => {
+      if (prev.phase !== 'playing') return prev;
+      const ids = reorderIds(
+        prev.blind.hand.map((t) => t.id),
+        fromId,
+        toId,
+      );
+      const byId = new Map(prev.blind.hand.map((t) => [t.id, t]));
+      const hand = ids.map((id) => byId.get(id)!);
+      return { ...prev, blind: { ...prev.blind, hand } };
+    });
+  }, []);
+
+  const reorderStaged = useCallback((fromId: string, toId: string) => {
+    setState((prev) =>
+      prev.phase !== 'playing' ? prev : { ...prev, selected: reorderIds(prev.selected, fromId, toId) },
+    );
   }, []);
 
   const playWord = useCallback(() => {
@@ -156,6 +178,8 @@ export function useGame(): UseGame {
       state.blind.exchangesLeft > 0,
     canCash: state.phase === 'playing' && canEndEarly(state.blind),
     toggleTile,
+    reorderHand,
+    reorderStaged,
     playWord,
     exchange,
     cashOut,

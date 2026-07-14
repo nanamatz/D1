@@ -128,25 +128,39 @@ export const tileGlyph = (t: Tile): string =>
 
 // ---------- Hand sorting (P1-1) ----------
 
-export type SortMode = 'vowel' | 'value' | 'alpha';
+/** 'manual' = no sort (drag-reorder order preserved, P1-2); not a sort button. */
+export type SortMode = 'vowel' | 'value' | 'alpha' | 'manual';
 export const SORT_MODES: readonly SortMode[] = ['vowel', 'value', 'alpha'];
 export const SORT_LABEL: Record<SortMode, string> = {
   vowel: 'Vowel/Cons',
   value: 'Value',
   alpha: 'A–Z',
+  manual: 'Manual',
 };
 
 const alpha = (a: Tile, b: Tile): number => a.letter.localeCompare(b.letter);
-const COMPARATORS: Record<SortMode, (a: Tile, b: Tile) => number> = {
+const COMPARATORS: Record<Exclude<SortMode, 'manual'>, (a: Tile, b: Tile) => number> = {
   alpha,
   value: (a, b) => tileValue(b) - tileValue(a) || alpha(a, b), // desc, alpha tiebreak
   vowel: (a, b) => Number(isVowel(b.letter)) - Number(isVowel(a.letter)) || alpha(a, b),
 };
 
-/** Stable sort of a hand for display; input untouched. */
+/** Stable sort of a hand for display; input untouched. 'manual' preserves order. */
 export function sortHand(tiles: readonly Tile[], mode: SortMode): Tile[] {
+  if (mode === 'manual') return tiles.slice();
   return tiles
     .map((t, i) => ({ t, i }))
     .sort((a, b) => COMPARATORS[mode](a.t, b.t) || a.i - b.i)
     .map((x) => x.t);
+}
+
+/** Move `fromId` to `toId`'s position within an id list (drag-reorder helper). */
+export function reorderIds(ids: readonly string[], fromId: string, toId: string): string[] {
+  const from = ids.indexOf(fromId);
+  const to = ids.indexOf(toId);
+  if (from < 0 || to < 0 || from === to) return ids.slice();
+  const next = ids.slice();
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved!);
+  return next;
 }

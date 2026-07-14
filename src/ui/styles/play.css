@@ -427,6 +427,12 @@
 .tile:hover {
   transform: translateY(-4px) rotate(0deg) !important;
 }
+.tile.draggable {
+  cursor: grab;
+}
+.tile.draggable:active {
+  cursor: grabbing;
+}
 .tile.mini {
   width: 36px;
   height: 36px;

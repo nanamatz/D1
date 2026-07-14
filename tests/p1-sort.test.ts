@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortHand } from '../src/ui/game';
+import { reorderIds, sortHand } from '../src/ui/game';
 import type { Letter, Tile } from '../src/engine/types';
 
 let idc = 0;
@@ -32,5 +32,25 @@ describe('P1-1 — hand sort modes', () => {
     expect(input.map((x) => x.id)).toEqual(ids); // input untouched
     // the two A's keep their original relative order
     expect(sorted.filter((x) => x.letter === 'A').map((x) => x.id)).toEqual([ids[0], ids[1]]);
+  });
+
+  it("'manual' preserves order (drag order)", () => {
+    const input = [t('C'), t('A'), t('T')];
+    expect(letters(sortHand(input, 'manual'))).toBe('CAT');
+  });
+});
+
+describe('P1-2 — reorderIds (drag-reorder)', () => {
+  it('moves an id to the target position', () => {
+    expect(reorderIds(['a', 'b', 'c', 'd'], 'a', 'c')).toEqual(['b', 'c', 'a', 'd']);
+  });
+
+  it('moves backward too', () => {
+    expect(reorderIds(['a', 'b', 'c', 'd'], 'd', 'b')).toEqual(['a', 'd', 'b', 'c']);
+  });
+
+  it('is a no-op for unknown or identical ids (returns a copy)', () => {
+    expect(reorderIds(['a', 'b'], 'a', 'a')).toEqual(['a', 'b']);
+    expect(reorderIds(['a', 'b'], 'z', 'b')).toEqual(['a', 'b']);
   });
 });

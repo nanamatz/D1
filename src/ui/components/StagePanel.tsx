@@ -49,7 +49,14 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
     sortMode,
   );
   const handRef = useRef<HTMLDivElement>(null);
+  const stagedRef = useRef<HTMLDivElement>(null);
   useFlip(handRef, `${sortMode}|${hand.map((t) => t.id).join(',')}`);
+  useFlip(stagedRef, staged.map((t) => t.id).join(','));
+
+  const dragHandTile = (fromId: string, toId: string) => {
+    setSortMode('manual'); // manual drag order overrides the active sort
+    g.reorderHand(fromId, toId);
+  };
 
   return (
     <div className="panel stage">
@@ -59,9 +66,9 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         <PreviewLine preview={preview} />
       </div>
 
-      <div className="staged">
+      <div className="staged" ref={stagedRef}>
         {staged.map((t) => (
-          <TileView key={t.id} tile={t} onSelect={g.toggleTile} />
+          <TileView key={t.id} tile={t} onSelect={g.toggleTile} onReorder={g.reorderStaged} />
         ))}
       </div>
 
@@ -81,7 +88,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
 
       <div className="hand" ref={handRef}>
         {hand.map((t) => (
-          <TileView key={t.id} tile={t} onSelect={g.toggleTile} />
+          <TileView key={t.id} tile={t} onSelect={g.toggleTile} onReorder={dragHandTile} />
         ))}
       </div>
 
