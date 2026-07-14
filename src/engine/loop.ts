@@ -24,6 +24,7 @@ import type {
   BlindKind,
   BlindState,
   RunState,
+  ScoreEvent,
   SentenceJudgment,
   SentenceScoringContext,
   Tile,
@@ -112,15 +113,23 @@ export function exchangeTiles(blind: BlindState, tileIds: readonly string[], rng
 export interface SubmitResult {
   blind: BlindState;
   submission: WordSubmission;
+  /** ordered settle steps for the UI to replay (UI_DESIGN §4.1) */
+  events: ScoreEvent[];
 }
 
-/** Layer 1 & 2: base chips/mult → jokers mutate (wordScoring) → settle chips × mult. */
+/**
+ * Layer 1 & 2: accumulate chips per tile, apply the suit mult, let jokers mutate
+ * (wordScoring), settle chips × mult — recording an ordered ScoreEvent log along
+ * the way. Jokers are emitted one at a time so each contribution is a captured
+ * delta; the additive/independent nature of wordScoring hooks makes this
+ * identical to the batch emit.
+ */
 function scoreSubmission(
   tiles: readonly Tile[],
   lexicon: Lexicon,
   run: RunState,
   blind: BlindState,
-): WordSubmission {
+): { submission: WordSubmission; events: ScoreEvent[] } {
   const b = baseScore(tiles, lexicon);
   const submission: WordSubmission = {
     tiles: tiles.slice(),
@@ -130,10 +139,30 @@ function scoreSubmission(
     posUsed: null,
     settledScore: 0,
   };
-  const ctx: WordScoringContext = { submission, chips: b.chips, mult: b.mult };
-  defaultJokerBus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+  const events: ScoreEvent[] = [];
+
+  const ctx: WordScoringContext = { submission, chips: 0, mult: b.mult };
+  for (const t of tiles) {
+    const chips = BALANCE.letterChips[t.letter] ?? 0;
+    ctx.chips += chips;
+    events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
+  }
+  events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
+
+  for (const joker of run.jokers) {
+    const beforeChips = ctx.chips;
+    const beforeMult = ctx.mult;
+    defaultJokerBus.emit('wordScoring', { run, blind, ctx }, [joker]);
+    const chipsDelta = ctx.chips - beforeChips;
+    const multDelta = ctx.mult - beforeMult;
+    if (chipsDelta !== 0 || multDelta !== 0) {
+      events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta });
+    }
+  }
+
   submission.settledScore = ctx.chips * ctx.mult;
-  return submission;
+  events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total: submission.settledScore });
+  return { submission, events };
 }
 
 /** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total. */
@@ -172,7 +201,7 @@ export function submitWord(
     throw new Error('no phases remain in this blind');
   }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
-  const submission = scoreSubmission(used, lexicon, run, blind);
+  const { submission, events } = scoreSubmission(used, lexicon, run, blind);
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));
@@ -200,7 +229,7 @@ export function submitWord(
   const judgment = judgeSentence(sequence, lexicon);
   const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind);
 
-  return { submission, blind: { ...afterBlind, projectedScore } };
+  return { submission, events, blind: { ...afterBlind, projectedScore } };
 }
 
 export interface EndBlindResult {

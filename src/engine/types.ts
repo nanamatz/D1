@@ -141,6 +141,17 @@ export interface WordScoringContext {
   mult: number;
 }
 
+/**
+ * Ordered steps of settling one word (GDD §7.1 layer 1). The engine records
+ * these per submission; the UI replays them for the settle animation
+ * (UI_DESIGN §4.1). Pure data — no timing, no DOM.
+ */
+export type ScoreEvent =
+  | { kind: 'tile'; tileId: string; letter: Letter; chips: number }
+  | { kind: 'suit'; suit: Suit | null; mult: number }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'settle'; chips: number; mult: number; total: number };
+
 export interface SentenceScoringContext {
   sequence: WordSubmission[];
   match: PatternMatch | null;

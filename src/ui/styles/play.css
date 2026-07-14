@@ -76,6 +76,18 @@
   line-height: 1.15;
   box-shadow: var(--shadow);
 }
+.scorebox.settling {
+  animation: settlepulse 0.22s ease-in-out infinite;
+}
+@keyframes settlepulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
 .scorebox .c {
   background: var(--chips);
 }
@@ -613,7 +625,8 @@
 @media (prefers-reduced-motion: reduce) {
   .hand .tile,
   .btn.cash,
-  .projected.beaten .num {
+  .projected.beaten .num,
+  .scorebox.settling {
     animation: none;
   }
   .tile,

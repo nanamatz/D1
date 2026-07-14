@@ -20,7 +20,14 @@ export function App() {
 
   return (
     <div className="frame">
-      <Sidebar run={run} blind={blind} preview={preview} projectedBreakdown={breakdown} />
+      <Sidebar
+        run={run}
+        blind={blind}
+        preview={preview}
+        projectedBreakdown={breakdown}
+        events={g.state.lastEvents}
+        settleId={g.state.settleId}
+      />
       <main className="main">
         <JokerShelf run={run} />
         <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />

@@ -1,12 +1,17 @@
-import type { BlindState, RunState } from '../../engine/types';
+import type { BlindState, RunState, ScoreEvent } from '../../engine/types';
 import type { StagePreview } from '../game';
+import { useCountUp, useSettle } from '../useAnim';
 
 interface Props {
   run: RunState;
   blind: BlindState;
   preview: StagePreview | null;
   projectedBreakdown: string;
+  events: ScoreEvent[];
+  settleId: number;
 }
+
+const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 
 function Dots({ total, filled, blue = false }: { total: number; filled: number; blue?: boolean }) {
   return (
@@ -21,12 +26,16 @@ function Dots({ total, filled, blue = false }: { total: number; filled: number; 
 const KIND_LABEL = { small: 'SMALL BLIND', big: 'BIG BLIND', boss: 'BOSS BLIND' } as const;
 
 /** Left rail: blind badge, round score, projected, resource dots, gold/ante. */
-export function Sidebar({ run, blind, preview, projectedBreakdown }: Props) {
+export function Sidebar({ run, blind, preview, projectedBreakdown, events, settleId }: Props) {
   const beaten = blind.projectedScore >= blind.target;
   const phasesLeft = blind.phasesTotal - blind.phasesUsed;
-  // Round-score box previews the staged word's chips × suit multiplier.
-  const chips = preview ? preview.chips : 0;
-  const mult = preview ? preview.suitMult : 1;
+  const settle = useSettle(events, settleId);
+  const committed = useCountUp(blind.committedScore);
+  const projected = useCountUp(blind.projectedScore);
+  // While settling, the box replays the just-played word's chips × mult;
+  // otherwise it previews the staged word (UI_DESIGN §4.1).
+  const chips = settle.active ? settle.chips : preview ? preview.chips : 0;
+  const mult = settle.active ? settle.mult : preview ? preview.suitMult : 1;
 
   return (
     <aside className="sidebar">
@@ -38,20 +47,20 @@ export function Sidebar({ run, blind, preview, projectedBreakdown }: Props) {
       </div>
 
       <div className="panel">
-        <div className="label">Staged word</div>
-        <div className="scorebox">
-          <span className="box c">{chips}</span>
+        <div className="label">{settle.active ? 'Scoring…' : 'Staged word'}</div>
+        <div className={['scorebox', settle.active && 'settling'].filter(Boolean).join(' ')}>
+          <span className="box c">{Math.round(chips)}</span>
           <span className="x">×</span>
-          <span className="box m">{mult}</span>
+          <span className="box m">{fmtMult(mult)}</span>
         </div>
         <div className="label" style={{ marginTop: 10 }}>
           Committed
         </div>
-        <div className="committed">{Math.round(blind.committedScore)}</div>
+        <div className="committed">{Math.round(committed)}</div>
 
         <div className={['projected', beaten && 'beaten'].filter(Boolean).join(' ')}>
           <div className="label">Projected</div>
-          <div className="num">{Math.round(blind.projectedScore)}</div>
+          <div className="num">{Math.round(projected)}</div>
           {beaten && <span className="beat">target beaten — cash out open</span>}
           <div className="breakdown">{projectedBreakdown}</div>
         </div>

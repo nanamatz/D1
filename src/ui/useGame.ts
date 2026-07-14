@@ -14,7 +14,7 @@ import {
   endBlind,
 } from '../engine/loop';
 import { resolveBlind } from '../engine/progression';
-import type { BlindState, OwnedJoker, RunState } from '../engine/types';
+import type { BlindState, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
 import { loadBrowserLexicon } from './lexicon.browser';
 import type { Phase } from './game';
 
@@ -28,6 +28,9 @@ export interface GameState {
   selected: string[];
   phase: Phase;
   message: string | null;
+  /** the most recent submission's settle log + a counter to retrigger replay */
+  lastEvents: ScoreEvent[];
+  settleId: number;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -39,7 +42,17 @@ function bootstrap(): GameState {
   const seed = Math.random().toString(36).slice(2);
   const run = equip(newRun(seed), STARTING_JOKERS);
   const blind = startBlind(run, makeRng(`${seed}#0`));
-  return { seed, rngCounter: 1, run, blind, selected: [], phase: 'playing', message: null };
+  return {
+    seed,
+    rngCounter: 1,
+    run,
+    blind,
+    selected: [],
+    phase: 'playing',
+    message: null,
+    lastEvents: [],
+    settleId: 0,
+  };
 }
 
 export interface UseGame {
@@ -100,8 +113,15 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'playing' || prev.selected.length === 0) return prev;
       if (prev.blind.phasesUsed >= prev.blind.phasesTotal) return prev;
-      const { blind } = submitWord(prev.blind, prev.run, lexicon, prev.selected);
-      const next: GameState = { ...prev, blind, selected: [], message: null };
+      const { blind, events } = submitWord(prev.blind, prev.run, lexicon, prev.selected);
+      const next: GameState = {
+        ...prev,
+        blind,
+        selected: [],
+        message: null,
+        lastEvents: events,
+        settleId: prev.settleId + 1,
+      };
       // No phases left → the blind ends automatically (GDD §7.2).
       return blind.phasesUsed >= blind.phasesTotal ? finalize(next) : next;
     });
