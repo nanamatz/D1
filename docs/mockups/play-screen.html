@@ -92,9 +92,16 @@ body{
   background:radial-gradient(120% 120% at 25% 18%, #FFFDF6 0%, var(--tile-face) 45%, #E2D8C4 100%);
   box-shadow:var(--shadow), inset 0 2px 2px rgba(255,255,255,.8);
   display:flex;align-items:center;justify-content:center;
-  font-family:"Jost";font-weight:500;font-size:34px;color:var(--tile-ink);
+  font-family:"Jost";font-weight:500;font-size:34px;color:var(--ink-tier,var(--tile-ink));
   transition:transform .15s;
 }
+/* letter-ink tiers by chip value */
+.tile.ink-mid{--ink-tier:#54432F}
+.tile.ink-hi{--ink-tier:#6E3A2A}
+.tile.ink-gild{--ink-tier:#8A6420}
+/* vowel/consonant face tint (ceramic base only) */
+.tile.vowel{--tile-face:#F7F0E1}
+.tile.cons{--tile-face:#EBE0C9}
 .tile .val{position:absolute;right:6px;bottom:3px;font-size:12px;font-weight:700;font-family:"Baloo 2"}
 .tile:hover{transform:translateY(-4px) rotate(0deg)!important}
 .tile.mini{width:36px;height:36px;font-size:20px;border-radius:7px;box-shadow:0 3px 0 rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.8)}
@@ -227,20 +234,20 @@ body{
         <span style="color:var(--ink-dim)">completes <b>Transitive ×2</b> → ~750</span>
       </div>
       <div class="staged">
-        <div class="tile">F<span class="val">4</span></div>
-        <div class="tile glass">I<span class="val">1</span></div>
-        <div class="tile">S<span class="val">1</span></div>
-        <div class="tile f-bold">H<span class="val">4</span></div>
+        <div class="tile cons ink-hi">F<span class="val">4</span></div>
+        <div class="tile glass vowel">I<span class="val">1</span></div>
+        <div class="tile cons">S<span class="val">1</span></div>
+        <div class="tile f-bold cons ink-hi">H<span class="val">4</span></div>
       </div>
 
       <div class="hand">
-        <div class="tile" tabindex="0">R<span class="val">1</span></div>
-        <div class="tile stone" tabindex="0">N<span class="val">1</span></div>
-        <div class="tile f-light" tabindex="0">o<span class="val">1</span></div>
-        <div class="tile" tabindex="0">D<span class="val">2</span></div>
-        <div class="tile porcelain" tabindex="0">U<span class="val">1</span></div>
-        <div class="tile f-inline" tabindex="0">M<span class="val">3</span></div>
-        <div class="tile" tabindex="0">q<span class="val">10</span></div>
+        <div class="tile cons" tabindex="0">R<span class="val">1</span></div>
+        <div class="tile stone cons" tabindex="0">N<span class="val">1</span></div>
+        <div class="tile f-light vowel" tabindex="0">o<span class="val">1</span></div>
+        <div class="tile cons ink-mid" tabindex="0">D<span class="val">2</span></div>
+        <div class="tile porcelain vowel" tabindex="0">U<span class="val">1</span></div>
+        <div class="tile f-inline cons ink-mid" tabindex="0">M<span class="val">3</span></div>
+        <div class="tile cons ink-gild" tabindex="0">q<span class="val">10</span></div>
       </div>
 
       <div class="actions">

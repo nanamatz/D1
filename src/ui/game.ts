@@ -132,6 +132,17 @@ export function fontClass(font: Tile['font']): string {
 export const tileGlyph = (t: Tile): string =>
   t.case === 'lower' ? t.letter.toLowerCase() : t.letter;
 
+/** Letter-ink tier by chip value (P2-3): 1 default · 2–3 · 4–5 · 8–10 gilded. */
+export function inkClass(value: number): string {
+  if (value >= 8) return 'ink-gild';
+  if (value >= 4) return 'ink-hi';
+  if (value >= 2) return 'ink-mid';
+  return '';
+}
+
+/** Vowel/consonant ceramic face tint class (P2-3). */
+export const faceClass = (t: Tile): string => (isVowel(t.letter) ? 'vowel' : 'cons');
+
 // ---------- Hand sorting (P1-1) ----------
 
 /** 'manual' = no sort (drag-reorder order preserved, P1-2); not a sort button. */

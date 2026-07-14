@@ -436,8 +436,25 @@
   font-family: 'Jost';
   font-weight: 500;
   font-size: 34px;
-  color: var(--tile-ink);
+  color: var(--ink-tier, var(--tile-ink));
   transition: transform 0.15s;
+}
+/* letter-ink tiers by chip value (P2-3) */
+.tile.ink-mid {
+  --ink-tier: #54432f;
+}
+.tile.ink-hi {
+  --ink-tier: #6e3a2a;
+}
+.tile.ink-gild {
+  --ink-tier: #8a6420;
+}
+/* vowel/consonant face tint — ceramic base only (material variants override background) */
+.tile.vowel {
+  --tile-face: #f7f0e1;
+}
+.tile.cons {
+  --tile-face: #ebe0c9;
 }
 .tile .val {
   position: absolute;

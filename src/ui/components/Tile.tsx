@@ -1,5 +1,5 @@
 import type { Tile } from '../../engine/types';
-import { fontClass, materialClass, tileGlyph, tileValue } from '../game';
+import { faceClass, fontClass, inkClass, materialClass, tileGlyph, tileValue } from '../game';
 
 interface Props {
   tile: Tile;
@@ -14,7 +14,16 @@ interface Props {
 export function TileView({ tile, mini = false, selected = false, onSelect, onReorder }: Props) {
   const interactive = !mini && !!onSelect;
   const draggable = !!onReorder;
-  const className = ['tile', mini && 'mini', selected && 'sel', draggable && 'draggable', materialClass(tile.material), fontClass(tile.font)]
+  const className = [
+    'tile',
+    mini && 'mini',
+    selected && 'sel',
+    draggable && 'draggable',
+    materialClass(tile.material),
+    fontClass(tile.font),
+    inkClass(tileValue(tile)),
+    faceClass(tile),
+  ]
     .filter(Boolean)
     .join(' ');
 
