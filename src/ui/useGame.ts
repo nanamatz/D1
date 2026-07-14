@@ -3,7 +3,7 @@
  * the headless engine. Randomness is reproducible: a fresh seeded RNG per
  * random op, keyed `seed#counter`, so no stateful RNG ref is needed.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { newRun } from '../engine/run';
 import { makeRng } from '../engine/rng';
 import {
@@ -16,6 +16,7 @@ import {
 import { resolveBlind } from '../engine/progression';
 import type { BlindState, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
 import { loadBrowserLexicon } from './lexicon.browser';
+import { recordWord } from './collection';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 
 const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
@@ -31,6 +32,8 @@ export interface GameState {
   /** the most recent submission's settle log + a counter to retrigger replay */
   lastEvents: ScoreEvent[];
   settleId: number;
+  /** last played word (for collection tracking); null on a fresh blind */
+  lastPlayed: { text: string; isGibberish: boolean } | null;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -52,6 +55,7 @@ function bootstrap(): GameState {
     message: null,
     lastEvents: [],
     settleId: 0,
+    lastPlayed: null,
   };
 }
 
@@ -73,6 +77,14 @@ export interface UseGame {
 export function useGame(): UseGame {
   const lexicon = useMemo(() => loadBrowserLexicon(), []);
   const [state, setState] = useState<GameState>(bootstrap);
+
+  // Word collection (P2-2): record each non-gibberish play once it settles.
+  useEffect(() => {
+    const lp = state.lastPlayed;
+    if (lp && !lp.isGibberish) recordWord(lp.text);
+    // keyed on the submission counter — records exactly once per play
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.settleId]);
 
   /** Judge & resolve the current blind, then advance or end the run. */
   const finalize = useCallback(
@@ -141,7 +153,7 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'playing' || prev.selected.length === 0) return prev;
       if (prev.blind.phasesUsed >= prev.blind.phasesTotal) return prev;
-      const { blind, events } = submitWord(prev.blind, prev.run, lexicon, prev.selected);
+      const { blind, events, submission } = submitWord(prev.blind, prev.run, lexicon, prev.selected);
       const next: GameState = {
         ...prev,
         blind,
@@ -149,6 +161,7 @@ export function useGame(): UseGame {
         message: null,
         lastEvents: events,
         settleId: prev.settleId + 1,
+        lastPlayed: { text: submission.text, isGibberish: submission.isGibberish },
       };
       // No phases left → the blind ends automatically (GDD §7.2).
       return blind.phasesUsed >= blind.phasesTotal ? finalize(next) : next;
