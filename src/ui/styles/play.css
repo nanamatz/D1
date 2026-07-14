@@ -496,6 +496,10 @@
 .preview .muted {
   color: var(--ink-dim);
 }
+.preview .warn {
+  color: var(--gold);
+  font-weight: 700;
+}
 .staged {
   display: flex;
   gap: 8px;

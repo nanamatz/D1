@@ -7,16 +7,25 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
 function PreviewLine({ preview }: { preview: StagePreview | null }) {
   if (!preview) return <span className="muted">Select tiles to stage a word.</span>;
+  // Gibberish escape valve made explicit (playtest-01 P0-3, GDD §6.4).
+  if (preview.isGibberish) {
+    return (
+      <>
+        <span>
+          <b>{preview.text}</b>
+        </span>
+        <span className="warn">Not a word — submit as gibberish</span>
+        <span className="chip-c">+{preview.chips} chips</span>
+        <span className="muted">breaks the sentence (leaves a hole)</span>
+      </>
+    );
+  }
   return (
     <>
       <span>
         <b>{preview.text}</b>
       </span>
-      <span>
-        {preview.isGibberish
-          ? 'Gibberish · ×1.0 · leaves a hole'
-          : `${cap(preview.suit ?? 'standard')} ×${preview.suitMult}`}
-      </span>
+      <span>{`${cap(preview.suit ?? 'standard')} ×${preview.suitMult}`}</span>
       <span className="chip-c">+{preview.chips} chips</span>
       {preview.completes && (
         <span className="muted">
@@ -62,7 +71,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         ) : (
           <>
             <button className="btn play" onClick={g.playWord} disabled={!g.canPlay}>
-              Play word
+              {preview?.isGibberish ? 'Submit gibberish' : 'Play word'}
             </button>
             <button className="btn exchange" onClick={g.exchange} disabled={!g.canExchange}>
               Exchange

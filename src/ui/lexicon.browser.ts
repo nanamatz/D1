@@ -14,5 +14,8 @@ export function loadBrowserLexicon(): Lexicon {
     if (key.startsWith('_')) continue; // drop `_comment`
     table[key] = value as LexiconEntryData;
   }
-  return makeLexicon(words, table);
+  const lexicon = makeLexicon(words, table);
+  // P0-1 acceptance: dictionary loads as a Set at startup; size logged.
+  console.info(`[lexicon] ${lexicon.size} valid words loaded (${Object.keys(table).length} tagged)`);
+  return lexicon;
 }
