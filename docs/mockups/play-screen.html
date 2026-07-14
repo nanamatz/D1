@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORD JOKER — play screen mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Jersey+10&family=Jost:ital,wght@0,300;0,500;0,700;0,900;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-desk:#22443B; --panel:#20303B; --panel-edge:#39505E;
+  --ink:#EDEAE2; --ink-dim:#9DB0B8;
+  --chips:#3FA7F5; --mult:#F5504E; --gold:#F0B23E;
+  --tile-face:#F4EDDF; --tile-ink:#2B2620;
+  --suit-standard:#B9C4CB; --suit-formal:#7E96F2; --suit-slang:#F09437; --suit-vulgar:#C6479E;
+  --shadow:0 5px 0 rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Baloo 2",sans-serif;color:var(--ink);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.05), transparent 60%),
+    radial-gradient(ellipse at 50% 110%, rgba(0,0,0,.45), transparent 55%),
+    var(--bg-desk);
+  min-height:100%;
+}
+.frame{display:grid;grid-template-columns:250px 1fr;gap:16px;max-width:1200px;margin:0 auto;padding:16px;min-height:100vh}
+
+/* ---------- panels ---------- */
+.panel{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);border-top:1px solid var(--panel-edge);padding:14px}
+.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
+
+/* ---------- sidebar ---------- */
+.sidebar{display:flex;flex-direction:column;gap:12px}
+.blind-badge{background:#2C4358;border-radius:12px;padding:10px 12px;text-align:center;box-shadow:var(--shadow)}
+.blind-badge .kind{font-weight:700;font-size:14px;letter-spacing:.12em}
+.blind-badge .target{font-family:"Jersey 10";font-size:44px;line-height:1;color:var(--mult);text-shadow:0 3px 0 rgba(0,0,0,.3)}
+.blind-badge .tlabel{font-size:11px;color:var(--ink-dim)}
+
+.scorebox{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:6px}
+.scorebox .box{border-radius:10px;padding:2px 12px;font-family:"Jersey 10";font-size:34px;line-height:1.15;box-shadow:var(--shadow)}
+.scorebox .c{background:var(--chips)}
+.scorebox .m{background:var(--mult)}
+.scorebox .x{font-family:"Jersey 10";font-size:26px;color:var(--ink-dim)}
+.committed{font-family:"Jersey 10";font-size:52px;text-align:center;line-height:1;margin-top:4px}
+.projected{margin-top:8px;text-align:center}
+.projected .num{font-family:"Jersey 10";font-size:34px;color:var(--gold);line-height:1}
+.projected .beat{display:inline-block;font-size:11px;color:#173226;background:var(--gold);border-radius:8px;padding:1px 8px;font-weight:700;margin-top:4px}
+
+.dots{display:flex;gap:6px;margin-top:4px}
+.dot{width:14px;height:14px;border-radius:50%;background:#0F1B22;box-shadow:inset 0 2px 3px rgba(0,0,0,.6)}
+.dot.on{background:var(--gold);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.dot.blue.on{background:var(--chips)}
+.row{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.money{font-family:"Jersey 10";font-size:30px;color:var(--gold);line-height:1}
+.ante{font-family:"Jersey 10";font-size:22px;color:var(--ink-dim);line-height:1}
+
+/* ---------- main column ---------- */
+.main{display:flex;flex-direction:column;gap:14px}
+.shelf{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.jokers,.consumables{display:flex;gap:10px}
+.joker{width:76px;height:96px;border-radius:12px;background:linear-gradient(180deg,#324454,#26343F);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  box-shadow:var(--shadow);border:2px solid #4A6272;cursor:pointer;transition:transform .15s}
+.joker:hover{transform:translateY(-4px) rotate(-1deg)}
+.joker .e{font-size:34px}
+.joker .n{font-size:10px;font-weight:600;color:var(--ink-dim);text-align:center;line-height:1.1;padding:0 4px}
+.joker.uncommon{border-color:var(--chips)}
+.joker.rare{border-color:var(--mult)}
+.consumable{width:60px;height:82px;border-radius:10px;background:#EFE7D6;color:#2B2620;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow)}
+.consumable .e{font-size:26px}
+.consumable .g{font-family:"Jost";font-size:30px;font-weight:900;line-height:.8}
+.consumable .n{font-size:9px;font-weight:700;color:#6B6357;text-align:center;line-height:1}
+
+/* ---------- sentence tray (signature) ---------- */
+.tray{min-height:150px;display:flex;align-items:center;gap:14px;padding:18px}
+.tray .label{position:absolute;transform:translateY(-64px)}
+.word{position:relative;border:3px solid var(--suit-standard);border-radius:12px;padding:10px 10px 6px;display:flex;gap:4px;background:rgba(0,0,0,.18)}
+.word.formal{border-color:var(--suit-formal)}
+.word .pos{position:absolute;left:50%;transform:translate(-50%,0);bottom:-11px;background:#0F1B22;border:1px solid #3A5060;
+  color:var(--ink-dim);font-size:10px;font-weight:700;border-radius:8px;padding:0 8px;white-space:nowrap}
+.word .suit-tag{position:absolute;top:-10px;left:8px;font-size:9px;font-weight:800;letter-spacing:.06em;
+  background:var(--suit-standard);color:#15242C;border-radius:6px;padding:0 6px}
+.word.absorbed{opacity:.75;border-style:dashed}
+.pattern-chip{margin-left:auto;background:#0F1B22;border:2px dashed #3A5060;border-radius:12px;padding:10px 14px;text-align:center}
+.pattern-chip .p{font-weight:700;font-size:14px}
+.pattern-chip .s{font-size:11px;color:var(--ink-dim)}
+
+/* ---------- tiles ---------- */
+.tile{width:64px;height:64px;border-radius:10px;position:relative;cursor:pointer;
+  background:radial-gradient(120% 120% at 25% 18%, #FFFDF6 0%, var(--tile-face) 45%, #E2D8C4 100%);
+  box-shadow:var(--shadow), inset 0 2px 2px rgba(255,255,255,.8);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Jost";font-weight:500;font-size:34px;color:var(--tile-ink);
+  transition:transform .15s;
+}
+.tile .val{position:absolute;right:6px;bottom:3px;font-size:12px;font-weight:700;font-family:"Baloo 2"}
+.tile:hover{transform:translateY(-4px) rotate(0deg)!important}
+.tile.mini{width:36px;height:36px;font-size:20px;border-radius:7px;box-shadow:0 3px 0 rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.8)}
+.tile.mini .val{font-size:8px;right:3px;bottom:1px}
+/* materials */
+.tile.glass{background:radial-gradient(120% 120% at 25% 18%, rgba(255,255,255,.95), rgba(190,225,245,.55) 60%, rgba(140,190,220,.5));
+  box-shadow:var(--shadow), inset 0 0 12px rgba(120,190,235,.8)}
+.tile.stone{background:radial-gradient(circle at 30% 25%, #C9C6BE, #9DA09B 70%),
+  radial-gradient(circle at 70% 60%, rgba(0,0,0,.15) 1px, transparent 2px);color:#2E2E2A}
+.tile.porcelain{background:radial-gradient(120% 120% at 25% 18%, #FFFFFF, #F2F6F7 55%, #D9E4E8);border:1px solid #BFD3DA}
+/* font editions (Jost styles) */
+.tile.f-bold{font-weight:700}
+.tile.f-black{font-weight:900}
+.tile.f-light{font-weight:300;font-style:italic}
+.tile.f-inline{font-weight:500;-webkit-text-stroke:2px var(--tile-ink);color:transparent}
+
+/* ---------- staged + hand ---------- */
+.stage{display:flex;flex-direction:column;gap:12px;align-items:center;padding:16px}
+.preview{background:#0F1B22;border-radius:10px;padding:6px 14px;font-size:13px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow)}
+.preview b{color:var(--gold)}
+.preview .chip-c{color:var(--chips);font-weight:700}
+.staged{display:flex;gap:8px}
+.staged .tile{transform:translateY(-8px);outline:3px solid var(--gold);outline-offset:2px}
+.hand{display:flex;gap:10px;justify-content:center;padding:6px 0 2px}
+.hand .tile:nth-child(odd){animation:wob 3.4s ease-in-out infinite}
+.hand .tile:nth-child(even){animation:wob 3.4s ease-in-out -1.7s infinite reverse}
+@keyframes wob{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+.actions{display:flex;gap:14px;margin-top:6px}
+.btn{font-family:"Baloo 2";font-weight:700;font-size:16px;color:#fff;border:none;border-radius:12px;
+  padding:12px 26px;cursor:pointer;box-shadow:var(--shadow);transition:transform .08s, box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.btn.play{background:var(--mult)}
+.btn.exchange{background:var(--chips)}
+.btn.cash{background:var(--gold);color:#173226;animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+.btn:focus-visible,.tile:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+
+@media (prefers-reduced-motion: reduce){
+  .hand .tile,.btn.cash{animation:none}
+  .tile,.joker,.btn{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="blind-badge">
+      <div class="kind">SMALL BLIND</div>
+      <div class="tlabel">target</div>
+      <div class="target">300</div>
+    </div>
+
+    <div class="panel">
+      <div class="label">Round score</div>
+      <div class="scorebox">
+        <span class="box c">86</span><span class="x">×</span><span class="box m">4</span>
+      </div>
+      <div class="committed">342</div>
+
+      <div class="projected">
+        <div class="label">Projected</div>
+        <div class="num">342</div>
+        <span class="beat">target beaten — cash out open</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="label">Phases</div>
+      <div class="dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div>
+      <div class="label" style="margin-top:10px">Exchanges</div>
+      <div class="dots"><span class="dot blue on"></span><span class="dot blue on"></span><span class="dot"></span></div>
+      <div class="row"><span class="money">$7</span><span class="ante">ANTE 1/8</span></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- joker shelf -->
+    <div class="shelf">
+      <div class="jokers">
+        <div class="joker" tabindex="0"><span class="e">🅰️</span><span class="n">Vowel Praise</span></div>
+        <div class="joker uncommon" tabindex="0"><span class="e">😎</span><span class="n">Hipster</span></div>
+        <div class="joker rare" tabindex="0"><span class="e">📜</span><span class="n">Grammarian</span></div>
+      </div>
+      <div class="consumables">
+        <div class="consumable"><span class="e">📎</span><span class="n">Correction<br>Tape</span></div>
+        <div class="consumable"><span class="g">;</span><span class="n">Semicolon</span></div>
+      </div>
+    </div>
+
+    <!-- sentence tray -->
+    <div class="panel tray">
+      <div class="word absorbed">
+        <span class="suit-tag">STD</span>
+        <div class="tile mini">T<span class="val">1</span></div>
+        <div class="tile mini">H<span class="val">4</span></div>
+        <div class="tile mini">E<span class="val">1</span></div>
+        <span class="pos">article · absorbed</span>
+      </div>
+      <div class="word">
+        <span class="suit-tag">STD</span>
+        <div class="tile mini">C<span class="val">3</span></div>
+        <div class="tile mini">A<span class="val">1</span></div>
+        <div class="tile mini">T<span class="val">1</span></div>
+        <span class="pos">noun</span>
+      </div>
+      <div class="word">
+        <span class="suit-tag">STD</span>
+        <div class="tile mini">E<span class="val">1</span></div>
+        <div class="tile mini">A<span class="val">1</span></div>
+        <div class="tile mini">T<span class="val">1</span></div>
+        <div class="tile mini">S<span class="val">1</span></div>
+        <span class="pos">verb · transitive</span>
+      </div>
+      <div class="pattern-chip">
+        <div class="p">Pattern: —</div>
+        <div class="s">Transitive needs an object</div>
+      </div>
+    </div>
+
+    <!-- staged word + hand -->
+    <div class="panel stage">
+      <div class="preview">
+        <span><b>FISH</b></span>
+        <span>Standard ×1.0</span>
+        <span class="chip-c">+14 chips</span>
+        <span style="color:var(--ink-dim)">completes <b>Transitive ×2</b> → ~750</span>
+      </div>
+      <div class="staged">
+        <div class="tile">F<span class="val">4</span></div>
+        <div class="tile glass">I<span class="val">1</span></div>
+        <div class="tile">S<span class="val">1</span></div>
+        <div class="tile f-bold">H<span class="val">4</span></div>
+      </div>
+
+      <div class="hand">
+        <div class="tile" tabindex="0">R<span class="val">1</span></div>
+        <div class="tile stone" tabindex="0">N<span class="val">1</span></div>
+        <div class="tile f-light" tabindex="0">o<span class="val">1</span></div>
+        <div class="tile" tabindex="0">D<span class="val">2</span></div>
+        <div class="tile porcelain" tabindex="0">U<span class="val">1</span></div>
+        <div class="tile f-inline" tabindex="0">M<span class="val">3</span></div>
+        <div class="tile" tabindex="0">q<span class="val">10</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn play">Play word</button>
+        <button class="btn exchange">Exchange</button>
+        <button class="btn cash">Cash out&nbsp;·&nbsp;+1 phase = $1</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

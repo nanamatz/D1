@@ -1,0 +1,38 @@
+/* Design tokens (docs/UI_DESIGN.md §1). Single source of theme truth. */
+:root {
+  --bg-desk: #22443b;
+  --panel: #20303b;
+  --panel-edge: #39505e;
+  --ink: #edeae2;
+  --ink-dim: #9db0b8;
+  --chips: #3fa7f5;
+  --mult: #f5504e;
+  --gold: #f0b23e;
+  --tile-face: #f4eddf;
+  --tile-ink: #2b2620;
+  --suit-standard: #b9c4cb;
+  --suit-formal: #7e96f2;
+  --suit-slang: #f09437;
+  --suit-vulgar: #c6479e;
+  --shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  font-family: 'Baloo 2', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(ellipse at 50% 110%, rgba(0, 0, 0, 0.45), transparent 55%),
+    var(--bg-desk);
+  min-height: 100%;
+}
