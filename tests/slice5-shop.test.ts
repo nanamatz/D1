@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { rollShopStock, buyItem, sellJoker, rerollShop } from '../src/engine/shop';
+import { rollShopStock, buyItem, sellJoker, rerollShop, buyVoucher } from '../src/engine/shop';
 import { newRun } from '../src/engine/run';
 import { makeRng } from '../src/engine/rng';
 import { BALANCE } from '../src/engine/balance';
-import type { OwnedJoker, RunState, ShopItem, ShopState } from '../src/engine/types';
+import type { OwnedJoker, RunState, ShopItem, ShopState, VoucherId } from '../src/engine/types';
 
 const run = (over: Partial<RunState> = {}): RunState => ({ ...newRun('shop'), ...over });
-const shopWith = (items: (ShopItem | null)[], rerolls = 0): ShopState => ({ items, rerolls });
+const shopWith = (
+  items: (ShopItem | null)[],
+  rerolls = 0,
+  voucher: VoucherId | null = null,
+): ShopState => ({ items, voucher, packs: [], rerolls });
 const dummyJokers = (n: number): OwnedJoker[] =>
   Array.from({ length: n }, (_, i) => ({ defId: `d${i}`, state: {} }));
 
@@ -98,5 +102,14 @@ describe('slice5 shop — sell & reroll', () => {
     const shop = shopWith([], 0);
     const r = run({ gold: 1 });
     expect(rerollShop(r, shop, makeRng('r')).ok).toBe(false);
+  });
+
+  it('buys the offered voucher: gold spent, effect applied, slot cleared', () => {
+    const shop = shopWith([], 0, 'extraHand');
+    const res = buyVoucher(run({ gold: 20 }), shop);
+    expect(res.ok).toBe(true);
+    expect(res.run.vouchers).toContain('extraHand');
+    expect(res.run.handSize).toBe(BALANCE.handSize + 1);
+    expect(res.shop.voucher).toBeNull();
   });
 });

@@ -86,6 +86,27 @@ export const BALANCE = {
   jokerSlots: 5, // Balatro-parity joker cap (placeholder)
   consumablePrice: 3, // flat consumable price (placeholder, GDD §9.2)
 
+  // ----- Vouchers (GDD §9.4) — single tier, 9 -----
+  voucherPrice: {
+    extraHand: 6, recycling: 6, overtime: 10, regularsDiscount: 5, compoundInterest: 7,
+    thrift: 5, wideShelf: 7, connoisseur: 6, pencilCase: 6,
+  } as Record<string, number>,
+  voucher: {
+    rerollDiscount: 2, // Regular's Discount
+    interestCap: 10, // Compound Interest (base cap 5 → 10)
+    thriftPerExchange: 1, // Thrift: gold per unused exchange on blind end
+    wideShelfSlots: 1, // Wide Shelf: +1 shop item slot
+  },
+
+  // ----- Packs (GDD §9.3) -----
+  packPrice: { letter: 4, emoji: 6, consumable: 4 } as Record<string, number>,
+  pack: {
+    letter: { show: 4, pick: 2 }, // 3–5 tiles shown, choose 1–2
+    emoji: { show: 3, pick: 1 }, // 2–4 jokers, choose 1
+    consumable: { show: 3, pick: 1 },
+  },
+  packEnhanceChance: { base: 0.15, connoisseur: 0.4 }, // material/font pre-attach rate
+
   // ----- Jokers (GDD §11) — per-joker knobs (proof set for slice ④) -----
   jokers: {
     vowelPraise: { multPerVowel: 2 }, // #1

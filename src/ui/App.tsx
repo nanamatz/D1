@@ -7,6 +7,7 @@ import { JokerShelf } from './components/JokerShelf';
 import { SentenceTray } from './components/SentenceTray';
 import { StagePanel } from './components/StagePanel';
 import { Shop } from './components/Shop';
+import { PackOpening } from './components/PackOpening';
 
 export function App() {
   const g = useGame();
@@ -16,7 +17,7 @@ export function App() {
   if (g.state.phase === 'shop') {
     return (
       <div className="frame shop-frame">
-        <Shop g={g} />
+        {g.state.pack ? <PackOpening g={g} /> : <Shop g={g} />}
       </div>
     );
   }

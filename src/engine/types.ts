@@ -224,8 +224,15 @@ export type ShopItem =
   | { kind: 'joker'; id: string; price: number }
   | { kind: 'consumable'; id: ConsumableId; price: number };
 
+/** Pack families (GDD §9.3). */
+export type PackKind = 'letter' | 'emoji' | 'consumable';
+
 export interface ShopState {
   items: (ShopItem | null)[];
+  /** single voucher slot, restocks each ante (GDD §9.2); null when owned/bought */
+  voucher: VoucherId | null;
+  /** pack slots (null = bought) */
+  packs: (PackKind | null)[];
   /** rerolls done this visit — drives the escalating reroll cost */
   rerolls: number;
 }

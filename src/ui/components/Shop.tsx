@@ -1,6 +1,8 @@
 import { JOKER_REGISTRY } from '../../engine/jokers';
+import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
 import { rerollCost, sellValue } from '../../engine/economy';
+import { rerollDiscount } from '../../engine/vouchers';
 import type { ConsumableId, ShopItem } from '../../engine/types';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
@@ -28,7 +30,8 @@ export function Shop({ g }: { g: UseGame }) {
       : run.consumables.length < run.consumableSlots;
   };
 
-  const cost = rerollCost(shop.rerolls);
+  const cost = rerollCost(shop.rerolls, rerollDiscount(run));
+  const voucher = shop.voucher ? VOUCHER_REGISTRY.get(shop.voucher) : undefined;
 
   return (
     <div className="shop">
@@ -62,6 +65,54 @@ export function Shop({ g }: { g: UseGame }) {
           <button className="btn play sm reroll" disabled={run.gold < cost} onClick={g.reroll}>
             {t('shop.reroll', { cost })}
           </button>
+        </div>
+      </div>
+
+      <div className="shop-two">
+        {voucher && (
+          <div className="panel">
+            <div className="label">{t('shop.vouchers')}</div>
+            <div className="shop-row">
+              <div className="shopitem">
+                <span className="e">{voucher.emoji}</span>
+                <span className="n">{lang === 'ko' ? voucher.nameKo : voucher.nameEn}</span>
+                <span className="price">${voucher.price}</span>
+                <button
+                  className="btn exchange sm"
+                  disabled={run.gold < voucher.price}
+                  onClick={g.buyVoucher}
+                >
+                  {t('shop.buy')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="panel">
+          <div className="label">{t('shop.packs')}</div>
+          <div className="shop-row">
+            {shop.packs.map((p, i) =>
+              p ? (
+                <div key={i} className="shopitem">
+                  <span className="e">📦</span>
+                  <span className="n">{t(`pack.${p}`)}</span>
+                  <span className="price">${BALANCE.packPrice[p]}</span>
+                  <button
+                    className="btn play sm"
+                    disabled={run.gold < (BALANCE.packPrice[p] ?? 0)}
+                    onClick={() => g.buyPack(i)}
+                  >
+                    {t('pack.open')}
+                  </button>
+                </div>
+              ) : (
+                <div key={i} className="shopitem empty">
+                  {t('shop.sold')}
+                </div>
+              ),
+            )}
+          </div>
         </div>
       </div>
 

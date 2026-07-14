@@ -30,15 +30,16 @@ export function clearReward(kind: BlindKind): number {
   return BALANCE.clearReward[kind];
 }
 
-/** Interest: `rate` gold per `per` held, capped (GDD §9.1). */
-export function interest(gold: number): number {
-  const { per, rate, cap } = BALANCE.interest;
+/** Interest: `rate` gold per `per` held, capped (GDD §9.1). Cap is raised by the
+ *  Compound Interest voucher — callers pass the effective cap. */
+export function interest(gold: number, cap: number = BALANCE.interest.cap): number {
+  const { per, rate } = BALANCE.interest;
   return Math.min(Math.floor(gold / per) * rate, cap);
 }
 
-/** Reroll cost: base + increment per reroll already done this shop (GDD §9.2). */
-export function rerollCost(rerollsDone: number): number {
-  return BALANCE.shop.rerollBase + BALANCE.shop.rerollIncrement * rerollsDone;
+/** Reroll cost: base + increment per reroll, minus any voucher discount, floored at 0. */
+export function rerollCost(rerollsDone: number, discount = 0): number {
+  return Math.max(0, BALANCE.shop.rerollBase + BALANCE.shop.rerollIncrement * rerollsDone - discount);
 }
 
 /** Sell value of an owned item: half its purchase price, rounded down (GDD §9.1). */

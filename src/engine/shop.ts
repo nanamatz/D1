@@ -7,11 +7,27 @@
 import { BALANCE } from './balance';
 import { ALL_JOKERS, JOKER_REGISTRY } from './jokers';
 import { rerollCost, sellValue } from './economy';
+import {
+  ALL_VOUCHER_IDS,
+  VOUCHER_REGISTRY,
+  applyVoucher,
+  rerollDiscount,
+  shopItemSlots,
+} from './vouchers';
 import type { Rng } from './rng';
-import type { ConsumableId, OwnedJoker, RunState, ShopItem, ShopState } from './types';
+import type {
+  ConsumableId,
+  OwnedJoker,
+  PackKind,
+  RunState,
+  ShopItem,
+  ShopState,
+  VoucherId,
+} from './types';
 
 /** Consumables that actually have an effect today (grows as they're built). */
 const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
+const PACK_KINDS: readonly PackKind[] = ['letter', 'emoji', 'consumable'];
 
 /** All items the shop could offer this run, minus jokers already owned. */
 function buildPool(run: RunState): ShopItem[] {
@@ -29,12 +45,33 @@ function buildPool(run: RunState): ShopItem[] {
   return [...jokers, ...consumables];
 }
 
-/** Roll a fresh stock into the item slots (distinct items; null if pool is short). */
-export function rollShopStock(run: RunState, rng: Rng): ShopState {
+function rollItems(run: RunState, rng: Rng): (ShopItem | null)[] {
   const shuffled = rng.shuffle(buildPool(run));
   const items: (ShopItem | null)[] = [];
-  for (let i = 0; i < BALANCE.shop.itemSlots; i++) items.push(shuffled[i] ?? null);
-  return { items, rerolls: 0 };
+  for (let i = 0; i < shopItemSlots(run); i++) items.push(shuffled[i] ?? null); // Wide Shelf +1
+  return items;
+}
+
+/** Offer one not-yet-owned voucher (GDD §9.2 voucher slot), or null. */
+function rollVoucher(run: RunState, rng: Rng): VoucherId | null {
+  const available = ALL_VOUCHER_IDS.filter((id) => !run.vouchers.includes(id));
+  return available.length ? rng.shuffle(available)[0]! : null;
+}
+
+function rollPacks(rng: Rng): (PackKind | null)[] {
+  const packs: (PackKind | null)[] = [];
+  for (let i = 0; i < BALANCE.shop.packSlots; i++) packs.push(PACK_KINDS[rng.int(PACK_KINDS.length)]!);
+  return packs;
+}
+
+/** Roll a fresh shop: item slots + voucher slot + pack slots. */
+export function rollShopStock(run: RunState, rng: Rng): ShopState {
+  return {
+    items: rollItems(run, rng),
+    voucher: rollVoucher(run, rng),
+    packs: rollPacks(rng),
+    rerolls: 0,
+  };
 }
 
 export interface BuyResult {
@@ -82,11 +119,24 @@ export function sellJoker(run: RunState, index: number): SellResult {
   return { run: { ...run, gold: run.gold + value, jokers }, ok: true };
 }
 
-/** Reroll the item slots for the escalating cost (GDD §9.2). */
+/** Buy the offered voucher: apply its effect + record ownership (GDD §9.4). */
+export function buyVoucher(run: RunState, shop: ShopState): BuyResult {
+  const id = shop.voucher;
+  if (!id) return { run, shop, ok: false };
+  const def = VOUCHER_REGISTRY.get(id);
+  if (!def || run.gold < def.price) return { run, shop, ok: false };
+  const nextRun = applyVoucher({ ...run, gold: run.gold - def.price }, id);
+  return { run: nextRun, shop: { ...shop, voucher: null }, ok: true };
+}
+
+/** Reroll the item slots only, for the escalating (voucher-discounted) cost (GDD §9.2). */
 export function rerollShop(run: RunState, shop: ShopState, rng: Rng): BuyResult {
-  const cost = rerollCost(shop.rerolls);
+  const cost = rerollCost(shop.rerolls, rerollDiscount(run));
   if (run.gold < cost) return { run, shop, ok: false };
   const nextRun = { ...run, gold: run.gold - cost };
-  const rolled = rollShopStock(nextRun, rng);
-  return { run: nextRun, shop: { items: rolled.items, rerolls: shop.rerolls + 1 }, ok: true };
+  return {
+    run: nextRun,
+    shop: { ...shop, items: rollItems(nextRun, rng), rerolls: shop.rerolls + 1 },
+    ok: true,
+  };
 }

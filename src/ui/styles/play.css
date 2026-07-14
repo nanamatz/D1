@@ -21,6 +21,16 @@
   flex-direction: column;
   gap: 14px;
 }
+.shop-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 680px) {
+  .shop-two {
+    grid-template-columns: 1fr;
+  }
+}
 .shop-head {
   display: flex;
   align-items: center;

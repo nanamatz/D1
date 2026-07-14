@@ -22,7 +22,9 @@ import type {
   ScoreEvent,
   ShopState,
 } from '../engine/types';
-import { rollShopStock, buyItem, sellJoker, rerollShop } from '../engine/shop';
+import { rollShopStock, buyItem, sellJoker, rerollShop, buyVoucher } from '../engine/shop';
+import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
+import { BALANCE } from '../engine/balance';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import { loadBrowserLexicon } from './lexicon.browser';
 import { recordWord } from './collection';
@@ -47,6 +49,8 @@ export interface GameState {
   hint: HintWord[] | null;
   /** shop stock while phase === 'shop', else null */
   shop: ShopState | null;
+  /** an open pack awaiting selection, else null */
+  pack: { offer: PackOffer; picksLeft: number } | null;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -74,6 +78,7 @@ function bootstrap(): GameState {
     lastPlayed: null,
     hint: null,
     shop: null,
+    pack: null,
   };
 }
 
@@ -92,6 +97,10 @@ export interface UseGame {
   sell: (index: number) => void;
   reroll: () => void;
   leaveShop: () => void;
+  buyVoucher: () => void;
+  buyPack: (index: number) => void;
+  pickPackOption: (index: number) => void;
+  closePack: () => void;
   playWord: () => void;
   exchange: () => void;
   cashOut: () => void;
@@ -188,6 +197,53 @@ export function useGame(): UseGame {
       };
     });
   }, []);
+
+  const buyVoucherAction = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== 'shop' || !prev.shop) return prev;
+      const res = buyVoucher(prev.run, prev.shop);
+      return res.ok ? { ...prev, run: res.run, shop: res.shop } : prev;
+    });
+  }, []);
+
+  const buyPack = useCallback((index: number) => {
+    setState((prev) => {
+      if (prev.phase !== 'shop' || !prev.shop) return prev;
+      const kind = prev.shop.packs[index];
+      if (!kind) return prev;
+      const price = BALANCE.packPrice[kind] ?? 0;
+      if (prev.run.gold < price) return prev;
+      const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
+      const offer = rollPack(kind, prev.run, rng);
+      const packs = prev.shop.packs.slice();
+      packs[index] = null;
+      return {
+        ...prev,
+        run: { ...prev.run, gold: prev.run.gold - price },
+        shop: { ...prev.shop, packs },
+        pack: { offer, picksLeft: offer.pick },
+        rngCounter: prev.rngCounter + 1,
+      };
+    });
+  }, []);
+
+  const pickPackOption = useCallback((optionIndex: number) => {
+    setState((prev) => {
+      if (!prev.pack || prev.pack.picksLeft <= 0) return prev;
+      const option = prev.pack.offer.options[optionIndex];
+      if (!option) return prev;
+      const run = applyPackPick(prev.run, option);
+      const options = prev.pack.offer.options.filter((_, i) => i !== optionIndex);
+      const picksLeft = prev.pack.picksLeft - 1;
+      const pack =
+        picksLeft <= 0 || options.length === 0
+          ? null
+          : { offer: { ...prev.pack.offer, options }, picksLeft };
+      return { ...prev, run, pack };
+    });
+  }, []);
+
+  const closePack = useCallback(() => setState((prev) => ({ ...prev, pack: null })), []);
 
   const toggleTile = useCallback((id: string) => {
     setState((prev) => {
@@ -300,6 +356,10 @@ export function useGame(): UseGame {
     sell,
     reroll,
     leaveShop,
+    buyVoucher: buyVoucherAction,
+    buyPack,
+    pickPackOption,
+    closePack,
     playWord,
     exchange,
     cashOut,
