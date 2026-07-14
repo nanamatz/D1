@@ -32,6 +32,29 @@
   flex-direction: column;
   gap: 12px;
 }
+.langbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -4px;
+}
+.langbtn {
+  font-family: 'Baloo 2';
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink-dim);
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.langbtn:hover {
+  color: var(--ink);
+}
+.langbtn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
 .blind-badge {
   background: #2c4358;
   border-radius: 12px;

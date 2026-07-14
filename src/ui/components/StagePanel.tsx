@@ -1,14 +1,14 @@
 import { useRef } from 'react';
 import type { SortMode, StagePreview } from '../game';
-import { SORT_LABEL, SORT_MODES, sortHand, tilesByIds } from '../game';
+import { SORT_MODES, sortHand, tilesByIds } from '../game';
 import { usePersistedState, useFlip } from '../hooks';
+import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
 
-const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
-
 function PreviewLine({ preview }: { preview: StagePreview | null }) {
-  if (!preview) return <span className="muted">Select tiles to stage a word.</span>;
+  const { t } = useI18n();
+  if (!preview) return <span className="muted">{t('stage.selectPrompt')}</span>;
   // Gibberish escape valve made explicit (playtest-01 P0-3, GDD §6.4).
   if (preview.isGibberish) {
     return (
@@ -16,9 +16,9 @@ function PreviewLine({ preview }: { preview: StagePreview | null }) {
         <span>
           <b>{preview.text}</b>
         </span>
-        <span className="warn">Not a word — submit as gibberish</span>
-        <span className="chip-c">+{preview.chips} chips</span>
-        <span className="muted">breaks the sentence (leaves a hole)</span>
+        <span className="warn">{t('stage.notWord')}</span>
+        <span className="chip-c">{t('stage.chips', { chips: preview.chips })}</span>
+        <span className="muted">{t('stage.breaks')}</span>
       </>
     );
   }
@@ -27,11 +27,11 @@ function PreviewLine({ preview }: { preview: StagePreview | null }) {
       <span>
         <b>{preview.text}</b>
       </span>
-      <span>{`${cap(preview.suit ?? 'standard')} ×${preview.suitMult}`}</span>
-      <span className="chip-c">+{preview.chips} chips</span>
+      <span>{t('stage.suitMult', { suit: t(`suit.${preview.suit ?? 'standard'}`), mult: preview.suitMult })}</span>
+      <span className="chip-c">{t('stage.chips', { chips: preview.chips })}</span>
       {preview.completes && (
         <span className="muted">
-          completes <b>{preview.completes.label}</b>
+          {t('stage.completes', { name: t(`pattern.${preview.completes.pattern}`) })}
         </span>
       )}
     </>
@@ -40,6 +40,7 @@ function PreviewLine({ preview }: { preview: StagePreview | null }) {
 
 /** Staged word preview, hand, and the action buttons (UI_DESIGN §2). */
 export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview | null }) {
+  const { t } = useI18n();
   const { blind, selected, phase, message } = g.state;
   const [sortMode, setSortMode] = usePersistedState<SortMode>('wj.sortMode', 'vowel');
   const staged = tilesByIds(blind.hand, selected);
@@ -60,7 +61,11 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
 
   return (
     <div className="panel stage">
-      {message && <div className={['toast', phase === 'gameover' ? 'lose' : 'win'].join(' ')}>{message}</div>}
+      {message && (
+        <div className={['toast', phase === 'gameover' ? 'lose' : 'win'].join(' ')}>
+          {t(message.key, message.params)}
+        </div>
+      )}
 
       <div className="preview">
         <PreviewLine preview={preview} />
@@ -73,7 +78,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
       </div>
 
       <div className="sortbar">
-        <span className="label">Sort</span>
+        <span className="label">{t('stage.sort')}</span>
         {SORT_MODES.map((m) => (
           <button
             key={m}
@@ -81,7 +86,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
             onClick={() => setSortMode(m)}
             aria-pressed={m === sortMode}
           >
-            {SORT_LABEL[m]}
+            {t(`sort.${m}`)}
           </button>
         ))}
       </div>
@@ -95,18 +100,18 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
       <div className="actions">
         {phase === 'gameover' ? (
           <button className="btn play" onClick={g.newGame}>
-            New game
+            {t('btn.newGame')}
           </button>
         ) : (
           <>
             <button className="btn play" onClick={g.playWord} disabled={!g.canPlay}>
-              {preview?.isGibberish ? 'Submit gibberish' : 'Play word'}
+              {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
             </button>
             <button className="btn exchange" onClick={g.exchange} disabled={!g.canExchange}>
-              Exchange
+              {t('btn.exchange')}
             </button>
             <button className="btn cash" onClick={g.cashOut} disabled={!g.canCash}>
-              Cash out&nbsp;·&nbsp;+1 phase = $1
+              {t('btn.cash')}
             </button>
           </>
         )}

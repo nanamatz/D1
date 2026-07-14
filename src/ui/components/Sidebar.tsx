@@ -1,6 +1,7 @@
 import type { BlindState, RunState, ScoreEvent } from '../../engine/types';
 import type { StagePreview } from '../game';
 import { useCountUp, useSettle } from '../useAnim';
+import { useI18n } from '../i18n';
 
 interface Props {
   run: RunState;
@@ -23,10 +24,9 @@ function Dots({ total, filled, blue = false }: { total: number; filled: number; 
   );
 }
 
-const KIND_LABEL = { small: 'SMALL BLIND', big: 'BIG BLIND', boss: 'BOSS BLIND' } as const;
-
 /** Left rail: blind badge, round score, projected, resource dots, gold/ante. */
 export function Sidebar({ run, blind, preview, projectedBreakdown, events, settleId }: Props) {
+  const { t, lang, setLang } = useI18n();
   const beaten = blind.projectedScore >= blind.target;
   const phasesLeft = blind.phasesTotal - blind.phasesUsed;
   const settle = useSettle(events, settleId);
@@ -39,43 +39,48 @@ export function Sidebar({ run, blind, preview, projectedBreakdown, events, settl
 
   return (
     <aside className="sidebar">
+      <div className="langbar">
+        <button className="langbtn" onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}>
+          {t('lang.toggle')}
+        </button>
+      </div>
       <div className="blind-badge">
-        <div className="kind">{KIND_LABEL[blind.kind]}</div>
+        <div className="kind">{t(`blind.${blind.kind}`)}</div>
         {blind.bossId && <div className="boss">{blind.bossId}</div>}
-        <div className="tlabel">target</div>
+        <div className="tlabel">{t('sidebar.target')}</div>
         <div className="target">{blind.target}</div>
       </div>
 
       <div className="panel">
-        <div className="label">{settle.active ? 'Scoring…' : 'Staged word'}</div>
+        <div className="label">{settle.active ? t('sidebar.scoring') : t('sidebar.staged')}</div>
         <div className={['scorebox', settle.active && 'settling'].filter(Boolean).join(' ')}>
           <span className="box c">{Math.round(chips)}</span>
           <span className="x">×</span>
           <span className="box m">{fmtMult(mult)}</span>
         </div>
         <div className="label" style={{ marginTop: 10 }}>
-          Committed
+          {t('sidebar.committed')}
         </div>
         <div className="committed">{Math.round(committed)}</div>
 
         <div className={['projected', beaten && 'beaten'].filter(Boolean).join(' ')}>
-          <div className="label">Projected</div>
+          <div className="label">{t('sidebar.projected')}</div>
           <div className="num">{Math.round(projected)}</div>
-          {beaten && <span className="beat">target beaten — cash out open</span>}
+          {beaten && <span className="beat">{t('sidebar.beaten')}</span>}
           <div className="breakdown">{projectedBreakdown}</div>
         </div>
       </div>
 
       <div className="panel">
-        <div className="label">Phases</div>
+        <div className="label">{t('sidebar.phases')}</div>
         <Dots total={blind.phasesTotal} filled={phasesLeft} />
         <div className="label" style={{ marginTop: 10 }}>
-          Exchanges
+          {t('sidebar.exchanges')}
         </div>
         <Dots total={run.baseExchanges} filled={blind.exchangesLeft} blue />
         <div className="row">
           <span className="money">${run.gold}</span>
-          <span className="ante">ANTE {run.ante}/8</span>
+          <span className="ante">{t('sidebar.ante', { n: run.ante })}</span>
         </div>
       </div>
     </aside>

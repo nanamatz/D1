@@ -16,7 +16,7 @@ import {
 import { resolveBlind } from '../engine/progression';
 import type { BlindState, OwnedJoker, RunState, ScoreEvent } from '../engine/types';
 import { loadBrowserLexicon } from './lexicon.browser';
-import { reorderIds, type Phase } from './game';
+import { reorderIds, type MessageSpec, type Phase } from './game';
 
 const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
 
@@ -27,7 +27,7 @@ export interface GameState {
   blind: BlindState;
   selected: string[];
   phase: Phase;
-  message: string | null;
+  message: MessageSpec | null;
   /** the most recent submission's settle log + a counter to retrigger replay */
   lastEvents: ScoreEvent[];
   settleId: number;
@@ -83,7 +83,10 @@ export function useGame(): UseGame {
         return {
           ...s,
           phase: 'gameover',
-          message: `Game over — scored ${final.finalScore} of ${s.blind.target}. Reached ante ${s.run.ante}.`,
+          message: {
+            key: 'msg.gameover',
+            params: { score: Math.round(final.finalScore), target: s.blind.target, ante: s.run.ante },
+          },
         };
       }
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
@@ -95,7 +98,10 @@ export function useGame(): UseGame {
         blind: nextBlind,
         selected: [],
         rngCounter: s.rngCounter + 1,
-        message: `Cleared! +$${e.total}  (reward ${e.reward} · ${e.phases} phases · ${e.interest} interest)`,
+        message: {
+          key: 'msg.cleared',
+          params: { total: e.total, reward: e.reward, phases: e.phases, interest: e.interest },
+        },
       };
     },
     [lexicon],

@@ -18,6 +18,12 @@ import type {
 
 export type Phase = 'playing' | 'gameover';
 
+/** A localizable toast: a locale key + interpolation params (P1-4). */
+export interface MessageSpec {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
 /** Tiles for the given ids, in id order, from a hand. */
 export function tilesByIds(hand: readonly Tile[], ids: readonly string[]): Tile[] {
   const byId = new Map(hand.map((t) => [t.id, t]));
