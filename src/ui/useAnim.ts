@@ -4,7 +4,6 @@
  * All honor prefers-reduced-motion (instant, no motion).
  */
 import { useEffect, useRef, useState } from 'react';
-import type { ScoreEvent } from '../engine/types';
 
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,49 +39,25 @@ export function useCountUp(value: number, duration = 420): number {
   return display;
 }
 
-export interface SettleDisplay {
-  chips: number;
-  mult: number;
-  active: boolean;
-}
-
 /**
- * Replay a submission's ScoreEvent log as a chips/mult build-up: chips tick up
- * per tile, the suit sets the mult, jokers add their deltas, then it settles.
- * `key` (a submission counter) retriggers the replay even for identical events.
+ * Reveal `count` items one at a time on a fixed cadence (Cash Out line-by-line,
+ * spec §2.5). Returns how many are currently visible. Reduced motion reveals all
+ * at once.
  */
-export function useSettle(events: readonly ScoreEvent[], key: number): SettleDisplay {
-  const [display, setDisplay] = useState<SettleDisplay>({ chips: 0, mult: 1, active: false });
-
+export function useReveal(count: number, stepMs = 380): number {
+  const [shown, setShown] = useState(reducedMotion() ? count : 0);
   useEffect(() => {
-    if (key === 0 || events.length === 0 || reducedMotion()) return;
-
-    const frames: Array<{ chips: number; mult: number }> = [];
-    let chips = 0;
-    let mult = 1;
-    for (const e of events) {
-      if (e.kind === 'tile') chips += e.chips;
-      else if (e.kind === 'suit') mult = e.mult;
-      else if (e.kind === 'joker' || e.kind === 'boss') {
-        chips += e.chipsDelta;
-        mult += e.multDelta;
-      } else continue; // settle frame == last accumulated
-      frames.push({ chips, mult });
+    if (reducedMotion()) {
+      setShown(count);
+      return;
     }
-    if (frames.length === 0) return;
-
-    const step = Math.min(120, Math.floor(760 / frames.length));
+    setShown(0);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    setDisplay({ chips: 0, mult: frames[0]!.mult, active: true });
-    frames.forEach((f, i) => {
-      timers.push(setTimeout(() => setDisplay({ ...f, active: true }), (i + 1) * step));
-    });
-    timers.push(
-      setTimeout(() => setDisplay((d) => ({ ...d, active: false })), frames.length * step + 550),
-    );
+    for (let i = 1; i <= count; i++) {
+      timers.push(setTimeout(() => setShown(i), i * stepMs));
+    }
     return () => timers.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-
-  return display;
+  }, [count, stepMs]);
+  return shown;
 }
+

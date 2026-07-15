@@ -119,17 +119,24 @@ describe('slice4 jokers — layer 3 (sentence/phase) (GDD §11.4)', () => {
     expect(ctx.totalMultiplier).toBe(1);
   });
 
-  it('#24 Rush Specialist: ×4 Mult with 2+ phases remaining', () => {
+  it('#24 Rush Specialist: ×(1 + 0.5·phasesLeft) — 3 left → ×2.5 (C-1)', () => {
     const ctx = sentCtx({});
     const early: BlindState = { ...blind, phasesUsed: 1, phasesTotal: 4 }; // 3 left
     bus.emit('sentenceScoring', { run, blind: early, ctx }, owned('rushSpecialist'));
-    expect(ctx.totalMultiplier).toBe(4);
+    expect(ctx.totalMultiplier).toBe(2.5);
   });
 
-  it('#24 Rush Specialist: no effect with fewer than 2 phases remaining', () => {
+  it('#24 Rush Specialist: fewer phases left → smaller bonus — 1 left → ×1.5 (C-1)', () => {
     const ctx = sentCtx({});
     const late: BlindState = { ...blind, phasesUsed: 3, phasesTotal: 4 }; // 1 left
     bus.emit('sentenceScoring', { run, blind: late, ctx }, owned('rushSpecialist'));
+    expect(ctx.totalMultiplier).toBe(1.5);
+  });
+
+  it('#24 Rush Specialist: nothing with 0 phases left (C-1)', () => {
+    const ctx = sentCtx({});
+    const done: BlindState = { ...blind, phasesUsed: 4, phasesTotal: 4 }; // 0 left
+    bus.emit('sentenceScoring', { run, blind: done, ctx }, owned('rushSpecialist'));
     expect(ctx.totalMultiplier).toBe(1);
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Vouchers (GDD §9.4) — single-tier, 9. Each turns a system knob into
- * merchandise. Direct knobs (hand/exchanges/phases/consumable slots) are bumped
+ * merchandise. Direct knobs (hand/discards/phases/consumable slots) are bumped
  * on purchase; economy modifiers (reroll discount, interest cap, thrift, wide
  * shelf, connoisseur) are read from run.vouchers at their use sites.
  */
@@ -18,7 +18,7 @@ export interface VoucherDef {
 
 const VOUCHERS: readonly VoucherDef[] = [
   { id: 'extraHand', nameEn: 'Extra Hand', nameKo: '여분의 손', emoji: '✋', price: BALANCE.voucherPrice.extraHand! },
-  { id: 'recycling', nameEn: 'Recycling', nameKo: '재활용', emoji: '♻️', price: BALANCE.voucherPrice.recycling! },
+  { id: 'extraDiscard', nameEn: 'Extra Discard', nameKo: '추가 버리기', emoji: '♻️', price: BALANCE.voucherPrice.extraDiscard! },
   { id: 'overtime', nameEn: 'Overtime', nameKo: '초과근무', emoji: '⏰', price: BALANCE.voucherPrice.overtime! },
   { id: 'regularsDiscount', nameEn: "Regular's Discount", nameKo: '단골 할인', emoji: '🏷️', price: BALANCE.voucherPrice.regularsDiscount! },
   { id: 'compoundInterest', nameEn: 'Compound Interest', nameKo: '복리', emoji: '📈', price: BALANCE.voucherPrice.compoundInterest! },
@@ -40,8 +40,8 @@ export function applyVoucher(run: RunState, id: VoucherId): RunState {
     case 'extraHand':
       r = { ...r, handSize: r.handSize + 1 };
       break;
-    case 'recycling':
-      r = { ...r, baseExchanges: r.baseExchanges + 1 };
+    case 'extraDiscard':
+      r = { ...r, baseDiscards: r.baseDiscards + 1 };
       break;
     case 'overtime':
       r = { ...r, basePhases: r.basePhases + 1 };

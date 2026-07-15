@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WORD JOKER — play screen mockup</title>
+<title>Play the Wor!d — play screen mockup</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Jersey+10&family=Jost:ital,wght@0,300;0,500;0,700;0,900;1,300&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -133,8 +133,8 @@ body{
 .btn{font-family:"Baloo 2";font-weight:700;font-size:16px;color:#fff;border:none;border-radius:12px;
   padding:12px 26px;cursor:pointer;box-shadow:var(--shadow);transition:transform .08s, box-shadow .08s}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
-.btn.play{background:var(--mult)}
-.btn.exchange{background:var(--chips)}
+.btn.play{background:var(--chips)}
+.btn.exchange{background:var(--mult)}
 .btn.cash{background:var(--gold);color:#173226;animation:glow 1.6s ease-in-out infinite}
 @keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
 .btn:focus-visible,.tile:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
@@ -173,7 +173,7 @@ body{
     <div class="panel">
       <div class="label">Phases</div>
       <div class="dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div>
-      <div class="label" style="margin-top:10px">Exchanges</div>
+      <div class="label" style="margin-top:10px">Discards</div>
       <div class="dots"><span class="dot blue on"></span><span class="dot blue on"></span><span class="dot"></span></div>
       <div class="row"><span class="money">$7</span><span class="ante">ANTE 1/8</span></div>
     </div>
@@ -252,7 +252,7 @@ body{
 
       <div class="actions">
         <button class="btn play">Play word</button>
-        <button class="btn exchange">Exchange</button>
+        <button class="btn exchange">Discard</button>
         <button class="btn cash">Cash out&nbsp;·&nbsp;+1 phase = $1</button>
       </div>
     </div>

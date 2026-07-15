@@ -10,9 +10,12 @@ const countByLetter = (tiles: Tile[]): Record<string, number> => {
   return counts;
 };
 
+// Total is derived from the composition table so a rebalance (C-2) never breaks these.
+const BAG_TOTAL = Object.values(BALANCE.bagComposition).reduce((a, b) => a + b, 0);
+
 describe('slice1 bag — build from BALANCE.bagComposition (GDD §2.1)', () => {
-  it('builds exactly 98 tiles', () => {
-    expect(buildBag().length).toBe(98);
+  it('builds exactly the composition total of tiles', () => {
+    expect(buildBag().length).toBe(BAG_TOTAL);
   });
 
   it('matches the per-letter composition table', () => {
@@ -39,7 +42,7 @@ describe('slice1 bag — shuffle preserves the multiset', () => {
   it('is a permutation of the same tiles (no tiles gained or lost)', () => {
     const rng = makeRng('bag-shuffle');
     const shuffled = rng.shuffle(buildBag());
-    expect(shuffled.length).toBe(98);
+    expect(shuffled.length).toBe(BAG_TOTAL);
     expect(countByLetter(shuffled)).toEqual(countByLetter(buildBag()));
   });
 });
@@ -49,7 +52,7 @@ describe('slice1 bag — draw (GDD §6.1, §6.6 no refill)', () => {
     const bag = buildBag();
     const { drawn, bag: rest } = drawTiles(bag, 11);
     expect(drawn.length).toBe(11);
-    expect(rest.length).toBe(98 - 11);
+    expect(rest.length).toBe(BAG_TOTAL - 11);
   });
 
   it('does not mutate the source bag array', () => {

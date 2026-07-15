@@ -1,90 +1,112 @@
-import { useRef } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
+import type { Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
-import { SORT_MODES, sortHand, tilesByIds } from '../game';
+import { SORT_MODES, sortHand, tileGlyph, tilesByIds, tileValue } from '../game';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
 
-function PreviewLine({ preview }: { preview: StagePreview | null }) {
-  const { t } = useI18n();
-  if (!preview) return <span className="muted">{t('stage.selectPrompt')}</span>;
-  if (preview.blocked) {
-    return (
-      <>
-        <span>
-          <b>{preview.text}</b>
-        </span>
-        <span className="warn">{t('boss.blockedWord')}</span>
-      </>
-    );
-  }
-  // Gibberish escape valve made explicit (playtest-01 P0-3, GDD §6.4).
-  if (preview.isGibberish) {
-    return (
-      <>
-        <span>
-          <b>{preview.text}</b>
-        </span>
-        <span className="warn">{t('stage.notWord')}</span>
-        <span className="chip-c">{t('stage.chips', { chips: preview.chips })}</span>
-        <span className="muted">{t('stage.breaks')}</span>
-      </>
-    );
-  }
-  return (
-    <>
-      <span>
-        <b>{preview.text}</b>
-      </span>
-      <span>{t('stage.suitMult', { suit: t(`suit.${preview.suit ?? 'standard'}`), mult: preview.suitMult })}</span>
-      <span className="chip-c">{t('stage.chips', { chips: preview.chips })}</span>
-      {preview.completes && (
-        <span className="muted">
-          {t('stage.completes', { name: t(`pattern.${preview.completes.pattern}`) })}
-        </span>
-      )}
-    </>
-  );
+interface Drag {
+  zone: 'hand' | 'staged';
+  id: string;
 }
 
-/** Staged word preview, hand, and the action buttons (UI_DESIGN §2). */
+/** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
+ *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
 export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview | null }) {
   const { t } = useI18n();
-  const { blind, selected, phase, message } = g.state;
+  const { blind, selected, message } = g.state;
   const [sortMode, setSortMode] = usePersistedState<SortMode>('wj.sortMode', 'vowel');
+  // C-3: discard marks are a separate selection from staging (hand tiles only).
+  const [discardMarks, setDiscardMarks] = useState<string[]>([]);
   const staged = tilesByIds(blind.hand, selected);
   const selectedSet = new Set(selected);
   const hand = sortHand(
-    blind.hand.filter((t) => !selectedSet.has(t.id)),
+    blind.hand.filter((tl) => !selectedSet.has(tl.id)),
     sortMode,
   );
   const hintIds = new Set(g.state.hint?.flatMap((w) => w.tileIds) ?? []);
   const handRef = useRef<HTMLDivElement>(null);
   const stagedRef = useRef<HTMLDivElement>(null);
-  useFlip(handRef, `${sortMode}|${hand.map((t) => t.id).join(',')}`);
-  useFlip(stagedRef, staged.map((t) => t.id).join(','));
+  useFlip(handRef, `${sortMode}|${hand.map((tl) => tl.id).join(',')}`);
+  useFlip(stagedRef, staged.map((tl) => tl.id).join(','));
 
-  const dragHandTile = (fromId: string, toId: string) => {
-    setSortMode('manual'); // manual drag order overrides the active sort
-    g.reorderHand(fromId, toId);
+  const handIds = new Set(hand.map((tl) => tl.id));
+  const validMarks = discardMarks.filter((id) => handIds.has(id));
+  const toggleMark = (id: string) =>
+    setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
+
+  const tileTip = (tile: Tile) => ({
+    title: tileGlyph(tile),
+    body: [
+      t('tile.chips', { n: tileValue(tile) }),
+      tile.material !== 'ceramic' ? t(`material.${tile.material}`) : '',
+      tile.font !== 'medium' ? t(`font.${tile.font}`) : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  });
+
+  // ----- drag & drop (C-2): pointer-position insertion, hand ↔ zone both ways -----
+  const parseDrag = (e: DragEvent): Drag | null => {
+    const [zone, id] = (e.dataTransfer.getData('text/plain') || '').split(':');
+    return (zone === 'hand' || zone === 'staged') && id ? { zone, id } : null;
+  };
+  const targetAt = (container: HTMLElement | null, clientX: number): string | null => {
+    if (!container) return null;
+    for (const el of Array.from(container.querySelectorAll<HTMLElement>('[data-tile-id]'))) {
+      const r = el.getBoundingClientRect();
+      if (clientX < r.left + r.width / 2) return el.dataset.tileId ?? null;
+    }
+    return null; // past the last tile → append
+  };
+  const allowDrop = (e: DragEvent) => e.preventDefault();
+  // item 9: the WHOLE stage area is a drop target. The zone is chosen by pointer
+  // Y (generously: anything at/above the staged row counts as the tray), so drops
+  // no longer need to land precisely inside a small box.
+  const dropZoneAt = (clientY: number): 'staged' | 'hand' => {
+    const r = stagedRef.current?.getBoundingClientRect();
+    return r && clientY <= r.bottom + 28 ? 'staged' : 'hand';
+  };
+  const onStageDrop = (e: DragEvent) => {
+    e.preventDefault();
+    const d = parseDrag(e);
+    if (!d) return;
+    if (dropZoneAt(e.clientY) === 'staged') {
+      if (d.zone === 'hand') {
+        g.toggleTile(d.id); // stage
+        return;
+      }
+      const to = targetAt(stagedRef.current, e.clientX) ?? staged[staged.length - 1]?.id;
+      if (to && to !== d.id) g.reorderStaged(d.id, to);
+    } else {
+      if (d.zone === 'staged') {
+        g.toggleTile(d.id); // unstage → back to hand
+        return;
+      }
+      const to = targetAt(handRef.current, e.clientX) ?? hand[hand.length - 1]?.id;
+      if (to && to !== d.id) {
+        setSortMode('manual'); // manual drag order overrides the active sort
+        g.reorderHand(d.id, to);
+      }
+    }
   };
 
-  return (
-    <div className="panel stage">
-      {message && (
-        <div className={['toast', phase === 'gameover' ? 'lose' : 'win'].join(' ')}>
-          {t(message.key, message.params)}
-        </div>
-      )}
+  const doDiscard = () => {
+    g.discard(validMarks);
+    setDiscardMarks([]);
+  };
+  const canDiscard = g.canDiscard && validMarks.length > 0; // no per-use tile cap (D-4)
 
-      <div className="preview">
-        <PreviewLine preview={preview} />
-      </div>
+  return (
+    <div className="stage" onDragOver={allowDrop} onDrop={onStageDrop}>
+      {message && <div className="toast warn-toast">{t(message.key, message.params)}</div>}
 
       <div className="staged" ref={stagedRef}>
-        {staged.map((t) => (
-          <TileView key={t.id} tile={t} onSelect={g.toggleTile} onReorder={g.reorderStaged} />
+        {staged.length === 0 && <span className="zone-hint">{t('stage.zoneEmpty')}</span>}
+        {staged.map((tile) => (
+          <TileView key={tile.id} tile={tile} zone="staged" onSelect={g.toggleTile} tooltip={tileTip(tile)} />
         ))}
       </div>
 
@@ -97,54 +119,47 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         </div>
       )}
 
-      <div className="sortbar">
-        <span className="label">{t('stage.sort')}</span>
-        {SORT_MODES.map((m) => (
-          <button
-            key={m}
-            className={['sortbtn', m === sortMode ? 'on' : ''].filter(Boolean).join(' ')}
-            onClick={() => setSortMode(m)}
-            aria-pressed={m === sortMode}
-          >
-            {t(`sort.${m}`)}
-          </button>
-        ))}
-      </div>
-
       <div className="hand" ref={handRef}>
-        {hand.map((t) => (
+        {hand.map((tile) => (
           <TileView
-            key={t.id}
-            tile={t}
-            hinted={hintIds.has(t.id)}
+            key={tile.id}
+            tile={tile}
+            zone="hand"
+            hinted={hintIds.has(tile.id)}
+            marked={validMarks.includes(tile.id)}
             onSelect={g.toggleTile}
-            onReorder={dragHandTile}
+            onMark={toggleMark}
+            tooltip={tileTip(tile)}
           />
         ))}
       </div>
 
+      <div className="discard-hint">{t('stage.discardHint')}</div>
+
+      {/* item 4: Balatro layout — Play (left) · Sort panel (center) · Discard (right) */}
       <div className="actions">
-        {phase === 'gameover' ? (
-          <button className="btn play" onClick={g.newGame}>
-            {t('btn.newGame')}
-          </button>
-        ) : (
-          <>
-            <button
-              className="btn play"
-              onClick={g.playWord}
-              disabled={!g.canPlay || !!preview?.blocked}
-            >
-              {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
-            </button>
-            <button className="btn exchange" onClick={g.exchange} disabled={!g.canExchange}>
-              {t('btn.exchange')}
-            </button>
-            <button className="btn cash" onClick={g.cashOut} disabled={!g.canCash}>
-              {t('btn.cash')}
-            </button>
-          </>
-        )}
+        <button className="btn blue play-btn" onClick={g.playWord} disabled={!g.canPlay || !!preview?.blocked}>
+          {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
+        </button>
+        <div className="sort-panel">
+          <div className="sort-title">{t('stage.sort')}</div>
+          <div className="sort-btns">
+            {SORT_MODES.map((m) => (
+              <button
+                key={m}
+                className={['sortbtn', m === sortMode ? 'on' : ''].filter(Boolean).join(' ')}
+                onClick={() => setSortMode(m)}
+                aria-pressed={m === sortMode}
+              >
+                {t(`sort.${m}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button className="btn red discard-btn" onClick={doDiscard} disabled={!canDiscard}>
+          {t('btn.discard')}
+          {validMarks.length > 0 ? ` (${validMarks.length})` : ''}
+        </button>
       </div>
     </div>
   );

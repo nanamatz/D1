@@ -1,51 +1,52 @@
-import { judgeSentence } from '../engine/patterns';
-import { stagePreview } from './game';
+import { useState } from 'react';
 import { useGame } from './useGame';
-import { useI18n } from './i18n';
-import { Sidebar } from './components/Sidebar';
-import { JokerShelf } from './components/JokerShelf';
-import { SentenceTray } from './components/SentenceTray';
-import { StagePanel } from './components/StagePanel';
-import { Shop } from './components/Shop';
-import { PackOpening } from './components/PackOpening';
+import { MainMenu } from './components/MainMenu';
+import { NewRun } from './components/NewRun';
+import { RunView } from './components/RunView';
+import { Collection } from './components/Collection';
+import { Options } from './components/Options';
+
+type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
 export function App() {
   const g = useGame();
-  const { t } = useI18n();
-  const { blind, run, selected } = g.state;
+  const [screen, setScreen] = useState<Screen>('menu');
 
-  if (g.state.phase === 'shop') {
-    return (
-      <div className="frame shop-frame">
-        {g.state.pack ? <PackOpening g={g} /> : <Shop g={g} />}
-      </div>
-    );
-  }
+  const view = () => {
+    switch (screen) {
+      case 'newrun':
+        return (
+          <NewRun
+            onStart={(seed) => {
+              g.startRun(seed);
+              setScreen('run');
+            }}
+            onBack={() => setScreen('menu')}
+          />
+        );
+      case 'run':
+        return <RunView g={g} onExit={() => setScreen('menu')} onNewRun={() => setScreen('newrun')} />;
+      case 'collection':
+        return <Collection lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
+      case 'options':
+        return <Options lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
+      case 'menu':
+      default:
+        return (
+          <MainMenu
+            onPlay={() => setScreen('newrun')}
+            onCollection={() => setScreen('collection')}
+            onOptions={() => setScreen('options')}
+          />
+        );
+    }
+  };
 
-  const preview = stagePreview(blind, g.lexicon, selected);
-  const judgment = judgeSentence(blind.sequence, g.lexicon);
-  const breakdown = judgment.match
-    ? t(`pattern.${judgment.match.pattern}`) +
-      (judgment.unison ? ` · ${t('tray.unison', { suit: t(`suit.${judgment.unison.suit}`) })}` : '')
-    : judgment.unison
-      ? t('sidebar.unisonOnly')
-      : t('sidebar.noBonus');
-
+  // E-1: a wipe plays whenever the top-level screen changes (the key remounts
+  // this wrapper). In-run phase transitions get their own wipe inside RunView.
   return (
-    <div className="frame">
-      <Sidebar
-        run={run}
-        blind={blind}
-        preview={preview}
-        projectedBreakdown={breakdown}
-        events={g.state.lastEvents}
-        settleId={g.state.settleId}
-      />
-      <main className="main">
-        <JokerShelf run={run} onUseConsumable={() => g.useMagnifier()} />
-        <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
-        <StagePanel g={g} preview={preview} />
-      </main>
+    <div key={screen} className="wipe-in route-wrap">
+      {view()}
     </div>
   );
 }

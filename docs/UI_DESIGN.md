@@ -1,4 +1,4 @@
-# WORD JOKER — UI Design Spec
+# Play the Wor!d — UI Design Spec
 
 **Design thesis: Balatro's arcade grammar, a stationer's materiality.**
 We borrow Balatro's screen *grammar* — left info panel, joker shelf on top, hand fanned at the bottom, chunky panels with hard offset shadows, juicy score feedback — but the material world is our own: **ceramic letter tiles on a letterpress desk**, not cards on casino felt. Never copy Balatro's assets, fonts, or textures (trade-dress line); capture the feel through our own theme, which the GDD already provides (materials §2.2, fonts §2.3).
@@ -59,7 +59,7 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 │  phases ●●○○   STAGED WORD preview (validity·suit·score)  │
 │  exchanges │                                              │
 │  gold/ante │   HAND (11 ceramic tiles, slight fan/wobble) │
-│            │        [PLAY WORD]   [EXCHANGE]              │
+│            │        [PLAY WORD]   [DISCARD]               │
 └────────────┴──────────────────────────────────────────────┘
 ```
 
@@ -77,7 +77,7 @@ Sidebar (top→bottom): blind badge (kind + boss name when boss) with target sco
 | `SentenceTray` | see §2. Includes `HoleSlot` (gibberish) and `PatternChip`. |
 | `JokerCard` | chunky card with large emoji, name on hover tooltip; rarity = frame color (common gray / uncommon blue / rare red / legendary gold shimmer). |
 | `ScoreBox` | blue chips box × red mult box, Jersey 10 numerals, count-up animation on settle. |
-| `Button` | primary red (Play word), secondary blue (Exchange), gold variant (Cash out / early end). Depress on press. |
+| `Button` | **Play word = blue, Discard = red** (Balatro convention, playtest-02 C-5), gold variant (Cash out / early end). Depress on press. |
 | `ProjectedPanel` | gold number + tiny breakdown line (pattern + unison), overwritten each phase (GDD §7.1). |
 
 ---

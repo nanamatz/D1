@@ -5,7 +5,7 @@
  * All functions are pure: they take a BlindState and return a NEW one, leaving
  * inputs (and the run's permanent bag) untouched. Illegal moves throw.
  *
- * Slice ① scope: startBlind, exchangeTiles (per-blind budget, §6.3), submitWord
+ * Slice ① scope: startBlind, discardTiles (per-blind budget, §6.3), submitWord
  * (letter-chip settlement + gibberish, §6.4/§7.1). Suit multipliers (②),
  * sentence projection (③), joker hooks (④) and the target curve (⑤) layer on
  * later — projectedScore currently just tracks committedScore.
@@ -17,6 +17,7 @@ import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, spell } from './scoring';
 import { finalizeScore, judgeSentence } from './patterns';
+import { evaluateLetterHand } from './letterHands';
 import { defaultJokerBus } from './jokers';
 import { BOSS_REGISTRY, drawBoss } from './bosses';
 import { blindTarget } from './economy';
@@ -46,7 +47,9 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   const shuffled = rng.shuffle(run.bag);
   const { drawn: hand, bag } = drawTiles(shuffled, run.handSize);
   const kind = opts.kind ?? kindForIndex(run.blindIndex);
-  const bossId = kind === 'boss' ? (opts.bossId ?? drawBoss(rng)) : (opts.bossId ?? null);
+  // Only boss blinds carry a bossId; opts.bossId is used only then (so callers can
+  // always pass the pre-drawn chapter boss, playtest-04 D-6).
+  const bossId = kind === 'boss' ? (opts.bossId ?? drawBoss(rng)) : null;
 
   let blind: BlindState = {
     kind,
@@ -54,8 +57,7 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     target: opts.target ?? blindTarget(run.ante, kind),
     phasesTotal: run.basePhases,
     phasesUsed: 0,
-    exchangesLeft: run.baseExchanges,
-    exchangeSize: BALANCE.tilesPerExchange,
+    discardsLeft: run.baseDiscards,
     committedScore: 0,
     projectedScore: 0,
     sequence: [],
@@ -66,7 +68,7 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     previewHidden: false,
   };
 
-  // Apply the boss's setup effect (phases, exchanges, flags — GDD §8.3).
+  // Apply the boss's setup effect (phases, discards, flags — GDD §8.3).
   if (bossId) blind = BOSS_REGISTRY.get(bossId)?.setup?.(blind) ?? blind;
   return blind;
 }
@@ -95,28 +97,30 @@ function takeFromHand(hand: readonly Tile[], ids: readonly string[]): Tile[] {
 }
 
 /**
- * Exchange (the discard equivalent, §6.3): return the chosen tiles to the bag,
- * reshuffle, and draw the same number back. Budget is PER BLIND.
+ * Discard (GDD §6.3, Balatro-aligned): the chosen tiles LEAVE PLAY for the rest
+ * of the blind — they move to `discardedThisBlind` and are NOT returned to the
+ * bag mid-blind. Replacements are drawn from the remaining (already-shuffled)
+ * bag, so no RNG is needed; if the bag runs dry, fewer are drawn (no refill,
+ * §6.6). Budget is PER BLIND (count of discards) with NO per-use tile cap
+ * (playtest-04 D-4) — one discard may dump any number of marked tiles. Used tiles
+ * (discarded + played) return to the bag only when the blind ends.
  */
-export function exchangeTiles(blind: BlindState, tileIds: readonly string[], rng: Rng): BlindState {
-  if (blind.exchangesLeft <= 0) {
-    throw new Error('exchange budget exhausted for this blind');
+export function discardTiles(blind: BlindState, tileIds: readonly string[]): BlindState {
+  if (blind.discardsLeft <= 0) {
+    throw new Error('discard budget exhausted for this blind');
   }
-  if (tileIds.length > blind.exchangeSize) {
-    throw new Error(`cannot exchange more than ${blind.exchangeSize} tiles at once`);
-  }
-  const returned = takeFromHand(blind.hand, tileIds); // validates membership
+  const removed = takeFromHand(blind.hand, tileIds); // validates membership
 
-  const returnedIds = new Set(tileIds);
-  const keptHand = blind.hand.filter((t) => !returnedIds.has(t.id));
-  const reshuffled = rng.shuffle([...blind.bag, ...returned]);
-  const { drawn, bag } = drawTiles(reshuffled, returned.length);
+  const removedIds = new Set(tileIds);
+  const keptHand = blind.hand.filter((t) => !removedIds.has(t.id));
+  const { drawn, bag } = drawTiles(blind.bag, removed.length);
 
   return {
     ...blind,
     hand: [...keptHand, ...drawn],
     bag,
-    exchangesLeft: blind.exchangesLeft - 1,
+    discardedThisBlind: [...blind.discardedThisBlind, ...removed],
+    discardsLeft: blind.discardsLeft - 1,
   };
 }
 
@@ -160,6 +164,21 @@ function scoreSubmission(
     events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
+
+  // Letter hand (A-2): highest single per-word structure bonus, folded in before
+  // the suit multiplier settles. Vowel Flush / Straight also fire on gibberish.
+  const letters = tiles.map((t) => t.letter).join('');
+  const letterHand = evaluateLetterHand(letters, submission.isGibberish);
+  if (letterHand && (letterHand.chips !== 0 || letterHand.mult !== 0)) {
+    ctx.chips += letterHand.chips;
+    ctx.mult += letterHand.mult;
+    events.push({
+      kind: 'letterHand',
+      hand: letterHand.id,
+      chipsDelta: letterHand.chips,
+      multDelta: letterHand.mult,
+    });
+  }
 
   for (const joker of run.jokers) {
     const beforeChips = ctx.chips;

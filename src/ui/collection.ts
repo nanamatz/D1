@@ -40,3 +40,24 @@ export function recordWord(word: string, now: number = Date.now()): boolean {
 export function collectionSize(): number {
   return Object.keys(loadCollection()).length;
 }
+
+const SEEN_KEY = 'wj.collectionSeen';
+
+/** Words collected since the collection was last viewed — drives the `!` badge (spec §0). */
+export function unseenCount(): number {
+  try {
+    const seen = Number(localStorage.getItem(SEEN_KEY) ?? '0');
+    return Math.max(0, collectionSize() - (Number.isFinite(seen) ? seen : 0));
+  } catch {
+    return 0;
+  }
+}
+
+/** Mark the collection as viewed (clears the badge). */
+export function markCollectionSeen(): void {
+  try {
+    localStorage.setItem(SEEN_KEY, String(collectionSize()));
+  } catch {
+    /* ignore quota / privacy-mode errors */
+  }
+}

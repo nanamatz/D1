@@ -8,6 +8,7 @@
   margin: 0 auto;
   padding: 16px;
   min-height: 100vh;
+  position: relative;
 }
 
 /* ---------- shop (GDD §9) ---------- */
@@ -126,7 +127,7 @@
   margin-bottom: -4px;
 }
 .langbtn {
-  font-family: 'Baloo 2';
+  font-family: 'Baloo 2', 'Noto Sans KR';
   font-weight: 700;
   font-size: 12px;
   color: var(--ink-dim);
@@ -316,6 +317,27 @@
   display: flex;
   gap: 10px;
 }
+/* item 8: space consumables (and reserve trailing room) for the Use/Sell menu
+   that opens to their right. */
+.consumables {
+  gap: 74px;
+  padding-right: 74px;
+}
+/* item 3: shelves reserve their full max-slot area via dashed empty placeholders. */
+.joker.empty {
+  border: 2px dashed #3a5060;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: none;
+  cursor: default;
+}
+.joker.empty:hover {
+  transform: none !important;
+}
+.consumable.empty {
+  border: 2px dashed #7c7360;
+  background: rgba(0, 0, 0, 0.14);
+  box-shadow: none;
+}
 .joker {
   width: 76px;
   height: 96px;
@@ -354,6 +376,39 @@
 }
 .joker.legendary {
   border-color: var(--gold);
+}
+/* Joker trigger animation (B step 3): wiggle + contribution popup. */
+.joker.firing {
+  animation: jokerWiggle 0.32s ease-in-out;
+  border-color: var(--gold);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 0 14px rgba(240, 178, 62, 0.7);
+}
+@keyframes jokerWiggle {
+  0%, 100% { transform: translateY(-4px) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(-5deg); }
+  75% { transform: translateY(-8px) rotate(5deg); }
+}
+.joker-pop {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: #173226;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  animation: popRise 0.6s ease-out;
+  z-index: 5;
+}
+.joker {
+  position: relative;
+}
+.joker-slot {
+  position: relative;
 }
 .consumable {
   width: 60px;
@@ -470,6 +525,60 @@
   opacity: 0.75;
   border-style: dashed;
 }
+/* Per-tile +N score pop during settle (B step 2). */
+.tile-pop-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.tile-pop {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--chips);
+  color: #fff;
+  font-weight: 800;
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 0 5px;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  z-index: 4;
+}
+.tile-pop.live {
+  animation: popRise 0.45s ease-out;
+}
+@keyframes popRise {
+  0% { transform: translate(-50%, 6px) scale(0.7); opacity: 0; }
+  40% { transform: translate(-50%, -2px) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+/* Letter-hand / suit stamp landing on the just-scored word (B step 4). */
+.word-stamp {
+  position: absolute;
+  top: -16px;
+  right: -8px;
+  background: var(--gold);
+  color: #173226;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  padding: 2px 9px;
+  box-shadow: var(--shadow);
+  animation: stampIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+  z-index: 6;
+}
+.word-stamp.suit {
+  background: var(--ink);
+  color: #15242c;
+}
+@keyframes stampIn {
+  0% { transform: scale(2) rotate(-12deg); opacity: 0; }
+  100% { transform: scale(1) rotate(-4deg); opacity: 1; }
+}
 /* gibberish hole — the cracked/burned slot (UI_DESIGN §2) */
 .hole {
   position: relative;
@@ -552,12 +661,13 @@
 .tile.ink-gild {
   --ink-tier: #8a6420;
 }
-/* vowel/consonant face tint — ceramic base only (material variants override background) */
+/* vowel/consonant face tint (C-6: strengthened one step, still both "beige").
+   Material tiles keep their own faces (their .glass/.stone/... rules win). */
 .tile.vowel {
-  --tile-face: #f7f0e1;
+  --tile-face: #f8f2e2;
 }
 .tile.cons {
-  --tile-face: #ebe0c9;
+  --tile-face: #e6d9bc;
 }
 .tile .val {
   position: absolute;
@@ -565,7 +675,7 @@
   bottom: 3px;
   font-size: 12px;
   font-weight: 700;
-  font-family: 'Baloo 2';
+  font-family: 'Baloo 2', 'Noto Sans KR';
 }
 .tile:hover {
   transform: translateY(-4px) rotate(0deg) !important;
@@ -661,6 +771,47 @@
   color: var(--gold);
   font-weight: 700;
 }
+.letterhand-tag {
+  color: #15242c;
+  background: var(--gold);
+  border-radius: 6px;
+  padding: 1px 8px;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+/* A-3: non-standard suit is celebrated in the staged preview (louder than Standard). */
+.suit-badge {
+  color: var(--ink-dim);
+  font-size: 13px;
+}
+.suit-badge.loud {
+  color: #15242c;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 1px 8px;
+}
+.suit-badge.formal.loud {
+  background: var(--suit-formal);
+}
+.suit-badge.slang.loud {
+  background: var(--suit-slang);
+}
+.suit-badge.vulgar.loud {
+  background: var(--suit-vulgar);
+}
+.preview.suit-frame {
+  border: 2px solid var(--suit-standard);
+}
+.preview.suit-frame.formal {
+  border-color: var(--suit-formal);
+}
+.preview.suit-frame.slang {
+  border-color: var(--suit-slang);
+}
+.preview.suit-frame.vulgar {
+  border-color: var(--suit-vulgar);
+}
 .staged {
   display: flex;
   gap: 8px;
@@ -680,7 +831,7 @@
   margin-right: 2px;
 }
 .sortbtn {
-  font-family: 'Baloo 2';
+  font-family: 'Baloo 2', 'Noto Sans KR';
   font-weight: 700;
   font-size: 12px;
   color: var(--ink-dim);
@@ -754,7 +905,7 @@
   justify-content: center;
 }
 .btn {
-  font-family: 'Baloo 2';
+  font-family: 'Baloo 2', 'Noto Sans KR';
   font-weight: 700;
   font-size: 16px;
   color: #fff;
@@ -778,6 +929,13 @@
 }
 .btn.exchange {
   background: var(--chips);
+}
+/* Balatro button convention (C-5): Play word = blue, Discard = red. */
+.btn.blue {
+  background: var(--chips);
+}
+.btn.red {
+  background: var(--mult);
 }
 .btn.cash {
   background: var(--gold);
@@ -818,12 +976,378 @@
   color: var(--mult);
 }
 
+/* C-3: discard-marked hand tile — red tint + slight sink, distinct from staging. */
+.tile.marked {
+  outline: 3px solid var(--mult);
+  outline-offset: 2px;
+  transform: translateY(4px) !important;
+  box-shadow: var(--shadow), inset 0 0 0 100px rgba(245, 80, 78, 0.24);
+  animation: none;
+}
+.discard-hint {
+  font-size: 11px;
+  color: var(--ink-dim);
+  text-align: center;
+  margin-top: -2px;
+}
+.zone-hint {
+  color: var(--ink-dim);
+  font-style: italic;
+  font-size: 13px;
+  align-self: center;
+}
+
+/* C-4: tile hover tooltip (reuses the shared .tt-card look, anchored to the tile). */
+.tile .tile-tt {
+  cursor: default;
+}
+.tile:hover .tile-tt,
+.tile:focus-visible .tile-tt {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* C-4: consumable Use / Sell menu (never instant-use). */
+.consumable-slot {
+  position: relative;
+}
+/* item 7: Use / Sell buttons appear to the RIGHT of the clicked element. */
+.consumable-menu {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #0f1b22;
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 20;
+}
+.consumable-menu button {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink);
+  background: #22333d;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.consumable-menu button:hover {
+  background: #2c4358;
+}
+
+/* ===== playtest-03 E: unified board, shelves, sidebar, action cluster ===== */
+
+/* E-5: tray is transparent (part of the continuous board) */
+.tray {
+  background: transparent;
+  box-shadow: none;
+  border-top: none;
+}
+
+/* E-5: shelves get a dark, high-transparency background · E-6: N/max counts */
+.shelf-group {
+  background: rgba(10, 18, 23, 0.5);
+  border-radius: 14px;
+  padding: 10px 12px 4px;
+  display: flex;
+  flex-direction: column;
+}
+.consumables-group {
+  align-items: flex-end;
+}
+.shelf-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  margin-top: 4px;
+}
+
+/* item 4: Balatro layout — Play (left) · Sort panel (center) · Discard (right) */
+.stage .actions {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+.sort-panel {
+  background: rgba(10, 18, 23, 0.55);
+  border-radius: 12px;
+  padding: 6px 14px 8px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.sort-title {
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.sort-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.sortbtn {
+  min-width: 68px; /* D-4: locale-stable */
+  text-align: center;
+}
+.btn.blue,
+.btn.red {
+  min-width: 152px; /* D-4: language switch never resizes them */
+}
+
+/* E-9: sidebar per the reference layout */
+.blind-badge .kind {
+  border-radius: 8px;
+  padding: 6px 0;
+  color: #fff;
+  background: linear-gradient(180deg, #3a5a86, #2c4358);
+}
+.blind-badge.small .kind {
+  background: linear-gradient(180deg, #4d7fd6, #3a5aa0);
+}
+.blind-badge.big .kind {
+  background: linear-gradient(180deg, #d6a53a, #a87d20);
+  color: #20160a;
+}
+.blind-badge.boss .kind {
+  background: linear-gradient(180deg, #d64d4a, #a02c2c);
+}
+.badge-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bs-target,
+.bs-reward {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.bs-reward {
+  align-items: flex-end;
+}
+.blind-badge .target {
+  font-size: 32px;
+}
+.bs-reward .reward {
+  font-family: 'Jersey 10';
+  font-size: 24px;
+  color: var(--gold);
+  letter-spacing: -2px;
+}
+.round-panel {
+  padding: 8px 12px;
+}
+.round-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.round-num {
+  font-family: 'Jersey 10';
+  font-size: 26px;
+}
+/* A: sentence-bonus forecast — a ghost, clearly separate from the committed number. */
+.round-forecast {
+  margin-top: 3px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  opacity: 0.8;
+  font-style: italic;
+}
+.score-panel {
+  text-align: center;
+}
+.sb-status {
+  min-height: 22px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+}
+.sb-status.warn {
+  color: var(--gold);
+}
+.sb-status.loud {
+  color: #15242c;
+  border-radius: 6px;
+  padding: 1px 10px;
+  display: inline-block;
+}
+.sb-status.loud.formal {
+  background: var(--suit-formal);
+}
+.sb-status.loud.slang {
+  background: var(--suit-slang);
+}
+.sb-status.loud.vulgar {
+  background: var(--suit-vulgar);
+}
+.sb-controls {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 8px;
+}
+.sb-btns {
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sidenav-btn.info {
+  background: #3a5a86;
+  color: #fff;
+  border: none;
+}
+.sidenav-btn.options {
+  background: var(--gold);
+  color: #20160a;
+  border: none;
+}
+.sb-cell {
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  min-width: 62px; /* D-4 */
+}
+.sb-cell .label {
+  font-size: 10px;
+}
+.cnum {
+  font-family: 'Jersey 10';
+  font-size: 24px;
+  line-height: 1;
+}
+.cnum.red {
+  color: var(--mult);
+}
+.cnum.blue {
+  color: var(--chips);
+}
+.money-cell .money {
+  font-size: 24px;
+}
+.sb-cell .ante {
+  font-family: 'Jersey 10';
+  font-size: 18px;
+  color: var(--gold);
+}
+
+/* B: verdict beat — the sentence-finalize / clear moment, shown after the word
+   settle so the bonus is seen pushing the score over the target. */
+.verdict {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+  z-index: 30;
+  opacity: 0;
+  animation: verdictIn 0.4s ease 0.55s forwards;
+}
+.verdict-score {
+  font-family: 'Jersey 10';
+  font-size: 64px;
+  color: var(--gold);
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
+}
+.verdict-cleared {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 26px;
+  color: #15242c;
+  background: var(--gold);
+  border-radius: 12px;
+  padding: 6px 20px;
+  box-shadow: var(--shadow);
+}
+@keyframes verdictIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* E-1: shared screen-transition WIPE. A panel covers the screen on mount, then
+   sweeps off to reveal the content. Applied to route + phase containers (menu↔run,
+   blind→blind, →shop, →settlement). Reduced motion → a fade instead. */
+.wipe-in::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--bg-desk);
+  z-index: 90;
+  pointer-events: none;
+  animation: wipeReveal 0.42s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+@keyframes wipeReveal {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-102%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wipe-in::before {
+    animation: wipeFade 0.24s ease forwards;
+  }
+}
+@keyframes wipeFade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* in-game Options (pause) covers the board */
+.pause-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--bg-desk);
+  overflow: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hand .tile,
   .btn.cash,
   .projected.beaten .num,
-  .scorebox.settling {
+  .scorebox.settling,
+  .blind-in {
     animation: none;
+  }
+  .verdict {
+    animation: none;
+    opacity: 1;
   }
   .tile,
   .joker,

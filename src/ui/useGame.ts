@@ -3,34 +3,75 @@
  * the headless engine. Randomness is reproducible: a fresh seeded RNG per
  * random op, keyed `seed#counter`, so no stateful RNG ref is needed.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { newRun } from '../engine/run';
 import { makeRng } from '../engine/rng';
-import {
-  startBlind,
-  submitWord,
-  exchangeTiles,
-  canEndEarly,
-  endBlind,
-} from '../engine/loop';
-import { resolveBlind } from '../engine/progression';
+import { startBlind, submitWord, discardTiles, endBlind } from '../engine/loop';
+import { resolveBlind, type BlindEarnings } from '../engine/progression';
+import { drawBoss } from '../engine/bosses';
 import type {
+  BlindKind,
   BlindState,
   ConsumableId,
   OwnedJoker,
+  PatternId,
   RunState,
   ScoreEvent,
   ShopState,
 } from '../engine/types';
-import { rollShopStock, buyItem, sellJoker, rerollShop, buyVoucher } from '../engine/shop';
+import {
+  rollShopStock,
+  buyItem,
+  sellJoker,
+  rerollShop,
+  buyVoucher,
+  rollVoucherOffer,
+  rollExtraItem,
+} from '../engine/shop';
+import { sellValue } from '../engine/economy';
 import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
 import { BALANCE } from '../engine/balance';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import { loadBrowserLexicon } from './lexicon.browser';
 import { recordWord } from './collection';
+import { recordRunEnd } from './lifetime';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 
 const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
+
+/** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
+export interface GameOverInfo {
+  finalScore: number;
+  target: number;
+  ante: number;
+  blindKind: BlindKind;
+  bossId: string | null;
+}
+
+/**
+ * Per-run display stats (spec §2.7 Game Over). Pure observation of player
+ * actions — no game rules — so the engine stays headless. Reset each run.
+ */
+export interface RunStats {
+  wordsPlayed: number;
+  tilesDiscarded: number;
+  itemsBought: number;
+  rerollsUsed: number;
+  bestWord: { text: string; score: number } | null;
+  patternCounts: Partial<Record<PatternId, number>>;
+  /** words collected for the first time ever, during this run */
+  discoveries: number;
+}
+
+const freshStats = (): RunStats => ({
+  wordsPlayed: 0,
+  tilesDiscarded: 0,
+  itemsBought: 0,
+  rerollsUsed: 0,
+  bestWord: null,
+  patternCounts: {},
+  discoveries: 0,
+});
 
 export interface GameState {
   seed: string;
@@ -43,6 +84,9 @@ export interface GameState {
   /** the most recent submission's settle log + a counter to retrigger replay */
   lastEvents: ScoreEvent[];
   settleId: number;
+  /** committed score BEFORE the in-flight settle — lets the round number climb
+   *  from the old committed to the new one during the animation (playtest-04 A-1) */
+  committedBefore: number;
   /** last played word (for collection tracking); null on a fresh blind */
   lastPlayed: { text: string; isGibberish: boolean } | null;
   /** Magnifier result: up to 3 spellable words to highlight, or null */
@@ -51,6 +95,21 @@ export interface GameState {
   shop: ShopState | null;
   /** an open pack awaiting selection, else null */
   pack: { offer: PackOffer; picksLeft: number } | null;
+  /** blind settlement line items while phase === 'cashout', else null */
+  cashout: BlindEarnings | null;
+  /** the advanced run (gold + next chapter/blind) to apply when Fee Settlement is
+   *  confirmed — kept pending so the board stays frozen on the cleared blind (A-2) */
+  pendingRun: RunState | null;
+  /** losing-blind snapshot while phase === 'gameover', else null */
+  gameover: GameOverInfo | null;
+  /** per-run display stats (Game Over screen) */
+  stats: RunStats;
+  /**
+   * The blind's last phase was just played and its settle is still animating
+   * (A-4). The board stays visible; finalize (→ cash out or game over) runs once
+   * the settle + verdict beat elapses.
+   */
+  pendingEnd: boolean;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -58,27 +117,40 @@ function equip(run: RunState, defIds: readonly string[]): RunState {
   return { ...run, jokers };
 }
 
-function bootstrap(): GameState {
-  const seed = Math.random().toString(36).slice(2);
-  const run: RunState = {
+const randomSeed = (): string => Math.random().toString(36).slice(2);
+
+function bootstrap(seed: string = randomSeed()): GameState {
+  const base: RunState = {
     ...equip(newRun(seed), STARTING_JOKERS),
     consumables: ['magnifier'] as ConsumableId[], // one hint to start (economy in a later slice)
   };
-  const blind = startBlind(run, makeRng(`${seed}#0`));
+  // Chapter 1's voucher offer + Deadline boss (fixed per chapter; playtest-03 C, 04 D-6).
+  const run: RunState = {
+    ...base,
+    voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`)),
+    chapterBossId: drawBoss(makeRng(`${seed}#boss-1`)),
+  };
+  const blind = startBlind(run, makeRng(`${seed}#0`), { bossId: run.chapterBossId });
   return {
     seed,
     rngCounter: 1,
     run,
     blind,
     selected: [],
-    phase: 'playing',
+    phase: 'blindselect',
     message: null,
     lastEvents: [],
     settleId: 0,
+    committedBefore: 0,
     lastPlayed: null,
     hint: null,
     shop: null,
     pack: null,
+    cashout: null,
+    pendingRun: null,
+    gameover: null,
+    stats: freshStats(),
+    pendingEnd: false,
   };
 }
 
@@ -86,13 +158,13 @@ export interface UseGame {
   state: GameState;
   lexicon: ReturnType<typeof loadBrowserLexicon>;
   canPlay: boolean;
-  canExchange: boolean;
-  canCash: boolean;
+  canDiscard: boolean;
   toggleTile: (id: string) => void;
   reorderHand: (fromId: string, toId: string) => void;
   reorderStaged: (fromId: string, toId: string) => void;
   useMagnifier: () => void;
   canMagnify: boolean;
+  sellConsumable: (index: number) => void;
   buy: (index: number) => void;
   sell: (index: number) => void;
   reroll: () => void;
@@ -102,54 +174,105 @@ export interface UseGame {
   pickPackOption: (index: number) => void;
   closePack: () => void;
   playWord: () => void;
-  exchange: () => void;
-  cashOut: () => void;
+  discard: (ids: string[]) => void;
+  selectBlind: () => void;
+  confirmCashout: () => void;
   newGame: () => void;
+  /** Start a fresh run from a specific seed (New Run screen); random if omitted. */
+  startRun: (seed?: string) => void;
 }
 
 export function useGame(): UseGame {
   const lexicon = useMemo(() => loadBrowserLexicon(), []);
   const [state, setState] = useState<GameState>(bootstrap);
 
+  // Record each finished run into the lifetime stats exactly once (spec §2.12).
+  // Keyed on the gameover snapshot identity so StrictMode re-runs don't double-count.
+  const recordedGameOver = useRef<GameOverInfo | null>(null);
+  useEffect(() => {
+    const go = state.gameover;
+    if (go && recordedGameOver.current !== go) {
+      recordedGameOver.current = go;
+      recordRunEnd({ ante: go.ante, gold: state.run.gold, bestWord: state.stats.bestWord });
+    }
+  }, [state.gameover, state.run.gold, state.stats.bestWord]);
+
   // Word collection (P2-2): record each non-gibberish play once it settles.
+  // A globally-new word also bumps this run's discovery count (Game Over §2.7).
   useEffect(() => {
     const lp = state.lastPlayed;
-    if (lp && !lp.isGibberish) recordWord(lp.text);
+    if (lp && !lp.isGibberish && recordWord(lp.text)) {
+      setState((prev) => ({
+        ...prev,
+        stats: { ...prev.stats, discoveries: prev.stats.discoveries + 1 },
+      }));
+    }
     // keyed on the submission counter — records exactly once per play
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.settleId]);
 
-  /** Judge & resolve the current blind, then advance or end the run. */
+  /** Judge & resolve the current blind, then route to Cash Out or Game Over. */
   const finalize = useCallback(
     (s: GameState): GameState => {
       const final = endBlind(s.blind, s.run, lexicon);
       const outcome = resolveBlind(s.run, s.blind, final.finalScore);
+      // Tally the finalized sentence pattern for "most played pattern" (§2.7).
+      const patternCounts = { ...s.stats.patternCounts };
+      const p = final.judgment.match?.pattern;
+      if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
+      const stats: RunStats = { ...s.stats, patternCounts };
+
       if (!outcome.cleared) {
         return {
           ...s,
+          stats,
           phase: 'gameover',
-          message: {
-            key: 'msg.gameover',
-            params: { score: Math.round(final.finalScore), target: s.blind.target, ante: s.run.ante },
+          gameover: {
+            finalScore: Math.round(final.finalScore),
+            target: s.blind.target,
+            ante: s.run.ante,
+            blindKind: s.blind.kind,
+            bossId: s.blind.bossId,
           },
         };
       }
-      // Cleared → enter the shop before the next blind (GDD §9).
+      // Cleared → the Fee Settlement screen, then the shop (GDD §9.1). Shop stock
+      // rolls now so its seed position is stable across the settle → shop step.
+      // "Early end" (playtest-03 B) = cleared with ≥1 phase remaining; bump the
+      // counter (read by Loan Shark #28 when it ships).
+      const phasesLeft = s.blind.phasesTotal - s.blind.phasesUsed;
+      let advancedRun =
+        phasesLeft > 0
+          ? {
+              ...outcome.run,
+              counters: { ...outcome.run.counters, earlyEnds: outcome.run.counters.earlyEnds + 1 },
+            }
+          : outcome.run;
+      // Clearing the Deadline (boss) restocks the voucher for the next chapter
+      // and unlocks the one-purchase-per-chapter slot (playtest-03 C).
+      if (s.run.blindIndex === 2) {
+        advancedRun = {
+          ...advancedRun,
+          voucherOffer: rollVoucherOffer(advancedRun, makeRng(`${s.seed}#voucher-${advancedRun.ante}`)),
+          voucherLocked: false,
+          chapterBossId: drawBoss(makeRng(`${s.seed}#boss-${advancedRun.ante}`)),
+        };
+      }
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
-      const shop = rollShopStock(outcome.run, rng);
-      const e = outcome.earned;
+      const shop = rollShopStock(advancedRun, rng);
+      // Keep s.run / s.blind on the CLEARED blind so the board stays frozen behind
+      // the Fee Settlement overlay (A-2); the advanced run applies on confirm.
       return {
         ...s,
-        run: outcome.run,
-        phase: 'shop',
+        stats,
+        phase: 'cashout',
+        cashout: outcome.earned,
+        pendingRun: advancedRun,
         shop,
         selected: [],
         hint: null,
+        message: null,
         rngCounter: s.rngCounter + 1,
-        message: {
-          key: 'msg.cleared',
-          params: { total: e.total, reward: e.reward, phases: e.phases, interest: e.interest },
-        },
       };
     },
     [lexicon],
@@ -159,7 +282,14 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const res = buyItem(prev.run, prev.shop, index);
-      return res.ok ? { ...prev, run: res.run, shop: res.shop } : prev;
+      return res.ok
+        ? {
+            ...prev,
+            run: res.run,
+            shop: res.shop,
+            stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
+          }
+        : prev;
     });
   }, []);
 
@@ -176,7 +306,15 @@ export function useGame(): UseGame {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const res = rerollShop(prev.run, prev.shop, rng);
-      return res.ok ? { ...prev, run: res.run, shop: res.shop, rngCounter: prev.rngCounter + 1 } : prev;
+      return res.ok
+        ? {
+            ...prev,
+            run: res.run,
+            shop: res.shop,
+            rngCounter: prev.rngCounter + 1,
+            stats: { ...prev.stats, rerollsUsed: prev.stats.rerollsUsed + 1 },
+          }
+        : prev;
     });
   }, []);
 
@@ -184,25 +322,62 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'shop') return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const blind = startBlind(prev.run, rng);
+      const blind = startBlind(prev.run, rng, { bossId: prev.run.chapterBossId });
       return {
         ...prev,
-        phase: 'playing',
+        phase: 'blindselect',
         blind,
         shop: null,
         selected: [],
         hint: null,
         message: null,
+        // B-1: reset EVERY piece of per-blind UI state so the next blind's first
+        // frame is clean (no stale tiles / settle / score remnants).
+        lastEvents: [],
+        settleId: 0,
+        committedBefore: 0,
+        lastPlayed: null,
+        pendingEnd: false,
         rngCounter: prev.rngCounter + 1,
       };
     });
   }, []);
 
+  /** Fee Settlement confirmed → apply the advanced run and open the shop. */
+  const confirmCashout = useCallback(() => {
+    setState((prev) =>
+      prev.phase === 'cashout' && prev.pendingRun
+        ? { ...prev, phase: 'shop', run: prev.pendingRun, pendingRun: null, cashout: null }
+        : prev,
+    );
+  }, []);
+
+  /** Blind Select (§2.3) confirmed → begin the (already-drawn) blind. */
+  const selectBlind = useCallback(() => {
+    setState((prev) => (prev.phase === 'blindselect' ? { ...prev, phase: 'playing' } : prev));
+  }, []);
+
   const buyVoucherAction = useCallback(() => {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
+      const boughtId = prev.shop.voucher;
       const res = buyVoucher(prev.run, prev.shop);
-      return res.ok ? { ...prev, run: res.run, shop: res.shop } : prev;
+      if (!res.ok) return prev;
+      // B-2: Wide Shelf's +1 item slot fills immediately, this same visit.
+      let shop = res.shop;
+      let rngCounter = prev.rngCounter;
+      if (boughtId === 'wideShelf') {
+        const extra = rollExtraItem(res.run, res.shop.items, makeRng(`${prev.seed}#${rngCounter}`));
+        shop = { ...res.shop, items: [...res.shop.items, extra] };
+        rngCounter += 1;
+      }
+      return {
+        ...prev,
+        run: res.run,
+        shop,
+        rngCounter,
+        stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
+      };
     });
   }, []);
 
@@ -223,6 +398,7 @@ export function useGame(): UseGame {
         shop: { ...prev.shop, packs },
         pack: { offer, picksLeft: offer.pick },
         rngCounter: prev.rngCounter + 1,
+        stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
       };
     });
   }, []);
@@ -247,11 +423,14 @@ export function useGame(): UseGame {
 
   const toggleTile = useCallback((id: string) => {
     setState((prev) => {
-      if (prev.phase !== 'playing' || !prev.blind.hand.some((t) => t.id === id)) return prev;
+      if (prev.phase !== 'playing' || prev.pendingEnd || !prev.blind.hand.some((t) => t.id === id))
+        return prev;
       const selected = prev.selected.includes(id)
         ? prev.selected.filter((x) => x !== id)
         : [...prev.selected, id];
-      return { ...prev, selected, hint: null };
+      // E-4: keep the magnifier hint (and its tile highlights) visible while
+      // staging — it only clears on Play or Discard.
+      return { ...prev, selected };
     });
   }, []);
 
@@ -265,7 +444,7 @@ export function useGame(): UseGame {
       );
       const byId = new Map(prev.blind.hand.map((t) => [t.id, t]));
       const hand = ids.map((id) => byId.get(id)!);
-      return { ...prev, blind: { ...prev.blind, hand }, hint: null };
+      return { ...prev, blind: { ...prev.blind, hand } };
     });
   }, []);
 
@@ -273,7 +452,7 @@ export function useGame(): UseGame {
     setState((prev) =>
       prev.phase !== 'playing'
         ? prev
-        : { ...prev, selected: reorderIds(prev.selected, fromId, toId), hint: null },
+        : { ...prev, selected: reorderIds(prev.selected, fromId, toId) },
     );
   }, []);
 
@@ -303,6 +482,11 @@ export function useGame(): UseGame {
       const run = goldDelta
         ? { ...prev.run, gold: Math.max(0, prev.run.gold + goldDelta) }
         : prev.run;
+      const best = prev.stats.bestWord;
+      const bestWord =
+        !submission.isGibberish && (!best || submission.settledScore > best.score)
+          ? { text: submission.text, score: Math.round(submission.settledScore) }
+          : best;
       const next: GameState = {
         ...prev,
         run,
@@ -311,47 +495,91 @@ export function useGame(): UseGame {
         message: null,
         lastEvents: events,
         settleId: prev.settleId + 1,
+        // committed BEFORE this word, so the round number climbs to the new
+        // committed during the settle rather than snapping (A-1).
+        committedBefore: prev.blind.committedScore,
         lastPlayed: { text: submission.text, isGibberish: submission.isGibberish },
         hint: null,
+        stats: { ...prev.stats, wordsPlayed: prev.stats.wordsPlayed + 1, bestWord },
       };
-      // No phases left → the blind ends automatically (GDD §7.2).
-      return blind.phasesUsed >= blind.phasesTotal ? finalize(next) : next;
+      // Auto-settle (playtest-03 B): the blind ends the moment the projected
+      // total (committed + sentence bonus) reaches the target — no manual button.
+      // The Perfectionist disables it (settles only when phases run out). Either
+      // way the board stays visible so the full settle + sentence-finalize plays
+      // before Fee Settlement; a timer runs finalize.
+      const phasesOut = blind.phasesUsed >= blind.phasesTotal;
+      const autoSettle = !blind.earlyEndDisabled && blind.projectedScore >= blind.target;
+      return phasesOut || autoSettle ? { ...next, pendingEnd: true } : next;
     });
-  }, [lexicon, finalize]);
+  }, [lexicon]);
 
-  const exchange = useCallback(() => {
+  // Once the last word's settle + sentence-finalize + verdict beat elapse,
+  // resolve the blind (→ Fee Settlement on a win, → Game Over overlay on a loss).
+  useEffect(() => {
+    if (!state.pendingEnd) return;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const delay = reduce ? 350 : 1900; // ~settle (1.4s) + verdict beat (0.5s)
+    const id = setTimeout(() => {
+      setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev));
+    }, delay);
+    return () => clearTimeout(id);
+  }, [state.pendingEnd, finalize]);
+
+  // C-3: discard acts on an explicit set of MARKED hand tiles, independent of
+  // what is staged in the tile zone. Tiles exit for the blind (no RNG).
+  const discard = useCallback((ids: string[]) => {
     setState((prev) => {
-      if (prev.phase !== 'playing' || prev.selected.length === 0) return prev;
-      if (prev.selected.length > prev.blind.exchangeSize || prev.blind.exchangesLeft <= 0) return prev;
-      const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const blind = exchangeTiles(prev.blind, prev.selected, rng);
-      return { ...prev, blind, selected: [], rngCounter: prev.rngCounter + 1, message: null, hint: null };
+      if (prev.phase !== 'playing' || prev.pendingEnd) return prev;
+      if (prev.blind.discardsLeft <= 0) return prev;
+      const staged = new Set(prev.selected);
+      const valid = ids.filter((id) => !staged.has(id) && prev.blind.hand.some((t) => t.id === id));
+      if (valid.length === 0) return prev; // no per-use tile cap (D-4)
+      const blind = discardTiles(prev.blind, valid);
+      return {
+        ...prev,
+        blind,
+        message: null,
+        hint: null,
+        stats: { ...prev.stats, tilesDiscarded: prev.stats.tilesDiscarded + valid.length },
+      };
     });
   }, []);
 
-  const cashOut = useCallback(() => {
-    setState((prev) =>
-      prev.phase === 'playing' && canEndEarly(prev.blind) ? finalize(prev) : prev,
-    );
-  }, [finalize]);
+  /** Sell a held consumable for half its price (C-4 Use/Sell menu). */
+  const sellConsumable = useCallback((index: number) => {
+    setState((prev) => {
+      const c = prev.run.consumables[index];
+      if (!c) return prev;
+      const consumables = prev.run.consumables.slice();
+      consumables.splice(index, 1);
+      const gold = prev.run.gold + sellValue(BALANCE.consumablePrice);
+      return { ...prev, run: { ...prev.run, consumables, gold } };
+    });
+  }, []);
 
   const newGame = useCallback(() => setState(bootstrap()), []);
+  const startRun = useCallback(
+    (seed?: string) => setState(bootstrap(seed && seed.trim() ? seed.trim() : undefined)),
+    [],
+  );
 
   return {
     state,
     lexicon,
-    canPlay: state.phase === 'playing' && state.selected.length > 0 && state.blind.phasesUsed < state.blind.phasesTotal,
-    canExchange:
+    canPlay:
       state.phase === 'playing' &&
+      !state.pendingEnd &&
       state.selected.length > 0 &&
-      state.selected.length <= state.blind.exchangeSize &&
-      state.blind.exchangesLeft > 0,
-    canCash: state.phase === 'playing' && canEndEarly(state.blind),
+      state.blind.phasesUsed < state.blind.phasesTotal,
+    canDiscard: state.phase === 'playing' && !state.pendingEnd && state.blind.discardsLeft > 0,
     toggleTile,
     reorderHand,
     reorderStaged,
     useMagnifier,
     canMagnify: state.phase === 'playing' && state.run.consumables.includes('magnifier'),
+    sellConsumable,
     buy,
     sell,
     reroll,
@@ -361,8 +589,10 @@ export function useGame(): UseGame {
     pickPackOption,
     closePack,
     playWord,
-    exchange,
-    cashOut,
+    discard,
+    selectBlind,
+    confirmCashout,
     newGame,
+    startRun,
   };
 }

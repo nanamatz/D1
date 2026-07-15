@@ -18,8 +18,8 @@ describe('slice5 vouchers — knob bumps applied on purchase (GDD §9.4)', () =>
     expect(r.handSize).toBe(BALANCE.handSize + 1);
     expect(hasVoucher(r, 'extraHand')).toBe(true);
   });
-  it('Recycling → exchanges +1, Overtime → phases +1, Pencil Case → consumable slots +1', () => {
-    expect(applyVoucher(newRun('v'), 'recycling').baseExchanges).toBe(BALANCE.exchangesPerBlind + 1);
+  it('Extra Discard → discards +1, Overtime → phases +1, Pencil Case → consumable slots +1', () => {
+    expect(applyVoucher(newRun('v'), 'extraDiscard').baseDiscards).toBe(BALANCE.discardsPerBlind + 1);
     expect(applyVoucher(newRun('v'), 'overtime').basePhases).toBe(BALANCE.basePhases + 1);
     expect(applyVoucher(newRun('v'), 'pencilCase').consumableSlots).toBe(BALANCE.consumableSlots + 1);
   });

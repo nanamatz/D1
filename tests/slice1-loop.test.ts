@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { newRun } from '../src/engine/run';
-import { startBlind, exchangeTiles, submitWord } from '../src/engine/loop';
+import { startBlind, discardTiles, submitWord } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
 import { BALANCE } from '../src/engine/balance';
 import type { Letter, Tile } from '../src/engine/types';
 
 const lex = makeLexicon(['cat', 'run', 'dog'], {});
+const BAG_TOTAL = Object.values(BALANCE.bagComposition).reduce((a, b) => a + b, 0);
 
 // A tiny helper to force a known hand so submissions are deterministic.
 let idc = 0;
@@ -21,9 +22,9 @@ const tile = (letter: Letter): Tile => ({
 describe('slice1 run — newRun initialization', () => {
   it('starts with a full 98-tile bag and base resources (GDD §6.2)', () => {
     const run = newRun('seed');
-    expect(run.bag.length).toBe(98);
+    expect(run.bag.length).toBe(BAG_TOTAL);
     expect(run.handSize).toBe(BALANCE.handSize);
-    expect(run.baseExchanges).toBe(BALANCE.exchangesPerBlind);
+    expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind);
     expect(run.gold).toBe(BALANCE.startingGold);
   });
 
@@ -39,8 +40,8 @@ describe('slice1 loop — startBlind (GDD §6.1)', () => {
     const run = newRun('blind-seed');
     const blind = startBlind(run, makeRng('blind-seed'));
     expect(blind.hand.length).toBe(run.handSize);
-    expect(blind.bag.length).toBe(98 - run.handSize);
-    expect(blind.exchangesLeft).toBe(run.baseExchanges);
+    expect(blind.bag.length).toBe(BAG_TOTAL - run.handSize);
+    expect(blind.discardsLeft).toBe(run.baseDiscards);
     expect(blind.phasesUsed).toBe(0);
     expect(blind.sequence).toEqual([]);
     expect(blind.committedScore).toBe(0);
@@ -49,45 +50,75 @@ describe('slice1 loop — startBlind (GDD §6.1)', () => {
   it('does not mutate the run bag (permanent asset is untouched)', () => {
     const run = newRun('blind-seed');
     startBlind(run, makeRng('blind-seed'));
-    expect(run.bag.length).toBe(98);
+    expect(run.bag.length).toBe(BAG_TOTAL);
+  });
+
+  it('a freshly started blind carries no residual state (playtest-04 B-1)', () => {
+    // Play a full blind, then start the next — it must be clean, no remnants.
+    const run = newRun('b1');
+    let blind = startBlind(run, makeRng('b1'));
+    blind = discardTiles(blind, blind.hand.slice(0, 2).map((t) => t.id));
+    submitWord(blind, run, lex, blind.hand.slice(0, 3).map((t) => t.id));
+
+    const next = startBlind(run, makeRng('b1-next'));
+    expect(next.sequence).toEqual([]);
+    expect(next.committedScore).toBe(0);
+    expect(next.projectedScore).toBe(0);
+    expect(next.discardedThisBlind).toEqual([]);
+    expect(next.phasesUsed).toBe(0);
+    expect(next.hand.length).toBe(run.handSize);
   });
 });
 
-describe('slice1 loop — exchange budget is PER BLIND (GDD §6.3)', () => {
+describe('slice1 loop — discard budget is PER BLIND (GDD §6.3)', () => {
   const setup = () => {
     const run = newRun('exch');
     const blind = startBlind(run, makeRng('exch'));
     return { run, blind };
   };
 
-  it('spends one exchange and keeps the hand full', () => {
+  it('spends one discard and keeps the hand full', () => {
     const { blind } = setup();
     const ids = blind.hand.slice(0, 3).map((t) => t.id);
-    const next = exchangeTiles(blind, ids, makeRng('e1'));
-    expect(next.exchangesLeft).toBe(blind.exchangesLeft - 1);
-    expect(next.hand.length).toBe(blind.hand.length); // returned + redrawn same count
+    const next = discardTiles(blind, ids);
+    expect(next.discardsLeft).toBe(blind.discardsLeft - 1);
+    expect(next.hand.length).toBe(blind.hand.length); // removed + redrawn same count
+  });
+
+  it('discarded tiles EXIT for the blind — not redrawn, moved to discardedThisBlind (A-1)', () => {
+    const { blind } = setup();
+    const ids = blind.hand.slice(0, 3).map((t) => t.id);
+    const next = discardTiles(blind, ids);
+    const handIds = new Set(next.hand.map((t) => t.id));
+    const bagIds = new Set(next.bag.map((t) => t.id));
+    for (const id of ids) {
+      expect(handIds.has(id)).toBe(false); // cannot be drawn again this blind
+      expect(bagIds.has(id)).toBe(false); // did not return to the bag mid-blind
+    }
+    expect(next.discardedThisBlind.map((t) => t.id)).toEqual(expect.arrayContaining(ids));
   });
 
   it('throws once the per-blind budget is exhausted', () => {
     let { blind } = setup();
-    for (let i = 0; i < BALANCE.exchangesPerBlind; i++) {
+    for (let i = 0; i < BALANCE.discardsPerBlind; i++) {
       const ids = blind.hand.slice(0, 1).map((t) => t.id);
-      blind = exchangeTiles(blind, ids, makeRng(`e${i}`));
+      blind = discardTiles(blind, ids);
     }
-    expect(blind.exchangesLeft).toBe(0);
+    expect(blind.discardsLeft).toBe(0);
     const ids = blind.hand.slice(0, 1).map((t) => t.id);
-    expect(() => exchangeTiles(blind, ids, makeRng('over'))).toThrow(/budget/i);
+    expect(() => discardTiles(blind, ids)).toThrow(/budget/i);
   });
 
-  it('rejects exchanging more tiles than the per-exchange cap (GDD §6.3)', () => {
+  it('has no per-use tile cap — one discard dumps any number of tiles (D-4)', () => {
     const { blind } = setup();
-    const tooMany = blind.hand.slice(0, BALANCE.tilesPerExchange + 1).map((t) => t.id);
-    expect(() => exchangeTiles(blind, tooMany, makeRng('big'))).toThrow(/cap|tiles/i);
+    const many = blind.hand.map((t) => t.id); // the whole hand at once
+    const next = discardTiles(blind, many);
+    expect(next.discardsLeft).toBe(blind.discardsLeft - 1); // still one discard spent
   });
 
-  it('rejects exchanging a tile not in hand', () => {
+  it('rejects discarding a tile not in hand', () => {
     const { blind } = setup();
-    expect(() => exchangeTiles(blind, ['not-a-real-id'], makeRng('x'))).toThrow(/hand/i);
+    expect(() => discardTiles(blind, ['not-a-real-id'])).toThrow(/hand/i);
   });
 });
 

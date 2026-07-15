@@ -1,4 +1,5 @@
 import { JOKER_REGISTRY } from '../../engine/jokers';
+import { BALANCE } from '../../engine/balance';
 import type { ConsumableId } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
 import { useI18n } from '../i18n';
@@ -9,19 +10,21 @@ const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: 'ðŸ
 
 function OptionCard({
   option,
-  lang,
   label,
   name,
+  blocked,
   onPick,
 }: {
   option: PackOption;
-  lang: string;
   label: string;
   name: string;
+  /** joker slots full â†’ this joker pick is non-selectable (D-5) */
+  blocked: boolean;
   onPick: () => void;
 }) {
+  const { t } = useI18n();
   return (
-    <div className="shopitem">
+    <div className={['shopitem', blocked && 'blocked'].filter(Boolean).join(' ')}>
       {option.kind === 'tile' ? (
         <TileView tile={option.tile} />
       ) : (
@@ -32,9 +35,13 @@ function OptionCard({
         </span>
       )}
       <span className="n">{name}</span>
-      <button className="btn exchange sm" onClick={onPick}>
-        {label}
-      </button>
+      {blocked ? (
+        <span className="pack-block">{t('pack.jokersFull')}</span>
+      ) : (
+        <button className="btn exchange sm" onClick={onPick}>
+          {label}
+        </button>
+      )}
     </div>
   );
 }
@@ -69,9 +76,9 @@ export function PackOpening({ g }: { g: UseGame }) {
             <OptionCard
               key={i}
               option={o}
-              lang={lang}
               name={optionName(o)}
               label={t('pack.pick')}
+              blocked={o.kind === 'joker' && g.state.run.jokers.length >= BALANCE.jokerSlots}
               onPick={() => g.pickPackOption(i)}
             />
           ))}

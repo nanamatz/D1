@@ -9,7 +9,7 @@
  */
 
 import { newRun } from '../engine/run';
-import { startBlind, exchangeTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
+import { startBlind, discardTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
 import { judgeSentence } from '../engine/patterns';
 import { JOKER_REGISTRY } from '../engine/jokers';
 import { resolveBlind, currentTarget, kindForIndex } from '../engine/progression';
@@ -48,13 +48,13 @@ function main(): void {
   console.log(`Slices ①–⑤ demo — seed "${run.seed}", ante ${run.ante} ${blind.kind} (target ${target})`);
   console.log(`  jokers: ${jokerNames.join(', ')} · gold ${run.gold}`);
   console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter).join('')}`);
-  console.log(`  bag remaining: ${blind.bag.length}, exchanges: ${blind.exchangesLeft}\n`);
+  console.log(`  bag remaining: ${blind.bag.length}, discards: ${blind.discardsLeft}\n`);
 
-  // One exchange: dump the three lowest-value-looking tiles (just the first 3).
+  // One discard: dump the three lowest-value-looking tiles (just the first 3).
   const dump = blind.hand.slice(0, 3).map((t) => t.id);
-  blind = exchangeTiles(blind, dump, makeRng('exchange-1'));
-  console.log(`Exchanged 3 tiles → new hand: ${blind.hand.map((t) => t.letter).join('')}`);
-  console.log(`  exchanges left: ${blind.exchangesLeft}\n`);
+  blind = discardTiles(blind, dump);
+  console.log(`Discarded 3 tiles → new hand: ${blind.hand.map((t) => t.letter).join('')}`);
+  console.log(`  discards left: ${blind.discardsLeft}\n`);
 
   // Play until phases run out — or stop early once projected ≥ target (§7.2).
   let endedEarly = false;

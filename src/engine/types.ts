@@ -1,5 +1,5 @@
 /**
- * Core domain types for WORD JOKER.
+ * Core domain types for Play the Wor!d.
  * Every table in docs/GDD.md maps onto a type here.
  * The engine layer (src/engine) must never import DOM or React types.
  */
@@ -149,6 +149,7 @@ export interface WordScoringContext {
 export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter; chips: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
+  | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
@@ -175,9 +176,7 @@ export interface BlindState {
   target: number;
   phasesTotal: number;
   phasesUsed: number;
-  exchangesLeft: number;
-  /** max tiles swappable per exchange (GDD §6.3) */
-  exchangeSize: number;
+  discardsLeft: number;
   committedScore: number; // layer 1 accumulation
   projectedScore: number; // committed + current sentence judgment (overwrite, GDD §7.1)
   sequence: WordSubmission[];
@@ -196,13 +195,20 @@ export interface RunState {
   gold: number;
   handSize: number; // base 11, a balance knob (GDD §6.2)
   basePhases: number; // base 4
-  baseExchanges: number; // base 3
+  baseDiscards: number; // base 3
   bag: Tile[]; // the permanent 98-tile (sculpted) asset
   jokers: OwnedJoker[];
   consumables: ConsumableId[];
   consumableSlots: number; // base 2
   patternLevels: Record<PatternId, number>;
   vouchers: VoucherId[];
+  /** the current chapter's offered voucher (fixed per chapter; playtest-03 C) */
+  voucherOffer: VoucherId | null;
+  /** a voucher was already bought this chapter — the slot is greyed until next chapter */
+  voucherLocked: boolean;
+  /** this chapter's Deadline boss, drawn at chapter start so Blind Select can
+   *  always show its effect (playtest-04 D-6) */
+  chapterBossId: string | null;
   /** scaling counters (GDD §11.6) — one per axis, jokers read/write these */
   counters: ScalingCounters;
 }
@@ -262,5 +268,5 @@ export type ConsumableId =
   | 'bookBurning' | 'apocrypha' | 'scribbles' | 'apocalypse';
 
 export type VoucherId =
-  | 'extraHand' | 'recycling' | 'overtime' | 'regularsDiscount'
+  | 'extraHand' | 'extraDiscard' | 'overtime' | 'regularsDiscount'
   | 'compoundInterest' | 'thrift' | 'wideShelf' | 'connoisseur' | 'pencilCase';

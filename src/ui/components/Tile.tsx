@@ -6,20 +6,37 @@ interface Props {
   mini?: boolean;
   selected?: boolean;
   hinted?: boolean;
+  /** marked for discard (C-3) — distinct from staging */
+  marked?: boolean;
   onSelect?: (id: string) => void;
-  /** enables HTML5 drag-reorder; called with (draggedId, dropTargetId) */
-  onReorder?: (fromId: string, toId: string) => void;
+  /** toggle the discard mark (right-click, C-3) */
+  onMark?: (id: string) => void;
+  /** drag zone this tile lives in (C-2); enables cross-zone drag when set */
+  zone?: 'hand' | 'staged';
+  /** anchored hover tooltip for the tile (C-4): chip value, material, font */
+  tooltip?: { title: string; body: string };
 }
 
 /** A ceramic letter tile (UI_DESIGN §3). Interactive unless `mini` or no handler. */
-export function TileView({ tile, mini = false, selected = false, hinted = false, onSelect, onReorder }: Props) {
+export function TileView({
+  tile,
+  mini = false,
+  selected = false,
+  hinted = false,
+  marked = false,
+  onSelect,
+  onMark,
+  zone,
+  tooltip,
+}: Props) {
   const interactive = !mini && !!onSelect;
-  const draggable = !!onReorder;
+  const draggable = !mini && !!zone;
   const className = [
     'tile',
     mini && 'mini',
     selected && 'sel',
     hinted && 'hint',
+    marked && 'marked',
     draggable && 'draggable',
     materialClass(tile.material),
     fontClass(tile.font),
@@ -33,23 +50,24 @@ export function TileView({ tile, mini = false, selected = false, hinted = false,
     <div
       className={className}
       data-flip-id={tile.id}
+      data-tile-id={tile.id}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}
       aria-label={interactive ? `${tileGlyph(tile)} tile, ${tileValue(tile)} chips` : undefined}
       draggable={draggable}
-      onDragStart={draggable ? (e) => e.dataTransfer.setData('text/plain', tile.id) : undefined}
-      onDragOver={draggable ? (e) => e.preventDefault() : undefined}
-      onDrop={
-        draggable
+      onDragStart={
+        draggable ? (e) => e.dataTransfer.setData('text/plain', `${zone}:${tile.id}`) : undefined
+      }
+      onClick={interactive ? () => onSelect!(tile.id) : undefined}
+      onContextMenu={
+        onMark
           ? (e) => {
               e.preventDefault();
-              const from = e.dataTransfer.getData('text/plain');
-              if (from && from !== tile.id) onReorder!(from, tile.id);
+              onMark(tile.id);
             }
           : undefined
       }
-      onClick={interactive ? () => onSelect!(tile.id) : undefined}
       onKeyDown={
         interactive
           ? (e) => {
@@ -63,6 +81,12 @@ export function TileView({ tile, mini = false, selected = false, hinted = false,
     >
       {tileGlyph(tile)}
       <span className="val">{tileValue(tile)}</span>
+      {tooltip && (
+        <span className="tt-card tile-tt" role="tooltip">
+          <span className="tt-title">{tooltip.title}</span>
+          <span className="tt-body">{tooltip.body}</span>
+        </span>
+      )}
     </div>
   );
 }

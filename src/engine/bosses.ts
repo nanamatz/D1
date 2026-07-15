@@ -2,7 +2,7 @@
  * Bosses (GDD §8.3) — data + hooks, like jokers. Each boss attacks one system
  * (readable), is build-dependent (a check), and has counterplay. Effects plug in
  * at fixed points in the loop pipeline:
- *   setup           → mutate the blind at start (phases, exchanges, flags)
+ *   setup           → mutate the blind at start (phases, discards, flags)
  *   wordScoring     → mutate chips/mult (after jokers)
  *   sentenceScoring → mutate the sentence bonus (after jokers)
  *   blocks          → an illegal submission (The Noun Lock)
@@ -99,7 +99,7 @@ const BOSSES: readonly BossDef[] = [
   // ----- loop-resource attacks -----
   {
     id: 'hoarder', nameEn: 'The Hoarder', nameKo: '수집광', emoji: '🧺',
-    setup: (blind) => ({ ...blind, exchangesLeft: 0 }),
+    setup: (blind) => ({ ...blind, discardsLeft: 0 }),
   },
   {
     id: 'editor', nameEn: 'The Editor', nameKo: '편집자', emoji: '✂️',

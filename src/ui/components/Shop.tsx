@@ -1,26 +1,40 @@
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
-import { rerollCost, sellValue } from '../../engine/economy';
+import { rerollCost } from '../../engine/economy';
 import { rerollDiscount } from '../../engine/vouchers';
 import type { ConsumableId, ShopItem } from '../../engine/types';
+import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
+import { Tooltip } from './Tooltip';
+import { JokerShelf } from './JokerShelf';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
-/** The shop screen between blinds (GDD §9). Buy/sell/reroll, then Next blind. */
+/** The shop screen between blinds (GDD §9.2). Buy/sell/reroll, then Next blind. */
 export function Shop({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const { run, shop } = g.state;
   if (!shop) return null;
 
-  const itemMeta = (item: ShopItem): { emoji: string; name: string } => {
+  const itemMeta = (
+    item: ShopItem,
+  ): { emoji: string; name: string; desc: string; accent?: string | undefined } => {
     if (item.kind === 'joker') {
       const def = JOKER_REGISTRY.get(item.id);
-      return { emoji: def?.emoji ?? '🃏', name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id };
+      return {
+        emoji: def?.emoji ?? '🃏',
+        name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
+        desc: t(jokerDescKey(item.id)),
+        accent: def && def.rarity !== 'common' ? def.rarity : undefined,
+      };
     }
-    return { emoji: CONSUMABLE_EMOJI[item.id] ?? '📄', name: t(`consumable.${item.id}`) };
+    return {
+      emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',
+      name: t(`consumable.${item.id}`),
+      desc: t(consumableDescKey(item.id)),
+    };
   };
 
   const affordable = (item: ShopItem): boolean => {
@@ -34,108 +48,116 @@ export function Shop({ g }: { g: UseGame }) {
   const voucher = shop.voucher ? VOUCHER_REGISTRY.get(shop.voucher) : undefined;
 
   return (
-    <div className="shop">
-      <div className="shop-head panel">
-        <div className="kind">{t('shop.title')}</div>
-        <div className="money">{t('shop.gold', { n: run.gold })}</div>
-        <button className="btn cash" onClick={g.leaveShop}>
+    <div className="shop2">
+      <aside className="shop-rail">
+        <button className="btn play next-blind" onClick={g.leaveShop}>
           {t('shop.next')}
         </button>
-      </div>
-
-      <div className="panel">
-        <div className="label">{t('shop.forSale')}</div>
-        <div className="shop-row">
-          {shop.items.map((item, i) =>
-            item ? (
-              <div key={i} className="shopitem">
-                <span className="e">{itemMeta(item).emoji}</span>
-                <span className="n">{itemMeta(item).name}</span>
-                <span className="price">${item.price}</span>
-                <button className="btn exchange sm" disabled={!affordable(item)} onClick={() => g.buy(i)}>
-                  {t('shop.buy')}
-                </button>
-              </div>
-            ) : (
-              <div key={i} className="shopitem empty">
-                {t('shop.sold')}
-              </div>
-            ),
-          )}
-          <button className="btn play sm reroll" disabled={run.gold < cost} onClick={g.reroll}>
-            {t('shop.reroll', { cost })}
-          </button>
+        <button className="btn green reroll-btn" disabled={run.gold < cost} onClick={g.reroll}>
+          {t('shop.reroll', { cost })}
+        </button>
+        <div className="shop-gold">
+          <span className="label">{t('shop.title')}</span>
+          <span className="money">${run.gold}</span>
         </div>
-      </div>
+      </aside>
 
-      <div className="shop-two">
-        {voucher && (
+      <div className="shop-main">
+        {/* D-1/D-2: owned jokers + consumables persist at the top, same shelf as
+            the play screen; then items for sale; then vouchers & packs. */}
+        <div className="shop-shelf">
+          <JokerShelf run={run} onSellConsumable={g.sellConsumable} onSellJoker={g.sell} />
+        </div>
+
+        <div className="panel">
+          <div className="label">{t('shop.forSale')}</div>
+          <div className="shop-row">
+            {shop.items.map((item, i) => {
+              if (!item) {
+                return (
+                  <div key={i} className="shopitem empty">
+                    {t('shop.sold')}
+                  </div>
+                );
+              }
+              const m = itemMeta(item);
+              return (
+                <Tooltip key={i} title={m.name} body={m.desc} accent={m.accent}>
+                  <div className={['shopitem', m.accent].filter(Boolean).join(' ')}>
+                    <span className="e">{m.emoji}</span>
+                    <span className="n">{m.name}</span>
+                    <span className="price">${item.price}</span>
+                    <button
+                      className="btn exchange sm"
+                      disabled={!affordable(item)}
+                      onClick={() => g.buy(i)}
+                    >
+                      {t('shop.buy')}
+                    </button>
+                  </div>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="shop-two">
           <div className="panel">
             <div className="label">{t('shop.vouchers')}</div>
             <div className="shop-row">
-              <div className="shopitem">
-                <span className="e">{voucher.emoji}</span>
-                <span className="n">{lang === 'ko' ? voucher.nameKo : voucher.nameEn}</span>
-                <span className="price">${voucher.price}</span>
-                <button
-                  className="btn exchange sm"
-                  disabled={run.gold < voucher.price}
-                  onClick={g.buyVoucher}
+              {voucher ? (
+                <Tooltip
+                  title={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                  body={t(voucherDescKey(voucher.id))}
                 >
-                  {t('shop.buy')}
-                </button>
-              </div>
+                  <div className="shopitem">
+                    <span className="e">{voucher.emoji}</span>
+                    <span className="n">{lang === 'ko' ? voucher.nameKo : voucher.nameEn}</span>
+                    <span className="price">${voucher.price}</span>
+                    <button
+                      className="btn exchange sm"
+                      disabled={run.gold < voucher.price}
+                      onClick={g.buyVoucher}
+                    >
+                      {t('shop.buy')}
+                    </button>
+                  </div>
+                </Tooltip>
+              ) : (
+                <div className="shopitem empty">{t('shop.sold')}</div>
+              )}
             </div>
           </div>
-        )}
 
-        <div className="panel">
-          <div className="label">{t('shop.packs')}</div>
-          <div className="shop-row">
-            {shop.packs.map((p, i) =>
-              p ? (
-                <div key={i} className="shopitem">
-                  <span className="e">📦</span>
-                  <span className="n">{t(`pack.${p}`)}</span>
-                  <span className="price">${BALANCE.packPrice[p]}</span>
-                  <button
-                    className="btn play sm"
-                    disabled={run.gold < (BALANCE.packPrice[p] ?? 0)}
-                    onClick={() => g.buyPack(i)}
-                  >
-                    {t('pack.open')}
-                  </button>
-                </div>
-              ) : (
-                <div key={i} className="shopitem empty">
-                  {t('shop.sold')}
-                </div>
-              ),
-            )}
+          <div className="panel">
+            <div className="label">{t('shop.packs')}</div>
+            <div className="shop-row">
+              {shop.packs.map((p, i) =>
+                p ? (
+                  <Tooltip key={i} title={t(`pack.${p}`)} body={t(`packdesc.${p}`)}>
+                    <div className="shopitem">
+                      <span className="e">📦</span>
+                      <span className="n">{t(`pack.${p}`)}</span>
+                      <span className="price">${BALANCE.packPrice[p]}</span>
+                      <button
+                        className="btn green sm"
+                        disabled={run.gold < (BALANCE.packPrice[p] ?? 0)}
+                        onClick={() => g.buyPack(i)}
+                      >
+                        {t('pack.open')}
+                      </button>
+                    </div>
+                  </Tooltip>
+                ) : (
+                  <div key={i} className="shopitem empty">
+                    {t('shop.sold')}
+                  </div>
+                ),
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="panel">
-        <div className="label">{t('shop.yourJokers')}</div>
-        <div className="shop-row">
-          {run.jokers.length === 0 && <span className="empty">{t('shop.noJokers')}</span>}
-          {run.jokers.map((owned, i) => {
-            const def = JOKER_REGISTRY.get(owned.defId);
-            if (!def) return null;
-            const name = lang === 'ko' ? def.nameKo : def.nameEn;
-            const value = sellValue(BALANCE.jokerPrice[def.rarity]);
-            return (
-              <div key={i} className={['shopitem', def.rarity !== 'common' ? def.rarity : ''].filter(Boolean).join(' ')}>
-                <span className="e">{def.emoji}</span>
-                <span className="n">{name}</span>
-                <button className="btn exchange sm" onClick={() => g.sell(i)}>
-                  {t('shop.sell', { value })}
-                </button>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

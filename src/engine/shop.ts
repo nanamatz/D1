@@ -52,8 +52,27 @@ function rollItems(run: RunState, rng: Rng): (ShopItem | null)[] {
   return items;
 }
 
-/** Offer one not-yet-owned voucher (GDD §9.2 voucher slot), or null. */
-function rollVoucher(run: RunState, rng: Rng): VoucherId | null {
+/**
+ * Roll one extra item for a newly-opened slot (Wide Shelf, playtest-04 B-2),
+ * avoiding items already on the shelf. Lets the +1 slot fill immediately in the
+ * same shop visit without re-rolling the existing (possibly wanted) items.
+ */
+export function rollExtraItem(
+  run: RunState,
+  existing: readonly (ShopItem | null)[],
+  rng: Rng,
+): ShopItem | null {
+  const shown = new Set(existing.filter((it): it is ShopItem => !!it).map((it) => `${it.kind}:${it.id}`));
+  const pool = buildPool(run).filter((it) => !shown.has(`${it.kind}:${it.id}`));
+  return pool.length ? rng.shuffle(pool)[0]! : null;
+}
+
+/**
+ * Roll the next chapter's voucher offer (playtest-03 C): a not-yet-owned voucher.
+ * Purchased vouchers are in run.vouchers and thus never reappear; unpurchased
+ * ones stay in the pool and may reappear in a later chapter.
+ */
+export function rollVoucherOffer(run: RunState, rng: Rng): VoucherId | null {
   const available = ALL_VOUCHER_IDS.filter((id) => !run.vouchers.includes(id));
   return available.length ? rng.shuffle(available)[0]! : null;
 }
@@ -64,11 +83,15 @@ function rollPacks(rng: Rng): (PackKind | null)[] {
   return packs;
 }
 
-/** Roll a fresh shop: item slots + voucher slot + pack slots. */
+/**
+ * Roll a fresh shop: item + pack slots re-roll every visit, but the voucher slot
+ * is FIXED per chapter — it shows run.voucherOffer, greyed out (null) once a
+ * voucher has been bought this chapter (playtest-03 C). Reroll never touches it.
+ */
 export function rollShopStock(run: RunState, rng: Rng): ShopState {
   return {
     items: rollItems(run, rng),
-    voucher: rollVoucher(run, rng),
+    voucher: run.voucherLocked ? null : run.voucherOffer,
     packs: rollPacks(rng),
     rerolls: 0,
   };
@@ -119,13 +142,17 @@ export function sellJoker(run: RunState, index: number): SellResult {
   return { run: { ...run, gold: run.gold + value, jokers }, ok: true };
 }
 
-/** Buy the offered voucher: apply its effect + record ownership (GDD §9.4). */
+/**
+ * Buy the offered voucher: apply its effect + record ownership (GDD §9.4). Only
+ * ONE voucher purchase per chapter (playtest-03 C) — locks the slot until the
+ * next chapter's shop.
+ */
 export function buyVoucher(run: RunState, shop: ShopState): BuyResult {
   const id = shop.voucher;
-  if (!id) return { run, shop, ok: false };
+  if (!id || run.voucherLocked) return { run, shop, ok: false };
   const def = VOUCHER_REGISTRY.get(id);
   if (!def || run.gold < def.price) return { run, shop, ok: false };
-  const nextRun = applyVoucher({ ...run, gold: run.gold - def.price }, id);
+  const nextRun = applyVoucher({ ...run, gold: run.gold - def.price, voucherLocked: true }, id);
   return { run: nextRun, shop: { ...shop, voucher: null }, ok: true };
 }
 

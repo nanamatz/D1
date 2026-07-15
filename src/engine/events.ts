@@ -19,7 +19,7 @@ import type {
 // ---------- Event payloads ----------
 
 export interface EngineEvents {
-  /** blind is being set up; jokers may mutate phase count, exchange budget, target */
+  /** blind is being set up; jokers may mutate phase count, discard budget, target */
   blindStart: { run: RunState; blind: BlindState };
 
   /** a word's chips/mult are being computed — THE main scoring hook.
@@ -29,8 +29,8 @@ export interface EngineEvents {
   /** word settled and appended to the sequence; counters have been updated */
   wordScored: { run: RunState; blind: BlindState; index: number };
 
-  /** an exchange was spent */
-  exchangeUsed: { run: RunState; blind: BlindState; tiles: Tile[] };
+  /** a discard was spent */
+  discardUsed: { run: RunState; blind: BlindState; tiles: Tile[] };
 
   /** sentence bonus is being finalized at blind end (GDD §7.4).
    *  Mutate ctx.flatBonus / ctx.totalMultiplier. */

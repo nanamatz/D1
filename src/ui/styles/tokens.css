@@ -28,7 +28,7 @@ body,
   height: 100%;
 }
 body {
-  font-family: 'Baloo 2', sans-serif;
+  font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
   color: var(--ink);
   background:
     radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.05), transparent 60%),

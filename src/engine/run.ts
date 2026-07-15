@@ -35,13 +35,16 @@ export function newRun(seed: string): RunState {
     gold: BALANCE.startingGold,
     handSize: BALANCE.handSize,
     basePhases: BALANCE.basePhases,
-    baseExchanges: BALANCE.exchangesPerBlind,
+    baseDiscards: BALANCE.discardsPerBlind,
     bag: buildBag(),
     jokers: [],
     consumables: [],
     consumableSlots: BALANCE.consumableSlots,
     patternLevels: freshPatternLevels(),
     vouchers: [],
+    voucherOffer: null, // rolled at run start / each new chapter (playtest-03 C)
+    voucherLocked: false,
+    chapterBossId: null, // drawn at chapter start (playtest-04 D-6)
     counters: freshCounters(),
   };
 }

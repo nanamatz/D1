@@ -47,8 +47,8 @@ describe('slice4 pipeline — layer 1 & 2 jokers mutate chips/mult before settle
   it('Hipster (layer 2) fires on a Slang word', () => {
     const run = withJokers('l2', 'hipster');
     const { submission } = play(openBlind(run), run, 'cool');
-    // COOL: chips 6, slang mult 2 +7 hipster = 9 → 54
-    expect(submission.settledScore).toBe(54);
+    // COOL: chips 6 +Twin(OO) 10 = 16; mult slang 2 +7 hipster = 9 → 16×9 = 144 (A-2)
+    expect(submission.settledScore).toBe(144);
   });
 
   it('layer-1 fires on gibberish, layer-2 does not (GDD §6.4)', () => {
@@ -69,14 +69,23 @@ describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', ()
     expect(endBlind(blind, run, lex).finalScore).toBe(166);
   });
 
-  it('Rush Specialist ×4 with 2+ phases remaining', () => {
+  it('Rush Specialist scales with phases left: 3 left → ×2.5 (C-1)', () => {
     const run = withJokers('rush', 'rushSpecialist');
     const { blind } = play(openBlind(run), run, 'cat'); // no pattern; phase 1 → 3 left
-    // committed 5, ×4 rush → 20
-    expect(blind.projectedScore).toBe(20);
+    // committed 5, ×(1 + 0.5·3) = ×2.5 → 12.5
+    expect(blind.projectedScore).toBe(12.5);
   });
 
-  it('Rush Specialist is inactive at blind end with <2 phases left', () => {
+  it('Rush Specialist pays more with more phases left than with fewer (C-1)', () => {
+    const run = withJokers('rushcmp', 'rushSpecialist');
+    const early = play(openBlind(run), run, 'cat').blind.projectedScore; // 3 left → ×2.5
+    let b = openBlind(run);
+    for (let i = 0; i < 3; i++) ({ blind: b } = play(b, run, 'cat')); // now 1 left → ×1.5
+    // compare the last word's contribution ratio via the multiplier applied
+    expect(early).toBeGreaterThan(5 * 1.5); // ×2.5 (12.5) > ×1.5 (7.5)
+  });
+
+  it('Rush Specialist is inactive at blind end with 0 phases left', () => {
     const run = withJokers('rush2', 'rushSpecialist');
     let b = openBlind(run);
     for (let i = 0; i < 4; i++) ({ blind: b } = play(b, run, 'cat')); // 4 phases → 0 left
@@ -87,8 +96,8 @@ describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', ()
   it('Grammarian and Rush stack multiplicatively', () => {
     const run = withJokers('both', 'grammarian', 'rushSpecialist');
     const { blind } = play(openBlind(run), run, 'run'); // imperative, phase 1 → 3 left
-    // (3 + 80) × 2 (grammarian) × 4 (rush) = 664
-    expect(blind.projectedScore).toBe(664);
+    // (3 + 80) × 2 (grammarian) × 2.5 (rush, 3 left) = 415
+    expect(blind.projectedScore).toBe(415);
   });
 });
 

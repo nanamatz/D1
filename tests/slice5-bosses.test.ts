@@ -34,8 +34,8 @@ describe('slice5 bosses — setup effects (GDD §8.3)', () => {
   it('Guillotine: phases 4 → 2', () => {
     expect(bossBlind(bossRun(), 'guillotine').phasesTotal).toBe(2);
   });
-  it('Hoarder: exchanges disabled', () => {
-    expect(bossBlind(bossRun(), 'hoarder').exchangesLeft).toBe(0);
+  it('Hoarder: discards disabled', () => {
+    expect(bossBlind(bossRun(), 'hoarder').discardsLeft).toBe(0);
   });
   it('Perfectionist: early end disabled even at/above target', () => {
     const b = { ...bossBlind(bossRun(), 'perfectionist', 10), projectedScore: 999 };

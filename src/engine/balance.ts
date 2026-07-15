@@ -11,8 +11,7 @@ export const BALANCE = {
   // ----- Core loop (GDD §6) -----
   handSize: 11,
   basePhases: 4,
-  exchangesPerBlind: 3,
-  tilesPerExchange: 5,
+  discardsPerBlind: 3, // per-blind count; no per-use tile cap (playtest-04 D-4)
 
   // ----- Scrabble letter values (GDD §2.1) -----
   letterChips: {
@@ -20,10 +19,17 @@ export const BALANCE = {
     N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10,
   } as Record<string, number>,
 
-  /** starting bag composition (GDD §2.1): letter → count, total 98 */
+  /**
+   * Starting bag composition (GDD §2.1): letter → count, total 68. Diverges from
+   * Scrabble on purpose (playtest-04 C-2, chosen by `src/sim/tile-pool.ts`):
+   * shrunk from 98 and compressed extremes (E 12→6, rares 1→2) so rare letters
+   * appear ~2× as often per hand — more diversity + deck-building traction —
+   * while makeable-word supply stays healthy and the gibberish-forced rate stays
+   * near zero. Scrabble assumes board-adjacency; standalone spelling wants flatter.
+   */
   bagComposition: {
-    A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2,
-    N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1,
+    A: 5, B: 2, C: 2, D: 2, E: 6, F: 2, G: 2, H: 2, I: 5, J: 2, K: 2, L: 2, M: 2,
+    N: 3, O: 4, P: 2, Q: 2, R: 3, S: 2, T: 3, U: 3, V: 2, W: 2, X: 2, Y: 2, Z: 2,
   } as Record<string, number>,
 
   // ----- Suit base multipliers (GDD §3.1) -----
@@ -46,6 +52,20 @@ export const BALANCE = {
 
   /** modifier absorption bonuses (GDD §5.1 rule 3) */
   modifierAbsorption: { addPatternChips: 15, multiplyPatternMult: 0.15 },
+
+  // ----- Letter hands (playtest-02 A-2) — per-word structure bonuses, applied
+  //       inside WordScoringContext before the suit multiplier settles. Highest
+  //       single hand only. rank 1 (weakest) .. 6 (strongest). -----
+  letterHands: {
+    twin:       { rank: 1, chips: 10, mult: 0 },
+    triplet:    { rank: 2, chips: 20, mult: 1 },
+    longword:   { rank: 3, chips: 30, mult: 1 },
+    palindrome: { rank: 4, chips: 30, mult: 2 },
+    vowelFlush: { rank: 5, chips: 50, mult: 3 },
+    straight:   { rank: 6, chips: 60, mult: 4 },
+  },
+  /** min word length for the Longword hand, and min length for Palindrome to count */
+  letterHand: { longwordLen: 7, palindromeMinLen: 3, straightRun: 6 },
 
   /** punctuation level-up per level (GDD §5.4) */
   punctuationLevel: {
@@ -88,13 +108,13 @@ export const BALANCE = {
 
   // ----- Vouchers (GDD §9.4) — single tier, 9 -----
   voucherPrice: {
-    extraHand: 6, recycling: 6, overtime: 10, regularsDiscount: 5, compoundInterest: 7,
+    extraHand: 6, extraDiscard: 6, overtime: 10, regularsDiscount: 5, compoundInterest: 7,
     thrift: 5, wideShelf: 7, connoisseur: 6, pencilCase: 6,
   } as Record<string, number>,
   voucher: {
     rerollDiscount: 2, // Regular's Discount
     interestCap: 10, // Compound Interest (base cap 5 → 10)
-    thriftPerExchange: 1, // Thrift: gold per unused exchange on blind end
+    thriftPerDiscard: 1, // Thrift: gold per unused discard on blind end
     wideShelfSlots: 1, // Wide Shelf: +1 shop item slot
   },
 
@@ -114,7 +134,10 @@ export const BALANCE = {
     jackOfAllTrades: { mult: 4 }, // #10
     hipster: { mult: 7 }, // #12, layer 2 (Slang)
     grammarian: { totalMult: 2 }, // #22, layer 3 (any pattern)
-    rushSpecialist: { totalMult: 4, minPhasesLeft: 2 }, // #24, layer 3
+    // #24, layer 3 — proportional to phases left at clear (playtest-04 C-1):
+    // ×(1 + multPerPhase × phasesLeft). More phases left → bigger bonus.
+    rushSpecialist: { multPerPhase: 0.5 },
+    loanShark: { goldPerPhase: 1 }, // #28 (not yet implemented) — $ per phase left at clear
   },
 
   // ----- Consumables (GDD §10) -----

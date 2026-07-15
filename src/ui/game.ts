@@ -5,6 +5,7 @@
  */
 import { baseScore, scoreWord } from '../engine/scoring';
 import { judgeSentence } from '../engine/patterns';
+import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
 import { isVowel } from '../engine/types';
@@ -17,7 +18,7 @@ import type {
   WordSubmission,
 } from '../engine/types';
 
-export type Phase = 'playing' | 'shop' | 'gameover';
+export type Phase = 'blindselect' | 'playing' | 'cashout' | 'shop' | 'gameover';
 
 /** A localizable toast: a locale key + interpolation params (P1-4). */
 export interface MessageSpec {
@@ -61,6 +62,8 @@ export interface StagePreview {
   suitMult: number;
   /** the pattern this play would complete for the whole sequence, if any */
   completes: { pattern: PatternId; label: string } | null;
+  /** the letter hand this word matches (A-2), if any */
+  letterHand: { id: LetterHandId; chips: number; mult: number } | null;
   /** true if the active boss forbids this word (The Noun Lock) */
   blocked: boolean;
 }
@@ -79,6 +82,8 @@ export function stagePreview(
   const blocked = blind.bossId
     ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
     : false;
+  const letters = tiles.map((t) => t.letter).join('');
+  const letterHand = evaluateLetterHand(letters, base.isGibberish);
   return {
     text: base.text,
     isGibberish: base.isGibberish,
@@ -86,6 +91,7 @@ export function stagePreview(
     chips: base.chips,
     suitMult: base.mult,
     completes: judged.match ? { pattern: judged.match.pattern, label: patternLabel(judged.match.pattern) } : null,
+    letterHand: letterHand ? { id: letterHand.id, chips: letterHand.chips, mult: letterHand.mult } : null,
     blocked,
   };
 }
@@ -154,7 +160,8 @@ export const faceClass = (t: Tile): string => (isVowel(t.letter) ? 'vowel' : 'co
 
 /** 'manual' = no sort (drag-reorder order preserved, P1-2); not a sort button. */
 export type SortMode = 'vowel' | 'value' | 'alpha' | 'manual';
-export const SORT_MODES: readonly SortMode[] = ['vowel', 'value', 'alpha'];
+// 'value' (score-order) sort removed per playtest-04 item 4.
+export const SORT_MODES: readonly SortMode[] = ['vowel', 'alpha'];
 export const SORT_LABEL: Record<SortMode, string> = {
   vowel: 'Vowel/Cons',
   value: 'Value',

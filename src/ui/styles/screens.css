@@ -1,0 +1,1429 @@
+/* Non-play screens (spec §2): cash out, blind select, game over, shop rail,
+   shared tooltip. Same tokens as play.css (docs/UI_DESIGN.md §1). */
+
+/* ---------- generic centered screen ---------- */
+.screen {
+  max-width: 860px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+/* ---------- shared buttons ---------- */
+.btn.green {
+  background: #4a9d5b;
+}
+.btn.big {
+  font-size: 22px;
+  padding: 16px 44px;
+}
+
+/* ---------- shared anchored tooltip (spec §0) ---------- */
+.tt-anchor {
+  position: relative;
+  display: inline-flex;
+}
+.tt-card {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 220px;
+  /* item 5: grey background so the text reads clearly */
+  background: #46565f;
+  border: 1px solid #61727c;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+/* item 6: tooltip shows ONLY on hover — no focus-within, so a click (which
+   focuses the tab-able card) never makes it persist after the cursor leaves. */
+.tt-anchor:hover .tt-card {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* E-7: shelf tooltips open downward (below the anchor). */
+.tt-card.down {
+  bottom: auto;
+  top: calc(100% + 10px);
+  transform: translateX(-50%) translateY(-4px);
+}
+.tt-anchor:hover .tt-card.down {
+  transform: translateX(-50%) translateY(0);
+}
+.tt-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+.tt-title.uncommon {
+  color: var(--chips);
+}
+.tt-title.rare {
+  color: var(--mult);
+}
+.tt-title.legendary {
+  color: var(--gold);
+}
+.tt-body {
+  font-size: 12px;
+  color: #dbe3e7;
+  line-height: 1.3;
+}
+.tt-extra {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* ---------- Cash Out / Fee Settlement (spec §2.5; A-2 overlay) ---------- */
+.overlay.cashout-overlay {
+  background: rgba(14, 26, 20, 0.55);
+}
+.overlay-card.cashout {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+.cashout-banner {
+  width: 100%;
+  text-align: center;
+  padding: 6px 0 10px;
+}
+.cashout-total {
+  display: block;
+  font-family: 'Jersey 10';
+  font-size: 72px;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+.cashout-lines {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.cashout-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 4px;
+  border-bottom: 1px dashed #2c4152;
+  opacity: 0;
+  transform: translateX(-8px);
+}
+.cashout-line:last-child {
+  border-bottom: none;
+}
+.cashout-line.in {
+  animation: lineIn 0.28s ease forwards;
+}
+@keyframes lineIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cashout-line .desc {
+  font-size: 14px;
+}
+.cashout-line .amt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cashout-line .amt b {
+  font-family: 'Jersey 10';
+  font-size: 24px;
+  color: var(--gold);
+  min-width: 44px;
+  text-align: right;
+}
+.coins {
+  font-size: 13px;
+  letter-spacing: -2px;
+}
+
+/* ---------- Blind Select (spec §2.3) ---------- */
+.blindselect {
+  max-width: 820px;
+}
+.bs-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
+.bs-head .label {
+  font-size: 20px;
+  color: var(--ink);
+}
+.bs-head .ante {
+  font-family: 'Jersey 10';
+  font-size: 22px;
+  color: var(--ink-dim);
+}
+.bs-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+@media (max-width: 680px) {
+  .bs-cards {
+    grid-template-columns: 1fr;
+  }
+}
+.bs-card {
+  background: #2c4358;
+  border-radius: 14px;
+  border-top: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid transparent;
+}
+.bs-card.small {
+  border-color: var(--suit-standard);
+}
+.bs-card.big {
+  border-color: var(--gold);
+}
+.bs-card.boss {
+  border-color: var(--mult);
+}
+.bs-card.upcoming {
+  opacity: 0.55;
+}
+.bs-card.current {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.35);
+}
+.bs-kind {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.bs-boss {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+.bs-boss .e {
+  font-size: 34px;
+}
+.bs-boss .bn {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--mult);
+}
+.bs-boss .be {
+  font-size: 11px;
+  color: var(--ink-dim);
+  line-height: 1.2;
+}
+.bs-boss.unknown .be {
+  font-style: italic;
+}
+.bs-target {
+  text-align: center;
+}
+.bs-target .label {
+  display: block;
+}
+.bs-target .n {
+  font-family: 'Jersey 10';
+  font-size: 40px;
+  line-height: 1;
+  color: var(--mult);
+}
+.bs-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.bs-reward .r b {
+  font-family: 'Jersey 10';
+  font-size: 20px;
+  color: var(--gold);
+}
+.bs-select {
+  width: 100%;
+}
+.bs-status {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 0;
+}
+.bs-status.defeated {
+  color: var(--suit-standard);
+}
+.bs-status.upcoming {
+  color: var(--ink-dim);
+}
+
+/* ---------- Game Over (spec §2.7 / playtest-02 A-4: overlays the board) ---------- */
+/* The board stays visible and reddens; the modal sits on top. */
+.frame.ending::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(200, 50, 40, 0.22), rgba(120, 20, 15, 0.5));
+  pointer-events: none;
+  z-index: 40;
+}
+.overlay.gameover-overlay {
+  background: rgba(50, 8, 6, 0.55);
+}
+.overlay-card.gameover {
+  max-width: 520px;
+}
+.gameover .go-title {
+  text-align: center;
+}
+.go-title {
+  font-family: 'Jersey 10';
+  font-size: 60px;
+  color: var(--mult);
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  line-height: 1;
+}
+.go-defeat,
+.go-stats,
+.go-seed {
+  width: 100%;
+}
+.go-defeat {
+  text-align: center;
+}
+.go-defeat-row {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 4px;
+}
+.go-boss {
+  font-weight: 700;
+  font-size: 18px;
+}
+.go-reach {
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+.go-score {
+  font-family: 'Jersey 10';
+  font-size: 24px;
+  color: var(--ink-dim);
+  margin-top: 6px;
+}
+.go-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 18px;
+}
+.go-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 2px;
+  border-bottom: 1px dashed #2c4152;
+}
+.go-stat.wide {
+  grid-column: 1 / -1;
+}
+.go-stat .k {
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+.go-stat .v {
+  font-family: 'Jersey 10';
+  font-size: 22px;
+}
+.go-stat .v b {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-size: 15px;
+  color: var(--gold);
+}
+.go-stat.discovery .v {
+  color: var(--gold);
+}
+.go-seed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.go-seed .seed-code {
+  flex: 1;
+  font-family: 'Jersey 10';
+  font-size: 20px;
+  color: var(--ink);
+  background: #0f1b22;
+  border-radius: 8px;
+  padding: 4px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.go-actions {
+  display: flex;
+  gap: 14px;
+}
+
+/* ---------- Shop rail layout (spec §2.6) ---------- */
+.shop2 {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 16px;
+}
+@media (max-width: 720px) {
+  .shop2 {
+    grid-template-columns: 1fr;
+  }
+}
+.shop-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.shop-rail .next-blind,
+.shop-rail .reroll-btn {
+  width: 100%;
+}
+.shop-gold {
+  background: var(--panel);
+  border-radius: 12px;
+  border-top: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  text-align: center;
+}
+.shop-gold .money {
+  display: block;
+  margin-top: 2px;
+}
+.shop-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.shopitem .btn.sell {
+  background: var(--gold);
+  color: #173226;
+}
+/* D-5: non-selectable joker pick when joker slots are full */
+.shopitem.blocked {
+  opacity: 0.5;
+}
+.pack-block {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mult);
+  text-align: center;
+}
+/* D-1: the shop's persistent shelf uses the play-screen shelf layout */
+.shop-shelf {
+  margin-bottom: 4px;
+}
+
+/* ---------- UI scale + accessibility toggles (spec §2.11) ---------- */
+#root {
+  zoom: var(--ui-scale, 1);
+}
+body.force-reduced-motion * {
+  animation: none !important;
+  transition: none !important;
+}
+body.cb-safe .tile.hint {
+  outline-color: #3fd0f5;
+  outline-style: solid;
+}
+
+/* ---------- shared chrome: titles, tabs, back bar, badge ---------- */
+.scr-title {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 26px;
+  text-align: center;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.tab {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-dim);
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 999px;
+  padding: 6px 18px;
+  cursor: pointer;
+  position: relative;
+}
+.tab.on {
+  color: #15242c;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.tab.on::after {
+  content: '▾';
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold);
+  font-size: 12px;
+}
+.tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.back-bar {
+  width: 100%;
+  max-width: 520px;
+  background: var(--gold);
+  color: #173226;
+}
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--mult);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: var(--shadow);
+}
+.badge-host {
+  position: relative;
+}
+
+/* ---------- Main Menu (spec §2.1) ---------- */
+.menu {
+  gap: 26px;
+}
+.logotype {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.9;
+}
+.lt-play {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+}
+.lt-title {
+  font-family: 'Jersey 10';
+  font-size: 92px;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  line-height: 0.9;
+}
+/* The ! echoes the Exclamation punctuation card (D-1 flavor note). */
+.lt-bang {
+  color: var(--mult);
+  display: inline-block;
+  transform: rotate(4deg);
+}
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 260px;
+}
+.menu-buttons .btn {
+  width: 100%;
+}
+.menu-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: min(520px, 90vw);
+  margin-top: 8px;
+}
+.profile-chip {
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* ---------- New Run (spec §2.2) ---------- */
+.newrun-body {
+  width: min(560px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.carousel {
+  text-align: center;
+}
+.carousel-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.car-arrow {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-size: 22px;
+  color: var(--ink);
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+.car-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.car-value {
+  font-weight: 700;
+  font-size: 18px;
+  min-width: 160px;
+}
+.select-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.select-preview {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: #16242c;
+  border-radius: 12px;
+  padding: 14px;
+}
+.bag-art {
+  font-size: 48px;
+}
+.bag-art.big {
+  font-size: 64px;
+}
+.select-desc {
+  font-size: 13px;
+  color: var(--ink-dim);
+  line-height: 1.35;
+}
+.seed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seed-input {
+  font-family: 'Jersey 10';
+  font-size: 20px;
+  background: #0f1b22;
+  color: var(--ink);
+  border: 1px solid #3a5060;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.play-run {
+  width: min(560px, 92vw);
+}
+
+/* ---------- Collection (spec §2.9) ---------- */
+.collection {
+  justify-content: flex-start;
+  gap: 16px;
+}
+.cat-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  width: min(720px, 94vw);
+}
+.cat-btn {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2c4358;
+  border: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.cat-btn:hover {
+  transform: translateY(-2px);
+}
+.cat-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+.cat-count {
+  font-family: 'Jersey 10';
+  font-size: 18px;
+  color: var(--gold);
+}
+.coll-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(760px, 94vw);
+}
+.coll-head .scr-title {
+  flex: 1;
+  text-align: left;
+}
+.coll-detail {
+  width: min(760px, 94vw);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+.coll-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.filter-pill {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink-dim);
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+.filter-pill.on {
+  color: #15242c;
+  background: var(--ink-dim);
+}
+.filter-pill.standard.on {
+  background: var(--suit-standard);
+}
+.filter-pill.formal.on {
+  background: var(--suit-formal);
+}
+.filter-pill.slang.on {
+  background: var(--suit-slang);
+}
+.filter-pill.vulgar.on {
+  background: var(--suit-vulgar);
+}
+.word-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.word-chip {
+  font-family: 'Jost';
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--tile-ink);
+  background: var(--tile-face);
+  border-left: 4px solid var(--suit-standard);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+.word-chip.formal {
+  border-left-color: var(--suit-formal);
+}
+.word-chip.slang {
+  border-left-color: var(--suit-slang);
+}
+.word-chip.vulgar {
+  border-left-color: var(--suit-vulgar);
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+.coll-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: #2c4358;
+  border: 2px solid transparent;
+  border-top: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+.coll-card.uncommon {
+  border-color: var(--chips);
+}
+.coll-card.rare {
+  border-color: var(--mult);
+}
+.coll-card.legendary {
+  border-color: var(--gold);
+}
+.cc-emoji {
+  font-size: 32px;
+}
+.cc-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: center;
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.sw-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+.bag-detail {
+  max-width: 320px;
+  text-align: center;
+}
+.bosses-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+}
+@media (max-width: 620px) {
+  .bosses-split {
+    grid-template-columns: 1fr;
+  }
+}
+.target-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-family: 'Jersey 10';
+}
+.target-table th {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-size: 11px;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  padding: 4px;
+}
+.target-table td {
+  text-align: center;
+  font-size: 16px;
+  padding: 3px 4px;
+  border-top: 1px solid #2c4152;
+}
+.target-table tr.endless td {
+  color: var(--gold);
+}
+.boss-chips .chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.boss-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #16242c;
+  border: 1px solid #3a5060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: var(--shadow);
+}
+.boss-chip.unknown {
+  color: var(--ink-dim);
+  font-family: 'Jersey 10';
+  font-size: 24px;
+}
+.coll-empty {
+  color: var(--ink-dim);
+  font-style: italic;
+  text-align: center;
+}
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pager-label {
+  font-family: 'Jersey 10';
+  font-size: 18px;
+  color: var(--ink-dim);
+}
+
+/* ---------- Options / Settings / Stats (spec §2.10–2.12) ---------- */
+.options {
+  justify-content: flex-start;
+  gap: 16px;
+  padding-top: 40px;
+}
+.set-panel {
+  width: min(560px, 94vw);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.set-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 2px;
+  border-bottom: 1px dashed #2c4152;
+  gap: 16px;
+}
+.set-row:last-child {
+  border-bottom: none;
+}
+.set-label {
+  font-weight: 700;
+  font-size: 14px;
+}
+.set-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.set-control input[type='range'] {
+  accent-color: var(--gold);
+  width: 160px;
+}
+.set-badge {
+  font-family: 'Jersey 10';
+  font-size: 18px;
+  color: var(--gold);
+  min-width: 34px;
+  text-align: right;
+}
+.set-note {
+  font-size: 12px;
+  color: var(--ink-dim);
+  font-style: italic;
+  padding: 4px 2px 8px;
+}
+.segmented {
+  display: flex;
+  gap: 4px;
+  background: #0f1b22;
+  border-radius: 10px;
+  padding: 3px;
+}
+.seg {
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-dim);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.seg.on {
+  color: #15242c;
+  background: var(--gold);
+}
+.toggle {
+  width: 48px;
+  height: 26px;
+  border-radius: 999px;
+  background: #0f1b22;
+  border: 1px solid #3a5060;
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+}
+.toggle .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  transition: transform 0.15s, background 0.15s;
+}
+.toggle.on {
+  background: rgba(240, 178, 62, 0.25);
+  border-color: var(--gold);
+}
+.toggle.on .knob {
+  transform: translateX(22px);
+  background: var(--gold);
+}
+.stats-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: min(620px, 94vw);
+}
+@media (max-width: 560px) {
+  .stats-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.muted-stat .v {
+  color: var(--ink-dim);
+}
+.credits {
+  width: min(520px, 94vw);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cr-title {
+  font-family: 'Jersey 10';
+  font-size: 40px;
+  color: var(--gold);
+}
+.cr-dim {
+  color: var(--ink-dim);
+  font-size: 13px;
+}
+
+/* ---------- in-run overlays (spec §2.4, §2.8) ---------- */
+.sidebar-nav {
+  display: flex;
+  gap: 8px;
+}
+.sidenav-btn {
+  flex: 1;
+  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink-dim);
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  padding: 7px;
+  cursor: pointer;
+}
+.sidenav-btn:hover {
+  color: var(--ink);
+}
+.sidenav-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+.overlay-card {
+  background: var(--panel);
+  border-radius: 16px;
+  border-top: 1px solid var(--panel-edge);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.4);
+  padding: 18px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+}
+.ov-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.ov-head h3 {
+  font-size: 18px;
+  flex: 1;
+}
+.ov-close {
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  color: var(--ink);
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.bag-toggle {
+  display: flex;
+  gap: 4px;
+  background: #0f1b22;
+  border-radius: 10px;
+  padding: 3px;
+}
+/* ===== playtest-03 E-1/E-2: pouch widget + bottom drawer ===== */
+.pouch-widget {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border-top: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.pouch-widget.open {
+  outline: 2px solid var(--gold);
+}
+.pouch-art {
+  font-size: 28px;
+}
+.pouch-count {
+  font-family: 'Jersey 10';
+  font-size: 22px;
+  color: var(--gold);
+}
+.pouch-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 48;
+}
+/* D-3: centered pouch modal. The overlay is a transparent, click-through
+   positioner (hover-driven); only the card is interactive/hoverable. */
+.pouch-overlay {
+  background: transparent;
+  pointer-events: none;
+  z-index: 49;
+  align-items: center;
+}
+.pouch-modal {
+  pointer-events: auto;
+  width: min(900px, 94vw);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 16px 20px 22px;
+  animation: pouchIn 0.22s ease;
+}
+@keyframes pouchIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* the hand + button cluster slide down to make room while the pouch is open */
+.frame .stage {
+  transition: transform 0.24s ease;
+}
+.frame.pouch-open .stage {
+  transform: translateY(90px);
+}
+.pouch-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 auto 12px;
+  max-width: 1100px;
+}
+.pouch-drawer-head h3 {
+  flex: 1;
+  font-size: 18px;
+}
+.pouch-remaining-label {
+  font-family: 'Jersey 10';
+  font-size: 20px;
+  color: var(--gold);
+}
+.pouch-body {
+  display: flex;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+.pouch-totals {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pouch-toggle {
+  display: flex;
+  gap: 4px;
+  background: #0f1b22;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 8px;
+}
+.pouch-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pouch-modal {
+    animation: none;
+  }
+  .frame .stage {
+    transition: none;
+  }
+}
+@media (max-width: 640px) {
+  .pouch-body {
+    flex-direction: column;
+  }
+  .pouch-totals {
+    width: 100%;
+  }
+  .pouch-grid {
+    grid-template-columns: repeat(9, 1fr);
+  }
+}
+
+/* legacy bag popover (superseded by the pouch drawer) */
+.bag-widget-wrap {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.bag-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border-top: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.bag-widget.pinned {
+  outline: 2px solid var(--gold);
+}
+.bw-stack {
+  position: relative;
+  width: 26px;
+  height: 32px;
+}
+.bw-stack span {
+  position: absolute;
+  width: 22px;
+  height: 28px;
+  border-radius: 5px;
+  background: radial-gradient(120% 120% at 25% 18%, #fffdf6, var(--tile-face) 60%, #e2d8c4);
+  border: 1px solid #c9bfa8;
+}
+.bw-stack span:nth-child(1) {
+  left: 0;
+  top: 4px;
+  transform: rotate(-8deg);
+}
+.bw-stack span:nth-child(2) {
+  left: 3px;
+  top: 2px;
+  transform: rotate(4deg);
+}
+.bw-stack span:nth-child(3) {
+  left: 6px;
+  top: 0;
+}
+.bw-count {
+  font-family: 'Jersey 10';
+  font-size: 22px;
+  color: var(--gold);
+}
+.bag-popover {
+  width: min(460px, 92vw);
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.bag-body {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .bag-body {
+    grid-template-columns: 1fr;
+  }
+}
+.bag-totals {
+  align-self: start;
+}
+.bt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.bt-row b {
+  font-family: 'Jersey 10';
+  font-size: 18px;
+}
+.bt-row.total {
+  border-top: 1px solid #2c4152;
+  margin-top: 4px;
+  padding-top: 6px;
+}
+.bt-row.muted {
+  color: var(--ink-dim);
+  font-style: italic;
+}
+.bag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 8px;
+}
+.bag-col {
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+}
+.bag-col.empty {
+  opacity: 0.4;
+}
+.bg-letter {
+  font-family: 'Jost';
+  font-weight: 700;
+  font-size: 20px;
+}
+.bg-count {
+  font-family: 'Jersey 10';
+  font-size: 15px;
+  color: var(--gold);
+}
+.ri-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ri-row {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+}
+.ri-row .k {
+  font-weight: 700;
+  color: var(--ink-dim);
+  min-width: 70px;
+}
+.ri-sub {
+  margin-top: 8px;
+}
+.ri-patterns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+}
+.ri-pat {
+  display: flex;
+  justify-content: space-between;
+  background: #16242c;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.ri-pat .pl {
+  font-family: 'Jersey 10';
+  color: var(--gold);
+}
+.ri-vouchers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ri-voucher {
+  background: #16242c;
+  border: 1px solid #3a5060;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cashout-line,
+  .bs-card.current {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .tt-card,
+  .toggle .knob {
+    transition: none;
+  }
+}

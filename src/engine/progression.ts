@@ -25,7 +25,7 @@ export interface BlindEarnings {
   reward: number;
   phases: number;
   interest: number;
-  /** Thrift voucher: gold per unused exchange (GDD §9.4) */
+  /** Thrift voucher: gold per unused discard (GDD §9.4) */
   thrift: number;
   total: number;
 }
@@ -58,7 +58,7 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
   const phases = (blind.phasesTotal - blind.phasesUsed) * BALANCE.goldPerRemainingPhase;
   const interestGold = interest(run.gold, interestCap(run));
   const thrift = hasVoucher(run, 'thrift')
-    ? blind.exchangesLeft * BALANCE.voucher.thriftPerExchange
+    ? blind.discardsLeft * BALANCE.voucher.thriftPerDiscard
     : 0;
   const total = reward + phases + interestGold + thrift;
   const next = advance(run.ante, run.blindIndex);
