@@ -19,7 +19,7 @@
   background: #4a9d5b;
 }
 .btn.big {
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   padding: 16px 44px;
 }
 
@@ -67,7 +67,7 @@
 }
 .tt-title {
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .tt-title.uncommon {
   color: var(--chips);
@@ -79,12 +79,12 @@
   color: var(--gold);
 }
 .tt-body {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: #dbe3e7;
   line-height: 1.3;
 }
 .tt-extra {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--gold);
 }
@@ -108,7 +108,7 @@
 .cashout-total {
   display: block;
   font-family: 'Jersey 10';
-  font-size: 72px;
+  font-size: var(--ds-3xl);
   line-height: 1;
   color: var(--gold);
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
@@ -140,7 +140,7 @@
   }
 }
 .cashout-line .desc {
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .cashout-line .amt {
   display: flex;
@@ -149,13 +149,13 @@
 }
 .cashout-line .amt b {
   font-family: 'Jersey 10';
-  font-size: 24px;
+  font-size: var(--ds-xs);
   color: var(--gold);
   min-width: 44px;
   text-align: right;
 }
 .coins {
-  font-size: 13px;
+  font-size: var(--fs-md);
   letter-spacing: -2px;
 }
 
@@ -171,12 +171,12 @@
   justify-content: center;
 }
 .bs-head .label {
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   color: var(--ink);
 }
 .bs-head .ante {
   font-family: 'Jersey 10';
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   color: var(--ink-dim);
 }
 .bs-cards {
@@ -220,7 +220,7 @@
 }
 .bs-kind {
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -232,15 +232,15 @@
   text-align: center;
 }
 .bs-boss .e {
-  font-size: 34px;
+  font-size: var(--ds-md);
 }
 .bs-boss .bn {
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--mult);
 }
 .bs-boss .be {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
   line-height: 1.2;
 }
@@ -255,7 +255,7 @@
 }
 .bs-target .n {
   font-family: 'Jersey 10';
-  font-size: 40px;
+  font-size: var(--ds-xl);
   line-height: 1;
   color: var(--mult);
 }
@@ -263,18 +263,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .bs-reward .r b {
   font-family: 'Jersey 10';
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   color: var(--gold);
 }
 .bs-select {
   width: 100%;
 }
 .bs-status {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -308,7 +308,7 @@
 }
 .go-title {
   font-family: 'Jersey 10';
-  font-size: 60px;
+  font-size: var(--ds-3xl);
   color: var(--mult);
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
   line-height: 1;
@@ -330,15 +330,15 @@
 }
 .go-boss {
   font-weight: 700;
-  font-size: 18px;
+  font-size: var(--fs-xl);
 }
 .go-reach {
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--ink-dim);
 }
 .go-score {
   font-family: 'Jersey 10';
-  font-size: 24px;
+  font-size: var(--ds-xs);
   color: var(--ink-dim);
   margin-top: 6px;
 }
@@ -358,16 +358,16 @@
   grid-column: 1 / -1;
 }
 .go-stat .k {
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--ink-dim);
 }
 .go-stat .v {
   font-family: 'Jersey 10';
-  font-size: 22px;
+  font-size: var(--fs-2xl);
 }
 .go-stat .v b {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-size: 15px;
+  font-family: var(--ctl-font);
+  font-size: var(--fs-lg);
   color: var(--gold);
 }
 .go-stat.discovery .v {
@@ -381,7 +381,7 @@
 .go-seed .seed-code {
   flex: 1;
   font-family: 'Jersey 10';
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   color: var(--ink);
   background: #0f1b22;
   border-radius: 8px;
@@ -443,7 +443,7 @@
   opacity: 0.5;
 }
 .pack-block {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--mult);
   text-align: center;
@@ -454,8 +454,9 @@
 }
 
 /* ---------- UI scale + accessibility toggles (spec §2.11) ---------- */
+/* The user's UI-scale setting × the viewport fit-scale (tokens.css, item 9). */
 #root {
-  zoom: var(--ui-scale, 1);
+  zoom: calc(var(--ui-scale, 1) * var(--fit-scale, 1));
 }
 body.force-reduced-motion * {
   animation: none !important;
@@ -468,9 +469,9 @@ body.cb-safe .tile.hint {
 
 /* ---------- shared chrome: titles, tabs, back bar, badge ---------- */
 .scr-title {
-  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-family: var(--ctl-font);
   font-weight: 700;
-  font-size: 26px;
+  font-size: var(--ds-xs);
   text-align: center;
 }
 .tabs {
@@ -479,15 +480,9 @@ body.cb-safe .tile.hint {
   justify-content: center;
 }
 .tab {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--ink-dim);
-  background: #16242c;
-  border: 1px solid #3a5060;
+  font-size: var(--fs-md);
   border-radius: 999px;
   padding: 6px 18px;
-  cursor: pointer;
   position: relative;
 }
 .tab.on {
@@ -502,11 +497,7 @@ body.cb-safe .tile.hint {
   left: 50%;
   transform: translateX(-50%);
   color: var(--gold);
-  font-size: 12px;
-}
-.tab:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  font-size: var(--fs-sm);
 }
 .back-bar {
   width: 100%;
@@ -524,7 +515,7 @@ body.cb-safe .tile.hint {
   background: var(--mult);
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: var(--fs-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -546,15 +537,15 @@ body.cb-safe .tile.hint {
   line-height: 0.9;
 }
 .lt-play {
-  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-family: var(--ctl-font);
   font-weight: 700;
-  font-size: 28px;
+  font-size: var(--ds-sm);
   color: var(--ink-dim);
   letter-spacing: 0.02em;
 }
 .lt-title {
   font-family: 'Jersey 10';
-  font-size: 92px;
+  font-size: var(--ds-4xl);
   color: var(--gold);
   letter-spacing: 0.04em;
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
@@ -583,12 +574,12 @@ body.cb-safe .tile.hint {
   margin-top: 8px;
 }
 .profile-chip {
-  background: #16242c;
-  border: 1px solid #3a5060;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
   border-radius: 999px;
   padding: 6px 14px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 
 /* ---------- New Run (spec §2.2) ---------- */
@@ -609,23 +600,14 @@ body.cb-safe .tile.hint {
   margin-top: 4px;
 }
 .car-arrow {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-size: 22px;
-  color: var(--ink);
-  background: #16242c;
-  border: 1px solid #3a5060;
-  border-radius: 10px;
+  font-size: var(--fs-2xl);
+  border-radius: var(--r-sm);
   width: 40px;
   height: 40px;
-  cursor: pointer;
-}
-.car-arrow:disabled {
-  opacity: 0.3;
-  cursor: default;
 }
 .car-value {
   font-weight: 700;
-  font-size: 18px;
+  font-size: var(--fs-xl);
   min-width: 160px;
 }
 .select-card {
@@ -637,20 +619,59 @@ body.cb-safe .tile.hint {
   display: flex;
   gap: 16px;
   align-items: center;
-  background: #16242c;
+  background: var(--inset);
   border-radius: 12px;
   padding: 14px;
 }
 .bag-art {
-  font-size: 48px;
+  font-size: var(--ds-2xl);
 }
 .bag-art.big {
-  font-size: 64px;
+  font-size: var(--ds-3xl);
 }
 .select-desc {
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--ink-dim);
   line-height: 1.35;
+}
+/* Continue tab — the run left in memory when you exit via Options → Main Menu. */
+.continue-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.continue-art {
+  font-size: var(--ds-2xl);
+}
+.continue-title {
+  font-family: 'Jersey 10';
+  font-size: var(--ds-sm);
+  line-height: 1;
+  color: var(--ink);
+}
+.continue-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+.continue-stats span {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+.continue-stats .cs-chapter {
+  color: var(--ink);
+}
+.continue-stats .cs-gold {
+  color: var(--gold);
+}
+.continue-stats .cs-seed {
+  font-family: 'Jost';
+  font-weight: 500;
 }
 .seed-toggle {
   display: flex;
@@ -661,10 +682,10 @@ body.cb-safe .tile.hint {
 }
 .seed-input {
   font-family: 'Jersey 10';
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   background: #0f1b22;
   color: var(--ink);
-  border: 1px solid #3a5060;
+  border: 1px solid var(--inset-edge);
   border-radius: 10px;
   padding: 8px 12px;
 }
@@ -701,11 +722,11 @@ body.cb-safe .tile.hint {
 }
 .cat-name {
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--fs-lg);
 }
 .cat-count {
   font-family: 'Jersey 10';
-  font-size: 18px;
+  font-size: var(--fs-xl);
   color: var(--gold);
 }
 .coll-head {
@@ -725,6 +746,38 @@ body.cb-safe .tile.hint {
   gap: 14px;
   align-items: center;
 }
+/* Word search — with the whole dictionary listed, this is the only practical way
+   to reach a specific word (paging alone is ~500 pages). */
+.coll-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+.coll-search-input {
+  flex: 1;
+  font-family: var(--ctl-font);
+  font-size: var(--fs-md);
+  color: var(--ink);
+  background: #22333d;
+  border: 1px solid var(--inset-edge);
+  border-radius: 10px;
+  padding: 8px 12px;
+  outline: none;
+}
+.coll-search-input:focus {
+  border-color: var(--chips);
+}
+.coll-search-input::placeholder {
+  color: var(--ink-dim);
+}
+.coll-search-count {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
 .coll-filters {
   display: flex;
   gap: 8px;
@@ -732,15 +785,9 @@ body.cb-safe .tile.hint {
   justify-content: center;
 }
 .filter-pill {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--ink-dim);
-  background: #16242c;
-  border: 1px solid #3a5060;
+  font-size: var(--fs-sm);
   border-radius: 999px;
   padding: 5px 14px;
-  cursor: pointer;
 }
 .filter-pill.on {
   color: #15242c;
@@ -767,7 +814,7 @@ body.cb-safe .tile.hint {
 .word-chip {
   font-family: 'Jost';
   font-weight: 500;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   color: var(--tile-ink);
   background: var(--tile-face);
   border-left: 4px solid var(--suit-standard);
@@ -782,6 +829,12 @@ body.cb-safe .tile.hint {
 }
 .word-chip.vulgar {
   border-left-color: var(--suit-vulgar);
+}
+/* Item 1: the grid lists every dictionary word; ones never played read as locked —
+   dimmed and desaturated, but still legible (they're the goal, not a spoiler). */
+.word-chip.locked {
+  opacity: 0.42;
+  filter: saturate(0.35);
 }
 .card-grid {
   display: grid;
@@ -811,10 +864,10 @@ body.cb-safe .tile.hint {
   border-color: var(--gold);
 }
 .cc-emoji {
-  font-size: 32px;
+  font-size: var(--ds-sm);
 }
 .cc-name {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   text-align: center;
 }
@@ -831,7 +884,7 @@ body.cb-safe .tile.hint {
   gap: 8px;
 }
 .sw-name {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--ink-dim);
 }
@@ -857,15 +910,15 @@ body.cb-safe .tile.hint {
   font-family: 'Jersey 10';
 }
 .target-table th {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-size: 11px;
+  font-family: var(--ctl-font);
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
   text-transform: uppercase;
   padding: 4px;
 }
 .target-table td {
   text-align: center;
-  font-size: 16px;
+  font-size: var(--fs-lg);
   padding: 3px 4px;
   border-top: 1px solid #2c4152;
 }
@@ -882,18 +935,18 @@ body.cb-safe .tile.hint {
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: #16242c;
-  border: 1px solid #3a5060;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   box-shadow: var(--shadow);
 }
 .boss-chip.unknown {
   color: var(--ink-dim);
   font-family: 'Jersey 10';
-  font-size: 24px;
+  font-size: var(--ds-xs);
 }
 .coll-empty {
   color: var(--ink-dim);
@@ -907,7 +960,7 @@ body.cb-safe .tile.hint {
 }
 .pager-label {
   font-family: 'Jersey 10';
-  font-size: 18px;
+  font-size: var(--fs-xl);
   color: var(--ink-dim);
 }
 
@@ -936,7 +989,7 @@ body.cb-safe .tile.hint {
 }
 .set-label {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .set-control {
   display: flex;
@@ -949,13 +1002,13 @@ body.cb-safe .tile.hint {
 }
 .set-badge {
   font-family: 'Jersey 10';
-  font-size: 18px;
+  font-size: var(--fs-xl);
   color: var(--gold);
   min-width: 34px;
   text-align: right;
 }
 .set-note {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--ink-dim);
   font-style: italic;
   padding: 4px 2px 8px;
@@ -968,9 +1021,9 @@ body.cb-safe .tile.hint {
   padding: 3px;
 }
 .seg {
-  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-family: var(--ctl-font);
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--ink-dim);
   background: transparent;
   border: none;
@@ -987,7 +1040,7 @@ body.cb-safe .tile.hint {
   height: 26px;
   border-radius: 999px;
   background: #0f1b22;
-  border: 1px solid #3a5060;
+  border: 1px solid var(--inset-edge);
   position: relative;
   cursor: pointer;
   padding: 0;
@@ -1033,12 +1086,12 @@ body.cb-safe .tile.hint {
 }
 .cr-title {
   font-family: 'Jersey 10';
-  font-size: 40px;
+  font-size: var(--ds-xl);
   color: var(--gold);
 }
 .cr-dim {
   color: var(--ink-dim);
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 
 /* ---------- in-run overlays (spec §2.4, §2.8) ---------- */
@@ -1048,22 +1101,9 @@ body.cb-safe .tile.hint {
 }
 .sidenav-btn {
   flex: 1;
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--ink-dim);
-  background: #16242c;
-  border: 1px solid #3a5060;
-  border-radius: 8px;
+  font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
   padding: 7px;
-  cursor: pointer;
-}
-.sidenav-btn:hover {
-  color: var(--ink);
-}
-.sidenav-btn:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
 }
 .overlay {
   position: fixed;
@@ -1093,18 +1133,18 @@ body.cb-safe .tile.hint {
   margin-bottom: 14px;
 }
 .ov-head h3 {
-  font-size: 18px;
+  font-size: var(--fs-2xl);
   flex: 1;
 }
 .ov-close {
-  background: #16242c;
-  border: 1px solid #3a5060;
-  border-radius: 8px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
   color: var(--ink);
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fs-lg);
 }
 .bag-toggle {
   display: flex;
@@ -1114,32 +1154,42 @@ body.cb-safe .tile.hint {
   padding: 3px;
 }
 /* ===== playtest-03 E-1/E-2: pouch widget + bottom drawer ===== */
-.pouch-widget {
+/* The dock is what's pinned to the corner; the widget box and its count stack
+   inside it, so the count reads under the box like the shelf counts do. The
+   dock's bottom keeps the --dock-bottom line it shares with the Discard row. */
+.pouch-dock {
   position: fixed;
   right: 18px;
-  bottom: 18px;
+  bottom: var(--dock-bottom);
   z-index: 45;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  background: var(--panel);
-  border-top: 1px solid var(--panel-edge);
+}
+/* No box — just the pouch itself (playtest-06). The panel background, edge and
+   shadow are gone; the radius and padding stay so the open-state outline still
+   traces a sane shape and the hover target keeps some slop around the art. */
+.pouch-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 12px;
-  box-shadow: var(--shadow);
-  padding: 8px 14px;
+  padding: 6px 12px;
   cursor: pointer;
   color: var(--ink);
 }
 .pouch-widget.open {
   outline: 2px solid var(--gold);
 }
+/* Scaled up from 30 → 52px. An exact 1.5× (45px) is not on the display scale, so
+   this takes the next step up rather than going off-scale (see tokens.css). */
 .pouch-art {
-  font-size: 28px;
+  font-size: var(--ds-2xl);
 }
+/* Font/size/colour come from the shared count rule in play.css (matched to
+   .shelf-count); only the spacing under the box is local. */
 .pouch-count {
-  font-family: 'Jersey 10';
-  font-size: 22px;
-  color: var(--gold);
+  margin-top: 4px;
 }
 .pouch-scrim {
   position: fixed;
@@ -1148,11 +1198,15 @@ body.cb-safe .tile.hint {
 }
 /* D-3: centered pouch modal. The overlay is a transparent, click-through
    positioner (hover-driven); only the card is interactive/hoverable. */
+/* Item 4: centre on the STAGE, not the viewport. The rail occupies the left
+   --rail-w of the board, so reserving that much padding shifts the flex centring
+   right by exactly half of it — landing the modal on the stage's midline. */
 .pouch-overlay {
   background: transparent;
   pointer-events: none;
   z-index: 49;
   align-items: center;
+  padding-left: calc(var(--rail-w) + var(--rail-gap));
 }
 .pouch-modal {
   pointer-events: auto;
@@ -1188,11 +1242,11 @@ body.cb-safe .tile.hint {
 }
 .pouch-drawer-head h3 {
   flex: 1;
-  font-size: 18px;
+  font-size: var(--fs-xl);
 }
 .pouch-remaining-label {
   font-family: 'Jersey 10';
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   color: var(--gold);
 }
 .pouch-body {
@@ -1298,7 +1352,7 @@ body.cb-safe .tile.hint {
 }
 .bw-count {
   font-family: 'Jersey 10';
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   color: var(--gold);
 }
 .bag-popover {
@@ -1324,11 +1378,11 @@ body.cb-safe .tile.hint {
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .bt-row b {
   font-family: 'Jersey 10';
-  font-size: 18px;
+  font-size: var(--fs-xl);
 }
 .bt-row.total {
   border-top: 1px solid #2c4152;
@@ -1345,8 +1399,8 @@ body.cb-safe .tile.hint {
   gap: 8px;
 }
 .bag-col {
-  background: #16242c;
-  border: 1px solid #3a5060;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -1359,46 +1413,60 @@ body.cb-safe .tile.hint {
 .bg-letter {
   font-family: 'Jost';
   font-weight: 700;
-  font-size: 20px;
+  font-size: var(--fs-2xl);
 }
 .bg-count {
   font-family: 'Jersey 10';
-  font-size: 15px;
+  font-size: var(--fs-lg);
   color: var(--gold);
+}
+/* Item 2 (playtest-06): Run Info reads at a glance — larger type and roomier
+   rows, and ONE PATTERN PER LINE. It was a 120px auto-fill grid, so patterns
+   doubled up per row and the level was hard to scan; the card grows to suit. */
+.overlay-card.runinfo {
+  max-width: 560px;
+  max-height: 92vh;
 }
 .ri-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 .ri-row {
   display: flex;
-  gap: 10px;
-  font-size: 14px;
+  gap: 12px;
+  font-size: var(--fs-lg);
+  line-height: 1.35;
 }
 .ri-row .k {
   font-weight: 700;
   color: var(--ink-dim);
-  min-width: 70px;
+  min-width: 92px;
+  flex: none;
 }
 .ri-sub {
   margin-top: 8px;
+  font-size: var(--fs-md);
 }
 .ri-patterns {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 6px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 .ri-pat {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  background: #16242c;
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 12px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: var(--fs-lg);
 }
 .ri-pat .pl {
   font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  line-height: 1;
   color: var(--gold);
 }
 .ri-vouchers {
@@ -1407,11 +1475,11 @@ body.cb-safe .tile.hint {
   gap: 8px;
 }
 .ri-voucher {
-  background: #16242c;
-  border: 1px solid #3a5060;
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 12px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  font-size: var(--fs-md);
   font-weight: 700;
 }
 
@@ -1425,5 +1493,80 @@ body.cb-safe .tile.hint {
   .tt-card,
   .toggle .knob {
     transition: none;
+  }
+}
+
+/* ---------- shared screen transition (playtest-05 B) ----------
+   Animal-Crossing feel; replaces the E-1 curtain wipe. Overlay wipe: the outgoing
+   screen stays fixed while the incoming screen slides in from the RIGHT moving
+   LEFT (one unified direction, strict X-axis linear translation — no diagonal)
+   over it. The panel edge is hard and pixel-crisp (no gradient/alpha fade); a
+   narrow, near-zero-blur dark shadow sits just off that leading edge so the
+   Z-depth step between panels reads. Curve is Ease-Out Back: decelerates hard
+   approaching the target, overshoots slightly, then settles back. Motion is a
+   GPU-composited transform — never per-frame React re-renders.
+   Reduced motion → a plain crossfade. */
+.screen-stack {
+  position: relative;
+}
+/* Mask the incoming panel while it sits off-screen. `clip` rather than `hidden` so
+   no scroll container is created, and only while transitioning so anything that
+   legitimately overflows (tooltips) is never clipped at rest. */
+.screen-stack.transitioning {
+  overflow-x: clip;
+}
+/* Deliberately NOT `.screen` — that token is the generic centered-screen layout
+   above; a transition pane is a full-bleed wrapper around whatever it holds. */
+.screen-pane {
+  background: var(--bg-desk);
+}
+/* Outgoing: frozen in place, beneath the incoming panel, and inert. */
+.screen-pane.screen-out {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.screen-pane.screen-in {
+  position: relative;
+}
+/* Hierarchical stacking: the incoming screen renders over the outgoing one. Scoped
+   to the transition so no permanent stacking context is created at rest (which
+   would re-parent the board's fixed overlays). */
+.screen-stack.transitioning .screen-pane.screen-in {
+  z-index: 2;
+}
+/* `backwards`, NOT `forwards`: the transform must not persist after the slide, or
+   the panel remains a containing block for its position:fixed descendants. */
+/* 0.75s, not 0.46s: the Animal-Crossing feel is a slow, weighty push — at 0.46s
+   the overshoot-settle went by too fast to read (playtest-06 item 2). If this
+   changes, keep MAX_TRANSITION_MS in ScreenTransition.tsx above it. */
+.screen-pane.screen-in.screen-anim {
+  animation: screenSlideIn 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  will-change: transform;
+  box-shadow: -8px 0 6px -3px rgba(0, 0, 0, 0.38);
+}
+@keyframes screenSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen-pane.screen-in.screen-anim {
+    animation: screenFadeIn 0.22s ease backwards;
+    will-change: opacity;
+    box-shadow: none;
+  }
+}
+@keyframes screenFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

@@ -35,8 +35,11 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
   const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
   return (
     <div className="shelf">
-      <div className="shelf-group jokers-group">
-        <div className="jokers">
+      {/* The count sits OUTSIDE the group box, directly beneath it, so the box's
+          height is the joker tile's alone (playtest-06 #1–2). */}
+      <div className="shelf-col jokers-col">
+        <div className="shelf-group jokers-group">
+          <div className="jokers">
           {run.jokers.map((owned, i) => {
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
@@ -81,13 +84,15 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
           {Array.from({ length: Math.max(0, BALANCE.jokerSlots - run.jokers.length) }, (_, i) => (
             <div key={`empty-${i}`} className="joker empty" aria-hidden />
           ))}
+          </div>
         </div>
         <div className="shelf-count left">
           {run.jokers.length}/{BALANCE.jokerSlots}
         </div>
       </div>
-      <div className="shelf-group consumables-group">
-        <div className="consumables">
+      <div className="shelf-col consumables-col">
+        <div className="shelf-group consumables-group">
+          <div className="consumables">
         {run.consumables.map((c, i) => (
           <div key={i} className="consumable-slot">
             <Tooltip title={t(`consumable.${c}`)} body={t(consumableDescKey(c))} down>
@@ -102,7 +107,12 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     setMenuIdx(menuIdx === i ? null : i);
-                  } else if (e.key === 'Escape') setMenuIdx(null);
+                  } else if (e.key === 'Escape') {
+                    // Stop here — otherwise RunView's window-level ESC handler
+                    // also fires and opens the pause menu behind this one.
+                    e.stopPropagation();
+                    setMenuIdx(null);
+                  }
                 }}
               >
                 <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
@@ -110,9 +120,24 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
               </div>
             </Tooltip>
             {menuIdx === i && (
-              <div className="consumable-menu" role="menu">
+              // `bare` = no wrapping box; the buttons carry the meaning by colour
+              // (use = pack-open green, sell = discard red) — playtest-06 item 3.
+              <div className="consumable-menu bare" role="menu">
+                {/* Sell sits above Use — reordered here rather than with CSS
+                    `order` so keyboard/AT order follows the visual order. */}
+                <button
+                  className="sell"
+                  role="menuitem"
+                  onClick={() => {
+                    onSellConsumable?.(i);
+                    setMenuIdx(null);
+                  }}
+                >
+                  {t('consumable.sellAction', { value: sellValue(BALANCE.consumablePrice) })}
+                </button>
                 {onUseConsumable && (
                   <button
+                    className="use"
                     role="menuitem"
                     onClick={() => {
                       onUseConsumable(c);
@@ -122,15 +147,6 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                     {t('consumable.useAction')}
                   </button>
                 )}
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    onSellConsumable?.(i);
-                    setMenuIdx(null);
-                  }}
-                >
-                  {t('consumable.sellAction', { value: sellValue(BALANCE.consumablePrice) })}
-                </button>
               </div>
             )}
           </div>
@@ -138,6 +154,7 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
         {Array.from({ length: Math.max(0, run.consumableSlots - run.consumables.length) }, (_, i) => (
           <div key={`empty-${i}`} className="consumable empty" aria-hidden />
         ))}
+          </div>
         </div>
         <div className="shelf-count right">
           {run.consumables.length}/{run.consumableSlots}

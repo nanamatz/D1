@@ -15,6 +15,115 @@
   --suit-slang: #f09437;
   --suit-vulgar: #c6479e;
   --shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+  /* Board metrics — shared so anything that must line up with the rail (e.g. the
+     pouch modal centring on the stage) derives from one number. */
+  --rail-w: 400px;
+  --rail-gap: 16px;
+  /* 1440, not 1400: the consumable row has to space its cards far enough apart
+     that the Use/Sell menu clears the next card (see --consumable-gap), and three
+     slots at that spacing did not fit beside the 500px joker shelf. */
+  --board-max: 1440px;
+  /* The board's design height — the sidebar column is the tallest thing on it
+     (~745px) plus --board-pad top and bottom. --fit-scale keeps the board inside
+     the viewport vertically as well as horizontally, so it never scrolls. */
+  --board-h: 790px;
+  --board-pad: 16px;
+  /* The Use/Sell menu opens --menu-offset to the right of a consumable card.
+     --menu-reserve is the room kept clear for it: an upper bound on the natural
+     button width (its widest label, "Sell $N" ≈ 73px, plus slack for longer
+     values and other locales) — it does NOT size the buttons, which stay as wide
+     as their own text. The card gap derives from it so the menu opens into the
+     gap instead of covering the next card (playtest-06). */
+  --menu-offset: 8px;
+  --menu-reserve: 84px;
+  --consumable-gap: calc(var(--menu-reserve) + var(--menu-offset));
+  /* The line the board docks to: the pouch widget sits this far off the viewport
+     bottom, and the stage's Discard row is pulled down to meet it exactly
+     (playtest-06). Both derive from this, so they can't drift apart. */
+  --dock-bottom: 18px;
+  /* Recessed surface: every inset cell (sidebar cells, shelf groups, the badge's
+     stats panel) uses these instead of its own ad-hoc hex (playtest-06 #10). */
+  --inset: #16242c;
+  --inset-edge: #3a5060;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+
+  /* ---- Type scale (playtest-06 #10) ----
+     Every font-size comes from here; the CSS had 29 ad-hoc values across 138
+     declarations, many of them 1px apart and meaninglessly different.
+     UI text — Baloo 2 / Noto Sans KR / Jost. */
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  /* Display — Jersey 10 numerals, tile letters, emoji art. */
+  --ds-xs: 26px;
+  --ds-sm: 30px;
+  --ds-md: 34px;
+  --ds-lg: 38px;
+  --ds-xl: 42px;
+  --ds-2xl: 52px;
+  --ds-3xl: 64px;
+  --ds-4xl: 92px;
+
+  /* ---- Controls (playtest-06 #10) ----
+     Two button families. LOUD = filled + shadow + press (the .btn set); QUIET =
+     inset surface + dim ink + hairline edge (nav/tab/pill/arrow/lang). The quiet
+     recipe was copy-pasted in five places before this. */
+  /* ---- Numeric readouts (playtest-06) ----
+     Target, reward, the chip/mult boxes, the phase/discard/chapter/round
+     counters, gold and the round score are all the same kind of thing: a number
+     you read off the rail. They were five different sizes (52/42/38/30/26); one
+     family and one size makes the rail read as a single instrument panel. Sized
+     from the gold cell, the loudest of them. */
+  --readout-font: 'Jersey 10';
+  --readout-size: var(--ds-2xl);
+
+  --ctl-font: 'Baloo 2', 'Noto Sans KR';
+  --ctl-press: translateY(3px);
+  --ctl-shadow-press: 0 2px 0 rgba(0, 0, 0, 0.35);
+  --focus-ring: 2px solid var(--gold);
+}
+
+/* Item 9: the board is laid out at a fixed design size (--board-max wide, ~790px
+   tall) and scaled to fit — it is a single-screen board, so it must never scroll.
+   Stepped via media queries because `zoom` needs a unitless number and CSS cannot
+   derive one from vw/vh (calc(100vw / 1440) is a length, not a ratio). Composes
+   with the user's UI-scale setting rather than replacing it.
+
+   BOTH axes matter. Width alone is not enough: the board is ~1.8:1 while a 16:9
+   screen minus browser chrome is more like 16:10.5, so HEIGHT is usually what
+   binds — a 1366×768 laptop has the width for 0.92 but only ~625px of viewport
+   for a 777px board, which is exactly what put a scrollbar on it.
+   Height rules come last so the shorter constraint wins on the common wide-and-
+   short laptop; the `and (max-width)` pairs cover windows that are narrow AND
+   short, where width would otherwise be the tighter of the two. */
+:root {
+  /* Fallback for engines without CSS trig (below): no scaling. */
+  --fit-scale: 1;
+
+  /* `zoom` needs a unitless ratio and CSS has no direct length→number cast:
+     calc(100vw / 1440px) is invalid. tan(atan2(y, x)) returns y/x as a plain
+     number, which is the standard way to get one. Baseline in Chrome 111+,
+     Safari 15.4+, Firefox 108+; where it is missing the declaration below is
+     unusable, `zoom` falls back to normal and the board renders unscaled — the
+     behaviour before any of this existed.
+     min() of BOTH axes, so whichever is tighter wins: a stepped ladder cannot
+     guarantee this (a 1152×540 window needs 0.68 for height but 0.80 for width,
+     and no fixed step lands on both). */
+  --vw-n: tan(atan2(100vw, 1px));
+  --vh-n: tan(atan2(100vh, 1px));
+  --board-w-n: tan(atan2(var(--board-max), 1px));
+  --board-h-n: tan(atan2(var(--board-h), 1px));
+  --fit-scale: min(
+    1,
+    calc(var(--vw-n) / var(--board-w-n)),
+    calc(var(--vh-n) / var(--board-h-n))
+  );
 }
 
 * {
@@ -22,10 +131,88 @@
   margin: 0;
   padding: 0;
 }
+
+/* ---------- controls (playtest-06 #10) ----------
+   Two families, one recipe each — loaded first so per-component rules only need
+   to say what is genuinely different (size, radius, colour variant).
+
+   LOUD (.btn …) — filled, shadowed, presses down. Variants set colour only.
+   QUIET (.sidenav-btn / .tab / .car-arrow / .filter-pill / .langbtn) — inset
+   surface, dim ink, hairline edge. This recipe was copy-pasted verbatim across
+   all five before this. */
+.btn,
+.sidenav-btn,
+.tab,
+.car-arrow,
+.filter-pill,
+.langbtn,
+.consumable-menu button {
+  font-family: var(--ctl-font);
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Every control focuses the same way; before, only two of them did at all. */
+.btn:focus-visible,
+.sidenav-btn:focus-visible,
+.tab:focus-visible,
+.car-arrow:focus-visible,
+.filter-pill:focus-visible,
+.langbtn:focus-visible,
+.consumable-menu button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.sidenav-btn,
+.tab,
+.car-arrow,
+.filter-pill,
+.langbtn {
+  color: var(--ink-dim);
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  transition: color 0.12s, background 0.12s;
+}
+.sidenav-btn:hover,
+.tab:hover,
+.car-arrow:hover,
+.filter-pill:hover,
+.langbtn:hover {
+  color: var(--ink);
+}
+/* One press feel for every control, loud or quiet. */
+.btn:active,
+.sidenav-btn:active,
+.tab:active,
+.car-arrow:active,
+.filter-pill:active,
+.langbtn:active,
+.consumable-menu button:active {
+  transform: var(--ctl-press);
+  box-shadow: var(--ctl-shadow-press);
+}
+.btn:disabled,
+.tab:disabled,
+.car-arrow:disabled,
+.sidenav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
 html,
 body,
 #root {
   height: 100%;
+}
+/* Transient transforms — the hand's FLIP tile animations, the +N score pops, the
+   screen transition's off-screen pane — briefly extend past the right edge. With
+   no clip they spawn a horizontal scrollbar that appears and vanishes again; the
+   viewport height changes with it, so the whole screen jolts like a page refresh
+   (playtest-06 #4: "단어를 선택하면 하단에 가로 슬라이드바가 등장했다 사라진다").
+   `clip`, not `hidden`: it creates no scroll container, so vertical scrolling and
+   position:fixed overlays are untouched. */
+html,
+body {
+  overflow-x: clip;
 }
 body {
   font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;

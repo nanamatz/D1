@@ -12,6 +12,7 @@ import {
   useContext,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -50,24 +51,54 @@ const IDLE: SettleView = {
 const SettleCtx = createContext<SettleView>(IDLE);
 export const useSettleView = (): SettleView => useContext(SettleCtx);
 
-const BASE_STEP = 150; // ms per beat at 1× speed
+// ms per beat at 1× speed. Matches `.tile-pop.live`'s popRise (0.45s) so each
+// tile's pop *finishes* before the next beat fires — at 150ms the pops overlapped
+// three-deep and the whole tally read as one blur (playtest-06 item 1). Players
+// need to see each contribution land one at a time; game speed (1/2/4×) scales it.
+const BASE_STEP = 450;
+const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
+const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
+
+/**
+ * Total time (ms) the settle timeline runs for `events` at `speed`× — the single
+ * source of truth for "settle complete". The round-clear / game-over UI is gated
+ * on this signal, never on the raw final score (playtest-05 A; recurrence of 04
+ * A-1). It scales with the number of scoring beats and with speed, so a long word
+ * with many jokers is *seen* landing before the verdict fires.
+ */
+export function settleDurationMs(
+  events: readonly ScoreEvent[],
+  speed: number,
+  reduce: boolean,
+): number {
+  if (reduce) return REDUCED_HOLD;
+  const beats = events.filter((e) => e.kind !== 'settle').length;
+  if (beats === 0) return 0;
+  return (beats * BASE_STEP + FINAL_HOLD) / speed;
+}
 
 /**
  * Drive the settle timeline for `events` (retriggered by `settleId`) at
- * `speed`× and publish it to descendants.
+ * `speed`× and publish it to descendants. `onComplete` fires once when the
+ * timeline lands (the completion signal that gates the round-clear UI).
  */
 export function SettleProvider({
   events,
   settleId,
   speed,
+  onComplete,
   children,
 }: {
   events: readonly ScoreEvent[];
   settleId: number;
   speed: number;
+  onComplete?: () => void;
   children: ReactNode;
 }) {
   const [view, setView] = useState<SettleView>(IDLE);
+  // Latest onComplete, read from the timeline effect without retriggering it.
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   // Precompute the ordered beats (skip the final 'settle' bookkeeping frame).
   const beats = useMemo(() => events.filter((e) => e.kind !== 'settle'), [events]);
@@ -95,7 +126,10 @@ export function SettleProvider({
         }
       }
       setView({ ...IDLE, active: true, chips, mult, tilePops: pops });
-      const off = setTimeout(() => setView(IDLE), 700);
+      const off = setTimeout(() => {
+        setView(IDLE);
+        onCompleteRef.current?.();
+      }, settleDurationMs(events, speed, true));
       return () => clearTimeout(off);
     }
 
@@ -152,8 +186,14 @@ export function SettleProvider({
       );
     });
 
-    // Hold the final tally briefly, then reset to idle 0×0 (B step 1).
-    timers.push(setTimeout(() => setView(IDLE), beats.length * step + 650 / speed));
+    // Hold the final tally briefly, then reset to idle 0×0 (B step 1) and signal
+    // completion — the round-clear UI is gated on this, not the raw score (05 A).
+    timers.push(
+      setTimeout(() => {
+        setView(IDLE);
+        onCompleteRef.current?.();
+      }, settleDurationMs(events, speed, false)),
+    );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settleId, speed]);

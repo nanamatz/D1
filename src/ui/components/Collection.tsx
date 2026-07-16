@@ -123,14 +123,31 @@ export function Collection({ lexicon, onBack }: Props) {
 function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const { t } = useI18n();
   const [suit, setSuit] = useState<Suit | 'all'>('all');
+  const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
 
+  // Item 1: list the WHOLE dictionary, not just what's been played — words never
+  // played render `locked` (dimmed) so the collection reads as something to fill in.
+  // Built once per lexicon (~30k entries): plain `<` beats localeCompare at this
+  // size, and the collection is read once rather than per word.
+  const all = useMemo(() => {
+    const collected = loadCollection();
+    return [...lexicon.words()]
+      .sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))
+      .map((w) => ({
+        w,
+        suit: lexicon.lookup(w)?.suit ?? 'standard',
+        found: collected[w] !== undefined,
+      }));
+  }, [lexicon]);
+
+  // Search + suit filter. With the whole dictionary listed, search is the only
+  // practical way to reach a specific word (~500 pages otherwise).
   const words = useMemo(() => {
-    const all = Object.keys(loadCollection()).sort((a, b) => a.length - b.length || a.localeCompare(b));
-    return all
-      .map((w) => ({ w, suit: lexicon.lookup(w)?.suit ?? 'standard' }))
-      .filter((e) => suit === 'all' || e.suit === suit);
-  }, [lexicon, suit]);
+    const q = query.trim().toLowerCase();
+    if (!q && suit === 'all') return all;
+    return all.filter((e) => (suit === 'all' || e.suit === suit) && (!q || e.w.includes(q)));
+  }, [all, suit, query]);
 
   const pages = Math.max(1, Math.ceil(words.length / PAGE));
   const clamped = Math.min(page, pages - 1);
@@ -139,6 +156,19 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
 
   return (
     <>
+      <div className="coll-search">
+        <input
+          type="search"
+          className="coll-search-input"
+          placeholder={t('collection.search')}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(0);
+          }}
+        />
+        <span className="coll-search-count">{t('collection.found', { n: words.length })}</span>
+      </div>
       <div className="coll-filters">
         {suits.map((s) => (
           <button
@@ -154,11 +184,16 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
         ))}
       </div>
       {words.length === 0 ? (
-        <p className="coll-empty">{t('collection.noWords')}</p>
+        <p className="coll-empty">
+          {query.trim() ? t('collection.noMatch', { q: query.trim() }) : t('collection.noWords')}
+        </p>
       ) : (
         <div className="word-grid">
           {slice.map((e) => (
-            <span key={e.w} className={['word-chip', e.suit].join(' ')}>
+            <span
+              key={e.w}
+              className={['word-chip', e.suit, !e.found && 'locked'].filter(Boolean).join(' ')}
+            >
               {e.w}
             </span>
           ))}

@@ -125,16 +125,19 @@ export function BagWidget({
 
   return (
     <>
-      <div
-        className={['pouch-widget', open ? 'open' : ''].filter(Boolean).join(' ')}
-        onMouseEnter={enter}
-        onMouseLeave={leave}
-        aria-label={t('bagview.title')}
-        aria-expanded={open}
-      >
-        <span className="pouch-art" aria-hidden>
-          👝
-        </span>
+      {/* The count sits below the widget box rather than inside it — the same
+          shape as the shelves (box + N/max beneath), playtest-06. Hovering
+          either opens the modal, so the handlers live on the dock. */}
+      <div className="pouch-dock" onMouseEnter={enter} onMouseLeave={leave}>
+        <div
+          className={['pouch-widget', open ? 'open' : ''].filter(Boolean).join(' ')}
+          aria-label={t('bagview.title')}
+          aria-expanded={open}
+        >
+          <span className="pouch-art" aria-hidden>
+            👝
+          </span>
+        </div>
         <span className="pouch-count">
           {remaining}/{total}
         </span>

@@ -2,11 +2,13 @@
 
 .frame {
   display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 16px;
-  max-width: 1200px;
+  /* Wider rail (playtest-06): 250px → --rail-w (400px); contents scale to match.
+     The board widened with it so the shelves still fit beside a 400px rail. */
+  grid-template-columns: var(--rail-w) 1fr;
+  gap: var(--rail-gap);
+  max-width: var(--board-max);
   margin: 0 auto;
-  padding: 16px;
+  padding: var(--board-pad);
   min-height: 100vh;
   position: relative;
 }
@@ -39,12 +41,12 @@
 }
 .shop-head .kind {
   font-weight: 700;
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   letter-spacing: 0.08em;
 }
 .shop-head .money {
   font-family: 'Jersey 10';
-  font-size: 30px;
+  font-size: var(--ds-sm);
   color: var(--gold);
   margin-left: auto;
 }
@@ -74,16 +76,16 @@
   border: 2px solid var(--mult);
 }
 .shopitem .e {
-  font-size: 32px;
+  font-size: var(--ds-sm);
 }
 .shopitem .n {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   text-align: center;
 }
 .shopitem .price {
   font-family: 'Jersey 10';
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   color: var(--gold);
 }
 .shopitem.empty {
@@ -92,7 +94,7 @@
   justify-content: center;
 }
 .btn.sm {
-  font-size: 13px;
+  font-size: var(--fs-md);
   padding: 6px 14px;
 }
 .reroll {
@@ -108,7 +110,7 @@
   padding: 14px;
 }
 .label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -116,10 +118,34 @@
 }
 
 /* ---------- sidebar ---------- */
+/* Numeric readouts (playtest-06). Target, reward, the chip/mult boxes, the
+   phase/discard/chapter/round counters, gold and the round score are all the
+   same thing — a number you read off the rail — but were five different sizes
+   (52/42/38/30/26). One family, one size, sized from the gold cell. Each keeps
+   only its own colour/spacing below.
+   `.shop-head .money` deliberately stays out: it is the shop header, not the
+   rail, and its own rule out-specifies this one. */
+.blind-badge .target,
+.bs-reward .reward,
+.scorebox .box,
+.cnum,
+.money,
+.round-num {
+  font-family: var(--readout-font);
+  font-size: var(--readout-size);
+  line-height: 1;
+}
+/* The rail reads as one surface rather than panels floating on the desk
+   (playtest-06); widened via .frame's grid column, with the contents scaled to
+   match. */
 .sidebar {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: rgba(9, 20, 17, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 12px;
 }
 .langbar {
   display: flex;
@@ -127,71 +153,151 @@
   margin-bottom: -4px;
 }
 .langbtn {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--ink-dim);
-  background: #16242c;
-  border: 1px solid #3a5060;
-  border-radius: 8px;
+  font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
   padding: 3px 10px;
-  cursor: pointer;
 }
-.langbtn:hover {
-  color: var(--ink);
-}
-.langbtn:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
-}
+/* Blind badge (playtest-06): a horizontally centered row — kind emblem left,
+   target/reward stats panel right. */
 .blind-badge {
   background: #2c4358;
   border-radius: 12px;
-  padding: 10px 12px;
-  text-align: center;
+  padding: 10px;
   box-shadow: var(--shadow);
 }
-.blind-badge .kind {
+.bb-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+/* Placeholder kind token — CSS-drawn, no asset yet. We borrow Balatro's screen
+   grammar, never its art (UI_DESIGN thesis); the art pass replaces this. */
+.bb-emblem {
+  flex: none;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22), var(--shadow);
+  background: radial-gradient(circle at 35% 28%, #7fb4dd, #3d6f9c 72%);
+}
+.blind-badge.big .bb-emblem {
+  background: radial-gradient(circle at 35% 28%, #f3cd7a, #b07f22 72%);
+}
+.blind-badge.boss .bb-emblem {
+  background: radial-gradient(circle at 35% 28%, #f0827d, #96302d 72%);
+}
+.bb-emoji {
+  font-size: var(--fs-2xl);
+  line-height: 1;
+}
+.bb-kind {
   font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.12em;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+/* Stats panel — darker than the badge so it reads as inset. */
+.bb-stats {
+  flex: 1;
+  min-width: 0;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.bs-target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.bs-target-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+/* Placeholder chip token — CSS-drawn, no asset yet. */
+.chip-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #ffffff 0 40%, transparent 41%),
+    repeating-conic-gradient(#ffffff 0 12deg, #cfdce4 12deg 24deg);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.bs-reward {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.blind-badge .target {
+  color: var(--mult);
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+}
+/* Heads the 52px target/reward readouts, so it carries the rail's largest label
+   size — at 13px it was a third the height of its own number and read as a
+   caption rather than a heading (cf. the reference mock). */
+.blind-badge .tlabel {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--ink);
+}
+.bb-boss {
+  margin-top: 8px;
+  text-align: center;
 }
 .blind-badge .boss {
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--mult);
   font-weight: 700;
 }
 .blind-badge .bosseff {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
-  line-height: 1.2;
-  margin: 2px 0 4px;
-}
-.blind-badge .target {
-  font-family: 'Jersey 10';
-  font-size: 44px;
-  line-height: 1;
-  color: var(--mult);
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
-}
-.blind-badge .tlabel {
-  font-size: 11px;
-  color: var(--ink-dim);
+  line-height: 1.25;
+  margin-top: 2px;
 }
 
+/* The row spans the panel so the boxes can fill it (the panel centres its
+   children, which would otherwise shrink this to its contents). */
 .scorebox {
   display: flex;
   align-items: center;
   gap: 8px;
   justify-content: center;
   margin-top: 6px;
+  width: 100%;
 }
+/* The two boxes fill the score panel's width inside its 12px inset (playtest-06)
+   — they used to hug their digits. `flex: 1` splits the row evenly between them
+   whatever the numbers are; `min-width: 0` lets them shrink rather than push the
+   row wider than the panel. Height stays the 1.5× 72px. */
 .scorebox .box {
-  border-radius: 10px;
-  padding: 2px 12px;
-  font-family: 'Jersey 10';
-  font-size: 34px;
-  line-height: 1.15;
+  flex: 1;
+  min-width: 0;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  padding: 2px 8px;
   box-shadow: var(--shadow);
 }
 .scorebox.settling {
@@ -214,12 +320,12 @@
 }
 .scorebox .x {
   font-family: 'Jersey 10';
-  font-size: 26px;
+  font-size: var(--ds-xs);
   color: var(--ink-dim);
 }
 .committed {
   font-family: 'Jersey 10';
-  font-size: 52px;
+  font-size: var(--ds-2xl);
   text-align: center;
   line-height: 1;
   margin-top: 4px;
@@ -230,7 +336,7 @@
 }
 .projected .num {
   font-family: 'Jersey 10';
-  font-size: 34px;
+  font-size: var(--ds-md);
   color: var(--gold);
   line-height: 1;
 }
@@ -239,7 +345,7 @@
 }
 .projected .beat {
   display: inline-block;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #173226;
   background: var(--gold);
   border-radius: 8px;
@@ -248,7 +354,7 @@
   margin-top: 4px;
 }
 .projected .breakdown {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
   margin-top: 4px;
 }
@@ -288,14 +394,11 @@
   margin-top: 8px;
 }
 .money {
-  font-family: 'Jersey 10';
-  font-size: 30px;
   color: var(--gold);
-  line-height: 1;
 }
 .ante {
   font-family: 'Jersey 10';
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   color: var(--ink-dim);
   line-height: 1;
 }
@@ -317,15 +420,21 @@
   display: flex;
   gap: 10px;
 }
-/* item 8: space consumables (and reserve trailing room) for the Use/Sell menu
-   that opens to their right. */
+/* The group is a fixed 500px, but five 84px tiles with 10px gaps only need 460 of
+   the 474 inner box — flex packs them to the start, stranding 14px on the right.
+   Spread them instead so the row is flush with the padding on both sides. */
+.jokers {
+  justify-content: space-between;
+}
+/* item 8: the cards are spaced by exactly the room the Use/Sell menu needs, so
+   the menu opens into the gap instead of covering the next card (playtest-06 —
+   at the old 46px it overlapped by ~35px). Derived from the menu's own width. */
 .consumables {
-  gap: 74px;
-  padding-right: 74px;
+  gap: var(--consumable-gap);
 }
 /* item 3: shelves reserve their full max-slot area via dashed empty placeholders. */
 .joker.empty {
-  border: 2px dashed #3a5060;
+  border: 2px dashed var(--inset-edge);
   background: rgba(0, 0, 0, 0.18);
   box-shadow: none;
   cursor: default;
@@ -339,9 +448,9 @@
   box-shadow: none;
 }
 .joker {
-  width: 76px;
-  height: 96px;
-  border-radius: 12px;
+  width: 84px;
+  height: 112px;
+  border-radius: var(--r-md);
   background: linear-gradient(180deg, #324454, #26343f);
   display: flex;
   flex-direction: column;
@@ -358,10 +467,10 @@
   transform: translateY(-4px) rotate(-1deg);
 }
 .joker .e {
-  font-size: 34px;
+  font-size: var(--ds-md);
 }
 .joker .n {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink-dim);
   text-align: center;
@@ -396,7 +505,7 @@
   background: var(--gold);
   color: #173226;
   font-weight: 800;
-  font-size: 13px;
+  font-size: var(--fs-md);
   border-radius: 8px;
   padding: 1px 8px;
   white-space: nowrap;
@@ -411,9 +520,9 @@
   position: relative;
 }
 .consumable {
-  width: 60px;
-  height: 82px;
-  border-radius: 10px;
+  width: 84px;
+  height: 112px;
+  border-radius: var(--r-md);
   background: #efe7d6;
   color: #2b2620;
   display: flex;
@@ -433,16 +542,16 @@
   outline: none;
 }
 .consumable .e {
-  font-size: 26px;
+  font-size: var(--ds-xs);
 }
 .consumable .g {
   font-family: 'Jost';
-  font-size: 30px;
+  font-size: var(--ds-sm);
   font-weight: 900;
   line-height: 0.8;
 }
 .consumable .n {
-  font-size: 9px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: #6b6357;
   text-align: center;
@@ -492,9 +601,9 @@
   transform: translate(-50%, 0);
   bottom: -11px;
   background: #0f1b22;
-  border: 1px solid #3a5060;
+  border: 1px solid var(--inset-edge);
   color: var(--ink-dim);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   border-radius: 8px;
   padding: 0 8px;
@@ -504,7 +613,7 @@
   position: absolute;
   top: -10px;
   left: 8px;
-  font-size: 9px;
+  font-size: var(--fs-2xs);
   font-weight: 800;
   letter-spacing: 0.06em;
   background: var(--suit-standard);
@@ -538,7 +647,7 @@
   background: var(--chips);
   color: #fff;
   font-weight: 800;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   border-radius: 6px;
   padding: 0 5px;
   white-space: nowrap;
@@ -562,7 +671,7 @@
   background: var(--gold);
   color: #173226;
   font-weight: 800;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-radius: 8px;
@@ -606,7 +715,7 @@
   background: #0f1b22;
   border: 1px solid #6b4a44;
   color: #d8a99f;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   border-radius: 8px;
   padding: 0 8px;
@@ -615,7 +724,7 @@
 .pattern-chip {
   margin-left: auto;
   background: #0f1b22;
-  border: 2px dashed #3a5060;
+  border: 2px dashed var(--inset-edge);
   border-radius: 12px;
   padding: 10px 14px;
   text-align: center;
@@ -626,10 +735,10 @@
 }
 .pattern-chip .p {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .pattern-chip .s {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
 }
 
@@ -647,7 +756,7 @@
   justify-content: center;
   font-family: 'Jost';
   font-weight: 500;
-  font-size: 34px;
+  font-size: var(--ds-md);
   color: var(--ink-tier, var(--tile-ink));
   transition: transform 0.15s;
 }
@@ -673,9 +782,9 @@
   position: absolute;
   right: 6px;
   bottom: 3px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
-  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-family: var(--ctl-font);
 }
 .tile:hover {
   transform: translateY(-4px) rotate(0deg) !important;
@@ -689,13 +798,13 @@
 .tile.mini {
   width: 36px;
   height: 36px;
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   border-radius: 7px;
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.8);
   cursor: default;
 }
 .tile.mini .val {
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   right: 3px;
   bottom: 1px;
 }
@@ -739,18 +848,24 @@
 }
 
 /* ---------- staged + hand ---------- */
+/* The stage sits at the very bottom of the board (playtest-06): `margin-top:
+   auto` pushes it down the main column, and the bottom padding is sized so the
+   Discard row lands exactly on the pouch widget's line — board padding +
+   this = --dock-bottom, the same offset the pouch is fixed at. */
 .stage {
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
-  padding: 16px;
+  margin-top: auto;
+  padding: var(--board-pad) var(--board-pad)
+    calc(var(--dock-bottom) - var(--board-pad));
 }
 .preview {
   background: #0f1b22;
   border-radius: 10px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   display: flex;
   gap: 12px;
   align-items: center;
@@ -777,13 +892,13 @@
   border-radius: 6px;
   padding: 1px 8px;
   font-weight: 800;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   letter-spacing: 0.02em;
 }
 /* A-3: non-standard suit is celebrated in the staged preview (louder than Standard). */
 .suit-badge {
   color: var(--ink-dim);
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .suit-badge.loud {
   color: #15242c;
@@ -831,12 +946,12 @@
   margin-right: 2px;
 }
 .sortbtn {
-  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-family: var(--ctl-font);
   font-weight: 700;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--ink-dim);
-  background: #16242c;
-  border: 1px solid #3a5060;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
   border-radius: 8px;
   padding: 4px 10px;
   cursor: pointer;
@@ -860,6 +975,22 @@
   justify-content: center;
   padding: 6px 0 2px;
   flex-wrap: wrap;
+  /* Round-start flourish (playtest-06): the hand slides in from the right half a
+     second after the board appears. This slide used to fire by ACCIDENT on the
+     first tile selection of a round — the FLIP cache was captured while the
+     screen transition still had the board mid-transform (see useFlip) — so it is
+     now deliberate: once per round, on mount (the board remounts each blind). */
+  animation: handIntro 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.5s backwards;
+}
+@keyframes handIntro {
+  from {
+    transform: translateX(46px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
 }
 .hand .tile:nth-child(odd) {
   animation: wob 3.4s ease-in-out infinite;
@@ -905,24 +1036,13 @@
   justify-content: center;
 }
 .btn {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-weight: 700;
-  font-size: 16px;
+  font-size: var(--fs-lg);
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 12px 26px;
-  cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.08s, box-shadow 0.08s;
-}
-.btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
-}
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 .btn.play {
   background: var(--mult);
@@ -985,7 +1105,7 @@
   animation: none;
 }
 .discard-hint {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
   text-align: center;
   margin-top: -2px;
@@ -993,7 +1113,7 @@
 .zone-hint {
   color: var(--ink-dim);
   font-style: italic;
-  font-size: 13px;
+  font-size: var(--fs-md);
   align-self: center;
 }
 
@@ -1015,7 +1135,7 @@
 .consumable-menu {
   position: absolute;
   top: 0;
-  left: calc(100% + 8px);
+  left: calc(100% + var(--menu-offset));
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1027,12 +1147,10 @@
   z-index: 20;
 }
 .consumable-menu button {
-  font-family: 'Baloo 2', 'Noto Sans KR';
-  font-weight: 700;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--ink);
   background: #22333d;
-  border: 1px solid #3a5060;
+  border: 1px solid var(--inset-edge);
   border-radius: 8px;
   padding: 5px 14px;
   cursor: pointer;
@@ -1040,6 +1158,35 @@
 }
 .consumable-menu button:hover {
   background: #2c4358;
+}
+.consumable-menu.bare {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  /* Roomier than the boxed menu's 4px — with no box to group them, the two
+     buttons need the space to read as separate actions. */
+  gap: 12px;
+}
+.consumable-menu.bare button {
+  border: none;
+  box-shadow: var(--shadow);
+}
+/* Colours swapped: Use is now the red, Sell the green. Heights are set from the
+   ~26px natural button (padding + line + border): Sell 2×, Use 1.5×. */
+.consumable-menu.bare button.use {
+  height: 40px;
+  background: var(--mult);
+}
+.consumable-menu.bare button.use:hover {
+  filter: brightness(1.12);
+}
+.consumable-menu.bare button.sell {
+  height: 50px;
+  background: #4a9d5b;
+}
+.consumable-menu.bare button.sell:hover {
+  background: #57b268;
 }
 
 /* ===== playtest-03 E: unified board, shelves, sidebar, action cluster ===== */
@@ -1052,21 +1199,55 @@
 }
 
 /* E-5: shelves get a dark, high-transparency background · E-6: N/max counts */
-.shelf-group {
-  background: rgba(10, 18, 23, 0.5);
-  border-radius: 14px;
-  padding: 10px 12px 4px;
+/* The N/max count lives OUTSIDE the box now, directly beneath it (playtest-06
+   #2), so the box wraps the tiles alone. */
+.shelf-col {
   display: flex;
   flex-direction: column;
+}
+.jokers-col {
+  flex: none;
+}
+/* Height is the joker tile plus padding (#1) — derived, not a hand-set number, so
+   it stays correct if the tile resizes. Both boxes match because both tile types
+   are the same height. */
+.shelf-group {
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.jokers-group {
+  width: 500px;
+  flex: none;
 }
 .consumables-group {
   align-items: flex-end;
 }
-.shelf-count {
-  font-size: 11px;
+/* The counts sit outside the group boxes now, so they state their own alignment
+   rather than inheriting it from the group's align-items (which no longer wraps
+   them — the right-hand count was silently falling back to left). */
+/* The shelf counts and the pouch widget's count are the same readout — one font,
+   one size (playtest-06). Both inherit the body's Baloo; the pouch one used to be
+   Jersey 10 in gold, which made two spellings of the same thing. Sized one step
+   up (11 → 15px) now they carry the count on their own. */
+.shelf-count,
+.pouch-count {
+  font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--ink-dim);
+}
+.shelf-count {
   margin-top: 4px;
+  padding: 0 2px;
+}
+.shelf-count.left {
+  text-align: left;
+}
+.shelf-count.right {
+  text-align: right;
 }
 
 /* item 4: Balatro layout — Play (left) · Sort panel (center) · Discard (right) */
@@ -1084,7 +1265,7 @@
   box-shadow: var(--shadow);
 }
 .sort-title {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--ink-dim);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1105,10 +1286,17 @@
   min-width: 152px; /* D-4: language switch never resizes them */
 }
 
-/* E-9: sidebar per the reference layout */
+/* E-9: sidebar per the reference layout. The rectangular kind pill heads the
+   badge, above the emblem+stats row. (The old `.badge-stats` row it used to sit
+   with was replaced by `.bb-row` — playtest-06.) */
 .blind-badge .kind {
   border-radius: 8px;
   padding: 6px 0;
+  margin-bottom: 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  letter-spacing: 0.12em;
   color: #fff;
   background: linear-gradient(180deg, #3a5a86, #2c4358);
 }
@@ -1122,28 +1310,7 @@
 .blind-badge.boss .kind {
   background: linear-gradient(180deg, #d64d4a, #a02c2c);
 }
-.badge-stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
-.bs-target,
-.bs-reward {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.bs-reward {
-  align-items: flex-end;
-}
-.blind-badge .target {
-  font-size: 32px;
-}
 .bs-reward .reward {
-  font-family: 'Jersey 10';
-  font-size: 24px;
   color: var(--gold);
   letter-spacing: -2px;
 }
@@ -1152,32 +1319,56 @@
 }
 .round-row {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+/* One step up from the generic .label (playtest-06); scoped so the tray and
+   shop labels that share `.label` are untouched. */
+.round-row .label {
+  font-size: var(--fs-sm);
 }
 .round-num {
-  font-family: 'Jersey 10';
-  font-size: 26px;
+  color: var(--ink);
 }
 /* A: sentence-bonus forecast — a ghost, clearly separate from the committed number. */
 .round-forecast {
   margin-top: 3px;
   text-align: right;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--gold);
   opacity: 0.8;
   font-style: italic;
 }
+/* FIXED size (playtest-06): the status line's text varies (letter-hand name /
+   "not a word" / suit) and the 0×0 box only fills during a settle, so a content-
+   sized panel made the whole rail reflow mid-play. Locked so nothing below it
+   moves; the status clips to one line rather than growing the box. */
+/* Grew with the 1.5× boxes (item 4): 28 padding + 22 status + 72 box + gap. */
+/* Horizontal padding matches the rest of the rail (.sidebar, .shelf-group and
+   .round-panel all inset 12px) rather than the 3px that let the boxes run nearly
+   edge to edge — it was the only inset in the rail that didn't line up. */
 .score-panel {
+  height: 136px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   text-align: center;
 }
 .sb-status {
+  max-width: 100%;
   min-height: 22px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   color: var(--ink-dim);
-  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .sb-status.warn {
   color: var(--gold);
@@ -1197,16 +1388,40 @@
 .sb-status.loud.vulgar {
   background: var(--suit-vulgar);
 }
+/* playtest-06 ref layout:
+     ┌────────┬─────────┬─────────┐
+     │ 런 정보 │  phases │ discard │
+     │        ├─────────┴─────────┤
+     │        │       gold        │   ← spans both
+     │ 옵션    ├─────────┬─────────┤
+     │        │ chapter │  round  │
+     └────────┴─────────┴─────────┘
+   The two nav buttons fill the whole left side; everything else auto-places. */
+/* Items 3–4 (playtest-06): the two nav buttons are twice their old size (~70×79
+   → --nav-w × half of --nav-h). The three rows stretch to that column's height,
+   so the counter cells scale from the buttons rather than being sized twice. */
 .sb-controls {
+  --nav-w: 140px;
+  --nav-h: 332px;
   display: grid;
-  grid-template-columns: auto 1fr 1fr;
+  grid-template-columns: var(--nav-w) 1fr 1fr;
+  grid-template-rows: repeat(3, 1fr);
   gap: 8px;
+  height: var(--nav-h);
 }
 .sb-btns {
-  grid-row: span 2;
+  grid-column: 1;
+  grid-row: 1 / span 3;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.sb-btns .sidenav-btn {
+  flex: 1;
+  font-size: var(--fs-2xl);
+}
+.money-cell {
+  grid-column: 2 / span 2;
 }
 .sidenav-btn.info {
   background: #3a5a86;
@@ -1219,23 +1434,21 @@
   border: none;
 }
 .sb-cell {
-  background: #16242c;
-  border: 1px solid #3a5060;
-  border-radius: 8px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 4px;
-  min-width: 62px; /* D-4 */
+  min-width: 72px; /* D-4 */
 }
 .sb-cell .label {
-  font-size: 10px;
+  font-size: var(--fs-lg);
 }
 .cnum {
-  font-family: 'Jersey 10';
-  font-size: 24px;
-  line-height: 1;
+  color: var(--ink);
 }
 .cnum.red {
   color: var(--mult);
@@ -1243,13 +1456,13 @@
 .cnum.blue {
   color: var(--chips);
 }
-.money-cell .money {
-  font-size: 24px;
-}
-.sb-cell .ante {
-  font-family: 'Jersey 10';
-  font-size: 18px;
+.cnum.gold {
   color: var(--gold);
+}
+/* "1/8" — the chapter reads as one big number with a small denominator. */
+.cnum .of {
+  font-size: 0.55em;
+  color: var(--ink-dim);
 }
 
 /* B: verdict beat — the sentence-finalize / clear moment, shown after the word
@@ -1269,14 +1482,14 @@
 }
 .verdict-score {
   font-family: 'Jersey 10';
-  font-size: 64px;
+  font-size: var(--ds-3xl);
   color: var(--gold);
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
 }
 .verdict-cleared {
-  font-family: 'Baloo 2', 'Noto Sans KR';
+  font-family: var(--ctl-font);
   font-weight: 700;
-  font-size: 26px;
+  font-size: var(--ds-xs);
   color: #15242c;
   background: var(--gold);
   border-radius: 12px;
@@ -1294,50 +1507,32 @@
   }
 }
 
-/* E-1: shared screen-transition WIPE. A panel covers the screen on mount, then
-   sweeps off to reveal the content. Applied to route + phase containers (menu↔run,
-   blind→blind, →shop, →settlement). Reduced motion → a fade instead. */
-.wipe-in::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: var(--bg-desk);
-  z-index: 90;
-  pointer-events: none;
-  animation: wipeReveal 0.42s cubic-bezier(0.7, 0, 0.3, 1) forwards;
-}
-@keyframes wipeReveal {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-102%);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .wipe-in::before {
-    animation: wipeFade 0.24s ease forwards;
-  }
-}
-@keyframes wipeFade {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
+/* The E-1 curtain wipe was replaced by the shared screen transition in
+   screens.css (playtest-05 B) — see `.screen-stack`. */
 
 /* in-game Options (pause) covers the board */
-.pause-screen {
-  position: fixed;
-  inset: 0;
+/* Item 1 (playtest-06): the pause/options UI is a MODAL over the still-visible
+   board, not a full-screen swap. Above the other overlays so it can be opened on
+   top of them. Options and Collection each bring their own full-screen `.screen`
+   layout (min-height 100vh, centred, capped width) — neutralise that inside the
+   card so they lay out as modal content. */
+.pause-overlay {
+  background: rgba(9, 20, 17, 0.62);
   z-index: 60;
-  background: var(--bg-desk);
-  overflow: auto;
+}
+.pause-modal {
+  max-width: 920px;
+  max-height: 86vh;
+}
+.pause-modal .screen {
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  gap: 14px;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hand,
   .hand .tile,
   .btn.cash,
   .projected.beaten .num,

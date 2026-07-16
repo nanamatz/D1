@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { judgeSentence } from '../../engine/patterns';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
@@ -17,6 +17,7 @@ import { GameOver } from './GameOver';
 import { BagWidget } from './BagView';
 import { RunInfo } from './RunInfo';
 import { Options } from './Options';
+import { ScreenTransition } from './ScreenTransition';
 
 interface Props {
   g: UseGame;
@@ -35,38 +36,76 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [paused, setPaused] = useState(false);
   const [pouchOpen, setPouchOpen] = useState(false);
 
-  if (phase === 'blindselect') return <BlindSelect g={g} />;
-  if (phase === 'shop') {
-    return (
-      <div className="frame shop-frame wipe-in">
-        {g.state.pack ? <PackOpening g={g} /> : <Shop g={g} />}
-      </div>
-    );
-  }
+  // ESC in-round: close the Run Info window if it's open, otherwise toggle the
+  // options/pause menu (playtest-06 #1, #2). Run Info takes priority so ESC peels
+  // one layer at a time rather than jumping straight to pause.
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      // Never steal ESC from a text field (e.g. the collection's search box).
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
+        return;
+      }
+      if (showInfo) setShowInfo(false);
+      else setPaused((p) => !p);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, showInfo]);
 
   // 'playing', 'gameover' and 'cashout' share the board — Game Over and Fee
   // Settlement overlay the still-visible (darkened) board, no full-screen swap
   // (A-2, A-4). The run stays frozen on the cleared blind during cash-out.
   const ending = phase === 'gameover';
   const settling = phase === 'cashout';
-  const preview = stagePreview(blind, g.lexicon, selected);
-  const judgment = judgeSentence(blind.sequence, g.lexicon);
   // Remount the board each blind (key on the blind's identity) so no score/settle
-  // remnants carry over, and the fresh mount plays the transition animation (D-3).
+  // remnants carry over (B-1).
   const boardKey = `${run.ante}-${run.blindIndex}`;
+  // B (playtest-05): one shared transition drives every in-run screen swap
+  // (blindselect → board → shop → next blind). 'cashout'/'gameover' keep the
+  // BOARD's key on purpose — they overlay the still-visible board rather than
+  // swapping screens (A-2/A-4), so no slide plays for them.
+  const screenKey =
+    phase === 'blindselect'
+      ? `blindselect-${boardKey}`
+      : phase === 'shop'
+        ? `shop-${boardKey}`
+        : `board-${boardKey}`;
 
-  return (
+  const content = () => {
+    if (phase === 'blindselect') return <BlindSelect g={g} />;
+    if (phase === 'shop') {
+      return (
+        <div className="frame shop-frame">
+          {g.state.pack ? <PackOpening g={g} /> : <Shop g={g} />}
+        </div>
+      );
+    }
+    const preview = stagePreview(blind, g.lexicon, selected);
+    const judgment = judgeSentence(blind.sequence, g.lexicon);
+    // `ending` reddens the board — that is the DEFEAT visual, so it is Game Over
+    // ONLY. Clearing a blind must never turn the board red; Fee Settlement darkens
+    // it on its own via .overlay.cashout-overlay, keeping the board visible (A-2).
+    return (
     <div
       key={boardKey}
-      className={['frame', 'wipe-in', (ending || settling) && 'ending', pouchOpen && 'pouch-open']
+      className={['frame', ending && 'ending', pouchOpen && 'pouch-open']
         .filter(Boolean)
         .join(' ')}
     >
-      <SettleProvider events={g.state.lastEvents} settleId={g.state.settleId} speed={settings.gameSpeed}>
+      <SettleProvider
+        events={g.state.lastEvents}
+        settleId={g.state.settleId}
+        speed={settings.gameSpeed}
+        onComplete={g.markSettleComplete}
+      >
         <Sidebar
           run={run}
           blind={blind}
           committedBefore={g.state.committedBefore}
+          finalScore={g.state.finalScore}
           preview={preview}
           onOpenInfo={() => setShowInfo(true)}
           onOpenOptions={() => setPaused(true)}
@@ -81,7 +120,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           <StagePanel g={g} preview={preview} />
         </main>
       </SettleProvider>
-      {g.state.pendingEnd && !ending && (
+      {g.state.pendingEnd && g.state.settleComplete && !ending && (
         <div className="verdict">
           <div className="verdict-score">
             ❄ {Math.round(blind.projectedScore)} / {blind.target}
@@ -101,12 +140,26 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />
       )}
       {!ending && !settling && paused && (
-        <div className="pause-screen">
-          <Options lexicon={g.lexicon} onBack={() => setPaused(false)} />
+        // A modal over the board, not a screen swap — the board stays visible
+        // behind it, like Fee Settlement and Game Over (playtest-06 #1).
+        <div className="overlay pause-overlay">
+          <div className="overlay-card pause-modal">
+            {/* Main Menu keeps the run in memory (useGame lives in App, so
+                leaving the run view doesn't discard it). */}
+            <Options
+              lexicon={g.lexicon}
+              onBack={() => setPaused(false)}
+              onNewRun={onNewRun}
+              onMainMenu={onExit}
+            />
+          </div>
         </div>
       )}
       {settling && <CashOut g={g} />}
       {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
     </div>
-  );
+    );
+  };
+
+  return <ScreenTransition screenKey={screenKey}>{content()}</ScreenTransition>;
 }

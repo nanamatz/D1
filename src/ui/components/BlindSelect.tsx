@@ -17,7 +17,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
   const { run, blind } = g.state;
 
   return (
-    <div className="screen blindselect wipe-in">
+    <div className="screen blindselect">
       <div className="bs-head">
         <span className="label">{t('blindselect.title')}</span>
         <span className="ante">{t('sidebar.ante', { n: run.ante })}</span>

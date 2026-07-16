@@ -4,17 +4,27 @@ import { collectionSize } from '../collection';
 import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
 import { useI18n } from '../i18n';
+import { Collection } from './Collection';
 
-type View = 'root' | 'settings' | 'stats' | 'credits';
+type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
 type Tab = 'game' | 'video' | 'audio';
 
 interface Props {
   lexicon: Lexicon;
   onBack: () => void;
+  /** In-run only (pause menu): abandon this run and go to New Run. */
+  onNewRun?: () => void;
+  /** In-run only (pause menu): leave to the main menu, run kept in memory. */
+  onMainMenu?: () => void;
 }
 
-/** Options root → Settings / Statistics / Credits (spec §2.10–2.12). */
-export function Options({ lexicon, onBack }: Props) {
+/**
+ * Options root → Settings / New Run / Main Menu / Statistics / Collection /
+ * Credits (spec §2.10–2.12; order per playtest-06 #4). New Run and Main Menu are
+ * pause-menu only — they render just when their handler is supplied, so opening
+ * Options from the main menu still shows the plain Settings/Stats/Collection set.
+ */
+export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
   const { t } = useI18n();
   const [view, setView] = useState<View>('root');
 
@@ -26,8 +36,21 @@ export function Options({ lexicon, onBack }: Props) {
           <button className="btn exchange" onClick={() => setView('settings')}>
             {t('options.settings')}
           </button>
+          {onNewRun && (
+            <button className="btn exchange" onClick={onNewRun}>
+              {t('options.newRun')}
+            </button>
+          )}
+          {onMainMenu && (
+            <button className="btn exchange" onClick={onMainMenu}>
+              {t('options.mainMenu')}
+            </button>
+          )}
           <button className="btn exchange" onClick={() => setView('stats')}>
             {t('options.statistics')}
+          </button>
+          <button className="btn exchange" onClick={() => setView('collection')}>
+            {t('options.collection')}
           </button>
           <button className="btn exchange" onClick={() => setView('credits')}>
             {t('options.credits')}
@@ -41,6 +64,9 @@ export function Options({ lexicon, onBack }: Props) {
   }
 
   const back = () => setView('root');
+  // The Collection brings its own full screen + back bar, so render it directly
+  // rather than nesting it inside the options frame.
+  if (view === 'collection') return <Collection lexicon={lexicon} onBack={back} />;
   return (
     <div className="screen options">
       {view === 'settings' && <SettingsView />}

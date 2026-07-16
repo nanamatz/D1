@@ -35,6 +35,7 @@ import { findSpellableWords, type HintWord } from '../engine/hint';
 import { loadBrowserLexicon } from './lexicon.browser';
 import { recordWord } from './collection';
 import { recordRunEnd } from './lifetime';
+import { loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 
 const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
@@ -107,9 +108,32 @@ export interface GameState {
   /**
    * The blind's last phase was just played and its settle is still animating
    * (A-4). The board stays visible; finalize (→ cash out or game over) runs once
-   * the settle + verdict beat elapses.
+   * the settle-complete signal fires and the verdict beat elapses.
    */
   pendingEnd: boolean;
+  /**
+   * The in-flight settle timeline has finished animating (SettleProvider's
+   * completion signal). The round-clear / game-over UI is gated on THIS, never on
+   * the raw final-score value (playtest-05 A; recurrence of 04 A-1). Reset to
+   * false when a new settle starts; idle blinds sit at true.
+   */
+  settleComplete: boolean;
+  /**
+   * The blind's finalized score (committed + the sentence bonus), set once the
+   * last settle lands. Non-null means the SENTENCE BONUS IS LANDING on the round
+   * number right now (playtest-06 item 1): the bonus is only finalized at blind
+   * end (GDD §7.1), so without this beat the clear screen arrived while the round
+   * number still showed committed-only and the player never saw *why* it cleared.
+   * Null at every other time — the bonus stays a separate forecast during play.
+   */
+  finalScore: number | null;
+  /**
+   * The player actually started this run (vs. the idle run `bootstrap` always
+   * builds so the board has something to render). Gates the New Run screen's
+   * Continue tab, and lives in state — rather than in App — so it persists with
+   * the save and survives a reload.
+   */
+  runStarted: boolean;
 }
 
 function equip(run: RunState, defIds: readonly string[]): RunState {
@@ -118,6 +142,19 @@ function equip(run: RunState, defIds: readonly string[]): RunState {
 }
 
 const randomSeed = (): string => Math.random().toString(36).slice(2);
+
+/**
+ * How long the sentence bonus takes to count up onto the round number at blind
+ * end (playtest-06 item 1). Exported so the Sidebar animates over the exact same
+ * window the finalize timer waits for — one source of truth.
+ */
+export const BONUS_LAND_MS = 700;
+
+// Beat held AFTER the round number has finished updating (settle beats, then the
+// sentence bonus landing) before the blind resolves — so the cleared score is seen
+// at its true final value past target before the clear UI (playtest-05 A / 06 #1).
+const VERDICT_BEAT_MS = 500;
+const VERDICT_BEAT_REDUCED_MS = 200;
 
 function bootstrap(seed: string = randomSeed()): GameState {
   const base: RunState = {
@@ -151,6 +188,9 @@ function bootstrap(seed: string = randomSeed()): GameState {
     gameover: null,
     stats: freshStats(),
     pendingEnd: false,
+    settleComplete: true,
+    finalScore: null,
+    runStarted: false,
   };
 }
 
@@ -177,6 +217,8 @@ export interface UseGame {
   discard: (ids: string[]) => void;
   selectBlind: () => void;
   confirmCashout: () => void;
+  /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
+  markSettleComplete: () => void;
   newGame: () => void;
   /** Start a fresh run from a specific seed (New Run screen); random if omitted. */
   startRun: (seed?: string) => void;
@@ -184,7 +226,21 @@ export interface UseGame {
 
 export function useGame(): UseGame {
   const lexicon = useMemo(() => loadBrowserLexicon(), []);
-  const [state, setState] = useState<GameState>(bootstrap);
+  // Resume a saved run if there is one; otherwise the idle bootstrap run.
+  const [state, setState] = useState<GameState>(() => loadRun() ?? bootstrap());
+
+  // Persist the run so it survives a reload (the Continue tab resumes it).
+  // Dedupe on the serialized bytes: most state churn (staging a tile, hovering)
+  // strips to an identical resting snapshot, and localStorage writes are
+  // synchronous — we don't want one on every click.
+  const lastSaved = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state.runStarted) return;
+    const json = serializeRun(state);
+    if (json === lastSaved.current) return;
+    lastSaved.current = json;
+    writeRun(json);
+  }, [state]);
 
   // Record each finished run into the lifetime stats exactly once (spec §2.12).
   // Keyed on the gameover snapshot identity so StrictMode re-runs don't double-count.
@@ -338,6 +394,8 @@ export function useGame(): UseGame {
         committedBefore: 0,
         lastPlayed: null,
         pendingEnd: false,
+        settleComplete: true,
+        finalScore: null,
         rngCounter: prev.rngCounter + 1,
       };
     });
@@ -355,6 +413,11 @@ export function useGame(): UseGame {
   /** Blind Select (§2.3) confirmed → begin the (already-drawn) blind. */
   const selectBlind = useCallback(() => {
     setState((prev) => (prev.phase === 'blindselect' ? { ...prev, phase: 'playing' } : prev));
+  }, []);
+
+  /** SettleProvider signals the settle timeline has landed — arms the clear UI (05 A). */
+  const markSettleComplete = useCallback(() => {
+    setState((prev) => (prev.settleComplete ? prev : { ...prev, settleComplete: true }));
   }, []);
 
   const buyVoucherAction = useCallback(() => {
@@ -495,6 +558,10 @@ export function useGame(): UseGame {
         message: null,
         lastEvents: events,
         settleId: prev.settleId + 1,
+        // A new settle starts; the completion signal re-arms (05 A) so the clear
+        // UI waits for THIS word's settle to land, not the previous one's.
+        settleComplete: false,
+        finalScore: null,
         // committed BEFORE this word, so the round number climbs to the new
         // committed during the settle rather than snapping (A-1).
         committedBefore: prev.blind.committedScore,
@@ -513,19 +580,38 @@ export function useGame(): UseGame {
     });
   }, [lexicon]);
 
-  // Once the last word's settle + sentence-finalize + verdict beat elapse,
-  // resolve the blind (→ Fee Settlement on a win, → Game Over overlay on a loss).
+  // Resolve the blind (→ Fee Settlement on a win, → Game Over on a loss) ONLY
+  // after the settle-complete signal fires — never on the raw final score, which
+  // is known instantly (playtest-05 A; recurrence of 04 A-1, unifying 04 A-2: the
+  // deciding sentence bonus must be *seen* pushing the score over first). The
+  // signal already tracks the variable settle length (long words settle longer),
+  // so this holds a fixed short beat afterward, not a guess at total settle time.
+  // Stage 1 — the last word's settle has landed: publish the finalized score so
+  // the sentence bonus counts up onto the round number (06 #1). The bonus only
+  // exists at blind end, so this is the player's one chance to SEE it land.
   useEffect(() => {
-    if (!state.pendingEnd) return;
+    if (!state.pendingEnd || !state.settleComplete || state.finalScore !== null) return;
+    const { finalScore } = endBlind(state.blind, state.run, lexicon);
+    setState((prev) =>
+      prev.pendingEnd && prev.finalScore === null ? { ...prev, finalScore } : prev,
+    );
+  }, [state.pendingEnd, state.settleComplete, state.finalScore, state.blind, state.run, lexicon]);
+
+  // Stage 2 — the round number is now fully updated (settle beats + bonus). Hold
+  // the verdict beat, then resolve the blind (→ Fee Settlement / → Game Over).
+  useEffect(() => {
+    if (!state.pendingEnd || state.finalScore === null) return;
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const delay = reduce ? 350 : 1900; // ~settle (1.4s) + verdict beat (0.5s)
-    const id = setTimeout(() => {
-      setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev));
-    }, delay);
+    const id = setTimeout(
+      () => {
+        setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev));
+      },
+      reduce ? VERDICT_BEAT_REDUCED_MS : BONUS_LAND_MS + VERDICT_BEAT_MS,
+    );
     return () => clearTimeout(id);
-  }, [state.pendingEnd, finalize]);
+  }, [state.pendingEnd, state.finalScore, finalize]);
 
   // C-3: discard acts on an explicit set of MARKED hand tiles, independent of
   // what is staged in the tile zone. Tiles exit for the blind (no RNG).
@@ -559,9 +645,13 @@ export function useGame(): UseGame {
     });
   }, []);
 
-  const newGame = useCallback(() => setState(bootstrap()), []);
+  const newGame = useCallback(() => setState({ ...bootstrap(), runStarted: true }), []);
   const startRun = useCallback(
-    (seed?: string) => setState(bootstrap(seed && seed.trim() ? seed.trim() : undefined)),
+    (seed?: string) =>
+      setState({
+        ...bootstrap(seed && seed.trim() ? seed.trim() : undefined),
+        runStarted: true,
+      }),
     [],
   );
 
@@ -592,6 +682,7 @@ export function useGame(): UseGame {
     discard,
     selectBlind,
     confirmCashout,
+    markSettleComplete,
     newGame,
     startRun,
   };
