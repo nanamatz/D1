@@ -19,7 +19,9 @@ import type {
 } from './types';
 
 const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
-const MATERIALS: readonly TileMaterial[] = ['porcelain', 'polished', 'glass', 'stone'];
+const MATERIALS: readonly TileMaterial[] = [
+  'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
+];
 const FONTS: readonly TileFont[] = ['lightItalic', 'bold', 'inline', 'black'];
 
 /** Letters weighted by the starting bag composition (natural distribution). */
@@ -47,7 +49,14 @@ function rollTile(run: RunState, rng: Rng, index: number): Tile {
     if (rng.next() < 0.5) material = MATERIALS[rng.int(MATERIALS.length)]!;
     else font = FONTS[rng.int(FONTS.length)]!;
   }
-  return { id: `pk${rng.int(1_000_000)}-${index}`, letter, case: 'upper', material, font };
+  return {
+    id: `pk${rng.int(1_000_000)}-${index}`,
+    // Stone carries no letter — the invariant that forces gibberish (GDD §2.2)
+    letter: material === 'stone' ? null : letter,
+    case: 'upper',
+    material,
+    font,
+  };
 }
 
 export function rollPack(kind: PackKind, run: RunState, rng: Rng): PackOffer {
