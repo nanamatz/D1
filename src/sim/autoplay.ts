@@ -11,6 +11,7 @@
 import { newRun } from '../engine/run';
 import { startBlind, discardTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
 import { judgeSentence } from '../engine/patterns';
+import { NO_LETTER } from '../engine/scoring';
 import { JOKER_REGISTRY } from '../engine/jokers';
 import { resolveBlind, currentTarget, kindForIndex } from '../engine/progression';
 import { makeRng } from '../engine/rng';
@@ -20,6 +21,12 @@ import { loadStubLexicon } from './stub-lexicon';
 
 /** Demo-only: find any valid word spellable from the hand (ordered, len ≤ 4). */
 function findWord(hand: readonly Tile[], lex: Lexicon, maxLen = 4): Tile[] | null {
+  // Stone tiles (letter: null) can never be part of a valid word — a "word"
+  // containing one is gibberish by definition (GDD §6.4). Exclude them from
+  // the search space entirely rather than routing the string through
+  // NO_LETTER: findWord's whole purpose is finding VALID words, so a
+  // candidate that can provably never match shouldn't be a search branch.
+  const spellable = hand.filter((t) => t.letter !== null);
   const search = (prefix: Tile[], rest: Tile[]): Tile[] | null => {
     if (prefix.length >= 1 && lex.isWord(prefix.map((t) => t.letter).join(''))) return prefix;
     if (prefix.length >= maxLen) return null;
@@ -29,7 +36,7 @@ function findWord(hand: readonly Tile[], lex: Lexicon, maxLen = 4): Tile[] | nul
     }
     return null;
   };
-  return search([], [...hand]);
+  return search([], spellable);
 }
 
 function main(): void {
@@ -47,13 +54,13 @@ function main(): void {
   const jokerNames = run.jokers.map((j) => JOKER_REGISTRY.get(j.defId)?.nameEn ?? j.defId);
   console.log(`Slices ①–⑤ demo — seed "${run.seed}", ante ${run.ante} ${blind.kind} (target ${target})`);
   console.log(`  jokers: ${jokerNames.join(', ')} · gold ${run.gold}`);
-  console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter).join('')}`);
+  console.log(`  dealt hand (${blind.hand.length}): ${blind.hand.map((t) => t.letter ?? NO_LETTER).join('')}`);
   console.log(`  bag remaining: ${blind.bag.length}, discards: ${blind.discardsLeft}\n`);
 
   // One discard: dump the three lowest-value-looking tiles (just the first 3).
   const dump = blind.hand.slice(0, 3).map((t) => t.id);
   blind = discardTiles(blind, dump);
-  console.log(`Discarded 3 tiles → new hand: ${blind.hand.map((t) => t.letter).join('')}`);
+  console.log(`Discarded 3 tiles → new hand: ${blind.hand.map((t) => t.letter ?? NO_LETTER).join('')}`);
   console.log(`  discards left: ${blind.discardsLeft}\n`);
 
   // Play until phases run out — or stop early once projected ≥ target (§7.2).
