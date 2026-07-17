@@ -120,7 +120,12 @@ export function SettleProvider({
           chips += e.chips;
           pops[e.tileId] = e.chips;
         } else if (e.kind === 'suit') mult = e.mult;
-        else if (e.kind === 'letterHand' || e.kind === 'joker' || e.kind === 'boss') {
+        else if (
+          e.kind === 'letterHand' ||
+          e.kind === 'joker' ||
+          e.kind === 'boss' ||
+          e.kind === 'material'
+        ) {
           chips += e.chipsDelta;
           mult += e.multDelta;
         }
@@ -181,6 +186,12 @@ export function SettleProvider({
             chips += e.chipsDelta;
             mult += e.multDelta;
             setView({ ...base, chips, mult });
+          } else if (e.kind === 'material') {
+            // Materials pop on the tile itself, not as a stamp — the tile's own
+            // ceramic/glass/stone face already carries the read (GDD §2.2).
+            chips += e.chipsDelta;
+            mult += e.multDelta;
+            setView({ ...base, chips, mult, activeTileId: e.tileId });
           }
         }, i * step),
       );

@@ -60,3 +60,31 @@ describe('settleDurationMs — the clear signal tracks the settle length', () =>
     expect(longPlay).toBeGreaterThan(1900);
   });
 });
+
+const material = (id: string): ScoreEvent => ({
+  kind: 'material',
+  material: 'porcelain',
+  tileId: id,
+  chipsDelta: 30,
+  multDelta: 0,
+});
+
+describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', () => {
+  it('a porcelain word settles longer than the same word in ceramic', () => {
+    const ceramic = [...Array.from({ length: 3 }, (_, i) => tile(`t${i}`)), suit(), settle()];
+    const porcelain = [
+      tile('t0'), material('t0'),
+      tile('t1'), material('t1'),
+      tile('t2'), material('t2'),
+      suit(), settle(),
+    ];
+    expect(settleDurationMs(porcelain, 1, false)).toBeGreaterThan(
+      settleDurationMs(ceramic, 1, false),
+    );
+  });
+
+  it('scales with speed like every other beat — never a fixed delay', () => {
+    const beats = [tile('t0'), material('t0'), suit(), settle()];
+    expect(settleDurationMs(beats, 1, false)).toBeGreaterThan(settleDurationMs(beats, 4, false));
+  });
+});
