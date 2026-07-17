@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { settleDurationMs } from '../src/ui/settle';
+import { settleDurationMs, accumulate } from '../src/ui/settle';
 import type { ScoreEvent } from '../src/engine/types';
 
 /**
@@ -86,5 +86,72 @@ describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', 
   it('scales with speed like every other beat — never a fixed delay', () => {
     const beats = [tile('t0'), material('t0'), suit(), settle()];
     expect(settleDurationMs(beats, 1, false)).toBeGreaterThan(settleDurationMs(beats, 4, false));
+  });
+});
+
+/**
+ * The critical bug: a `material` event with a nonzero multDelta (Polished,
+ * Glass, mult-rolling Lead plate) lands in the log BEFORE `suit`, because
+ * those materials mutate ctx.mult in the per-tile loop that precedes the
+ * `suit` push (loop.ts). If the UI folds `suit` as an OVERWRITE
+ * (`mult = e.mult`) instead of an accumulation, the material's contribution
+ * is wiped out the instant `suit` is folded. `accumulate` must ADD every
+ * mult-bearing event, `suit` included, so folding is order-independent.
+ */
+describe('accumulate — the chips/mult fold shared by both settle timelines', () => {
+  const materialMult = (id: string, multDelta: number): ScoreEvent => ({
+    kind: 'material',
+    material: 'glass',
+    tileId: id,
+    chipsDelta: 0,
+    multDelta,
+  });
+
+  it('a material multDelta preceding suit is NOT wiped out by the suit fold', () => {
+    // Engine order for a Glass tile: tile, material(+1 multDelta, i.e. the
+    // ctx.mult ×2 step captured as a delta around the suit-inclusive base),
+    // suit, settle. UI starts at mult=0, so folding must land at 1 (material)
+    // + 1 (suit) = 2 — matching the engine's post-suit ctx.mult of 2.0.
+    const events: ScoreEvent[] = [
+      tile('t0'),
+      materialMult('t0', 1),
+      suit(),
+      settle(),
+    ];
+    let chips = 0;
+    let mult = 0;
+    for (const e of events) {
+      if (e.kind === 'settle') continue;
+      ({ chips, mult } = accumulate(chips, mult, e));
+    }
+    expect(mult).toBe(2);
+  });
+
+  it('a ceramic word (no material beats) still lands mult=1 from suit alone', () => {
+    const events: ScoreEvent[] = [tile('t0'), suit(), settle()];
+    let chips = 0;
+    let mult = 0;
+    for (const e of events) {
+      if (e.kind === 'settle') continue;
+      ({ chips, mult } = accumulate(chips, mult, e));
+    }
+    expect(chips).toBe(10);
+    expect(mult).toBe(1);
+  });
+
+  it('tile chips accumulate additively regardless of material/suit folding', () => {
+    const events: ScoreEvent[] = [
+      tile('t0'),
+      materialMult('t0', 1),
+      suit(),
+      settle(),
+    ];
+    let chips = 0;
+    let mult = 0;
+    for (const e of events) {
+      if (e.kind === 'settle') continue;
+      ({ chips, mult } = accumulate(chips, mult, e));
+    }
+    expect(chips).toBe(10);
   });
 });
