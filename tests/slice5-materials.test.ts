@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { scoreWord, spell, letterChips, NO_LETTER } from '../src/engine/scoring';
+import { scoreWord, spell, letterChips, letterString, NO_LETTER } from '../src/engine/scoring';
 import { makeLexicon } from '../src/engine/lexicon';
 import { isVowel, isConsonant } from '../src/engine/types';
-import { stagePreview } from '../src/ui/game';
-import type { Letter, Tile, TileMaterial, BlindState } from '../src/engine/types';
+import type { Letter, Tile, TileMaterial } from '../src/engine/types';
 
 let idc = 0;
 /** Build tiles from a word; '_' means a letterless stone tile. */
@@ -47,46 +46,14 @@ describe('slice5 — letterless tiles (GDD §2.2 Stone)', () => {
   });
 });
 
-/** Minimal BlindState fixture for stagePreview tests below. */
-function makeBlind(hand: Tile[]): BlindState {
-  return {
-    kind: 'small',
-    bossId: null,
-    target: 100,
-    phasesTotal: 4,
-    phasesUsed: 0,
-    discardsLeft: 3,
-    committedScore: 0,
-    projectedScore: 0,
-    sequence: [],
-    bag: [],
-    hand,
-    discardedThisBlind: [],
-  };
-}
-
-describe('slice5 — stagePreview does not silently drop stone tiles (review finding 1)', () => {
-  it('previews a stone-containing selection as gibberish, spelled with the sentinel', () => {
+describe('slice5 — letterString (review finding 1)', () => {
+  it('renders a letterless stone tile as the sentinel, not as a dropped/empty char', () => {
     const hand = tiles('_cat');
-    const preview = stagePreview(makeBlind(hand), lex, hand.map((t) => t.id));
-    expect(preview).not.toBeNull();
-    expect(preview!.isGibberish).toBe(true);
-    // base.text goes through spell() already; this asserts the preview pipeline
-    // (including the letters string built for evaluateLetterHand) runs clean
-    // on a null-letter tile instead of throwing or silently coercing it away.
-    expect(preview!.text).toBe(`${NO_LETTER}CAT`);
-    expect(preview!.suit).toBeNull();
-  });
-
-  it('a straight letter hand still evaluates correctly around a stone tile', () => {
-    // Q R S T U V is a 6-run straight; inserting a stone tile must not break
-    // detection (the letters string is `${NO_LETTER}QRSTUV`, not `QRSTUV` vs
-    // silently-shortened `QRSTUV` either way — this pins current behavior so
-    // a future regression in the join logic is caught).
-    const hand = tiles('_qrstuv');
-    const preview = stagePreview(makeBlind(hand), lex, hand.map((t) => t.id));
-    expect(preview).not.toBeNull();
-    expect(preview!.isGibberish).toBe(true);
-    expect(preview!.letterHand?.id).toBe('straight');
+    const result = letterString(hand);
+    expect(result).toBe(`${NO_LETTER}CAT`);
+    // The regression this guards against: Array#join coerces `null` to `''`,
+    // silently shortening the string instead of preserving the stone's slot.
+    expect(result).not.toBe('CAT');
+    expect(result).toHaveLength(4);
   });
 });

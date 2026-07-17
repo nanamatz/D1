@@ -15,7 +15,7 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { baseScore, spell, NO_LETTER } from './scoring';
+import { baseScore, spell, letterString } from './scoring';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { defaultJokerBus } from './jokers';
@@ -167,7 +167,7 @@ function scoreSubmission(
 
   // Letter hand (A-2): highest single per-word structure bonus, folded in before
   // the suit multiplier settles. Vowel Flush / Straight also fire on gibberish.
-  const letters = tiles.map((t) => t.letter ?? NO_LETTER).join('');
+  const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, submission.isGibberish);
   if (letterHand && (letterHand.chips !== 0 || letterHand.mult !== 0)) {
     ctx.chips += letterHand.chips;

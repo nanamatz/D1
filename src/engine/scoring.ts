@@ -28,6 +28,21 @@ export function spell(tiles: readonly Tile[]): string {
     .join('');
 }
 
+/**
+ * The letters string fed to `evaluateLetterHand` (GDD §5.5) — the single source
+ * of truth for that input, shared by the loop pipeline and the UI stage preview.
+ * Letterless (Stone) tiles render as `NO_LETTER` so a stone never silently
+ * vanishes from the string (which would corrupt straight/flush detection).
+ *
+ * Differs from `spell()`: `spell()` honors each tile's upper/lower `case` for
+ * lexicon lookup and display; `Letter` is always stored canonically uppercase
+ * (see `types.ts`), and `letterString` returns that canonical form as-is — it
+ * exists for letter-hand *structure* matching, not for display or lookup.
+ */
+export function letterString(tiles: readonly Tile[]): string {
+  return tiles.map((t) => t.letter ?? NO_LETTER).join('');
+}
+
 /** Sum of intrinsic Scrabble letter chips (GDD §2.1). Stone contributes 0 — its
  *  chips come from the material, not the letter (GDD §2.2). */
 export function letterChips(tiles: readonly Tile[]): number {

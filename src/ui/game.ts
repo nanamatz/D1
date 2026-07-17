@@ -3,7 +3,7 @@
  * they contain NO game rules — every decision routes back through the engine
  * (scoreWord/judgeSentence/etc). The React hook (useGame) owns the state.
  */
-import { baseScore, scoreWord, NO_LETTER } from '../engine/scoring';
+import { baseScore, scoreWord, letterString } from '../engine/scoring';
 import { judgeSentence } from '../engine/patterns';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
@@ -82,7 +82,7 @@ export function stagePreview(
   const blocked = blind.bossId
     ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
     : false;
-  const letters = tiles.map((t) => t.letter ?? NO_LETTER).join('');
+  const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, base.isGibberish);
   return {
     text: base.text,
