@@ -74,8 +74,21 @@ const leadPlate: MaterialDef = {
   },
 };
 
+const glass: MaterialDef = {
+  id: 'glass',
+  nameKo: '유리',
+  nameEn: 'Glass',
+  // The ×2 ALWAYS lands on the word that breaks it — the destroy roll is reported
+  // as a side effect and applied by the caller after the word settles (GDD §2.2).
+  onTileScored: (ctx, _tile, rng) => {
+    const cfg = BALANCE.materials.glass;
+    ctx.mult *= cfg.multFactor;
+    return rng.next() < cfg.destroyChance ? { destroy: true } : {};
+  },
+};
+
 export const MATERIAL_REGISTRY: ReadonlyMap<TileMaterial, MaterialDef> = new Map(
-  [porcelain, polished, stone, leadPlate].map((m) => [m.id, m]),
+  [porcelain, polished, stone, leadPlate, glass].map((m) => [m.id, m]),
 );
 
 /**

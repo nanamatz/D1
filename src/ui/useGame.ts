@@ -547,10 +547,14 @@ export function useGame(): UseGame {
         // Boss legality (e.g. The Noun Lock) — surface, don't crash.
         return { ...prev, message: { key: 'boss.blocked' } };
       }
-      const { blind, events, submission, goldDelta } = result;
-      const run = goldDelta
-        ? { ...prev.run, gold: Math.max(0, prev.run.gold + goldDelta) }
-        : prev.run;
+      const { blind, events, submission, goldDelta, destroyedTileIds } = result;
+      const nextRun: RunState = {
+        ...prev.run,
+        gold: Math.max(0, prev.run.gold + goldDelta),
+        bag: destroyedTileIds.length
+          ? prev.run.bag.filter((t) => !destroyedTileIds.includes(t.id))
+          : prev.run.bag,
+      };
       const best = prev.stats.bestWord;
       const bestWord =
         !submission.isGibberish && (!best || submission.settledScore > best.score)
@@ -558,7 +562,7 @@ export function useGame(): UseGame {
           : best;
       const next: GameState = {
         ...prev,
-        run,
+        run: nextRun,
         blind,
         selected: [],
         message: null,

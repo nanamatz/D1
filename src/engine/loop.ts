@@ -132,6 +132,8 @@ export interface SubmitResult {
   events: ScoreEvent[];
   /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/15 roll); 0 normally */
   goldDelta: number;
+  /** tiles destroyed by their material (Glass) — the caller removes them from run.bag */
+  destroyedTileIds: string[];
 }
 
 /**
@@ -147,7 +149,7 @@ function scoreSubmission(
   run: RunState,
   blind: BlindState,
   rng: Rng,
-): { submission: WordSubmission; events: ScoreEvent[]; materialGold: number } {
+): { submission: WordSubmission; events: ScoreEvent[]; materialGold: number; destroyedTileIds: string[] } {
   const b = baseScore(tiles, lexicon);
   const submission: WordSubmission = {
     tiles: tiles.slice(),
@@ -161,6 +163,7 @@ function scoreSubmission(
 
   const ctx: WordScoringContext = { submission, chips: 0, mult: b.mult };
   let materialGold = 0;
+  const destroyedTileIds: string[] = [];
   for (const t of tiles) {
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     ctx.chips += chips;
@@ -169,6 +172,7 @@ function scoreSubmission(
     const mat = applyTileMaterial(ctx, t, rng);
     if (mat) {
       materialGold += mat.side.goldDelta ?? 0;
+      if (mat.side.destroy) destroyedTileIds.push(t.id);
       if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
         events.push({
           kind: 'material',
@@ -225,7 +229,7 @@ function scoreSubmission(
   if (boss?.voids?.(submission, blind.sequence)) total = 0; // The Purist
   submission.settledScore = total;
   events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
-  return { submission, events, materialGold };
+  return { submission, events, materialGold, destroyedTileIds };
 }
 
 /** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total. */
@@ -274,7 +278,13 @@ export function submitWord(
     throw new Error('boss: this word cannot be submitted');
   }
 
-  const { submission, events, materialGold } = scoreSubmission(used, lexicon, run, blind, rng);
+  const { submission, events, materialGold, destroyedTileIds } = scoreSubmission(
+    used,
+    lexicon,
+    run,
+    blind,
+    rng,
+  );
   const goldDelta = (boss?.goldPerWord ? -boss.goldPerWord : 0) + materialGold;
 
   const usedIds = new Set(tileIds);
@@ -303,7 +313,7 @@ export function submitWord(
   const judgment = judgeSentence(sequence, lexicon);
   const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind);
 
-  return { submission, events, goldDelta, blind: { ...afterBlind, projectedScore } };
+  return { submission, events, goldDelta, destroyedTileIds, blind: { ...afterBlind, projectedScore } };
 }
 
 export interface EndBlindResult {

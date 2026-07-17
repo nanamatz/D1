@@ -68,13 +68,11 @@ function main(): void {
   while (blind.phasesUsed < blind.phasesTotal && blind.hand.length > 0) {
     const word = findWord(blind.hand, lex) ?? blind.hand.slice(0, Math.min(3, blind.hand.length));
     const ids = word.map((t) => t.id);
-    const { blind: after, submission } = submitWord(
-      blind,
-      run,
-      lex,
-      ids,
-      makeRng(`${run.seed}#w${blind.phasesUsed}`),
-    );
+    const result = submitWord(blind, run, lex, ids, makeRng(`${run.seed}#w${blind.phasesUsed}`));
+    const { blind: after, submission } = result;
+    if (result.destroyedTileIds.length) {
+      run.bag = run.bag.filter((t) => !result.destroyedTileIds.includes(t.id));
+    }
     blind = after;
     const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `[${submission.suit} suit]`;
     const judged = judgeSentence(blind.sequence, lex);

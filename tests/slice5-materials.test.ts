@@ -146,3 +146,60 @@ describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
     expect(a.submission.settledScore).not.toBe(b.submission.settledScore);
   });
 });
+
+describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
+  it('doubles the mult on the word it is played in', () => {
+    // CAT = 5 chips × (1.0 standard × 2) = 10
+    const t = tiles('cat');
+    t[0]!.material = 'glass';
+    expect(scoreWord(t, lex).settledScore).toBe(10);
+  });
+
+  it('two glass tiles compound the factor', () => {
+    const t = tiles('cat');
+    t[0]!.material = 'glass';
+    t[1]!.material = 'glass';
+    expect(scoreWord(t, lex).settledScore).toBe(20); // 5 × 1.0 × 2 × 2
+  });
+
+  it('reports destroyed tiles and is seed-reproducible', () => {
+    const run = { ...newRun('glass-seed'), bag: tiles('cat', 'glass') };
+    const roll = () => {
+      const blind = startBlind(run, makeRng('glass-seed'));
+      const ids = blind.hand.map((t) => t.id);
+      return submitWord(blind, run, lex, ids, makeRng('shatter')).destroyedTileIds;
+    };
+    expect(roll()).toEqual(roll());
+  });
+
+  it('destroys roughly 1/4 of glass tiles played', () => {
+    const run = { ...newRun('glass-seed'), bag: tiles('cat', 'glass') };
+    let destroyed = 0;
+    const TRIALS = 400;
+    for (let i = 0; i < TRIALS; i++) {
+      const blind = startBlind(run, makeRng(`g${i}`));
+      const ids = blind.hand.map((t) => t.id);
+      destroyed += submitWord(blind, run, lex, ids, makeRng(`s${i}`)).destroyedTileIds.length;
+    }
+    const rate = destroyed / (TRIALS * 3); // 3 glass tiles per word
+    expect(rate).toBeGreaterThan(0.15);
+    expect(rate).toBeLessThan(0.35);
+  });
+
+  it('two different explicit RNGs on the same run/blind/hand diverge on destroyedTileIds (regression: destroy roll must consume the passed rng)', () => {
+    const run = { ...newRun('glass-seed'), bag: tiles('cat', 'glass') };
+    const blind = startBlind(run, makeRng('glass-seed'));
+    const ids = blind.hand.map((t) => t.id);
+
+    const a = submitWord(blind, run, lex, ids, makeRng('shatter-a'));
+    const b = submitWord(blind, run, lex, ids, makeRng('shatter-b'));
+
+    // Verified against the actual mulberry32 sequence for this hand: both seeds
+    // destroy exactly one of the 3 glass tiles, but a DIFFERENT one each time
+    // ('shatter-a' → the 2nd tile, 'shatter-b' → the 1st) — a genuinely
+    // divergent pair, not a coincidence of the assertion shape.
+    expect(a.destroyedTileIds.length).toBe(1);
+    expect(b.destroyedTileIds.length).toBe(1);
+    expect(a.destroyedTileIds).not.toEqual(b.destroyedTileIds);
+  });
+});
