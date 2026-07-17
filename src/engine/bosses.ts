@@ -41,7 +41,10 @@ export interface BossDef {
 
 const vowelChips = (ctx: WordScoringContext): number => {
   let sum = 0;
-  for (const t of ctx.submission.tiles) if (isVowel(t.letter)) sum += BALANCE.letterChips[t.letter] ?? 0;
+  for (const t of ctx.submission.tiles) {
+    if (t.letter === null) continue; // a Stone tile is never a vowel (GDD §2.2)
+    if (isVowel(t.letter)) sum += BALANCE.letterChips[t.letter] ?? 0;
+  }
   return sum;
 };
 

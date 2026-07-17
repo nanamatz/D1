@@ -16,9 +16,11 @@ interface Counts {
 function tally(tiles: readonly Tile[]): Counts {
   const c: Counts = { perLetter: {}, vowels: 0, consonants: 0, materials: {}, fonts: {} };
   for (const t of tiles) {
-    c.perLetter[t.letter] = (c.perLetter[t.letter] ?? 0) + 1;
-    if (isVowel(t.letter)) c.vowels++;
-    else c.consonants++;
+    if (t.letter !== null) {
+      c.perLetter[t.letter] = (c.perLetter[t.letter] ?? 0) + 1;
+      if (isVowel(t.letter)) c.vowels++;
+      else c.consonants++;
+    }
     if (t.material !== 'ceramic') c.materials[t.material] = (c.materials[t.material] ?? 0) + 1;
     if (t.font !== 'medium') c.fonts[t.font] = (c.fonts[t.font] ?? 0) + 1;
   }

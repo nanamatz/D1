@@ -2,7 +2,7 @@
  *  Fires on gibberish too — layer 1 reads letters (GDD §6.4). */
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
-import { isVowel } from '../types';
+import { isConsonant } from '../types';
 
 export const consonantBricklayer: JokerDef = {
   id: 'consonantBricklayer',
@@ -15,7 +15,7 @@ export const consonantBricklayer: JokerDef = {
   price: BALANCE.jokerPrice.common,
   hooks: {
     wordScoring: ({ ctx }) => {
-      const consonants = ctx.submission.tiles.filter((t) => !isVowel(t.letter)).length;
+      const consonants = ctx.submission.tiles.filter((t) => isConsonant(t.letter)).length;
       ctx.chips += BALANCE.jokers.consonantBricklayer.chipsPerConsonant * consonants;
     },
   },

@@ -14,17 +14,25 @@ import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
 import type { Suit, Tile, WordSubmission } from './types';
 
+/** Sentinel glyph for a letterless Stone tile. Never appears in the lexicon, so a
+ *  word containing one always fails lookup → gibberish (GDD §2.2, §6.4). */
+export const NO_LETTER = '□';
+
 /** Spell the tiles as displayed, honoring each tile's case. */
 export function spell(tiles: readonly Tile[]): string {
   return tiles
-    .map((t) => (t.case === 'lower' ? t.letter.toLowerCase() : t.letter))
+    .map((t) => {
+      if (t.letter === null) return NO_LETTER;
+      return t.case === 'lower' ? t.letter.toLowerCase() : t.letter;
+    })
     .join('');
 }
 
-/** Sum of intrinsic Scrabble letter chips (GDD §2.1). */
+/** Sum of intrinsic Scrabble letter chips (GDD §2.1). Stone contributes 0 — its
+ *  chips come from the material, not the letter (GDD §2.2). */
 export function letterChips(tiles: readonly Tile[]): number {
   let sum = 0;
-  for (const t of tiles) sum += BALANCE.letterChips[t.letter] ?? 0;
+  for (const t of tiles) sum += t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
   return sum;
 }
 
