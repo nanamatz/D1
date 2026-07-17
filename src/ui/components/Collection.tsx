@@ -22,19 +22,26 @@ type Category =
   | 'packs'
   | 'bags';
 
-const MATERIALS: TileMaterial[] = ['ceramic', 'porcelain', 'polished', 'glass', 'stone'];
+export const MATERIALS: TileMaterial[] = [
+  'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
+];
 const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
 const PACK_KINDS = ['letter', 'emoji', 'consumable'] as const;
 const PAGE = 60;
 
-const sampleTile = (over: Partial<Tile>): Tile => ({
-  id: `s-${over.material ?? 'ceramic'}-${over.font ?? 'medium'}`,
-  letter: 'A',
-  case: 'upper',
-  material: 'ceramic',
-  font: 'medium',
-  ...over,
-});
+const sampleTile = (over: Partial<Tile>): Tile => {
+  const material = over.material ?? 'ceramic';
+  // material === 'stone' ⟺ letter === null (packs.ts:55) — a lettered Stone
+  // sample tile would violate that invariant even though it's display-only here.
+  return {
+    id: `s-${material}-${over.font ?? 'medium'}`,
+    letter: material === 'stone' ? null : 'A',
+    case: 'upper',
+    material,
+    font: 'medium',
+    ...over,
+  };
+};
 
 interface Props {
   lexicon: Lexicon;

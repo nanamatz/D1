@@ -55,8 +55,16 @@ function meanScore(material: TileMaterial): MaterialStats {
   let gold = 0;
   let blindEndGold = 0;
   for (let i = 0; i < TRIALS; i++) {
-    const run = { ...newRun(`sim-${material}-${i}`), bag: bagOf(material) };
-    const blind = startBlind(run, makeRng(`sim-${material}-${i}`));
+    // The shuffle/hand seed is deliberately material-INDEPENDENT (I-3): every
+    // material must be measured on the same hand samples (common random
+    // numbers), or a material with genuinely zero scoring effect (Ivory has no
+    // onTileScored) can still show a different mean than Ceramic purely from
+    // sampling noise. `newRun`'s seed is carried along even though nothing in
+    // this call path (startBlind/submitWord/endBlind) reads RunState.seed —
+    // buildBag() is seedless and the bag is overridden by `bagOf` below — but
+    // keeping it material-independent too avoids drift if that ever changes.
+    const run = { ...newRun(`sim-${i}`), bag: bagOf(material) };
+    const blind = startBlind(run, makeRng(`sim-${i}`));
     const word = findWord(blind.hand, lex) ?? blind.hand.slice(0, 3);
     const r = submitWord(blind, run, lex, word.map((t) => t.id), makeRng(`roll-${i}`));
     score += r.submission.settledScore;
