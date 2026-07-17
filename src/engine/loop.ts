@@ -16,7 +16,7 @@ import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, spell, letterString } from './scoring';
-import { applyTileMaterial } from './materials';
+import { applyTileMaterial, applyHeldMaterials } from './materials';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { defaultJokerBus } from './jokers';
@@ -185,6 +185,14 @@ function scoreSubmission(
     }
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
+
+  // Brass and friends read tiles REMAINING in hand — blind.hand still holds the
+  // played tiles at this point, so exclude them explicitly.
+  const playedIds = new Set(tiles.map((t) => t.id));
+  const held = blind.hand.filter((t) => !playedIds.has(t.id));
+  for (const beat of applyHeldMaterials(ctx, held)) {
+    events.push({ kind: 'material', ...beat });
+  }
 
   // Letter hand (A-2): highest single per-word structure bonus, folded in before
   // the suit multiplier settles. Vowel Flush / Straight also fire on gibberish.

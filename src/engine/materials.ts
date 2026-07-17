@@ -87,8 +87,18 @@ const glass: MaterialDef = {
   },
 };
 
+const brass: MaterialDef = {
+  id: 'brass',
+  nameKo: '황동',
+  nameEn: 'Brass',
+  // Type metal that stays in the case: pays while it is NOT played.
+  onHeldDuringScoring: (ctx) => {
+    ctx.mult *= BALANCE.materials.brass.multFactor;
+  },
+};
+
 export const MATERIAL_REGISTRY: ReadonlyMap<TileMaterial, MaterialDef> = new Map(
-  [porcelain, polished, stone, leadPlate, glass].map((m) => [m.id, m]),
+  [porcelain, polished, stone, leadPlate, glass, brass].map((m) => [m.id, m]),
 );
 
 /**
@@ -107,4 +117,29 @@ export function applyTileMaterial(
   const beforeMult = ctx.mult;
   const side = def.onTileScored(ctx, tile, rng) ?? {};
   return { chipsDelta: ctx.chips - beforeChips, multDelta: ctx.mult - beforeMult, side };
+}
+
+/**
+ * Apply the materials of tiles REMAINING in hand (Brass). Fires once per held
+ * tile, per word. Returns one delta record per tile that actually moved the
+ * numbers, for the UI settle log.
+ */
+export function applyHeldMaterials(
+  ctx: WordScoringContext,
+  held: readonly Tile[],
+): { material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }[] {
+  const out: { material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }[] = [];
+  for (const tile of held) {
+    const def = MATERIAL_REGISTRY.get(tile.material);
+    if (!def?.onHeldDuringScoring) continue;
+    const beforeChips = ctx.chips;
+    const beforeMult = ctx.mult;
+    def.onHeldDuringScoring(ctx, tile);
+    const chipsDelta = ctx.chips - beforeChips;
+    const multDelta = ctx.mult - beforeMult;
+    if (chipsDelta !== 0 || multDelta !== 0) {
+      out.push({ material: tile.material, tileId: tile.id, chipsDelta, multDelta });
+    }
+  }
+  return out;
 }

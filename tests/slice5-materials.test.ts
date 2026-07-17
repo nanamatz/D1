@@ -203,3 +203,27 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
     expect(a.destroyedTileIds).not.toEqual(b.destroyedTileIds);
   });
 });
+
+describe('slice5 — Brass (GDD §2.2, Balatro Steel)', () => {
+  it('multiplies mult per brass tile left in hand, not per brass tile played', () => {
+    const run = { ...newRun('brass-seed'), bag: [...tiles('cat'), ...tiles('do', 'brass')] };
+    const blind = startBlind(run, makeRng('brass-seed'));
+    const played = blind.hand.filter((t) => t.material !== 'brass');
+    const heldBrass = blind.hand.filter((t) => t.material === 'brass').length;
+    const { events } = submitWord(
+      blind, run, lex, played.map((t) => t.id), makeRng('r'),
+    );
+    const brassBeats = events.filter((e) => e.kind === 'material' && e.material === 'brass');
+    expect(brassBeats).toHaveLength(heldBrass);
+  });
+
+  it('a played brass tile does not pay the held bonus', () => {
+    const run = { ...newRun('brass-seed'), bag: tiles('cat', 'brass') };
+    const blind = startBlind(run, makeRng('brass-seed'));
+    const { events } = submitWord(
+      blind, run, lex, blind.hand.map((t) => t.id), makeRng('r'),
+    );
+    // every brass tile was played → none held → no brass beats
+    expect(events.some((e) => e.kind === 'material' && e.material === 'brass')).toBe(false);
+  });
+});
