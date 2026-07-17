@@ -130,7 +130,7 @@ export interface SubmitResult {
   submission: WordSubmission;
   /** ordered settle steps for the UI to replay (UI_DESIGN §4.1) */
   events: ScoreEvent[];
-  /** run-gold change from this submission (The Taxman = −1); 0 normally */
+  /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/15 roll); 0 normally */
   goldDelta: number;
 }
 

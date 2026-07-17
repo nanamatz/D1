@@ -118,4 +118,31 @@ describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
     // 3 lead tiles × 200 words at 1/5 each — a total miss would mean the RNG is not wired
     expect(hits).toBeGreaterThan(0);
   });
+
+  it('two different explicit RNGs on the same run/blind/hand diverge (regression: rng must be threaded, not reseeded from run.seed)', () => {
+    // Same run, same blind, same tile ids — only the RNG passed to submitWord differs.
+    // If scoreSubmission silently reseeds from the constant run.seed instead of using
+    // the passed rng, these two calls would be indistinguishable and this test would
+    // fail to catch it (unlike the reproducibility tests above, which use the SAME
+    // rng seed both times and so pass under either implementation).
+    const run = { ...newRun('mat-seed'), bag: tiles('cat', 'leadPlate') };
+    const blind = startBlind(run, makeRng('mat-seed'));
+    const ids = blind.hand.map((t) => t.id);
+
+    const a = submitWord(blind, run, lex, ids, makeRng('a'));
+    const b = submitWord(blind, run, lex, ids, makeRng('b'));
+
+    const multDelta = (r: ReturnType<typeof submitWord>) =>
+      r.events
+        .filter((e): e is Extract<typeof e, { kind: 'material' }> => e.kind === 'material')
+        .reduce((sum, e) => sum + e.multDelta, 0);
+
+    // Verified against the actual mulberry32 sequence: seed 'a' misses all 3 Lead
+    // plate mult rolls (0 hits), seed 'b' hits 2 of 3 (+40 mult) — a genuinely
+    // divergent pair, not a coincidence of the assertion shape.
+    expect(multDelta(a)).toBe(0);
+    expect(multDelta(b)).toBe(40);
+    expect(multDelta(a)).not.toBe(multDelta(b));
+    expect(a.submission.settledScore).not.toBe(b.submission.settledScore);
+  });
 });
