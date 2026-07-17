@@ -97,8 +97,15 @@ const brass: MaterialDef = {
   },
 };
 
+const ivory: MaterialDef = {
+  id: 'ivory',
+  nameKo: '상아',
+  nameEn: 'Ivory',
+  onHeldAtBlindEnd: () => ({ goldDelta: BALANCE.materials.ivory.gold }),
+};
+
 export const MATERIAL_REGISTRY: ReadonlyMap<TileMaterial, MaterialDef> = new Map(
-  [porcelain, polished, stone, leadPlate, glass, brass].map((m) => [m.id, m]),
+  [porcelain, polished, stone, leadPlate, glass, brass, ivory].map((m) => [m.id, m]),
 );
 
 /**
@@ -142,4 +149,15 @@ export function applyHeldMaterials(
     }
   }
   return out;
+}
+
+/** Total gold from materials on tiles still in hand at blind end (Ivory). Pure. */
+export function collectBlindEndMaterials(held: readonly Tile[]): number {
+  let gold = 0;
+  for (const tile of held) {
+    const def = MATERIAL_REGISTRY.get(tile.material);
+    if (!def?.onHeldAtBlindEnd) continue;
+    gold += (def.onHeldAtBlindEnd(tile) ?? {}).goldDelta ?? 0;
+  }
+  return gold;
 }

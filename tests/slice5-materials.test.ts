@@ -4,7 +4,7 @@ import { makeLexicon } from '../src/engine/lexicon';
 import { isVowel, isConsonant } from '../src/engine/types';
 import type { Letter, Tile, TileMaterial } from '../src/engine/types';
 import { makeRng } from '../src/engine/rng';
-import { startBlind, submitWord } from '../src/engine/loop';
+import { startBlind, submitWord, endBlind } from '../src/engine/loop';
 import { newRun } from '../src/engine/run';
 
 let idc = 0;
@@ -225,5 +225,29 @@ describe('slice5 — Brass (GDD §2.2, Balatro Steel)', () => {
     );
     // every brass tile was played → none held → no brass beats
     expect(events.some((e) => e.kind === 'material' && e.material === 'brass')).toBe(false);
+  });
+});
+
+describe('slice5 — Ivory (GDD §2.2, Balatro Gold)', () => {
+  it('pays $3 per ivory tile held at blind end', () => {
+    const run = { ...newRun('ivory-seed'), bag: tiles('cat', 'ivory') };
+    const blind = startBlind(run, makeRng('ivory-seed'));
+    const held = blind.hand.filter((t) => t.material === 'ivory').length;
+    expect(endBlind(blind, run, lex).materialGold).toBe(3 * held);
+  });
+
+  it('pays nothing for ceramic hands', () => {
+    const run = { ...newRun('ivory-seed'), bag: tiles('cat') };
+    const blind = startBlind(run, makeRng('ivory-seed'));
+    expect(endBlind(blind, run, lex).materialGold).toBe(0);
+  });
+
+  it('is pure — calling endBlind twice reports the same gold, never double-applies', () => {
+    const run = { ...newRun('ivory-seed'), bag: tiles('cat', 'ivory') };
+    const blind = startBlind(run, makeRng('ivory-seed'));
+    const a = endBlind(blind, run, lex).materialGold;
+    const b = endBlind(blind, run, lex).materialGold;
+    expect(a).toBe(b);
+    expect(run.gold).toBe(newRun('ivory-seed').gold); // untouched
   });
 });

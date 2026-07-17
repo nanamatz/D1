@@ -271,7 +271,11 @@ export function useGame(): UseGame {
   const finalize = useCallback(
     (s: GameState): GameState => {
       const final = endBlind(s.blind, s.run, lexicon);
-      const outcome = resolveBlind(s.run, s.blind, final.finalScore);
+      const runWithMaterialGold: RunState = {
+        ...s.run,
+        gold: s.run.gold + final.materialGold,
+      };
+      const outcome = resolveBlind(runWithMaterialGold, s.blind, final.finalScore);
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
       const p = final.judgment.match?.pattern;
@@ -281,12 +285,13 @@ export function useGame(): UseGame {
       if (!outcome.cleared) {
         return {
           ...s,
+          run: outcome.run,
           stats,
           phase: 'gameover',
           gameover: {
             finalScore: Math.round(final.finalScore),
             target: s.blind.target,
-            ante: s.run.ante,
+            ante: outcome.run.ante,
             blindKind: s.blind.kind,
             bossId: s.blind.bossId,
           },
@@ -306,7 +311,7 @@ export function useGame(): UseGame {
           : outcome.run;
       // Clearing the Deadline (boss) restocks the voucher for the next chapter
       // and unlocks the one-purchase-per-chapter slot (playtest-03 C).
-      if (s.run.blindIndex === 2) {
+      if (runWithMaterialGold.blindIndex === 2) {
         advancedRun = {
           ...advancedRun,
           voucherOffer: rollVoucherOffer(advancedRun, makeRng(`${s.seed}#voucher-${advancedRun.ante}`)),

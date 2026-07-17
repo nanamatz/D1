@@ -16,7 +16,7 @@ import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, spell, letterString } from './scoring';
-import { applyTileMaterial, applyHeldMaterials } from './materials';
+import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { defaultJokerBus } from './jokers';
@@ -330,6 +330,9 @@ export interface EndBlindResult {
   finalScore: number;
   /** unused phases → gold on ending (economy lands in slice ⑤) */
   phasesLeft: number;
+  /** gold from materials held in hand at blind end (Ivory). The CALLER applies it —
+   *  endBlind is pure and is called more than once per blind (useGame.ts:273, 594). */
+  materialGold: number;
 }
 
 /**
@@ -341,5 +344,10 @@ export interface EndBlindResult {
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
   const judgment = judgeSentence(blind.sequence, lexicon);
   const finalScore = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind);
-  return { judgment, finalScore, phasesLeft: blind.phasesTotal - blind.phasesUsed };
+  return {
+    judgment,
+    finalScore,
+    phasesLeft: blind.phasesTotal - blind.phasesUsed,
+    materialGold: collectBlindEndMaterials(blind.hand),
+  };
 }
