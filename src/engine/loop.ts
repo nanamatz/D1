@@ -13,9 +13,10 @@
 
 import { BALANCE } from './balance';
 import { drawTiles } from './bag';
-import type { Rng } from './rng';
+import { makeRng, type Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, spell, letterString } from './scoring';
+import { applyTileMaterial } from './materials';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { defaultJokerBus } from './jokers';
@@ -145,6 +146,7 @@ function scoreSubmission(
   lexicon: Lexicon,
   run: RunState,
   blind: BlindState,
+  rng: Rng,
 ): { submission: WordSubmission; events: ScoreEvent[] } {
   const b = baseScore(tiles, lexicon);
   const submission: WordSubmission = {
@@ -162,6 +164,17 @@ function scoreSubmission(
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     ctx.chips += chips;
     events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
+
+    const mat = applyTileMaterial(ctx, t, rng);
+    if (mat && (mat.chipsDelta !== 0 || mat.multDelta !== 0)) {
+      events.push({
+        kind: 'material',
+        material: t.material,
+        tileId: t.id,
+        chipsDelta: mat.chipsDelta,
+        multDelta: mat.multDelta,
+      });
+    }
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
 
@@ -257,7 +270,7 @@ export function submitWord(
   }
   const goldDelta = boss?.goldPerWord ? -boss.goldPerWord : 0;
 
-  const { submission, events } = scoreSubmission(used, lexicon, run, blind);
+  const { submission, events } = scoreSubmission(used, lexicon, run, blind, makeRng(run.seed));
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));

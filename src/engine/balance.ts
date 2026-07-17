@@ -38,6 +38,22 @@ export const BALANCE = {
   // ----- Gibberish (GDD §6.4, decision b-2) -----
   gibberish: { mult: 1.0 }, // letter chips × 1.0; no suit, no POS, leaves a hole
 
+  /**
+   * Materials (GDD §2.2). First-pass values are Balatro's enhancement numbers
+   * VERBATIM — a validated reference point to tune from, not a claim they fit
+   * our scale. See docs/superpowers/specs/2026-07-17-tile-materials-design.md
+   * for the three predicted breakages src/sim should measure.
+   */
+  materials: {
+    porcelain: { chips: 30 }, // Balatro Bonus
+    polished: { mult: 4 }, // Balatro Mult
+    glass: { multFactor: 2, destroyChance: 0.25 }, // Balatro Glass
+    stone: { chips: 50 }, // Balatro Stone
+    leadPlate: { multChance: 0.2, mult: 20, goldChance: 1 / 15, gold: 20 }, // Balatro Lucky
+    ivory: { gold: 3 }, // Balatro Gold
+    brass: { multFactor: 1.5 }, // Balatro Steel
+  },
+
   // ----- Sentence patterns (GDD §5.2) -----
   patterns: {
     outcry:       { rank: 1, op: 'add' as const,      flatChips: 20 },

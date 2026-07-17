@@ -12,7 +12,9 @@
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
-import type { Suit, Tile, WordSubmission } from './types';
+import { applyTileMaterial } from './materials';
+import { makeRng } from './rng';
+import type { Suit, Tile, WordScoringContext, WordSubmission } from './types';
 
 /** Sentinel glyph for a letterless Stone tile. Never appears in the lexicon, so a
  *  word containing one always fails lookup → gibberish (GDD §2.2, §6.4). */
@@ -82,12 +84,19 @@ export function baseScore(tiles: readonly Tile[], lexicon: Lexicon): BaseScore {
  */
 export function scoreWord(tiles: readonly Tile[], lexicon: Lexicon): WordSubmission {
   const b = baseScore(tiles, lexicon);
-  return {
+  const submission: WordSubmission = {
     tiles: tiles.slice(),
     text: b.text,
     isGibberish: b.isGibberish,
     suit: b.suit,
     posUsed: null,
-    settledScore: b.chips * b.mult,
+    settledScore: 0,
   };
+  // Reference path: no jokers, no bosses. Materials still apply — they are part of
+  // the tile, not a modifier layered on top. Fixed seed keeps this pure/testable.
+  const rng = makeRng('scoreWord');
+  const ctx: WordScoringContext = { submission, chips: b.chips, mult: b.mult };
+  for (const t of tiles) applyTileMaterial(ctx, t, rng);
+  submission.settledScore = ctx.chips * ctx.mult;
+  return submission;
 }

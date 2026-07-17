@@ -14,7 +14,9 @@ export type Letter =
 export type LetterCase = 'upper' | 'lower';
 
 /** Enhancement layer (GDD §2.2). 'ceramic' is the unenhanced base. */
-export type TileMaterial = 'ceramic' | 'porcelain' | 'polished' | 'glass' | 'stone';
+export type TileMaterial =
+  | 'ceramic' | 'porcelain' | 'polished' | 'glass' | 'stone'
+  | 'leadPlate' | 'ivory' | 'brass';
 
 /** Edition layer (GDD §2.3). 'medium' (Futura Medium) is the base. */
 export type TileFont = 'medium' | 'lightItalic' | 'bold' | 'inline' | 'black';
@@ -152,6 +154,7 @@ export interface WordScoringContext {
  */
 export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter | null; chips: number }
+  | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number }
