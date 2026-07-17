@@ -13,7 +13,7 @@
 
 import { BALANCE } from './balance';
 import { drawTiles } from './bag';
-import { makeRng, type Rng } from './rng';
+import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, spell, letterString } from './scoring';
 import { applyTileMaterial } from './materials';
@@ -147,7 +147,7 @@ function scoreSubmission(
   run: RunState,
   blind: BlindState,
   rng: Rng,
-): { submission: WordSubmission; events: ScoreEvent[] } {
+): { submission: WordSubmission; events: ScoreEvent[]; materialGold: number } {
   const b = baseScore(tiles, lexicon);
   const submission: WordSubmission = {
     tiles: tiles.slice(),
@@ -160,20 +160,24 @@ function scoreSubmission(
   const events: ScoreEvent[] = [];
 
   const ctx: WordScoringContext = { submission, chips: 0, mult: b.mult };
+  let materialGold = 0;
   for (const t of tiles) {
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     ctx.chips += chips;
     events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
 
     const mat = applyTileMaterial(ctx, t, rng);
-    if (mat && (mat.chipsDelta !== 0 || mat.multDelta !== 0)) {
-      events.push({
-        kind: 'material',
-        material: t.material,
-        tileId: t.id,
-        chipsDelta: mat.chipsDelta,
-        multDelta: mat.multDelta,
-      });
+    if (mat) {
+      materialGold += mat.side.goldDelta ?? 0;
+      if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
+        events.push({
+          kind: 'material',
+          material: t.material,
+          tileId: t.id,
+          chipsDelta: mat.chipsDelta,
+          multDelta: mat.multDelta,
+        });
+      }
     }
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
@@ -221,7 +225,7 @@ function scoreSubmission(
   if (boss?.voids?.(submission, blind.sequence)) total = 0; // The Purist
   submission.settledScore = total;
   events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
-  return { submission, events };
+  return { submission, events, materialGold };
 }
 
 /** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total. */
@@ -257,6 +261,7 @@ export function submitWord(
   run: RunState,
   lexicon: Lexicon,
   tileIds: readonly string[],
+  rng: Rng,
 ): SubmitResult {
   if (blind.phasesUsed >= blind.phasesTotal) {
     throw new Error('no phases remain in this blind');
@@ -268,9 +273,9 @@ export function submitWord(
   if (boss?.blocks?.(spell(used), lexicon)) {
     throw new Error('boss: this word cannot be submitted');
   }
-  const goldDelta = boss?.goldPerWord ? -boss.goldPerWord : 0;
 
-  const { submission, events } = scoreSubmission(used, lexicon, run, blind, makeRng(run.seed));
+  const { submission, events, materialGold } = scoreSubmission(used, lexicon, run, blind, rng);
+  const goldDelta = (boss?.goldPerWord ? -boss.goldPerWord : 0) + materialGold;
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));

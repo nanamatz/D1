@@ -25,7 +25,7 @@ const tilesFor = (word: string): Tile[] =>
 /** Force a hand that spells `word`, submit it, return the new blind + submission. */
 const play = (blind: BlindState, run: RunState, word: string) => {
   const hand = tilesFor(word);
-  return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id));
+  return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id), makeRng('test'));
 };
 
 const freshBlind = (target = 1000) => {

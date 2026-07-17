@@ -58,7 +58,7 @@ describe('slice1 loop — startBlind (GDD §6.1)', () => {
     const run = newRun('b1');
     let blind = startBlind(run, makeRng('b1'));
     blind = discardTiles(blind, blind.hand.slice(0, 2).map((t) => t.id));
-    submitWord(blind, run, lex, blind.hand.slice(0, 3).map((t) => t.id));
+    submitWord(blind, run, lex, blind.hand.slice(0, 3).map((t) => t.id), makeRng('test'));
 
     const next = startBlind(run, makeRng('b1-next'));
     expect(next.sequence).toEqual([]);
@@ -134,7 +134,7 @@ describe('slice1 loop — submitWord (GDD §6.1, §7.1)', () => {
   it('settles the word score immediately and appends it to the sequence', () => {
     const { run, blind } = controlledBlind();
     const ids = blind.hand.slice(0, 3).map((t) => t.id); // C A T
-    const { blind: after, submission } = submitWord(blind, run, lex, ids);
+    const { blind: after, submission } = submitWord(blind, run, lex, ids, makeRng('test'));
     expect(submission.text).toBe('CAT');
     expect(submission.settledScore).toBe(5);
     expect(after.committedScore).toBe(5); // layer 1 immediate (GDD §7.1)
@@ -145,7 +145,7 @@ describe('slice1 loop — submitWord (GDD §6.1, §7.1)', () => {
   it('draws back up by the number of tiles used (GDD §6.1)', () => {
     const { run, blind } = controlledBlind();
     const ids = blind.hand.slice(0, 3).map((t) => t.id);
-    const { blind: after } = submitWord(blind, run, lex, ids);
+    const { blind: after } = submitWord(blind, run, lex, ids, makeRng('test'));
     expect(after.hand.length).toBe(blind.hand.length); // played 3, drew 3
   });
 
@@ -153,7 +153,13 @@ describe('slice1 loop — submitWord (GDD §6.1, §7.1)', () => {
     const { run, blind } = controlledBlind();
     // Spell T A C — not a word in our lexicon
     const [c, a, t] = blind.hand;
-    const { blind: after, submission } = submitWord(blind, run, lex, [t!.id, a!.id, c!.id]);
+    const { blind: after, submission } = submitWord(
+      blind,
+      run,
+      lex,
+      [t!.id, a!.id, c!.id],
+      makeRng('test'),
+    );
     expect(submission.text).toBe('TAC');
     expect(submission.isGibberish).toBe(true);
     expect(submission.posUsed).toBeNull();
@@ -164,12 +170,12 @@ describe('slice1 loop — submitWord (GDD §6.1, §7.1)', () => {
     const { run, blind } = controlledBlind();
     const drained = { ...blind, bag: [] as Tile[] };
     const ids = drained.hand.slice(0, 3).map((t) => t.id);
-    const { blind: after } = submitWord(drained, run, lex, ids);
+    const { blind: after } = submitWord(drained, run, lex, ids, makeRng('test'));
     expect(after.hand.length).toBe(drained.hand.length - 3);
   });
 
   it('rejects submitting a tile not in hand', () => {
     const { run, blind } = controlledBlind();
-    expect(() => submitWord(blind, run, lex, ['ghost-id'])).toThrow(/hand/i);
+    expect(() => submitWord(blind, run, lex, ['ghost-id'], makeRng('test'))).toThrow(/hand/i);
   });
 });

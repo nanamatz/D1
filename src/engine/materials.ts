@@ -61,8 +61,21 @@ const stone: MaterialDef = {
   },
 };
 
+const leadPlate: MaterialDef = {
+  id: 'leadPlate',
+  nameKo: '연판',
+  nameEn: 'Lead plate',
+  // A worn stereotype plate prints unevenly — same plate, uneven pulls.
+  // The two rolls are INDEPENDENT (Balatro Lucky): one tile can hit both.
+  onTileScored: (ctx, _tile, rng) => {
+    const cfg = BALANCE.materials.leadPlate;
+    if (rng.next() < cfg.multChance) ctx.mult += cfg.mult;
+    return rng.next() < cfg.goldChance ? { goldDelta: cfg.gold } : {};
+  },
+};
+
 export const MATERIAL_REGISTRY: ReadonlyMap<TileMaterial, MaterialDef> = new Map(
-  [porcelain, polished, stone].map((m) => [m.id, m]),
+  [porcelain, polished, stone, leadPlate].map((m) => [m.id, m]),
 );
 
 /**

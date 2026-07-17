@@ -3,6 +3,9 @@ import { scoreWord, spell, letterChips, letterString, NO_LETTER } from '../src/e
 import { makeLexicon } from '../src/engine/lexicon';
 import { isVowel, isConsonant } from '../src/engine/types';
 import type { Letter, Tile, TileMaterial } from '../src/engine/types';
+import { makeRng } from '../src/engine/rng';
+import { startBlind, submitWord } from '../src/engine/loop';
+import { newRun } from '../src/engine/run';
 
 let idc = 0;
 /** Build tiles from a word; '_' means a letterless stone tile. */
@@ -88,5 +91,31 @@ describe('slice5 — static per-tile material effects (GDD §2.2)', () => {
 
   it('ceramic changes nothing', () => {
     expect(scoreWord(tiles('cat'), lex).settledScore).toBe(5);
+  });
+});
+
+describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
+  it('is reproducible: the same seed gives the same outcome', () => {
+    const build = () => {
+      const run = { ...newRun('mat-seed'), bag: tiles('cat', 'leadPlate') };
+      const blind = startBlind(run, makeRng('mat-seed'));
+      const ids = blind.hand.map((t) => t.id);
+      return submitWord(blind, run, lex, ids, makeRng('roll-1'));
+    };
+    expect(build().submission.settledScore).toBe(build().submission.settledScore);
+    expect(build().goldDelta).toBe(build().goldDelta);
+  });
+
+  it('different seeds eventually produce a mult hit (1/5) across many rolls', () => {
+    const run = { ...newRun('mat-seed'), bag: tiles('cat', 'leadPlate') };
+    let hits = 0;
+    for (let i = 0; i < 200; i++) {
+      const blind = startBlind(run, makeRng(`b${i}`));
+      const ids = blind.hand.map((t) => t.id);
+      const { events } = submitWord(blind, run, lex, ids, makeRng(`roll-${i}`));
+      if (events.some((e) => e.kind === 'material' && e.multDelta > 0)) hits++;
+    }
+    // 3 lead tiles × 200 words at 1/5 each — a total miss would mean the RNG is not wired
+    expect(hits).toBeGreaterThan(0);
   });
 });

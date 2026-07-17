@@ -25,7 +25,7 @@ const tilesFor = (word: string): Tile[] =>
 const play = (run: RunState, word: string): { events: ScoreEvent[]; settled: number } => {
   const blind: BlindState = startBlind(run, makeRng(run.seed));
   const hand = tilesFor(word);
-  const res = submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id));
+  const res = submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id), makeRng('test'));
   return { events: res.events, settled: res.submission.settledScore };
 };
 

@@ -27,7 +27,7 @@ const bossBlind = (run: RunState, bossId: string, target = 100_000): BlindState 
   startBlind(run, makeRng('boss'), { kind: 'boss', bossId, target });
 const play = (blind: BlindState, run: RunState, word: string) => {
   const hand = tilesFor(word);
-  return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id));
+  return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id), makeRng('test'));
 };
 
 describe('slice5 bosses — setup effects (GDD §8.3)', () => {

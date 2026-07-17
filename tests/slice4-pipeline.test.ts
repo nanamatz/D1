@@ -29,7 +29,7 @@ const tilesFor = (word: string): Tile[] =>
 
 const play = (blind: BlindState, run: RunState, word: string) => {
   const hand = tilesFor(word);
-  return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id));
+  return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id), makeRng('test'));
 };
 
 const openBlind = (run: RunState, target = 100_000): BlindState =>

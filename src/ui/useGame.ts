@@ -536,7 +536,13 @@ export function useGame(): UseGame {
       if (prev.blind.phasesUsed >= prev.blind.phasesTotal) return prev;
       let result;
       try {
-        result = submitWord(prev.blind, prev.run, lexicon, prev.selected);
+        result = submitWord(
+          prev.blind,
+          prev.run,
+          lexicon,
+          prev.selected,
+          makeRng(`${prev.seed}#${prev.rngCounter}`),
+        );
       } catch {
         // Boss legality (e.g. The Noun Lock) — surface, don't crash.
         return { ...prev, message: { key: 'boss.blocked' } };
@@ -568,6 +574,7 @@ export function useGame(): UseGame {
         lastPlayed: { text: submission.text, isGibberish: submission.isGibberish },
         hint: null,
         stats: { ...prev.stats, wordsPlayed: prev.stats.wordsPlayed + 1, bestWord },
+        rngCounter: prev.rngCounter + 1,
       };
       // Auto-settle (playtest-03 B): the blind ends the moment the projected
       // total (committed + sentence bonus) reaches the target — no manual button.
