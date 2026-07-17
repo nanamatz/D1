@@ -46,6 +46,7 @@ export function findSpellableWords(
 ): HintWord[] {
   const byLetter = new Map<Letter, Tile[]>();
   for (const t of hand) {
+    if (t.letter === null) continue; // a Stone tile can spell nothing (GDD §2.2)
     const bucket = byLetter.get(t.letter);
     if (bucket) bucket.push(t);
     else byLetter.set(t.letter, [t]);

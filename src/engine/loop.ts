@@ -15,7 +15,8 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { baseScore, spell } from './scoring';
+import { baseScore, spell, letterString } from './scoring';
+import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { defaultJokerBus } from './jokers';
@@ -129,8 +130,10 @@ export interface SubmitResult {
   submission: WordSubmission;
   /** ordered settle steps for the UI to replay (UI_DESIGN §4.1) */
   events: ScoreEvent[];
-  /** run-gold change from this submission (The Taxman = −1); 0 normally */
+  /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/15 roll); 0 normally */
   goldDelta: number;
+  /** tiles destroyed by their material (Glass) — the caller removes them from run.bag */
+  destroyedTileIds: string[];
 }
 
 /**
@@ -145,7 +148,8 @@ function scoreSubmission(
   lexicon: Lexicon,
   run: RunState,
   blind: BlindState,
-): { submission: WordSubmission; events: ScoreEvent[] } {
+  rng: Rng,
+): { submission: WordSubmission; events: ScoreEvent[]; materialGold: number; destroyedTileIds: string[] } {
   const b = baseScore(tiles, lexicon);
   const submission: WordSubmission = {
     tiles: tiles.slice(),
@@ -158,16 +162,41 @@ function scoreSubmission(
   const events: ScoreEvent[] = [];
 
   const ctx: WordScoringContext = { submission, chips: 0, mult: b.mult };
+  let materialGold = 0;
+  const destroyedTileIds: string[] = [];
   for (const t of tiles) {
-    const chips = BALANCE.letterChips[t.letter] ?? 0;
+    const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     ctx.chips += chips;
     events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
+
+    const mat = applyTileMaterial(ctx, t, rng);
+    if (mat) {
+      materialGold += mat.side.goldDelta ?? 0;
+      if (mat.side.destroy) destroyedTileIds.push(t.id);
+      if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
+        events.push({
+          kind: 'material',
+          material: t.material,
+          tileId: t.id,
+          chipsDelta: mat.chipsDelta,
+          multDelta: mat.multDelta,
+        });
+      }
+    }
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
 
+  // Brass and friends read tiles REMAINING in hand — blind.hand still holds the
+  // played tiles at this point, so exclude them explicitly.
+  const playedIds = new Set(tiles.map((t) => t.id));
+  const held = blind.hand.filter((t) => !playedIds.has(t.id));
+  for (const beat of applyHeldMaterials(ctx, held)) {
+    events.push({ kind: 'material', ...beat });
+  }
+
   // Letter hand (A-2): highest single per-word structure bonus, folded in before
   // the suit multiplier settles. Vowel Flush / Straight also fire on gibberish.
-  const letters = tiles.map((t) => t.letter).join('');
+  const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, submission.isGibberish);
   if (letterHand && (letterHand.chips !== 0 || letterHand.mult !== 0)) {
     ctx.chips += letterHand.chips;
@@ -208,7 +237,7 @@ function scoreSubmission(
   if (boss?.voids?.(submission, blind.sequence)) total = 0; // The Purist
   submission.settledScore = total;
   events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
-  return { submission, events };
+  return { submission, events, materialGold, destroyedTileIds };
 }
 
 /** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total. */
@@ -244,6 +273,7 @@ export function submitWord(
   run: RunState,
   lexicon: Lexicon,
   tileIds: readonly string[],
+  rng: Rng,
 ): SubmitResult {
   if (blind.phasesUsed >= blind.phasesTotal) {
     throw new Error('no phases remain in this blind');
@@ -255,9 +285,15 @@ export function submitWord(
   if (boss?.blocks?.(spell(used), lexicon)) {
     throw new Error('boss: this word cannot be submitted');
   }
-  const goldDelta = boss?.goldPerWord ? -boss.goldPerWord : 0;
 
-  const { submission, events } = scoreSubmission(used, lexicon, run, blind);
+  const { submission, events, materialGold, destroyedTileIds } = scoreSubmission(
+    used,
+    lexicon,
+    run,
+    blind,
+    rng,
+  );
+  const goldDelta = (boss?.goldPerWord ? -boss.goldPerWord : 0) + materialGold;
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));
@@ -285,7 +321,7 @@ export function submitWord(
   const judgment = judgeSentence(sequence, lexicon);
   const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind);
 
-  return { submission, events, goldDelta, blind: { ...afterBlind, projectedScore } };
+  return { submission, events, goldDelta, destroyedTileIds, blind: { ...afterBlind, projectedScore } };
 }
 
 export interface EndBlindResult {
@@ -294,6 +330,9 @@ export interface EndBlindResult {
   finalScore: number;
   /** unused phases → gold on ending (economy lands in slice ⑤) */
   phasesLeft: number;
+  /** gold from materials held in hand at blind end (Ivory). The CALLER applies it —
+   *  endBlind is pure and is called more than once per blind (useGame.ts:273, 594). */
+  materialGold: number;
 }
 
 /**
@@ -305,5 +344,10 @@ export interface EndBlindResult {
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
   const judgment = judgeSentence(blind.sequence, lexicon);
   const finalScore = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind);
-  return { judgment, finalScore, phasesLeft: blind.phasesTotal - blind.phasesUsed };
+  return {
+    judgment,
+    finalScore,
+    phasesLeft: blind.phasesTotal - blind.phasesUsed,
+    materialGold: collectBlindEndMaterials(blind.hand),
+  };
 }

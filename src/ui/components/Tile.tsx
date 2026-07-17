@@ -1,5 +1,6 @@
 import type { Tile } from '../../engine/types';
 import { faceClass, fontClass, inkClass, materialClass, tileGlyph, tileValue } from '../game';
+import { useI18n } from '../i18n';
 
 interface Props {
   tile: Tile;
@@ -29,8 +30,14 @@ export function TileView({
   zone,
   tooltip,
 }: Props) {
+  const { t } = useI18n();
   const interactive = !mini && !!onSelect;
   const draggable = !mini && !!zone;
+  // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
+  // to its material name so a screen reader announces "Stone tile, 0 chips"
+  // instead of the identity-less " tile, 0 chips" (M-4).
+  const idLabel =
+    tileGlyph(tile) || (tile.material !== 'ceramic' ? t(`material.${tile.material}`) : '');
   const className = [
     'tile',
     mini && 'mini',
@@ -54,7 +61,7 @@ export function TileView({
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}
-      aria-label={interactive ? `${tileGlyph(tile)} tile, ${tileValue(tile)} chips` : undefined}
+      aria-label={interactive ? `${idLabel} tile, ${t('tile.chips', { n: tileValue(tile) })}` : undefined}
       draggable={draggable}
       onDragStart={
         draggable ? (e) => e.dataTransfer.setData('text/plain', `${zone}:${tile.id}`) : undefined

@@ -86,7 +86,7 @@ function measure(name: string, comp: Comp, lex: ReturnType<typeof loadStubLexico
   for (let i = 0; i < HANDS; i++) {
     const rng = makeRng(`${name}-${i}`);
     const hand = rng.shuffle(bag).slice(0, HAND);
-    rareSum += hand.filter((t) => RARE.has(t.letter)).length;
+    rareSum += hand.filter((t) => t.letter !== null && RARE.has(t.letter)).length;
     const words = findSpellableWords(hand, lex, 100000);
     if (words.length === 0) {
       zero++;

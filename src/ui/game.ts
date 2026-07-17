@@ -3,7 +3,7 @@
  * they contain NO game rules — every decision routes back through the engine
  * (scoreWord/judgeSentence/etc). The React hook (useGame) owns the state.
  */
-import { baseScore, scoreWord } from '../engine/scoring';
+import { baseScore, scoreWord, letterString } from '../engine/scoring';
 import { judgeSentence } from '../engine/patterns';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
@@ -82,7 +82,7 @@ export function stagePreview(
   const blocked = blind.bossId
     ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
     : false;
-  const letters = tiles.map((t) => t.letter).join('');
+  const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, base.isGibberish);
   return {
     text: base.text,
@@ -117,8 +117,9 @@ function prettyPos(pos: string): string {
   }
 }
 
-/** Letter chip value for a tile (display only). */
-export const tileValue = (t: Tile): number => BALANCE.letterChips[t.letter] ?? 0;
+/** Letter chip value for a tile (display only). Stone has no letter → 0. */
+export const tileValue = (t: Tile): number =>
+  t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
 
 /** Material → css class ('' for the ceramic base). */
 export function materialClass(material: Tile['material']): string {
@@ -141,9 +142,12 @@ export function fontClass(font: Tile['font']): string {
   }
 }
 
-/** Literal display glyph for a tile (case shown as authored: h vs H). */
-export const tileGlyph = (t: Tile): string =>
-  t.case === 'lower' ? t.letter.toLowerCase() : t.letter;
+/** Literal display glyph for a tile (case shown as authored: h vs H).
+ *  A Stone tile has no letter and renders blank — the .stone material class carries its look. */
+export const tileGlyph = (t: Tile): string => {
+  if (t.letter === null) return '';
+  return t.case === 'lower' ? t.letter.toLowerCase() : t.letter;
+};
 
 /** Letter-ink tier by chip value (P2-3): 1 default · 2–3 · 4–5 · 8–10 gilded. */
 export function inkClass(value: number): string {
@@ -153,8 +157,11 @@ export function inkClass(value: number): string {
   return '';
 }
 
-/** Vowel/consonant ceramic face tint class (P2-3). */
-export const faceClass = (t: Tile): string => (isVowel(t.letter) ? 'vowel' : 'cons');
+/** Vowel/consonant ceramic face tint class (P2-3). Stone is neither → no tint. */
+export const faceClass = (t: Tile): string => {
+  if (t.letter === null) return '';
+  return isVowel(t.letter) ? 'vowel' : 'cons';
+};
 
 // ---------- Hand sorting (P1-1) ----------
 
@@ -169,7 +176,8 @@ export const SORT_LABEL: Record<SortMode, string> = {
   manual: 'Manual',
 };
 
-const alpha = (a: Tile, b: Tile): number => a.letter.localeCompare(b.letter);
+const alpha = (a: Tile, b: Tile): number =>
+  (a.letter ?? '￿').localeCompare(b.letter ?? '￿');
 const COMPARATORS: Record<Exclude<SortMode, 'manual'>, (a: Tile, b: Tile) => number> = {
   alpha,
   value: (a, b) => tileValue(b) - tileValue(a) || alpha(a, b), // desc, alpha tiebreak

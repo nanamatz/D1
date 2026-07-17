@@ -6,7 +6,10 @@ import type { Letter, Tile } from '../src/engine/types';
 
 const countByLetter = (tiles: Tile[]): Record<string, number> => {
   const counts: Record<string, number> = {};
-  for (const t of tiles) counts[t.letter] = (counts[t.letter] ?? 0) + 1;
+  for (const t of tiles) {
+    if (t.letter === null) continue; // buildBag() never produces letterless (Stone) tiles
+    counts[t.letter] = (counts[t.letter] ?? 0) + 1;
+  }
   return counts;
 };
 

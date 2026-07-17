@@ -51,3 +51,23 @@ describe('slice5 packs — apply a pick', () => {
     expect(applyPackPick(full, offer.options[0]!).consumables.length).toBe(2); // no room → unchanged
   });
 });
+
+describe('slice5 — packs stock all 7 non-base materials (GDD §9.3)', () => {
+  it('can roll every material across many seeds, and stone tiles are letterless', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 3000; i++) {
+      const run = { ...newRun(`pk${i}`), bag: [] };
+      const offer = rollPack('letter', run, makeRng(`pk${i}`));
+      for (const o of offer.options) {
+        if (o.kind !== 'tile') continue;
+        seen.add(o.tile.material);
+        // The invariant that makes Stone work (GDD §2.2)
+        if (o.tile.material === 'stone') expect(o.tile.letter).toBeNull();
+        else expect(o.tile.letter).not.toBeNull();
+      }
+    }
+    for (const m of ['porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass']) {
+      expect(seen.has(m)).toBe(true);
+    }
+  });
+});

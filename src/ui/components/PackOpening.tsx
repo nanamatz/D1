@@ -2,6 +2,7 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import type { ConsumableId } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
+import { NO_LETTER } from '../../engine/scoring';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
@@ -58,7 +59,7 @@ export function PackOpening({ g }: { g: UseGame }) {
       return def ? (lang === 'ko' ? def.nameKo : def.nameEn) : o.id;
     }
     if (o.kind === 'consumable') return t(`consumable.${o.id}`);
-    return o.tile.letter; // tile
+    return o.tile.letter ?? NO_LETTER; // tile
   };
 
   return (

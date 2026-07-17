@@ -821,14 +821,106 @@
   );
   box-shadow: var(--shadow), inset 0 0 12px rgba(120, 190, 235, 0.8);
 }
+/* Stone: a letterless tile (GDD §2.2). tileGlyph() renders nothing, so the face
+   carries the whole read — no letter, no ink tint (color: transparent hides the
+   0-chip .val badge too, since Stone's identity is purely material, not numeric). */
 .tile.stone {
   background: radial-gradient(circle at 30% 25%, #c9c6be, #9da09b 70%),
     radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.15) 1px, transparent 2px);
-  color: #2e2e2a;
+  color: transparent;
 }
 .tile.porcelain {
   background: radial-gradient(120% 120% at 25% 18%, #ffffff, #f2f6f7 55%, #d9e4e8);
   border: 1px solid #bfd3da;
+}
+/* Polished: buffed ceramic — same warm face as the base tile (still tinted by
+   --tile-face, so vowel/cons tints still show through, unlike the other
+   material faces which replace it outright), plus a STATIC buffed-sheen band
+   and a brighter specular box-shadow that are visible at all times, with an
+   animated specular sweep layered on top (UI_DESIGN §3 "animated shine
+   sweep"). The static band exists because the sweep alone is off-screen for
+   ~60% of its cycle and fully suppressed under prefers-reduced-motion — a
+   Polished tile must read as distinct from plain Ceramic (and from Glass/
+   Stone/Porcelain/Lead plate/Ivory/Brass) at any single instant, not just
+   while the sweep happens to be crossing. Kept subtler than the metals
+   (leadPlate/brass) and Ivory: one soft diagonal band on the same warm body,
+   not a different hue or a repeating grain — "the same tile, polished."
+   overflow: hidden clips the sweep to the tile's own border-radius;
+   pointer-events: none keeps it from intercepting drag/click. */
+.tile.polished {
+  overflow: hidden;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 36%,
+      rgba(255, 255, 255, 0.4) 46%,
+      rgba(255, 255, 255, 0.1) 55%,
+      transparent 64%
+    ),
+    radial-gradient(120% 120% at 25% 18%, #fffdf6 0%, var(--tile-face) 45%, #e2d8c4 100%);
+  box-shadow:
+    var(--shadow),
+    inset 0 2px 3px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.1);
+}
+.tile.polished::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.85) 48%,
+    rgba(255, 255, 255, 0.15) 58%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  animation: polished-sheen 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes polished-sheen {
+  0%,
+  15% {
+    transform: translateX(-120%);
+  }
+  55%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+/* Lead plate: a worn stereotype plate — dull, flat, matte type-metal grey.
+   Deliberately static (no sheen) to read as heavier/duller than Brass or Polished. */
+.tile.leadPlate {
+  background: radial-gradient(120% 120% at 25% 18%, #9a9d9f 0%, #6f7274 50%, #45484b 100%);
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.35);
+  border: 1px solid #3a3c3e;
+}
+/* Ivory: warm cream/bone, prized — brighter and more saturated than the base
+   ceramic face, with faint Schreger-line grain and a gilt-toned border so it
+   reads as a distinct, valuable material rather than "ceramic but paler". */
+.tile.ivory {
+  background:
+    repeating-linear-gradient(
+      100deg,
+      rgba(255, 250, 232, 0) 0px,
+      rgba(214, 196, 150, 0.22) 1px,
+      rgba(255, 250, 232, 0) 3px
+    ),
+    radial-gradient(120% 120% at 25% 18%, #fffaf0 0%, #f6ecd2 50%, #e4d3a0 100%);
+  border: 1px solid #d8c48f;
+}
+/* Brass: yellow type metal — warm gold-brass gradient with a brighter specular
+   highlight than Lead plate, but no animation (Polished owns motion). */
+.tile.brass {
+  background: radial-gradient(120% 120% at 25% 18%, #ffe9a8 0%, #d1a13c 50%, #8f6a1f 100%);
+  box-shadow:
+    var(--shadow),
+    inset 0 2px 2px rgba(255, 250, 220, 0.6),
+    inset 0 -3px 4px rgba(90, 60, 10, 0.4);
+  border: 1px solid #7a5a1a;
 }
 /* font editions (Jost styles) */
 .tile.f-bold {
@@ -1531,13 +1623,23 @@
   gap: 14px;
 }
 
+/* Polished's specular sweep (.tile.polished::after, added alongside the other
+   material faces) is exempt from the `.hand .tile` rule below because it
+   targets a pseudo-element, not .tile itself — suppress it explicitly so
+   motion-sensitive users don't get a perpetually animating tile. Unscoped
+   (not `.hand .tile.polished::after`): tiles render the same class outside
+   .hand too (staged tiles, the Collection screen), and the sweep should stop
+   everywhere reduced motion is requested. The static buffed-sheen band and
+   box-shadow on .tile.polished itself are untouched by this rule, so the
+   tile stays identifiable with the sweep gone. */
 @media (prefers-reduced-motion: reduce) {
   .hand,
   .hand .tile,
   .btn.cash,
   .projected.beaten .num,
   .scorebox.settling,
-  .blind-in {
+  .blind-in,
+  .tile.polished::after {
     animation: none;
   }
   .verdict {
