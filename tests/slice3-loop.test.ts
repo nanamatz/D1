@@ -34,12 +34,22 @@ const freshBlind = (target = 1000) => {
 };
 
 describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)', () => {
-  it('a bare verb projects the Imperative bonus over committed', () => {
+  it('a bare verb no longer projects a sentence bonus (imperative needs an object)', () => {
     const { run, blind } = freshBlind();
     const { blind: after, submission } = play(blind, run, 'run'); // RUN = 3 chips
     expect(submission.settledScore).toBe(3);
     expect(after.committedScore).toBe(3); // layer 1 unchanged
-    expect(after.projectedScore).toBe(83); // (3 + 40×2) × 1
+    expect(after.projectedScore).toBe(3); // no imperative → projected mirrors committed
+  });
+
+  it('verb + noun projects the Imperative bonus over committed', () => {
+    const { run } = freshBlind();
+    let b = startBlind(run, makeRng('s3'), { target: 1000 });
+    ({ blind: b } = play(b, run, 'eats')); // 4 chips
+    ({ blind: b } = play(b, run, 'fish')); // 10 chips → EATS FISH = Imperative
+    // committed = 14; both standard → Unison standard (+50 flat); Imperative +40×2.
+    expect(b.committedScore).toBe(14);
+    expect(b.projectedScore).toBe(144); // (14 + 40×2 + 50) × 1
   });
 
   it('builds a Transitive sentence across phases and multiplies the total', () => {

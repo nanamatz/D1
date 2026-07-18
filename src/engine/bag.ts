@@ -1,5 +1,6 @@
 /**
- * The bag — the permanent, sculptable 98-tile asset (GDD §2.1, §6.1).
+ * The bag — the permanent, sculptable 68-tile asset (GDD §2.1, §6.1; the count is
+ * whatever BALANCE.bagComposition sums to — 68 after the 98→68 rebalance, C-2).
  *
  * buildBag creates the starting bag from BALANCE.bagComposition. Tiles are
  * plain data with stable ids; enhancement (material) and edition (font) start
@@ -13,7 +14,7 @@
 import { BALANCE } from './balance';
 import type { Letter, Tile } from './types';
 
-/** Build the starting bag (98 tiles) from the composition table. */
+/** Build the starting bag (68 tiles) from the composition table. */
 export function buildBag(): Tile[] {
   const bag: Tile[] = [];
   let n = 0;

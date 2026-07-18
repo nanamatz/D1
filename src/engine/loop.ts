@@ -183,6 +183,20 @@ function scoreSubmission(
         });
       }
     }
+
+    // Per-tile jokers (Vowel Praise, Consonant Bricklayer) fire AS this tile scores,
+    // one at a time, so each contribution interleaves with the tiles and its pop
+    // lands on the tile (item 3). Per-word jokers stay in the wordScoring pass below.
+    for (const joker of run.jokers) {
+      const beforeChips = ctx.chips;
+      const beforeMult = ctx.mult;
+      defaultJokerBus.emit('tileScoring', { run, blind, ctx, tile: t }, [joker]);
+      const chipsDelta = ctx.chips - beforeChips;
+      const multDelta = ctx.mult - beforeMult;
+      if (chipsDelta !== 0 || multDelta !== 0) {
+        events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta, tileId: t.id });
+      }
+    }
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
 

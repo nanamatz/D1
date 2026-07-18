@@ -46,15 +46,27 @@ describe('P1-3a — per-submission ScoreEvent log (settle choreography source)',
     expect(suit).toEqual({ kind: 'suit', suit: 'standard', mult: 1 });
   });
 
-  it('records each layer-1/2 joker as a chips/mult delta, in acquisition order', () => {
+  it('records per-tile jokers per consonant (with a tileId) and per-word jokers once', () => {
     const run = equip('j', 'consonantBricklayer', 'jackOfAllTrades');
-    const { events, settled } = play(run, 'cat');
+    const { events, settled } = play(run, 'cat'); // C, T consonants; A vowel
     const jokers = events.filter((e) => e.kind === 'joker');
-    expect(jokers).toEqual([
-      { kind: 'joker', jokerId: 'consonantBricklayer', chipsDelta: 8, multDelta: 0 },
-      { kind: 'joker', jokerId: 'jackOfAllTrades', chipsDelta: 0, multDelta: 4 },
+    // Consonant Bricklayer (per-tile, item 3) fires once per consonant, each carrying
+    // the tile it landed on; Jack of All Trades (per-word) fires once, no tileId.
+    const brick = jokers.filter((e) => e.kind === 'joker' && e.jokerId === 'consonantBricklayer');
+    const jack = jokers.filter((e) => e.kind === 'joker' && e.jokerId === 'jackOfAllTrades');
+    expect(brick.length).toBe(2);
+    for (const e of brick) {
+      expect(e).toMatchObject({ chipsDelta: 4, multDelta: 0 });
+      expect(e.kind === 'joker' && e.tileId).toBeTruthy();
+    }
+    expect(jack).toEqual([{ kind: 'joker', jokerId: 'jackOfAllTrades', chipsDelta: 0, multDelta: 4 }]);
+    // Per-tile jokers precede the per-word joker (acquisition order preserved).
+    expect(jokers.map((e) => (e.kind === 'joker' ? e.jokerId : ''))).toEqual([
+      'consonantBricklayer',
+      'consonantBricklayer',
+      'jackOfAllTrades',
     ]);
-    // settle = (5 + 8) chips × (1 + 4) mult = 65 — unchanged from the batch path
+    // settle = (5 + 8) chips × (1 + 4) mult = 65 — total unchanged from the batch path
     expect(settled).toBe(65);
   });
 

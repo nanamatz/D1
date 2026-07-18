@@ -1,8 +1,9 @@
 import type { BlindState, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
-import { bossDescKey } from '../descriptions';
+import { bossDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
+import { Tooltip } from './Tooltip';
 
 interface Props {
   run: RunState;
@@ -55,10 +56,12 @@ export function RunInfo({ run, blind, onClose }: Props) {
           <div className="label ri-sub">{t('runinfo.patterns')}</div>
           <div className="ri-patterns">
             {PATTERN_ORDER.map((p) => (
-              <div key={p} className="ri-pat">
-                <span className="pn">{t(`pattern.${p}`)}</span>
-                <span className="pl">Lv {run.patternLevels[p]}</span>
-              </div>
+              <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
+                <div className="ri-pat">
+                  <span className="pn">{t(`pattern.${p}`)}</span>
+                  <span className="pl">Lv {run.patternLevels[p]}</span>
+                </div>
+              </Tooltip>
             ))}
           </div>
 
@@ -70,10 +73,13 @@ export function RunInfo({ run, blind, onClose }: Props) {
               {run.vouchers.map((id) => {
                 const v = VOUCHER_REGISTRY.get(id);
                 if (!v) return null;
+                const name = lang === 'ko' ? v.nameKo : v.nameEn;
                 return (
-                  <span key={id} className="ri-voucher" title={lang === 'ko' ? v.nameKo : v.nameEn}>
-                    {v.emoji} {lang === 'ko' ? v.nameKo : v.nameEn}
-                  </span>
+                  <Tooltip key={id} title={name} body={t(voucherDescKey(id))} down>
+                    <span className="ri-voucher">
+                      {v.emoji} {name}
+                    </span>
+                  </Tooltip>
                 );
               })}
             </div>

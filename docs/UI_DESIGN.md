@@ -66,7 +66,7 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 │            │                                              │
 │  projected ├──────────────────────────────────────────────┤
 │  phases ●●○○   STAGED WORD preview (validity·suit·score)  │
-│  exchanges │                                              │
+│  discards  │                                              │
 │  gold/ante │   HAND (11 pixel-art tiles, slight fan/wobble) │
 │            │        [PLAY WORD]   [DISCARD]               │
 └────────────┴──────────────────────────────────────────────┘
@@ -74,7 +74,7 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 
 **Signature element — the Sentence Tray.** Balatro has no equivalent: our played words accumulate left-to-right *as a sentence under construction*. Each played word is a mini-card group (its tiles shrunk), framed in its suit color, with a POS tag chip beneath. A gibberish play renders as a cracked/burned slot — the **hole** made visible. At the tray's right end, a pattern status chip shows the live judgment ("Transitive ✓ ×2" / "— no pattern"). This tray is the game's identity on screen; spend the polish budget here.
 
-Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score · committed score as `[chips]×[mult]` blue/red boxes · projected score in gold (pulses when ≥ target — the auto-settle status indicator; there is **no** early-end/cash-out button, GDD §7.2) · phase dots · exchange dots · gold · ante N/8.
+Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score · committed score as `[chips]×[mult]` blue/red boxes · projected score in gold (pulses when ≥ target — the auto-settle status indicator; there is **no** early-end/cash-out button, GDD §7.2) · phase dots · discard dots · gold · ante N/8.
 
 ---
 

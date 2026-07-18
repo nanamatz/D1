@@ -71,6 +71,10 @@
      for a tooltip wider than one card (see .card-grid) and the two numbers must not
      drift apart. */
   --coll-card-min: 120px;
+  /* Every shop card (for-sale joker/consumable, voucher, pack) is this ONE width,
+     even though the three live in different-width rows — otherwise each sized to its
+     own name and they never lined up (item 2). */
+  --shop-card-w: 138px;
 
   /* ---- Type scale (playtest-06 #10) ----
      Every font-size comes from here; the CSS had 29 ad-hoc values across 138

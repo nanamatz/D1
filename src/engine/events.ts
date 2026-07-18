@@ -23,8 +23,14 @@ export interface EngineEvents {
   blindStart: { run: RunState; blind: BlindState };
 
   /** a word's chips/mult are being computed — THE main scoring hook.
-   *  Mutate ctx.chips / ctx.mult. Runs before settlement (GDD §7.1 layer 1). */
+   *  Mutate ctx.chips / ctx.mult. Runs before settlement (GDD §7.1 layer 1).
+   *  Use this for per-WORD effects (a flat bonus, a suit-gated bonus). */
   wordScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext };
+
+  /** a SINGLE tile's chips have just been added — per-LETTER jokers (Vowel Praise,
+   *  Consonant Bricklayer) hook here so their contribution interleaves with the tile
+   *  scoring and animates on that tile (item 3). Mutate ctx.chips / ctx.mult. */
+  tileScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext; tile: Tile };
 
   /** word settled and appended to the sequence; counters have been updated */
   wordScored: { run: RunState; blind: BlindState; index: number };

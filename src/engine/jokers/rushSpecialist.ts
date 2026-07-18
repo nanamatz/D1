@@ -1,9 +1,9 @@
-/** #24 Rush Specialist (Rare, layer 3): ×Mult that scales with how many phases
- *  are left at clear — ×(1 + 0.5 × phasesLeft) (playtest-04 C-1). Auto-settle
- *  made "cleared with phases left" the default, so a flat conditional bonus was
- *  meaningless; now a 1-phase clear of a 4-phase blind pays big, a last-phase
- *  clear pays nothing. Reads phases left from the blind, so it applies to the
- *  projection preview and the final (GDD §11.4, §11.7). */
+/** #24 Rush Specialist (Rare, layer 2): ×Mult on EACH WORD that scales with how many
+ *  phases will remain after it — ×(1 + 0.5 × phasesLeft) (reworked, item 6). It used
+ *  to multiply the sentence bonus, which only landed at clear and so just padded an
+ *  already-winning score; as a per-word mult it actively drives each word toward the
+ *  target, so a fast (early-phase) clear is what pays. A last-phase play pays nothing.
+ *  (GDD §11.4, §11.7.) */
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
@@ -14,13 +14,15 @@ export const rushSpecialist: JokerDef = {
   nameEn: 'Rush Specialist',
   emoji: '🏃',
   rarity: 'rare',
-  layer: 3,
+  layer: 2,
   price: BALANCE.jokerPrice.rare,
   hooks: {
-    sentenceScoring: ({ blind, ctx }) => {
-      const phasesLeft = blind.phasesTotal - blind.phasesUsed;
+    wordScoring: ({ blind, ctx }) => {
+      // `blind` here is pre-increment, so subtract 1 for the phases that will REMAIN
+      // after this word — a last-phase play (0 left) pays nothing.
+      const phasesLeft = Math.max(0, blind.phasesTotal - blind.phasesUsed - 1);
       if (phasesLeft > 0) {
-        ctx.totalMultiplier *= 1 + BALANCE.jokers.rushSpecialist.multPerPhase * phasesLeft;
+        ctx.mult *= 1 + BALANCE.jokers.rushSpecialist.multPerPhase * phasesLeft;
       }
     },
   },

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BlindState, Letter, RunState, Tile } from '../../engine/types';
+import type { BlindState, RunState, Tile } from '../../engine/types';
 import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
-
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('') as Letter[];
+import { TileView } from './Tile';
 
 interface Counts {
   perLetter: Record<string, number>;
@@ -33,10 +32,26 @@ function tally(tiles: readonly Tile[]): Counts {
  */
 const pouchRemaining = (blind: BlindState): Tile[] => blind.bag;
 
-/** The wide A–Z table + totals — remaining tiles only (playtest-04 item 1, no toggle). */
+/** Order tiles for the pouch view: by letter A–Z, letterless (Stone) last. */
+function sortForDisplay(tiles: readonly Tile[]): Tile[] {
+  return [...tiles].sort((a, b) => {
+    if (a.letter === b.letter) return 0;
+    if (a.letter === null) return 1;
+    if (b.letter === null) return -1;
+    return a.letter < b.letter ? -1 : 1;
+  });
+}
+
+/**
+ * The remaining pouch, shown as the ACTUAL tiles (playtest item 4) — same visual as
+ * in-blind tiles (material face, font, chip value), just mini-sized — so material and
+ * font are readable at a glance. Totals stay in the side rail. Remaining = undrawn
+ * bag ONLY (playtest-03 D-1).
+ */
 function PouchContents({ blind }: { blind: BlindState }) {
   const { t } = useI18n();
-  const active = tally(pouchRemaining(blind));
+  const tiles = pouchRemaining(blind);
+  const active = tally(tiles);
 
   return (
     <div className="pouch-body">
@@ -74,16 +89,10 @@ function PouchContents({ blind }: { blind: BlindState }) {
         )}
       </aside>
 
-      <div className="pouch-grid">
-        {ALPHABET.map((l) => {
-          const now = active.perLetter[l] ?? 0;
-          return (
-            <div key={l} className={['bag-col', now === 0 ? 'empty' : ''].filter(Boolean).join(' ')}>
-              <span className="bg-letter">{l}</span>
-              <span className="bg-count">{now}</span>
-            </div>
-          );
-        })}
+      <div className="pouch-tiles">
+        {sortForDisplay(tiles).map((tile) => (
+          <TileView key={tile.id} tile={tile} mini />
+        ))}
       </div>
     </div>
   );

@@ -157,7 +157,7 @@ export type ScoreEvent =
   | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; tileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
 

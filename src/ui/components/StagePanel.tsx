@@ -110,6 +110,20 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         ))}
       </div>
 
+      {/* item 6: preview the staged word BEFORE submitting — its part of speech and
+          the sentence bonus this play would project (pattern + unison). */}
+      {preview && !preview.isGibberish && (preview.pos || preview.sentenceBonus > 0) && (
+        <div className="stage-preview">
+          {preview.pos && <span className="sp-pos">{preview.pos}</span>}
+          {preview.sentenceBonus > 0 && (
+            <span className="sp-forecast">
+              {preview.completes ? t(`pattern.${preview.completes.pattern}`) : t('stage.bonus')}
+              <span className="sp-bonus">+{Math.round(preview.sentenceBonus)}</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {g.state.hint && (
         <div className="hintbar">
           🔍{' '}

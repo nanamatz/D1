@@ -57,6 +57,16 @@
   align-items: stretch;
   margin-top: 8px;
 }
+/* item 2: pin every shop card to ONE width so for-sale items, the voucher, and
+   packs line up even though they sit in different-width rows. The tooltip anchor
+   wraps buyable cards; the bare ".shopitem.empty" placeholders sit directly in the
+   row — both are fixed here, and the global `.tt-anchor > :not(.tt-card)` rule then
+   stretches the inner .shopitem to fill its anchor. */
+.shop-row > .tt-anchor,
+.shop-row > .shopitem {
+  flex: 0 0 var(--shop-card-w);
+  width: var(--shop-card-w);
+}
 .shopitem {
   background: #2c4358;
   border-radius: 12px;
@@ -67,7 +77,7 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  min-width: 120px;
+  min-width: 0;
 }
 .shopitem.uncommon {
   border: 2px solid var(--chips);
@@ -307,19 +317,97 @@
   border-radius: var(--r-md);
   padding: 2px 8px;
   box-shadow: var(--shadow);
+  position: relative; /* anchor the +N/×N pop (item 6) */
 }
-.scorebox.settling {
-  animation: settlepulse 0.22s ease-in-out infinite;
+/* item 6: each scoring beat floats how much the box grew, rising up and fading. It
+   re-mounts per beat (React key on the beat id), so every tile/joker contribution
+   pops one at a time. */
+.box-pop {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 50%;
+  font-family: 'Jersey 10';
+  font-size: var(--ds-sm);
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: boxPop 0.5s ease-out forwards;
 }
-@keyframes settlepulse {
-  0%,
+/* Chip pops read blue, mult pops read red — matching their boxes (item: colour
+   the floating pops to their stat). */
+.scorebox .c .box-pop {
+  color: #5bb8ff;
+}
+.scorebox .m .box-pop {
+  color: #ff6f6d;
+}
+/* A blue diamond (마름모) before the chip +N, fading with the text (it inherits the
+   pop's opacity animation). A square rotated 45°; no shadow, so the rotate doesn't
+   skew it. */
+.chip-diamond {
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  margin-right: 4px;
+  background: var(--chips);
+  transform: rotate(45deg);
+  vertical-align: 0.04em;
+}
+@keyframes boxPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  30% {
+    opacity: 1;
+  }
   100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
+    opacity: 0;
+    transform: translate(-50%, -20px);
   }
 }
+
+/* item 3/5: gold readouts float a delta pop when the amount changes. An increase
+   rises (the same boxPop as the score pops), a decrease drops with its own motion. */
+.money-wrap {
+  position: relative;
+}
+.money-pop {
+  position: absolute;
+  left: 50%;
+  font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+.money-pop.up {
+  bottom: 100%;
+  color: #6bd18a;
+  animation: boxPop 0.7s ease-out forwards;
+}
+.money-pop.down {
+  top: 100%;
+  color: var(--mult);
+  animation: moneyDrop 0.7s ease-in forwards;
+}
+@keyframes moneyDrop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 18px);
+  }
+}
+/* item 7: the scorebox no longer pulses/shakes during settle — the floating +N/×N
+   pops (item 6) carry the "score is building" read instead. */
 .scorebox .c {
   background: var(--chips);
 }
@@ -1217,6 +1305,37 @@
   align-self: center;
 }
 
+/* item 6: the staged-word preview strip — POS on the left, the projected sentence
+   bonus (pattern name + amount) on the right, shown before the word is submitted. */
+.stage-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 22px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.sp-pos {
+  color: var(--ink-dim);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+.sp-forecast {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold);
+}
+.sp-bonus {
+  color: #15242c;
+  background: var(--gold);
+  border-radius: 6px;
+  padding: 1px 8px;
+  font-family: 'Jersey 10';
+  font-size: var(--fs-lg);
+}
+
 /* C-4: tile hover tooltip (reuses the shared .tt-card look, anchored to the tile).
    Its reveal lives with the other tooltips in screens.css — that rule has to sit
    next to the shared @starting-style block to stay in sync with it. */
@@ -1562,47 +1681,8 @@
   color: var(--ink-dim);
 }
 
-/* B: verdict beat — the sentence-finalize / clear moment, shown after the word
-   settle so the bonus is seen pushing the score over the target. */
-.verdict {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  pointer-events: none;
-  z-index: 30;
-  opacity: 0;
-  animation: verdictIn 0.4s ease 0.55s forwards;
-}
-.verdict-score {
-  font-family: 'Jersey 10';
-  font-size: var(--ds-3xl);
-  color: var(--gold);
-  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
-}
-.verdict-cleared {
-  font-family: var(--ctl-font);
-  font-weight: 700;
-  font-size: var(--ds-xs);
-  color: #15242c;
-  background: var(--gold);
-  border-radius: 12px;
-  padding: 6px 20px;
-  box-shadow: var(--shadow);
-}
-@keyframes verdictIn {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+/* (item 4) The "Cleared! + Settle" verdict overlay was removed — the blind now
+   auto-resolves to the Fee Settlement modal, which is the only clear screen. */
 
 /* The E-1 curtain wipe was replaced by the shared screen transition in
    screens.css (playtest-05 B) — see `.screen-stack`. */
@@ -1646,6 +1726,39 @@
   gap: 14px;
 }
 
+/* item 7: the sale panels are wrapped in this region so the pack modal can cover
+   exactly them (for-sale / vouchers / packs), leaving the shelf above interactive. */
+.shop-sale-region {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* The pack modal is a modal over the still-mounted shop (item 5), but scoped to the
+   sale region (item 7) — the joker/consumable shelf and rail stay usable so they can
+   be sold while a pack is open. Absolute within .shop-sale-region. */
+.pack-overlay-region {
+  position: absolute;
+  inset: -8px;
+  background: rgba(9, 20, 17, 0.72);
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  z-index: 40;
+}
+.overlay-card.pack-modal {
+  max-width: min(880px, 96vw);
+  /* overflow visible so option hover tooltips (item 4) escape the card; its content
+     is one wrapping row, so it never needs to scroll. */
+  overflow: visible;
+}
+.pack-modal .shop {
+  max-width: none;
+  margin: 0;
+}
+
 /* Polished's specular sweep (.tile.polished::after, added alongside the other
    material faces) is exempt from the `.hand .tile` rule below because it
    targets a pseudo-element, not .tile itself — suppress it explicitly so
@@ -1660,14 +1773,10 @@
   .hand .tile,
   .btn.cash,
   .projected.beaten .num,
-  .scorebox.settling,
   .blind-in,
+  .box-pop,
   .tile.polished::after {
     animation: none;
-  }
-  .verdict {
-    animation: none;
-    opacity: 1;
   }
   .tile,
   .joker,

@@ -135,10 +135,10 @@ function candidates(words: readonly POSWord[]): Candidate[] {
   };
 
   push('outcry', matchSkeleton(words, [INTERJECTION]));
-  // Imperative: bare verb OR verb + noun (prefer the tighter core → fewer absorbed).
-  const impVN = matchSkeleton(words, [ANYVERB, NOUN]);
-  const impV = matchSkeleton(words, [ANYVERB]);
-  push('imperative', impVN ?? impV);
+  // Imperative requires an object: verb + noun. A bare verb is NOT a pattern —
+  // matching a lone verb spiked the projection off a single tile (changed from
+  // the original "RUN alone counts" design; GDD §5.2 note).
+  push('imperative', matchSkeleton(words, [ANYVERB, NOUN]));
   push('simple', matchSkeleton(words, [NOUN, INTRANS]));
   push('descriptive', matchSkeleton(words, [NOUN, LINKING, ADJ]));
   push('transitive', matchSkeleton(words, [NOUN, TRANS, NOUN]));

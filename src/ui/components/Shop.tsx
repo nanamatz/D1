@@ -9,6 +9,8 @@ import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { Tooltip } from './Tooltip';
 import { JokerShelf } from './JokerShelf';
+import { PackOpening } from './PackOpening';
+import { MoneyValue } from './MoneyValue';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -65,7 +67,7 @@ export function Shop({ g }: { g: UseGame }) {
         </button>
         <div className="shop-gold">
           <span className="label">{t('shop.title')}</span>
-          <span className="money">${run.gold}</span>
+          <MoneyValue value={run.gold} />
         </div>
       </aside>
 
@@ -76,6 +78,10 @@ export function Shop({ g }: { g: UseGame }) {
           <JokerShelf run={run} onSellConsumable={g.sellConsumable} onSellJoker={g.sell} />
         </div>
 
+        {/* item 7: the pack-opening modal covers ONLY this sale region (for-sale,
+            vouchers, packs). The shelf above stays visible and interactive so jokers
+            and consumables can still be sold while a pack is open. */}
+        <div className="shop-sale-region">
         <div className="panel">
           <div className="label">{t('shop.forSale')}</div>
           <div className="shop-row">
@@ -165,6 +171,14 @@ export function Shop({ g }: { g: UseGame }) {
           </div>
         </div>
 
+        {g.state.pack && (
+          <div className="pack-overlay-region">
+            <div className="overlay-card pack-modal">
+              <PackOpening g={g} />
+            </div>
+          </div>
+        )}
+        </div>
       </div>
     </div>
   );

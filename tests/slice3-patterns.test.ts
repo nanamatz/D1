@@ -50,8 +50,8 @@ describe('slice3 patterns — the eight matchers (GDD §5.2)', () => {
     expect(pattern(['WOW'])).toBe('outcry');
   });
 
-  it('Imperative: a bare verb', () => {
-    expect(pattern(['RUN'])).toBe('imperative');
+  it('Imperative: a bare verb no longer matches (needs an object)', () => {
+    expect(pattern(['RUN'])).toBeNull();
   });
 
   it('Imperative: verb + noun', () => {

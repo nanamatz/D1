@@ -4,7 +4,7 @@
  * (scoreWord/judgeSentence/etc). The React hook (useGame) owns the state.
  */
 import { baseScore, scoreWord, letterString } from '../engine/scoring';
-import { judgeSentence } from '../engine/patterns';
+import { judgeSentence, finalizeScore } from '../engine/patterns';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
@@ -13,6 +13,7 @@ import type { Lexicon } from '../engine/lexicon';
 import type {
   BlindState,
   PatternId,
+  RunState,
   Suit,
   Tile,
   WordSubmission,
@@ -62,15 +63,22 @@ export interface StagePreview {
   suitMult: number;
   /** the pattern this play would complete for the whole sequence, if any */
   completes: { pattern: PatternId; label: string } | null;
+  /** POS of the staged word (item 6) — its tagged set, shown before submitting */
+  pos: string | null;
+  /** projected sentence bonus if this word is submitted (item 6): pattern + unison
+   *  + modifiers on top of the raw committed. Jokers are NOT simulated here, so this
+   *  is the base forecast; 0 when the play adds no sentence bonus. */
+  sentenceBonus: number;
   /** the letter hand this word matches (A-2), if any */
   letterHand: { id: LetterHandId; chips: number; mult: number } | null;
   /** true if the active boss forbids this word (The Noun Lock) */
   blocked: boolean;
 }
 
-/** Preview the staged word: validity, suit, chips, and pattern completion. */
+/** Preview the staged word: validity, suit, chips, POS, and pattern/bonus forecast. */
 export function stagePreview(
   blind: BlindState,
+  run: RunState,
   lexicon: Lexicon,
   selectedIds: readonly string[],
 ): StagePreview | null {
@@ -84,6 +92,13 @@ export function stagePreview(
     : false;
   const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, base.isGibberish);
+  // Forecast the sentence bonus this play would add: finalize the whole sequence
+  // (existing words + this staged one) and subtract the raw committed. Uses the
+  // joker-less settled scores (scoreWord), so it matches the engine minus sentence
+  // jokers — a stable, honest preview number.
+  const committedAfter = blind.committedScore + hypothetical.settledScore;
+  const finalized = finalizeScore(committedAfter, judged, run.patternLevels);
+  const sentenceBonus = base.isGibberish ? 0 : Math.max(0, finalized.total - committedAfter);
   return {
     text: base.text,
     isGibberish: base.isGibberish,
@@ -91,6 +106,8 @@ export function stagePreview(
     chips: base.chips,
     suitMult: base.mult,
     completes: judged.match ? { pattern: judged.match.pattern, label: patternLabel(judged.match.pattern) } : null,
+    pos: base.isGibberish ? null : posLabel(hypothetical, lexicon),
+    sentenceBonus,
     letterHand: letterHand ? { id: letterHand.id, chips: letterHand.chips, mult: letterHand.mult } : null,
     blocked,
   };

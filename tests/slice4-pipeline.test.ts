@@ -63,16 +63,20 @@ describe('slice4 pipeline — layer 1 & 2 jokers mutate chips/mult before settle
 describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', () => {
   it('Grammarian ×2 on a completed pattern', () => {
     const run = withJokers('gram', 'grammarian');
-    const { blind } = play(openBlind(run), run, 'run'); // imperative
-    // base (3 + 80) = 83, Grammarian ×2 → 166
-    expect(blind.projectedScore).toBe(166);
-    expect(endBlind(blind, run, lex).finalScore).toBe(166);
+    let b = openBlind(run);
+    ({ blind: b } = play(b, run, 'run'));
+    ({ blind: b } = play(b, run, 'cat')); // RUN CAT = Imperative (+ standard Unison)
+    // committed 8; finalize (8 + 80 imperative + 50 unison) = 138, Grammarian ×2 → 276
+    expect(b.projectedScore).toBe(276);
+    expect(endBlind(b, run, lex).finalScore).toBe(276);
   });
 
-  it('Rush Specialist scales with phases left: 3 left → ×2.5 (C-1)', () => {
+  it('Rush Specialist scales with phases left: 3 left → ×2.5 (per-word, item 6)', () => {
     const run = withJokers('rush', 'rushSpecialist');
-    const { blind } = play(openBlind(run), run, 'cat'); // no pattern; phase 1 → 3 left
-    // committed 5, ×(1 + 0.5·3) = ×2.5 → 12.5
+    const { blind } = play(openBlind(run), run, 'cat'); // phase 1 → 3 will remain
+    // per-word mult now: CAT 5 chips × (standard 1 × 2.5) = 12.5 committed; no pattern
+    // → projected == committed.
+    expect(blind.committedScore).toBe(12.5);
     expect(blind.projectedScore).toBe(12.5);
   });
 
@@ -85,19 +89,24 @@ describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', ()
     expect(early).toBeGreaterThan(5 * 1.5); // ×2.5 (12.5) > ×1.5 (7.5)
   });
 
-  it('Rush Specialist is inactive at blind end with 0 phases left', () => {
+  it('Rush Specialist per-word mult: last-phase play pays nothing', () => {
     const run = withJokers('rush2', 'rushSpecialist');
     let b = openBlind(run);
-    for (let i = 0; i < 4; i++) ({ blind: b } = play(b, run, 'cat')); // 4 phases → 0 left
-    // committed 20 (4×5), all standard → unison +50, no pattern, rush inactive → 70
-    expect(endBlind(b, run, lex).finalScore).toBe(70);
+    for (let i = 0; i < 4; i++) ({ blind: b } = play(b, run, 'cat')); // phases left 3/2/1/0
+    // per-word CAT 5 × 2.5 / ×2 / ×1.5 / ×1 = 12.5+10+7.5+5 = 35 committed (last word,
+    // 0 left, gets no rush). all standard → unison +50; no pattern → 85.
+    expect(b.committedScore).toBe(35);
+    expect(endBlind(b, run, lex).finalScore).toBe(85);
   });
 
-  it('Grammarian and Rush stack multiplicatively', () => {
+  it('Grammarian (sentence) and Rush (per-word) stack', () => {
     const run = withJokers('both', 'grammarian', 'rushSpecialist');
-    const { blind } = play(openBlind(run), run, 'run'); // imperative, phase 1 → 3 left
-    // (3 + 80) × 2 (grammarian) × 2.5 (rush, 3 left) = 415
-    expect(blind.projectedScore).toBe(415);
+    let b = openBlind(run);
+    ({ blind: b } = play(b, run, 'run')); // 3 left → ×2.5: RUN 3 → 7.5
+    ({ blind: b } = play(b, run, 'cat')); // 2 left → ×2: CAT 5 → 10 (RUN CAT = imperative)
+    // committed 17.5; (17.5 + 80 imperative + 50 unison) × 2 (grammarian) = 295
+    expect(b.committedScore).toBe(17.5);
+    expect(b.projectedScore).toBe(295);
   });
 });
 
@@ -106,6 +115,6 @@ describe('slice4 pipeline — no jokers leaves earlier behavior unchanged', () =
     const run = newRun('none'); // jokers: []
     const { submission, blind } = play(openBlind(run), run, 'run');
     expect(submission.settledScore).toBe(3); // RUN chips, standard ×1
-    expect(blind.projectedScore).toBe(83); // imperative bonus only
+    expect(blind.projectedScore).toBe(3); // bare verb: no pattern → projected mirrors committed
   });
 });

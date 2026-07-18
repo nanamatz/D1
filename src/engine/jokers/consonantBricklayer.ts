@@ -1,5 +1,6 @@
-/** #2 Consonant Bricklayer (Common, layer 1): +4 Chips per consonant.
- *  Fires on gibberish too — layer 1 reads letters (GDD §6.4). */
+/** #2 Consonant Bricklayer (Common, layer 1): +4 Chips per consonant. Fires per-tile
+ *  (item 3) so it lands as each consonant tile scores; fires on gibberish too — layer
+ *  1 reads letters (GDD §6.4). */
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 import { isConsonant } from '../types';
@@ -14,9 +15,10 @@ export const consonantBricklayer: JokerDef = {
   layer: 1,
   price: BALANCE.jokerPrice.common,
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const consonants = ctx.submission.tiles.filter((t) => isConsonant(t.letter)).length;
-      ctx.chips += BALANCE.jokers.consonantBricklayer.chipsPerConsonant * consonants;
+    tileScoring: ({ ctx, tile }) => {
+      if (isConsonant(tile.letter)) {
+        ctx.chips += BALANCE.jokers.consonantBricklayer.chipsPerConsonant;
+      }
     },
   },
 };

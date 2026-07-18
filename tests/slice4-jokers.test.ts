@@ -48,6 +48,13 @@ const wordCtx = (submission: WordSubmission, chips: number, mult: number): WordS
 const emitWord = (defId: string, ctx: WordScoringContext, b: BlindState = blind) =>
   bus.emit('wordScoring', { run, blind: b, ctx }, owned(defId));
 
+// Per-letter jokers hook tileScoring (item 3) — fire it once per tile in the word.
+const emitTiles = (defId: string, ctx: WordScoringContext, b: BlindState = blind) => {
+  for (const tile of ctx.submission.tiles) {
+    bus.emit('tileScoring', { run, blind: b, ctx, tile }, owned(defId));
+  }
+};
+
 const sentCtx = (over: Partial<SentenceScoringContext>): SentenceScoringContext => ({
   sequence: [],
   match: null,
@@ -59,15 +66,15 @@ const sentCtx = (over: Partial<SentenceScoringContext>): SentenceScoringContext 
 });
 
 describe('slice4 jokers — layer 1 (letter/tile), fire on gibberish too (GDD §6.4, §11.2)', () => {
-  it('#1 Vowel Praise: +2 Mult per vowel', () => {
+  it('#1 Vowel Praise: +2 Mult per vowel (per-tile)', () => {
     const ctx = wordCtx(sub('EAT', 'standard'), 3, 1); // E, A → 2 vowels
-    emitWord('vowelPraise', ctx);
+    emitTiles('vowelPraise', ctx);
     expect(ctx.mult).toBe(1 + 2 * 2);
   });
 
-  it('#2 Consonant Bricklayer: +4 Chips per consonant', () => {
+  it('#2 Consonant Bricklayer: +4 Chips per consonant (per-tile)', () => {
     const ctx = wordCtx(sub('CAT', 'standard'), 5, 1); // C, T → 2 consonants
-    emitWord('consonantBricklayer', ctx);
+    emitTiles('consonantBricklayer', ctx);
     expect(ctx.chips).toBe(5 + 4 * 2);
   });
 
@@ -79,8 +86,8 @@ describe('slice4 jokers — layer 1 (letter/tile), fire on gibberish too (GDD §
 
   it('layer-1 jokers still fire on a gibberish hole (letters are intrinsic)', () => {
     const ctx = wordCtx(sub('ZZQ', null, true), 30, 1); // 0 vowels, 3 consonants
-    emitWord('vowelPraise', ctx);
-    emitWord('consonantBricklayer', ctx);
+    emitTiles('vowelPraise', ctx);
+    emitTiles('consonantBricklayer', ctx);
     expect(ctx.mult).toBe(1); // +0 vowels
     expect(ctx.chips).toBe(30 + 4 * 3);
   });
@@ -119,25 +126,27 @@ describe('slice4 jokers — layer 3 (sentence/phase) (GDD §11.4)', () => {
     expect(ctx.totalMultiplier).toBe(1);
   });
 
-  it('#24 Rush Specialist: ×(1 + 0.5·phasesLeft) — 3 left → ×2.5 (C-1)', () => {
-    const ctx = sentCtx({});
-    const early: BlindState = { ...blind, phasesUsed: 1, phasesTotal: 4 }; // 3 left
-    bus.emit('sentenceScoring', { run, blind: early, ctx }, owned('rushSpecialist'));
-    expect(ctx.totalMultiplier).toBe(2.5);
+  // Rush Specialist reworked (item 6): a per-WORD ×Mult (wordScoring), scaling with
+  // the phases that will REMAIN after this word (blind is pre-increment, so −1).
+  it('#24 Rush Specialist: ×(1 + 0.5·phasesLeft) on each word — 3 will remain → ×2.5', () => {
+    const ctx = wordCtx(sub('CAT', 'standard'), 5, 1);
+    const early: BlindState = { ...blind, phasesUsed: 0, phasesTotal: 4 }; // 3 will remain
+    emitWord('rushSpecialist', ctx, early);
+    expect(ctx.mult).toBe(2.5);
   });
 
-  it('#24 Rush Specialist: fewer phases left → smaller bonus — 1 left → ×1.5 (C-1)', () => {
-    const ctx = sentCtx({});
-    const late: BlindState = { ...blind, phasesUsed: 3, phasesTotal: 4 }; // 1 left
-    bus.emit('sentenceScoring', { run, blind: late, ctx }, owned('rushSpecialist'));
-    expect(ctx.totalMultiplier).toBe(1.5);
+  it('#24 Rush Specialist: fewer phases left → smaller mult — 1 will remain → ×1.5', () => {
+    const ctx = wordCtx(sub('CAT', 'standard'), 5, 1);
+    const late: BlindState = { ...blind, phasesUsed: 2, phasesTotal: 4 }; // 1 will remain
+    emitWord('rushSpecialist', ctx, late);
+    expect(ctx.mult).toBe(1.5);
   });
 
-  it('#24 Rush Specialist: nothing with 0 phases left (C-1)', () => {
-    const ctx = sentCtx({});
-    const done: BlindState = { ...blind, phasesUsed: 4, phasesTotal: 4 }; // 0 left
-    bus.emit('sentenceScoring', { run, blind: done, ctx }, owned('rushSpecialist'));
-    expect(ctx.totalMultiplier).toBe(1);
+  it('#24 Rush Specialist: nothing on the last phase (0 will remain)', () => {
+    const ctx = wordCtx(sub('CAT', 'standard'), 5, 1);
+    const done: BlindState = { ...blind, phasesUsed: 3, phasesTotal: 4 }; // 0 will remain
+    emitWord('rushSpecialist', ctx, done);
+    expect(ctx.mult).toBe(1);
   });
 });
 

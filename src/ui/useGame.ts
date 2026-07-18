@@ -150,9 +150,10 @@ const randomSeed = (): string => Math.random().toString(36).slice(2);
  */
 export const BONUS_LAND_MS = 700;
 
-// Beat held AFTER the round number has finished updating (settle beats, then the
-// sentence bonus landing) before the blind resolves — so the cleared score is seen
-// at its true final value past target before the clear UI (playtest-05 A / 06 #1).
+// Beat held AFTER the round number finishes updating (settle beats, then the sentence
+// bonus landing) before the blind auto-resolves to Fee Settlement / Game Over — so the
+// cleared score is seen at its true final value before the modal opens (item 4 removed
+// the intermediate Settle-button screen; this is the pacing beat that replaced it).
 const VERDICT_BEAT_MS = 500;
 const VERDICT_BEAT_REDUCED_MS = 200;
 
@@ -354,9 +355,11 @@ export function useGame(): UseGame {
     });
   }, []);
 
+  // Jokers can be sold from the shop AND mid-blind (item 1) — like consumables,
+  // which sell in any phase. selling is phase-agnostic in the engine (sellJoker).
   const sell = useCallback((index: number) => {
     setState((prev) => {
-      if (prev.phase !== 'shop') return prev;
+      if (prev.phase !== 'shop' && prev.phase !== 'playing') return prev;
       const res = sellJoker(prev.run, index);
       return res.ok ? { ...prev, run: res.run } : prev;
     });
@@ -600,11 +603,9 @@ export function useGame(): UseGame {
   // after the settle-complete signal fires — never on the raw final score, which
   // is known instantly (playtest-05 A; recurrence of 04 A-1, unifying 04 A-2: the
   // deciding sentence bonus must be *seen* pushing the score over first). The
-  // signal already tracks the variable settle length (long words settle longer),
-  // so this holds a fixed short beat afterward, not a guess at total settle time.
-  // Stage 1 — the last word's settle has landed: publish the finalized score so
-  // the sentence bonus counts up onto the round number (06 #1). The bonus only
-  // exists at blind end, so this is the player's one chance to SEE it land.
+  // signal already tracks the variable settle length (long words settle longer).
+  // Stage 1 — the last word's settle has landed: publish the finalized score so the
+  // sentence bonus counts up onto the round number (06 #1).
   useEffect(() => {
     if (!state.pendingEnd || !state.settleComplete || state.finalScore !== null) return;
     const { finalScore } = endBlind(state.blind, state.run, lexicon);
@@ -613,17 +614,17 @@ export function useGame(): UseGame {
     );
   }, [state.pendingEnd, state.settleComplete, state.finalScore, state.blind, state.run, lexicon]);
 
-  // Stage 2 — the round number is now fully updated (settle beats + bonus). Hold
-  // the verdict beat, then resolve the blind (→ Fee Settlement / → Game Over).
+  // Stage 2 — the round number is fully updated (settle beats + bonus). Hold a short
+  // beat so the cleared score is seen, then auto-resolve to Fee Settlement / Game Over
+  // (item 4: the intermediate "Cleared! + Settle button" screen was removed — the Fee
+  // Settlement modal, with its own Collect button, is the only clear screen now).
   useEffect(() => {
     if (!state.pendingEnd || state.finalScore === null) return;
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const id = setTimeout(
-      () => {
-        setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev));
-      },
+      () => setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev)),
       reduce ? VERDICT_BEAT_REDUCED_MS : BONUS_LAND_MS + VERDICT_BEAT_MS,
     );
     return () => clearTimeout(id);

@@ -6,12 +6,16 @@ import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
 import { BONUS_LAND_MS } from '../useGame';
 import { useI18n } from '../i18n';
+import { MoneyValue } from './MoneyValue';
 
 interface Props {
   run: RunState;
   blind: BlindState;
   /** committed score before the in-flight settle — lets the round number climb (A-1) */
   committedBefore: number;
+  /** false while a submission's settle is animating; flips true when it lands. Gates
+   *  the round-number roll so it holds at committedBefore until the settle completes. */
+  settleComplete: boolean;
   /** blind-end final score — non-null while the sentence bonus lands (06 #1) */
   finalScore: number | null;
   /** the staged-word preview — its status shows above the 0×0 box (E-9) */
@@ -50,6 +54,7 @@ export function Sidebar({
   run,
   blind,
   committedBefore,
+  settleComplete,
   finalScore,
   preview,
   onOpenInfo,
@@ -59,18 +64,21 @@ export function Sidebar({
   const phasesLeft = blind.phasesTotal - blind.phasesUsed;
   const settle = useSettleView();
   const reward = clearReward(blind.kind);
-  // A (playtest-04): the ROUND score is committed ONLY and never decreases. During
-  // a settle it climbs per beat from the old committed toward the new one (clamped
-  // so a voided word doesn't overshoot); idle it shows the committed total.
-  const settleRound = settle.active
-    ? Math.min(committedBefore + settle.chips * settle.mult, blind.committedScore)
-    : blind.committedScore;
-  // At blind end the sentence bonus is finalized and LANDS on the round number
-  // (06 #1) — the one moment it folds in. Counting up from committed to the final
-  // score is what shows the player why the score cleared. During play it stays a
-  // separate forecast and is never folded in (that's the 04-A "score drops" bug).
-  const landed = useCountUp(finalScore ?? settleRound, BONUS_LAND_MS);
-  const round = finalScore !== null ? landed : settleRound;
+  // A (playtest-04) + item 7: the ROUND score is committed ONLY and never decreases,
+  // and it ALWAYS rolls up with the same eased count-up the sentence bonus uses — no
+  // more per-beat stepping. While a word's settle animates the scorebox, the round
+  // holds at the pre-word committed (committedBefore); when the settle lands it eases
+  // up to the new committed, and at blind end it eases on to the finalized score
+  // (committed + sentence bonus, 06 #1). The forecast stays separate and is never
+  // folded into this number (that's the 04-A "score drops" bug).
+  //
+  // The hold is gated on `settleComplete`, NOT settle.active: both settleComplete and
+  // the new committedScore are set in the SAME submit state update, so there is never
+  // a frame where committedScore is new but the hold is off. settle.active flips a
+  // frame later (a layout effect), which briefly targeted the new committed and made
+  // the number jump up, drop to committedBefore, then roll again (the item-5 bug).
+  const roundTarget = finalScore ?? (settleComplete ? blind.committedScore : committedBefore);
+  const round = useCountUp(roundTarget, BONUS_LAND_MS);
   // The sentence bonus as a forecast — "if the sentence ends like this: +N".
   const forecast = blind.projectedScore - blind.committedScore;
   // Idle is 0 × 0; the box fills only during settle, then resets (UI_DESIGN §4.1, B).
@@ -127,9 +135,24 @@ export function Sidebar({
       <div className="panel score-panel">
         <StatusLine preview={preview} />
         <div className={['scorebox', settle.active && 'settling'].filter(Boolean).join(' ')}>
-          <span className="box c">{Math.round(chips)}</span>
+          <span className="box c">
+            {Math.round(chips)}
+            {settle.scorePop && settle.scorePop.chips !== 0 && (
+              <span key={`c${settle.scorePop.id}`} className="box-pop chip">
+                <span className="chip-diamond" aria-hidden />+{Math.round(settle.scorePop.chips)}
+              </span>
+            )}
+          </span>
           <span className="x">×</span>
-          <span className="box m">{fmtMult(mult)}</span>
+          <span className="box m">
+            {fmtMult(mult)}
+            {settle.scorePop && settle.scorePop.mult !== 0 && (
+              <span key={`m${settle.scorePop.id}`} className="box-pop">
+                {settle.scorePop.multOp === 'mul' ? '×' : '+'}
+                {fmtMult(settle.scorePop.mult)}
+              </span>
+            )}
+          </span>
         </div>
       </div>
 
@@ -153,7 +176,7 @@ export function Sidebar({
           <span className="cnum red">{blind.discardsLeft}</span>
         </div>
         <div className="sb-cell money-cell">
-          <span className="money">${run.gold}</span>
+          <MoneyValue value={run.gold} />
         </div>
         <div className="sb-cell">
           <span className="label">{t('sidebar.chapter')}</span>

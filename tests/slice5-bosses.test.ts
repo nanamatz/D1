@@ -70,8 +70,10 @@ describe('slice5 bosses — scoring effects', () => {
   });
   it('Anarchist: sentence bonus does not trigger (projected == committed)', () => {
     const r = bossRun();
-    const { blind } = play(bossBlind(r, 'anarchist'), r, 'run'); // RUN would be Imperative
-    expect(blind.projectedScore).toBe(blind.committedScore);
+    let b = bossBlind(r, 'anarchist');
+    ({ blind: b } = play(b, r, 'run'));
+    ({ blind: b } = play(b, r, 'cat')); // RUN CAT would be Imperative + Unison
+    expect(b.projectedScore).toBe(b.committedScore);
   });
 });
 

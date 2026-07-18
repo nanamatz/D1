@@ -174,9 +174,41 @@
   color: #20160a;
 }
 
+/* item 1: the letter-tile tooltip is its OWN, compact shape — NOT the shared
+   joker card. Its content is a single-letter title and a short
+   "N chips · Material · Font" line, so the joker width (--tt-w = 220px) left it
+   mostly empty. Size to content with a small ceiling so a long material+font
+   line still wraps instead of stretching. `.tt-card.tile-tt` (0,2,0) beats the
+   base `.tt-card` width. */
+.tt-card.tile-tt {
+  width: max-content;
+  max-width: 148px;
+  padding: 4px 2px;
+  gap: 3px;
+}
+.tile-tt .tt-title {
+  font-size: var(--fs-sm);
+  padding: 0 6px;
+}
+.tile-tt .tt-desc {
+  padding: 4px 7px;
+}
+.tile-tt .tt-body {
+  font-size: var(--fs-xs);
+  line-height: 1.3;
+}
+
 /* ---------- Cash Out / Fee Settlement (spec §2.5; A-2 overlay) ---------- */
 .overlay.cashout-overlay {
-  background: rgba(14, 26, 20, 0.55);
+  background: rgba(14, 26, 20, 0.62);
+  /* item 2: the BACKDROP covers the whole board (inset:0 over the position:relative
+     .frame) and blocks interaction with everything behind — only the modal is live.
+     The card still centres over the MAIN column: the extra left padding skips the
+     rail so flex-centering lands over the play area, not the whole board. */
+  position: absolute;
+  inset: 0;
+  padding: var(--board-pad) var(--board-pad) var(--board-pad)
+    calc(var(--board-pad) + var(--rail-w) + var(--rail-gap));
 }
 .overlay-card.cashout {
   max-width: 480px;
@@ -387,6 +419,11 @@
 }
 .overlay-card.gameover {
   max-width: 520px;
+  /* item 9: space the title / defeat / stats / seed / actions apart — without this
+     the children were flush (block flow, no gap) and read as overlapping. */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 .gameover .go-title {
   text-align: center;
@@ -1396,6 +1433,15 @@ body.cb-safe .tile.hint {
   grid-template-columns: repeat(13, 1fr);
   gap: 8px;
 }
+/* item 4: the pouch shows the actual remaining tiles as mini tiles (same material
+   face / font / chip value as in-blind), wrapping across the drawer. */
+.pouch-tiles {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-content: flex-start;
+}
 @media (prefers-reduced-motion: reduce) {
   .pouch-modal {
     animation: none;
@@ -1545,6 +1591,14 @@ body.cb-safe .tile.hint {
 .overlay-card.runinfo {
   max-width: 560px;
   max-height: 92vh;
+  /* item 2: let the pattern/voucher hover tooltips escape the card instead of being
+     clipped by overflow:auto. The panel's content is short, so it won't need to scroll. */
+  overflow: visible;
+}
+/* Each pattern row is wrapped in a tooltip anchor — make the anchor fill its grid
+   cell so the row keeps its full-width layout. */
+.ri-patterns .tt-anchor {
+  display: flex;
 }
 .ri-body {
   display: flex;

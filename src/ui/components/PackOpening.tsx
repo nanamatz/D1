@@ -1,31 +1,42 @@
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
-import type { ConsumableId } from '../../engine/types';
+import type { ConsumableId, JokerRarity } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
 import { NO_LETTER } from '../../engine/scoring';
+import { consumableDescKey, jokerDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
+import { Tooltip } from './Tooltip';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
+
+interface Tip {
+  title: string;
+  body: string;
+  rarity?: JokerRarity | undefined;
+}
 
 function OptionCard({
   option,
   label,
   name,
-  blocked,
+  blockKey,
+  tip,
   onPick,
 }: {
   option: PackOption;
   label: string;
   name: string;
-  /** joker slots full → this joker pick is non-selectable (D-5) */
-  blocked: boolean;
+  /** i18n key for why this pick is non-selectable (slots full), or undefined */
+  blockKey?: string | undefined;
+  /** hover tooltip (item 4) — shown on joker/consumable options regardless of blocked */
+  tip?: Tip | undefined;
   onPick: () => void;
 }) {
   const { t } = useI18n();
-  return (
-    <div className={['shopitem', blocked && 'blocked'].filter(Boolean).join(' ')}>
+  const card = (
+    <div className={['shopitem', blockKey && 'blocked'].filter(Boolean).join(' ')}>
       {option.kind === 'tile' ? (
         <TileView tile={option.tile} />
       ) : (
@@ -36,14 +47,23 @@ function OptionCard({
         </span>
       )}
       <span className="n">{name}</span>
-      {blocked ? (
-        <span className="pack-block">{t('pack.jokersFull')}</span>
+      {blockKey ? (
+        <span className="pack-block">{t(blockKey)}</span>
       ) : (
         <button className="btn exchange sm" onClick={onPick}>
           {label}
         </button>
       )}
     </div>
+  );
+  // The tooltip wraps the whole card, so it shows on hover even when the pick is
+  // blocked (item 4) — hover is CSS-driven and independent of the block state.
+  return tip ? (
+    <Tooltip title={tip.title} body={tip.body} rarity={tip.rarity} down>
+      {card}
+    </Tooltip>
+  ) : (
+    card
   );
 }
 
@@ -62,6 +82,18 @@ export function PackOpening({ g }: { g: UseGame }) {
     return o.tile.letter ?? NO_LETTER; // tile
   };
 
+  // Hover tooltip for joker / consumable options (item 4) — tiles carry their own.
+  const optionTip = (o: PackOption): Tip | undefined => {
+    if (o.kind === 'joker') {
+      const def = JOKER_REGISTRY.get(o.id);
+      return { title: optionName(o), body: t(jokerDescKey(o.id)), rarity: def?.rarity };
+    }
+    if (o.kind === 'consumable') {
+      return { title: optionName(o), body: t(consumableDescKey(o.id)) };
+    }
+    return undefined;
+  };
+
   return (
     <div className="shop">
       <div className="shop-head panel">
@@ -73,16 +105,28 @@ export function PackOpening({ g }: { g: UseGame }) {
       </div>
       <div className="panel">
         <div className="shop-row">
-          {pack.offer.options.map((o, i) => (
-            <OptionCard
-              key={i}
-              option={o}
-              name={optionName(o)}
-              label={t('pack.pick')}
-              blocked={o.kind === 'joker' && g.state.run.jokers.length >= BALANCE.jokerSlots}
-              onPick={() => g.pickPackOption(i)}
-            />
-          ))}
+          {pack.offer.options.map((o, i) => {
+            // A pick is blocked when the matching slot is full (item 5: consumables
+            // now block too, not just jokers) — the engine no-ops such a pick anyway.
+            const blockKey =
+              o.kind === 'joker' && g.state.run.jokers.length >= BALANCE.jokerSlots
+                ? 'pack.jokersFull'
+                : o.kind === 'consumable' &&
+                    g.state.run.consumables.length >= g.state.run.consumableSlots
+                  ? 'pack.consumablesFull'
+                  : undefined;
+            return (
+              <OptionCard
+                key={i}
+                option={o}
+                name={optionName(o)}
+                label={t('pack.pick')}
+                blockKey={blockKey}
+                tip={optionTip(o)}
+                onPick={() => g.pickPackOption(i)}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { judgeSentence } from '../../engine/patterns';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
-import { useI18n } from '../i18n';
 import { useSettings } from '../settings';
 import { SettleProvider } from '../settle';
 import { Sidebar } from './Sidebar';
@@ -10,7 +9,6 @@ import { JokerShelf } from './JokerShelf';
 import { SentenceTray } from './SentenceTray';
 import { StagePanel } from './StagePanel';
 import { Shop } from './Shop';
-import { PackOpening } from './PackOpening';
 import { CashOut } from './CashOut';
 import { BlindSelect } from './BlindSelect';
 import { GameOver } from './GameOver';
@@ -29,7 +27,6 @@ interface Props {
 
 /** An active run: routes the in-run phases (spec §2.3–2.7). */
 export function RunView({ g, onExit, onNewRun }: Props) {
-  const { t } = useI18n();
   const { settings } = useSettings();
   const { blind, run, selected, phase } = g.state;
   const [showInfo, setShowInfo] = useState(false);
@@ -77,13 +74,15 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const content = () => {
     if (phase === 'blindselect') return <BlindSelect g={g} />;
     if (phase === 'shop') {
+      // item 7: the pack-opening modal is rendered inside Shop, over the sale region
+      // only, so the joker/consumable shelf stays visible and sellable.
       return (
         <div className="frame shop-frame">
-          {g.state.pack ? <PackOpening g={g} /> : <Shop g={g} />}
+          <Shop g={g} />
         </div>
       );
     }
-    const preview = stagePreview(blind, g.lexicon, selected);
+    const preview = stagePreview(blind, run, g.lexicon, selected);
     const judgment = judgeSentence(blind.sequence, g.lexicon);
     // `ending` reddens the board — that is the DEFEAT visual, so it is Game Over
     // ONLY. Clearing a blind must never turn the board red; Fee Settlement darkens
@@ -105,6 +104,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           run={run}
           blind={blind}
           committedBefore={g.state.committedBefore}
+          settleComplete={g.state.settleComplete}
           finalScore={g.state.finalScore}
           preview={preview}
           onOpenInfo={() => setShowInfo(true)}
@@ -115,24 +115,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             run={run}
             onUseConsumable={() => g.useMagnifier()}
             onSellConsumable={g.sellConsumable}
+            onSellJoker={g.sell}
           />
           <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
           <StagePanel g={g} preview={preview} />
         </main>
       </SettleProvider>
-      {g.state.pendingEnd && g.state.settleComplete && !ending && (
-        <div className="verdict">
-          <div className="verdict-score">
-            ❄ {Math.round(blind.projectedScore)} / {blind.target}
-          </div>
-          {blind.projectedScore >= blind.target && (
-            <div className="verdict-cleared">
-              {t('verdict.cleared')}
-              {judgment.match ? ` · ${t(`pattern.${judgment.match.pattern}`)}` : ''}
-            </div>
-          )}
-        </div>
-      )}
+      {/* item 4: the intermediate "Cleared! + Settle" screen is gone — the blind
+          auto-resolves to the Fee Settlement modal after the score lands (useGame). */}
       {!ending && !settling && (
         <BagWidget run={run} blind={blind} onOpenChange={setPouchOpen} />
       )}

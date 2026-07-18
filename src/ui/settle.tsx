@@ -35,6 +35,10 @@ export interface SettleView {
   jokerPop: { jokerId: string; chips: number; mult: number } | null;
   /** a letter-hand / suit stamp landing this beat */
   stamp: { kind: 'letterHand' | 'suit'; label: string } | null;
+  /** this beat's chip / mult increase, for the floating +N pops over the scorebox
+   *  (item 6). `id` is the beat index so each pop re-mounts and replays its rise.
+   *  `multOp` is 'add' for the additive settle beats; reserved 'mul' would render ×. */
+  scorePop: { chips: number; mult: number; multOp: 'add' | 'mul'; id: number } | null;
 }
 
 const IDLE: SettleView = {
@@ -46,6 +50,7 @@ const IDLE: SettleView = {
   activeJokerId: null,
   jokerPop: null,
   stamp: null,
+  scorePop: null,
 };
 
 const SettleCtx = createContext<SettleView>(IDLE);
@@ -173,6 +178,16 @@ export function SettleProvider({
     beats.forEach((e, i) => {
       timers.push(
         setTimeout(() => {
+          const prevChips = chips;
+          const prevMult = mult;
+          ({ chips, mult } = accumulate(chips, mult, e));
+          // This beat's increase drives the floating +N pops (item 6). Every settle
+          // beat is additive, so multOp is 'add'; a future multiplicative beat would
+          // set 'mul' to render ×N instead.
+          const scorePop =
+            chips !== prevChips || mult !== prevMult
+              ? { chips: chips - prevChips, mult: mult - prevMult, multOp: 'add' as const, id: i }
+              : null;
           const base: SettleView = {
             active: true,
             chips,
@@ -182,33 +197,34 @@ export function SettleProvider({
             activeJokerId: null,
             jokerPop: null,
             stamp: null,
+            scorePop,
           };
-          ({ chips, mult } = accumulate(chips, mult, e));
           if (e.kind === 'tile') {
             pops[e.tileId] = e.chips;
-            setView({ ...base, chips, tilePops: { ...pops }, activeTileId: e.tileId });
+            setView({ ...base, tilePops: { ...pops }, activeTileId: e.tileId });
           } else if (e.kind === 'suit') {
-            setView({
-              ...base,
-              mult,
-              stamp: e.suit ? { kind: 'suit', label: e.suit } : null,
-            });
+            setView({ ...base, stamp: e.suit ? { kind: 'suit', label: e.suit } : null });
           } else if (e.kind === 'letterHand') {
-            setView({ ...base, chips, mult, stamp: { kind: 'letterHand', label: e.hand } });
+            setView({ ...base, stamp: { kind: 'letterHand', label: e.hand } });
           } else if (e.kind === 'joker') {
+            // Per-tile jokers (item 3) carry a tileId — pop on that tile as well as
+            // wiggling the joker, and grow the tile's +N when they add chips.
+            if (e.tileId && e.chipsDelta !== 0) {
+              pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
+            }
             setView({
               ...base,
-              chips,
-              mult,
+              tilePops: { ...pops },
+              activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId,
               jokerPop: { jokerId: e.jokerId, chips: e.chipsDelta, mult: e.multDelta },
             });
           } else if (e.kind === 'boss') {
-            setView({ ...base, chips, mult });
+            setView({ ...base });
           } else if (e.kind === 'material') {
             // Materials pop on the tile itself, not as a stamp — the tile's own
             // ceramic/glass/stone face already carries the read (GDD §2.2).
-            setView({ ...base, chips, mult, activeTileId: e.tileId });
+            setView({ ...base, activeTileId: e.tileId });
           }
         }, i * step),
       );

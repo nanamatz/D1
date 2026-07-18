@@ -233,7 +233,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 | # | Pattern | POS skeleton | Example | Min. phases | Bonus (placeholder) | Operation |
 |---|---|---|---|---|---|---|
 | 1 | Outcry | Interjection alone | SHH / WOW | 1 | +20 Chips | Add |
-| 2 | Imperative | Verb (+Noun) | RUN / EAT FISH | 1–2 | +40 Chips, +2 Mult | Add |
+| 2 | Imperative | Verb + Noun | EAT FISH | 2 | +40 Chips, +2 Mult | Add |
 | 3 | Chant | Same verb ×3+ | RUN RUN RUN RUN | 3+ | per repeat: +15 Chips, +1.5 Mult | Add (scales with repeats) |
 | 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | +60 Chips, +3 Mult | Add |
 | 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | total ×1.5 | Multiply |
@@ -244,7 +244,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 Design intent:
 
 - **Outcry** finally gives vowel-less interjections (shh, brr) a home in the pattern table — a niche that meshes with the Consonant Bricklayer build.
-- **Imperative at 1 phase is deliberate** — "RUN" alone is a grammatically complete sentence. Its reward is kept low: this is the high-card position. The fun of repetition is split off into **Chant**, preserving the RUN×4 showcase as its own pattern.
+- **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, preserving the RUN×4 showcase as its own pattern.
 - **Multiplication starts at #5** — from the point where the linking-vs-transitive distinction (i.e., knowledge of structure) is required, the reward regime changes qualitatively. This implements the "structural sentences = multiplication" principle from §7.3.
 - **#7–8 are tight-to-impossible in the base 4 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
 - **Interrogative (auxiliary inversion, e.g. "CAN BIRDS FLY") is deferred** to expansion content, consistent with the rules diet.
@@ -360,7 +360,7 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 
 The old "cash-out button unlocks at projected ≥ target" was a fake choice: surplus score is worthless and remaining phases pay gold, so continuing past the target was always wrong. **Auto-settle** removes the non-choice.
 
-- **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target → a verdict beat → Fee Settlement. There is no cash-out button. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment.
+- **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
 - **Remaining phases = money.** Unchanged: 1 gold per remaining phase, paid as a Fee Settlement line item (§9.1).
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush jokers are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 4-phase blind pays big; a last-phase clear pays nothing.
 - **Boss exceptions.** *The Perfectionist* disables auto-settle — one settlement check after all phases are used. *The Blindfold* is unchanged mechanically; with the projection hidden, the auto-clear now arrives unpredictably (intended spice).
@@ -373,7 +373,7 @@ Additive patterns add flat points to the total; multiplicative patterns multiply
 
 ### 7.4 Final Pipeline Summary
 
-**Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × jokers) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind **auto-settles** (§7.2 — there is no early-end button).
+**Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × jokers) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
 **On ending (early/final):** finalize sentence bonus from the sequence (per-pattern +/× per §5.2) → apply Unison bonus if any (§5.3) → grant 1 gold per remaining phase → end blind.
 
