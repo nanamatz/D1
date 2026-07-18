@@ -95,3 +95,36 @@ describe('slice5 progression — resolveBlind gold & advancement (GDD §9.1)', (
     expect(run.blindIndex).toBe(0);
   });
 });
+
+describe('slice5 progression — final-boss victory (spec 2026-07-19)', () => {
+  it('clearing the final-chapter Boss flags won and still pays + advances (endless-ready)', () => {
+    const run: RunState = { ...newRun('w'), gold: 0, ante: 8, blindIndex: 2 };
+    const blind = blindWith({ kind: 'boss', target: 100, phasesUsed: 4 });
+    const out = resolveBlind(run, blind, 500);
+    expect(out.won).toBe(true);
+    expect(out.cleared).toBe(true);
+    expect(out.earned.reward).toBeGreaterThan(0);
+    expect(out.run.ante).toBe(9); // advanced run kept for the future endless mode
+  });
+
+  it('won stays false on the ante-8 Big, an earlier Boss, and a loss', () => {
+    const big = resolveBlind(
+      { ...newRun('w'), ante: 8, blindIndex: 1 },
+      blindWith({ kind: 'big', target: 100 }),
+      500,
+    );
+    expect(big.won).toBe(false);
+    const earlyBoss = resolveBlind(
+      { ...newRun('w'), ante: 7, blindIndex: 2 },
+      blindWith({ kind: 'boss', target: 100 }),
+      500,
+    );
+    expect(earlyBoss.won).toBe(false);
+    const loss = resolveBlind(
+      { ...newRun('w'), ante: 8, blindIndex: 2 },
+      blindWith({ kind: 'boss', target: 100 }),
+      50,
+    );
+    expect(loss.won).toBe(false);
+  });
+});

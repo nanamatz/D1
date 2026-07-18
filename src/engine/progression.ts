@@ -33,6 +33,9 @@ export interface BlindEarnings {
 export interface BlindOutcome {
   cleared: boolean;
   gameOver: boolean;
+  /** cleared the final chapter's Boss — the run is won (GDD §8.2); endless mode
+   *  (planned) will consume `run`/`earned` to continue past this instead */
+  won: boolean;
   earned: BlindEarnings;
   /** the run after payout + advancement (unchanged on a miss) */
   run: RunState;
@@ -52,7 +55,7 @@ function advance(ante: number, blindIndex: 0 | 1 | 2): { ante: number; blindInde
  */
 export function resolveBlind(run: RunState, blind: BlindState, finalScore: number): BlindOutcome {
   if (finalScore < blind.target) {
-    return { cleared: false, gameOver: true, earned: NO_EARNINGS, run };
+    return { cleared: false, gameOver: true, won: false, earned: NO_EARNINGS, run };
   }
   const reward = clearReward(blind.kind);
   const phases = (blind.phasesTotal - blind.phasesUsed) * BALANCE.goldPerRemainingPhase;
@@ -65,6 +68,7 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
   return {
     cleared: true,
     gameOver: false,
+    won: run.ante === BALANCE.runAntes && run.blindIndex === 2,
     earned: { reward, phases, interest: interestGold, thrift, total },
     run: { ...run, gold: run.gold + total, ante: next.ante, blindIndex: next.blindIndex },
   };
