@@ -11,6 +11,7 @@ import { Tooltip } from './Tooltip';
 import { JokerShelf } from './JokerShelf';
 import { PackOpening } from './PackOpening';
 import { MoneyValue } from './MoneyValue';
+import { ShopMascot } from './ShopMascot';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -69,6 +70,7 @@ export function Shop({ g }: { g: UseGame }) {
           <span className="label">{t('shop.title')}</span>
           <MoneyValue value={run.gold} />
         </div>
+        <ShopMascot />
       </aside>
 
       <div className="shop-main">
