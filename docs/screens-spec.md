@@ -69,14 +69,14 @@ Left rail: **Next Blind** (red) + **Reroll $N** (green, escalating). Main column
 - Voucher slot rules per GDD §9.2 (reroll-immune, one purchase per chapter, restocks at Deadline).
 - **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a speech bubble showing one random `mascot.welcome.*` line per shop entry, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Art: `docs/Piyak.png` → `src/ui/assets/piyak.png`.
 
-### 2.7 Game Over
-Stats panel, translated to our terms:
+### 2.7 Run End (Game Over / Published)
+One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeated-by panel; **win** — gold "출간 완료!/Published!", final-Deadline record panel; stats/seed/actions shared. A future **endless mode** button will join the action row (routing into Fee Settlement → shop; planned, not implemented). **우땅 (WooDak)**, the orangutan mentor mascot, stands beside the card (hidden ≤720px) with a speech bubble: discovery mention (`{n}` new words) → stat-based tip → random tip; a congratulation leads on a win. Idle = shared single-sprite breathe + slow sway. Art: `docs/WooDak.png` → `src/ui/assets/woodak.png`. Stats panel, translated to our terms:
 - Best word (score + the word itself) · Most played pattern (e.g. "Transitive (16)")
 - Words played · Tiles discarded · Items bought · Rerolls used
 - **New discoveries: N** (ties into the collection tracking already shipped)
 - Defeated by: boss badge · Chapter / stage reached
 - **Seed + Copy button** (engine seed makes runs reproducible)
-- Buttons: New Run · Main Menu. A run-summary quip line is optional flavor **[PLACEHOLDER]**.
+- Buttons: New Run · Main Menu. (The run-summary quip is now 우땅's speech bubble — see above.)
 
 ### 2.8 Pouch widget + centered modal (보따리)
 **Persistent pouch widget** bottom-right: a pouch illustration + `remaining/total` text that updates on every draw/discard. **Hover** opens a **centered modal** (playtest-04 D-3, supersedes the bottom drawer); a grace timer bridges widget↔modal so it never flickers. While open, the hand + button cluster **slide down** to make room and restore on close. The modal is a wide, no-scroll layout: left = totals (vowels/consonants, materials, fonts); main = the A–Z grid showing **remaining tiles only** (playtest-04 item 1; no full-pouch toggle).
