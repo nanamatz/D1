@@ -556,6 +556,80 @@
   flex-direction: column;
   gap: 14px;
 }
+/* ---------- Shop mascot — 삐약이/Piyak (UI_DESIGN §6) ----------
+   Bottom of the left rail: proprietor-behind-the-counter, never overlapping
+   the sale slots. Single-sprite CSS breathe; part-based blink/tail-flick
+   waits on extra frames. */
+.mascot {
+  margin-top: auto; /* park at the bottom of the rail */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.mascot-cat {
+  width: 140px;
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;
+  animation: mascotBreathe 3s ease-in-out infinite;
+}
+/* Pixel-grammar bubble: squared corners, hard 2px ink border, blocky shadow. */
+.mascot-bubble {
+  position: relative;
+  background: var(--tile-face);
+  color: var(--tile-ink);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border: 2px solid var(--tile-ink);
+  box-shadow: var(--shadow);
+  animation: bubblePop 0.18s ease-out 0.25s backwards;
+}
+/* Stepped pixel tail: a small face-colored square poking out of the bottom edge. */
+.mascot-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%);
+  background: var(--tile-face);
+  border: 2px solid var(--tile-ink);
+  border-top: none;
+}
+@keyframes mascotBreathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.985);
+  }
+}
+@keyframes bubblePop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot-cat,
+  .mascot-bubble {
+    animation: none;
+  }
+}
+/* Single-column shop layout: hide rather than push the sale content. */
+@media (max-width: 720px) {
+  .mascot {
+    display: none;
+  }
+}
 .shopitem .btn.sell {
   background: var(--gold);
   color: #173226;
