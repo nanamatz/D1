@@ -81,10 +81,15 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       {/* Centered row: the kind emblem on the left, the target/reward stats panel
-          on the right. The boss identity sits under the row so the Deadline's
-          effect text always reads (04 D-6). */}
+          on the right. `.bb-eff` between the heading and the row is a slot of
+          fixed height that is ALWAYS present — empty on a normal blind, holding
+          the Deadline's effect text on a boss. That keeps the badge (and so the
+          whole rail) exactly as tall either way; before, the boss-only block grew
+          it. The heading doubles as the boss's name on a boss blind — the kind
+          label still reads off the emblem below (04 D-6: the effect always shows). */}
       <div className={['blind-badge', blind.kind].join(' ')}>
-        <div className="kind">{t(`blind.${blind.kind}`)}</div>
+        <div className="kind">{boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : t(`blind.${blind.kind}`)}</div>
+        <div className="bb-eff">{boss && <span className="bosseff">{t(`bossdesc.${boss.id}`)}</span>}</div>
         <div className="bb-row">
           {/* Placeholder kind token — CSS-drawn until the art pass supplies one. */}
           <div className="bb-emblem">
@@ -105,12 +110,6 @@ export function Sidebar({
             </div>
           </div>
         </div>
-        {boss && (
-          <div className="bb-boss">
-            <div className="boss">{lang === 'ko' ? boss.nameKo : boss.nameEn}</div>
-            <div className="bosseff">{t(`bossdesc.${boss.id}`)}</div>
-          </div>
-        )}
       </div>
 
       <div className="panel round-panel">

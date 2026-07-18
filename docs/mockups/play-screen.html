@@ -3,72 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Play the Wor!d — play screen mockup</title>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Jersey+10&family=Jost:ital,wght@0,300;0,500;0,700;0,900;1,300&display=swap" rel="stylesheet">
+<title>Play the Wor!d — play screen mockup (pixel-art / CRT)</title>
+<!--
+  VISUAL CONTRACT — Play screen. Art direction: pixel-art + CRT (UI_DESIGN.md, this revision).
+  Restyle, not rebuild: layout + semantic tokens are unchanged from the prior ceramic mockup;
+  ONLY the surface treatment changes — squared corners, blocky hard-offset shadows, pixel-shaded
+  tile faces, dithered material treatments, a global CRT post-pass (scanlines + vignette + bloom),
+  and `image-rendering: pixelated` on tile layers.
+  Font decision: (a) modern-pixel hybrid — Jersey 10 (headline/numerals) + Jost (tiles) + Baloo 2 (UI).
+  Cash-out button REMOVED: GDD §7.2 / screens §2.4 — the blind auto-settles, there is no cash-out
+  button. The projected panel reads as the auto-settle status, not a button.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Jersey+10&family=Jost:ital,wght@0,500;0,700;0,900;1,300&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg-desk:#22443B; --panel:#20303B; --panel-edge:#39505E;
+  --bg-desk:#22443B; --panel:#20303B; --panel-edge:#39505E; --panel-floor:#12212A;
   --ink:#EDEAE2; --ink-dim:#9DB0B8;
   --chips:#3FA7F5; --mult:#F5504E; --gold:#F0B23E;
   --tile-face:#F4EDDF; --tile-ink:#2B2620;
   --suit-standard:#B9C4CB; --suit-formal:#7E96F2; --suit-slang:#F09437; --suit-vulgar:#C6479E;
-  --shadow:0 5px 0 rgba(0,0,0,.35);
+  --inset:#16242C; --inset-edge:#3A5060;
+  /* Signature surface cue: a solid, BLURLESS pixel step down-right (a chunk, not a soft shadow). */
+  --shadow:4px 4px 0 rgba(0,0,0,.42);
+  --shadow-sm:3px 3px 0 rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
   font-family:"Baloo 2",sans-serif;color:var(--ink);
+  /* Stepped vignette (hard bands, not a smooth gradient) + desk color. The fine
+     dithered noise rides on top at the pixel grid. */
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.05), transparent 60%),
-    radial-gradient(ellipse at 50% 110%, rgba(0,0,0,.45), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 8%, rgba(255,255,255,.05), transparent 55%),
+    radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.5), transparent 60%),
     var(--bg-desk);
   min-height:100%;
+  image-rendering:pixelated;
 }
 .frame{display:grid;grid-template-columns:250px 1fr;gap:16px;max-width:1200px;margin:0 auto;padding:16px;min-height:100vh}
 
-/* ---------- panels ---------- */
-.panel{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);border-top:1px solid var(--panel-edge);padding:14px}
+/* ============ CRT post-pass (global overlay; UI_DESIGN §1/§5) ============
+   Full-screen, pointer-events:none, toggleable (here always-on for the contract).
+   Three layers: scanlines · vignette+barrel · faint bloom. Ships in-app as one
+   overlay mounted above the app root so every screen inherits it. */
+.crt-scan,.crt-vig,.crt-bloom{position:fixed;inset:0;pointer-events:none}
+.crt-scan{z-index:9997;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.24) 0 2px, rgba(0,0,0,0) 2px 4px);
+  mix-blend-mode:multiply;animation:flicker 5.2s steps(30) infinite}
+.crt-vig{z-index:9998;
+  background:radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0,0,0,.55) 100%);
+  box-shadow:inset 0 0 140px rgba(0,0,0,.45)}
+.crt-bloom{z-index:9999;
+  background:radial-gradient(ellipse at 50% 42%, rgba(120,200,255,.05), transparent 60%);
+  mix-blend-mode:screen}
+@keyframes flicker{0%,97%,100%{opacity:1}98%{opacity:.86}99%{opacity:.94}}
+
+/* ---------- panels (squared, embossed: light top edge + dark floor) ---------- */
+.panel{background:var(--panel);border-radius:0;box-shadow:var(--shadow);
+  border-top:2px solid var(--panel-edge);border-bottom:2px solid var(--panel-floor);padding:14px}
 .label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
 
 /* ---------- sidebar ---------- */
 .sidebar{display:flex;flex-direction:column;gap:12px}
-.blind-badge{background:#2C4358;border-radius:12px;padding:10px 12px;text-align:center;box-shadow:var(--shadow)}
+.blind-badge{background:#2C4358;border-radius:0;padding:10px 12px;text-align:center;box-shadow:var(--shadow);
+  border-top:2px solid #4A6A85;border-bottom:2px solid #16242C}
 .blind-badge .kind{font-weight:700;font-size:14px;letter-spacing:.12em}
-.blind-badge .target{font-family:"Jersey 10";font-size:44px;line-height:1;color:var(--mult);text-shadow:0 3px 0 rgba(0,0,0,.3)}
+.blind-badge .target{font-family:"Jersey 10";font-size:44px;line-height:1;color:var(--mult);text-shadow:2px 2px 0 rgba(0,0,0,.45)}
 .blind-badge .tlabel{font-size:11px;color:var(--ink-dim)}
 
 .scorebox{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:6px}
-.scorebox .box{border-radius:10px;padding:2px 12px;font-family:"Jersey 10";font-size:34px;line-height:1.15;box-shadow:var(--shadow)}
+/* Squared chip/mult boxes with a pixel bevel (light top-left, dark bottom-right). */
+.scorebox .box{border-radius:0;padding:2px 12px;font-family:"Jersey 10";font-size:34px;line-height:1.15;
+  box-shadow:var(--shadow-sm), inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -2px 0 rgba(0,0,0,.28)}
 .scorebox .c{background:var(--chips)}
 .scorebox .m{background:var(--mult)}
 .scorebox .x{font-family:"Jersey 10";font-size:26px;color:var(--ink-dim)}
-.committed{font-family:"Jersey 10";font-size:52px;text-align:center;line-height:1;margin-top:4px}
+.committed{font-family:"Jersey 10";font-size:52px;text-align:center;line-height:1;margin-top:4px;
+  text-shadow:2px 2px 0 rgba(0,0,0,.35)}
 .projected{margin-top:8px;text-align:center}
-.projected .num{font-family:"Jersey 10";font-size:34px;color:var(--gold);line-height:1}
-.projected .beat{display:inline-block;font-size:11px;color:#173226;background:var(--gold);border-radius:8px;padding:1px 8px;font-weight:700;margin-top:4px}
+.projected .num{font-family:"Jersey 10";font-size:34px;color:var(--gold);line-height:1;
+  text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+/* Auto-settle STATUS (not a button): pulses when projected >= target. */
+.projected .beat{display:inline-block;font-size:11px;color:#173226;background:var(--gold);border-radius:0;
+  padding:2px 8px;font-weight:800;margin-top:5px;letter-spacing:.04em;
+  box-shadow:2px 2px 0 rgba(0,0,0,.35);animation:pulse 1.4s steps(6) infinite}
+@keyframes pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
 
+/* Blocky square status pixels (were circular dots). */
 .dots{display:flex;gap:6px;margin-top:4px}
-.dot{width:14px;height:14px;border-radius:50%;background:#0F1B22;box-shadow:inset 0 2px 3px rgba(0,0,0,.6)}
-.dot.on{background:var(--gold);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.dot{width:14px;height:14px;border-radius:0;background:#0C1720;box-shadow:inset 2px 2px 0 rgba(0,0,0,.55)}
+.dot.on{background:var(--gold);box-shadow:2px 2px 0 rgba(0,0,0,.35)}
 .dot.blue.on{background:var(--chips)}
 .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-.money{font-family:"Jersey 10";font-size:30px;color:var(--gold);line-height:1}
+.money{font-family:"Jersey 10";font-size:30px;color:var(--gold);line-height:1;text-shadow:2px 2px 0 rgba(0,0,0,.3)}
 .ante{font-family:"Jersey 10";font-size:22px;color:var(--ink-dim);line-height:1}
 
 /* ---------- main column ---------- */
 .main{display:flex;flex-direction:column;gap:14px}
 .shelf{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .jokers,.consumables{display:flex;gap:10px}
-.joker{width:76px;height:96px;border-radius:12px;background:linear-gradient(180deg,#324454,#26343F);
+/* Chunky squared joker cards; rarity = pixel frame color. */
+.joker{width:76px;height:96px;border-radius:0;background:#2B3B48;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  box-shadow:var(--shadow);border:2px solid #4A6272;cursor:pointer;transition:transform .15s}
-.joker:hover{transform:translateY(-4px) rotate(-1deg)}
-.joker .e{font-size:34px}
+  box-shadow:var(--shadow);border:2px solid #4A6272;cursor:pointer;transition:transform .1s steps(2)}
+.joker:hover{transform:translateY(-4px)}
+.joker .e{font-size:34px;image-rendering:pixelated}
 .joker .n{font-size:10px;font-weight:600;color:var(--ink-dim);text-align:center;line-height:1.1;padding:0 4px}
 .joker.uncommon{border-color:var(--chips)}
 .joker.rare{border-color:var(--mult)}
-.consumable{width:60px;height:82px;border-radius:10px;background:#EFE7D6;color:#2B2620;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow)}
+.consumable{width:60px;height:82px;border-radius:0;background:#EFE7D6;color:#2B2620;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow);
+  border-top:2px solid #FFFBF0;border-bottom:2px solid #C4B79A}
 .consumable .e{font-size:26px}
 .consumable .g{font-family:"Jost";font-size:30px;font-weight:900;line-height:.8}
 .consumable .n{font-size:9px;font-weight:700;color:#6B6357;text-align:center;line-height:1}
@@ -76,25 +122,29 @@ body{
 /* ---------- sentence tray (signature) ---------- */
 .tray{min-height:150px;display:flex;align-items:center;gap:14px;padding:18px}
 .tray .label{position:absolute;transform:translateY(-64px)}
-.word{position:relative;border:3px solid var(--suit-standard);border-radius:12px;padding:10px 10px 6px;display:flex;gap:4px;background:rgba(0,0,0,.18)}
+/* Suit-framed word groups; squared frames, blocky corners. */
+.word{position:relative;border:3px solid var(--suit-standard);border-radius:0;padding:10px 10px 6px;display:flex;gap:4px;background:rgba(0,0,0,.22)}
 .word.formal{border-color:var(--suit-formal)}
-.word .pos{position:absolute;left:50%;transform:translate(-50%,0);bottom:-11px;background:#0F1B22;border:1px solid #3A5060;
-  color:var(--ink-dim);font-size:10px;font-weight:700;border-radius:8px;padding:0 8px;white-space:nowrap}
-.word .suit-tag{position:absolute;top:-10px;left:8px;font-size:9px;font-weight:800;letter-spacing:.06em;
-  background:var(--suit-standard);color:#15242C;border-radius:6px;padding:0 6px}
+.word .pos{position:absolute;left:50%;transform:translate(-50%,0);bottom:-11px;background:var(--inset);border:2px solid var(--inset-edge);
+  color:var(--ink-dim);font-size:10px;font-weight:700;border-radius:0;padding:0 8px;white-space:nowrap}
+.word .suit-tag{position:absolute;top:-11px;left:8px;font-size:9px;font-weight:800;letter-spacing:.06em;
+  background:var(--suit-standard);color:#15242C;border-radius:0;padding:0 6px}
 .word.absorbed{opacity:.75;border-style:dashed}
-.pattern-chip{margin-left:auto;background:#0F1B22;border:2px dashed #3A5060;border-radius:12px;padding:10px 14px;text-align:center}
+.pattern-chip{margin-left:auto;background:var(--inset);border:2px dashed var(--inset-edge);border-radius:0;padding:10px 14px;text-align:center}
 .pattern-chip .p{font-weight:700;font-size:14px}
 .pattern-chip .s{font-size:11px;color:var(--ink-dim)}
 
-/* ---------- tiles ---------- */
-.tile{width:64px;height:64px;border-radius:10px;position:relative;cursor:pointer;
-  background:radial-gradient(120% 120% at 25% 18%, #FFFDF6 0%, var(--tile-face) 45%, #E2D8C4 100%);
-  box-shadow:var(--shadow), inset 0 2px 2px rgba(255,255,255,.8);
+/* ---------- tiles (pixel-shaded ivory face) ---------- */
+.tile{width:64px;height:64px;border-radius:0;position:relative;cursor:pointer;
+  background:var(--tile-face);color:var(--ink-tier,var(--tile-ink));
+  /* Hard offset chunk + pixel bevel (light top-left, dark bottom-right). No smooth gradients. */
+  box-shadow:var(--shadow), inset 3px 3px 0 rgba(255,255,255,.72), inset -3px -3px 0 rgba(0,0,0,.16);
   display:flex;align-items:center;justify-content:center;
-  font-family:"Jost";font-weight:500;font-size:34px;color:var(--ink-tier,var(--tile-ink));
-  transition:transform .15s;
+  font-family:"Jost";font-weight:500;font-size:34px;
+  image-rendering:pixelated;transition:transform .1s steps(2);
 }
+/* Pixel glaze glint — a small hard highlight block top-left. */
+.tile::before{content:"";position:absolute;top:6px;left:6px;width:12px;height:7px;background:rgba(255,255,255,.55)}
 /* letter-ink tiers by chip value */
 .tile.ink-mid{--ink-tier:#54432F}
 .tile.ink-hi{--ink-tier:#6E3A2A}
@@ -103,24 +153,57 @@ body{
 .tile.vowel{--tile-face:#F7F0E1}
 .tile.cons{--tile-face:#EBE0C9}
 .tile .val{position:absolute;right:6px;bottom:3px;font-size:12px;font-weight:700;font-family:"Baloo 2"}
-.tile:hover{transform:translateY(-4px) rotate(0deg)!important}
-.tile.mini{width:36px;height:36px;font-size:20px;border-radius:7px;box-shadow:0 3px 0 rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.8)}
+.tile:hover{transform:translateY(-4px)!important}
+.tile.mini{width:36px;height:36px;font-size:20px;
+  box-shadow:var(--shadow-sm), inset 2px 2px 0 rgba(255,255,255,.7), inset -2px -2px 0 rgba(0,0,0,.16)}
+.tile.mini::before{width:8px;height:4px;top:4px;left:4px}
 .tile.mini .val{font-size:8px;right:3px;bottom:1px}
-/* materials */
-.tile.glass{background:radial-gradient(120% 120% at 25% 18%, rgba(255,255,255,.95), rgba(190,225,245,.55) 60%, rgba(140,190,220,.5));
-  box-shadow:var(--shadow), inset 0 0 12px rgba(120,190,235,.8)}
-.tile.stone{background:radial-gradient(circle at 30% 25%, #C9C6BE, #9DA09B 70%),
-  radial-gradient(circle at 70% 60%, rgba(0,0,0,.15) 1px, transparent 2px);color:#2E2E2A}
-.tile.porcelain{background:radial-gradient(120% 120% at 25% 18%, #FFFFFF, #F2F6F7 55%, #D9E4E8);border:1px solid #BFD3DA}
-/* font editions (Jost styles) */
+
+/* ---------- materials as PIXEL treatments (UI_DESIGN §3), not smooth glazes ---------- */
+/* Porcelain: whiter face + cool 1px border. */
+.tile.porcelain{background:#FBFCFD;
+  box-shadow:var(--shadow), inset 0 0 0 2px #BFD3DA, inset 3px 3px 0 rgba(255,255,255,.85)}
+/* Glass: translucent + inner glow (the one sanctioned soft-inner). */
+.tile.glass{background:rgba(182,222,245,.32);color:#1d3f52;
+  box-shadow:var(--shadow), inset 0 0 12px rgba(150,210,240,.9), inset 3px 3px 0 rgba(255,255,255,.6)}
+.tile.glass::before{background:rgba(255,255,255,.75)}
+/* Stone: gray + hard cross-hatch dither; letterless. */
+.tile.stone{background-color:#9DA09B;color:#2E2E2A;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(0,0,0,.14) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.12) 0 2px, transparent 2px 4px);
+  box-shadow:var(--shadow), inset 3px 3px 0 rgba(255,255,255,.28), inset -3px -3px 0 rgba(0,0,0,.28)}
+/* Ivory: warm cream + a single diagonal sheen band. */
+.tile.ivory{background:#F6EFDD;
+  background-image:linear-gradient(120deg, transparent 46%, rgba(255,255,255,.5) 50%, transparent 54%);
+  box-shadow:var(--shadow), inset 3px 3px 0 rgba(255,255,255,.78), inset -3px -3px 0 rgba(120,100,60,.18)}
+/* Brass: metallic gold dither + coin glint block. */
+.tile.brass{background-color:#C98F2E;color:#3A2A08;
+  background-image:repeating-linear-gradient(45deg, rgba(255,240,180,.4) 0 2px, rgba(120,80,10,.28) 2px 4px);
+  box-shadow:var(--shadow), inset 3px 3px 0 rgba(255,240,190,.55), inset -3px -3px 0 rgba(70,45,5,.5)}
+.tile.brass::before{background:rgba(255,250,210,.85);width:9px;height:9px}
+/* Lead: dark type-metal + heavy bevel. */
+.tile.lead{background:#5A5F63;color:#E7E9EA;
+  box-shadow:var(--shadow), inset 4px 4px 0 rgba(255,255,255,.18), inset -4px -4px 0 rgba(0,0,0,.45)}
+.tile.lead::before{background:rgba(255,255,255,.22)}
+/* Polished: stepped pixel shine sweep across the face. */
+.tile.polished{overflow:hidden}
+.tile.polished::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,.8) 50%, transparent 58%);
+  background-size:220% 100%;animation:shine 2.6s steps(14) infinite}
+@keyframes shine{0%{background-position:120% 0}100%{background-position:-120% 0}}
+
+/* ---------- fonts (Jost weights/styles — 5, per UI_DESIGN §1 / TileFont) ---------- */
+.tile.f-light{font-weight:300;font-style:italic}
 .tile.f-bold{font-weight:700}
 .tile.f-black{font-weight:900}
-.tile.f-light{font-weight:300;font-style:italic}
 .tile.f-inline{font-weight:500;-webkit-text-stroke:2px var(--tile-ink);color:transparent}
+/* (base font = Jost Medium 500, the default above; f-light = Futura Light Italic) */
 
 /* ---------- staged + hand ---------- */
 .stage{display:flex;flex-direction:column;gap:12px;align-items:center;padding:16px}
-.preview{background:#0F1B22;border-radius:10px;padding:6px 14px;font-size:13px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow)}
+.preview{background:var(--inset);border-radius:0;padding:6px 14px;font-size:13px;display:flex;gap:12px;align-items:center;
+  box-shadow:var(--shadow-sm);border-top:2px solid var(--inset-edge)}
 .preview b{color:var(--gold)}
 .preview .chip-c{color:var(--chips);font-weight:700}
 .staged{display:flex;gap:8px}
@@ -130,17 +213,17 @@ body{
 .hand .tile:nth-child(even){animation:wob 3.4s ease-in-out -1.7s infinite reverse}
 @keyframes wob{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
 .actions{display:flex;gap:14px;margin-top:6px}
-.btn{font-family:"Baloo 2";font-weight:700;font-size:16px;color:#fff;border:none;border-radius:12px;
-  padding:12px 26px;cursor:pointer;box-shadow:var(--shadow);transition:transform .08s, box-shadow .08s}
-.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+/* Squared buttons; depress on press (translate + shadow collapse). */
+.btn{font-family:"Baloo 2";font-weight:700;font-size:16px;color:#fff;border:none;border-radius:0;
+  padding:12px 26px;cursor:pointer;box-shadow:var(--shadow);transition:transform .06s steps(2), box-shadow .06s steps(2);
+  border-top:2px solid rgba(255,255,255,.28);border-bottom:2px solid rgba(0,0,0,.3)}
+.btn:active{transform:translate(4px,4px);box-shadow:0 0 0 rgba(0,0,0,.35)}
 .btn.play{background:var(--chips)}
 .btn.exchange{background:var(--mult)}
-.btn.cash{background:var(--gold);color:#173226;animation:glow 1.6s ease-in-out infinite}
-@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
 .btn:focus-visible,.tile:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 
 @media (prefers-reduced-motion: reduce){
-  .hand .tile,.btn.cash{animation:none}
+  .hand .tile,.projected .beat,.tile.polished::after,.crt-scan{animation:none}
   .tile,.joker,.btn{transition:none}
 }
 </style>
@@ -166,7 +249,7 @@ body{
       <div class="projected">
         <div class="label">Projected</div>
         <div class="num">342</div>
-        <span class="beat">target beaten — cash out open</span>
+        <span class="beat">target met · auto-settling</span>
       </div>
     </div>
 
@@ -241,23 +324,28 @@ body{
       </div>
 
       <div class="hand">
-        <div class="tile cons" tabindex="0">R<span class="val">1</span></div>
-        <div class="tile stone cons" tabindex="0">N<span class="val">1</span></div>
-        <div class="tile f-light vowel" tabindex="0">o<span class="val">1</span></div>
-        <div class="tile cons ink-mid" tabindex="0">D<span class="val">2</span></div>
+        <div class="tile cons f-light" tabindex="0">R<span class="val">1</span></div>
+        <div class="tile stone" tabindex="0"><span class="val">0</span></div>
+        <div class="tile ivory vowel" tabindex="0">o<span class="val">1</span></div>
+        <div class="tile brass cons ink-mid" tabindex="0">D<span class="val">2</span></div>
         <div class="tile porcelain vowel" tabindex="0">U<span class="val">1</span></div>
         <div class="tile f-inline cons ink-mid" tabindex="0">M<span class="val">3</span></div>
-        <div class="tile cons ink-gild" tabindex="0">q<span class="val">10</span></div>
+        <div class="tile lead f-black" tabindex="0">Q<span class="val">10</span></div>
+        <div class="tile polished cons" tabindex="0">T<span class="val">1</span></div>
       </div>
 
       <div class="actions">
         <button class="btn play">Play word</button>
         <button class="btn exchange">Discard</button>
-        <button class="btn cash">Cash out&nbsp;·&nbsp;+1 phase = $1</button>
       </div>
     </div>
 
   </main>
 </div>
+
+<!-- global CRT post-pass (pointer-events:none; mounted above the app root in-app) -->
+<div class="crt-scan"></div>
+<div class="crt-vig"></div>
+<div class="crt-bloom"></div>
 </body>
 </html>

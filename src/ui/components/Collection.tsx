@@ -48,7 +48,12 @@ interface Props {
   onBack: () => void;
 }
 
-/** Collection / 도감 (spec §2.9): category menu → shared grid detail views. */
+/**
+ * Collection / 도감 (spec §2.9): category menu → shared grid detail views.
+ *
+ * Every tooltip in here opens `down`: the screen is top-aligned, so its grids sit
+ * within ~100px of the viewport top and an upward card loses its title off-screen.
+ */
 export function Collection({ lexicon, onBack }: Props) {
   const { t } = useI18n();
   const [cat, setCat] = useState<Category | null>(null);
@@ -223,7 +228,8 @@ function JokersView() {
             key={def.id}
             title={lang === 'ko' ? def.nameKo : def.nameEn}
             body={t(jokerDescKey(def.id))}
-            accent={accent}
+            rarity={def.rarity}
+            down
           >
             <div className={['coll-card', accent].filter(Boolean).join(' ')}>
               <span className="cc-emoji">{def.emoji}</span>
@@ -272,7 +278,7 @@ function VouchersView() {
       {ALL_VOUCHER_IDS.map((id) => {
         const v = VOUCHER_REGISTRY.get(id)!;
         return (
-          <Tooltip key={id} title={lang === 'ko' ? v.nameKo : v.nameEn} body={t(voucherDescKey(id))}>
+          <Tooltip key={id} title={lang === 'ko' ? v.nameKo : v.nameEn} body={t(voucherDescKey(id))} down>
             <div className="coll-card">
               <span className="cc-emoji">{v.emoji}</span>
               <span className="cc-name">{lang === 'ko' ? v.nameKo : v.nameEn}</span>
@@ -319,7 +325,7 @@ function BossesView() {
           {CORE_BOSS_IDS.map((id) => {
             const b = BOSS_REGISTRY.get(id)!;
             return (
-              <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))}>
+              <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))} down>
                 <div className="boss-chip">{b.emoji}</div>
               </Tooltip>
             );
@@ -339,7 +345,7 @@ function PacksView() {
   return (
     <div className="card-grid">
       {PACK_KINDS.map((p) => (
-        <Tooltip key={p} title={t(`pack.${p}`)} body={t(`packdesc.${p}`)}>
+        <Tooltip key={p} title={t(`pack.${p}`)} body={t(`packdesc.${p}`)} down>
           <div className="coll-card">
             <span className="cc-emoji">📦</span>
             <span className="cc-name">{t(`pack.${p}`)}</span>

@@ -24,9 +24,16 @@
      slots at that spacing did not fit beside the 500px joker shelf. */
   --board-max: 1440px;
   /* The board's design height — the sidebar column is the tallest thing on it
-     (~745px) plus --board-pad top and bottom. --fit-scale keeps the board inside
-     the viewport vertically as well as horizontally, so it never scrolls. */
-  --board-h: 790px;
+     (874px) plus --board-pad top and bottom. --fit-scale keeps the board inside
+     the viewport vertically as well as horizontally, so it never scrolls.
+     Keep this in step with the rail: understate it and --fit-scale reads 1 on a
+     viewport the board does not actually fit, which is a scrollbar. It read 790
+     while the rail was already ~870, so a boss blind (the taller badge, before the
+     reserved effect slot evened the two out) scrolled on a 900px-tall viewport.
+     906 is the measured height; the rest is headroom, because `zoom` rounds the
+     scaled layout to device pixels and an exact fit rounds UP into a 2px scrollbar
+     (1366×768 did). */
+  --board-h: 912px;
   --board-pad: 16px;
   /* The Use/Sell menu opens --menu-offset to the right of a consumable card.
      --menu-reserve is the room kept clear for it: an upper bound on the natural
@@ -37,6 +44,10 @@
   --menu-offset: 8px;
   --menu-reserve: 84px;
   --consumable-gap: calc(var(--menu-reserve) + var(--menu-offset));
+  /* The blind badge's reserved effect slot: two --fs-xs lines at 1.25 line-height.
+     Kept whether or not a boss fills it, so a boss blind is exactly as tall as a
+     normal one. */
+  --bb-eff-h: 28px;
   /* The line the board docks to: the pouch widget sits this far off the viewport
      bottom, and the stage's Discard row is pulled down to meet it exactly
      (playtest-06). Both derive from this, so they can't drift apart. */
@@ -48,6 +59,18 @@
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
+  /* Tooltips: one dark-grey card, one radius, ONE WIDTH, everywhere. The body text
+     reuses --tt-bg so the white description plate reads as a window cut out of the
+     card. --tt-w is a fixed width, not a max: sizing to content made every tooltip
+     a different shape (66px on a tile, 220px on a long joker). Long copy wraps and
+     the height grows instead. */
+  --tt-bg: #3a444c;
+  --tt-r: 10px;
+  --tt-w: 220px;
+  /* The Collection's card columns. Named because the card grid has to reserve room
+     for a tooltip wider than one card (see .card-grid) and the two numbers must not
+     drift apart. */
+  --coll-card-min: 120px;
 
   /* ---- Type scale (playtest-06 #10) ----
      Every font-size comes from here; the CSS had 29 ad-hoc values across 138

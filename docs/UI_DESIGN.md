@@ -1,7 +1,10 @@
 # Play the Wor!d — UI Design Spec
 
-**Design thesis: Balatro's arcade grammar, a stationer's materiality.**
-We borrow Balatro's screen *grammar* — left info panel, joker shelf on top, hand fanned at the bottom, chunky panels with hard offset shadows, juicy score feedback — but the material world is our own: **ceramic letter tiles on a letterpress desk**, not cards on casino felt. Never copy Balatro's assets, fonts, or textures (trade-dress line); capture the feel through our own theme, which the GDD already provides (materials §2.2, fonts §2.3).
+> **Art-direction change (this revision): pixel-art + CRT.** The game now fully adopts a pixel-art/CRT aesthetic. The previous "ceramic letterpress, deliberately un-Balatro" identity and its trade-dress guardrail are **retired**. We still avoid copying Balatro's specific art assets, but the pixel-art idiom, CRT treatment, and Balatro-style screen grammar are all embraced. Existing screens are **restyled, not rebuilt** — semantic tokens and layout stay; surface treatment (pixelation, squared corners, blocky shadows, global CRT pass) changes. A pixel-art shop mascot (tuxedo cat proprietor) is added (§6).
+
+
+**Design thesis: pixel-art arcade roguelite with a CRT finish.**
+The game embraces a **pixel-art / CRT aesthetic** in the Balatro lineage: chunky pixel panels, a scanline+bloom CRT post-effect, punchy arcade score feedback. The prior "ceramic letterpress, deliberately un-Balatro" direction is **retired** (see changelog) — the earlier trade-dress guardrail no longer applies. We still don't copy Balatro's *actual art assets* (its specific card illustrations, its logo, its exact sprites), but we freely adopt the pixel-art idiom, CRT treatment, and screen grammar. Tiles read as **printed/stamped letter tiles rendered in pixel art** (the publishing-world fiction and materials/fonts from GDD §2.2–2.3 are unchanged — only their *rendering style* becomes pixel-art).
 
 The visual contract is `docs/mockups/play-screen.html`. When spec and mockup disagree, the mockup wins.
 
@@ -21,7 +24,7 @@ The visual contract is `docs/mockups/play-screen.html`. When spec and mockup dis
 | `--chips` | `#3FA7F5` | Chips (blue — genre convention) |
 | `--mult` | `#F5504E` | Mult (red — genre convention) |
 | `--gold` | `#F0B23E` | money, projected score, early-end glow |
-| `--tile-face` | `#F4EDDF` | ceramic tile face (warm ivory) |
+| `--tile-face` | `#F4EDDF` | letter tile face (warm ivory, pixel-art shaded) |
 | `--tile-ink` | `#2B2620` | tile letter ink |
 
 Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · slang `#F09437` · vulgar `#C6479E`. Vulgar is magenta, not red — red is reserved for Mult.
@@ -30,16 +33,22 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 
 | Role | Face | Notes |
 |---|---|---|
-| Score display / big numbers | **Jersey 10** (Google Fonts) | condensed pixel feel for the arcade register; numbers only |
-| Tile letters | **Jost** | the GDD's own Futura stand-in (§2.3). Font *editions* are Jost weights/styles: Medium 500 (base) · Light Italic 300i · Bold 700 · Inline (500 + text-stroke outline) · Black 900 |
-| UI labels / body | **Baloo 2** | rounded, chunky, friendly; sentence case |
+| Score display / big numbers | **Jersey 10** (Google Fonts) | already a pixel face — keep; it now sets the tone for the whole UI rather than being the odd one out |
+| Tile letters | **Jost** | the GDD's own Futura stand-in (§2.3). **Five fonts** map onto Jost weights/styles, matching the `TileFont` union (`medium`/`lightItalic`/`bold`/`inline`/`black`): Medium 500 (base) · Light Italic (Jost 300 italic) · Bold 700 · Inline (500 + text-stroke outline) · Black 900 |
+| UI labels / body | **Baloo 2** | rounded, chunky; sentence case |
 
-### Surface language
+> **Pixel-font note (art-shift) — RESOLVED to (a), "modern pixel hybrid".** Jost and Baloo 2 are smooth vector faces that read slightly against the pixel-art surfaces; we **keep them**, rendered at crisp sizes, and lean on Jersey 10 (already a pixel face) for headline/numeric moments. The two candidates considered were **(a)** keep the current faces as a hybrid — *chosen* — and **(b)** swap UI/tile faces for true bitmap fonts (Pixelify Sans / Silkscreen / Departure Mono), *rejected*. Because (a) is chosen, the **font mapping (GDD §2.3) is unchanged**: it stays **five** — Jost Medium 500 (base) / Light Italic (Jost 300 italic) / Bold 700 / Inline (500 + text-stroke) / Black 900 — matching `TileFont` and `fontClass()`. (An earlier draft of this note mis-stated a "Light Italic removed, 4 fonts" patch; no such patch exists in GDD §2.3, and the code carries all five — corrected here. Revisit only if the hybrid reads too soft in playtest; a later swap to (b) would then re-open the mapping.)
 
-- Radius: panels 14px, tiles 10px, buttons 12px.
-- **Hard offset shadow** is the signature surface cue: `box-shadow: 0 5px 0 rgba(0,0,0,.35)` (no blur). Buttons depress 3px on press (translateY + shadow shrink).
-- Panels get a 1px `--panel-edge` top border as a bevel highlight.
-- Background: `--bg-desk` + radial vignette + very subtle noise (CSS gradient noise, no image assets).
+### Surface language (pixel-art / CRT)
+
+- **Pixel grid.** Author UI at a low virtual resolution and scale up with integer nearest-neighbor (`image-rendering: pixelated`) so edges stay crisp. Borders/shadows are 1–2 "big pixels" wide, not sub-pixel.
+- **Hard offset shadow** stays the signature surface cue but as blocky pixel shadow: a solid dark step down-right (no blur), e.g. a 4–5px hard offset that reads as a chunk, not a soft `box-shadow`. Buttons depress on press (translate + shadow collapse).
+- Radius: keep corners **squared or 1-step chamfered** — rounded 14px radii read as non-pixel; prefer hard pixel corners or a single-pixel bevel.
+- Panels get a light top-edge pixel highlight (`--panel-edge`) and a dark bottom-edge for the stamped/embossed look.
+- **CRT post-effect** (global, toggleable in Settings, GDD/screens §2.11): scanlines + slight bloom + subtle barrel/vignette. Ship it as a full-screen overlay/shader pass so any screen inherits it. Must be **disable-able** (accessibility + the reduced-motion/low-end path), and scanline intensity should be a slider (the reference build exposed a "CRT" strength + "CRT bloom" toggle).
+- Background: `--bg-desk` + vignette; noise/texture rendered at the pixel grid, not as a smooth gradient.
+
+> **Migration note.** Existing components built to the old "ceramic/smooth" surface language (soft radii, blurless-but-fine offset shadows) are **restyled, not rebuilt** — the token names and layout stay; only the surface treatment (pixelation, CRT, squared corners, blocky shadows) changes. Keep all semantic tokens (`--chips`, `--mult`, `--gold`, suit colors) — they are genre conventions and remain correct.
 
 ---
 
@@ -58,14 +67,14 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 │  projected ├──────────────────────────────────────────────┤
 │  phases ●●○○   STAGED WORD preview (validity·suit·score)  │
 │  exchanges │                                              │
-│  gold/ante │   HAND (11 ceramic tiles, slight fan/wobble) │
+│  gold/ante │   HAND (11 pixel-art tiles, slight fan/wobble) │
 │            │        [PLAY WORD]   [DISCARD]               │
 └────────────┴──────────────────────────────────────────────┘
 ```
 
 **Signature element — the Sentence Tray.** Balatro has no equivalent: our played words accumulate left-to-right *as a sentence under construction*. Each played word is a mini-card group (its tiles shrunk), framed in its suit color, with a POS tag chip beneath. A gibberish play renders as a cracked/burned slot — the **hole** made visible. At the tray's right end, a pattern status chip shows the live judgment ("Transitive ✓ ×2" / "— no pattern"). This tray is the game's identity on screen; spend the polish budget here.
 
-Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score · committed score as `[chips]×[mult]` blue/red boxes · projected score in gold (pulses when ≥ target; early-end button lights up) · phase dots · exchange dots · gold · ante N/8.
+Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score · committed score as `[chips]×[mult]` blue/red boxes · projected score in gold (pulses when ≥ target — the auto-settle status indicator; there is **no** early-end/cash-out button, GDD §7.2) · phase dots · exchange dots · gold · ante N/8.
 
 ---
 
@@ -73,7 +82,7 @@ Sidebar (top→bottom): blind badge (kind + boss name when boss) with target sco
 
 | Component | Notes |
 |---|---|
-| `Tile` | 64px ceramic square: ivory face, glaze highlight (top-left radial), letter in Jost (case shown literally: h vs H), chip value bottom-right. **Material variants:** porcelain = whiter + cool border; polished = animated shine sweep; glass = translucent + inner glow; stone = gray speckle. **Font editions** = Jost weight/style per §1. Selected = raised 10px + gold outline. |
+| `Tile` | 64px (integer-scaled) pixel-art letter tile: ivory face with pixel-shaded glaze highlight (top-left), letter (case shown literally: h vs H), chip value bottom-right. **Material variants (8, GDD §2.2)** rendered as pixel treatments: porcelain = whiter face + cool 1px border; polished = animated pixel shine sweep; glass = translucent + inner glow; stone = gray speckle/dither; **ivory = warm cream with a subtle sheen; brass = metallic gold dither + coin glint; lead = dark grey type-metal with a beveled edge**. **Font editions (4)** = per §1 Type note. Selected = raised + gold pixel outline. |
 | `SentenceTray` | see §2. Includes `HoleSlot` (gibberish) and `PatternChip`. |
 | `JokerCard` | chunky card with large emoji, name on hover tooltip; rarity = frame color (common gray / uncommon blue / rare red / legendary gold shimmer). |
 | `ScoreBox` | blue chips box × red mult box, Jersey 10 numerals, count-up animation on settle. |
@@ -87,7 +96,7 @@ Sidebar (top→bottom): blind badge (kind + boss name when boss) with target sco
 Priority order — implement top-down, cut from the bottom if time-boxed:
 
 1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): staged tiles fly to the tray → chips box counts up per tile (tick per letter) → suit stamp slams onto the word frame → mult box multiplies → committed score rolls. ~900ms total, skippable.
-2. **Projected update**: after settle, pattern chip re-evaluates with a soft flip; projected number rolls to new value; if ≥ target, early-end button ignites (gold pulse).
+2. **Projected update**: after settle, pattern chip re-evaluates with a soft flip; projected number rolls to new value; if ≥ target, the projected panel ignites (gold pulse) to signal the imminent **auto-settle** (a status cue, not a button — GDD §7.2).
 3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel.
 4. **Hover/select**: hover = lift 4px + straighten; select = rise 10px + gold ring.
 5. **Boss intro**: boss badge stamps in with a screen shake (respect reduced motion).
@@ -99,6 +108,19 @@ Quality floor: `prefers-reduced-motion` disables wobble/shake and reduces settle
 ## 5. Implementation notes (slice ⑥)
 
 - React + plain CSS custom properties (tokens above as `:root` vars). No Tailwind in the game screen — the styling is too bespoke; keep tokens in one `tokens.css`.
+- **Pixel-art rendering:** apply `image-rendering: pixelated` to sprite/tile layers; author art at a fixed virtual resolution and integer-scale. Avoid smooth CSS gradients/blurs on pixel surfaces (they break the aesthetic) — use dithering/stepped fills.
+- **CRT effect:** implement once as a global post-pass overlay (CSS scanline layer + optional WebGL/shader for bloom/barrel), mounted above the app root so every screen inherits it. Wire its on/off + intensity to Settings (screens §2.11 Graphics). It must not intercept pointer events, and must be disable-able for accessibility/low-end.
 - Animation: CSS transitions/keyframes first; adopt a spring lib (framer-motion) only if the settle sequence demands it.
 - The engine stays headless: UI subscribes to engine state snapshots; the settle sequence is driven by a `ScoreEvent[]` log the engine already produces per submission (chips/mult steps), replayed with timing by the UI.
 - Screens after the play screen (shop, blind select, pack opening) reuse the same tokens/components; design them after slice ⑤ logic exists. The mockup covers the play screen only.
+
+---
+
+## 6. Shop mascot — pixel-art cat proprietor (art-shift)
+
+The Stationery Shop (screens §2.6) has a **mascot character: a tuxedo cat who owns/runs the shop**, rendered in pixel-art with the CRT finish (fits the new direction natively). Reference art supplied by design (`docs/reference/mascot/cat.png`).
+
+- **Placement:** seated on one side of the shop screen (proprietor behind the counter feel), not overlapping the item slots.
+- **Idle animation — part-based, not a hand-drawn sprite sheet (decision pending final confirmation, leaning part-based):** slice the supplied art into body / tail / eyes layers and animate cheaply — body breathes (subtle vertical squash ±1–2 px on a slow sine), eyes blink occasionally, tail flicks. This starts from the single supplied image; a full multi-frame sprite sheet can replace it later if desired.
+- **Role in shop:** open question (proprietor decoration vs. speech-bubble price/flavor barker vs. reacts on purchase) — ships first as **seated idle decoration**; reactive behaviors are a later layer. Track in screens §2.6.
+- Respect `prefers-reduced-motion`: freeze to a static frame.

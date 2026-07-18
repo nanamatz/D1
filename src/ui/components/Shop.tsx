@@ -3,7 +3,7 @@ import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
 import { rerollDiscount } from '../../engine/vouchers';
-import type { ConsumableId, ShopItem } from '../../engine/types';
+import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
 import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
@@ -20,7 +20,13 @@ export function Shop({ g }: { g: UseGame }) {
 
   const itemMeta = (
     item: ShopItem,
-  ): { emoji: string; name: string; desc: string; accent?: string | undefined } => {
+  ): {
+    emoji: string;
+    name: string;
+    desc: string;
+    accent?: string | undefined;
+    rarity?: JokerRarity | undefined;
+  } => {
     if (item.kind === 'joker') {
       const def = JOKER_REGISTRY.get(item.id);
       return {
@@ -28,6 +34,7 @@ export function Shop({ g }: { g: UseGame }) {
         name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
         desc: t(jokerDescKey(item.id)),
         accent: def && def.rarity !== 'common' ? def.rarity : undefined,
+        rarity: def?.rarity,
       };
     }
     return {
@@ -82,7 +89,7 @@ export function Shop({ g }: { g: UseGame }) {
               }
               const m = itemMeta(item);
               return (
-                <Tooltip key={i} title={m.name} body={m.desc} accent={m.accent}>
+                <Tooltip key={i} title={m.name} body={m.desc} rarity={m.rarity}>
                   <div className={['shopitem', m.accent].filter(Boolean).join(' ')}>
                     <span className="e">{m.emoji}</span>
                     <span className="n">{m.name}</span>

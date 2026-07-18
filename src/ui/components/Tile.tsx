@@ -1,6 +1,7 @@
 import type { Tile } from '../../engine/types';
 import { faceClass, fontClass, inkClass, materialClass, tileGlyph, tileValue } from '../game';
 import { useI18n } from '../i18n';
+import { richText } from '../richtext';
 
 interface Props {
   tile: Tile;
@@ -91,7 +92,9 @@ export function TileView({
       {tooltip && (
         <span className="tt-card tile-tt" role="tooltip">
           <span className="tt-title">{tooltip.title}</span>
-          <span className="tt-body">{tooltip.body}</span>
+          <span className="tt-desc">
+            <span className="tt-body">{richText(tooltip.body)}</span>
+          </span>
         </span>
       )}
     </div>

@@ -143,9 +143,12 @@ function SettingsView() {
         ))}
       </div>
 
+      {/* All three panels are always rendered and stacked in one grid cell, so the
+          panel's height is the tallest tab's and never jumps between tabs. The
+          inactive ones are `visibility: hidden`, which also drops them from the
+          tab order and the accessibility tree. */}
       <div className="panel set-panel">
-        {tab === 'game' && (
-          <>
+        <div className={['set-tabpanel', tab === 'game' ? 'on' : ''].filter(Boolean).join(' ')}>
             <div className="set-row">
               <span className="set-label">{t('settings.gameSpeed')}</span>
               <div className="segmented">
@@ -183,11 +186,9 @@ function SettingsView() {
                 {lang === 'en' ? 'English' : '한국어'}
               </button>
             </div>
-          </>
-        )}
+        </div>
 
-        {tab === 'video' && (
-          <>
+        <div className={['set-tabpanel', tab === 'video' ? 'on' : ''].filter(Boolean).join(' ')}>
             <Toggle
               label={t('settings.fullscreen')}
               on={settings.fullscreen}
@@ -204,17 +205,14 @@ function SettingsView() {
               max={120}
               onChange={(v) => set('uiScale', v)}
             />
-          </>
-        )}
+        </div>
 
-        {tab === 'audio' && (
-          <>
+        <div className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>
             <p className="set-note">{t('settings.audioStub')}</p>
             <Slider label={t('settings.master')} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
             <Slider label={t('settings.music')} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />
             <Slider label={t('settings.sfx')} value={settings.sfx} min={0} max={100} onChange={(v) => set('sfx', v)} />
-          </>
-        )}
+        </div>
       </div>
     </>
   );
@@ -265,7 +263,10 @@ function CreditsView() {
     <>
       <h2 className="scr-title">{t('options.credits')}</h2>
       <div className="panel credits">
-        <p className="cr-title">Play the Wor!d</p>
+        {/* Same bang treatment as the main-menu logotype (.lt-bang). */}
+        <p className="cr-title">
+          Play the Wor<span className="lt-bang">!</span>d
+        </p>
         <p>{t('credits.tagline')}</p>
         <p className="cr-dim">{t('credits.inspired')}</p>
       </div>

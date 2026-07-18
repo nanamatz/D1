@@ -28,33 +28,67 @@
   position: relative;
   display: inline-flex;
 }
+/* The anchor must not resize what it wraps. It is a flex container, so a wrapped
+   card would otherwise be sized by its own content along the main axis and ignore
+   the width the anchor was given — which is why the Collection's joker and voucher
+   cards came out every width from 66px to 119px inside uniform 120px grid columns.
+   The basis stays content-derived, so a shrink-to-fit anchor (the shelves, the
+   tiles) is unchanged; grow fills a stretched anchor, and shrink lets a long name
+   wrap back down to the column instead of jutting out of it — `flex-shrink: 0`
+   here left "Consonant Bricklayer" 21px wider than its own grid cell.
+   .tt-card is absolutely positioned, so it is not a flex item and not affected. */
+.tt-anchor > :not(.tt-card) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .tt-card {
   position: absolute;
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  width: max-content;
-  max-width: 220px;
-  /* item 5: grey background so the text reads clearly */
-  background: #46565f;
-  border: 1px solid #61727c;
-  border-radius: 12px;
+  width: var(--tt-w);
+  background: var(--tt-bg);
+  border-radius: var(--tt-r);
   box-shadow: var(--shadow);
-  padding: 10px 12px;
-  display: flex;
+  padding: 6px 2px;
   flex-direction: column;
   gap: 5px;
   text-align: left;
   z-index: 30;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  /* `display: none` while hidden, not just `opacity: 0`: an absolutely-positioned
+     box still counts toward an ancestor scroll container's scrollable overflow even
+     at zero opacity, so idle tooltips gave the pause modal phantom scrollbars — a
+     card near the right edge pushed scrollWidth past clientWidth by a couple of px
+     and the sideways scrollbar never went away. `allow-discrete` + @starting-style
+     below keep the fade despite the display flip. */
+  display: none;
+  transition: opacity 0.12s ease, transform 0.12s ease, display 0.12s allow-discrete;
 }
 /* item 6: tooltip shows ONLY on hover — no focus-within, so a click (which
-   focuses the tab-able card) never makes it persist after the cursor leaves. */
-.tt-anchor:hover .tt-card {
+   focuses the tab-able card) never makes it persist after the cursor leaves.
+   The tile's tooltip is not wrapped in a .tt-anchor, so it rides along here. */
+.tt-anchor:hover .tt-card,
+.tile:hover .tile-tt,
+.tile:focus-visible .tile-tt {
+  display: flex;
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+/* Entry values for the fade — without these the card would pop in at full opacity,
+   because a box coming out of `display: none` has no previous style to animate from. */
+@starting-style {
+  .tt-anchor:hover .tt-card,
+  .tile:hover .tile-tt,
+  .tile:focus-visible .tile-tt {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  .tt-anchor:hover .tt-card.down {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
 }
 /* E-7: shelf tooltips open downward (below the anchor). */
 .tt-card.down {
@@ -65,28 +99,79 @@
 .tt-anchor:hover .tt-card.down {
   transform: translateX(-50%) translateY(0);
 }
+/* The name, centred at the top of the dark card. Always white: rarity is the
+   badge's job now, so the title doesn't have to double as a rarity readout. */
 .tt-title {
   font-weight: 700;
   font-size: var(--fs-md);
+  color: #fff;
+  text-align: center;
+  padding: 0 8px;
 }
-.tt-title.uncommon {
-  color: var(--chips);
-}
-.tt-title.rare {
-  color: var(--mult);
-}
-.tt-title.legendary {
-  color: var(--gold);
+/* The description plate — white, rounded, inset 2px from the card's edges. */
+.tt-desc {
+  background: #fff;
+  border-radius: var(--tt-r);
+  margin: 0 2px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .tt-body {
   font-size: var(--fs-sm);
-  color: #dbe3e7;
-  line-height: 1.3;
+  /* The card's own grey, so the plate reads as a window cut out of it. */
+  color: var(--tt-bg);
+  line-height: 1.35;
 }
 .tt-extra {
   font-size: var(--fs-xs);
   font-weight: 700;
-  color: var(--gold);
+  color: #8a6a1c;
+}
+/* Highlights inside description copy (see richtext.tsx). Values get a filled
+   chip; "Blind" is only recoloured — it's a noun, not a number. */
+.hl-mult,
+.hl-chips {
+  color: #fff;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.hl-mult {
+  background: var(--mult);
+}
+.hl-chips {
+  background: var(--chips);
+}
+.hl-blind {
+  color: #2f8fd4;
+  font-weight: 700;
+}
+/* Rarity badge — jokers only, beneath the description plate. */
+.tt-rarity {
+  align-self: center;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 10px;
+}
+.tt-rarity.common {
+  background: #6b7a84;
+}
+.tt-rarity.uncommon {
+  background: var(--chips);
+}
+.tt-rarity.rare {
+  background: var(--mult);
+}
+.tt-rarity.legendary {
+  background: var(--gold);
+  color: #20160a;
 }
 
 /* ---------- Cash Out / Fee Settlement (spec §2.5; A-2 overlay) ---------- */
@@ -536,12 +621,15 @@ body.cb-safe .tile.hint {
   align-items: center;
   line-height: 0.9;
 }
+/* Same face, colour and shadow as the word below it — the two lines are one
+   logotype, not a caption over a title. Only the size differs. (The credits title
+   already renders the whole name this way.) */
 .lt-play {
-  font-family: var(--ctl-font);
-  font-weight: 700;
+  font-family: 'Jersey 10';
   font-size: var(--ds-sm);
-  color: var(--ink-dim);
-  letter-spacing: 0.02em;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
 }
 .lt-title {
   font-family: 'Jersey 10';
@@ -694,15 +782,25 @@ body.cb-safe .tile.hint {
 }
 
 /* ---------- Collection (spec §2.9) ---------- */
+/* Wider than the 860px .screen default: the word grid is the one view that can
+   outgrow the viewport, and rows are what cost height. At this width a page of
+   60 chips wraps in ~5 rows instead of ~8, so nothing scrolls. */
 .collection {
   justify-content: flex-start;
   gap: 16px;
+  max-width: min(1240px, 96vw);
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
+/* These three size to their CONTAINER, not the viewport: the Collection renders
+   both as a standalone screen and inside the pause modal, and a viewport-derived
+   width overflows the modal (and scrolls it sideways) rather than fitting it. */
 .cat-menu {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
-  width: min(720px, 94vw);
+  width: 100%;
+  max-width: min(1180px, 96vw);
 }
 .cat-btn {
   position: relative;
@@ -733,14 +831,16 @@ body.cb-safe .tile.hint {
   display: flex;
   align-items: center;
   gap: 14px;
-  width: min(760px, 94vw);
+  width: 100%;
+  max-width: min(1180px, 96vw);
 }
 .coll-head .scr-title {
   flex: 1;
   text-align: left;
 }
 .coll-detail {
-  width: min(760px, 94vw);
+  width: 100%;
+  max-width: min(1180px, 96vw);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -836,11 +936,17 @@ body.cb-safe .tile.hint {
   opacity: 0.42;
   filter: saturate(0.35);
 }
+/* The tooltip is centred on a card and is wider than one, so it hangs (--tt-w minus
+   a column) / 2 past the cards at each end of a row. Reserve exactly that much, or
+   the end card's tooltip leaves the container — which is a sideways scrollbar, or a
+   clipped tooltip if the container clips. A column is never narrower than
+   --coll-card-min, so that is the worst case. */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--coll-card-min), 1fr));
   gap: 12px;
   width: 100%;
+  padding-inline: calc((var(--tt-w) - var(--coll-card-min)) / 2);
 }
 .coll-card {
   display: flex;
@@ -970,11 +1076,24 @@ body.cb-safe .tile.hint {
   gap: 16px;
   padding-top: 40px;
 }
+/* Every tab panel occupies the same single grid cell, so the grid sizes itself to
+   the tallest of them and switching tabs never changes the panel's height. No
+   fixed min-height to keep in sync as settings rows come and go. */
 .set-panel {
   width: min(560px, 94vw);
+  display: grid;
+}
+.set-tabpanel {
+  grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* Hidden, not removed — the cell must keep measuring it. `visibility` also
+     takes it out of the tab order and the a11y tree, which `opacity` would not. */
+  visibility: hidden;
+}
+.set-tabpanel.on {
+  visibility: visible;
 }
 .set-row {
   display: flex;

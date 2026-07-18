@@ -259,20 +259,28 @@
   font-weight: 700;
   color: var(--ink);
 }
-.bb-boss {
-  margin-top: 8px;
+/* Reserved effect slot between the heading and the row. It is in the DOM on every
+   blind and holds its height whether or not it has text, so a boss blind and a
+   normal one are the same height — the boss's effect fills the gap instead of
+   adding to it. Two --fs-xs lines is the budget; every boss description fits it in
+   both locales, and anything longer clamps rather than growing the badge. */
+.bb-eff {
+  height: var(--bb-eff-h);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-}
-.blind-badge .boss {
-  font-size: var(--fs-md);
-  color: var(--mult);
-  font-weight: 700;
 }
 .blind-badge .bosseff {
   font-size: var(--fs-xs);
   color: var(--ink-dim);
   line-height: 1.25;
-  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 /* The row spans the panel so the boxes can fill it (the panel centres its
@@ -1209,14 +1217,11 @@
   align-self: center;
 }
 
-/* C-4: tile hover tooltip (reuses the shared .tt-card look, anchored to the tile). */
+/* C-4: tile hover tooltip (reuses the shared .tt-card look, anchored to the tile).
+   Its reveal lives with the other tooltips in screens.css — that rule has to sit
+   next to the shared @starting-style block to stay in sync with it. */
 .tile .tile-tt {
   cursor: default;
-}
-.tile:hover .tile-tt,
-.tile:focus-visible .tile-tt {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
 /* C-4: consumable Use / Sell menu (never instant-use). */
@@ -1612,9 +1617,27 @@
   background: rgba(9, 20, 17, 0.62);
   z-index: 60;
 }
-.pause-modal {
+/* Two classes, not one: `.overlay-card` (screens.css) also sets max-width, at the
+   same specificity, and screens.css loads AFTER play.css — so a lone `.pause-modal`
+   loses and the modal silently stayed at the 640px default. The other modals
+   (.overlay-card.cashout / .gameover / .runinfo) are all written this way. */
+.overlay-card.pause-modal {
   max-width: 920px;
   max-height: 86vh;
+  /* Never scroll sideways. Everything in here is sized to fit the modal (the card
+     grid reserves its own tooltip clearance, see .card-grid), so a horizontal
+     scrollbar could only mean something transient poked out — and a scrollbar that
+     appears and vanishes with the cursor is the bug this screen kept regressing to.
+     html/body clip horizontally for the same reason (tokens.css). Vertical stays
+     `auto`: tall content genuinely has to scroll. */
+  overflow-x: clip;
+  overflow-y: auto;
+}
+/* The Collection is the one pause view that wants the wide grid it gets as a
+   standalone screen. Every other view here is a narrow centred column and would
+   only gain empty space, so the width follows the content rather than the modal. */
+.overlay-card.pause-modal:has(.collection) {
+  max-width: min(1240px, 96vw);
 }
 .pause-modal .screen {
   min-height: 0;

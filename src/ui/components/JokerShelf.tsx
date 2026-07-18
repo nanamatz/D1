@@ -49,7 +49,13 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
             const className = ['joker', accent, firing ? 'firing' : ''].filter(Boolean).join(' ');
             return (
               <div key={i} className="joker-slot">
-                <Tooltip title={name} body={t(jokerDescKey(def.id))} extra={grownValue(def, owned)} accent={accent} down>
+                <Tooltip
+                  title={name}
+                  body={t(jokerDescKey(def.id))}
+                  extra={grownValue(def, owned)}
+                  rarity={def.rarity}
+                  down
+                >
                   <div
                     className={className}
                     tabIndex={0}
@@ -66,8 +72,11 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                   </div>
                 </Tooltip>
                 {onSellJoker && jokerMenuIdx === i && (
-                  <div className="consumable-menu" role="menu">
+                  // Same `bare` menu the consumable shelf uses, so Sell looks and
+                  // behaves identically on both shelves.
+                  <div className="consumable-menu bare" role="menu">
                     <button
+                      className="sell"
                       role="menuitem"
                       onClick={() => {
                         onSellJoker(i);
