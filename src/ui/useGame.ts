@@ -47,6 +47,8 @@ export interface GameOverInfo {
   ante: number;
   blindKind: BlindKind;
   bossId: string | null;
+  /** true when the run ended by clearing the final chapter's Deadline (a win) */
+  won: boolean;
 }
 
 /**
@@ -295,6 +297,27 @@ export function useGame(): UseGame {
             ante: outcome.run.ante,
             blindKind: s.blind.kind,
             bossId: s.blind.bossId,
+            won: false,
+          },
+        };
+      }
+      // Final-chapter Deadline cleared → the run is WON (spec 2026-07-19).
+      // Skip Fee Settlement/shop for now; outcome.run (advanced, paid out) is
+      // still applied so the planned endless mode can later route this through
+      // the normal cashout path instead.
+      if (outcome.won) {
+        return {
+          ...s,
+          run: outcome.run,
+          stats,
+          phase: 'gameover',
+          gameover: {
+            finalScore: Math.round(final.finalScore),
+            target: s.blind.target,
+            ante: s.run.ante, // the chapter just completed, not the advanced one
+            blindKind: s.blind.kind,
+            bossId: s.blind.bossId,
+            won: true,
           },
         };
       }
