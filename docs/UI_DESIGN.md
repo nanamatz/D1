@@ -116,11 +116,11 @@ Quality floor: `prefers-reduced-motion` disables wobble/shake and reduces settle
 
 ---
 
-## 6. Shop mascot — pixel-art cat proprietor (art-shift)
+## 6. Shop mascot — 삐약이 (Piyak), pixel-art cat proprietor
 
-The Stationery Shop (screens §2.6) has a **mascot character: a tuxedo cat who owns/runs the shop**, rendered in pixel-art with the CRT finish (fits the new direction natively). Reference art supplied by design (`docs/reference/mascot/cat.png`).
+The Stationery Shop (screens §2.6) has a **mascot character: 삐약이 (Piyak), a tuxedo cat who owns/runs the shop**, rendered in pixel-art with the CRT finish. Art: `docs/Piyak.png` (896×1195, transparent background), shipped as `src/ui/assets/piyak.png`.
 
-- **Placement:** seated on one side of the shop screen (proprietor behind the counter feel), not overlapping the item slots.
-- **Idle animation — part-based, not a hand-drawn sprite sheet (decision pending final confirmation, leaning part-based):** slice the supplied art into body / tail / eyes layers and animate cheaply — body breathes (subtle vertical squash ±1–2 px on a slow sine), eyes blink occasionally, tail flicks. This starts from the single supplied image; a full multi-frame sprite sheet can replace it later if desired.
-- **Role in shop:** open question (proprietor decoration vs. speech-bubble price/flavor barker vs. reacts on purchase) — ships first as **seated idle decoration**; reactive behaviors are a later layer. Track in screens §2.6.
-- Respect `prefers-reduced-motion`: freeze to a static frame.
+- **Placement (shipped):** bottom of the shop's left rail, below the gold panel (proprietor behind the counter feel), never overlapping the item slots. Hidden on the ≤720px single-column layout.
+- **Idle animation (shipped, single-sprite):** CSS breathe — subtle vertical squash (scaleY ≈ 0.985, origin at the feet) on a ~3s ease loop. The part-based slicing (blink / tail-flick layers) from the earlier draft needs extra art frames and stays future work.
+- **Role in shop (shipped: welcome barker):** on each shop entry Piyak shows one random line from the `mascot.welcome.*` pool (8 lines, i18n) in a pixel-grammar speech bubble (squared corners, ink border, blocky shadow). Purchase/reroll reactions remain a later layer. Track in screens §2.6.
+- Respect `prefers-reduced-motion` (and the in-game force-reduced-motion option): freeze to a static frame, bubble appears without motion.
