@@ -637,6 +637,36 @@
     display: none;
   }
 }
+/* ---------- Run-end mascot — 우땅/WooDak (spec 2026-07-19) ----------
+   Sits beside the run-end card (overlay is already a centered flex row).
+   Reuses the shared .mascot/.mascot-bubble grammar; adds a slow sway on a
+   wrapper so it composes with the breathe squash on the img itself. */
+.go-mascot {
+  width: 190px;
+  flex: none;
+  margin-right: 18px;
+}
+.woodak-img {
+  width: 150px;
+}
+.mascot-sway {
+  animation: woodakSway 4s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+@keyframes woodakSway {
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot-sway {
+    animation: none;
+  }
+}
 .shopitem .btn.sell {
   background: var(--gold);
   color: #173226;

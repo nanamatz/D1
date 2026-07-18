@@ -3,6 +3,7 @@ import { BOSS_REGISTRY } from '../../engine/bosses';
 import type { PatternId } from '../../engine/types';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
+import { WooDakMascot } from './WooDakMascot';
 
 /** The most-frequent finalized sentence pattern this run, with its count. */
 function topPattern(counts: Partial<Record<PatternId, number>>): { id: PatternId; n: number } | null {
@@ -45,6 +46,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
 
   return (
     <div className="overlay gameover-overlay">
+      <WooDakMascot stats={stats} won={won} />
       <div className={['overlay-card', 'gameover', won ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
       <div className="go-title">{t(won ? 'gameover.wonTitle' : 'gameover.title')}</div>
 
