@@ -435,6 +435,13 @@
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
   line-height: 1;
 }
+/* Win framing (spec 2026-07-19): same card, gold celebration accent. */
+.go-won .go-title {
+  color: var(--gold);
+}
+.overlay.gameover-overlay:has(.go-won) {
+  background: rgba(52, 40, 6, 0.55);
+}
 .go-defeat,
 .go-stats,
 .go-seed {

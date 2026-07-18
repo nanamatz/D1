@@ -31,6 +31,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
   const boss = gameover.bossId ? BOSS_REGISTRY.get(gameover.bossId) : undefined;
   const top = topPattern(stats.patternCounts);
   const bestWord = stats.bestWord;
+  const won = gameover.won;
 
   const copySeed = () => {
     navigator.clipboard?.writeText(seed).then(
@@ -44,11 +45,11 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
 
   return (
     <div className="overlay gameover-overlay">
-      <div className="overlay-card gameover" role="dialog" aria-modal>
-      <div className="go-title">{t('gameover.title')}</div>
+      <div className={['overlay-card', 'gameover', won ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
+      <div className="go-title">{t(won ? 'gameover.wonTitle' : 'gameover.title')}</div>
 
       <div className="panel go-defeat">
-        <span className="label">{t('gameover.defeatedBy')}</span>
+        <span className="label">{t(won ? 'gameover.wonBy' : 'gameover.defeatedBy')}</span>
         <div className="go-defeat-row">
           {boss ? (
             <span className="go-boss">
@@ -58,7 +59,9 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
             <span className="go-boss">{t(`blind.${gameover.blindKind}`)}</span>
           )}
           <span className="go-reach">
-            {t('gameover.reached', { ante: gameover.ante, blind: t(`blind.${gameover.blindKind}`) })}
+            {won
+              ? t('gameover.wonReached', { ante: gameover.ante })
+              : t('gameover.reached', { ante: gameover.ante, blind: t(`blind.${gameover.blindKind}`) })}
           </span>
         </div>
         <div className="go-score">
