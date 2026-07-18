@@ -645,6 +645,32 @@
   width: 190px;
   flex: none;
   margin-right: 18px;
+  /* The shared .mascot rule's margin-top:auto (shop-rail bottom parking) would
+     sink him to the overlay floor — pin him to eye level with the card. */
+  margin-top: 0;
+  align-self: center;
+  /* Jump-pop entrance: rise + overshoot squash, then the bubble pops (below). */
+  animation: woodakEnter 0.45s ease-out backwards;
+}
+@keyframes woodakEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(36px) scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.12);
+  }
+  80% {
+    transform: translateY(0) scale(0.97);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+.go-mascot .mascot-bubble {
+  /* after the 0.45s landing (Piyak keeps the shared 0.25s) */
+  animation-delay: 0.5s;
 }
 .woodak-img {
   width: 150px;
@@ -663,7 +689,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mascot-sway {
+  .mascot-sway,
+  .go-mascot {
     animation: none;
   }
 }
