@@ -18,8 +18,8 @@ export function ShopMascot() {
     <div className="mascot">
       <div className="mascot-bubble">{t(`mascot.welcome.${line}`)}</div>
       <div className="mascot-seat">
-        <img className="mascot-cushion" src={cushionUrl} alt="" />
         <img className="mascot-cat" src={piyakUrl} alt="" />
+        <img className="mascot-cushion" src={cushionUrl} alt="" />
       </div>
     </div>
   );

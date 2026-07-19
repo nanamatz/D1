@@ -593,10 +593,14 @@
   bottom: 0;
   width: 160px;
   image-rendering: pixelated;
+  /* in front of the cat (DOM order) so the rim overlaps his lower body */
 }
 .mascot-seat .mascot-cat {
-  position: relative; /* stack above the cushion */
-  margin-bottom: 10px; /* sit on the pillow, front edge showing below */
+  /* raised so ~15-20px of the lower body sits behind the cushion rim —
+     the sunken-into-the-cushion look; tuned by screenshot. The cat art has
+     transparent bottom padding, so the offset is smaller than the geometric
+     overlap suggests. */
+  margin-bottom: 24px;
 }
 /* Pixel-grammar bubble: squared corners, hard 2px ink border, blocky shadow. */
 .mascot-bubble {

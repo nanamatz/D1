@@ -120,7 +120,7 @@ Quality floor: `prefers-reduced-motion` disables wobble/shake and reduces settle
 
 The Stationery Shop (screens §2.6) has a **mascot character: 삐약이 (Piyak), a tuxedo cat who owns/runs the shop**, rendered in pixel-art with the CRT finish. Art: `docs/Piyak.png` (896×1195, transparent background), shipped as `src/ui/assets/piyak.png`.
 
-- **Placement (shipped):** bottom of the shop's left rail, below the gold panel (proprietor behind the counter feel), never overlapping the item slots. Hidden on the ≤720px single-column layout, lying on a pixel-art pink cushion (`src/ui/assets/piyak-cushion.png`, generated in-house).
+- **Placement (shipped):** bottom of the shop's left rail, below the gold panel (proprietor behind the counter feel), never overlapping the item slots. Hidden on the ≤720px single-column layout, lying sunken into a pixel-art pink cushion — the cushion renders in front so its rim overlaps his lower body; top-face/side shading + baked ground shadow give it volume (`src/ui/assets/piyak-cushion.png`, generated in-house).
 - **Idle animation (shipped, single-sprite):** CSS breathe — subtle vertical squash (scaleY ≈ 0.985, origin at the feet) on a ~3s ease loop. The part-based slicing (blink / tail-flick layers) from the earlier draft needs extra art frames and stays future work.
 - **Role in shop (shipped: welcome barker):** on each shop entry Piyak shows one random line from the `mascot.welcome.*` pool (8 lines, i18n) in a pixel-grammar speech bubble (squared corners, ink border, blocky shadow). Purchase/reroll reactions remain a later layer. Track in screens §2.6.
 - Respect `prefers-reduced-motion` (and the in-game force-reduced-motion option): freeze to a static frame, bubble appears without motion.
