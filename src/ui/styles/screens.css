@@ -580,6 +580,24 @@
   transform-origin: 50% 100%;
   animation: mascotBreathe 3s ease-in-out infinite;
 }
+/* Piyak lies on a pink cushion (spec 2026-07-19): cushion behind/below, the
+   cat overlaps its top edge; breathe stays on the cat only. */
+.mascot-seat {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+.mascot-cushion {
+  position: absolute;
+  bottom: 0;
+  width: 160px;
+  image-rendering: pixelated;
+}
+.mascot-seat .mascot-cat {
+  position: relative; /* stack above the cushion */
+  margin-bottom: 10px; /* sit on the pillow, front edge showing below */
+}
 /* Pixel-grammar bubble: squared corners, hard 2px ink border, blocky shadow. */
 .mascot-bubble {
   position: relative;

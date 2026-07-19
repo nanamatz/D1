@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useI18n } from '../i18n';
 import piyakUrl from '../assets/piyak.png';
+import cushionUrl from '../assets/piyak-cushion.png';
 
 /** Size of the mascot.welcome.N pool in the locale files. */
 const MASCOT_WELCOME_COUNT = 8;
@@ -16,7 +17,10 @@ export function ShopMascot() {
   return (
     <div className="mascot">
       <div className="mascot-bubble">{t(`mascot.welcome.${line}`)}</div>
-      <img className="mascot-cat" src={piyakUrl} alt="" />
+      <div className="mascot-seat">
+        <img className="mascot-cushion" src={cushionUrl} alt="" />
+        <img className="mascot-cat" src={piyakUrl} alt="" />
+      </div>
     </div>
   );
 }
