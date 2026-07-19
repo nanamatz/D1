@@ -7,6 +7,8 @@
  * GDD section references are noted per block.
  */
 
+import type { FontEffectId, TileFont } from './types';
+
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
   handSize: 11,
@@ -53,6 +55,25 @@ export const BALANCE = {
     ivory: { gold: 3 }, // Balatro Gold
     brass: { multFactor: 1.5 }, // Balatro Steel
   },
+
+  /**
+   * Font seal effects (GDD §2.3) — Balatro-seal values verbatim-then-tune,
+   * same philosophy as materials above.
+   */
+  fontEffectValues: {
+    goldPlay: { gold: 3 }, // Gold Seal
+    chipPlay: { chips: 30 }, // adapted (Blue Seal has no planet analog; Bonus-card value)
+    retriggerPlay: { extraTriggers: 1 }, // Red Seal — the reserved retrigger, spent here
+    discardGain: {}, // Purple Seal (tarot → consumable)
+  },
+  // PROVISIONAL — awaiting design mapping (GDD §2.3/§12): reassigning a font is
+  // a one-line change here; tooltips and scoring read this table.
+  fontEffects: {
+    lightItalic: 'goldPlay',
+    bold: 'chipPlay',
+    inline: 'retriggerPlay',
+    black: 'discardGain',
+  } as Record<Exclude<TileFont, 'medium'>, FontEffectId>,
 
   // ----- Sentence patterns (GDD §5.2) -----
   patterns: {

@@ -18,7 +18,8 @@ import type {
   TileMaterial,
 } from './types';
 
-const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
+/** Consumables implemented so far — shared by pack rolls and discardGain (fonts.ts). */
+export const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
 const MATERIALS: readonly TileMaterial[] = [
   'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
 ];

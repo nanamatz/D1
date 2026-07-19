@@ -21,6 +21,9 @@ export type TileMaterial =
 /** Edition layer (GDD §2.3). 'medium' (Futura Medium) is the base. */
 export type TileFont = 'medium' | 'lightItalic' | 'bold' | 'inline' | 'black';
 
+/** Font seal effects (GDD §2.3) — the edition layer's Balatro-seal port. */
+export type FontEffectId = 'goldPlay' | 'chipPlay' | 'retriggerPlay' | 'discardGain';
+
 export interface Tile {
   id: string; // stable unique id — tiles are permanent, sculptable assets (GDD §2)
   /** null ⟺ material 'stone' — a letterless tile (GDD §2.2). Any word containing
