@@ -591,7 +591,10 @@
 .mascot-cushion {
   position: absolute;
   bottom: 0;
-  width: 160px;
+  /* native 156x66 (logical 52x22 at x3) shown 1:1 — an integer pixel scale.
+     A CSS resize here (the old 192->160) makes logical pixels uneven widths
+     and the sprite ragged; if the size must change, regenerate the asset. */
+  width: 156px;
   image-rendering: pixelated;
   /* in front of the cat (DOM order) so the rim overlaps his lower body */
 }
