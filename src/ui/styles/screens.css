@@ -591,19 +591,15 @@
 .mascot-cushion {
   position: absolute;
   bottom: 0;
-  /* native 156x66 (logical 52x22 at x3) shown 1:1 — an integer pixel scale.
-     A CSS resize here (the old 192->160) makes logical pixels uneven widths
-     and the sprite ragged; if the size must change, regenerate the asset. */
-  width: 156px;
+  /* user-supplied cat-face plush (docs/Cushion.png, trimmed 564x530): sits
+     BEHIND Piyak (its face must not cover him) — ears peek above his back,
+     the wider body shows either side. */
+  width: 180px;
   image-rendering: pixelated;
-  /* in front of the cat (DOM order) so the rim overlaps his lower body */
 }
 .mascot-seat .mascot-cat {
-  /* raised so ~15-20px of the lower body sits behind the cushion rim —
-     the sunken-into-the-cushion look; tuned by screenshot. The cat art has
-     transparent bottom padding, so the offset is smaller than the geometric
-     overlap suggests. */
-  margin-bottom: 24px;
+  position: relative; /* stack above the cushion */
+  margin-bottom: 6px; /* rest low on the plush */
 }
 /* Pixel-grammar bubble: squared corners, hard 2px ink border, blocky shadow. */
 .mascot-bubble {
