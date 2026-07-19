@@ -25,6 +25,20 @@ describe('material registries stay in sync with the engine (I-1 regression guard
     }
   });
 
+  // Collection tooltips (spec 2026-07-19): every material — ceramic included —
+  // carries effect copy in both locales.
+  it('every material has a materialdesc effect key in en.json', () => {
+    for (const m of ALL_MATERIALS) {
+      expect(en as Record<string, string>).toHaveProperty(`materialdesc.${m}`);
+    }
+  });
+
+  it('every material has a materialdesc effect key in ko.json', () => {
+    for (const m of ALL_MATERIALS) {
+      expect(ko as Record<string, string>).toHaveProperty(`materialdesc.${m}`);
+    }
+  });
+
   it("Collection.tsx's MATERIALS list covers the full TileMaterial union", () => {
     expect([...COLLECTION_MATERIALS].sort()).toEqual([...ALL_MATERIALS].sort());
   });

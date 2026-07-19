@@ -248,10 +248,12 @@ function MaterialsView() {
   return (
     <div className="swatch-grid">
       {MATERIALS.map((m) => (
-        <div key={m} className="swatch">
-          <TileView tile={sampleTile({ material: m })} />
-          <span className="sw-name">{t(`material.${m}`)}</span>
-        </div>
+        <Tooltip key={m} title={t(`material.${m}`)} body={t(`materialdesc.${m}`)} down>
+          <div className="swatch">
+            <TileView tile={sampleTile({ material: m })} />
+            <span className="sw-name">{t(`material.${m}`)}</span>
+          </div>
+        </Tooltip>
       ))}
     </div>
   );
