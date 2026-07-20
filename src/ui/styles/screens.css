@@ -1990,3 +1990,9 @@ body.cb-safe .tile.hint {
 .intro-body { font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
 .intro-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .intro-dots { font-size: 12px; opacity: 0.7; }
+/* Skip is otherwise near-invisible (transparent .btn on the dark card) — give it a
+   clearly-visible gold fill with dark text, distinct from the blue primary "Next". */
+.btn.intro-skip {
+  background: var(--gold);
+  color: #173226;
+}
