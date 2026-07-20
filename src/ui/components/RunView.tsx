@@ -74,6 +74,18 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     else if (phase === 'gameover') audio.play('failSting');
   }, [phase]);
 
+  // First-encounter tutorials for jokers/consumables/boss blinds: fire once per
+  // blind entry (phase transitions to 'playing'), not mid-blind when jokers or
+  // consumables change. The bus no-ops on already-seen/tips-off, so a repeat
+  // fire on re-entry is harmless.
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    // fire once per blind entry; run/blind read intentionally without being deps
+    if (run.jokers.length > 0) tutorialBus.fire('firstJoker');
+    if (run.consumables.length > 0) tutorialBus.fire('firstConsumable');
+    if (blind.kind === 'boss') tutorialBus.fire('firstBoss');
+  }, [phase]);
+
   // 'playing', 'gameover' and 'cashout' share the board — Game Over and Fee
   // Settlement overlay the still-visible (darkened) board, no full-screen swap
   // (A-2, A-4). The run stays frozen on the cleared blind during cash-out.
