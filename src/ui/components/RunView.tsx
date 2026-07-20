@@ -4,7 +4,8 @@ import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
-import { tutorialBus } from '../tutorial';
+import { tutorialBus, hasSeenIntro } from '../tutorial';
+import { readTips } from '../settings';
 import { SettleProvider } from '../settle';
 import { Sidebar } from './Sidebar';
 import { JokerShelf } from './JokerShelf';
@@ -18,6 +19,7 @@ import { BagWidget } from './BagView';
 import { RunInfo } from './RunInfo';
 import { Options } from './Options';
 import { ScreenTransition } from './ScreenTransition';
+import { GuidedIntro } from './GuidedIntro';
 
 interface Props {
   g: UseGame;
@@ -34,6 +36,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [showInfo, setShowInfo] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pouchOpen, setPouchOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
 
   // ESC in-round: close the Run Info window if it's open, otherwise toggle the
   // options/pause menu (playtest-06 #1, #2). Run Info takes priority so ESC peels
@@ -53,6 +56,12 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, showInfo]);
+
+  // Guided first-run intro (A-1): opens once, on first entry into the playing
+  // board, gated on the intro not having been seen yet and tips being on.
+  useEffect(() => {
+    if (phase === 'playing' && !hasSeenIntro() && readTips()) setIntroOpen(true);
+  }, [phase]);
 
   // Mascot beat on shop enter + blind-resolution stings (B-1 settle-set:
   // clearFanfare / failSting), keyed purely on phase transitions.
@@ -138,6 +147,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           auto-resolves to the Fee Settlement modal after the score lands (useGame). */}
       {!ending && !settling && (
         <BagWidget run={run} blind={blind} onOpenChange={setPouchOpen} />
+      )}
+      {!ending && !settling && introOpen && (
+        <GuidedIntro onClose={() => setIntroOpen(false)} />
       )}
       {!ending && !settling && showInfo && (
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />

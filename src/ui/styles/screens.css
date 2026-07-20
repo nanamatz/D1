@@ -1937,6 +1937,8 @@ body.cb-safe .tile.hint {
 .tut-ok { width: 100%; }
 
 /* ---------- Help glossary (work order A-3) ---------- */
+.help-replay { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.help-replay-note { font-size: 12px; opacity: 0.75; }
 .help-groups { display: flex; flex-direction: column; gap: 12px; }
 .help-group { text-align: left; }
 .help-entry { padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }

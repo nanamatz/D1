@@ -267,6 +267,8 @@
   "options.help": "도움말",
   "options.credits": "크레딧",
   "help.title": "도움말 & 용어집",
+  "help.replayIntro": "튜토리얼 다시 보기",
+  "help.replayIntroDone": "다음 블라인드에 들어가면 튜토리얼이 다시 표시됩니다.",
   "help.group.tiles": "타일",
   "help.group.scoring": "채점",
   "help.group.economy": "상점 & 경제",

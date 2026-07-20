@@ -267,6 +267,8 @@
   "options.help": "Help",
   "options.credits": "Credits",
   "help.title": "Help & Glossary",
+  "help.replayIntro": "Replay tutorial",
+  "help.replayIntroDone": "The tutorial will play again next time you enter a blind.",
   "help.group.tiles": "Tiles",
   "help.group.scoring": "Scoring",
   "help.group.economy": "Shop & Economy",

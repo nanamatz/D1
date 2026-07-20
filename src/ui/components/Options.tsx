@@ -5,7 +5,7 @@ import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
 import { useI18n } from '../i18n';
 import { Collection } from './Collection';
-import { ENCOUNTERS, hasSeen, type EncounterGroup } from '../tutorial';
+import { ENCOUNTERS, hasSeen, resetIntro, type EncounterGroup } from '../tutorial';
 import { richText } from '../richtext';
 
 type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection' | 'help';
@@ -270,10 +270,20 @@ function Stat({ k, v, muted }: { k: string; v: string | number; muted?: boolean 
 // ---------- Help ----------
 function HelpView() {
   const { t } = useI18n();
+  const [replayed, setReplayed] = useState(false);
   const groups: EncounterGroup[] = ['tiles', 'scoring', 'economy', 'run'];
   return (
     <>
       <h2 className="scr-title">{t('help.title')}</h2>
+      <div className="help-replay">
+        <button
+          className="btn exchange sm"
+          onClick={() => { resetIntro(); setReplayed(true); }}
+        >
+          {t('help.replayIntro')}
+        </button>
+        {replayed && <span className="help-replay-note">{t('help.replayIntroDone')}</span>}
+      </div>
       <div className="help-groups">
         {groups.map((g) => {
           const items = ENCOUNTERS.filter((e) => e.group === g);
