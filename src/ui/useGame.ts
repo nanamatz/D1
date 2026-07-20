@@ -13,8 +13,6 @@ import { tutorialBus } from './tutorial';
 import type {
   BlindKind,
   BlindState,
-  ConsumableId,
-  OwnedJoker,
   PatternId,
   RunState,
   ScoreEvent,
@@ -39,8 +37,6 @@ import { recordRunEnd } from './lifetime';
 import { loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
-
-const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -140,11 +136,6 @@ export interface GameState {
   runStarted: boolean;
 }
 
-function equip(run: RunState, defIds: readonly string[]): RunState {
-  const jokers: OwnedJoker[] = defIds.map((defId) => ({ defId, state: {} }));
-  return { ...run, jokers };
-}
-
 const randomSeed = (): string => Math.random().toString(36).slice(2);
 
 /**
@@ -162,10 +153,8 @@ const VERDICT_BEAT_MS = 500;
 const VERDICT_BEAT_REDUCED_MS = 200;
 
 function bootstrap(seed: string = randomSeed()): GameState {
-  const base: RunState = {
-    ...equip(newRun(seed), STARTING_JOKERS),
-    consumables: ['magnifier'] as ConsumableId[], // one hint to start (economy in a later slice)
-  };
+  // runs start empty — jokers/consumables are acquired in the shop (was: 3 demo jokers + a magnifier)
+  const base: RunState = newRun(seed);
   // Chapter 1's voucher offer + Deadline boss (fixed per chapter; playtest-03 C, 04 D-6).
   const run: RunState = {
     ...base,
