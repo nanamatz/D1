@@ -37,6 +37,7 @@ import { recordWord } from './collection';
 import { recordRunEnd } from './lifetime';
 import { loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
+import { audio } from './audio';
 
 const STARTING_JOKERS: readonly string[] = ['vowelPraise', 'hipster', 'grammarian'];
 
@@ -367,14 +368,14 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const res = buyItem(prev.run, prev.shop, index);
-      return res.ok
-        ? {
-            ...prev,
-            run: res.run,
-            shop: res.shop,
-            stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
-          }
-        : prev;
+      if (!res.ok) return prev;
+      audio.play('purchase');
+      return {
+        ...prev,
+        run: res.run,
+        shop: res.shop,
+        stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
+      };
     });
   }, []);
 
@@ -384,7 +385,9 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'shop' && prev.phase !== 'playing') return prev;
       const res = sellJoker(prev.run, index);
-      return res.ok ? { ...prev, run: res.run } : prev;
+      if (!res.ok) return prev;
+      audio.play('sell');
+      return { ...prev, run: res.run };
     });
   }, []);
 
@@ -393,15 +396,15 @@ export function useGame(): UseGame {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const res = rerollShop(prev.run, prev.shop, rng);
-      return res.ok
-        ? {
-            ...prev,
-            run: res.run,
-            shop: res.shop,
-            rngCounter: prev.rngCounter + 1,
-            stats: { ...prev.stats, rerollsUsed: prev.stats.rerollsUsed + 1 },
-          }
-        : prev;
+      if (!res.ok) return prev;
+      audio.play('reroll');
+      return {
+        ...prev,
+        run: res.run,
+        shop: res.shop,
+        rngCounter: prev.rngCounter + 1,
+        stats: { ...prev.stats, rerollsUsed: prev.stats.rerollsUsed + 1 },
+      };
     });
   }, []);
 
@@ -457,6 +460,7 @@ export function useGame(): UseGame {
       const boughtId = prev.shop.voucher;
       const res = buyVoucher(prev.run, prev.shop);
       if (!res.ok) return prev;
+      audio.play('voucherRedeem');
       // B-2: Wide Shelf's +1 item slot fills immediately, this same visit.
       let shop = res.shop;
       let rngCounter = prev.rngCounter;
@@ -486,6 +490,7 @@ export function useGame(): UseGame {
       const offer = rollPack(kind, prev.run, rng);
       const packs = prev.shop.packs.slice();
       packs[index] = null;
+      audio.play('packOpen');
       return {
         ...prev,
         run: { ...prev.run, gold: prev.run.gold - price },

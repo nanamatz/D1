@@ -3,6 +3,7 @@ import { judgeSentence } from '../../engine/patterns';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
+import { audio } from '../audio';
 import { SettleProvider } from '../settle';
 import { Sidebar } from './Sidebar';
 import { JokerShelf } from './JokerShelf';
@@ -51,6 +52,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, showInfo]);
+
+  // Mascot beat on shop enter + blind-resolution stings (B-1 settle-set:
+  // clearFanfare / failSting), keyed purely on phase transitions.
+  useEffect(() => {
+    if (phase === 'shop') audio.play('catMeow');
+    else if (phase === 'cashout') audio.play('clearFanfare');
+    else if (phase === 'gameover') audio.play('failSting');
+  }, [phase]);
 
   // 'playing', 'gameover' and 'cashout' share the board — Game Over and Fee
   // Settlement overlay the still-visible (darkened) board, no full-screen swap
