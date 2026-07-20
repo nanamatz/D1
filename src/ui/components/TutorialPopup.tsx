@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n';
-import { useSettings } from '../settings';
+import { readTips } from '../settings';
 import { richText } from '../richtext';
 import { tutorialBus, hasSeen, markSeen, ENCOUNTERS, type EncounterId } from '../tutorial';
 
@@ -12,18 +12,19 @@ import { tutorialBus, hasSeen, markSeen, ENCOUNTERS, type EncounterId } from '..
  */
 export function TutorialHost() {
   const { t } = useI18n();
-  const { settings } = useSettings();
   const [active, setActive] = useState<EncounterId | null>(null);
 
   useEffect(() => {
     return tutorialBus.subscribe((id) => {
-      // Read the freshest tips setting at fire time via localStorage-backed hook:
-      // if tips are off, or already seen, do nothing.
-      if (!settings.tips) return;
+      // Read the CURRENT tips setting at fire time (readTips reads localStorage
+      // directly). This host mounts once and never re-renders on a settings
+      // change, so a captured `useSettings().settings.tips` would be frozen at
+      // mount and ignore a live toggle from Options — readTips stays live.
+      if (!readTips()) return;
       if (hasSeen(id)) return;
       setActive((cur) => cur ?? id); // don't clobber a popup already showing
     });
-  }, [settings.tips]);
+  }, []);
 
   if (!active) return <></>;
   const enc = ENCOUNTERS.find((e) => e.id === active);

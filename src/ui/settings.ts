@@ -35,8 +35,28 @@ export const DEFAULT_SETTINGS: Settings = {
   sfx: 80,
 };
 
+const SETTINGS_KEY = 'wj.settings';
+
+/**
+ * Read the CURRENT tips setting straight from localStorage — not from a React
+ * `useSettings()` copy. `usePersistedState` is a per-instance `useState` with no
+ * cross-instance sync, so a component mounted once (the TutorialHost) would freeze
+ * its `settings.tips` at mount and never see a live toggle from Options. This
+ * always reflects the latest persisted value (settings write through on change).
+ */
+export function readTips(): boolean {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return DEFAULT_SETTINGS.tips;
+    const parsed = JSON.parse(raw) as Partial<Settings>;
+    return parsed.tips ?? DEFAULT_SETTINGS.tips;
+  } catch {
+    return DEFAULT_SETTINGS.tips;
+  }
+}
+
 export function useSettings() {
-  const [settings, setSettings] = usePersistedState<Settings>('wj.settings', DEFAULT_SETTINGS);
+  const [settings, setSettings] = usePersistedState<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
 
   // Apply the presentation-affecting settings to the document.
   useEffect(() => {
