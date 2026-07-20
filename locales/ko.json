@@ -342,6 +342,8 @@
   "tutorial.magnifier.body": "돋보기를 쓰면 지금 손패로 만들 수 있는 단어를 최대 3개까지 보여줍니다.",
   "tutorial.pouchHover.title": "보따리",
   "tutorial.pouchHover.body": "\"남음\"은 아직 뽑지 않은 보따리 속 타일만 셉니다 — 손패·낸 타일·버린 타일은 이미 보따리를 떠난 것입니다.",
+  "tutorial.firstBoss.title": "보스 블라인드",
+  "tutorial.firstBoss.body": "이 라운드는 보스 블라인드입니다 — 규칙을 바꾸는 제약이 걸려 있어요. 사이드바에서 효과를 확인하고 그에 맞춰 단어를 계획하세요.",
   "tutorial.gotIt": "확인",
   "intro.next": "다음",
   "intro.skip": "튜토리얼 건너뛰기",

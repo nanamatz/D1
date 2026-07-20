@@ -12,11 +12,12 @@
 
 const KEY = 'wj.tutorial';
 
-/** The 13 non-boss encounters (A-2). Per-boss encounters are a later slice. */
+/** The 14 encounters (A-2 + first boss). */
 export type EncounterId =
   | 'firstJoker' | 'firstMaterial' | 'firstFont' | 'firstLetterHand'
   | 'firstPattern' | 'firstUnison' | 'firstGibberish' | 'shopFirstVisit'
-  | 'firstConsumable' | 'firstVoucher' | 'firstPack' | 'pouchHover' | 'magnifier';
+  | 'firstConsumable' | 'firstVoucher'
+  | 'firstPack' | 'pouchHover' | 'magnifier' | 'firstBoss';
 
 export type EncounterGroup = 'tiles' | 'scoring' | 'economy' | 'run';
 
@@ -24,6 +25,8 @@ export interface Encounter {
   id: EncounterId;
   group: EncounterGroup;
   icon: string;
+  /** optional mascot portrait shown in the popup card (Piyak = shop, WooDak = mentor) */
+  mascot?: 'piyak' | 'woodak';
 }
 
 export const ENCOUNTERS: readonly Encounter[] = [
@@ -37,9 +40,10 @@ export const ENCOUNTERS: readonly Encounter[] = [
   { id: 'firstConsumable', group: 'economy', icon: '✏️' },
   { id: 'firstVoucher', group: 'economy', icon: '🎫' },
   { id: 'firstPack', group: 'economy', icon: '📦' },
-  { id: 'shopFirstVisit', group: 'economy', icon: '🏪' },
+  { id: 'shopFirstVisit', group: 'economy', icon: '🏪', mascot: 'piyak' },
   { id: 'magnifier', group: 'economy', icon: '🔍' },
   { id: 'pouchHover', group: 'run', icon: '👝' },
+  { id: 'firstBoss', group: 'run', icon: '👑', mascot: 'woodak' },
 ];
 
 type Flags = Record<string, number>;
