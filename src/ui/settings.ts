@@ -14,6 +14,7 @@ export interface Settings {
   screenshake: number; // 0..100
   reducedMotion: boolean;
   colorBlind: boolean;
+  tips: boolean;
   fullscreen: boolean;
   uiScale: number; // 80..120 (%)
   master: number; // 0..100
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   screenshake: 50,
   reducedMotion: false,
   colorBlind: false,
+  tips: true,
   fullscreen: false,
   uiScale: 100,
   master: 80,

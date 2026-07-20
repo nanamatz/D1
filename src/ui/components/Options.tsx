@@ -180,6 +180,11 @@ function SettingsView() {
               on={settings.colorBlind}
               onChange={(v) => set('colorBlind', v)}
             />
+            <Toggle
+              label={t('settings.tips')}
+              on={settings.tips}
+              onChange={(v) => set('tips', v)}
+            />
             <div className="set-row">
               <span className="set-label">{t('settings.language')}</span>
               <button className="btn exchange sm" onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}>
@@ -208,7 +213,7 @@ function SettingsView() {
         </div>
 
         <div className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>
-            <p className="set-note">{t('settings.audioStub')}</p>
+            <p className="set-note">{t('settings.audioNote')}</p>
             <Slider label={t('settings.master')} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
             <Slider label={t('settings.music')} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />
             <Slider label={t('settings.sfx')} value={settings.sfx} min={0} max={100} onChange={(v) => set('sfx', v)} />
