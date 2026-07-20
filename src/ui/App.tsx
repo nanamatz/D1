@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGame } from './useGame';
+import { useSettings } from './settings';
 import { MainMenu } from './components/MainMenu';
 import { NewRun } from './components/NewRun';
 import { RunView } from './components/RunView';
@@ -11,6 +12,10 @@ type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
 export function App() {
   const g = useGame();
+  // Mounting `useSettings` here (not just inside Options/RunView) keeps its
+  // document-effect — including the audio mixer volume sync (work order B) —
+  // live across every screen, not only while Options or a run is open.
+  useSettings();
   const [screen, setScreen] = useState<Screen>('menu');
   // `useGame` lives here, so leaving the run view (Options → Main Menu) keeps the
   // run intact, and it's persisted to localStorage so a reload keeps it too.

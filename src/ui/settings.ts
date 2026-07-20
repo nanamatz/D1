@@ -7,6 +7,7 @@
  */
 import { useEffect } from 'react';
 import { usePersistedState } from './hooks';
+import { audio } from './audio';
 
 export interface Settings {
   gameSpeed: 1 | 2 | 4;
@@ -41,7 +42,12 @@ export function useSettings() {
     root.style.setProperty('--ui-scale', String(settings.uiScale / 100));
     document.body.classList.toggle('force-reduced-motion', settings.reducedMotion);
     document.body.classList.toggle('cb-safe', settings.colorBlind);
-  }, [settings.uiScale, settings.reducedMotion, settings.colorBlind]);
+    // Mixer: push the persisted slider values into the audio facade (work order B).
+    audio.setVolumes({ master: settings.master, music: settings.music, sfx: settings.sfx });
+  }, [
+    settings.uiScale, settings.reducedMotion, settings.colorBlind,
+    settings.master, settings.music, settings.sfx,
+  ]);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
     setSettings({ ...settings, [key]: value });
