@@ -80,6 +80,50 @@ export function resetTutorial(): void {
   }
 }
 
+// ----- Guided first-run intro (A-1) — a separate one-shot flag -----
+const INTRO_KEY = 'wj.tutorialIntro';
+
+export interface IntroStep {
+  /** stable key → i18n copy `intro.step.<key>.title/.body` */
+  key: string;
+  /** CSS selector of the play-screen element to spotlight */
+  selector: string;
+}
+
+/** The 6 core-loop steps, in order (selectors verified in the play screen). */
+export const INTRO_STEPS: readonly IntroStep[] = [
+  { key: 'hand', selector: '.hand' },
+  { key: 'score', selector: '.score-panel' },
+  { key: 'target', selector: '.bs-target' },
+  { key: 'discard', selector: '.discard-btn' },
+  { key: 'tray', selector: '.tray' },
+  { key: 'clear', selector: '.round-panel' },
+];
+
+export function hasSeenIntro(): boolean {
+  try {
+    return localStorage.getItem(INTRO_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function markIntroSeen(): void {
+  try {
+    localStorage.setItem(INTRO_KEY, String(Date.now()));
+  } catch {
+    /* ignore quota / privacy-mode errors */
+  }
+}
+
+export function resetIntro(): void {
+  try {
+    localStorage.removeItem(INTRO_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Event bus — decouples trigger sites from the popup host (audio-singleton shape). */
 class TutorialBus {
   private subs = new Set<(id: EncounterId) => void>();

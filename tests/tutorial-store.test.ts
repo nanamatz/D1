@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hasSeen, markSeen, resetTutorial, seenCount, loadTutorial, ENCOUNTERS, tutorialBus, type EncounterId } from '../src/ui/tutorial';
+import { hasSeenIntro, markIntroSeen, resetIntro, INTRO_STEPS } from '../src/ui/tutorial';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 
@@ -15,6 +16,7 @@ beforeEach(() => {
     key: () => null, length: 0,
   } as Storage;
   resetTutorial();
+  resetIntro();
 });
 
 describe('tutorial seen-flags store', () => {
@@ -72,5 +74,26 @@ describe('tutorial copy stays in sync with the registry', () => {
         expect(loc).toHaveProperty(`tutorial.${e.id}.body`);
       }
     }
+  });
+});
+
+describe('guided intro flag (A-1)', () => {
+  it('hasSeenIntro is false until marked, true after, reset clears it', () => {
+    resetIntro();
+    expect(hasSeenIntro()).toBe(false);
+    markIntroSeen();
+    expect(hasSeenIntro()).toBe(true);
+    resetIntro();
+    expect(hasSeenIntro()).toBe(false);
+  });
+
+  it('INTRO_STEPS has 6 steps, each with a key and a selector', () => {
+    expect(INTRO_STEPS.length).toBe(6);
+    for (const s of INTRO_STEPS) {
+      expect(s.key).toBeTruthy();
+      expect(s.selector.startsWith('.')).toBe(true);
+    }
+    // keys are unique
+    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(6);
   });
 });
