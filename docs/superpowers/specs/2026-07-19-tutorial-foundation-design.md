@@ -23,10 +23,12 @@ Pure/headless UI util (no React): `hasSeen(id)`, `markSeen(id)`, `loadTutorial()
 
 ### 2. Encounter registry — `src/ui/tutorial.ts`
 Data table `ENCOUNTERS: { id: EncounterId; group: EncounterGroup; icon?: string }[]`.
-`EncounterId` union covers the A-2 list (extend as systems ship): `firstJoker`,
-`firstMaterial`, `firstFont`, `firstLetterHand`, `firstPattern`, `firstUnison`,
-`firstGibberish`, `shopFirstVisit`, `firstConsumable`, `firstVoucher`, `firstPack`,
-`pouchHover`, `magnifier`, plus per-boss ids. Copy lives in i18n as
+`EncounterId` union covers the A-2 non-boss list (13, extend as systems ship):
+`firstJoker`, `firstMaterial`, `firstFont`, `firstLetterHand`, `firstPattern`,
+`firstUnison`, `firstGibberish`, `shopFirstVisit`, `firstConsumable`, `firstVoucher`,
+`firstPack`, `pouchHover`, `magnifier`. **Per-boss encounters are deferred to a later
+slice** (bosses already carry `bossdesc.*` copy the future per-boss popup can reuse),
+to keep this slice's copy volume bounded. Copy lives in i18n as
 `tutorial.<id>.title` / `tutorial.<id>.body` (ko/en) — **the Help screen reuses the
 exact same keys** (single copy source). Body copy uses the richtext markup
 (`[c:]`/`[m:]`/`[b:]`) already in the tooltips.
