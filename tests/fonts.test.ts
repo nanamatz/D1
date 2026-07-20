@@ -4,7 +4,7 @@ import { BALANCE } from '../src/engine/balance';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import { makeLexicon } from '../src/engine/lexicon';
-import { startBlind, submitWord } from '../src/engine/loop';
+import { startBlind, submitWord, discardTiles } from '../src/engine/loop';
 import { letterChips } from '../src/engine/scoring';
 import type { FontEffectId, Letter, Tile, TileFont } from '../src/engine/types';
 
@@ -125,5 +125,33 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
     const r = submit(wordTiles('tac', { 0: fontFor('chipPlay') })); // not in lexicon
     expect(r.submission.isGibberish).toBe(true);
     expect(r.events.some((e) => e.kind === 'font' && e.effect === 'chipPlay')).toBe(true);
+  });
+});
+
+describe('discardGain wired into discardTiles (GDD §2.3)', () => {
+  it('discarding a discardGain tile yields a consumable via discardTiles', () => {
+    const run = newRun('discard-seed'); // consumableSlots 2, consumables []
+    const blind = startBlind(run, makeRng('discard-seed'));
+    const discardTile: Tile = { ...blind.hand[0]!, font: fontFor('discardGain') };
+    const seeded = { ...blind, hand: [discardTile, ...blind.hand.slice(1)] };
+
+    const { blind: after, gained, slotsBlocked } = discardTiles(
+      seeded, run, [discardTile.id], makeRng('d'),
+    );
+    expect(gained).toHaveLength(1);
+    expect(slotsBlocked).toBe(0);
+    expect(after.discardsLeft).toBe(seeded.discardsLeft - 1);
+  });
+
+  it('discardTiles with full slots yields nothing and reports slotsBlocked', () => {
+    const base = newRun('discard-seed-2');
+    const run = { ...base, consumables: Array(base.consumableSlots).fill('magnifier' as const) };
+    const blind = startBlind(run, makeRng('discard-seed-2'));
+    const discardTile: Tile = { ...blind.hand[0]!, font: fontFor('discardGain') };
+    const seeded = { ...blind, hand: [discardTile, ...blind.hand.slice(1)] };
+
+    const { gained, slotsBlocked } = discardTiles(seeded, run, [discardTile.id], makeRng('d'));
+    expect(gained).toHaveLength(0);
+    expect(slotsBlocked).toBe(1);
   });
 });

@@ -57,7 +57,7 @@ describe('slice1 loop — startBlind (GDD §6.1)', () => {
     // Play a full blind, then start the next — it must be clean, no remnants.
     const run = newRun('b1');
     let blind = startBlind(run, makeRng('b1'));
-    blind = discardTiles(blind, blind.hand.slice(0, 2).map((t) => t.id));
+    blind = discardTiles(blind, run, blind.hand.slice(0, 2).map((t) => t.id), makeRng('b1-discard')).blind;
     submitWord(blind, run, lex, blind.hand.slice(0, 3).map((t) => t.id), makeRng('test'));
 
     const next = startBlind(run, makeRng('b1-next'));
@@ -74,21 +74,22 @@ describe('slice1 loop — discard budget is PER BLIND (GDD §6.3)', () => {
   const setup = () => {
     const run = newRun('exch');
     const blind = startBlind(run, makeRng('exch'));
-    return { run, blind };
+    const rng = makeRng('exch-discard');
+    return { run, blind, rng };
   };
 
   it('spends one discard and keeps the hand full', () => {
-    const { blind } = setup();
+    const { run, blind, rng } = setup();
     const ids = blind.hand.slice(0, 3).map((t) => t.id);
-    const next = discardTiles(blind, ids);
+    const next = discardTiles(blind, run, ids, rng).blind;
     expect(next.discardsLeft).toBe(blind.discardsLeft - 1);
     expect(next.hand.length).toBe(blind.hand.length); // removed + redrawn same count
   });
 
   it('discarded tiles EXIT for the blind — not redrawn, moved to discardedThisBlind (A-1)', () => {
-    const { blind } = setup();
+    const { run, blind, rng } = setup();
     const ids = blind.hand.slice(0, 3).map((t) => t.id);
-    const next = discardTiles(blind, ids);
+    const next = discardTiles(blind, run, ids, rng).blind;
     const handIds = new Set(next.hand.map((t) => t.id));
     const bagIds = new Set(next.bag.map((t) => t.id));
     for (const id of ids) {
@@ -99,26 +100,27 @@ describe('slice1 loop — discard budget is PER BLIND (GDD §6.3)', () => {
   });
 
   it('throws once the per-blind budget is exhausted', () => {
-    let { blind } = setup();
+    const { run, blind: initialBlind, rng } = setup();
+    let blind = initialBlind;
     for (let i = 0; i < BALANCE.discardsPerBlind; i++) {
       const ids = blind.hand.slice(0, 1).map((t) => t.id);
-      blind = discardTiles(blind, ids);
+      blind = discardTiles(blind, run, ids, rng).blind;
     }
     expect(blind.discardsLeft).toBe(0);
     const ids = blind.hand.slice(0, 1).map((t) => t.id);
-    expect(() => discardTiles(blind, ids)).toThrow(/budget/i);
+    expect(() => discardTiles(blind, run, ids, rng)).toThrow(/budget/i);
   });
 
   it('has no per-use tile cap — one discard dumps any number of tiles (D-4)', () => {
-    const { blind } = setup();
+    const { run, blind, rng } = setup();
     const many = blind.hand.map((t) => t.id); // the whole hand at once
-    const next = discardTiles(blind, many);
+    const next = discardTiles(blind, run, many, rng).blind;
     expect(next.discardsLeft).toBe(blind.discardsLeft - 1); // still one discard spent
   });
 
   it('rejects discarding a tile not in hand', () => {
-    const { blind } = setup();
-    expect(() => discardTiles(blind, ['not-a-real-id'])).toThrow(/hand/i);
+    const { run, blind, rng } = setup();
+    expect(() => discardTiles(blind, run, ['not-a-real-id'], rng)).toThrow(/hand/i);
   });
 });
 

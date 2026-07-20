@@ -39,7 +39,7 @@ function main(): void {
 
   // One discard: dump the three lowest-value-looking tiles (just the first 3).
   const dump = blind.hand.slice(0, 3).map((t) => t.id);
-  blind = discardTiles(blind, dump);
+  blind = discardTiles(blind, run, dump, makeRng(`${run.seed}#discard`)).blind;
   console.log(`Discarded 3 tiles → new hand: ${blind.hand.map((t) => t.letter ?? NO_LETTER).join('')}`);
   console.log(`  discards left: ${blind.discardsLeft}\n`);
 

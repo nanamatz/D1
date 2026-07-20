@@ -19,7 +19,7 @@ import { baseScore, spell, letterString } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
-import { fontEffectOf } from './fonts';
+import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus } from './jokers';
 import { BOSS_REGISTRY, drawBoss } from './bosses';
 import { blindTarget } from './economy';
@@ -27,6 +27,7 @@ import { kindForIndex } from './progression';
 import type {
   BlindKind,
   BlindState,
+  ConsumableId,
   RunState,
   ScoreEvent,
   SentenceJudgment,
@@ -98,16 +99,28 @@ function takeFromHand(hand: readonly Tile[], ids: readonly string[]): Tile[] {
   return picked;
 }
 
+export interface DiscardResult {
+  blind: BlindState;
+  /** consumables gained from discardGain-font tiles (already slot-checked);
+   *  the CALLER appends them to run.consumables (same division as goldDelta) */
+  gained: ConsumableId[];
+  /** discardGain triggers that no-opped on full slots (→ UI "slots full" toast) */
+  slotsBlocked: number;
+}
+
 /**
  * Discard (GDD §6.3, Balatro-aligned): the chosen tiles LEAVE PLAY for the rest
  * of the blind — they move to `discardedThisBlind` and are NOT returned to the
  * bag mid-blind. Replacements are drawn from the remaining (already-shuffled)
- * bag, so no RNG is needed; if the bag runs dry, fewer are drawn (no refill,
- * §6.6). Budget is PER BLIND (count of discards) with NO per-use tile cap
- * (playtest-04 D-4) — one discard may dump any number of marked tiles. Used tiles
- * (discarded + played) return to the bag only when the blind ends.
+ * bag; the rng is used ONLY for discardGain font rolls (GDD §2.3), never for
+ * drawing. Budget is PER BLIND with NO per-use tile cap (playtest-04 D-4).
  */
-export function discardTiles(blind: BlindState, tileIds: readonly string[]): BlindState {
+export function discardTiles(
+  blind: BlindState,
+  run: RunState,
+  tileIds: readonly string[],
+  rng: Rng,
+): DiscardResult {
   if (blind.discardsLeft <= 0) {
     throw new Error('discard budget exhausted for this blind');
   }
@@ -116,13 +129,18 @@ export function discardTiles(blind: BlindState, tileIds: readonly string[]): Bli
   const removedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !removedIds.has(t.id));
   const { drawn, bag } = drawTiles(blind.bag, removed.length);
+  const { gained, slotsBlocked } = rollDiscardGains(run, removed, rng);
 
   return {
-    ...blind,
-    hand: [...keptHand, ...drawn],
-    bag,
-    discardedThisBlind: [...blind.discardedThisBlind, ...removed],
-    discardsLeft: blind.discardsLeft - 1,
+    blind: {
+      ...blind,
+      hand: [...keptHand, ...drawn],
+      bag,
+      discardedThisBlind: [...blind.discardedThisBlind, ...removed],
+      discardsLeft: blind.discardsLeft - 1,
+    },
+    gained,
+    slotsBlocked,
   };
 }
 
