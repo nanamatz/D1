@@ -6,6 +6,7 @@ import { newRun } from '../src/engine/run';
 import { makeLexicon } from '../src/engine/lexicon';
 import { startBlind, submitWord, discardTiles } from '../src/engine/loop';
 import { letterChips } from '../src/engine/scoring';
+import { accumulate } from '../src/ui/settle';
 import type { FontEffectId, Letter, Tile, TileFont } from '../src/engine/types';
 
 const tile = (font: TileFont, id = `t-${font}`): Tile => ({
@@ -125,6 +126,16 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
     const r = submit(wordTiles('tac', { 0: fontFor('chipPlay') })); // not in lexicon
     expect(r.submission.isGibberish).toBe(true);
     expect(r.events.some((e) => e.kind === 'font' && e.effect === 'chipPlay')).toBe(true);
+  });
+});
+
+describe('settle replay: accumulate folds font events (GDD §2.3)', () => {
+  it('accumulate folds font chipsDelta like other delta events', () => {
+    const r = accumulate(10, 2, {
+      kind: 'font', font: 'bold', effect: 'chipPlay', tileId: 'x',
+      chipsDelta: 30, multDelta: 0, goldDelta: 0,
+    });
+    expect(r).toEqual({ chips: 40, mult: 2 });
   });
 });
 

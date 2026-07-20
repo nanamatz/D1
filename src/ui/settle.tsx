@@ -94,7 +94,8 @@ export function accumulate(
     e.kind === 'letterHand' ||
     e.kind === 'joker' ||
     e.kind === 'boss' ||
-    e.kind === 'material'
+    e.kind === 'material' ||
+    e.kind === 'font'
   ) {
     return { chips: chips + e.chipsDelta, mult: mult + e.multDelta };
   }
@@ -225,6 +226,11 @@ export function SettleProvider({
             // Materials pop on the tile itself, not as a stamp — the tile's own
             // ceramic/glass/stone face already carries the read (GDD §2.2).
             setView({ ...base, activeTileId: e.tileId });
+          } else if (e.kind === 'font') {
+            // Font beats land on the tile, like materials; a chipPlay delta
+            // grows the tile's +N pop the way per-tile jokers do.
+            if (e.chipsDelta !== 0) pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
+            setView({ ...base, tilePops: { ...pops }, activeTileId: e.tileId });
           }
         }, i * step),
       );
