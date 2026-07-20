@@ -5,8 +5,10 @@ import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
 import { useI18n } from '../i18n';
 import { Collection } from './Collection';
+import { ENCOUNTERS, hasSeen, type EncounterGroup } from '../tutorial';
+import { richText } from '../richtext';
 
-type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
+type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection' | 'help';
 type Tab = 'game' | 'video' | 'audio';
 
 interface Props {
@@ -20,7 +22,7 @@ interface Props {
 
 /**
  * Options root → Settings / New Run / Main Menu / Statistics / Collection /
- * Credits (spec §2.10–2.12; order per playtest-06 #4). New Run and Main Menu are
+ * Help / Credits (spec §2.10–2.12; order per playtest-06 #4). New Run and Main Menu are
  * pause-menu only — they render just when their handler is supplied, so opening
  * Options from the main menu still shows the plain Settings/Stats/Collection set.
  */
@@ -52,6 +54,9 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
           <button className="btn exchange" onClick={() => setView('collection')}>
             {t('options.collection')}
           </button>
+          <button className="btn exchange" onClick={() => setView('help')}>
+            {t('options.help')}
+          </button>
           <button className="btn exchange" onClick={() => setView('credits')}>
             {t('options.credits')}
           </button>
@@ -71,6 +76,7 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
     <div className="screen options">
       {view === 'settings' && <SettingsView />}
       {view === 'stats' && <StatsView lexicon={lexicon} />}
+      {view === 'help' && <HelpView />}
       {view === 'credits' && <CreditsView />}
       <button className="btn back-bar" onClick={back}>
         {t('common.back')}
@@ -258,6 +264,42 @@ function Stat({ k, v, muted }: { k: string; v: string | number; muted?: boolean 
       <span className="k">{k}</span>
       <span className="v">{v}</span>
     </div>
+  );
+}
+
+// ---------- Help ----------
+function HelpView() {
+  const { t } = useI18n();
+  const groups: EncounterGroup[] = ['tiles', 'scoring', 'economy', 'run'];
+  return (
+    <>
+      <h2 className="scr-title">{t('help.title')}</h2>
+      <div className="help-groups">
+        {groups.map((g) => {
+          const items = ENCOUNTERS.filter((e) => e.group === g);
+          if (items.length === 0) return null;
+          return (
+            <div key={g} className="panel help-group">
+              <div className="label">{t(`help.group.${g}`)}</div>
+              {items.map((e) => {
+                const seen = hasSeen(e.id);
+                return (
+                  <div key={e.id} className={['help-entry', seen ? '' : 'locked'].filter(Boolean).join(' ')}>
+                    <div className="help-entry-head">
+                      <span className="tut-icon">{e.icon}</span>
+                      <span className="help-entry-title">
+                        {seen ? t(`tutorial.${e.id}.title`) : t('help.undiscovered')}
+                      </span>
+                    </div>
+                    {seen && <p className="help-entry-body">{richText(t(`tutorial.${e.id}.body`))}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

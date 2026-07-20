@@ -1935,3 +1935,13 @@ body.cb-safe .tile.hint {
 .tut-title { font-weight: 700; font-size: 16px; }
 .tut-body { line-height: 1.5; font-size: 13px; margin-bottom: 14px; }
 .tut-ok { width: 100%; }
+
+/* ---------- Help glossary (work order A-3) ---------- */
+.help-groups { display: flex; flex-direction: column; gap: 12px; }
+.help-group { text-align: left; }
+.help-entry { padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.help-entry:first-of-type { border-top: 0; }
+.help-entry.locked { opacity: 0.4; }
+.help-entry-head { display: flex; align-items: center; gap: 8px; }
+.help-entry-title { font-weight: 700; font-size: 14px; }
+.help-entry-body { font-size: 12px; line-height: 1.45; margin-top: 4px; }
