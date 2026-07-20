@@ -60,7 +60,7 @@ const RECIPES: Record<SfxName, Recipe> = {
   catMeow:          { gain: 0.30, dur: 0.30, tones: [{ wave: 'sawtooth', from: 620, to: 780 }] },
 };
 
-export const SFX_NAMES = Object.keys(RECIPES) as SfxName[];
+export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];
 
 const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
