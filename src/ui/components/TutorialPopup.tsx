@@ -3,6 +3,7 @@ import { useI18n } from '../i18n';
 import { readTips } from '../settings';
 import { richText } from '../richtext';
 import { tutorialBus, hasSeen, markSeen, ENCOUNTERS, type EncounterId } from '../tutorial';
+import { SpotlightBubble } from './SpotlightBubble';
 import piyakUrl from '../assets/piyak.png';
 import woodakUrl from '../assets/woodak.png';
 
@@ -39,23 +40,36 @@ export function TutorialHost() {
   };
   const mascot = enc?.mascot;
 
+  const body = (
+    <>
+      <div className="tut-head">
+        <span className="tut-icon">{enc?.icon}</span>
+        <span className="tut-title">{t(`tutorial.${active}.title`)}</span>
+      </div>
+      <p className="tut-body">{richText(t(`tutorial.${active}.body`))}</p>
+      <button className="btn blue tut-ok" onClick={dismiss}>
+        {t('tutorial.gotIt')}
+      </button>
+    </>
+  );
+
+  // Spotlight style when the encounter anchors to an element; else the centered card.
+  if (enc?.target) {
+    return (
+      <SpotlightBubble target={enc.target} {...(mascot ? { mascot } : {})}>
+        {body}
+      </SpotlightBubble>
+    );
+  }
+
   return (
     <div className="tut-overlay" role="dialog" aria-modal="true" onClick={dismiss}>
       <div
         className={['tut-card', mascot ? 'has-mascot' : ''].filter(Boolean).join(' ')}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="tut-head">
-          <span className="tut-icon">{enc?.icon}</span>
-          <span className="tut-title">{t(`tutorial.${active}.title`)}</span>
-        </div>
-        <p className="tut-body">{richText(t(`tutorial.${active}.body`))}</p>
-        <button className="btn blue tut-ok" onClick={dismiss}>
-          {t('tutorial.gotIt')}
-        </button>
-        {mascot && (
-          <img className="mascot-cat tut-mascot" src={MASCOT_SRC[mascot]} alt="" />
-        )}
+        {body}
+        {mascot && <img className="mascot-cat tut-mascot" src={MASCOT_SRC[mascot]} alt="" />}
       </div>
     </div>
   );
