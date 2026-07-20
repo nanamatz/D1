@@ -332,5 +332,6 @@
   "tutorial.magnifier.title": "돋보기",
   "tutorial.magnifier.body": "돋보기를 쓰면 지금 손패로 만들 수 있는 단어를 최대 3개까지 보여줍니다.",
   "tutorial.pouchHover.title": "보따리",
-  "tutorial.pouchHover.body": "\"남음\"은 아직 뽑지 않은 보따리 속 타일만 셉니다 — 손패·낸 타일·버린 타일은 이미 보따리를 떠난 것입니다."
+  "tutorial.pouchHover.body": "\"남음\"은 아직 뽑지 않은 보따리 속 타일만 셉니다 — 손패·낸 타일·버린 타일은 이미 보따리를 떠난 것입니다.",
+  "tutorial.gotIt": "확인"
 }

@@ -332,5 +332,6 @@
   "tutorial.magnifier.title": "Magnifier",
   "tutorial.magnifier.body": "Use the Magnifier to reveal up to three words you can spell from your current hand.",
   "tutorial.pouchHover.title": "The Pouch",
-  "tutorial.pouchHover.body": "\"Remaining\" counts only the undrawn tiles still in the pouch — tiles in hand, played, or discarded have already left it."
+  "tutorial.pouchHover.body": "\"Remaining\" counts only the undrawn tiles still in the pouch — tiles in hand, played, or discarded have already left it.",
+  "tutorial.gotIt": "Got it"
 }

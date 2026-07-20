@@ -1902,3 +1902,36 @@ body.cb-safe .tile.hint {
     opacity: 1;
   }
 }
+
+/* ---------- tutorial encounter popup (work order A-2) ----------
+   Token check: tokens.css defines --panel (#20303b) but has no --edge token —
+   the nearest established panel border is --panel-edge (#39505e), used here
+   with the brief's literal fallback preserved. */
+.tut-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+.tut-card {
+  width: min(360px, 86vw);
+  background: var(--panel, #1c2b26);
+  border: 2px solid var(--panel-edge, #0d1512);
+  border-radius: 8px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  color: #fff;
+}
+.tut-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tut-icon { font-size: 22px; }
+.tut-title { font-weight: 700; font-size: 16px; }
+.tut-body { line-height: 1.5; font-size: 13px; margin-bottom: 14px; }
+.tut-ok { width: 100%; }

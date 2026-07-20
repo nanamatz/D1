@@ -7,6 +7,7 @@ import { RunView } from './components/RunView';
 import { Collection } from './components/Collection';
 import { Options } from './components/Options';
 import { ScreenTransition } from './components/ScreenTransition';
+import { TutorialHost } from './components/TutorialPopup';
 
 type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
@@ -73,5 +74,10 @@ export function App() {
 
   // B (playtest-05): every top-level screen change plays the one shared
   // transition. In-run phase changes use the same component inside RunView.
-  return <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>;
+  return (
+    <>
+      <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>
+      <TutorialHost />
+    </>
+  );
 }
