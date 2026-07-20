@@ -9,6 +9,7 @@ import { makeRng } from '../engine/rng';
 import { startBlind, submitWord, discardTiles, endBlind } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import { drawBoss } from '../engine/bosses';
+import { tutorialBus } from './tutorial';
 import type {
   BlindKind,
   BlindState,
@@ -461,6 +462,7 @@ export function useGame(): UseGame {
       const res = buyVoucher(prev.run, prev.shop);
       if (!res.ok) return prev;
       audio.play('voucherRedeem');
+      tutorialBus.fire('firstVoucher');
       // B-2: Wide Shelf's +1 item slot fills immediately, this same visit.
       let shop = res.shop;
       let rngCounter = prev.rngCounter;
@@ -491,6 +493,7 @@ export function useGame(): UseGame {
       const packs = prev.shop.packs.slice();
       packs[index] = null;
       audio.play('packOpen');
+      tutorialBus.fire('firstPack');
       return {
         ...prev,
         run: { ...prev.run, gold: prev.run.gold - price },
@@ -584,6 +587,7 @@ export function useGame(): UseGame {
         return { ...prev, message: { key: 'boss.blocked' } };
       }
       const { blind, events, submission, goldDelta, destroyedTileIds } = result;
+      if (submission.isGibberish) tutorialBus.fire('firstGibberish');
       const nextRun: RunState = {
         ...prev.run,
         gold: Math.max(0, prev.run.gold + goldDelta),
