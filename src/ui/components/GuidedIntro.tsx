@@ -29,8 +29,20 @@ export function GuidedIntro({ onClose }: { onClose: () => void }) {
 
   useLayoutEffect(() => {
     measure();
+    // The intro opens the instant the play board mounts, while the screen-transition
+    // slide-in is still animating — a one-shot measure catches the target mid-slide
+    // (off-screen). Re-measure a few times over the transition's lifetime so the
+    // spotlight settles onto the real position (the .intro-spot CSS transition glides
+    // it into place). rAF handles the immediate post-paint frame; the timeouts cover
+    // the ~600ms slide.
+    const raf = requestAnimationFrame(measure);
+    const timers = [120, 360, 650].map((ms) => setTimeout(measure, ms));
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      for (const t of timers) clearTimeout(t);
+      window.removeEventListener('resize', measure);
+    };
   }, [measure]);
 
   const finish = () => { markIntroSeen(); onClose(); };
