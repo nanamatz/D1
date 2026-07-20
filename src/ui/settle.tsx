@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { ScoreEvent } from '../engine/types';
+import { audio } from './audio';
 
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -163,6 +164,7 @@ export function SettleProvider({
         ({ chips, mult } = accumulate(chips, mult, e));
       }
       setView({ ...IDLE, active: true, chips, mult, tilePops: pops });
+      audio.play('totalRoll');
       const off = setTimeout(() => {
         setView(IDLE);
         onCompleteRef.current?.();
@@ -175,6 +177,7 @@ export function SettleProvider({
     let chips = 0;
     let mult = 0;
     const pops: Record<string, number> = {};
+    let tickStep = 0;
 
     beats.forEach((e, i) => {
       timers.push(
@@ -182,6 +185,18 @@ export function SettleProvider({
           const prevChips = chips;
           const prevMult = mult;
           ({ chips, mult } = accumulate(chips, mult, e));
+          // SFX (work order B): fire inside the speed-scaled beat timer so the
+          // cadence tracks game speed automatically. Facade no-ops until unlocked.
+          if (e.kind === 'tile') {
+            audio.play('tilePop');
+            audio.play('countTick', { step: tickStep++ });
+          } else if (e.kind === 'suit' || e.kind === 'letterHand' || e.kind === 'boss') {
+            audio.play('stamp');
+          } else if (e.kind === 'joker' || e.kind === 'font') {
+            audio.play('jokerBlip');
+          } else if (e.kind === 'material') {
+            audio.play('multFill');
+          }
           // This beat's increase drives the floating +N pops (item 6). Every settle
           // beat is additive, so multOp is 'add'; a future multiplicative beat would
           // set 'mul' to render ×N instead.
@@ -240,6 +255,7 @@ export function SettleProvider({
     // completion — the round-clear UI is gated on this, not the raw score (05 A).
     timers.push(
       setTimeout(() => {
+        audio.play('totalRoll');
         setView(IDLE);
         onCompleteRef.current?.();
       }, settleDurationMs(events, speed, false)),
