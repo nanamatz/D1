@@ -1,5 +1,6 @@
 import type { BlindEarnings } from '../../engine/progression';
 import { useCountUp, useReveal } from '../useAnim';
+import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 
@@ -59,7 +60,11 @@ export function CashOut({ g }: { g: UseGame }) {
           ))}
         </div>
 
-        <button className="btn cash big" onClick={g.confirmCashout} autoFocus>
+        <button
+          className="btn cash big"
+          onClick={() => { audio.play('buttonPress'); g.confirmCashout(); }}
+          autoFocus
+        >
           {t('cashout.confirm')}
         </button>
       </div>

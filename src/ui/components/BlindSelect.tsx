@@ -2,6 +2,7 @@ import { blindTarget, clearReward } from '../../engine/economy';
 import { kindForIndex } from '../../engine/progression';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { bossDescKey } from '../descriptions';
+import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 
@@ -56,7 +57,11 @@ export function BlindSelect({ g }: { g: UseGame }) {
                 </span>
               </div>
               {status === 'current' ? (
-                <button className="btn play bs-select" onClick={g.selectBlind} autoFocus>
+                <button
+                  className="btn play bs-select"
+                  onClick={() => { audio.play('buttonPress'); g.selectBlind(); }}
+                  autoFocus
+                >
                   {t('blindselect.select')}
                 </button>
               ) : (

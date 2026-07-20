@@ -1,4 +1,5 @@
 import { unseenCount } from '../collection';
+import { audio } from '../audio';
 import { useI18n } from '../i18n';
 
 interface Props {
@@ -22,13 +23,23 @@ export function MainMenu({ onPlay, onCollection, onOptions }: Props) {
       </div>
 
       <div className="menu-buttons">
-        <button className="btn play big" onClick={onPlay} autoFocus>
+        <button
+          className="btn play big"
+          onClick={() => { audio.play('buttonPress'); onPlay(); }}
+          autoFocus
+        >
           {t('menu.play')}
         </button>
-        <button className="btn exchange" onClick={onOptions}>
+        <button
+          className="btn exchange"
+          onClick={() => { audio.play('buttonPress'); onOptions(); }}
+        >
           {t('menu.options')}
         </button>
-        <button className="btn exchange badge-host" onClick={onCollection}>
+        <button
+          className="btn exchange badge-host"
+          onClick={() => { audio.play('buttonPress'); onCollection(); }}
+        >
           {t('menu.collection')}
           {unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
         </button>

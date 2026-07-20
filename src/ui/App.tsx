@@ -12,9 +12,17 @@ type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
 export function App() {
   const g = useGame();
-  // Mounting `useSettings` here (not just inside Options/RunView) keeps its
-  // document-effect — including the audio mixer volume sync (work order B) —
-  // live across every screen, not only while Options or a run is open.
+  // `usePersistedState` is a plain per-instance useState with no cross-instance
+  // sync, so this App-level instance is frozen at page-load values and its
+  // effect fires once at mount — it does NOT stay "live" across screens.
+  // The real value of mounting `useSettings` here (not only inside
+  // Options/RunView) is that mount-time effect: it applies the persisted
+  // volume values (e.g. a saved master:0) to the audio mixer singleton at
+  // startup, on the menu screen, before Options or RunView ever mount —
+  // closing the gap where saved silence wouldn't apply until Options was
+  // opened. `audio.setVolumes` is last-writer-wins with no render loop, so
+  // whichever instance (this one, or Options/RunView's own) last called it
+  // wins; this one just guarantees an early call happens.
   useSettings();
   const [screen, setScreen] = useState<Screen>('menu');
   // `useGame` lives here, so leaving the run view (Options → Main Menu) keeps the

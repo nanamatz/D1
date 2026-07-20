@@ -5,6 +5,7 @@ import { rerollCost } from '../../engine/economy';
 import { rerollDiscount } from '../../engine/vouchers';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
 import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
+import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { Tooltip } from './Tooltip';
@@ -60,7 +61,10 @@ export function Shop({ g }: { g: UseGame }) {
   return (
     <div className="shop2">
       <aside className="shop-rail">
-        <button className="btn play next-blind" onClick={g.leaveShop}>
+        <button
+          className="btn play next-blind"
+          onClick={() => { audio.play('buttonPress'); g.leaveShop(); }}
+        >
           {t('shop.next')}
         </button>
         <button className="btn green reroll-btn" disabled={run.gold < cost} onClick={g.reroll}>
