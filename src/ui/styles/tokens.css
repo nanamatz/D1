@@ -19,9 +19,10 @@
      pouch modal centring on the stage) derives from one number. */
   --rail-w: 400px;
   --rail-gap: 16px;
-  /* 1440, not 1400: the consumable row has to space its cards far enough apart
-     that the Use/Sell menu clears the next card (see --consumable-gap), and three
-     slots at that spacing did not fit beside the 500px joker shelf. */
+  /* 1440, not 1400: the consumable row spaces its cards far enough apart that
+     the Use/Sell menu clears the next card (see --consumable-gap). The row is
+     now pinned to its 2-slot footprint (a +1 slot squeezes in without widening
+     it), but the width stays for breathing room beside the 500px joker shelf. */
   --board-max: 1440px;
   /* The board's design height — the sidebar column is the tallest thing on it
      (874px) plus --board-pad top and bottom. --fit-scale keeps the board inside
@@ -40,7 +41,9 @@
      button width (its widest label, "Sell $N" ≈ 73px, plus slack for longer
      values and other locales) — it does NOT size the buttons, which stay as wide
      as their own text. The card gap derives from it so the menu opens into the
-     gap instead of covering the next card (playtest-06). */
+     gap instead of covering the next card (playtest-06). Holds at the base 2
+     slots only: with a +1-slot voucher the row keeps its 2-slot footprint, the
+     gaps collapse, and menu overlap is accepted. */
   --menu-offset: 8px;
   --menu-reserve: 84px;
   --consumable-gap: calc(var(--menu-reserve) + var(--menu-offset));

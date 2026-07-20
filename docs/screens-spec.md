@@ -93,7 +93,7 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 | **Words** | discovered words as tile-styled entries, `N/total`, filter by suit & length, paginated | our unique category; data already tracked |
 | Jokers | all 46, rarity-ordered, paginated grid | tooltip shows full effect |
 | Materials | 8 tile faces (ceramic + 7) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
-| Fonts | 5 (Futura variants) | rendered as the same letter in each style; maps the reference's "editions" screen |
+| Fonts | 5 (Futura variants) | rendered as the same letter in each style; shows each font's seal effect from `balance.ts` `fontEffects` (GDD §2.3); maps the reference's "editions" screen |
 | Stationery | 9 (incl. Magnifier) | |
 | Punctuation | 8 | shows which pattern each levels |
 | Forbidden Books | 4 | |
@@ -102,17 +102,17 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 | Bags | carousel detail view (bag art + description) | **[PLACEHOLDER: 1 entry]** |
 | **Blinds & Bosses** | left: ante → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Small/Big badges + 12 boss chips + 2 finisher chips (undiscovered = `?`) | doubles as the player-facing difficulty-curve reference |
 
-**Omitted by design (no equivalents — do not add):** Seals (our edition slot is occupied solely by fonts) and Tags (skip/tag system deferred, GDD §8.2).
+**Omitted by design (no equivalents — do not add):** Seals (their roles are absorbed into the font layer — GDD §2.3 seal-port — so no separate category) and Tags (skip/tag system deferred, GDD §8.2).
 
 ### 2.10 Options root
-Buttons: **Settings · Statistics · Credits**. (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
+Buttons: **Settings · Statistics · Help · Credits** (Help = the tutorial glossary, feature-01 A-3; entries unlock as encountered). (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
 
 ### 2.11 Settings
 Tabs — trimmed for a web game:
-- **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle.
+- **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle · **"don't show tips" toggle** (kills the first-encounter tutorial popups, feature-01 A-2).
 - **Graphics**: **CRT effect on/off · CRT intensity slider · CRT bloom on/off** (the pixel-art/CRT finish is now core identity — the reference build exposed exactly these; see UI_DESIGN §"Surface language") · pixel-perfect/integer-scale toggle.
 - **Video**: fullscreen toggle · UI scale slider. (No monitor select/VSync — web.)
-- **Audio**: master / music / SFX sliders with value badges. **[PLACEHOLDER: audio system itself may not exist yet — ship sliders wired to a stub mixer]**.
+- **Audio**: master / music / SFX sliders with value badges — these drive the **live Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). **Phase 1 ships SFX** (chiptune, fully synthesized — no asset files; the facade is the swap seam, see `assets/AUDIO_LICENSES.md`); the context unlocks on the first user gesture (autoplay policy) and settle-sequence SFX scale with the game-speed setting. **BGM is Phase 2 (still pending)** — the `music` slider is wired to the mixer bus but has no track to attenuate yet.
 
 ### 2.12 Statistics
 Left column: Best word score · Highest ante/blind reached · Most played pattern · Most gold held · Wins/streak.

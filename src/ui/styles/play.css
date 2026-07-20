@@ -376,8 +376,11 @@
 .money-pop {
   position: absolute;
   left: 50%;
-  font-family: 'Jersey 10';
+  /* Same style as the .money readout it floats over (gold + readout font), for
+     visual unity — direction is carried by the sign and the motion, not colour. */
+  font-family: var(--readout-font);
   font-size: var(--ds-xs);
+  color: var(--gold);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
   pointer-events: none;
   white-space: nowrap;
@@ -385,12 +388,10 @@
 }
 .money-pop.up {
   bottom: 100%;
-  color: #6bd18a;
   animation: boxPop 0.7s ease-out forwards;
 }
 .money-pop.down {
   top: 100%;
-  color: var(--mult);
   animation: moneyDrop 0.7s ease-in forwards;
 }
 @keyframes moneyDrop {
@@ -522,11 +523,15 @@
 .jokers {
   justify-content: space-between;
 }
-/* item 8: the cards are spaced by exactly the room the Use/Sell menu needs, so
-   the menu opens into the gap instead of covering the next card (playtest-06 —
-   at the old 46px it overlapped by ~35px). Derived from the menu's own width. */
+/* item 8 + fixed footprint: the row is pinned to the 2-slot width (two 84px
+   cards spaced by --consumable-gap, the room the Use/Sell menu needs) and never
+   grows — a +1-slot voucher (pencilCase) fits its third card inside the same
+   width by letting space-between collapse the gaps (~4px). At 3 slots the menu
+   may overlap the next card; that is accepted. */
 .consumables {
-  gap: var(--consumable-gap);
+  width: calc(2 * 84px + var(--consumable-gap));
+  gap: 0;
+  justify-content: space-between;
 }
 /* item 3: shelves reserve their full max-slot area via dashed empty placeholders. */
 .joker.empty {

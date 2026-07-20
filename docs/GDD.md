@@ -156,7 +156,18 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 
 **Acquisition:** pre-attached in Letter Packs, or applied by the Fountain Pen consumable (§10.1).
 
-**Effects: undefined (§14).** Unlike materials (§2.2), the five fonts carry no effects yet — they are visual-only. Two constraints are already fixed for whoever designs them: this layer absorbs *both* of Balatro's edition and seal concepts (§2 design note), and **retrigger is reserved for it** — materials deliberately left it unspent.
+**Effects — the Balatro-seal port (confirmed).** The four non-base fonts carry the seal roles, honoring the §2 design note (this layer absorbs both edition and seal; **retrigger lives here**, materials left it unspent). Effect ids and values (→ `balance.ts`):
+
+| Effect id | Trigger | Effect | Balatro origin |
+|---|---|---|---|
+| `goldPlay` | tile scores in a played word | +$3 | Gold Seal (verbatim) |
+| `chipPlay` | tile scores in a played word | +30 Chips | adapted (Blue Seal's planet-generation has no clean analog; value borrows Bonus-card's +30) |
+| `retriggerPlay` | tile scores in a played word | retrigger this tile's scoring contribution once | Red Seal (verbatim) — the reserved retrigger, spent here |
+| `discardGain` | tile is discarded | gain 1 random consumable; **requires a free consumable slot**, otherwise nothing | Purple Seal (tarot→consumable) |
+
+Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 jokers); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis (Brass, Thrift) as intended synergy. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
+
+**Font ↔ effect mapping: data-driven, assignment TBD by design.** Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it. Until design supplies the mapping, a provisional assignment ships clearly marked; reassignment is a one-line data change (§12).
 
 > **Decision — fonts unified as style variants within the Futura family.** A font functions as a visual signal that "this tile has a special effect." Weight/italic/inline variants within one family are instantly distinguishable from a single glyph while keeping the screen's tone coherent. Mixing distinct typefaces blurs the information axis ("is this a different font, or a different letter/material?"), so it is avoided. Room is left to give only the top rarity an exceptional emphasis. (License note: Futura is a paid commercial font. Prototype-stage alternatives — Jost, Spartan, Century Gothic family.)
 
@@ -668,7 +679,9 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 - **Voucher tier 2 (upgraded versions).** Deferred to content expansion.
 - **Interrogative pattern.** Auxiliary-inversion pattern + Question Mark punctuation; deferred to expansion (§5.2).
 - **Dadaist joker.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
-- **Font effects (all 5).** Fonts are still visual-only — §2.3 names the five styles but describes no effects. Fonts **own retrigger** (the seal role, §2 design note); do not spend it elsewhere. Materials closed this gap first (§2.2); fonts are the remaining half.
+- **Font ↔ effect mapping.** Effects are now defined (§2.3 seal port: `goldPlay`/`chipPlay`/`retriggerPlay`/`discardGain`); the **assignment of which font gets which effect** is design-supplied and still pending — ships as a provisional `balance.ts` `fontEffects` mapping until then.
+- **Tutorial system.** Layered (first-run guided intro → first-encounter one-time popups → Help/Glossary screen), hosted by **우땅 (WooDak)** per §1's mascot roles; Piyak keeps shop greetings. Work order: `docs/feature-01-tutorial-sound-fontseals.md`.
+- **Audio.** Chiptune/8-bit, SFX-first (settle-sequence sounds with pitch-escalating chip ticks before any BGM); real mixer replaces the Settings stub. Same work order.
 - **Stakes = matcher-leniency knobs (reframed, playtest-01).** True grammar checking stays out (§4.1 level 3); instead, future stake levels modulate knobs that already exist — modifier absorption on/off, hole forgiveness, unison strictness.
 - **Word collection (도감) UI.** First-play-per-word tracking ships now (localStorage; gibberish excluded); the collection screen itself is a later milestone (playtest-01 P2-2).
 - **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch classification → baked table; one-word = one-suit/POS resolution rule (§3.2, §4.2).
