@@ -22,7 +22,10 @@ export function TutorialHost() {
       // mount and ignore a live toggle from Options — readTips stays live.
       if (!readTips()) return;
       if (hasSeen(id)) return;
-      setActive((cur) => cur ?? id); // don't clobber a popup already showing
+      // Trigger sites fire from inside a React setState updater (useGame.playWord
+      // etc.). Defer the state change to a microtask so we don't call setActive
+      // while another component is rendering ("setState during render" warning).
+      queueMicrotask(() => setActive((cur) => cur ?? id)); // don't clobber a shown popup
     });
   }, []);
 
