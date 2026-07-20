@@ -340,5 +340,20 @@
   "tutorial.magnifier.body": "돋보기를 쓰면 지금 손패로 만들 수 있는 단어를 최대 3개까지 보여줍니다.",
   "tutorial.pouchHover.title": "보따리",
   "tutorial.pouchHover.body": "\"남음\"은 아직 뽑지 않은 보따리 속 타일만 셉니다 — 손패·낸 타일·버린 타일은 이미 보따리를 떠난 것입니다.",
-  "tutorial.gotIt": "확인"
+  "tutorial.gotIt": "확인",
+  "intro.next": "다음",
+  "intro.skip": "튜토리얼 건너뛰기",
+  "intro.done": "알겠어요!",
+  "intro.step.hand.title": "단어 만들기",
+  "intro.step.hand.body": "손패의 글자 타일을 클릭해 단어로 조합한 뒤 제출하세요. 이렇게 점수를 냅니다.",
+  "intro.step.score.title": "칩 × 배수",
+  "intro.step.score.body": "낸 단어는 [c:칩] × [m:배수]로 정산됩니다. 한 박자씩 쌓이는 정산을 지켜보세요.",
+  "intro.step.target.title": "목표 점수 달성",
+  "intro.step.target.body": "[b:블라인드]의 목표 점수를 넘기세요. 확정 점수는 단어를 낼 때마다 올라갑니다.",
+  "intro.step.discard.title": "버려서 새로 뽑기",
+  "intro.step.discard.body": "손패가 애매한가요? 타일을 우클릭해 표시한 뒤 버리기로 교체하세요 — 블라인드당 횟수 제한이 있습니다.",
+  "intro.step.tray.title": "문장 만들기",
+  "intro.step.tray.body": "낸 단어들이 문장으로 이어집니다. 문법 패턴을 완성하면 큰 보너스가 붙습니다.",
+  "intro.step.clear.title": "자동 정산",
+  "intro.step.clear.body": "예상 점수가 목표를 넘으면 블라인드가 스스로 정산됩니다. 이게 핵심 루프예요 — 행운을 빕니다!"
 }

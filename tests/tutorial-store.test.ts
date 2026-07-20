@@ -97,3 +97,17 @@ describe('guided intro flag (A-1)', () => {
     expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(6);
   });
 });
+
+describe('guided intro copy coverage', () => {
+  it('every intro step + button has copy in both locales', () => {
+    for (const loc of [en, ko] as Record<string, string>[]) {
+      for (const s of INTRO_STEPS) {
+        expect(loc).toHaveProperty(`intro.step.${s.key}.title`);
+        expect(loc).toHaveProperty(`intro.step.${s.key}.body`);
+      }
+      for (const k of ['intro.next', 'intro.skip', 'intro.done']) {
+        expect(loc).toHaveProperty(k);
+      }
+    }
+  });
+});

@@ -340,5 +340,20 @@
   "tutorial.magnifier.body": "Use the Magnifier to reveal up to three words you can spell from your current hand.",
   "tutorial.pouchHover.title": "The Pouch",
   "tutorial.pouchHover.body": "\"Remaining\" counts only the undrawn tiles still in the pouch — tiles in hand, played, or discarded have already left it.",
-  "tutorial.gotIt": "Got it"
+  "tutorial.gotIt": "Got it",
+  "intro.next": "Next",
+  "intro.skip": "Skip tutorial",
+  "intro.done": "Got it!",
+  "intro.step.hand.title": "Spell a word",
+  "intro.step.hand.body": "Click letter tiles in your hand to stage them into a word, then submit. This is how you score.",
+  "intro.step.score.title": "Chips × Mult",
+  "intro.step.score.body": "A played word settles as [c:chips] × [m:mult]. Watch the tally build up beat by beat.",
+  "intro.step.target.title": "Reach the target",
+  "intro.step.target.body": "Beat the [b:blind]'s target score. Your committed score climbs with every word you play.",
+  "intro.step.discard.title": "Discard to dig",
+  "intro.step.discard.body": "Stuck with an awkward hand? Right-click tiles to mark them, then Discard to swap them — limited per blind.",
+  "intro.step.tray.title": "Build a sentence",
+  "intro.step.tray.body": "The words you play line up into a sentence. Finish a grammatical pattern for a big bonus.",
+  "intro.step.clear.title": "Auto-settle",
+  "intro.step.clear.body": "Once your projected score clears the target, the blind settles itself. That's the loop — good luck!"
 }
