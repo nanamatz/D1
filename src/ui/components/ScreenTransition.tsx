@@ -14,6 +14,7 @@
  * re-renders. Reduced motion → a plain crossfade (see screens.css).
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { audio } from '../audio';
 
 interface Entry {
   key: string;
@@ -61,6 +62,10 @@ export function ScreenTransition({ screenKey, children }: Props) {
     const id = setTimeout(() => setOutgoing(null), MAX_TRANSITION_MS);
     return () => clearTimeout(id);
   }, [outgoing]);
+
+  useEffect(() => {
+    audio.play('transitionWhoosh');
+  }, [screenKey]);
 
   const transitioning = outgoing !== null;
 

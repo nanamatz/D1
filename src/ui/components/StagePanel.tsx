@@ -6,6 +6,7 @@ import { fontDescKey } from '../descriptions';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
+import { audio } from '../audio';
 import { TileView } from './Tile';
 
 interface Drag {
@@ -37,6 +38,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   const validMarks = discardMarks.filter((id) => handIds.has(id));
   const toggleMark = (id: string) =>
     setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
+  const selectTile = (id: string) => { audio.play('tileSelect'); g.toggleTile(id); };
 
   const tileTip = (tile: Tile) => ({
     title: tileGlyph(tile),
@@ -74,8 +76,10 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
     e.preventDefault();
     const d = parseDrag(e);
     if (!d) return;
+    audio.play('dragSnap');
     if (dropZoneAt(e.clientY) === 'staged') {
       if (d.zone === 'hand') {
+        audio.play('tilePlace');
         g.toggleTile(d.id); // stage
         return;
       }
@@ -83,6 +87,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
       if (to && to !== d.id) g.reorderStaged(d.id, to);
     } else {
       if (d.zone === 'staged') {
+        audio.play('tilePick');
         g.toggleTile(d.id); // unstage → back to hand
         return;
       }
@@ -95,6 +100,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   };
 
   const doDiscard = () => {
+    audio.play('discardSwoosh');
     g.discard(validMarks);
     setDiscardMarks([]);
   };
@@ -107,7 +113,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
       <div className="staged" ref={stagedRef}>
         {staged.length === 0 && <span className="zone-hint">{t('stage.zoneEmpty')}</span>}
         {staged.map((tile) => (
-          <TileView key={tile.id} tile={tile} zone="staged" onSelect={g.toggleTile} tooltip={tileTip(tile)} />
+          <TileView key={tile.id} tile={tile} zone="staged" onSelect={selectTile} tooltip={tileTip(tile)} />
         ))}
       </div>
 
@@ -142,7 +148,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
             zone="hand"
             hinted={hintIds.has(tile.id)}
             marked={validMarks.includes(tile.id)}
-            onSelect={g.toggleTile}
+            onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}
           />
@@ -153,7 +159,11 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
 
       {/* item 4: Balatro layout — Play (left) · Sort panel (center) · Discard (right) */}
       <div className="actions">
-        <button className="btn blue play-btn" onClick={g.playWord} disabled={!g.canPlay || !!preview?.blocked}>
+        <button
+          className="btn blue play-btn"
+          onClick={() => { audio.play('submitThock'); g.playWord(); }}
+          disabled={!g.canPlay || !!preview?.blocked}
+        >
           {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
         </button>
         <div className="sort-panel">
