@@ -27,6 +27,9 @@ export interface Encounter {
   icon: string;
   /** optional mascot portrait shown in the popup card (Piyak = shop, WooDak = mentor) */
   mascot?: 'piyak' | 'woodak';
+  /** optional CSS selector — when set, the popup spotlights this element (coach-mark
+   *  style) instead of a centered card */
+  target?: string;
 }
 
 export const ENCOUNTERS: readonly Encounter[] = [
@@ -36,14 +39,14 @@ export const ENCOUNTERS: readonly Encounter[] = [
   { id: 'firstUnison', group: 'scoring', icon: '🎵' },
   { id: 'firstMaterial', group: 'tiles', icon: '🧱' },
   { id: 'firstFont', group: 'tiles', icon: '🅰️' },
-  { id: 'firstJoker', group: 'run', icon: '🤡' },
+  { id: 'firstJoker', group: 'run', icon: '🤡', mascot: 'woodak', target: '.jokers-col' },
   { id: 'firstConsumable', group: 'economy', icon: '✏️' },
   { id: 'firstVoucher', group: 'economy', icon: '🎫' },
   { id: 'firstPack', group: 'economy', icon: '📦' },
-  { id: 'shopFirstVisit', group: 'economy', icon: '🏪', mascot: 'piyak' },
+  { id: 'shopFirstVisit', group: 'economy', icon: '🏪', mascot: 'piyak', target: '.shop-sale-region' },
   { id: 'magnifier', group: 'economy', icon: '🔍' },
   { id: 'pouchHover', group: 'run', icon: '👝' },
-  { id: 'firstBoss', group: 'run', icon: '👑', mascot: 'woodak' },
+  { id: 'firstBoss', group: 'run', icon: '👑', mascot: 'woodak', target: '.bosseff' },
 ];
 
 type Flags = Record<string, number>;
