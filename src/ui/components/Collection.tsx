@@ -7,7 +7,7 @@ import { BALANCE } from '../../engine/balance';
 import type { Lexicon } from '../../engine/lexicon';
 import type { Suit, TileFont, TileMaterial, Tile } from '../../engine/types';
 import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from '../collection';
-import { bossDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
+import { bossDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
@@ -263,10 +263,12 @@ function FontsView() {
   return (
     <div className="swatch-grid">
       {FONTS.map((f) => (
-        <div key={f} className="swatch">
-          <TileView tile={sampleTile({ font: f })} />
-          <span className="sw-name">{t(`font.${f}`)}</span>
-        </div>
+        <Tooltip key={f} title={t(`font.${f}`)} body={t(fontDescKey(f))} down>
+          <div className="swatch">
+            <TileView tile={sampleTile({ font: f })} />
+            <span className="sw-name">{t(`font.${f}`)}</span>
+          </div>
+        </Tooltip>
       ))}
     </div>
   );

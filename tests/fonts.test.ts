@@ -5,7 +5,6 @@ import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import { makeLexicon } from '../src/engine/lexicon';
 import { startBlind, submitWord, discardTiles } from '../src/engine/loop';
-import { letterChips } from '../src/engine/scoring';
 import { accumulate } from '../src/ui/settle';
 import type { FontEffectId, Letter, Tile, TileFont } from '../src/engine/types';
 

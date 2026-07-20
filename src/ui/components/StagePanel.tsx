@@ -2,6 +2,7 @@ import { useRef, useState, type DragEvent } from 'react';
 import type { Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
 import { SORT_MODES, sortHand, tileGlyph, tilesByIds, tileValue } from '../game';
+import { fontDescKey } from '../descriptions';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
@@ -42,7 +43,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
     body: [
       t('tile.chips', { n: tileValue(tile) }),
       tile.material !== 'ceramic' ? t(`material.${tile.material}`) : '',
-      tile.font !== 'medium' ? t(`font.${tile.font}`) : '',
+      tile.font !== 'medium' ? `${t(`font.${tile.font}`)} — ${t(fontDescKey(tile.font))}` : '',
     ]
       .filter(Boolean)
       .join(' · '),

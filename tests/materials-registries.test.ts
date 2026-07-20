@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { MATERIAL_REGISTRY } from '../src/engine/materials';
 import { MATERIALS as COLLECTION_MATERIALS } from '../src/ui/components/Collection';
+import { BALANCE } from '../src/engine/balance';
+import { fontDescKey } from '../src/ui/descriptions';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import type { TileMaterial } from '../src/engine/types';
@@ -41,5 +43,24 @@ describe('material registries stay in sync with the engine (I-1 regression guard
 
   it("Collection.tsx's MATERIALS list covers the full TileMaterial union", () => {
     expect([...COLLECTION_MATERIALS].sort()).toEqual([...ALL_MATERIALS].sort());
+  });
+});
+
+describe('font effect copy stays in sync (work order C-2/C-3)', () => {
+  const FONTS = ['medium', 'lightItalic', 'bold', 'inline', 'black'] as const;
+
+  it('every font resolves to a desc key present in both locales', () => {
+    for (const f of FONTS) {
+      const key = fontDescKey(f);
+      expect(en as Record<string, string>).toHaveProperty(key);
+      expect(ko as Record<string, string>).toHaveProperty(key);
+    }
+  });
+
+  it('every declared effect id has locale copy (mapping changes stay covered)', () => {
+    for (const id of Object.values(BALANCE.fontEffects)) {
+      expect(en as Record<string, string>).toHaveProperty(`fonteffectdesc.${id}`);
+      expect(ko as Record<string, string>).toHaveProperty(`fonteffectdesc.${id}`);
+    }
   });
 });

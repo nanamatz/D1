@@ -3,13 +3,19 @@
  * registries (nameEn/nameKo); the effect prose is i18n copy keyed by id, so it
  * translates and stays out of the engine.
  */
+import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';
-import type { OwnedJoker } from '../engine/types';
+import type { OwnedJoker, TileFont } from '../engine/types';
 
 export const jokerDescKey = (id: string): string => `jokerdesc.${id}`;
 export const voucherDescKey = (id: string): string => `voucherdesc.${id}`;
 export const consumableDescKey = (id: string): string => `consumabledesc.${id}`;
 export const bossDescKey = (id: string): string => `bossdesc.${id}`;
+
+/** Font tooltip copy resolves through BALANCE.fontEffects — never hard-code the
+ *  mapping (GDD §2.3): remapping a font in balance.ts must update every tooltip. */
+export const fontDescKey = (font: TileFont): string =>
+  font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
 /**
  * A scaling joker's live grown value as a display string, or null when the
