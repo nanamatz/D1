@@ -3,42 +3,48 @@ import { useI18n } from '../i18n';
 import { readTips } from '../settings';
 import { richText } from '../richtext';
 import { tutorialBus, hasSeen, markSeen, ENCOUNTERS, type EncounterId } from '../tutorial';
+import piyakUrl from '../assets/piyak.png';
+import woodakUrl from '../assets/woodak.png';
+
+const MASCOT_SRC: Record<'piyak' | 'woodak', string> = { piyak: piyakUrl, woodak: woodakUrl };
 
 /**
  * Layer-2 encounter popup host (work order A-2). Mounted once in App. Subscribes
- * to the tutorial bus; when an encounter fires for the first time AND the "show
- * tips" setting is on, it shows a one-time card and marks the id seen on dismiss.
- * Decoupled from trigger sites via the bus (no prop threading).
+ * to the tutorial bus and shows a one-time card per encounter, gated on the live
+ * "show tips" setting and the seen-flag. Co-firing encounters QUEUE and show one
+ * after another. An encounter may carry a mascot portrait (Piyak / WooDak).
  */
 export function TutorialHost() {
   const { t } = useI18n();
-  const [active, setActive] = useState<EncounterId | null>(null);
+  const [queue, setQueue] = useState<EncounterId[]>([]);
 
   useEffect(() => {
     return tutorialBus.subscribe((id) => {
-      // Read the CURRENT tips setting at fire time (readTips reads localStorage
-      // directly). This host mounts once and never re-renders on a settings
-      // change, so a captured `useSettings().settings.tips` would be frozen at
-      // mount and ignore a live toggle from Options — readTips stays live.
       if (!readTips()) return;
       if (hasSeen(id)) return;
-      // Trigger sites fire from inside a React setState updater (useGame.playWord
-      // etc.). Defer the state change to a microtask so we don't call setActive
-      // while another component is rendering ("setState during render" warning).
-      queueMicrotask(() => setActive((cur) => cur ?? id)); // don't clobber a shown popup
+      // Defer past the firing component's render (fires happen inside setState
+      // updaters / effects). Dedup against what's already queued.
+      queueMicrotask(() =>
+        setQueue((q) => (q.includes(id) ? q : [...q, id])),
+      );
     });
   }, []);
 
+  const active = queue[0] ?? null;
   if (!active) return <></>;
   const enc = ENCOUNTERS.find((e) => e.id === active);
   const dismiss = () => {
     markSeen(active);
-    setActive(null);
+    setQueue((q) => q.slice(1)); // advance to the next queued encounter
   };
+  const mascot = enc?.mascot;
 
   return (
     <div className="tut-overlay" role="dialog" aria-modal="true" onClick={dismiss}>
-      <div className="tut-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={['tut-card', mascot ? 'has-mascot' : ''].filter(Boolean).join(' ')}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="tut-head">
           <span className="tut-icon">{enc?.icon}</span>
           <span className="tut-title">{t(`tutorial.${active}.title`)}</span>
@@ -47,6 +53,9 @@ export function TutorialHost() {
         <button className="btn blue tut-ok" onClick={dismiss}>
           {t('tutorial.gotIt')}
         </button>
+        {mascot && (
+          <img className="mascot-cat tut-mascot" src={MASCOT_SRC[mascot]} alt="" />
+        )}
       </div>
     </div>
   );

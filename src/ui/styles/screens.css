@@ -1936,6 +1936,18 @@ body.cb-safe .tile.hint {
 .tut-body { line-height: 1.5; font-size: 13px; margin-bottom: 14px; }
 .tut-ok { width: 100%; }
 
+/* tutorial popup mascot portrait (Piyak on shop, WooDak on boss) */
+.tut-card.has-mascot { position: relative; padding-bottom: 20px; }
+.tut-mascot {
+  position: absolute;
+  right: -8px;
+  bottom: -6px;
+  width: 84px;
+  height: auto;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
 /* ---------- Help glossary (work order A-3) ---------- */
 .help-replay { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .help-replay-note { font-size: 12px; opacity: 0.75; }
