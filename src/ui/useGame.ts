@@ -654,7 +654,8 @@ export function useGame(): UseGame {
   }, [state.pendingEnd, state.finalScore, finalize]);
 
   // C-3: discard acts on an explicit set of MARKED hand tiles, independent of
-  // what is staged in the tile zone. Tiles exit for the blind (no RNG).
+  // what is staged in the tile zone. Tiles exit for the blind (draw is RNG-free;
+  // the rng is used only for discardGain font seal rolls, GDD §2.3).
   const discard = useCallback((ids: string[]) => {
     setState((prev) => {
       if (prev.phase !== 'playing' || prev.pendingEnd) return prev;
@@ -662,12 +663,21 @@ export function useGame(): UseGame {
       const staged = new Set(prev.selected);
       const valid = ids.filter((id) => !staged.has(id) && prev.blind.hand.some((t) => t.id === id));
       if (valid.length === 0) return prev; // no per-use tile cap (D-4)
-      const blind = discardTiles(prev.blind, valid);
+      const { blind, gained, slotsBlocked } = discardTiles(
+        prev.blind,
+        prev.run,
+        valid,
+        makeRng(`${prev.seed}#${prev.rngCounter}`),
+      );
       return {
         ...prev,
         blind,
-        message: null,
+        run: gained.length
+          ? { ...prev.run, consumables: [...prev.run.consumables, ...gained] }
+          : prev.run,
+        message: slotsBlocked > 0 ? { key: 'font.slotsFull' } : null,
         hint: null,
+        rngCounter: prev.rngCounter + 1,
         stats: { ...prev.stats, tilesDiscarded: prev.stats.tilesDiscarded + valid.length },
       };
     });

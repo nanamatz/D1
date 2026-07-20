@@ -252,6 +252,7 @@
   "font.bold": "볼드",
   "font.inline": "인라인",
   "font.black": "블랙",
+  "font.slotsFull": "소모품 슬롯이 가득 참 — 소모품을 얻지 못했습니다",
   "options.title": "설정",
   "options.settings": "환경설정",
   "options.newRun": "새로운 런",

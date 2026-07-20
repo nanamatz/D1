@@ -252,6 +252,7 @@
   "font.bold": "Bold",
   "font.inline": "Inline",
   "font.black": "Black",
+  "font.slotsFull": "Consumable slots full — no consumable gained",
   "options.title": "Options",
   "options.settings": "Settings",
   "options.newRun": "New Run",
