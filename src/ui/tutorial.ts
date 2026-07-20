@@ -40,7 +40,7 @@ export const ENCOUNTERS: readonly Encounter[] = [
   { id: 'firstMaterial', group: 'tiles', icon: '🧱' },
   { id: 'firstFont', group: 'tiles', icon: '🅰️' },
   { id: 'firstJoker', group: 'run', icon: '🤡', mascot: 'woodak', target: '.jokers-col' },
-  { id: 'firstConsumable', group: 'economy', icon: '✏️' },
+  { id: 'firstConsumable', group: 'economy', icon: '✏️', mascot: 'woodak', target: '.consumables-col' },
   { id: 'firstVoucher', group: 'economy', icon: '🎫' },
   { id: 'firstPack', group: 'economy', icon: '📦' },
   { id: 'shopFirstVisit', group: 'economy', icon: '🏪', mascot: 'piyak', target: '.shop-sale-region' },
