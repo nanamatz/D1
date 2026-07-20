@@ -19,6 +19,7 @@ import { baseScore, spell, letterString } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
+import { fontEffectOf } from './fonts';
 import { defaultJokerBus } from './jokers';
 import { BOSS_REGISTRY, drawBoss } from './bosses';
 import { blindTarget } from './economy';
@@ -130,7 +131,8 @@ export interface SubmitResult {
   submission: WordSubmission;
   /** ordered settle steps for the UI to replay (UI_DESIGN §4.1) */
   events: ScoreEvent[];
-  /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/15 roll); 0 normally */
+  /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/15 roll;
+   *  goldPlay font seal = +BALANCE.fontEffectValues.goldPlay.gold per trigger); 0 normally */
   goldDelta: number;
   /** tiles destroyed by their material (Glass) — the caller removes them from run.bag */
   destroyedTileIds: string[];
@@ -166,35 +168,68 @@ function scoreSubmission(
   const destroyedTileIds: string[] = [];
   for (const t of tiles) {
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
-    ctx.chips += chips;
-    events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
+    const fontEffect = fontEffectOf(t.font);
+    const triggers =
+      1 + (fontEffect === 'retriggerPlay' ? BALANCE.fontEffectValues.retriggerPlay.extraTriggers : 0);
 
-    const mat = applyTileMaterial(ctx, t, rng);
-    if (mat) {
-      materialGold += mat.side.goldDelta ?? 0;
-      if (mat.side.destroy) destroyedTileIds.push(t.id);
-      if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
+    for (let trig = 0; trig < triggers; trig++) {
+      // The retrigger beat announces the repeat BEFORE the repeated tile beat.
+      if (trig > 0) {
         events.push({
-          kind: 'material',
-          material: t.material,
-          tileId: t.id,
-          chipsDelta: mat.chipsDelta,
-          multDelta: mat.multDelta,
+          kind: 'font', font: t.font, effect: 'retriggerPlay', tileId: t.id,
+          chipsDelta: 0, multDelta: 0, goldDelta: 0,
         });
       }
-    }
 
-    // Per-tile jokers (Vowel Praise, Consonant Bricklayer) fire AS this tile scores,
-    // one at a time, so each contribution interleaves with the tiles and its pop
-    // lands on the tile (item 3). Per-word jokers stay in the wordScoring pass below.
-    for (const joker of run.jokers) {
-      const beforeChips = ctx.chips;
-      const beforeMult = ctx.mult;
-      defaultJokerBus.emit('tileScoring', { run, blind, ctx, tile: t }, [joker]);
-      const chipsDelta = ctx.chips - beforeChips;
-      const multDelta = ctx.mult - beforeMult;
-      if (chipsDelta !== 0 || multDelta !== 0) {
-        events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta, tileId: t.id });
+      ctx.chips += chips;
+      events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
+
+      const mat = applyTileMaterial(ctx, t, rng);
+      if (mat) {
+        materialGold += mat.side.goldDelta ?? 0;
+        if (mat.side.destroy && !destroyedTileIds.includes(t.id)) destroyedTileIds.push(t.id);
+        if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
+          events.push({
+            kind: 'material',
+            material: t.material,
+            tileId: t.id,
+            chipsDelta: mat.chipsDelta,
+            multDelta: mat.multDelta,
+          });
+        }
+      }
+
+      // Font play effects fire per trigger, tile-level — so they fire on
+      // gibberish too, like materials (GDD §2.3).
+      if (fontEffect === 'goldPlay') {
+        const gold = BALANCE.fontEffectValues.goldPlay.gold;
+        materialGold += gold;
+        events.push({
+          kind: 'font', font: t.font, effect: 'goldPlay', tileId: t.id,
+          chipsDelta: 0, multDelta: 0, goldDelta: gold,
+        });
+      } else if (fontEffect === 'chipPlay') {
+        const bonus = BALANCE.fontEffectValues.chipPlay.chips;
+        ctx.chips += bonus;
+        events.push({
+          kind: 'font', font: t.font, effect: 'chipPlay', tileId: t.id,
+          chipsDelta: bonus, multDelta: 0, goldDelta: 0,
+        });
+      }
+
+      // Per-tile jokers (Vowel Praise, Consonant Bricklayer) fire AS this tile scores,
+      // one at a time, so each contribution interleaves with the tiles and its pop
+      // lands on the tile (item 3). Per-word jokers stay in the wordScoring pass below.
+      // Retriggers compose: jokers fire again on each repeated trigger too (GDD §2.3).
+      for (const joker of run.jokers) {
+        const beforeChips = ctx.chips;
+        const beforeMult = ctx.mult;
+        defaultJokerBus.emit('tileScoring', { run, blind, ctx, tile: t }, [joker]);
+        const chipsDelta = ctx.chips - beforeChips;
+        const multDelta = ctx.mult - beforeMult;
+        if (chipsDelta !== 0 || multDelta !== 0) {
+          events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta, tileId: t.id });
+        }
       }
     }
   }

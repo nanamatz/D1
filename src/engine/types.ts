@@ -158,6 +158,7 @@ export interface WordScoringContext {
 export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter | null; chips: number }
   | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'font'; font: TileFont; effect: FontEffectId; tileId: string; chipsDelta: number; multDelta: number; goldDelta: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; tileId?: string }
