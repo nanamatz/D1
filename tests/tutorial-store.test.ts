@@ -87,14 +87,14 @@ describe('guided intro flag (A-1)', () => {
     expect(hasSeenIntro()).toBe(false);
   });
 
-  it('INTRO_STEPS has 6 steps, each with a key and a selector', () => {
-    expect(INTRO_STEPS.length).toBe(6);
+  it('INTRO_STEPS has 7 steps (incl. the chromatic world-framing step), each with a key and a selector', () => {
+    expect(INTRO_STEPS.length).toBe(7);
     for (const s of INTRO_STEPS) {
       expect(s.key).toBeTruthy();
       expect(s.selector.startsWith('.')).toBe(true);
     }
     // keys are unique
-    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(6);
+    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(7);
   });
 });
 

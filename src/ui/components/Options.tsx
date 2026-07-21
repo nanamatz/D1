@@ -216,6 +216,15 @@ function SettingsView() {
               max={120}
               onChange={(v) => set('uiScale', v)}
             />
+            {/* C-4: presentation-unlock override — reveal all colors/audio now. The
+                chromatic gimmick stays the celebratory path; playing the word still
+                fires the reveal + collection record even when this is on. */}
+            <Toggle
+              label={t('settings.unlockAll')}
+              on={settings.unlockAll}
+              onChange={(v) => set('unlockAll', v)}
+            />
+            <p className="set-note">{t('settings.unlockAllNote')}</p>
         </div>
 
         <div className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>

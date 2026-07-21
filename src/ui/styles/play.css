@@ -275,14 +275,19 @@
   align-items: center;
   gap: 7px;
 }
-/* D-5: pixel tomato beside score numbers (emoji placeholder for the pixel asset).
-   Thematically: tomatoes thrown at bad manuscripts. */
+/* D-5: pixel tomato beside score numbers (docs/T_Tomato.png).
+   Thematically: tomatoes thrown at bad manuscripts. Grey until RED unlocks (C). */
 .tomato-icon {
   display: inline-block;
-  font-size: 0.9em;
-  line-height: 1;
+  width: 1.7em;
+  height: 1.7em;
+  vertical-align: -0.45em;
+  object-fit: contain;
   image-rendering: pixelated;
-  transform: translateY(1px);
+  filter: grayscale(1) brightness(1.05);
+}
+:root.unlock-red .tomato-icon {
+  filter: none;
 }
 /* Placeholder chip token — CSS-drawn, no asset yet. */
 .chip-icon {

@@ -157,6 +157,10 @@ class Audio {
   private schedTimer: ReturnType<typeof setInterval> | null = null;
   private nextStepTime = 0;
   private currentStep = 0;
+  // Chromatic unlock gating (feature-02 C-6): the game starts SILENT — the SFX and
+  // music buses are OFF until the SOUND / MUSIC words are played (or the Settings
+  // override enables them). setBusEnabled flips these; play()/playMusic() respect them.
+  private busEnabled = { sfx: false, music: false };
 
   constructor() {
     // Install the one-shot unlock gesture listener as soon as this module loads
@@ -209,8 +213,9 @@ class Audio {
     if (this.currentTrack === track && this.schedTimer !== null) return;
     if (!this.ctx || !this.unlocked) { this.pendingTrack = track; return; }
     this.stopScheduler();
-    this.currentTrack = track;
+    this.currentTrack = track; // remembered even when the bus is gated off (C-6)
     this.pendingTrack = null;
+    if (!this.busEnabled.music) return; // MUSIC not unlocked yet → hold the track
     this.ensureMusicGraph();
     this.startScheduler();
   }
@@ -292,7 +297,29 @@ class Audio {
     }
   }
 
+  /** Enable/disable a bus (chromatic unlock, C-6). SFX off by default (silent start). */
+  setBusEnabled(bus: 'sfx' | 'music', enabled: boolean): void {
+    this.busEnabled[bus] = enabled;
+    if (bus === 'music') {
+      if (enabled) {
+        // resume the requested track if one is queued but not scheduling
+        if (this.currentTrack && this.schedTimer === null) {
+          this.ensureMusicGraph();
+          this.startScheduler();
+        }
+      } else {
+        this.stopScheduler();
+        if (this.ctx && this.musicGain) {
+          this.musicGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
+        }
+      }
+    }
+  }
+
+  isBusEnabled(bus: 'sfx' | 'music'): boolean { return this.busEnabled[bus]; }
+
   play(name: SfxName, opts?: { step?: number }): void {
+    if (!this.busEnabled.sfx) return; // bus gated off until SOUND is unlocked (C-6)
     if (!this.ctx || !this.unlocked) return; // pre-gesture / no Web Audio → drop
     const g = effectiveGain(name, this.vol);
     if (g <= 0) return;

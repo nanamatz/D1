@@ -7,6 +7,7 @@ import { BALANCE } from '../../engine/balance';
 import type { Lexicon } from '../../engine/lexicon';
 import type { Suit, TileFont, TileMaterial, Tile } from '../../engine/types';
 import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from '../collection';
+import { UNLOCKS, loadPlayed, playedCount } from '../unlocks';
 import { bossDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { Tooltip } from './Tooltip';
@@ -20,13 +21,14 @@ type Category =
   | 'vouchers'
   | 'bosses'
   | 'packs'
+  | 'palette'
   | 'bags';
 
 export const MATERIALS: TileMaterial[] = [
   'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
 ];
 const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
-const PACK_KINDS = ['letter', 'emoji', 'consumable'] as const;
+const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile', 'forbidden'] as const;
 const PAGE = 60;
 
 const sampleTile = (over: Partial<Tile>): Tile => {
@@ -71,13 +73,14 @@ export function Collection({ lexicon, onBack }: Props) {
       fonts: { have: FONTS.length, total: FONTS.length },
       vouchers: { have: ALL_VOUCHER_IDS.length, total: ALL_VOUCHER_IDS.length },
       bosses: { have: CORE_BOSS_IDS.length, total: CORE_BOSS_IDS.length },
-      packs: { have: PACK_KINDS.length, total: PACK_KINDS.length },
+      packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
+      palette: { have: playedCount(), total: UNLOCKS.length },
       bags: { have: 1, total: 1 },
     }),
     [lexicon],
   );
 
-  const CATS: Category[] = ['words', 'jokers', 'materials', 'fonts', 'vouchers', 'bosses', 'packs', 'bags'];
+  const CATS: Category[] = ['words', 'jokers', 'materials', 'fonts', 'vouchers', 'bosses', 'packs', 'palette', 'bags'];
 
   if (cat === null) {
     return (
@@ -121,6 +124,7 @@ export function Collection({ lexicon, onBack }: Props) {
         {cat === 'vouchers' && <VouchersView />}
         {cat === 'bosses' && <BossesView />}
         {cat === 'packs' && <PacksView />}
+        {cat === 'palette' && <PaletteView />}
         {cat === 'bags' && <BagsView />}
       </div>
 
@@ -348,14 +352,48 @@ function PacksView() {
   const { t } = useI18n();
   return (
     <div className="card-grid">
-      {PACK_KINDS.map((p) => (
-        <Tooltip key={p} title={t(`pack.${p}`)} body={t(`packdesc.${p}`)} down>
+      {PACK_TYPES.map((p) => (
+        <Tooltip key={p} title={t(`pack.type.${p}`)} body={t(`packdesc.${p}`)} down>
           <div className="coll-card">
             <span className="cc-emoji">📦</span>
-            <span className="cc-name">{t(`pack.${p}`)}</span>
+            <span className="cc-name">{t(`pack.type.${p}`)}</span>
           </div>
         </Tooltip>
       ))}
+    </div>
+  );
+}
+
+// ---------- Palette (chromatic unlocks, feature-02 C-5) ----------
+function PaletteView() {
+  const { t } = useI18n();
+  const played = loadPlayed();
+  return (
+    <div className="card-grid">
+      {UNLOCKS.map((u) => {
+        const found = played.has(u.id);
+        // Locked = silhouette with a letter-count hint ("R _ _"); unlocked = the word.
+        const hint = u.word[0] + ' _'.repeat(u.word.length - 1);
+        const group = u.effect.kind === 'color' ? u.effect.group : null;
+        const descKey =
+          u.effect.kind === 'color' ? `unlock.body.${u.effect.group}`
+          : u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? 'unlock.body.music' : 'unlock.body.sound')
+          : u.effect.kind === 'locale' ? 'unlock.body.korean'
+          : 'unlock.body.mascot';
+        return (
+          <Tooltip
+            key={u.id}
+            title={found ? u.word : t('collection.palette.locked')}
+            body={found ? t(descKey) : t('collection.palette.hint')}
+            down
+          >
+            <div className={['coll-card', 'palette-card', found ? `chroma-${group ?? 'audio'}` : 'locked'].join(' ')}>
+              <span className="cc-emoji">🎨</span>
+              <span className="cc-name">{found ? u.word : hint}</span>
+            </div>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }

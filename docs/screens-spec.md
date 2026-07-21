@@ -97,7 +97,8 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 | Stationery | 9 (incl. Magnifier) | |
 | Punctuation | 8 | shows which pattern each levels |
 | Forbidden Books | 4 | |
-| Packs | 5 pack types | Letter / Emoji / Stationery / Punctuation / Forbidden |
+| Packs | 5 pack types | Typesetting / Sticker / Stationery / Type / Forbidden Stacks (feature-02 B) |
+| **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
 | Vouchers | 9 tickets | single tier — no upgraded pair slot |
 | Bags | carousel detail view (bag art + description) | **[PLACEHOLDER: 1 entry]** |
 | **Blinds & Bosses** | left: ante → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Small/Big badges + 12 boss chips + 2 finisher chips (undiscovered = `?`) | doubles as the player-facing difficulty-curve reference |
@@ -111,7 +112,7 @@ Buttons: **Settings · Statistics · Help · Credits** (Help = the tutorial glos
 Tabs — trimmed for a web game:
 - **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle · **"don't show tips" toggle** (kills the first-encounter tutorial popups, feature-01 A-2).
 - **Graphics**: **CRT effect on/off · CRT intensity slider · CRT bloom on/off** (the pixel-art/CRT finish is now core identity — the reference build exposed exactly these; see UI_DESIGN §"Surface language") · pixel-perfect/integer-scale toggle.
-- **Video**: fullscreen toggle · UI scale slider. (No monitor select/VSync — web.)
+- **Video**: fullscreen toggle · UI scale slider · **"reveal all presentation" toggle** (chromatic-unlock override, feature-02 C-4 — unlocks every color/audio now; the first real play of a word still fires its celebration + Palette record once). (No monitor select/VSync — web.)
 - **Audio**: master / music / SFX sliders with value badges — these drive the **live Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). **Phase 1 ships SFX** (chiptune, fully synthesized — no asset files; the facade is the swap seam, see `assets/AUDIO_LICENSES.md`); the context unlocks on the first user gesture (autoplay policy) and settle-sequence SFX scale with the game-speed setting. **BGM is Phase 2 (still pending)** — the `music` slider is wired to the mixer bus but has no track to attenuate yet.
 
 ### 2.12 Statistics

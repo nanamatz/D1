@@ -2017,3 +2017,79 @@ body.cb-safe .tile.hint {
   background: var(--gold);
   color: #173226;
 }
+
+/* feature-02 C-1: chromatic-unlock celebration reveal — the color washes in and
+   the word pops. One-shot, auto-dismisses (or click). */
+.chroma-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: chromaFade 2.6s ease forwards;
+}
+.chroma-reveal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, var(--wash) 0%, transparent 62%);
+  opacity: 0;
+  animation: chromaWash 2.6s ease forwards;
+}
+.wash-red { --wash: rgba(245, 80, 78, 0.5); }
+.wash-yellow { --wash: rgba(240, 178, 62, 0.5); }
+.wash-green { --wash: rgba(60, 155, 92, 0.5); }
+.wash-blue { --wash: rgba(63, 167, 245, 0.5); }
+.wash-audio { --wash: rgba(255, 255, 255, 0.32); }
+.chroma-card { position: relative; text-align: center; }
+.chroma-word {
+  font-family: 'Jersey 10';
+  font-size: var(--ds-4xl);
+  color: var(--ink);
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.45);
+  animation: chromaPop 0.5s cubic-bezier(0.2, 1.4, 0.5, 1) both;
+}
+.chroma-body {
+  font-size: var(--fs-xl);
+  color: var(--ink);
+  margin-top: 10px;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+@keyframes chromaWash {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes chromaFade {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes chromaPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  45% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chroma-reveal::before { animation: chromaWash 2.6s steps(1) forwards; }
+  .chroma-word { animation: none; }
+}
+.force-reduced-motion .chroma-word { animation: none; }
+
+/* feature-02 C-5: Palette collection cards — locked = grey silhouette + letter
+   hint; unlocked = the word in its group color. */
+.palette-card .cc-name {
+  font-family: 'Jersey 10';
+  letter-spacing: 0.1em;
+}
+.palette-card.locked {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+.palette-card.chroma-red .cc-name { color: #f5504e; }
+.palette-card.chroma-yellow .cc-name { color: #f0b23e; }
+.palette-card.chroma-green .cc-name { color: #3c9b5c; }
+.palette-card.chroma-blue .cc-name { color: #3fa7f5; }

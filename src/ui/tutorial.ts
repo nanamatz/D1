@@ -32,22 +32,23 @@ export interface Encounter {
   target?: string;
 }
 
+// Every encounter renders as a WooDak spotlight coach-mark (mascot + target),
+// EXCEPT the shop-first-visit greeting, which keeps Piyak in her shop-owner role
+// (GDD A-2). Targets are elements present when the encounter fires.
 export const ENCOUNTERS: readonly Encounter[] = [
-  // D-3: gibberish uses the same spotlight + speech-bubble grammar as the other
-  // encounters — the hole lands in the tray, so WooDak points there.
   { id: 'firstGibberish', group: 'scoring', icon: '🗯️', mascot: 'woodak', target: '.tray' },
-  { id: 'firstLetterHand', group: 'scoring', icon: '🃏' },
-  { id: 'firstPattern', group: 'scoring', icon: '📝' },
-  { id: 'firstUnison', group: 'scoring', icon: '🎵' },
-  { id: 'firstMaterial', group: 'tiles', icon: '🧱' },
-  { id: 'firstFont', group: 'tiles', icon: '🅰️' },
+  { id: 'firstLetterHand', group: 'scoring', icon: '🃏', mascot: 'woodak', target: '.tray' },
+  { id: 'firstPattern', group: 'scoring', icon: '📝', mascot: 'woodak', target: '.tray' },
+  { id: 'firstUnison', group: 'scoring', icon: '🎵', mascot: 'woodak', target: '.tray' },
+  { id: 'firstMaterial', group: 'tiles', icon: '🧱', mascot: 'woodak', target: '.hand' },
+  { id: 'firstFont', group: 'tiles', icon: '🅰️', mascot: 'woodak', target: '.hand' },
   { id: 'firstJoker', group: 'run', icon: '🤡', mascot: 'woodak', target: '.jokers-col' },
   { id: 'firstConsumable', group: 'economy', icon: '✏️', mascot: 'woodak', target: '.consumables-col' },
-  { id: 'firstVoucher', group: 'economy', icon: '🎫' },
-  { id: 'firstPack', group: 'economy', icon: '📦' },
+  { id: 'firstVoucher', group: 'economy', icon: '🎫', mascot: 'woodak', target: '.shop-sale-region' },
+  { id: 'firstPack', group: 'economy', icon: '📦', mascot: 'woodak', target: '.shop-sale-region' },
   { id: 'shopFirstVisit', group: 'economy', icon: '🏪', mascot: 'piyak', target: '.shop-sale-region' },
-  { id: 'magnifier', group: 'economy', icon: '🔍' },
-  { id: 'pouchHover', group: 'run', icon: '👝' },
+  { id: 'magnifier', group: 'economy', icon: '🔍', mascot: 'woodak', target: '.consumables-col' },
+  { id: 'pouchHover', group: 'run', icon: '👝', mascot: 'woodak', target: '.pouch-dock' },
   { id: 'firstBoss', group: 'run', icon: '👑', mascot: 'woodak', target: '.bosseff' },
 ];
 
@@ -99,8 +100,11 @@ export interface IntroStep {
   selector: string;
 }
 
-/** The 6 core-loop steps, in order (selectors verified in the play screen). */
+/** The core-loop steps, in order (selectors verified in the play screen). The
+ *  first frames the desaturated world (feature-02 C-5) so the grey start never
+ *  reads as a rendering bug. */
 export const INTRO_STEPS: readonly IntroStep[] = [
+  { key: 'world', selector: '.round-panel' },
   { key: 'hand', selector: '.hand' },
   { key: 'score', selector: '.score-panel' },
   { key: 'target', selector: '.bs-target' },

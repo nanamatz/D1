@@ -8,6 +8,7 @@
 import { useEffect } from 'react';
 import { usePersistedState } from './hooks';
 import { audio } from './audio';
+import { applyPresentation } from './unlocks';
 
 export interface Settings {
   gameSpeed: 1 | 2 | 4;
@@ -20,6 +21,8 @@ export interface Settings {
   master: number; // 0..100
   music: number;
   sfx: number;
+  /** feature-02 C-4: presentation-unlock override (unlock all colors/audio now) */
+  unlockAll: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -33,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   master: 80,
   music: 70,
   sfx: 80,
+  unlockAll: false,
 };
 
 const SETTINGS_KEY = 'wj.settings';
@@ -66,9 +70,11 @@ export function useSettings() {
     document.body.classList.toggle('cb-safe', settings.colorBlind);
     // Mixer: push the persisted slider values into the audio facade (work order B).
     audio.setVolumes({ master: settings.master, music: settings.music, sfx: settings.sfx });
+    // Chromatic unlocks (C): apply the played set + override to DOM/audio buses.
+    applyPresentation(settings.unlockAll);
   }, [
     settings.uiScale, settings.reducedMotion, settings.colorBlind,
-    settings.master, settings.music, settings.sfx,
+    settings.master, settings.music, settings.sfx, settings.unlockAll,
   ]);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>

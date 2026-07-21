@@ -14,20 +14,22 @@ The visual contract is `docs/mockups/play-screen.html`. When spec and mockup dis
 
 ### Palette
 
-| Token | Hex | Use |
-|---|---|---|
-| `--bg-desk` | `#22443B` | table surface (deep desk-green, vignetted) |
-| `--panel` | `#20303B` | UI panels (dark slate) |
-| `--panel-edge` | `#39505E` | panel top-edge highlight |
-| `--ink` | `#EDEAE2` | primary text on dark |
-| `--ink-dim` | `#9DB0B8` | secondary text |
-| `--chips` | `#3FA7F5` | Chips (blue — genre convention) |
-| `--mult` | `#F5504E` | Mult (red — genre convention) |
-| `--gold` | `#F0B23E` | money, projected score, early-end glow |
-| `--tile-face` | `#F4EDDF` | letter tile face (warm ivory, pixel-art shaded) |
-| `--tile-ink` | `#2B2620` | tile letter ink |
+| Token | Hex (true) | Use | Chromatic group (C) |
+|---|---|---|---|
+| `--bg-desk` | `#22443B` | table surface (deep desk-green, vignetted) | **GREEN** (locked `#313733`) |
+| `--panel` | `#20303B` | UI panels (dark slate) | — |
+| `--panel-edge` | `#39505E` | panel top-edge highlight | — |
+| `--ink` | `#EDEAE2` | primary text on dark | — |
+| `--ink-dim` | `#9DB0B8` | secondary text | — |
+| `--chips` | `#3FA7F5` | Chips (blue — genre convention) | **BLUE** (locked `#8A9299`) |
+| `--mult` | `#F5504E` | Mult (red — genre convention) | **RED** (locked `#9C8785`) |
+| `--gold` | `#F0B23E` | money, projected score, early-end glow | **YELLOW** (locked `#A89E84`) |
+| `--tile-face` | `#F4EDDF` | letter tile face (warm ivory, pixel-art shaded) | — |
+| `--tile-ink` | `#2B2620` | tile letter ink | — |
 
 Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · slang `#F09437` · vulgar `#C6479E`. Vulgar is magenta, not red — red is reserved for Mult.
+
+> **Chromatic unlocks (feature-02 C, GDD §13 — "truly monochrome").** The **entire** palette holds **neutral grey** locked values by default (not just the four accent tokens) — the slate chrome, tile faces, and suits are grey too, so the world starts *genuinely* black-and-white. Group assignment: **RED** = `--mult`, `--suit-vulgar`; **YELLOW** = `--gold`, `--suit-slang`, `--tile-face`; **GREEN** = `--bg-desk`; **BLUE** = `--chips`, `--suit-formal`, `--suit-standard`, `--panel`, `--panel-edge`, `--inset`, `--inset-edge`. Playing the color word toggles an `unlock-<group>` class on `<html>` that swaps in the true hex (token swapping in `tokens.css`), re-coloring progressively. A **`world-mono` guard** additionally greyscales the board (`filter: grayscale(1)`) *only while no color is unlocked*, covering hard-coded fills (materials, badge, stage backdrops); it's dropped on the first unlock. The fixed CRT overlay is outside the greyscaled containers. MUSIC/SOUND gate the audio buses, not colors. Info is never color-only (a11y), so the grey start stays readable.
 
 ### Type
 
@@ -104,7 +106,7 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
 
 Quality floor: `prefers-reduced-motion` disables wobble/shake (incl. joker/consumable idle) and reduces settle to fades · keyboard focus visible on tiles and buttons (gold outline) · all color-coded info (suits, chips/mult) doubled with a text label — never color alone.
 
-**Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. *D-6 stage backgrounds:* per-stage backdrops under the CRT pass — **초고/Draft** = writer's desk, **퇴고/Revision** = marked-up manuscript, **마감/Deadline** = the red-pen office (tense red wash); desaturation-aware (GREEN unlock, C-3, will later gate their color). *D-7:* all Collection categories share the Words category's height (uniform). Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
+**Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (`src/ui/assets/tomato.png`, from `docs/T_Tomato.png`; tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. The tomato is greyscaled until **RED** unlocks (it belongs to the red group). *D-6 stage backgrounds:* per-stage backdrops under the CRT pass — **초고/Draft** = writer's desk, **퇴고/Revision** = marked-up manuscript, **마감/Deadline** = the red-pen office (tense red wash); desaturation-aware (GREEN unlock, C-3, will later gate their color). *D-7:* all Collection categories share the Words category's height (uniform). Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
 
 ---
 
@@ -112,7 +114,7 @@ Quality floor: `prefers-reduced-motion` disables wobble/shake (incl. joker/consu
 
 - React + plain CSS custom properties (tokens above as `:root` vars). No Tailwind in the game screen — the styling is too bespoke; keep tokens in one `tokens.css`.
 - **Pixel-art rendering:** apply `image-rendering: pixelated` to sprite/tile layers; author art at a fixed virtual resolution and integer-scale. Avoid smooth CSS gradients/blurs on pixel surfaces (they break the aesthetic) — use dithering/stepped fills.
-- **CRT effect:** implement once as a global post-pass overlay (CSS scanline layer + optional WebGL/shader for bloom/barrel), mounted above the app root so every screen inherits it. Wire its on/off + intensity to Settings (screens §2.11 Graphics). It must not intercept pointer events, and must be disable-able for accessibility/low-end.
+- **CRT effect (implemented):** `<CrtOverlay/>` (`src/ui/components/CrtOverlay.tsx`) — three fixed, `pointer-events:none` layers mounted once in App above the app root (scanlines · vignette+barrel · a faint **neutral** bloom kept white so the B&W start stays colorless). Always-on for now; the Settings on/off + intensity toggle (screens §2.11 Graphics) is still to be wired. Scanline flicker is disabled under reduced motion. Because it sits outside the board containers, the chromatic `world-mono` greyscale never touches it.
 - Animation: CSS transitions/keyframes first; adopt a spring lib (framer-motion) only if the settle sequence demands it.
 - The engine stays headless: UI subscribes to engine state snapshots; the settle sequence is driven by a `ScoreEvent[]` log the engine already produces per submission (chips/mult steps), replayed with timing by the UI.
 - Screens after the play screen (shop, blind select, pack opening) reuse the same tokens/components; design them after slice ⑤ logic exists. The mockup covers the play screen only.

@@ -9,6 +9,8 @@ import { Collection } from './components/Collection';
 import { Options } from './components/Options';
 import { ScreenTransition } from './components/ScreenTransition';
 import { TutorialHost } from './components/TutorialPopup';
+import { ChromaticReveal } from './components/ChromaticReveal';
+import { CrtOverlay } from './components/CrtOverlay';
 
 type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
@@ -97,6 +99,8 @@ export function App() {
     <>
       <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>
       <TutorialHost />
+      <ChromaticReveal />
+      <CrtOverlay />
     </>
   );
 }

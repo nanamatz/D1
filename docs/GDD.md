@@ -708,3 +708,32 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 - **Ink colors = stakes (playtest-03 A).** The deferred difficulty/stake ladder is re-skinned as **Ink** (검정 → 빨강 …); red ink = the editor's pen. Reframed as matcher-leniency knobs (per playtest-01), not true grammar checking.
 - **Touch long-press marking (playtest-03 F).** Discard-marking uses right-click (desktop-only); a long-press gesture for touch devices is open. No change now.
 - **Suit dataset batch (playtest-03 F).** The real 20–30k LLM batch classification stays an offline design-side task; the lexicon loader format is kept stable so a larger baked table drops in without code changes.
+
+---
+
+## 13. Chromatic Unlocks — "writing the world into color" (feature-02 C)
+
+The game begins **desaturated and silent**; playing specific words permanently unlocks presentation layers. This is the literal enactment of the title — you *play the world into existence*. Persistent **per profile** (localStorage `wj.unlocks`, beside collection/tutorial flags). **Valid words only** unlock (gibberish never does).
+
+**System shape.** One data-driven registry (`src/ui/unlocks.ts`): `word → { effect }`. A word-played check fires on each valid submission; on the first-ever play of a listed word it records the unlock and fires a **celebration reveal** (the color washes in / audio fades up). Adding a future unlock = adding a registry row — **never a hard-coded word check in a component**.
+
+**Initial table (C-2).**
+
+| Word | Unlocks |
+|---|---|
+| RED | red token group — `--mult`, red buttons, rare-joker frames |
+| YELLOW | gold token group — money, gold UI, early-end glow |
+| GREEN | green token group — desk/blind backgrounds (`--bg-desk`) |
+| BLUE | blue token group — `--chips`, blue buttons |
+| MUSIC | BGM bus enabled (wraps the feature-01 mixer's music bus) |
+| SOUND | SFX bus enabled (wraps the SFX bus) |
+| KOREAN | Korean-locale celebration entry (the language is separately selectable in Settings from the start — the gimmick is the reward, not the gate) |
+| MONSTER / GHOST / DOG / CAT | mascot variant skins — **data slots now, art later** (rows registered; effect no-ops until variant art exists) |
+
+**"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces, the blind badge, stage backdrops) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable. *(Revises the earlier "token-swap only, never a blanket filter" note: the guard is scoped to the all-locked state, so it neither kills unlocked colors nor fights the CRT.)*
+
+**Audio gating (C-6).** MUSIC/SOUND gate the real mixer's buses — **default off** (the game starts silent) until the word is played or the override is on. Requires feature-01 B (audio) shipped; color groups are independent.
+
+**Escape hatch (C-4).** Settings → Video: a **"reveal all presentation"** override (unlock everything now) — buried but present, for accessibility/streamers/impatient players. The gimmick stays the **celebratory path**: even with the override on, the first real play of a word still fires the celebration + collection record once.
+
+**Discoverability (C-5).** New Collection category **팔레트 (Palette)** — locked entries are grey silhouettes with a letter-count hint ("R _ _"), unlocked entries show the word in its group color. The first-run tutorial opens with a WooDak line framing the desaturated world ("이 세계는 아직 다 쓰이지 않았어~우땅") so it never reads as a rendering bug.

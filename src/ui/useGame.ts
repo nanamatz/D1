@@ -10,6 +10,7 @@ import { startBlind, submitWord, discardTiles, endBlind } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import { drawBoss } from '../engine/bosses';
 import { tutorialBus } from './tutorial';
+import { checkWordPlayed, unlockBus } from './unlocks';
 import type {
   BlindKind,
   BlindState,
@@ -594,6 +595,12 @@ export function useGame(): UseGame {
       }
       const { blind, events, submission, goldDelta, destroyedTileIds } = result;
       if (submission.isGibberish) tutorialBus.fire('firstGibberish');
+      // Chromatic unlocks (feature-02 C): a VALID word may write a presentation
+      // layer into the world on its first-ever play. Gibberish never unlocks.
+      if (!submission.isGibberish) {
+        const unlocked = checkWordPlayed(submission.text);
+        if (unlocked) unlockBus.emit(unlocked);
+      }
       // A-2: a per-word structure bonus (Twin/Vowel Flush/Straight…) landed —
       // explain Letter Hands the first time one actually scores. The event is
       // only present when a hand triggered (loop.ts), so its presence is the signal.

@@ -1,20 +1,29 @@
 /* Design tokens (docs/UI_DESIGN.md §1). Single source of theme truth. */
 :root {
-  --bg-desk: #22443b;
-  --panel: #20303b;
-  --panel-edge: #39505e;
-  --ink: #edeae2;
-  --ink-dim: #9db0b8;
-  --chips: #3fa7f5;
-  --mult: #f5504e;
-  --gold: #f0b23e;
-  --tile-face: #f4eddf;
-  --tile-ink: #2b2620;
-  --suit-standard: #b9c4cb;
-  --suit-formal: #7e96f2;
-  --suit-slang: #f09437;
-  --suit-vulgar: #c6479e;
-  --shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+  /* feature-02 C-3 (revised — "truly monochrome start"): the WHOLE palette defaults
+     to neutral GREYS, so the world begins genuinely black-and-white. Each grouped
+     token is restored to its true value by an `unlock-<group>` class on <html>
+     (below) when the matching colour WORD is played — RED/YELLOW/GREEN/BLUE bring
+     their hues back progressively. A `world-mono` guard (unlocks.ts) additionally
+     greyscales the board while NO colour is unlocked, covering hard-coded fills
+     (materials, badges) the tokens don't reach. Info is never colour-only (a11y). */
+  --bg-desk: #383a39; /* GREEN group; unlock-green → #22443b */
+  --panel: #2a2d30; /* BLUE (slate chrome); unlock-blue → #20303b */
+  --panel-edge: #4a4d51; /* BLUE; unlock-blue → #39505e */
+  --ink: #edeae2; /* neutral (near-white) */
+  --ink-dim: #adafb1; /* neutral grey */
+  --chips: #8f9295; /* BLUE; unlock-blue → #3fa7f5 */
+  --mult: #8a8785; /* RED; unlock-red → #f5504e */
+  --gold: #b0aca4; /* YELLOW; unlock-yellow → #f0b23e */
+  --tile-face: #e9e8e4; /* YELLOW (warm cream); unlock-yellow → #f4eddf */
+  --tile-ink: #2b2620; /* neutral (near-black) */
+  --suit-standard: #c2c3c4; /* neutral grey */
+  --suit-formal: #979799; /* BLUE; unlock-blue → #7e96f2 */
+  --suit-slang: #a3a09b; /* YELLOW; unlock-yellow → #f09437 */
+  --suit-vulgar: #808080; /* RED; unlock-red → #c6479e */
+  /* Signature surface cue (mockup): a solid BLURLESS pixel step down-RIGHT. */
+  --shadow: 4px 4px 0 rgba(0, 0, 0, 0.42);
+  --shadow-sm: 3px 3px 0 rgba(0, 0, 0, 0.4);
   /* Board metrics — shared so anything that must line up with the rail (e.g. the
      pouch modal centring on the stage) derives from one number. */
   --rail-w: 400px;
@@ -57,8 +66,8 @@
   --dock-bottom: 18px;
   /* Recessed surface: every inset cell (sidebar cells, shelf groups, the badge's
      stats panel) uses these instead of its own ad-hoc hex (playtest-06 #10). */
-  --inset: #16242c;
-  --inset-edge: #3a5060;
+  --inset: #202225; /* BLUE chrome; unlock-blue → #16242c */
+  --inset-edge: #474a4e; /* BLUE chrome; unlock-blue → #3a5060 */
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
@@ -118,6 +127,79 @@
   --ctl-shadow-press: 0 2px 0 rgba(0, 0, 0, 0.35);
   --focus-ring: 2px solid var(--gold);
 }
+
+/* feature-02 C-3: chromatic unlocks restore the true grouped colours (classes
+   toggled on <html> by unlocks.applyPresentation). Each colour word brings back
+   every hue in its group, so the world re-colours progressively. */
+:root.unlock-red {
+  --mult: #f5504e; /* mult, red buttons, rare-joker frames */
+  --suit-vulgar: #c6479e;
+}
+:root.unlock-yellow {
+  --gold: #f0b23e; /* money, gold UI, early-end glow */
+  --suit-slang: #f09437;
+  --tile-face: #f4eddf; /* warm ivory tile face returns */
+}
+:root.unlock-green {
+  --bg-desk: #22443b; /* desk / blind backgrounds */
+}
+:root.unlock-blue {
+  --chips: #3fa7f5; /* chips, blue buttons */
+  --suit-formal: #7e96f2;
+  --suit-standard: #b9c4cb;
+  --panel: #20303b; /* the slate-blue UI chrome returns */
+  --panel-edge: #39505e;
+  --inset: #16242c;
+  --inset-edge: #3a5060;
+}
+
+/* "Truly monochrome" guard (revised C-3): while NO colour group is unlocked the
+   board is greyscaled outright, so hard-coded fills the tokens don't reach
+   (material tile faces, the blind badge, stage backdrops) are B&W too. The class
+   is dropped the moment any colour is played, after which the token desaturation
+   above carries the per-colour reveal. The fixed CRT overlay sits outside these
+   containers, so it is never greyscaled. */
+:root.world-mono .frame,
+:root.world-mono .screen {
+  filter: grayscale(1);
+}
+
+/* ============ CRT post-pass (global overlay; UI_DESIGN §1/§5, play-screen mockup)
+   Three fixed pointer-events:none layers above the app root: scanlines · vignette
+   + barrel · a faint NEUTRAL bloom (kept white, not blue, so the B&W start stays
+   colourless). Mounted by <CrtOverlay/> in App. ============ */
+.crt-scan,
+.crt-vig,
+.crt-bloom {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+.crt-scan {
+  z-index: 9997;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.24) 0 2px, rgba(0, 0, 0, 0) 2px 4px);
+  mix-blend-mode: multiply;
+  animation: crt-flicker 5.2s steps(30) infinite;
+}
+.crt-vig {
+  z-index: 9998;
+  background: radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.55) 100%);
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.45);
+}
+.crt-bloom {
+  z-index: 9999;
+  background: radial-gradient(ellipse at 50% 42%, rgba(255, 255, 255, 0.045), transparent 60%);
+  mix-blend-mode: screen;
+}
+@keyframes crt-flicker {
+  0%, 97%, 100% { opacity: 1; }
+  98% { opacity: 0.86; }
+  99% { opacity: 0.94; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crt-scan { animation: none; }
+}
+.force-reduced-motion .crt-scan { animation: none; }
 
 /* Item 9: the board is laid out at a fixed design size (--board-max wide, ~790px
    tall) and scaled to fit — it is a single-screen board, so it must never scroll.
@@ -247,9 +329,13 @@ body {
 body {
   font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
   color: var(--ink);
+  /* Mockup body: a fine dithered scanline band + stepped vignette over the desk
+     colour, on the pixel grid. */
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.05), transparent 60%),
-    radial-gradient(ellipse at 50% 110%, rgba(0, 0, 0, 0.45), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 8%, rgba(255, 255, 255, 0.05), transparent 55%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.5), transparent 60%),
     var(--bg-desk);
   min-height: 100%;
+  image-rendering: pixelated;
 }
