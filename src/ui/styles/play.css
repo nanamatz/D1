@@ -93,7 +93,7 @@
   width: var(--shop-card-w);
 }
 .shopitem {
-  background: #2c4358;
+  background: var(--badge-bg);
   border-radius: 12px;
   border-top: 1px solid var(--panel-edge);
   box-shadow: var(--shadow);
@@ -204,7 +204,7 @@
 /* Blind badge (playtest-06): a horizontally centered row — kind emblem left,
    target/reward stats panel right. */
 .blind-badge {
-  background: #2c4358;
+  background: var(--badge-bg);
   border-radius: 12px;
   padding: 10px;
   box-shadow: var(--shadow);
@@ -219,46 +219,22 @@
    grammar, never its art (UI_DESIGN thesis); the art pass replaces this. */
 .bb-emblem {
   flex: none;
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  padding: 4px;
-  text-align: center;
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22), var(--shadow);
-  background: radial-gradient(circle at 35% 28%, #7fb4dd, #3d6f9c 72%);
-}
-.blind-badge.big .bb-emblem {
-  background: radial-gradient(circle at 35% 28%, #f3cd7a, #b07f22 72%);
-}
-.blind-badge.boss .bb-emblem {
-  background: radial-gradient(circle at 35% 28%, #f0827d, #96302d 72%);
 }
 .bb-emoji {
-  font-size: var(--fs-2xl);
+  font-size: var(--ds-md);
   line-height: 1;
 }
-/* Pixel-art blind/boss emblem (docs/Arts). Sits inside the circular badge above
-   the kind label; crisp pixel scaling, blocky drop shadow. */
+/* Pixel-art blind/boss emblem (docs/Arts): stands on its own — no circular badge,
+   no kind label; crisp pixel scaling, blocky drop shadow. */
 .bb-art {
-  width: 54px;
-  height: 54px;
+  width: 104px;
+  height: 104px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
-}
-.bb-kind {
-  font-weight: 700;
-  font-size: var(--fs-sm);
-  letter-spacing: 0.05em;
-  line-height: 1.05;
-  text-transform: uppercase;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
 }
 /* Stats panel — darker than the badge so it reads as inset. */
 .bb-stats {
@@ -292,17 +268,36 @@
   vertical-align: middle;
 }
 /* D-5: pixel tomato beside score numbers (docs/T_Tomato.png).
-   Thematically: tomatoes thrown at bad manuscripts. Grey until RED unlocks (C). */
+   Thematically: tomatoes thrown at bad manuscripts.
+   Per-group reveal (feature-02 C): the tomato's BODY is RED and its STEM is GREEN, two
+   different unlock groups, so one greyscale filter can't be group-correct (playtest bug:
+   the green stem showed on a RED-only unlock). The icon is composited from group-specific
+   art instead — a `<span>` whose background-image swaps with the unlock classes on <html>:
+     nothing → full art, greyscaled     RED only  → red body + grey stem (tomato-red)
+     GREEN only → grey body + green stem  RED+GREEN → full-colour art (tomato). */
 .tomato-icon {
   display: inline-block;
   width: 3.3em;
   height: 3.3em;
   vertical-align: -0.45em;
-  object-fit: contain;
+  background-image: url(../assets/tomato.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   image-rendering: pixelated;
   filter: grayscale(1) brightness(1.05);
 }
 :root.unlock-red .tomato-icon {
+  background-image: url(../assets/tomato-red.png);
+  filter: none;
+}
+:root.unlock-green .tomato-icon {
+  background-image: url(../assets/tomato-green.png);
+  filter: none;
+}
+/* Both unlocked (higher specificity than either single) → the full-colour tomato. */
+:root.unlock-red.unlock-green .tomato-icon {
+  background-image: url(../assets/tomato.png);
   filter: none;
 }
 /* Placeholder chip token — CSS-drawn, no asset yet. */
@@ -401,10 +396,10 @@
 /* Chip pops read blue, mult pops read red — matching their boxes (item: colour
    the floating pops to their stat). */
 .scorebox .c .box-pop {
-  color: #5bb8ff;
+  color: var(--pop-chip);
 }
 .scorebox .m .box-pop {
-  color: #ff6f6d;
+  color: var(--pop-mult);
 }
 /* A blue diamond (마름모) before the chip +N, fading with the text (it inherits the
    pop's opacity animation). A square rotated 45°; no shadow, so the rotate doesn't
@@ -973,6 +968,15 @@
 .tile.draggable:active {
   cursor: grabbing;
 }
+/* First-run lesson lock: tiles that aren't the next YELLOW letter are dimmed and inert. */
+.tile.locked {
+  opacity: 0.28;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.tile.locked:hover {
+  transform: none !important;
+}
 .tile.mini {
   width: 36px;
   height: 36px;
@@ -1481,7 +1485,7 @@
 .consumable-menu button {
   font-size: var(--fs-sm);
   color: var(--ink);
-  background: #22333d;
+  background: var(--menu-btn-bg);
   border: 1px solid var(--inset-edge);
   border-radius: 8px;
   padding: 5px 14px;
@@ -1489,7 +1493,7 @@
   white-space: nowrap;
 }
 .consumable-menu button:hover {
-  background: #2c4358;
+  background: var(--badge-bg);
 }
 .consumable-menu.bare {
   background: none;
@@ -1515,10 +1519,10 @@
 }
 .consumable-menu.bare button.sell {
   height: 50px;
-  background: #4a9d5b;
+  background: var(--btn-green);
 }
 .consumable-menu.bare button.sell:hover {
-  background: #57b268;
+  background: var(--btn-green-hi);
 }
 
 /* ===== playtest-03 E: unified board, shelves, sidebar, action cluster ===== */
@@ -1630,17 +1634,17 @@
   font-size: var(--fs-lg);
   letter-spacing: 0.12em;
   color: #fff;
-  background: linear-gradient(180deg, #3a5a86, #2c4358);
+  background: linear-gradient(180deg, var(--kind-a), var(--kind-b));
 }
 .blind-badge.small .kind {
-  background: linear-gradient(180deg, #4d7fd6, #3a5aa0);
+  background: linear-gradient(180deg, var(--kind-small-a), var(--kind-small-b));
 }
 .blind-badge.big .kind {
-  background: linear-gradient(180deg, #d6a53a, #a87d20);
+  background: linear-gradient(180deg, var(--kind-big-a), var(--kind-big-b));
   color: #20160a;
 }
 .blind-badge.boss .kind {
-  background: linear-gradient(180deg, #d64d4a, #a02c2c);
+  background: linear-gradient(180deg, var(--kind-boss-a), var(--kind-boss-b));
 }
 .bs-reward .reward {
   color: var(--gold);
@@ -1770,7 +1774,7 @@
   grid-column: 2 / span 2;
 }
 .sidenav-btn.info {
-  background: #3a5a86;
+  background: var(--kind-a);
   color: #fff;
   border: none;
 }

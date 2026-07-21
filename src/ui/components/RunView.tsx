@@ -5,7 +5,7 @@ import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
-import { tutorialBus, hasSeenIntro } from '../tutorial';
+import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from '../tutorial';
 import { readTips } from '../settings';
 import { SettleProvider } from '../settle';
 import { Sidebar } from './Sidebar';
@@ -59,11 +59,13 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, showInfo]);
 
-  // Guided first-run intro (A-1): opens once, on first entry into the playing
-  // board, gated on the intro not having been seen yet and tips being on.
+  // Guided first-run lesson: opens once, on entry into the playing board — but ONLY for a run
+  // that bootstrapped as the tutorial (showIntro), so its hand is rigged for the YELLOW lock.
+  // `!hasSeenIntro()` is the once-guard (finishing the intro marks it seen). Replaying (Help)
+  // clears the seen-flag, but a rigged hand only comes from a fresh run, so replay = New Run.
   useEffect(() => {
-    if (phase === 'playing' && !hasSeenIntro() && readTips()) setIntroOpen(true);
-  }, [phase]);
+    if (phase === 'playing' && g.state.showIntro && !hasSeenIntro() && readTips()) setIntroOpen(true);
+  }, [phase, g.state.showIntro]);
 
   // Mascot beat on shop enter + blind-resolution stings (B-1 settle-set:
   // clearFanfare / failSting), keyed purely on phase transitions.
@@ -180,7 +182,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onReorderJoker={g.reorderJokers}
           />
           <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
-          <StagePanel g={g} preview={preview} />
+          {/* Lesson lock: while the guided intro is open (first tutorial blind) the board is
+              hard-locked to spelling YELLOW. Skipping the intro releases it. */}
+          <StagePanel g={g} preview={preview} {...(introOpen ? { lockWord: TUTORIAL_WORD } : {})} />
         </main>
       </SettleProvider>
       {/* item 4: the intermediate "Cleared! + Settle" screen is gone — the blind
@@ -189,7 +193,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <BagWidget run={run} blind={blind} onOpenChange={setPouchOpen} />
       )}
       {!ending && !settling && introOpen && (
-        <GuidedIntro onClose={() => setIntroOpen(false)} />
+        <GuidedIntro g={g} onClose={() => setIntroOpen(false)} />
       )}
       {!ending && !settling && showInfo && (
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />

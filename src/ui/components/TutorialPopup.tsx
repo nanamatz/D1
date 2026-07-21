@@ -2,12 +2,9 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n';
 import { readTips } from '../settings';
 import { richText } from '../richtext';
-import { tutorialBus, hasSeen, markSeen, ENCOUNTERS, type EncounterId } from '../tutorial';
+import { tutorialBus, hasSeen, markSeen, hasSeenIntro, ENCOUNTERS, type EncounterId } from '../tutorial';
 import { SpotlightBubble } from './SpotlightBubble';
-import piyakUrl from '../assets/piyak.png';
-import woodakUrl from '../assets/woodak.png';
-
-const MASCOT_SRC: Record<'piyak' | 'woodak', string> = { piyak: piyakUrl, woodak: woodakUrl };
+import { mascotSrc } from '../mascots';
 
 /**
  * Layer-2 encounter popup host (work order A-2). Mounted once in App. Subscribes
@@ -22,6 +19,9 @@ export function TutorialHost() {
   useEffect(() => {
     return tutorialBus.subscribe((id) => {
       if (!readTips()) return;
+      // Don't overlap encounter popups with the guided first-run lesson — YELLOW's Twin (LL)
+      // would otherwise pop the Letter Hand card mid-lesson. Encounters begin once it's done.
+      if (!hasSeenIntro()) return;
       if (hasSeen(id)) return;
       // Defer past the firing component's render (fires happen inside setState
       // updaters / effects). Dedup against what's already queued.
@@ -69,7 +69,7 @@ export function TutorialHost() {
         onClick={(e) => e.stopPropagation()}
       >
         {body}
-        {mascot && <img className="mascot-cat tut-mascot" src={MASCOT_SRC[mascot]} alt="" />}
+        {mascot && <img className="mascot-cat tut-mascot" src={mascotSrc(mascot)} alt="" />}
       </div>
     </div>
   );

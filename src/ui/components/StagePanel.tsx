@@ -1,7 +1,7 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { isVowel, type Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
-import { SORT_MODES, sortHand, tileGlyph, tilesByIds, tileValue } from '../game';
+import { SORT_MODES, sortHand, tileGlyph, tilesByIds, tileValue, nextLockLetter } from '../game';
 import { fontDescKey } from '../descriptions';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
@@ -16,7 +16,18 @@ interface Drag {
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
-export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview | null }) {
+export function StagePanel({
+  g,
+  preview,
+  lockWord,
+}: {
+  g: UseGame;
+  preview: StagePreview | null;
+  /** First-run lesson: hard-lock the board to spelling this word (YELLOW). Only the next
+   *  needed letter is clickable; sort/discard/drag are disabled; Play lights only when the
+   *  staged word matches. Undefined = normal free play. */
+  lockWord?: string;
+}) {
   const { t } = useI18n();
   const { blind, selected, message } = g.state;
   const [sortMode, setSortMode] = usePersistedState<SortMode>('wj.sortMode', 'vowel');
@@ -27,6 +38,11 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   const [overId, setOverId] = useState<string | null>(null);
   const endDrag = () => { setDragId(null); setOverId(null); };
   const staged = tilesByIds(blind.hand, selected);
+  // First-run lesson hard-lock: only the next YELLOW letter is clickable, and Play lights
+  // only when the staged word matches. Order is enforced, so `staged` is always a prefix.
+  const lock = !!lockWord;
+  const nextLetter = lockWord ? nextLockLetter(staged.map((tl) => tl.letter), lockWord) : null;
+  const lockComplete = lock && nextLetter === null;
   const selectedSet = new Set(selected);
   const hand = sortHand(
     blind.hand.filter((tl) => !selectedSet.has(tl.id)),
@@ -40,8 +56,10 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
 
   const handIds = new Set(hand.map((tl) => tl.id));
   const validMarks = discardMarks.filter((id) => handIds.has(id));
-  const toggleMark = (id: string) =>
+  const toggleMark = (id: string) => {
+    if (lock) return; // discard is disabled during the lesson lock
     setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
+  };
   const selectTile = (id: string) => { audio.play('tileSelect'); g.toggleTile(id); };
   // Ancient Paper (고대 문서): vowel tiles stay face-down (identity hidden) until
   // played — in both the hand and the staged word, so staging can't scout them.
@@ -118,15 +136,16 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
     g.discard(validMarks);
     setDiscardMarks([]);
   };
-  const canDiscard = g.canDiscard && validMarks.length > 0; // no per-use tile cap (D-4)
+  const canDiscard = g.canDiscard && validMarks.length > 0 && !lock; // no per-use tile cap (D-4)
 
   return (
     <div
       className="stage"
-      onDragOver={allowDrop}
-      onDrop={onStageDrop}
-      onDragStart={(e) => setDragId((e.target as HTMLElement).dataset.tileId ?? null)}
-      onDragEnd={endDrag}
+      // Drag & drop is disabled during the lesson lock — staging is click-only there.
+      onDragOver={lock ? undefined : allowDrop}
+      onDrop={lock ? undefined : onStageDrop}
+      onDragStart={lock ? undefined : (e) => setDragId((e.target as HTMLElement).dataset.tileId ?? null)}
+      onDragEnd={lock ? undefined : endDrag}
     >
       {message && <div className="toast warn-toast">{t(message.key, message.params)}</div>}
 
@@ -180,6 +199,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
             dragging={dragId === tile.id}
             dropTarget={overId === tile.id}
             faceDown={faceDown(tile)}
+            disabled={lock && tile.letter !== nextLetter}
             onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}
@@ -194,7 +214,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
         <button
           className="btn blue play-btn"
           onClick={() => { audio.play('submitThock'); g.playWord(); }}
-          disabled={!g.canPlay || !!preview?.blocked}
+          disabled={!g.canPlay || !!preview?.blocked || (lock && !lockComplete)}
         >
           {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
         </button>
@@ -207,6 +227,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
                 className={['sortbtn', m === sortMode ? 'on' : ''].filter(Boolean).join(' ')}
                 onClick={() => setSortMode(m)}
                 aria-pressed={m === sortMode}
+                disabled={lock}
               >
                 {t(`sort.${m}`)}
               </button>

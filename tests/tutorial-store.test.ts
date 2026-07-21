@@ -87,14 +87,16 @@ describe('guided intro flag (A-1)', () => {
     expect(hasSeenIntro()).toBe(false);
   });
 
-  it('INTRO_STEPS has 7 steps (incl. the chromatic world-framing step), each with a key and a selector', () => {
-    expect(INTRO_STEPS.length).toBe(7);
+  it('INTRO_STEPS is the 3-step YELLOW lesson, each with a key and a selector', () => {
+    expect(INTRO_STEPS.length).toBe(3);
     for (const s of INTRO_STEPS) {
       expect(s.key).toBeTruthy();
       expect(s.selector.startsWith('.')).toBe(true);
     }
     // keys are unique
-    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(7);
+    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(3);
+    // the build/submit steps auto-advance on the player's action, not a Next click
+    expect(INTRO_STEPS.map((s) => s.advance)).toEqual(['next', 'staged', 'played']);
   });
 });
 
@@ -107,6 +109,10 @@ describe('guided intro copy coverage', () => {
       }
       for (const k of ['intro.next', 'intro.skip', 'intro.done']) {
         expect(loc).toHaveProperty(k);
+      }
+      // gated steps (advance !== 'next') show a hint instead of a Next button
+      for (const s of INTRO_STEPS) {
+        if (s.advance && s.advance !== 'next') expect(loc).toHaveProperty(`intro.hint.${s.key}`);
       }
     }
   });

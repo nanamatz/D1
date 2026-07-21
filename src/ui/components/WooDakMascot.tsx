@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '../i18n';
-import woodakUrl from '../assets/woodak.png';
+import { mascotSrc } from '../mascots';
 import type { RunStats } from '../useGame';
 
 /** Size of the woodak.tip.N generic pool in the locale files. */
@@ -28,7 +28,7 @@ export function WooDakMascot({ stats, won }: { stats: RunStats; won: boolean }) 
     <div className="mascot go-mascot">
       <div className="mascot-bubble">{text}</div>
       <div className="mascot-sway">
-        <img className="mascot-cat woodak-img" src={woodakUrl} alt="" />
+        <img className="mascot-cat woodak-img" src={mascotSrc('woodak')} alt="" />
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ import type {
   BlindKind,
   BlindState,
   ConsumableId,
+  Letter,
   RunState,
   ScoreEvent,
   SentenceJudgment,
@@ -42,6 +43,22 @@ export interface StartBlindOptions {
   bossId?: string | null;
   /** blind target; defaults to the ante-curve value for the run's position (§8.2) */
   target?: number;
+  /** Deal these letters at the FRONT of the opening hand, in order, then fill randomly.
+   *  UI-only hook for the scripted first-run lesson (rig YELLOW). A letter not present in
+   *  the bag is skipped. The engine stays generic — it just front-loads the draw. */
+  openingLetters?: readonly Letter[];
+}
+
+/** Move the first tile of each requested letter to the front of the (shuffled) bag, in the
+ *  given order; letters not found are skipped. Used only via StartBlindOptions.openingLetters. */
+function frontLoadLetters(bag: readonly Tile[], letters: readonly Letter[]): Tile[] {
+  const rest = [...bag];
+  const front: Tile[] = [];
+  for (const L of letters) {
+    const i = rest.findIndex((t) => t.letter === L);
+    if (i >= 0) front.push(rest.splice(i, 1)[0]!);
+  }
+  return [...front, ...rest];
 }
 
 /** Set up a blind: shuffle a copy of the run bag, deal the opening hand (§6.1).
@@ -57,7 +74,8 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
 
   const effHandSize = Math.max(1, run.handSize + (boss?.handSizeDelta ?? 0));
   const shuffled = rng.shuffle(run.bag);
-  const { drawn: hand, bag } = drawTiles(shuffled, effHandSize);
+  const ordered = opts.openingLetters ? frontLoadLetters(shuffled, opts.openingLetters) : shuffled;
+  const { drawn: hand, bag } = drawTiles(ordered, effHandSize);
   const targetMult = boss?.targetMult ?? 1; // Wanted ×2
 
   let blind: BlindState = {

@@ -93,24 +93,35 @@ export function resetTutorial(): void {
 // ----- Guided first-run intro (A-1) — a separate one-shot flag -----
 const INTRO_KEY = 'wj.tutorialIntro';
 
+/**
+ * The scripted first-run lesson (2026-07-21): the opening hand is rigged to contain this
+ * word's letters and the blind target is lowered so playing it clears the blind. The word
+ * MUST be a valid dictionary + colour-unlock word so submitting it teaches the Palette.
+ * YELLOW = Y,E,L,L,O,W (Twin on the two L's); ~12 chips clears the target-10 blind.
+ */
+export const TUTORIAL_WORD = 'YELLOW';
+export const TUTORIAL_TARGET = 10;
+
+/** How an intro step advances: a Next button, or automatically when the player performs
+ *  the gated action (stages the full word / plays a word). */
+export type IntroAdvance = 'next' | 'staged' | 'played';
+
 export interface IntroStep {
   /** stable key → i18n copy `intro.step.<key>.title/.body` */
   key: string;
   /** CSS selector of the play-screen element to spotlight */
   selector: string;
+  /** how this step advances (default 'next') */
+  advance?: IntroAdvance;
 }
 
-/** The core-loop steps, in order (selectors verified in the play screen). The
- *  first frames the desaturated world (feature-02 C-5) so the grey start never
- *  reads as a rendering bug. */
+/** The rebuilt lesson: frame the grey world → build YELLOW → submit it. Submitting washes the
+ *  yellow palette in (ChromaticReveal) and clears the target-10 blind. Learn-by-doing: the
+ *  build/submit steps auto-advance when the player actually does them (GuidedIntro). */
 export const INTRO_STEPS: readonly IntroStep[] = [
-  { key: 'world', selector: '.round-panel' },
-  { key: 'hand', selector: '.hand' },
-  { key: 'score', selector: '.score-panel' },
-  { key: 'target', selector: '.bs-target' },
-  { key: 'discard', selector: '.discard-btn' },
-  { key: 'tray', selector: '.tray' },
-  { key: 'clear', selector: '.round-panel' },
+  { key: 'frame', selector: '.round-panel', advance: 'next' },
+  { key: 'build', selector: '.hand', advance: 'staged' },
+  { key: 'submit', selector: '.play-btn', advance: 'played' },
 ];
 
 export function hasSeenIntro(): boolean {

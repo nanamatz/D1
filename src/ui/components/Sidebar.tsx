@@ -8,7 +8,6 @@ import { BONUS_LAND_MS } from '../useGame';
 import { useI18n } from '../i18n';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
-import tomatoUrl from '../assets/tomato.png';
 
 interface Props {
   run: RunState;
@@ -102,22 +101,23 @@ export function Sidebar({
         <div className="bb-eff">{boss && <span className="bosseff">{t(`bossdesc.${boss.id}`)}</span>}</div>
         <div className="bb-row">
           {/* Pixel-art emblem: the boss art on a boss blind, else the Draft/Revision
-              kind art (bossArt.ts). Falls back to the kind label if art is missing. */}
+              kind art (bossArt.ts). Falls back to the kind emoji if art is missing.
+              The kind name still reads off the badge heading above. */}
           <div className="bb-emblem">
             {blindEmblem(blind.kind, blind.bossId) ? (
               <img className="bb-art" src={blindEmblem(blind.kind, blind.bossId)} alt="" />
             ) : (
               boss && <span className="bb-emoji">{boss.emoji}</span>
             )}
-            <span className="bb-kind">{t(`blind.${blind.kind}`)}</span>
           </div>
           <div className="bb-stats">
             <div className="bs-target">
               <span className="tlabel">{t('sidebar.target')}:</span>
               <span className="bs-target-row">
                 {/* D-5: pixel tomato replaces the poker-chip icon beside score
-                    numbers; the "Chips" term/box stay unchanged. Grey until RED unlocks. */}
-                <img className="tomato-icon" src={tomatoUrl} alt="" aria-hidden />
+                    numbers; the "Chips" term/box stay unchanged. Art (grey/red/green/
+                    full) is composited by .tomato-icon from the unlock classes. */}
+                <span className="tomato-icon" aria-hidden />
                 <span className="target">{blind.target}</span>
               </span>
             </div>
@@ -132,7 +132,7 @@ export function Sidebar({
       <div className="panel round-panel">
         <div className="round-row">
           <span className="label">{t('sidebar.round')}</span>
-          <span className="round-num"><img className="tomato-icon" src={tomatoUrl} alt="" aria-hidden /> {Math.round(round)}</span>
+          <span className="round-num"><span className="tomato-icon" aria-hidden /> {Math.round(round)}</span>
         </div>
         {!blind.previewHidden && forecast > 0 && (
           <div className="round-forecast">

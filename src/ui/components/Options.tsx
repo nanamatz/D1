@@ -3,6 +3,8 @@ import type { Lexicon } from '../../engine/lexicon';
 import { collectionSize } from '../collection';
 import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
+import { availableWooDakSkins } from '../mascots';
+import { activeUnlocks } from '../unlocks';
 import { useI18n } from '../i18n';
 import { Collection } from './Collection';
 import { ENCOUNTERS, hasSeen, resetIntro, type EncounterGroup } from '../tutorial';
@@ -76,7 +78,7 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
     <div className="screen options">
       {view === 'settings' && <SettingsView />}
       {view === 'stats' && <StatsView lexicon={lexicon} />}
-      {view === 'help' && <HelpView />}
+      {view === 'help' && <HelpView {...(onNewRun ? { onNewRun } : {})} />}
       {view === 'credits' && <CreditsView />}
       <button className="btn back-bar" onClick={back}>
         {t('common.back')}
@@ -137,6 +139,9 @@ function SettingsView() {
   const { t, lang, setLang } = useI18n();
   const { settings, set } = useSettings();
   const [tab, setTab] = useState<Tab>('game');
+  // 2026-07-21: WooDak ally skins the player may pick — default + unlocked art skins.
+  // Hidden entirely while only the default exists, so it is never a one-option row.
+  const mascotSkins = availableWooDakSkins(activeUnlocks(settings.unlockAll));
 
   return (
     <>
@@ -197,6 +202,24 @@ function SettingsView() {
                 {lang === 'en' ? 'English' : '한국어'}
               </button>
             </div>
+            {mascotSkins.length > 1 && (
+              <div className="set-row">
+                <span className="set-label">{t('settings.mascot')}</span>
+                <div className="mascot-picker">
+                  {mascotSkins.map((s) => (
+                    <button
+                      key={s.id}
+                      className={['mascot-choice', s.id === settings.mascot ? 'on' : ''].filter(Boolean).join(' ')}
+                      onClick={() => set('mascot', s.id)}
+                      aria-pressed={s.id === settings.mascot}
+                      title={t(s.nameKey)}
+                    >
+                      <img src={s.art ?? ''} alt={t(s.nameKey)} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
 
         <div className={['set-tabpanel', tab === 'video' ? 'on' : ''].filter(Boolean).join(' ')}>
@@ -277,18 +300,23 @@ function Stat({ k, v, muted }: { k: string; v: string | number; muted?: boolean 
 }
 
 // ---------- Help ----------
-function HelpView() {
+function HelpView({ onNewRun }: { onNewRun?: () => void }) {
   const { t } = useI18n();
   const [replayed, setReplayed] = useState(false);
   const groups: EncounterGroup[] = ['tiles', 'scoring', 'economy', 'run'];
+  // The lesson rigs the opening hand at run start, so replaying means a fresh run. From the
+  // pause menu (onNewRun available) jump straight there; from the main menu, clear the flag
+  // and tell the player to start a New Run.
+  const replay = () => {
+    resetIntro();
+    if (onNewRun) onNewRun();
+    else setReplayed(true);
+  };
   return (
     <>
       <h2 className="scr-title">{t('help.title')}</h2>
       <div className="help-replay">
-        <button
-          className="btn exchange sm"
-          onClick={() => { resetIntro(); setReplayed(true); }}
-        >
+        <button className="btn exchange sm" onClick={replay}>
           {t('help.replayIntro')}
         </button>
         {replayed && <span className="help-replay-note">{t('help.replayIntroDone')}</span>}

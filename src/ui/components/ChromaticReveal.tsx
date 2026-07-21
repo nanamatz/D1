@@ -3,6 +3,12 @@ import { useI18n } from '../i18n';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
 import { applyPresentation, unlockBus, type UnlockDef } from '../unlocks';
+import { mascotVariantArt } from '../mascots';
+
+/** The mascot portrait for a mascot unlock that has art (else null). */
+function mascotArt(def: UnlockDef): string | null {
+  return def.effect.kind === 'mascot' ? mascotVariantArt(def.effect.variant) : null;
+}
 
 /** i18n subtitle key for an unlock's celebration line. */
 function bodyKey(def: UnlockDef): string {
@@ -10,7 +16,8 @@ function bodyKey(def: UnlockDef): string {
     case 'color': return `unlock.body.${def.effect.group}`;
     case 'audio': return def.effect.bus === 'music' ? 'unlock.body.music' : 'unlock.body.sound';
     case 'locale': return 'unlock.body.korean';
-    case 'mascot': return 'unlock.body.mascot';
+    // A mascot with art is a real, selectable ally; art-less variants stay "coming soon".
+    case 'mascot': return mascotVariantArt(def.effect.variant) ? 'unlock.body.mascotReady' : 'unlock.body.mascot';
   }
 }
 
@@ -51,6 +58,7 @@ export function ChromaticReveal() {
 
   if (!active) return null;
   const group = washGroup(active);
+  const art = mascotArt(active);
   const dismiss = () => setQueue((q) => q.slice(1));
 
   return (
@@ -61,6 +69,7 @@ export function ChromaticReveal() {
       onClick={dismiss}
     >
       <div className="chroma-card">
+        {art && <img className="chroma-mascot" src={art} alt="" />}
         <div className="chroma-word">{active.word}</div>
         <div className="chroma-body">{t(bodyKey(active))}</div>
       </div>

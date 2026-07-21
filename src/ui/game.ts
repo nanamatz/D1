@@ -130,6 +130,14 @@ export function posLabel(sub: WordSubmission, lexicon: Lexicon, t: PosTranslate)
 export const tileValue = (t: Tile): number =>
   t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
 
+/** First-run lesson lock: the next letter still needed to spell `word`, given the letters
+ *  already staged (in order), or null once they spell it. The lock enforces order, so the
+ *  staged letters are always a prefix of `word`. Case-insensitive. */
+export function nextLockLetter(staged: readonly (string | null)[], word: string): string | null {
+  const target = word.toUpperCase();
+  return staged.length >= target.length ? null : target[staged.length]!;
+}
+
 /** Material → css class ('' for the ceramic base). */
 export function materialClass(material: Tile['material']): string {
   return material === 'ceramic' ? '' : material;

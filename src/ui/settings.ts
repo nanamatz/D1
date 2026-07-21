@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { usePersistedState } from './hooks';
 import { audio } from './audio';
 import { applyPresentation } from './unlocks';
+import type { WooDakSkin } from './mascots';
 
 export interface Settings {
   gameSpeed: 1 | 2 | 4;
@@ -23,6 +24,8 @@ export interface Settings {
   sfx: number;
   /** feature-02 C-4: presentation-unlock override (unlock all colors/audio now) */
   unlockAll: boolean;
+  /** 2026-07-21: chosen WooDak ally skin (default 'woodak'; unlocked skins only). */
+  mascot: WooDakSkin;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,9 +40,11 @@ export const DEFAULT_SETTINGS: Settings = {
   music: 70,
   sfx: 80,
   unlockAll: false,
+  mascot: 'woodak',
 };
 
-const SETTINGS_KEY = 'wj.settings';
+/** Exported so `mascots.ts` can read the live selection from the same store. */
+export const SETTINGS_KEY = 'wj.settings';
 
 /**
  * Read the CURRENT tips setting straight from localStorage — not from a React

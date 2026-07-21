@@ -21,6 +21,27 @@
   --suit-formal: #979799; /* BLUE; unlock-blue → #7e96f2 */
   --suit-slang: #a3a09b; /* YELLOW; unlock-yellow → #f09437 */
   --suit-vulgar: #808080; /* RED; unlock-red → #c6479e */
+  /* feature-02 C-3 (playtest bug): fills that were hard-coded hexes and only kept
+     monochrome by the all-or-nothing `world-mono` greyscale. Because world-mono is
+     dropped the moment ANY colour unlocks, a single unlock (e.g. RED) used to reveal
+     every one of these regardless of its own group. They are now grouped tokens like
+     the rest of the palette: a luminance-grey default here, the true value restored
+     ONLY under the matching `unlock-<group>` class below. Greys match each colour's
+     greyscale luminance so the pre-unlock look is unchanged. */
+  --badge-bg: #3a3c3f; /* BLUE slate chrome; unlock-blue → #2c4358 */
+  --menu-btn-bg: #2f3133; /* BLUE chrome; unlock-blue → #22333d */
+  --kind-a: #565758; /* BLUE; unlock-blue → #3a5a86 (also the info button) */
+  --kind-b: #3a3c3f; /* BLUE; unlock-blue → #2c4358 */
+  --kind-small-a: #7a7a7a; /* BLUE; unlock-blue → #4d7fd6 */
+  --kind-small-b: #585a5c; /* BLUE; unlock-blue → #3a5aa0 */
+  --kind-big-a: #a7a7a7; /* YELLOW; unlock-yellow → #d6a53a */
+  --kind-big-b: #7f7f7f; /* YELLOW; unlock-yellow → #a87d20 */
+  --kind-boss-a: #767676; /* RED; unlock-red → #d64d4a */
+  --kind-boss-b: #4f4f4f; /* RED; unlock-red → #a02c2c */
+  --btn-green: #7d7d7d; /* GREEN; unlock-green → #4a9d5b */
+  --btn-green-hi: #8e8e8e; /* GREEN; unlock-green → #57b268 */
+  --pop-chip: #a4a4a4; /* BLUE; unlock-blue → #5bb8ff */
+  --pop-mult: #9a9a9a; /* RED; unlock-red → #ff6f6d */
   /* Signature surface cue (mockup): a solid BLURLESS pixel step down-RIGHT. */
   --shadow: 4px 4px 0 rgba(0, 0, 0, 0.42);
   --shadow-sm: 3px 3px 0 rgba(0, 0, 0, 0.4);
@@ -134,14 +155,21 @@
 :root.unlock-red {
   --mult: #f5504e; /* mult, red buttons, rare-joker frames */
   --suit-vulgar: #c6479e;
+  --kind-boss-a: #d64d4a; /* boss-blind kind pill */
+  --kind-boss-b: #a02c2c;
+  --pop-mult: #ff6f6d; /* mult score-pop */
 }
 :root.unlock-yellow {
   --gold: #f0b23e; /* money, gold UI, early-end glow */
   --suit-slang: #f09437;
   --tile-face: #f4eddf; /* warm ivory tile face returns */
+  --kind-big-a: #d6a53a; /* big-blind (Revision) kind pill */
+  --kind-big-b: #a87d20;
 }
 :root.unlock-green {
   --bg-desk: #22443b; /* desk / blind backgrounds */
+  --btn-green: #4a9d5b; /* reroll / pack-open / sell buttons */
+  --btn-green-hi: #57b268;
 }
 :root.unlock-blue {
   --chips: #3fa7f5; /* chips, blue buttons */
@@ -151,6 +179,13 @@
   --panel-edge: #39505e;
   --inset: #16242c;
   --inset-edge: #3a5060;
+  --badge-bg: #2c4358; /* blind badge / shop cards / menu-button hover */
+  --menu-btn-bg: #22333d;
+  --kind-a: #3a5a86; /* base kind pill + run-info button */
+  --kind-b: #2c4358;
+  --kind-small-a: #4d7fd6; /* small-blind (Draft) kind pill */
+  --kind-small-b: #3a5aa0;
+  --pop-chip: #5bb8ff; /* chip score-pop */
 }
 
 /* "Truly monochrome" guard (revised C-3): while NO colour group is unlocked the
@@ -158,9 +193,12 @@
    (material tile faces, the blind badge, stage backdrops) are B&W too. The class
    is dropped the moment any colour is played, after which the token desaturation
    above carries the per-colour reveal. The fixed CRT overlay sits outside these
-   containers, so it is never greyscaled. */
+   containers, so it is never greyscaled. The coach-mark mascot is portalled to
+   <body> (SpotlightBubble, to escape the .frame filter for correct positioning), so
+   it is greyscaled explicitly here to stay monochrome during the B&W start. */
 :root.world-mono .frame,
-:root.world-mono .screen {
+:root.world-mono .screen,
+:root.world-mono .intro-mascot .mascot-cat {
   filter: grayscale(1);
 }
 

@@ -22,6 +22,9 @@ interface Props {
   /** Ancient Paper (고대 문서): render the tile face-down — its letter/value are
    *  hidden (info attack) until it is played. Still selectable. */
   faceDown?: boolean;
+  /** Locked by the first-run lesson: dimmed and non-interactive (not the next YELLOW
+   *  letter). Distinct from faceDown — the letter is still visible. */
+  disabled?: boolean;
   /** anchored hover tooltip for the tile (C-4): chip value, material, font */
   tooltip?: { title: string; body: string };
 }
@@ -39,11 +42,12 @@ export function TileView({
   dragging = false,
   dropTarget = false,
   faceDown = false,
+  disabled = false,
   tooltip,
 }: Props) {
   const { t } = useI18n();
-  const interactive = !mini && !!onSelect;
-  const draggable = !mini && !!zone;
+  const interactive = !mini && !!onSelect && !disabled;
+  const draggable = !mini && !!zone && !disabled;
   // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
   // to its material name so a screen reader announces "Stone tile, 0 chips"
   // instead of the identity-less " tile, 0 chips" (M-4).
@@ -63,6 +67,7 @@ export function TileView({
     inkClass(tileValue(tile)),
     faceClass(tile),
     faceDown && 'facedown',
+    disabled && 'locked',
   ]
     .filter(Boolean)
     .join(' ');

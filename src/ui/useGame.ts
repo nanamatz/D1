@@ -9,11 +9,13 @@ import { makeRng } from '../engine/rng';
 import { startBlind, submitWord, discardTiles, endBlind } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import { drawBoss } from '../engine/bosses';
-import { tutorialBus } from './tutorial';
+import { tutorialBus, hasSeenIntro, TUTORIAL_WORD, TUTORIAL_TARGET } from './tutorial';
+import { readTips } from './settings';
 import { checkWordPlayed, unlockBus } from './unlocks';
 import type {
   BlindKind,
   BlindState,
+  Letter,
   PatternId,
   RunState,
   ScoreEvent,
@@ -135,6 +137,13 @@ export interface GameState {
    * the save and survives a reload.
    */
   runStarted: boolean;
+  /**
+   * This run started as the guided lesson: the opening hand was rigged to YELLOW and the
+   * intro should hard-lock the first blind. Decided ONCE at bootstrap (same gate as the
+   * rig) so it stays tied to the rigged blind — a mid-run intro reset (Help → Replay) can't
+   * flip it on and open the hard-lock on a non-rigged blind (that softlocks). Replay = new run.
+   */
+  showIntro: boolean;
 }
 
 const randomSeed = (): string => Math.random().toString(36).slice(2);
@@ -162,7 +171,16 @@ function bootstrap(seed: string = randomSeed()): GameState {
     voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`)),
     chapterBossId: drawBoss(makeRng(`${seed}#boss-1`)),
   };
-  const blind = startBlind(run, makeRng(`${seed}#0`), { bossId: run.chapterBossId });
+  // First-run lesson (2026-07-21): rig the opening hand to contain YELLOW and lower the
+  // target so playing it clears the blind. Same gate as the guided intro (RunView), so a
+  // player who has done the tutorial (or turned tips off) gets a normal random hand.
+  const tutorial = !hasSeenIntro() && readTips();
+  const blind = startBlind(run, makeRng(`${seed}#0`), {
+    bossId: run.chapterBossId,
+    ...(tutorial
+      ? { openingLetters: TUTORIAL_WORD.split('') as Letter[], target: TUTORIAL_TARGET }
+      : {}),
+  });
   return {
     seed,
     rngCounter: 1,
@@ -186,6 +204,7 @@ function bootstrap(seed: string = randomSeed()): GameState {
     settleComplete: true,
     finalScore: null,
     runStarted: false,
+    showIntro: tutorial,
   };
 }
 
