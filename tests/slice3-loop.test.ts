@@ -85,6 +85,6 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     expect(result.judgment.match?.pattern).toBe('transitive');
     expect(result.judgment.unison?.suit).toBe('standard');
     expect(result.finalScore).toBe(289); // 19 + (40 + 50 unison) × 3 transitive
-    expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 4 - 3 = 1
+    expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 5 - 3 = 2
   });
 });

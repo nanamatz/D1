@@ -12,8 +12,8 @@ import type { FontEffectId, TileFont } from './types';
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
   handSize: 11,
-  basePhases: 4,
-  discardsPerBlind: 3, // per-blind count; no per-use tile cap (playtest-04 D-4)
+  basePhases: 5,
+  discardsPerBlind: 4, // per-blind count; no per-use tile cap (playtest-04 D-4)
 
   // ----- Scrabble letter values (GDD §2.1) -----
   letterChips: {

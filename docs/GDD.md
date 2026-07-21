@@ -51,7 +51,7 @@ Version 0.2 — systems expansion
 | Enhancement | 8 tile materials | Ceramic (base) + Porcelain, Polished, Glass, Stone, Lead plate, Ivory, Brass |
 | Edition / Seal | 5 letter fonts | Futura Medium (base) + 4 styles |
 | Joker | Emoji tiles | 4 rarities + Legendary; shop purchase/draw; rule-breaking |
-| Hand (play) | Phase | Base 4 per blind; variable via jokers/vouchers |
+| Hand (play) | Phase | Base 5 per blind; variable via jokers/vouchers |
 | Discard | Discard | Budget per blind; discarded tiles exit for the blind |
 | Poker hand table | Sentence pattern table | POS sequence matching (§5) |
 | Flush | Unison bonus | All words in the sequence share one suit |
@@ -266,7 +266,7 @@ Design intent:
 - **Outcry** finally gives vowel-less interjections (shh, brr) a home in the pattern table — a niche that meshes with the Consonant Bricklayer build.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, preserving the RUN×4 showcase as its own pattern.
 - **The Chips×Mult ladder climbs together** — both sides grow from #1→#8, so structural sentences (higher Mult) reward suit/joker Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
-- **#7–8 are tight-to-impossible in the base 4 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
+- **#7–8 are tight-to-impossible in the base 5 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
 - **Interrogative (auxiliary inversion, e.g. "CAN BIRDS FLY") is deferred** to expansion content, consistent with the rules diet.
 
 ### 5.3 Unison Bonus (the flush substitute)
@@ -332,7 +332,7 @@ Baseline hand size **11** (placeholder within the 10–12 band). Larger than Bal
 
 ### 6.3 Discard — per-blind budget (Balatro-aligned; playtest-02 A-1)
 
-Mirroring Balatro's discards (3 per blind, up to 5 cards each): **3 discards per blind, up to 5 tiles each** (structure confirmed; values are placeholders). **Discarded tiles exit play for the rest of the blind** — they move to the discarded pile (like played tiles) and are NOT returned to the bag mid-blind; the same number are drawn from the remaining bag. Discarded tiles return to the bag only when the blind ends. (Earlier design returned tiles to the bag immediately; that was dropped in favor of the Balatro-aligned semantics so a discarded letter can't be redrawn within the same blind.)
+Mirroring Balatro's discards (3 per blind, up to 5 cards each): **4 discards per blind, up to 5 tiles each** (structure confirmed; values are placeholders). **Discarded tiles exit play for the rest of the blind** — they move to the discarded pile (like played tiles) and are NOT returned to the bag mid-blind; the same number are drawn from the remaining bag. Discarded tiles return to the bag only when the blind ends. (Earlier design returned tiles to the bag immediately; that was dropped in favor of the Balatro-aligned semantics so a discarded letter can't be redrawn within the same blind.)
 
 The budget is **per blind, not per phase** — this is the point. Sharing the budget across phases creates inter-phase resource management ("burn discards now or save them for later phases"). A per-phase allowance would reduce it to a resetting convenience with no strategic weight. Unused discards can hook into the economy via voucher (Thrift, §9.4).
 
@@ -382,7 +382,7 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 
 - **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
 - **Remaining phases = money.** Unchanged: 1 gold per remaining phase, paid as a Fee Settlement line item (§9.1).
-- **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush jokers are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 4-phase blind pays big; a last-phase clear pays nothing.
+- **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush jokers are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 5-phase blind pays big; a last-phase clear pays nothing.
 - **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 12-boss roster (§8.3, 2026-07-21) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
 ### 7.3 Sentence Bonus = base Chips × Mult (unified)
@@ -399,7 +399,7 @@ Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(p
 
 ### 7.5 Variable Phases
 
-Base 4 phases per blind. Increases via jokers/vouchers; the player may also end in a single phase. "Longer sentences → higher multipliers" (patterns #7–8, modifier absorption) versus the 1-phase rush creates the game's central strategic opposition — Rush ↔ Epic Poet — which the joker pool deliberately amplifies (§11.7).
+Base 5 phases per blind. Increases via jokers/vouchers; the player may also end in a single phase. "Longer sentences → higher multipliers" (patterns #7–8, modifier absorption) versus the 1-phase rush creates the game's central strategic opposition — Rush ↔ Epic Poet — which the joker pool deliberately amplifies (§11.7).
 
 ---
 
@@ -407,7 +407,7 @@ Base 4 phases per blind. Increases via jokers/vouchers; the player may also end 
 
 ### 8.1 Terminology (corrected in v0.2)
 
-- **Blind** = one round. Grants phases (base 4) + an discard budget; cleared by exceeding the target score. Early-end and remaining-phase rewards operate at this unit.
+- **Blind** = one round. Grants phases (base 5) + an discard budget; cleared by exceeding the target score. Early-end and remaining-phase rewards operate at this unit.
 - **Ante** = a set of 3 blinds: **Small → Big → Boss**. The base target rises per ante.
 
 All v0.1 uses of "ante" in the scoring chapter meant "blind" and are corrected throughout.
@@ -447,7 +447,7 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| History Book · 역사책 (`historyBook`) | Only 2 phases (base 4 → 2) | Pressure blind; counters Epic Poet, harmless to Rush |
+| History Book · 역사책 (`historyBook`) | Only 2 phases (base 5 → 2) | Pressure blind; counters Epic Poet, harmless to Rush |
 
 **Loop-resource attacks**
 

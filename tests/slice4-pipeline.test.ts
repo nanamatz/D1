@@ -72,43 +72,43 @@ describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', ()
     expect(endBlind(b, run, lex).finalScore).toBe(268);
   });
 
-  it('Rush Specialist scales with phases left: 3 left → ×2.5 (per-word, item 6)', () => {
+  it('Rush Specialist scales with phases left: 4 left → ×3 (per-word, item 6)', () => {
     const run = withJokers('rush', 'rushSpecialist');
-    const { blind } = play(openBlind(run), run, 'cat'); // phase 1 → 3 will remain
-    // per-word mult now: CAT 5 chips × (standard 1 × 2.5) = 12.5 committed; no pattern
+    const { blind } = play(openBlind(run), run, 'cat'); // phase 1 of 5 → 4 will remain
+    // per-word mult now: CAT 5 chips × (standard 1 × 3) = 15 committed; no pattern
     // → projected == committed.
-    expect(blind.committedScore).toBe(12.5);
-    expect(blind.projectedScore).toBe(12.5);
+    expect(blind.committedScore).toBe(15);
+    expect(blind.projectedScore).toBe(15);
   });
 
   it('Rush Specialist pays more with more phases left than with fewer (C-1)', () => {
     const run = withJokers('rushcmp', 'rushSpecialist');
-    const early = play(openBlind(run), run, 'cat').blind.projectedScore; // 3 left → ×2.5
+    const early = play(openBlind(run), run, 'cat').blind.projectedScore; // 4 left → ×3
     let b = openBlind(run);
-    for (let i = 0; i < 3; i++) ({ blind: b } = play(b, run, 'cat')); // now 1 left → ×1.5
+    for (let i = 0; i < 3; i++) ({ blind: b } = play(b, run, 'cat')); // now 2 left → ×2
     // compare the last word's contribution ratio via the multiplier applied
-    expect(early).toBeGreaterThan(5 * 1.5); // ×2.5 (12.5) > ×1.5 (7.5)
+    expect(early).toBeGreaterThan(5 * 2); // ×3 (15) > ×2 (10)
   });
 
   it('Rush Specialist per-word mult: last-phase play pays nothing', () => {
     const run = withJokers('rush2', 'rushSpecialist');
     let b = openBlind(run);
-    for (let i = 0; i < 4; i++) ({ blind: b } = play(b, run, 'cat')); // phases left 3/2/1/0
-    // per-word CAT 5 × 2.5 / ×2 / ×1.5 / ×1 = 12.5+10+7.5+5 = 35 committed (last word,
-    // 0 left, gets no rush). all standard → unison +50; no pattern → 85.
-    expect(b.committedScore).toBe(35);
-    expect(endBlind(b, run, lex).finalScore).toBe(85);
+    for (let i = 0; i < 5; i++) ({ blind: b } = play(b, run, 'cat')); // phases left 4/3/2/1/0
+    // per-word CAT 5 × 3 / ×2.5 / ×2 / ×1.5 / ×1 = 15+12.5+10+7.5+5 = 50 committed (last
+    // word, 0 left, gets no rush). all standard → unison +50; no pattern → 100.
+    expect(b.committedScore).toBe(50);
+    expect(endBlind(b, run, lex).finalScore).toBe(100);
   });
 
   it('Grammarian (sentence) and Rush (per-word) stack', () => {
     const run = withJokers('both', 'grammarian', 'rushSpecialist');
     let b = openBlind(run);
-    ({ blind: b } = play(b, run, 'run')); // 3 left → ×2.5: RUN 3 → 7.5
-    ({ blind: b } = play(b, run, 'cat')); // 2 left → ×2: CAT 5 → 10 (RUN CAT = imperative)
-    // committed 17.5; sentence bonus (15 imperative + 50 unison) × (2 × 2 grammarian)
-    // = 65 × 4 = 260 → total 277.5
-    expect(b.committedScore).toBe(17.5);
-    expect(b.projectedScore).toBe(277.5);
+    ({ blind: b } = play(b, run, 'run')); // 4 left → ×3: RUN 3 → 9
+    ({ blind: b } = play(b, run, 'cat')); // 3 left → ×2.5: CAT 5 → 12.5 (RUN CAT = imperative)
+    // committed 21.5; sentence bonus (15 imperative + 50 unison) × (2 × 2 grammarian)
+    // = 65 × 4 = 260 → total 281.5
+    expect(b.committedScore).toBe(21.5);
+    expect(b.projectedScore).toBe(281.5);
   });
 });
 
