@@ -75,12 +75,16 @@ export interface StagePreview {
   blocked: boolean;
 }
 
+/** A translate fn (i18n `t`) — POS keys carry no params, so a key→string is enough. */
+export type PosTranslate = (key: string) => string;
+
 /** Preview the staged word: validity, suit, chips, POS, and pattern/bonus forecast. */
 export function stagePreview(
   blind: BlindState,
   run: RunState,
   lexicon: Lexicon,
   selectedIds: readonly string[],
+  t: PosTranslate,
 ): StagePreview | null {
   const tiles = tilesByIds(blind.hand, selectedIds);
   if (tiles.length === 0) return null;
@@ -106,32 +110,20 @@ export function stagePreview(
     chips: base.chips,
     suitMult: base.mult,
     completes: judged.match ? { pattern: judged.match.pattern, label: patternLabel(judged.match.pattern) } : null,
-    pos: base.isGibberish ? null : posLabel(hypothetical, lexicon),
+    pos: base.isGibberish ? null : posLabel(hypothetical, lexicon, t),
     sentenceBonus,
     letterHand: letterHand ? { id: letterHand.id, chips: letterHand.chips, mult: letterHand.mult } : null,
     blocked,
   };
 }
 
-/** POS label shown under a played word (resolved-if-known, else the tagged set). */
-export function posLabel(sub: WordSubmission, lexicon: Lexicon): string {
-  if (sub.isGibberish) return 'gibberish · hole';
+/** POS label shown under a played word (resolved-if-known, else the tagged set).
+ *  Localised via i18n `pos.<value>` keys (Korean/English). */
+export function posLabel(sub: WordSubmission, lexicon: Lexicon, t: PosTranslate): string {
+  if (sub.isGibberish) return t('pos.gibberish');
   const entry = lexicon.lookup(sub.text);
   if (!entry || entry.pos.length === 0) return '—';
-  return entry.pos.map(prettyPos).join(' / ');
-}
-
-function prettyPos(pos: string): string {
-  switch (pos) {
-    case 'verbTransitive':
-      return 'verb · trans';
-    case 'verbIntransitive':
-      return 'verb · intrans';
-    case 'verbLinking':
-      return 'verb · linking';
-    default:
-      return pos;
-  }
+  return entry.pos.map((p) => t(`pos.${p}`)).join(' / ');
 }
 
 /** Letter chip value for a tile (display only). Stone has no letter → 0. */

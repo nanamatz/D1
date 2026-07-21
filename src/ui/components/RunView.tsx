@@ -3,6 +3,7 @@ import { judgeSentence } from '../../engine/patterns';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
+import { useI18n } from '../i18n';
 import { audio } from '../audio';
 import { tutorialBus, hasSeenIntro } from '../tutorial';
 import { readTips } from '../settings';
@@ -32,6 +33,7 @@ interface Props {
 /** An active run: routes the in-run phases (spec §2.3–2.7). */
 export function RunView({ g, onExit, onNewRun }: Props) {
   const { settings } = useSettings();
+  const { t } = useI18n();
   const { blind, run, selected, phase } = g.state;
   const [showInfo, setShowInfo] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -135,7 +137,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         </div>
       );
     }
-    const preview = stagePreview(blind, run, g.lexicon, selected);
+    const preview = stagePreview(blind, run, g.lexicon, selected, t);
     // `judgment` is computed once in the component body (drives the A-2 fires too)
     // `ending` reddens the board — that is the DEFEAT visual, so it is Game Over
     // ONLY. Clearing a blind must never turn the board red; Fee Settlement darkens

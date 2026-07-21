@@ -334,6 +334,7 @@ export function useGame(): UseGame {
           voucherOffer: rollVoucherOffer(advancedRun, makeRng(`${s.seed}#voucher-${advancedRun.ante}`)),
           voucherLocked: false,
           chapterBossId: drawBoss(makeRng(`${s.seed}#boss-${advancedRun.ante}`)),
+          wordsThisAnte: [], // new ante → Memoirs' pool resets (회고록)
         };
       }
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
@@ -611,6 +612,11 @@ export function useGame(): UseGame {
         bag: destroyedTileIds.length
           ? prev.run.bag.filter((t) => !destroyedTileIds.includes(t.id))
           : prev.run.bag,
+        // Track played words this ante for the Memoirs boss (회고록); gibberish is
+        // never tracked. Reset per ante in finalize when the chapter's Deadline clears.
+        wordsThisAnte: submission.isGibberish
+          ? prev.run.wordsThisAnte
+          : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],
       };
       const best = prev.stats.bestWord;
       const bestWord =

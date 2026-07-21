@@ -19,6 +19,9 @@ interface Props {
   dragging?: boolean;
   /** D-2: the live insertion gap lands before this tile (dashed bar) */
   dropTarget?: boolean;
+  /** Ancient Paper (고대 문서): render the tile face-down — its letter/value are
+   *  hidden (info attack) until it is played. Still selectable. */
+  faceDown?: boolean;
   /** anchored hover tooltip for the tile (C-4): chip value, material, font */
   tooltip?: { title: string; body: string };
 }
@@ -35,6 +38,7 @@ export function TileView({
   zone,
   dragging = false,
   dropTarget = false,
+  faceDown = false,
   tooltip,
 }: Props) {
   const { t } = useI18n();
@@ -58,6 +62,7 @@ export function TileView({
     fontClass(tile.font),
     inkClass(tileValue(tile)),
     faceClass(tile),
+    faceDown && 'facedown',
   ]
     .filter(Boolean)
     .join(' ');
@@ -70,7 +75,13 @@ export function TileView({
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}
-      aria-label={interactive ? `${idLabel} tile, ${t('tile.chips', { n: tileValue(tile) })}` : undefined}
+      aria-label={
+        interactive
+          ? faceDown
+            ? t('boss.faceDownTile')
+            : `${idLabel} tile, ${t('tile.chips', { n: tileValue(tile) })}`
+          : undefined
+      }
       draggable={draggable}
       onDragStart={
         draggable ? (e) => e.dataTransfer.setData('text/plain', `${zone}:${tile.id}`) : undefined
@@ -95,9 +106,15 @@ export function TileView({
           : undefined
       }
     >
-      {tileGlyph(tile)}
-      <span className="val">{tileValue(tile)}</span>
-      {tooltip && (
+      {faceDown ? (
+        <span className="tile-back" aria-hidden>?</span>
+      ) : (
+        <>
+          {tileGlyph(tile)}
+          <span className="val">{tileValue(tile)}</span>
+        </>
+      )}
+      {!faceDown && tooltip && (
         <span className="tt-card tile-tt" role="tooltip">
           <span className="tt-title">{tooltip.title}</span>
           <span className="tt-desc">

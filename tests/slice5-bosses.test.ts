@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { newRun } from '../src/engine/run';
-import { startBlind, submitWord, canEndEarly } from '../src/engine/loop';
+import { startBlind, submitWord } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
 import { drawBoss, CORE_BOSS_IDS } from '../src/engine/bosses';
@@ -30,19 +30,25 @@ const play = (blind: BlindState, run: RunState, word: string) => {
   return submitWord({ ...blind, hand }, run, lex, hand.map((t) => t.id), makeRng('test'));
 };
 
-describe('slice5 bosses — setup effects (GDD §8.3)', () => {
-  it('Guillotine: phases 4 → 2', () => {
-    expect(bossBlind(bossRun(), 'guillotine').phasesTotal).toBe(2);
+describe('slice5 bosses — setup / structural effects (GDD §8.3)', () => {
+  it('Wanted (수배 전단): target ×2', () => {
+    const r = bossRun();
+    const plain = startBlind(r, makeRng('w'), { kind: 'boss', bossId: 'contract' }).target;
+    const wanted = startBlind(r, makeRng('w'), { kind: 'boss', bossId: 'wanted' }).target;
+    expect(wanted).toBe(plain * 2);
   });
-  it('Hoarder: discards disabled', () => {
-    expect(bossBlind(bossRun(), 'hoarder').discardsLeft).toBe(0);
+  it('History Book (역사책): phases 4 → 2', () => {
+    expect(bossBlind(bossRun(), 'historyBook').phasesTotal).toBe(2);
   });
-  it('Perfectionist: early end disabled even at/above target', () => {
-    const b = { ...bossBlind(bossRun(), 'perfectionist', 10), projectedScore: 999 };
-    expect(canEndEarly(b)).toBe(false);
+  it('Contract (계약서): start with 0 discards', () => {
+    expect(bossBlind(bossRun(), 'contract').discardsLeft).toBe(0);
   });
-  it('Blindfold: preview hidden flag set', () => {
-    expect(bossBlind(bossRun(), 'blindfold').previewHidden).toBe(true);
+  it('Budget Book (가계부): opening hand −3', () => {
+    const r = bossRun();
+    expect(bossBlind(r, 'budgetBook').hand.length).toBe(r.handSize - 3);
+  });
+  it('Ancient Paper (고대 문서): vowels-hidden flag set', () => {
+    expect(bossBlind(bossRun(), 'ancientPaper').vowelsHidden).toBe(true);
   });
   it('a boss blind with no explicit id draws a valid boss', () => {
     const b = startBlind(bossRun(), makeRng('x'), { kind: 'boss' });
@@ -51,51 +57,51 @@ describe('slice5 bosses — setup effects (GDD §8.3)', () => {
 });
 
 describe('slice5 bosses — scoring effects', () => {
-  it('Censor: vulgar words score 0', () => {
+  it('White Paper (백지): vulgar words score 0', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'censor'), r, 'damn').submission.settledScore).toBe(0);
+    expect(play(bossBlind(r, 'whitePaper'), r, 'damn').submission.settledScore).toBe(0);
   });
-  it('Snob: standard multiplier halved (CAT 5 → 2.5)', () => {
+  it('Burnt Paper (그을린 종이): verb words score 0; nouns score normally', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'snob'), r, 'cat').submission.settledScore).toBe(2.5);
+    expect(play(bossBlind(r, 'burntPaper'), r, 'run').submission.settledScore).toBe(0);
+    expect(play(bossBlind(r, 'burntPaper'), r, 'cat').submission.settledScore).toBeGreaterThan(0);
   });
-  it('Editor: words of 4 letters or fewer score 0; 5+ score normally', () => {
+  it('Will (유서): base chips & mult halved (CAT 5×1 → 2.5×0.5 = 1.25)', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'editor'), r, 'cat').submission.settledScore).toBe(0);
-    expect(play(bossBlind(r, 'editor'), r, 'bright').submission.settledScore).toBe(12); // B3R1I1G2H4T1
+    expect(play(bossBlind(r, 'will'), r, 'cat').submission.settledScore).toBe(1.25);
   });
-  it('Mute: vowel tiles contribute 0 chips (CAT 5 → 4)', () => {
-    const r = bossRun();
-    expect(play(bossBlind(r, 'mute'), r, 'cat').submission.settledScore).toBe(4); // 5 − A(1)
-  });
-  it('Anarchist: sentence bonus does not trigger (projected == committed)', () => {
-    const r = bossRun();
-    let b = bossBlind(r, 'anarchist');
-    ({ blind: b } = play(b, r, 'run'));
-    ({ blind: b } = play(b, r, 'cat')); // RUN CAT would be Imperative + Unison
-    expect(b.projectedScore).toBe(b.committedScore);
+  it('Memoirs (회고록): a word already played this ante scores 0; a fresh one scores', () => {
+    const r = { ...bossRun(), wordsThisAnte: ['cat'] };
+    expect(play(bossBlind(r, 'memoirs'), r, 'cat').submission.settledScore).toBe(0);
+    expect(play(bossBlind(r, 'memoirs'), r, 'run').submission.settledScore).toBeGreaterThan(0);
   });
 });
 
-describe('slice5 bosses — legality, void, economy', () => {
-  it('Noun Lock: verb words cannot be submitted; nouns can', () => {
+describe('slice5 bosses — void, economy, hand churn', () => {
+  it('Forbidden Paper (금서): once a suit is established, other suits void to 0; gibberish is exempt', () => {
     const r = bossRun();
-    expect(() => play(bossBlind(r, 'nounLock'), r, 'run')).toThrow(/boss/i);
-    expect(() => play(bossBlind(r, 'nounLock'), r, 'cat')).not.toThrow();
+    let b = bossBlind(r, 'forbiddenPaper');
+    const first = play(b, r, 'cat'); // standard establishes the lock
+    ({ blind: b } = first);
+    expect(first.submission.settledScore).toBeGreaterThan(0);
+    const second = play(b, r, 'damn'); // vulgar ≠ standard → void
+    expect(second.submission.settledScore).toBe(0);
   });
 
-  it('Purist: once 2 distinct suits are played, subsequent words void to 0', () => {
+  it('Bond (채권): each submission drains $1 per tile played (CAT → −3)', () => {
     const r = bossRun();
-    let b = bossBlind(r, 'purist');
-    ({ blind: b } = play(b, r, 'cat')); // standard
-    ({ blind: b } = play(b, r, 'damn')); // vulgar → now 2 suits
-    const third = play(b, r, 'cat');
-    expect(third.submission.settledScore).toBe(0);
+    expect(play(bossBlind(r, 'bond'), r, 'cat').goldDelta).toBe(-3);
   });
 
-  it('Taxman: each submission carries a −1 gold delta', () => {
+  it('Unopened Letter (미개봉 편지): each play dumps up to 4 extra random hand tiles, refilled', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'taxman'), r, 'cat').goldDelta).toBe(-1);
+    const b = startBlind(r, makeRng('letter'), { kind: 'boss', bossId: 'letter', target: 100_000 });
+    const ids = b.hand.slice(0, 3).map((t) => t.id);
+    const res = submitWord(b, r, lex, ids, makeRng('t'));
+    // 3 played + 4 dumped by Letter = 7 tiles have left play this blind
+    expect(res.blind.discardedThisBlind.length).toBe(7);
+    // dumped tiles are replaced, so hand size is preserved
+    expect(res.blind.hand.length).toBe(b.hand.length);
   });
 
   it('no boss → no gold delta', () => {

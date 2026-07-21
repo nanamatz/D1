@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BOSS_REGISTRY } from '../../engine/bosses';
+import { BOSS_ART } from '../bossArt';
 import type { PatternId } from '../../engine/types';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
@@ -55,7 +56,12 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
         <div className="go-defeat-row">
           {boss ? (
             <span className="go-boss">
-              {boss.emoji} {lang === 'ko' ? boss.nameKo : boss.nameEn}
+              {BOSS_ART[boss.id] ? (
+                <img className="go-boss-art" src={BOSS_ART[boss.id]} alt="" />
+              ) : (
+                boss.emoji
+              )}{' '}
+              {lang === 'ko' ? boss.nameKo : boss.nameEn}
             </span>
           ) : (
             <span className="go-boss">{t(`blind.${gameover.blindKind}`)}</span>

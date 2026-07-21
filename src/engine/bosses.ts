@@ -1,35 +1,51 @@
 /**
  * Bosses (GDD §8.3) — data + hooks, like jokers. Each boss attacks one system
- * (readable), is build-dependent (a check), and has counterplay. Effects plug in
- * at fixed points in the loop pipeline:
+ * (readable), is build-dependent (a check), and has counterplay. This is the
+ * publishing-frame roster of 12 (수배 전단 … 유서); effects plug in at fixed
+ * points in the loop pipeline:
+ *   handSizeDelta   → shrink the opening draw before the hand is dealt (Budget Book)
+ *   targetMult      → scale the blind target (Wanted)
  *   setup           → mutate the blind at start (phases, discards, flags)
- *   wordScoring     → mutate chips/mult (after jokers)
- *   sentenceScoring → mutate the sentence bonus (after jokers)
- *   blocks          → an illegal submission (The Noun Lock)
- *   voids           → an allowed-but-zero submission (The Purist)
- *   goldPerWord     → economy drain per word (The Taxman)
+ *   wordScoring     → mutate chips/mult (after jokers); gets {run, blind, lexicon}
+ *   voids           → an allowed-but-zero submission (Forbidden Paper single-suit lock)
+ *   blocks          → an illegal submission (unused by the current roster; kept as infra)
+ *   goldPerWord     → economy drain per word (unused by the current roster)
+ *   goldPerTile     → economy drain per tile played (Bond)
+ *   discardOnPlay   → discard N random hand tiles after each play (Unopened Letter)
  *
- * The 2 ante-8 finishers (Proofreader, Babel) need extra run/phase state and are
- * deferred.
+ * Boss art (id → image) lives in the UI (`src/ui/bossArt.ts`) so the engine stays
+ * headless; `emoji` here is only a text fallback.
  */
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
-import { isVerb, isVowel } from './types';
+import { isVerb } from './types';
 import type {
   BlindState,
+  RunState,
   SentenceScoringContext,
   WordScoringContext,
   WordSubmission,
 } from './types';
 
+/** Read-only context a boss's wordScoring hook may inspect (GDD §8.3). */
+export interface BossScoringEnv {
+  run: RunState;
+  blind: BlindState;
+  lexicon: Lexicon;
+}
+
 export interface BossDef {
   id: string;
   nameEn: string;
   nameKo: string;
-  emoji: string;
+  emoji: string; // text fallback; the real emblem is an image (src/ui/bossArt.ts)
+  /** opening-hand size change, applied BEFORE the hand is dealt (Budget Book −3) */
+  handSizeDelta?: number;
+  /** blind-target multiplier, applied at start and mirrored by Blind Select (Wanted ×2) */
+  targetMult?: number;
   setup?: (blind: BlindState) => BlindState;
-  wordScoring?: (ctx: WordScoringContext) => void;
+  wordScoring?: (ctx: WordScoringContext, env: BossScoringEnv) => void;
   sentenceScoring?: (ctx: SentenceScoringContext) => void;
   /** true → the submission is illegal and cannot be played */
   blocks?: (word: string, lexicon: Lexicon) => boolean;
@@ -37,97 +53,99 @@ export interface BossDef {
   voids?: (submission: WordSubmission, priorSequence: readonly WordSubmission[]) => boolean;
   /** gold removed each time a word is submitted */
   goldPerWord?: number;
+  /** gold removed per tile in a submission (Bond) */
+  goldPerTile?: number;
+  /** random hand tiles discarded after each play (Unopened Letter) */
+  discardOnPlay?: number;
 }
 
-const vowelChips = (ctx: WordScoringContext): number => {
-  let sum = 0;
-  for (const t of ctx.submission.tiles) {
-    if (t.letter === null) continue; // a Stone tile is never a vowel (GDD §2.2)
-    if (isVowel(t.letter)) sum += BALANCE.letterChips[t.letter] ?? 0;
-  }
-  return sum;
+const zero = (ctx: WordScoringContext): void => {
+  ctx.chips = 0;
+  ctx.mult = 0;
 };
 
 const BOSSES: readonly BossDef[] = [
-  // ----- suit attacks -----
+  // 1. Wanted (수배 전단): XL blind — target ×2.
   {
-    id: 'censor', nameEn: 'The Censor', nameKo: '검열관', emoji: '🚫',
-    wordScoring: (ctx) => {
-      if (ctx.submission.suit === 'vulgar') {
-        ctx.chips = 0;
-        ctx.mult = 0;
-      }
+    id: 'wanted', nameEn: 'Wanted', nameKo: '수배 전단', emoji: '📜',
+    targetMult: BALANCE.boss.wantedTargetMult,
+  },
+  // 2. Unopened Letter (미개봉 편지): each play discards up to 4 random hand tiles.
+  {
+    id: 'letter', nameEn: 'Unopened Letter', nameKo: '미개봉 편지', emoji: '✉️',
+    discardOnPlay: BALANCE.boss.letterDiscardOnPlay,
+  },
+  // 3. Ancient Paper (고대 문서): all vowel tiles are drawn face-down (info attack,
+  //    UI-only — they score normally when played).
+  {
+    id: 'ancientPaper', nameEn: 'Ancient Paper', nameKo: '고대 문서', emoji: '🗞️',
+    setup: (blind) => ({ ...blind, vowelsHidden: true }),
+  },
+  // 4. Forbidden Paper (금서): single-suit lock — once a suit is established this
+  //    blind, words of any OTHER suit void to 0. Gibberish (null suit) is exempt.
+  {
+    id: 'forbiddenPaper', nameEn: 'Forbidden Paper', nameKo: '금서', emoji: '🔥',
+    voids: (submission, prior) => {
+      if (submission.suit === null) return false; // gibberish always plays (GDD §6.4)
+      const established = prior.find((w) => w.suit !== null)?.suit ?? null;
+      return established !== null && submission.suit !== established;
     },
   },
+  // 5. Bond (채권): −$1 per tile played this blind.
   {
-    id: 'snob', nameEn: 'The Snob', nameKo: '속물', emoji: '🎩',
-    wordScoring: (ctx) => {
-      if (ctx.submission.suit === 'standard') ctx.mult *= BALANCE.boss.snobStandardMult;
-    },
+    id: 'bond', nameEn: 'Bond', nameKo: '채권', emoji: '💵',
+    goldPerTile: BALANCE.boss.bondGoldPerTile,
   },
+  // 6. History Book (역사책): only 2 phases.
   {
-    id: 'purist', nameEn: 'The Purist', nameKo: '순수주의자', emoji: '⚗️',
-    voids: (_sub, prior) => {
-      const suits = new Set(prior.filter((w) => w.suit !== null).map((w) => w.suit));
-      return suits.size >= 2; // 2+ distinct suits already played → subsequent words void
-    },
-  },
-  // ----- sentence attacks -----
-  {
-    id: 'anarchist', nameEn: 'The Anarchist', nameKo: '무정부주의자', emoji: '💣',
-    sentenceScoring: (ctx) => {
-      ctx.sentenceChips = 0; // sentence bonus does not trigger (0 × mult = 0)
-      ctx.sentenceMult = 1;
-    },
-  },
-  {
-    id: 'nounLock', nameEn: 'The Noun Lock', nameKo: '명사 자물쇠', emoji: '🔒',
-    blocks: (word, lexicon) => {
-      const entry = lexicon.lookup(word);
-      return entry !== null && entry.pos.some(isVerb);
-    },
-  },
-  // ----- phase / early-end attacks -----
-  {
-    id: 'perfectionist', nameEn: 'The Perfectionist', nameKo: '완벽주의자', emoji: '📐',
-    setup: (blind) => ({ ...blind, earlyEndDisabled: true }),
-  },
-  {
-    id: 'guillotine', nameEn: 'The Guillotine', nameKo: '단두대', emoji: '🔪',
+    id: 'historyBook', nameEn: 'History Book', nameKo: '역사책', emoji: '📚',
     setup: (blind) => ({
       ...blind,
-      phasesTotal: Math.max(1, blind.phasesTotal + BALANCE.boss.guillotinePhaseDelta),
+      phasesTotal: Math.max(1, BALANCE.boss.historyBookPhases),
     }),
   },
-  // ----- loop-resource attacks -----
+  // 7. Memoirs (회고록): any word already played THIS ante is debuffed (scores 0).
   {
-    id: 'hoarder', nameEn: 'The Hoarder', nameKo: '수집광', emoji: '🧺',
+    id: 'memoirs', nameEn: 'Memoirs', nameKo: '회고록', emoji: '📖',
+    wordScoring: (ctx, env) => {
+      if (ctx.submission.isGibberish) return; // gibberish is never a tracked word
+      const played = env.run.wordsThisAnte ?? [];
+      if (played.includes(ctx.submission.text.toLowerCase())) zero(ctx);
+    },
+  },
+  // 8. Budget Book (가계부): hand size −3.
+  {
+    id: 'budgetBook', nameEn: 'Budget Book', nameKo: '가계부', emoji: '🧾',
+    handSizeDelta: BALANCE.boss.budgetBookHandDelta,
+  },
+  // 9. Contract (계약서): start with 0 discards.
+  {
+    id: 'contract', nameEn: 'Contract', nameKo: '계약서', emoji: '🖋️',
     setup: (blind) => ({ ...blind, discardsLeft: 0 }),
   },
+  // 10. Burnt Paper (그을린 종이): all verbs debuffed (score 0).
   {
-    id: 'editor', nameEn: 'The Editor', nameKo: '편집자', emoji: '✂️',
-    wordScoring: (ctx) => {
-      if (ctx.submission.tiles.length < BALANCE.boss.editorMinLength) {
-        ctx.chips = 0;
-        ctx.mult = 0;
-      }
+    id: 'burntPaper', nameEn: 'Burnt Paper', nameKo: '그을린 종이', emoji: '🕯️',
+    wordScoring: (ctx, env) => {
+      if (ctx.submission.isGibberish) return;
+      const entry = env.lexicon.lookup(ctx.submission.text);
+      if (entry !== null && entry.pos.some(isVerb)) zero(ctx);
     },
   },
+  // 11. White Paper (백지): all vulgar words debuffed (score 0).
   {
-    id: 'mute', nameEn: 'The Mute', nameKo: '침묵', emoji: '🤐',
+    id: 'whitePaper', nameEn: 'White Paper', nameKo: '백지', emoji: '📄',
     wordScoring: (ctx) => {
-      ctx.chips -= vowelChips(ctx); // vowel tiles contribute 0 chips
+      if (ctx.submission.suit === 'vulgar') zero(ctx);
     },
   },
-  // ----- information attack -----
+  // 12. Will (유서): base chips and mult halved.
   {
-    id: 'blindfold', nameEn: 'The Blindfold', nameKo: '눈가리개', emoji: '🙈',
-    setup: (blind) => ({ ...blind, previewHidden: true }),
-  },
-  // ----- economy attack -----
-  {
-    id: 'taxman', nameEn: 'The Taxman', nameKo: '세금징수원', emoji: '💰',
-    goldPerWord: BALANCE.boss.taxmanGoldPerWord,
+    id: 'will', nameEn: 'Will', nameKo: '유서', emoji: '🪦',
+    wordScoring: (ctx) => {
+      ctx.chips *= BALANCE.boss.willScale;
+      ctx.mult *= BALANCE.boss.willScale;
+    },
   },
 ];
 

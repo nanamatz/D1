@@ -7,6 +7,7 @@ import { useCountUp } from '../useAnim';
 import { BONUS_LAND_MS } from '../useGame';
 import { useI18n } from '../i18n';
 import { MoneyValue } from './MoneyValue';
+import { blindEmblem } from '../bossArt';
 import tomatoUrl from '../assets/tomato.png';
 
 interface Props {
@@ -100,9 +101,14 @@ export function Sidebar({
         <div className="kind">{boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : t(`blind.${blind.kind}`)}</div>
         <div className="bb-eff">{boss && <span className="bosseff">{t(`bossdesc.${boss.id}`)}</span>}</div>
         <div className="bb-row">
-          {/* Placeholder kind token — CSS-drawn until the art pass supplies one. */}
+          {/* Pixel-art emblem: the boss art on a boss blind, else the Draft/Revision
+              kind art (bossArt.ts). Falls back to the kind label if art is missing. */}
           <div className="bb-emblem">
-            {boss && <span className="bb-emoji">{boss.emoji}</span>}
+            {blindEmblem(blind.kind, blind.bossId) ? (
+              <img className="bb-art" src={blindEmblem(blind.kind, blind.bossId)} alt="" />
+            ) : (
+              boss && <span className="bb-emoji">{boss.emoji}</span>
+            )}
             <span className="bb-kind">{t(`blind.${blind.kind}`)}</span>
           </div>
           <div className="bb-stats">

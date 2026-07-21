@@ -1,6 +1,7 @@
 import { blindTarget, clearReward } from '../../engine/economy';
 import { kindForIndex } from '../../engine/progression';
 import { BOSS_REGISTRY } from '../../engine/bosses';
+import { BOSS_ART, blindEmblem } from '../bossArt';
 import { bossDescKey } from '../descriptions';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
@@ -39,9 +40,16 @@ export function BlindSelect({ g }: { g: UseGame }) {
           return (
             <div key={i} className={['bs-card', kind, status].join(' ')}>
               <div className="bs-kind">{t(`blind.${kind}`)}</div>
+              {kind !== 'boss' && blindEmblem(kind, null) && (
+                <img className="bs-kind-art" src={blindEmblem(kind, null)} alt="" />
+              )}
               {kind === 'boss' && boss && (
                 <div className="bs-boss">
-                  <span className="e">{boss.emoji}</span>
+                  {BOSS_ART[boss.id] ? (
+                    <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
+                  ) : (
+                    <span className="e">{boss.emoji}</span>
+                  )}
                   <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
                   <span className="be">{t(bossDescKey(boss.id))}</span>
                 </div>

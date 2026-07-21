@@ -1,6 +1,6 @@
 import type { BlindState, SentenceJudgment } from '../../engine/types';
 import type { Lexicon } from '../../engine/lexicon';
-import { posLabel, SUIT_TAG, suitClass } from '../game';
+import { posLabel, suitClass } from '../game';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
 import { TileView } from './Tile';
@@ -62,7 +62,7 @@ export function SentenceTray({ blind, judgment, lexicon }: Props) {
           </div>
         ) : (
           <div key={i} className={['word', suitClass(sub.suit)].join(' ')}>
-            <span className="suit-tag">{sub.suit ? SUIT_TAG[sub.suit] : ''}</span>
+            <span className="suit-tag">{sub.suit ? t(`suittag.${sub.suit}`) : ''}</span>
             {sub.tiles.map((tile) => {
               const pop = settling ? settle.tilePops[tile.id] : undefined;
               return (
@@ -78,7 +78,7 @@ export function SentenceTray({ blind, judgment, lexicon }: Props) {
                 </span>
               );
             })}
-            <span className="pos">{posLabel(sub, lexicon)}</span>
+            <span className="pos">{posLabel(sub, lexicon, t)}</span>
             {settling && <WordStamp />}
           </div>
         );

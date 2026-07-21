@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react';
-import type { Tile } from '../../engine/types';
+import { isVowel, type Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
 import { SORT_MODES, sortHand, tileGlyph, tilesByIds, tileValue } from '../game';
 import { fontDescKey } from '../descriptions';
@@ -43,6 +43,9 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   const toggleMark = (id: string) =>
     setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
   const selectTile = (id: string) => { audio.play('tileSelect'); g.toggleTile(id); };
+  // Ancient Paper (고대 문서): vowel tiles stay face-down (identity hidden) until
+  // played — in both the hand and the staged word, so staging can't scout them.
+  const faceDown = (tile: Tile) => !!blind.vowelsHidden && isVowel(tile.letter);
 
   const tileTip = (tile: Tile) => ({
     title: tileGlyph(tile),
@@ -136,6 +139,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
             zone="staged"
             dragging={dragId === tile.id}
             dropTarget={overId === tile.id}
+            faceDown={faceDown(tile)}
             onSelect={selectTile}
             tooltip={tileTip(tile)}
           />
@@ -175,6 +179,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
             marked={validMarks.includes(tile.id)}
             dragging={dragId === tile.id}
             dropTarget={overId === tile.id}
+            faceDown={faceDown(tile)}
             onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}

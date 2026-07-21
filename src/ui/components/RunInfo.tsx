@@ -1,5 +1,6 @@
 import type { BlindState, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
+import { BOSS_ART } from '../bossArt';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { patternChipsMult } from '../../engine/patterns';
 import { bossDescKey, voucherDescKey } from '../descriptions';
@@ -48,8 +49,13 @@ export function RunInfo({ run, blind, onClose }: Props) {
           {boss && (
             <div className="ri-row">
               <span className="k">{t('runinfo.boss')}</span>
-              <span className="v">
-                {boss.emoji} {lang === 'ko' ? boss.nameKo : boss.nameEn} — {t(bossDescKey(boss.id))}
+              <span className="v ri-boss">
+                {BOSS_ART[boss.id] ? (
+                  <img className="ri-boss-art" src={BOSS_ART[boss.id]} alt="" />
+                ) : (
+                  boss.emoji
+                )}{' '}
+                {lang === 'ko' ? boss.nameKo : boss.nameEn} — {t(bossDescKey(boss.id))}
               </span>
             </div>
           )}

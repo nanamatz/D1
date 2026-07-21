@@ -47,17 +47,23 @@ export interface StartBlindOptions {
 /** Set up a blind: shuffle a copy of the run bag, deal the opening hand (§6.1).
  *  Kind and target default to the run's position on the ante curve (GDD §8.2). */
 export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}): BlindState {
-  const shuffled = rng.shuffle(run.bag);
-  const { drawn: hand, bag } = drawTiles(shuffled, run.handSize);
   const kind = opts.kind ?? kindForIndex(run.blindIndex);
   // Only boss blinds carry a bossId; opts.bossId is used only then (so callers can
-  // always pass the pre-drawn chapter boss, playtest-04 D-6).
+  // always pass the pre-drawn chapter boss, playtest-04 D-6). Resolve the boss BEFORE
+  // the shuffle so its hand-size delta can shrink the opening draw (Budget Book, §8.3);
+  // drawBoss (the no-explicit-id path) consumes rng, so ordering matters only there.
   const bossId = kind === 'boss' ? (opts.bossId ?? drawBoss(rng)) : null;
+  const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
+
+  const effHandSize = Math.max(1, run.handSize + (boss?.handSizeDelta ?? 0));
+  const shuffled = rng.shuffle(run.bag);
+  const { drawn: hand, bag } = drawTiles(shuffled, effHandSize);
+  const targetMult = boss?.targetMult ?? 1; // Wanted ×2
 
   let blind: BlindState = {
     kind,
     bossId,
-    target: opts.target ?? blindTarget(run.ante, kind),
+    target: (opts.target ?? blindTarget(run.ante, kind)) * targetMult,
     phasesTotal: run.basePhases,
     phasesUsed: 0,
     discardsLeft: run.baseDiscards,
@@ -69,10 +75,11 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     discardedThisBlind: [],
     earlyEndDisabled: false,
     previewHidden: false,
+    vowelsHidden: false,
   };
 
   // Apply the boss's setup effect (phases, discards, flags — GDD §8.3).
-  if (bossId) blind = BOSS_REGISTRY.get(bossId)?.setup?.(blind) ?? blind;
+  if (boss?.setup) blind = boss.setup(blind);
   return blind;
 }
 
@@ -292,7 +299,7 @@ function scoreSubmission(
   if (boss?.wordScoring) {
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
-    boss.wordScoring(ctx);
+    boss.wordScoring(ctx, { run, blind, lexicon });
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     if (chipsDelta !== 0 || multDelta !== 0) {
@@ -301,7 +308,7 @@ function scoreSubmission(
   }
 
   let total = ctx.chips * ctx.mult;
-  if (boss?.voids?.(submission, blind.sequence)) total = 0; // The Purist
+  if (boss?.voids?.(submission, blind.sequence)) total = 0; // Forbidden Paper single-suit lock
   submission.settledScore = total;
   events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
   return { submission, events, materialGold, destroyedTileIds };
@@ -347,7 +354,7 @@ export function submitWord(
   }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
 
-  // Boss legality (The Noun Lock blocks verbs) + economy drain (The Taxman).
+  // Boss legality (kept as infra; no current-roster boss blocks) + economy drains.
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   if (boss?.blocks?.(spell(used), lexicon)) {
     throw new Error('boss: this word cannot be submitted');
@@ -360,28 +367,47 @@ export function submitWord(
     blind,
     rng,
   );
-  const goldDelta = (boss?.goldPerWord ? -boss.goldPerWord : 0) + materialGold;
+  // Economy drains: −goldPerWord flat, −goldPerTile per tile played (Bond).
+  const bossGoldDrain =
+    (boss?.goldPerWord ? -boss.goldPerWord : 0) +
+    (boss?.goldPerTile ? -boss.goldPerTile * used.length : 0);
+  const goldDelta = bossGoldDrain + materialGold;
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));
   const { drawn, bag } = drawTiles(blind.bag, used.length);
 
-  const committedScore = blind.committedScore + submission.settledScore;
-  const sequence = [...blind.sequence, submission];
-
   // Build the post-phase blind first so layer-3 jokers (e.g. Rush Specialist)
   // read the correct phases-remaining when projecting.
-  const afterBlind: BlindState = {
+  let afterBlind: BlindState = {
     ...blind,
     hand: [...keptHand, ...drawn],
     bag,
     // used tiles are spent for the blind; they return to the bag at blind end (§6.1)
     discardedThisBlind: [...blind.discardedThisBlind, ...used],
-    sequence,
-    committedScore,
+    sequence: [...blind.sequence, submission],
+    committedScore: blind.committedScore + submission.settledScore,
     projectedScore: 0,
     phasesUsed: blind.phasesUsed + 1,
   };
+
+  // Unopened Letter (미개봉 편지): after each play, discard up to N random hand tiles;
+  // they exit play for the blind (§6.3) and are replaced from the remaining bag.
+  if (boss?.discardOnPlay && afterBlind.hand.length > 0) {
+    const n = Math.min(boss.discardOnPlay, afterBlind.hand.length);
+    const dumped = rng.shuffle(afterBlind.hand).slice(0, n);
+    const dumpedIds = new Set(dumped.map((t) => t.id));
+    const kept = afterBlind.hand.filter((t) => !dumpedIds.has(t.id));
+    const refill = drawTiles(afterBlind.bag, dumped.length);
+    afterBlind = {
+      ...afterBlind,
+      hand: [...kept, ...refill.drawn],
+      bag: refill.bag,
+      discardedThisBlind: [...afterBlind.discardedThisBlind, ...dumped],
+    };
+  }
+  const committedScore = afterBlind.committedScore;
+  const sequence = afterBlind.sequence;
 
   // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
   // sentence bonus is a projection, never accumulated per phase.

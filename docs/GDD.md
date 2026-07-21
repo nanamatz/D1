@@ -10,7 +10,7 @@ Version 0.2 — systems expansion
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 8 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
-- New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12 + 2 finishers). Blind skip / tags: adoption itself deferred.
+- New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 9 vouchers.
 - New: **Consumables** — 3 families: Stationery (Tarot-equiv.), Punctuation (Planet-equiv.), Forbidden Books (Spectral-equiv.).
 - Jokers: #32 renamed Ellipsis → **Elision** (name ceded to the Punctuation consumable). Added **#46 Hypocrite** (demoted from base rule to joker).
@@ -355,7 +355,7 @@ The Scrabble-style 2-letter floor is **removed**. Scrabble needs the floor becau
 - **"I" and "a" become budget sentence parts.** I (pronoun) + RUN (verb) = Simple in 2 phases. Opens a rush/sentence hybrid line; meshes with joker #7 Short & Sharp.
 - **1-tile gibberish = a paid mini-discard.** Dumping one dead tile spends a phase (and leaves a hole) instead of discard budget — a deliberate discard↔phase↔hole currency triangle.
 
-The removed floor is resurrected as a *boss rule* (The Editor, §8.3) — a global rule deleted, revived as a boss variation.
+The removed minimum-word-length floor stays removed globally. (It was once slated to return as a boss rule — "The Editor" — but the 2026-07-21 boss roster dropped that boss; no current boss re-imposes a length floor. §8.3.)
 
 ### 6.6 Bag Depletion — the natural cap on Epic Poet
 
@@ -383,7 +383,7 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 - **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
 - **Remaining phases = money.** Unchanged: 1 gold per remaining phase, paid as a Fee Settlement line item (§9.1).
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush jokers are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 4-phase blind pays big; a last-phase clear pays nothing.
-- **Boss exceptions.** *The Perfectionist* disables auto-settle — one settlement check after all phases are used. *The Blindfold* is unchanged mechanically; with the projection hidden, the auto-clear now arrives unpredictably (intended spice).
+- **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 12-boss roster (§8.3, 2026-07-21) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
 ### 7.3 Sentence Bonus = base Chips × Mult (unified)
 
@@ -420,58 +420,62 @@ Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**;
 
 ### 8.3 Boss Pool — Design Principles & 12 Bosses
 
-Balatro bosses work because they (1) attack **one system at a time** (readable), (2) are crippling or harmless **depending on the build** (build check), and (3) always have **counterplay** (jokers/consumables). Applying that to our systems — suits, sentences, phases, discard, gibberish, hand, preview:
+Balatro bosses work because they (1) attack **one system at a time** (readable), (2) are crippling or harmless **depending on the build** (build check), and (3) always have **counterplay** (jokers/consumables). Applying that to our systems — score output, suits, POS, sentences, phases, discard, hand, preview, economy. The roster is themed to the publishing frame (each boss is a kind of paper/document); its engine ids are the semantic names in parentheses (see `src/engine/bosses.ts`), and each carries a pixel-art emblem in `docs/Arts/`.
 
-**Suit attacks**
-
-| Boss | Effect | Targets / counters |
-|---|---|---|
-| The Censor | Vulgar-suit words score 0 | Counter to Sailor's Mouth / Tyrant builds |
-| The Snob | Standard-suit multiplier ×1.0 → ×0.5 | Attacks the safe main line; forces non-standard suits |
-| The Purist | Playing 2+ different suits voids subsequent words | Forces suit unison; counters Code-Switching builds |
-
-**Sentence attacks**
+**Score / target attacks**
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| The Anarchist | Sentence bonuses do not trigger | Checks Grammarian / Epic Poet builds |
-| The Noun Lock | Verb-POS words cannot be submitted | Blocks Imperative lines; Wild POS shines |
+| Wanted · 수배 전단 (`wanted`) | Extra-large blind — target ×2 | Raw check on total scoring throughput; a pressure blind |
+| Will · 유서 (`will`) | Base Chips **and** Mult halved (×0.5 each) | Attacks every build's base output; rewards patterns/multipliers |
+| Forbidden Paper · 금서 (`forbiddenPaper`) | Only one suit may be played this blind — once a suit is established, words of any other suit void to 0 (gibberish exempt) | Forces suit unison; counters Code-Switching builds |
 
-**Phase / early-end attacks**
+**Suit / POS attacks**
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| The Perfectionist | Early end disabled — all phases must be used | Counters Rush / Loan Shark; remaining-phase money naturally vanishes |
-| The Guillotine | Phases −2 (base 4 → 2) | Pressure blind; counters Epic Poet, harmless to Rush |
+| White Paper · 백지 (`whitePaper`) | Vulgar-suit words score 0 (debuffed) | Counter to Sailor's Mouth / Tyrant builds |
+| Burnt Paper · 그을린 종이 (`burntPaper`) | Verb-POS words score 0 (debuffed) | Blocks Imperative/verb lines; noun & Wild-POS builds shine |
+
+**Repetition attack**
+
+| Boss | Effect | Targets / counters |
+|---|---|---|
+| Memoirs · 회고록 (`memoirs`) | Any word already played **this ante** (Draft + Revision + earlier Deadline phases) scores 0 | Punishes narrow vocab; rewards run-long breadth |
+
+**Phase attack**
+
+| Boss | Effect | Targets / counters |
+|---|---|---|
+| History Book · 역사책 (`historyBook`) | Only 2 phases (base 4 → 2) | Pressure blind; counters Epic Poet, harmless to Rush |
 
 **Loop-resource attacks**
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| The Hoarder | Discards disabled | Raw exposure to draw luck; gibberish escape valve appreciates |
-| The Editor | Words of 4 letters or fewer score 0 | The deleted minimum-length rule, revived as a boss rule; blocks "I + RUN" budget parts |
-| The Mute | Vowel tiles' Chips = 0 | Collapses Vowel Praise builds; Consonant Bricklayer unaffected; the one blind where vowel-less words (shh, brr) shine |
+| Contract · 계약서 (`contract`) | Start with 0 discards | Raw exposure to draw luck; gibberish escape valve appreciates |
+| Budget Book · 가계부 (`budgetBook`) | Hand size −3 | Squeezes word length and options; a smaller build space |
+| Unopened Letter · 미개봉 편지 (`letter`) | Each play discards up to 4 random hand tiles (they exit play, refilled from the bag) | Disrupts planned holds; churns the hand every phase |
 
 **Information attack**
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| The Blindfold | Projected-score preview hidden | Attacks the game's own UI mechanism; early-end judgment goes by feel — the info-denial archetype (Balatro's face-down cards) |
+| Ancient Paper · 고대 문서 (`ancientPaper`) | All vowel tiles are dealt **face-down** — identity hidden until played; they score normally | Info-denial; spelling by feel — the face-down archetype (Balatro's face-down cards) |
 
 **Economy attack**
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| The Taxman | −1 gold per word submitted this blind | Pressures Miser / Loan Shark economies (values tied to §9) |
+| Bond · 채권 (`bond`) | −$1 per **tile** played this blind | Pressures Miser / Loan Shark economies (values tied to §9) |
 
-### 8.4 Finisher Bosses (Ante 8 only) — 2
+### 8.4 Finisher Bosses
 
-| Boss | Effect | Character |
-|---|---|---|
-| The Proofreader | Every word already submitted this run scores 0 | A final exam of run-long vocabulary breadth — thematically the word game's finale |
-| Babel | Each phase, one random POS rotates into a ban | Chaos type: sentence plans must be re-drafted in real time |
+**Retired (2026-07-21).** The earlier design carried two ante-8-only finishers (The Proofreader, Babel) on top of a 12-boss pool. The publishing-frame roster above is a single flat pool of **12**, drawn randomly each ante including ante 8 — there is no separate finisher tier. Memoirs (`memoirs`) inherits the Proofreader's "already-played words are dead" idea, scoped to the ante rather than the whole run. A dedicated ante-8 finisher may return later; if so it is added to this section, not folded silently into §8.3.
 
-**Pool intent:** 12 bosses cover each system roughly once, and every major build among the 46 jokers has at least one counter boss (Rush ↔ Perfectionist, Epic Poet ↔ Guillotine, Vulgar ↔ Censor, sentences ↔ Anarchist, vowels ↔ Mute…). Bosses draw randomly from the pool per ante, Balatro-style.
+**Pool intent:** the 12 bosses cover each system roughly once, and every major build among the 46 jokers has at least one counter boss (Rush ↔ History Book, Vulgar ↔ White Paper, verb/Imperative lines ↔ Burnt Paper, Code-Switching ↔ Forbidden Paper, narrow vocab ↔ Memoirs, economy ↔ Bond…). Bosses draw randomly from the pool per ante, Balatro-style.
+
+**Debuff convention.** "Debuffed" (White Paper, Burnt Paper, Memoirs) means the affected word scores **0** — its Chips and Mult are both zeroed after jokers, mirroring Balatro's disabled cards (decision 2026-07-21).
 
 ---
 
@@ -486,7 +490,7 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 | Interest | 1 gold per 5 held, **cap 5** (max interest from 25 gold) |
 | Selling jokers | Half of purchase price |
 
-> **Interest is the heart** (adopted as-is): the cap creates the "save to 25, spend above it" rhythm and the early-game conflict between buying jokers and building an interest base. Jokers #9 Miser (Mult per held gold) and #28 Loan Shark (early-end scaling) run directly on this system, as does The Taxman boss.
+> **Interest is the heart** (adopted as-is): the cap creates the "save to 25, spend above it" rhythm and the early-game conflict between buying jokers and building an interest base. Jokers #9 Miser (Mult per held gold) and #28 Loan Shark (early-end scaling) run directly on this system, as does the Bond boss (§8.3, −$1 per tile played).
 
 ### 9.2 Shop Layout — five stalls
 
@@ -622,7 +626,7 @@ Jokers are represented as emoji tiles, acquired by shop purchase/draw (§9). Unl
 |---|---|---|---|---|
 | 21 | Drill Instructor | ×3 Mult on completing an Imperative (verb repeat/initial) | 3 | — |
 | 22 | Grammarian | ×2 Mult on completing any valid sentence pattern (general amplifier) | 3 | — |
-| 23 | Sailor's Mouth | Vulgar suit ×4 Mult (nullified by The Censor) | 2 | — |
+| 23 | Sailor's Mouth | Vulgar suit ×4 Mult (nullified by White Paper) | 2 | — |
 | 24 | Rush Specialist | ×Mult scaling with phases left at clear: ×(1 + 0.5 × phasesLeft) | 3 | — |
 | 25 | Epic Poet | +0.3 ×Mult per phase used, accumulating (that blind only) | 3 | ★ |
 | 26 | Collector | +0.1 ×Mult permanently per sentence completed | 3 | ★ |
@@ -638,7 +642,7 @@ Jokers are represented as emoji tiles, acquired by shop purchase/draw (§9). Unl
 |---|---|---|---|---|
 | 31 | Wild POS | All hand tiles count as any part of speech in sentence judgment — force-completes any pattern | 3 | — |
 | 32 | Elision *(renamed from Ellipsis)* | An empty POS slot in a sentence pattern still counts as a match + all sentence bonuses ×1.5 | 3 | — |
-| 33 | Tyrant | Treat all words as Vulgar suit + double all Vulgar ×Mult (extreme matchup with The Censor) | 2 | — |
+| 33 | Tyrant | Treat all words as Vulgar suit + double all Vulgar ×Mult (extreme matchup with White Paper) | 2 | — |
 | 34 | Infinite Narrative | Remove phase cap, halve per-phase target growth + +0.2 ×Mult per phase *(natural ceiling: bag depletion, §6.6)* | 3 | ★ |
 | 35 | One Stroke | ×10 blind score on hitting target in 1 phase; if 2+ phases used, this joker is void this blind | 3 | — |
 
@@ -661,7 +665,7 @@ Scaling jokers' counters are deliberately spread out so that "which scaling joke
 
 ### 11.7 Core Oppositions & Balance Pressure Points
 
-- **Rush ↔ Epic Poet.** At Rare, Rush Specialist (24) ↔ Epic Poet (25) oppose, and at Legendary, One Stroke (35) ↔ Infinite Narrative (34) form the finale of that opposition. This opposition is the game's spine, directly tied to the "early-end vs. phase-extension" tension in §7.2, and now checked from the boss side by The Perfectionist / The Guillotine (§8.3).
+- **Rush ↔ Epic Poet.** At Rare, Rush Specialist (24) ↔ Epic Poet (25) oppose, and at Legendary, One Stroke (35) ↔ Infinite Narrative (34) form the finale of that opposition. This opposition is the game's spine, directly tied to the "early-end vs. phase-extension" tension in §7.2, and now checked from the boss side by History Book (§8.3), which cuts the phase budget both builds fight over to 2.
 - **Rush economy combo.** Loan Shark (28) + One Stroke (35) create an extreme rush-economy build. Very strong when it runs, so its ceiling needs checking.
 - **Epic Poet multiplicative stack.** 25, 26, 34 accumulate multiplication — the "no one ends early" problem meeting the projected-score preview erupts precisely here. Two structural brakes now exist: Infinite Narrative's built-in "halve target growth," and bag depletion (§6.6). Verify these two builds' ceilings first in playtesting.
 

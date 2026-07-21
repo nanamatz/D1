@@ -192,8 +192,9 @@ export interface BlindState {
   hand: Tile[];
   discardedThisBlind: Tile[]; // used tiles; return to bag at blind end
   /** boss flags applied at setup (GDD §8.3) */
-  earlyEndDisabled?: boolean; // The Perfectionist
-  previewHidden?: boolean; // The Blindfold (UI hides the projected preview)
+  earlyEndDisabled?: boolean; // dormant early-end lock (no boss in the current roster sets it)
+  previewHidden?: boolean; // dormant preview-hide flag (UI hides the projected preview)
+  vowelsHidden?: boolean; // Ancient Paper (고대 문서): vowel tiles drawn face-down (UI only)
 }
 
 export interface RunState {
@@ -217,6 +218,10 @@ export interface RunState {
   /** this chapter's Deadline boss, drawn at chapter start so Blind Select can
    *  always show its effect (playtest-04 D-6) */
   chapterBossId: string | null;
+  /** lowercased words submitted so far THIS ante (small + big + boss phases).
+   *  Reset when a new ante begins; read by the Memoirs boss (회고록) to debuff
+   *  any word already played this ante (GDD §8.3). */
+  wordsThisAnte: string[];
   /** scaling counters (GDD §11.6) — one per axis, jokers read/write these */
   counters: ScalingCounters;
 }

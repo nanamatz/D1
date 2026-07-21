@@ -351,6 +351,22 @@
 .bs-boss .e {
   font-size: var(--ds-md);
 }
+/* Pixel-art boss emblem on a Blind Select card (docs/Arts). */
+.bs-boss-art {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3));
+}
+/* Draft/Revision emblem on the non-boss cards. */
+.bs-kind-art {
+  width: 56px;
+  height: 56px;
+  margin: 2px auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 .bs-boss .bn {
   font-weight: 700;
   font-size: var(--fs-md);
@@ -460,6 +476,28 @@
 .go-boss {
   font-weight: 700;
   font-size: var(--fs-xl);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.go-boss-art {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  vertical-align: middle;
+}
+/* Run Info boss row emblem (inline). */
+.ri-boss {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ri-boss-art {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 .go-reach {
   font-size: var(--fs-md);
@@ -1172,8 +1210,16 @@ body.cb-safe .tile.hint {
 .cc-emoji {
   font-size: var(--ds-sm);
 }
+/* Boss collection card: pixel-art emblem in place of the emoji glyph. */
+.boss-card-art {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
+}
 .cc-name {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2xl);
   font-weight: 700;
   text-align: center;
 }
@@ -1237,6 +1283,44 @@ body.cb-safe .tile.hint {
   gap: 8px;
   margin-top: 8px;
 }
+/* Boss cards sit in the narrower half of .bosses-split — tune the grid to that
+   column instead of inheriting .card-grid's tooltip-width padding. */
+.boss-chips .card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  padding-inline: 0;
+  margin-top: 8px;
+  gap: 8px;
+}
+.boss-card {
+  padding: 8px 6px;
+  gap: 4px;
+}
+.boss-card .cc-name {
+  font-size: var(--fs-md);
+}
+/* Draft / Revision blind emblems atop the target-curve table. */
+.blind-emblems {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 8px 0 4px;
+}
+.blind-emblem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.blind-emblem-art {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
+}
+.blind-emblem .cc-name {
+  font-size: var(--fs-md);
+}
 .boss-chip {
   width: 44px;
   height: 44px;
@@ -1253,6 +1337,12 @@ body.cb-safe .tile.hint {
   color: var(--ink-dim);
   font-family: 'Jersey 10';
   font-size: var(--ds-xs);
+}
+.boss-chip-art {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 .coll-empty {
   color: var(--ink-dim);
@@ -2083,7 +2173,7 @@ body.cb-safe .tile.hint {
    hint; unlocked = the word in its group color. */
 .palette-card .cc-name {
   font-family: 'Jersey 10';
-  letter-spacing: 0.1em;
+  letter-spacing: 0.01em;
 }
 .palette-card.locked {
   opacity: 0.55;

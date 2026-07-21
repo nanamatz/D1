@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ALL_JOKERS, JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY, ALL_VOUCHER_IDS } from '../../engine/vouchers';
 import { BOSS_REGISTRY, CORE_BOSS_IDS } from '../../engine/bosses';
+import { BOSS_ART, BLIND_ART } from '../bossArt';
 import { blindTarget } from '../../engine/economy';
 import { BALANCE } from '../../engine/balance';
 import type { Lexicon } from '../../engine/lexicon';
@@ -306,6 +307,19 @@ function BossesView() {
     <div className="bosses-split">
       <div className="panel target-table">
         <div className="label">{t('collection.targetCurve')}</div>
+        {/* Non-boss blind emblems: Draft (small) / Revision (big). Deadlines are
+            the 12 bosses shown to the right. */}
+        <div className="blind-emblems">
+          {(['small', 'big'] as const).map(
+            (k) =>
+              BLIND_ART[k] && (
+                <div key={k} className="blind-emblem">
+                  <img className="blind-emblem-art" src={BLIND_ART[k]} alt="" />
+                  <span className="cc-name">{t(`blind.${k}`)}</span>
+                </div>
+              ),
+          )}
+        </div>
         <table>
           <thead>
             <tr>
@@ -329,18 +343,22 @@ function BossesView() {
       </div>
       <div className="boss-chips">
         <div className="label">{t('collection.bosses')}</div>
-        <div className="chip-wrap">
+        <div className="card-grid">
           {CORE_BOSS_IDS.map((id) => {
             const b = BOSS_REGISTRY.get(id)!;
             return (
               <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))} down>
-                <div className="boss-chip">{b.emoji}</div>
+                <div className="coll-card boss-card">
+                  {BOSS_ART[id] ? (
+                    <img className="boss-card-art" src={BOSS_ART[id]} alt="" />
+                  ) : (
+                    <span className="cc-emoji">{b.emoji}</span>
+                  )}
+                  <span className="cc-name">{lang === 'ko' ? b.nameKo : b.nameEn}</span>
+                </div>
               </Tooltip>
             );
           })}
-          {/* Ante-8 finishers are deferred (GDD §8.3) — shown as unknown. */}
-          <div className="boss-chip unknown">?</div>
-          <div className="boss-chip unknown">?</div>
         </div>
       </div>
     </div>
