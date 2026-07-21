@@ -19,7 +19,6 @@ import { isModifier, isVerb } from './types';
 import type {
   PatternId,
   PatternMatch,
-  PatternOp,
   POS,
   SentenceJudgment,
   Suit,
@@ -191,77 +190,76 @@ export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexi
 
 // ---------- Scoring the judgment (GDD §5.2, §7.3–7.4) ----------
 
-/** Loose views over the const balance tables (keys vary per pattern). */
+/** Loose view over a pattern's balance row (chant carries the extra repeat keys). */
 interface PatternBalance {
-  op: PatternOp;
-  flatChips?: number;
-  flatMult?: number;
-  perRepeatChips?: number;
-  perRepeatMult?: number;
-  totalMult?: number;
+  baseChips: number;
+  baseMult: number;
+  levelChips: number;
+  levelMult: number;
+  repeatChips?: number;
+  repeatLevelChips?: number;
+  repeatFloor?: number;
 }
-interface LevelBalance {
-  chips?: number;
-  mult?: number;
-  perRepeatChips?: number;
-  perRepeatMult?: number;
-  totalMult?: number;
+
+/** A pattern's current [chips × mult] at a given level (feature-02 A-3, Run Info). */
+export function patternChipsMult(id: PatternId, level: number): { chips: number; mult: number } {
+  const P = BALANCE.patterns[id] as PatternBalance;
+  return {
+    chips: P.baseChips + (level - 1) * P.levelChips,
+    mult: P.baseMult + (level - 1) * P.levelMult,
+  };
 }
 
 export interface FinalScore {
-  flatBonus: number;
-  totalMultiplier: number;
-  /** (totalBefore + flatBonus) × totalMultiplier */
+  /** the sentence bonus' Chips side: patternChips + 15·mods + unisonChips */
+  sentenceChips: number;
+  /** the sentence bonus' Mult side: patternMult × unisonMult */
+  sentenceMult: number;
+  /** the sentence bonus itself: sentenceChips × sentenceMult */
+  bonus: number;
+  /** totalBefore + bonus */
   total: number;
 }
 
 /**
- * Fold a judgment into the blind total (GDD §7.4): four clean steps live below
- * the already-settled letter/suit layers — pattern bonus, modifier absorption,
- * punctuation levels, then unison. Additive patterns contribute flat chips×mult;
- * multiplicative patterns and non-standard unison multiply the running total.
+ * Compute the sentence bonus (GDD §5.2, feature-02 A). Every pattern owns a base
+ * [Chips × Mult]; modifiers add +15 to the Chips side each and Unison folds in
+ * (Standard on Chips, register mults on Mult). The result is a SELF-CONTAINED
+ * bonus — `sentenceChips × sentenceMult` — ADDED to the committed total. Patterns
+ * no longer multiply the running word score (the old add/multiply split is gone).
+ *
+ *   sentence bonus = (patternChips + 15·mods + unisonChips) × (patternMult × unisonMult)
  */
 export function finalizeScore(
   totalBefore: number,
   judgment: SentenceJudgment,
   levels: Record<PatternId, number>,
 ): FinalScore {
-  let flatBonus = 0;
-  let totalMultiplier = 1;
+  let chips = 0;
+  let mult = 1;
 
   const m = judgment.match;
   if (m) {
     const lvl = levels[m.pattern] ?? 1;
     const P = BALANCE.patterns[m.pattern] as PatternBalance;
-    const Lv = ((BALANCE.punctuationLevel as Record<string, LevelBalance>)[m.pattern] ?? {}) as LevelBalance;
-    const mods = m.absorbedModifiers;
-
-    if (P.op === 'add') {
-      let chips: number;
-      let mult: number;
-      if (m.pattern === 'chant') {
-        const r = m.repeats ?? 0;
-        chips = ((P.perRepeatChips ?? 0) + (lvl - 1) * (Lv.perRepeatChips ?? 0)) * r;
-        mult = ((P.perRepeatMult ?? 0) + (lvl - 1) * (Lv.perRepeatMult ?? 0)) * r;
-      } else {
-        chips = (P.flatChips ?? 0) + (lvl - 1) * (Lv.chips ?? 0);
-        mult = (P.flatMult ?? 1) + (lvl - 1) * (Lv.mult ?? 0);
-      }
-      chips += BALANCE.modifierAbsorption.addPatternChips * mods;
-      flatBonus += chips * mult;
-    } else {
-      let mm = (P.totalMult ?? 1) + (lvl - 1) * (Lv.totalMult ?? 0);
-      mm += BALANCE.modifierAbsorption.multiplyPatternMult * mods;
-      totalMultiplier *= mm;
+    const cm = patternChipsMult(m.pattern, lvl);
+    chips += cm.chips;
+    mult *= cm.mult;
+    // Chant: +repeatChips per repeat beyond the floor (each +repeatLevelChips/level).
+    if (m.pattern === 'chant' && m.repeats !== undefined) {
+      const extra = Math.max(0, m.repeats - (P.repeatFloor ?? 3));
+      chips += extra * ((P.repeatChips ?? 0) + (lvl - 1) * (P.repeatLevelChips ?? 0));
     }
+    chips += BALANCE.modifierAbsorption.chips * m.absorbedModifiers;
   }
 
   const u = judgment.unison;
   if (u) {
-    const U = BALANCE.unison[u.suit] as { flatChips?: number; totalMult?: number };
-    if (U.flatChips !== undefined) flatBonus += U.flatChips;
-    if (U.totalMult !== undefined) totalMultiplier *= U.totalMult;
+    const U = BALANCE.unison[u.suit] as { chips?: number; mult?: number };
+    if (U.chips !== undefined) chips += U.chips;
+    if (U.mult !== undefined) mult *= U.mult;
   }
 
-  return { flatBonus, totalMultiplier, total: (totalBefore + flatBonus) * totalMultiplier };
+  const bonus = chips * mult;
+  return { sentenceChips: chips, sentenceMult: mult, bonus, total: totalBefore + bonus };
 }

@@ -11,6 +11,31 @@
   padding: var(--board-pad);
   min-height: 100vh;
   position: relative;
+  /* D-6: per-stage backdrop. Placeholder pixel-flavored gradients (under the CRT
+     pass) until the art pass supplies real backgrounds; GREEN unlock (C-3) will
+     later gate their color. --board-max centers the board over the tint. */
+  background-size: cover;
+  background-attachment: fixed;
+  transition: background 0.5s ease;
+}
+/* 초고 / Draft — writer's desk (warm paper/wood) */
+.frame.stage-draft {
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(196, 164, 120, 0.16), transparent 60%),
+    linear-gradient(180deg, #21201c 0%, #191814 100%);
+}
+/* 퇴고 / Revision — marked-up manuscript (cool paper + red marks) */
+.frame.stage-revision {
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(120, 150, 196, 0.16), transparent 60%),
+    repeating-linear-gradient(180deg, transparent 0 26px, rgba(245, 80, 78, 0.05) 26px 27px),
+    linear-gradient(180deg, #1c1e21 0%, #141518 100%);
+}
+/* 마감 / Deadline — the editor's red-pen office (tense red wash) */
+.frame.stage-deadline {
+  background-image:
+    radial-gradient(130% 90% at 50% -10%, rgba(245, 80, 78, 0.22), transparent 55%),
+    linear-gradient(180deg, #241618 0%, #180f11 100%);
 }
 
 /* ---------- shop (GDD §9) ---------- */
@@ -98,6 +123,15 @@
   font-size: var(--fs-2xl);
   color: var(--gold);
 }
+/* feature-02 B: pack size badge (Normal/Jumbo/Mega) */
+.shopitem .pack-size {
+  font-size: var(--fs-2xs, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+.shopitem.pack-jumbo .pack-size { color: var(--chips); }
+.shopitem.pack-mega .pack-size { color: var(--mult); }
 .shopitem.empty {
   color: var(--ink-dim);
   font-style: italic;
@@ -240,6 +274,15 @@
   display: flex;
   align-items: center;
   gap: 7px;
+}
+/* D-5: pixel tomato beside score numbers (emoji placeholder for the pixel asset).
+   Thematically: tomatoes thrown at bad manuscripts. */
+.tomato-icon {
+  display: inline-block;
+  font-size: 0.9em;
+  line-height: 1;
+  image-rendering: pixelated;
+  transform: translateY(1px);
 }
 /* Placeholder chip token — CSS-drawn, no asset yet. */
 .chip-icon {
@@ -1191,6 +1234,17 @@
 .hand .tile:nth-child(even) {
   animation: wob 3.4s ease-in-out -1.7s infinite reverse;
 }
+/* D-4: jokers & consumables share the tiles' idle wobble family (staggered slow
+   sine, ±1.2°). The firing joker is excluded so its settle wiggle wins; empty
+   slots never wobble. Suppressed under reduced motion (block below). */
+.joker-slot:nth-child(odd) .joker:not(.firing),
+.consumable-slot:nth-child(odd) .consumable {
+  animation: wob 3.6s ease-in-out infinite;
+}
+.joker-slot:nth-child(even) .joker:not(.firing),
+.consumable-slot:nth-child(even) .consumable {
+  animation: wob 3.6s ease-in-out -1.8s infinite reverse;
+}
 .hand .tile.sel {
   transform: translateY(-10px) !important;
   outline: 3px solid var(--gold);
@@ -1220,6 +1274,29 @@
   50% {
     transform: rotate(1.2deg);
   }
+}
+/* D-2: drag dot-outline — a dashed pixel outline at the drag origin and a dashed
+   insertion bar at the live drop gap (hand, tile zone, and the joker shelf). */
+.tile.dragging,
+.joker-slot.dragging {
+  opacity: 0.45;
+  outline: 2px dashed var(--ink-dim);
+  outline-offset: 2px;
+  animation: none; /* freeze the idle wobble while dragging */
+}
+.tile.drop-target,
+.joker-slot.drop-target {
+  position: relative;
+}
+.tile.drop-target::before,
+.joker-slot.drop-target::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 4px;
+  bottom: 4px;
+  border-left: 3px dashed var(--gold);
+  pointer-events: none;
 }
 .actions {
   display: flex;
@@ -1776,6 +1853,8 @@
 @media (prefers-reduced-motion: reduce) {
   .hand,
   .hand .tile,
+  .joker,
+  .consumable,
   .btn.cash,
   .projected.beaten .num,
   .blind-in,

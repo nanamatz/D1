@@ -15,6 +15,10 @@ interface Props {
   onMark?: (id: string) => void;
   /** drag zone this tile lives in (C-2); enables cross-zone drag when set */
   zone?: 'hand' | 'staged';
+  /** D-2: this tile is the current drag origin (dashed outline) */
+  dragging?: boolean;
+  /** D-2: the live insertion gap lands before this tile (dashed bar) */
+  dropTarget?: boolean;
   /** anchored hover tooltip for the tile (C-4): chip value, material, font */
   tooltip?: { title: string; body: string };
 }
@@ -29,6 +33,8 @@ export function TileView({
   onSelect,
   onMark,
   zone,
+  dragging = false,
+  dropTarget = false,
   tooltip,
 }: Props) {
   const { t } = useI18n();
@@ -46,6 +52,8 @@ export function TileView({
     hinted && 'hint',
     marked && 'marked',
     draggable && 'draggable',
+    dragging && 'dragging',
+    dropTarget && 'drop-target',
     materialClass(tile.material),
     fontClass(tile.font),
     inkClass(tileValue(tile)),

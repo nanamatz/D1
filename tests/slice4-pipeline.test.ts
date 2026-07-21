@@ -66,9 +66,10 @@ describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', ()
     let b = openBlind(run);
     ({ blind: b } = play(b, run, 'run'));
     ({ blind: b } = play(b, run, 'cat')); // RUN CAT = Imperative (+ standard Unison)
-    // committed 8; finalize (8 + 80 imperative + 50 unison) = 138, Grammarian ×2 → 276
-    expect(b.projectedScore).toBe(276);
-    expect(endBlind(b, run, lex).finalScore).toBe(276);
+    // committed 8; sentence bonus (15 imperative + 50 unison) × (2 × 2 Grammarian)
+    // = 65 × 4 = 260 → total 268
+    expect(b.projectedScore).toBe(268);
+    expect(endBlind(b, run, lex).finalScore).toBe(268);
   });
 
   it('Rush Specialist scales with phases left: 3 left → ×2.5 (per-word, item 6)', () => {
@@ -104,9 +105,10 @@ describe('slice4 pipeline — layer 3 jokers mutate the sentence projection', ()
     let b = openBlind(run);
     ({ blind: b } = play(b, run, 'run')); // 3 left → ×2.5: RUN 3 → 7.5
     ({ blind: b } = play(b, run, 'cat')); // 2 left → ×2: CAT 5 → 10 (RUN CAT = imperative)
-    // committed 17.5; (17.5 + 80 imperative + 50 unison) × 2 (grammarian) = 295
+    // committed 17.5; sentence bonus (15 imperative + 50 unison) × (2 × 2 grammarian)
+    // = 65 × 4 = 260 → total 277.5
     expect(b.committedScore).toBe(17.5);
-    expect(b.projectedScore).toBe(295);
+    expect(b.projectedScore).toBe(277.5);
   });
 });
 

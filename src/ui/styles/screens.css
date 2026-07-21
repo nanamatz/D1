@@ -1041,6 +1041,10 @@ body.cb-safe .tile.hint {
   flex-direction: column;
   gap: 14px;
   align-items: center;
+  /* D-7: every category fills to the Words category's height, so switching
+     categories doesn't resize the panel (content stays top-aligned). */
+  min-height: 68vh;
+  justify-content: flex-start;
 }
 /* Word search — with the whole dictionary listed, this is the only practical way
    to reach a specific word (paging alone is ~500 pages). */
@@ -1795,12 +1799,29 @@ body.cb-safe .tile.hint {
   padding: 10px 14px;
   font-size: var(--fs-lg);
 }
+.ri-pat .pn {
+  flex: 1;
+}
 .ri-pat .pl {
   font-family: 'Jersey 10';
   font-size: var(--ds-xs);
   line-height: 1;
   color: var(--gold);
+  margin-left: 12px;
 }
+/* feature-02 A-3: live [Chips × Mult] per pattern, Balatro-hand-list style */
+.ri-pat .pcm {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  line-height: 1;
+  margin-left: 12px;
+}
+.ri-pat .pcm .chips { color: var(--chips); }
+.ri-pat .pcm .mult { color: var(--mult); }
+.ri-pat .pcm .times { color: var(--ink-dim); }
 .ri-vouchers {
   display: flex;
   flex-wrap: wrap;

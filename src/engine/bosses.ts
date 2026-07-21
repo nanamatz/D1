@@ -76,8 +76,8 @@ const BOSSES: readonly BossDef[] = [
   {
     id: 'anarchist', nameEn: 'The Anarchist', nameKo: '무정부주의자', emoji: '💣',
     sentenceScoring: (ctx) => {
-      ctx.flatBonus = 0;
-      ctx.totalMultiplier = 1; // sentence bonuses do not trigger
+      ctx.sentenceChips = 0; // sentence bonus does not trigger (0 × mult = 0)
+      ctx.sentenceMult = 1;
     },
   },
   {

@@ -97,11 +97,14 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
 
 1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): staged tiles fly to the tray → chips box counts up per tile (tick per letter) → suit stamp slams onto the word frame → mult box multiplies → committed score rolls. ~900ms total, skippable.
 2. **Projected update**: after settle, pattern chip re-evaluates with a soft flip; projected number rolls to new value; if ≥ target, the projected panel ignites (gold pulse) to signal the imminent **auto-settle** (a status cue, not a button — GDD §7.2).
-3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel.
+3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel. **Jokers & consumables share this wobble family (feature-02 D-4)**; the firing joker is excluded so its settle wiggle wins.
 4. **Hover/select**: hover = lift 4px + straighten; select = rise 10px + gold ring.
 5. **Boss intro**: boss badge stamps in with a screen shake (respect reduced motion).
+6. **Drag dot-outline (feature-02 D-2)**: while dragging a tile or a joker, the origin slot shows a dashed pixel outline and the live insertion gap shows a dashed bar (Balatro feel). Applies to hand, tile zone, and the joker shelf.
 
-Quality floor: `prefers-reduced-motion` disables wobble/shake and reduces settle to fades · keyboard focus visible on tiles and buttons (gold outline) · all color-coded info (suits, chips/mult) doubled with a text label — never color alone.
+Quality floor: `prefers-reduced-motion` disables wobble/shake (incl. joker/consumable idle) and reduces settle to fades · keyboard focus visible on tiles and buttons (gold outline) · all color-coded info (suits, chips/mult) doubled with a text label — never color alone.
+
+**Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. *D-6 stage backgrounds:* per-stage backdrops under the CRT pass — **초고/Draft** = writer's desk, **퇴고/Revision** = marked-up manuscript, **마감/Deadline** = the red-pen office (tense red wash); desaturation-aware (GREEN unlock, C-3, will later gate their color). *D-7:* all Collection categories share the Words category's height (uniform). Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
 
 ---
 

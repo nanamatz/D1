@@ -321,13 +321,13 @@ function scoreSentence(
     match: judgment.match,
     unison: judgment.unison,
     totalBefore: committed,
-    flatBonus: base.flatBonus,
-    totalMultiplier: base.totalMultiplier,
+    sentenceChips: base.sentenceChips,
+    sentenceMult: base.sentenceMult,
   };
   defaultJokerBus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
-  return (ctx.totalBefore + ctx.flatBonus) * ctx.totalMultiplier;
+  return ctx.totalBefore + ctx.sentenceChips * ctx.sentenceMult;
 }
 
 /**

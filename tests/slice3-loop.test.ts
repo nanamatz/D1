@@ -47,9 +47,9 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     let b = startBlind(run, makeRng('s3'), { target: 1000 });
     ({ blind: b } = play(b, run, 'eats')); // 4 chips
     ({ blind: b } = play(b, run, 'fish')); // 10 chips → EATS FISH = Imperative
-    // committed = 14; both standard → Unison standard (+50 flat); Imperative +40×2.
+    // committed = 14; both standard → Unison standard (+50 chips); Imperative 15×2.
     expect(b.committedScore).toBe(14);
-    expect(b.projectedScore).toBe(144); // (14 + 40×2 + 50) × 1
+    expect(b.projectedScore).toBe(144); // 14 + (15 + 50) × 2 = 14 + 130
   });
 
   it('builds a Transitive sentence across phases and multiplies the total', () => {
@@ -59,9 +59,9 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     ({ blind: b } = play(b, run, 'eats'));
     ({ blind: b } = play(b, run, 'fish'));
     // committed = CAT 5 + EATS 4 + FISH 10 = 19. All standard suit → Unison
-    // standard (+50 flat) also fires: (19 + 50) × Transitive ×2 = 138.
+    // standard (+50 chips) folds in: 19 + (40 + 50) × Transitive-mult 3 = 289.
     expect(b.committedScore).toBe(19);
-    expect(b.projectedScore).toBe(138);
+    expect(b.projectedScore).toBe(289);
   });
 
   it('a gibberish hole collapses the sentence bonus — projected falls back to committed', () => {
@@ -84,7 +84,7 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     const result = endBlind(b, run, lex);
     expect(result.judgment.match?.pattern).toBe('transitive');
     expect(result.judgment.unison?.suit).toBe('standard');
-    expect(result.finalScore).toBe(138); // (19 + 50 unison) × 2 transitive
+    expect(result.finalScore).toBe(289); // 19 + (40 + 50 unison) × 3 transitive
     expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 4 - 3 = 1
   });
 });

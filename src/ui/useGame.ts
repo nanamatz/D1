@@ -195,6 +195,7 @@ export interface UseGame {
   canDiscard: boolean;
   toggleTile: (id: string) => void;
   reorderHand: (fromId: string, toId: string) => void;
+  reorderJokers: (from: number, to: number) => void;
   reorderStaged: (fromId: string, toId: string) => void;
   useMagnifier: () => void;
   canMagnify: boolean;
@@ -473,12 +474,12 @@ export function useGame(): UseGame {
   const buyPack = useCallback((index: number) => {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
-      const kind = prev.shop.packs[index];
-      if (!kind) return prev;
-      const price = BALANCE.packPrice[kind] ?? 0;
+      const slot = prev.shop.packs[index];
+      if (!slot) return prev;
+      const price = BALANCE.pack.size[slot.size].price;
       if (prev.run.gold < price) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const offer = rollPack(kind, prev.run, rng);
+      const offer = rollPack(slot, prev.run, rng);
       const packs = prev.shop.packs.slice();
       packs[index] = null;
       audio.play('packOpen');
@@ -547,6 +548,22 @@ export function useGame(): UseGame {
     );
   }, []);
 
+  // D-1: drag-reorder the owned-joker shelf. Order IS hook-execution order
+  // (loop.ts iterates run.jokers), so this is strategic (additive-before-
+  // multiplicative). Persisted in run state; index-based since jokers can dup.
+  const reorderJokers = useCallback((from: number, to: number) => {
+    setState((prev) => {
+      const jokers = prev.run.jokers;
+      if (from < 0 || to < 0 || from >= jokers.length || to >= jokers.length || from === to) {
+        return prev;
+      }
+      const next = jokers.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved!);
+      return { ...prev, run: { ...prev.run, jokers: next } };
+    });
+  }, []);
+
   const useMagnifier = useCallback(() => {
     setState((prev) => {
       if (prev.phase !== 'playing' || !prev.run.consumables.includes('magnifier')) return prev;
@@ -577,6 +594,10 @@ export function useGame(): UseGame {
       }
       const { blind, events, submission, goldDelta, destroyedTileIds } = result;
       if (submission.isGibberish) tutorialBus.fire('firstGibberish');
+      // A-2: a per-word structure bonus (Twin/Vowel Flush/Straight…) landed —
+      // explain Letter Hands the first time one actually scores. The event is
+      // only present when a hand triggered (loop.ts), so its presence is the signal.
+      if (events.some((e) => e.kind === 'letterHand')) tutorialBus.fire('firstLetterHand');
       const nextRun: RunState = {
         ...prev.run,
         gold: Math.max(0, prev.run.gold + goldDelta),
@@ -714,6 +735,7 @@ export function useGame(): UseGame {
     canDiscard: state.phase === 'playing' && !state.pendingEnd && state.blind.discardsLeft > 0,
     toggleTile,
     reorderHand,
+    reorderJokers,
     reorderStaged,
     useMagnifier,
     canMagnify: state.phase === 'playing' && state.run.consumables.includes('magnifier'),

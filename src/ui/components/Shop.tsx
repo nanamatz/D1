@@ -81,7 +81,7 @@ export function Shop({ g }: { g: UseGame }) {
         {/* D-1/D-2: owned jokers + consumables persist at the top, same shelf as
             the play screen; then items for sale; then vouchers & packs. */}
         <div className="shop-shelf">
-          <JokerShelf run={run} onSellConsumable={g.sellConsumable} onSellJoker={g.sell} />
+          <JokerShelf run={run} onSellConsumable={g.sellConsumable} onSellJoker={g.sell} onReorderJoker={g.reorderJokers} />
         </div>
 
         {/* item 7: the pack-opening modal covers ONLY this sale region (for-sale,
@@ -153,14 +153,19 @@ export function Shop({ g }: { g: UseGame }) {
             <div className="shop-row">
               {shop.packs.map((p, i) =>
                 p ? (
-                  <Tooltip key={i} title={t(`pack.${p}`)} body={t(`packdesc.${p}`)}>
-                    <div className="shopitem">
+                  <Tooltip
+                    key={i}
+                    title={`${t(`pack.type.${p.type}`)} · ${t(`pack.size.${p.size}`)}`}
+                    body={t(`packdesc.${p.type}`)}
+                  >
+                    <div className={['shopitem', `pack-${p.size}`].join(' ')}>
                       <span className="e">📦</span>
-                      <span className="n">{t(`pack.${p}`)}</span>
-                      <span className="price">${BALANCE.packPrice[p]}</span>
+                      <span className="n">{t(`pack.type.${p.type}`)}</span>
+                      <span className="pack-size">{t(`pack.size.${p.size}`)}</span>
+                      <span className="price">${BALANCE.pack.size[p.size].price}</span>
                       <button
                         className="btn green sm"
-                        disabled={run.gold < (BALANCE.packPrice[p] ?? 0)}
+                        disabled={run.gold < BALANCE.pack.size[p.size].price}
                         onClick={() => g.buyPack(i)}
                       >
                         {t('pack.open')}

@@ -18,7 +18,9 @@ import type { Rng } from './rng';
 import type {
   ConsumableId,
   OwnedJoker,
-  PackKind,
+  PackSize,
+  PackSlot,
+  PackType,
   RunState,
   ShopItem,
   ShopState,
@@ -27,7 +29,8 @@ import type {
 
 /** Consumables that actually have an effect today (grows as they're built). */
 const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
-const PACK_KINDS: readonly PackKind[] = ['letter', 'emoji', 'consumable'];
+const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'forbidden'];
+const PACK_SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 
 /** All items the shop could offer this run, minus jokers already owned. */
 function buildPool(run: RunState): ShopItem[] {
@@ -77,9 +80,26 @@ export function rollVoucherOffer(run: RunState, rng: Rng): VoucherId | null {
   return available.length ? rng.shuffle(available)[0]! : null;
 }
 
-function rollPacks(rng: Rng): (PackKind | null)[] {
-  const packs: (PackKind | null)[] = [];
-  for (let i = 0; i < BALANCE.shop.packSlots; i++) packs.push(PACK_KINDS[rng.int(PACK_KINDS.length)]!);
+/** Weighted pick from a list of ids using a {id: weight} table. */
+function weightedPick<T extends string>(ids: readonly T[], weights: Record<string, number>, rng: Rng): T {
+  const total = ids.reduce((s, id) => s + (weights[id] ?? 0), 0);
+  let r = rng.next() * total;
+  for (const id of ids) {
+    r -= weights[id] ?? 0;
+    if (r < 0) return id;
+  }
+  return ids[ids.length - 1]!;
+}
+
+/** Each pack slot rolls an independent type × size (Forbidden/Mega/Jumbo rarer). */
+function rollPacks(rng: Rng): (PackSlot | null)[] {
+  const packs: (PackSlot | null)[] = [];
+  for (let i = 0; i < BALANCE.shop.packSlots; i++) {
+    packs.push({
+      type: weightedPick(PACK_TYPES, BALANCE.pack.typeWeights, rng),
+      size: weightedPick(PACK_SIZES, BALANCE.pack.sizeWeights, rng),
+    });
+  }
   return packs;
 }
 

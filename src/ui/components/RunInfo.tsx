@@ -1,6 +1,7 @@
 import type { BlindState, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
+import { patternChipsMult } from '../../engine/patterns';
 import { bossDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { Tooltip } from './Tooltip';
@@ -55,14 +56,24 @@ export function RunInfo({ run, blind, onClose }: Props) {
 
           <div className="label ri-sub">{t('runinfo.patterns')}</div>
           <div className="ri-patterns">
-            {PATTERN_ORDER.map((p) => (
-              <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
-                <div className="ri-pat">
-                  <span className="pn">{t(`pattern.${p}`)}</span>
-                  <span className="pl">Lv {run.patternLevels[p]}</span>
-                </div>
-              </Tooltip>
-            ))}
+            {PATTERN_ORDER.map((p) => {
+              // feature-02 A-3: the Balatro-style hand list — live [Chips × Mult]
+              // at the pattern's current level, updating as Punctuation cards level it.
+              const cm = patternChipsMult(p, run.patternLevels[p]);
+              return (
+                <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
+                  <div className="ri-pat">
+                    <span className="pn">{t(`pattern.${p}`)}</span>
+                    <span className="pl">Lv {run.patternLevels[p]}</span>
+                    <span className="pcm">
+                      <b className="chips">{cm.chips}</b>
+                      <span className="times">×</span>
+                      <b className="mult">{cm.mult}</b>
+                    </span>
+                  </div>
+                </Tooltip>
+              );
+            })}
           </div>
 
           <div className="label ri-sub">{t('runinfo.vouchers')}</div>

@@ -86,6 +86,25 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     if (blind.kind === 'boss') tutorialBus.fire('firstBoss');
   }, [phase]);
 
+  // A-2 first-encounter tutorials driven by LIVE board state (material/font tiles
+  // in hand, a pattern or Unison lighting up in the tray, owning the Magnifier).
+  // The bus no-ops on already-seen/tips-off, so re-firing when a condition stays
+  // true is harmless; we fire the moment each condition first becomes true.
+  const judgment = judgeSentence(blind.sequence, g.lexicon);
+  const hasMaterialTile = blind.hand.some((t) => t.material !== 'ceramic');
+  const hasFontTile = blind.hand.some((t) => t.font !== 'medium');
+  const hasPattern = judgment.match !== null;
+  const hasUnison = judgment.unison !== null;
+  const hasMagnifier = run.consumables.includes('magnifier');
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    if (hasMaterialTile) tutorialBus.fire('firstMaterial');
+    if (hasFontTile) tutorialBus.fire('firstFont');
+    if (hasPattern) tutorialBus.fire('firstPattern');
+    if (hasUnison) tutorialBus.fire('firstUnison');
+    if (hasMagnifier) tutorialBus.fire('magnifier');
+  }, [phase, hasMaterialTile, hasFontTile, hasPattern, hasUnison, hasMagnifier]);
+
   // 'playing', 'gameover' and 'cashout' share the board — Game Over and Fee
   // Settlement overlay the still-visible (darkened) board, no full-screen swap
   // (A-2, A-4). The run stays frozen on the cleared blind during cash-out.
@@ -117,14 +136,20 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       );
     }
     const preview = stagePreview(blind, run, g.lexicon, selected);
-    const judgment = judgeSentence(blind.sequence, g.lexicon);
+    // `judgment` is computed once in the component body (drives the A-2 fires too)
     // `ending` reddens the board — that is the DEFEAT visual, so it is Game Over
     // ONLY. Clearing a blind must never turn the board red; Fee Settlement darkens
     // it on its own via .overlay.cashout-overlay, keeping the board visible (A-2).
     return (
     <div
       key={boardKey}
-      className={['frame', ending && 'ending', pouchOpen && 'pouch-open']
+      className={[
+        'frame',
+        // D-6: per-stage backdrop (초고 Draft / 퇴고 Revision / 마감 Deadline).
+        `stage-${blind.kind === 'small' ? 'draft' : blind.kind === 'big' ? 'revision' : 'deadline'}`,
+        ending && 'ending',
+        pouchOpen && 'pouch-open',
+      ]
         .filter(Boolean)
         .join(' ')}
     >
@@ -150,6 +175,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onUseConsumable={() => g.useMagnifier()}
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}
+            onReorderJoker={g.reorderJokers}
           />
           <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
           <StagePanel g={g} preview={preview} />

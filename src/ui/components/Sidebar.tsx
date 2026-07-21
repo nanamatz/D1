@@ -108,7 +108,9 @@ export function Sidebar({
             <div className="bs-target">
               <span className="tlabel">{t('sidebar.target')}:</span>
               <span className="bs-target-row">
-                <span className="chip-icon" aria-hidden />
+                {/* D-5: pixel tomato (emoji placeholder) replaces the poker-chip
+                    icon beside score numbers; the "Chips" term/box stay unchanged. */}
+                <span className="tomato-icon" aria-hidden>🍅</span>
                 <span className="target">{blind.target}</span>
               </span>
             </div>
@@ -123,7 +125,7 @@ export function Sidebar({
       <div className="panel round-panel">
         <div className="round-row">
           <span className="label">{t('sidebar.round')}</span>
-          <span className="round-num">❄ {Math.round(round)}</span>
+          <span className="round-num"><span className="tomato-icon" aria-hidden>🍅</span> {Math.round(round)}</span>
         </div>
         {!blind.previewHidden && forecast > 0 && (
           <div className="round-forecast">

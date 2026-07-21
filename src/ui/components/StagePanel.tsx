@@ -22,6 +22,10 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   const [sortMode, setSortMode] = usePersistedState<SortMode>('wj.sortMode', 'vowel');
   // C-3: discard marks are a separate selection from staging (hand tiles only).
   const [discardMarks, setDiscardMarks] = useState<string[]>([]);
+  // D-2: drag origin + live insertion target, for the dashed outlines.
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const endDrag = () => { setDragId(null); setOverId(null); };
   const staged = tilesByIds(blind.hand, selected);
   const selectedSet = new Set(selected);
   const hand = sortHand(
@@ -64,7 +68,13 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
     }
     return null; // past the last tile → append
   };
-  const allowDrop = (e: DragEvent) => e.preventDefault();
+  const allowDrop = (e: DragEvent) => {
+    e.preventDefault();
+    // D-2: reflect the live insertion gap. Pick the zone by pointer Y, then the
+    // tile the cursor is before (null = appending past the last tile).
+    const zoneRef = dropZoneAt(e.clientY) === 'staged' ? stagedRef.current : handRef.current;
+    setOverId(targetAt(zoneRef, e.clientX));
+  };
   // item 9: the WHOLE stage area is a drop target. The zone is chosen by pointer
   // Y (generously: anything at/above the staged row counts as the tray), so drops
   // no longer need to land precisely inside a small box.
@@ -74,6 +84,7 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   };
   const onStageDrop = (e: DragEvent) => {
     e.preventDefault();
+    endDrag();
     const d = parseDrag(e);
     if (!d) return;
     audio.play('dragSnap');
@@ -107,13 +118,27 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
   const canDiscard = g.canDiscard && validMarks.length > 0; // no per-use tile cap (D-4)
 
   return (
-    <div className="stage" onDragOver={allowDrop} onDrop={onStageDrop}>
+    <div
+      className="stage"
+      onDragOver={allowDrop}
+      onDrop={onStageDrop}
+      onDragStart={(e) => setDragId((e.target as HTMLElement).dataset.tileId ?? null)}
+      onDragEnd={endDrag}
+    >
       {message && <div className="toast warn-toast">{t(message.key, message.params)}</div>}
 
       <div className="staged" ref={stagedRef}>
         {staged.length === 0 && <span className="zone-hint">{t('stage.zoneEmpty')}</span>}
         {staged.map((tile) => (
-          <TileView key={tile.id} tile={tile} zone="staged" onSelect={selectTile} tooltip={tileTip(tile)} />
+          <TileView
+            key={tile.id}
+            tile={tile}
+            zone="staged"
+            dragging={dragId === tile.id}
+            dropTarget={overId === tile.id}
+            onSelect={selectTile}
+            tooltip={tileTip(tile)}
+          />
         ))}
       </div>
 
@@ -148,6 +173,8 @@ export function StagePanel({ g, preview }: { g: UseGame; preview: StagePreview |
             zone="hand"
             hinted={hintIds.has(tile.id)}
             marked={validMarks.includes(tile.id)}
+            dragging={dragId === tile.id}
+            dropTarget={overId === tile.id}
             onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}

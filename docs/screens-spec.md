@@ -65,7 +65,7 @@ Big gold banner button confirms and transitions to the Stationery Shop.
 ### 2.6 Shop (Stationery Shop)
 Left rail: **Next Blind** (red) + **Reroll $N** (green, escalating). Main column, top → bottom (playtest-04 D-2): **owned jokers + consumables shelf → items for sale → vouchers & packs**. The owned shelf is the **same component/position as the play screen** (D-1); clicking an owned joker opens a **Sell $N** menu to its right, consumables a Use/Sell menu. Tooltips per §0.
 - **Wide Shelf voucher** grows the item-slot count **immediately** this same visit (D-6/B-2) — a new item fills the extra slot.
-- **Emoji Pack** joker choices are **greyed / non-selectable when joker slots are full** (D-5), with a "joker slots full" note.
+- **Sticker Pack** joker choices are **greyed / non-selectable when joker slots are full** (D-5), with a "joker slots full" note.
 - Voucher slot rules per GDD §9.2 (reroll-immune, one purchase per chapter, restocks at Deadline).
 - **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a speech bubble showing one random `mascot.welcome.*` line per shop entry, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Art: `docs/Piyak.png` → `src/ui/assets/piyak.png`.
 

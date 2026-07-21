@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from './useGame';
 import { useSettings } from './settings';
+import { audio, type MusicTrack } from './audio';
 import { MainMenu } from './components/MainMenu';
 import { NewRun } from './components/NewRun';
 import { RunView } from './components/RunView';
@@ -30,6 +31,24 @@ export function App() {
   // run intact, and it's persisted to localStorage so a reload keeps it too.
   // `runStarted` rides along in the save. A finished run is not resumable.
   const canContinue = g.state.runStarted && g.state.phase !== 'gameover';
+
+  // BGM (work order B-2): one place picks the loop for the current context — menu
+  // track off-run, the shop lounge in the Stationery Shop, and the play track
+  // (its tenser Deadline variant on a boss blind) on the board. `playMusic`
+  // no-ops when the track is unchanged and defers until the audio gesture-unlock.
+  const track: MusicTrack =
+    screen !== 'run'
+      ? 'menu'
+      : g.state.phase === 'shop'
+        ? 'shop'
+        : g.state.phase === 'gameover'
+          ? 'menu'
+          : g.state.blind.kind === 'boss'
+            ? 'boss'
+            : 'play';
+  useEffect(() => {
+    audio.playMusic(track);
+  }, [track]);
 
   const view = () => {
     switch (screen) {

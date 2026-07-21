@@ -10,6 +10,19 @@ import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
+const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
+  ellipsis: '…', exclamation: '❗', doubleExclamation: '‼️', period: '。',
+  colon: '：', semicolon: '；', dash: '—', comma: '，',
+};
+
+/** Emoji/glyph for a non-tile option. */
+function optionEmoji(option: PackOption): string {
+  if (option.kind === 'joker') return JOKER_REGISTRY.get(option.id)?.emoji ?? '🃏';
+  if (option.kind === 'punctuation') return PUNCTUATION_EMOJI[option.id] ?? '✒️';
+  if (option.kind === 'forbidden') return '📕';
+  if (option.kind === 'consumable') return CONSUMABLE_EMOJI[option.id] ?? '📄';
+  return '📄'; // tile carries its own face; never reached here
+}
 
 interface Tip {
   title: string;
@@ -40,11 +53,7 @@ function OptionCard({
       {option.kind === 'tile' ? (
         <TileView tile={option.tile} />
       ) : (
-        <span className="e">
-          {option.kind === 'joker'
-            ? (JOKER_REGISTRY.get(option.id)?.emoji ?? '🃏')
-            : (CONSUMABLE_EMOJI[option.id] ?? '📄')}
-        </span>
+        <span className="e">{optionEmoji(option)}</span>
       )}
       <span className="n">{name}</span>
       {blockKey ? (
@@ -78,17 +87,21 @@ export function PackOpening({ g }: { g: UseGame }) {
       const def = JOKER_REGISTRY.get(o.id);
       return def ? (lang === 'ko' ? def.nameKo : def.nameEn) : o.id;
     }
-    if (o.kind === 'consumable') return t(`consumable.${o.id}`);
-    return o.tile.letter ?? NO_LETTER; // tile
+    if (o.kind === 'tile') return o.tile.letter ?? NO_LETTER;
+    return t(`consumable.${o.id}`); // consumable / punctuation / forbidden
   };
 
-  // Hover tooltip for joker / consumable options (item 4) — tiles carry their own.
+  // Hover tooltip for non-tile options (item 4) — tiles carry their own.
   const optionTip = (o: PackOption): Tip | undefined => {
     if (o.kind === 'joker') {
       const def = JOKER_REGISTRY.get(o.id);
       return { title: optionName(o), body: t(jokerDescKey(o.id)), rarity: def?.rarity };
     }
-    if (o.kind === 'consumable') {
+    if (o.kind === 'punctuation') {
+      // Explain it levels the mapped pattern immediately (feature-02 B).
+      return { title: optionName(o), body: t('pack.punctuationLevels', { pattern: t(`pattern.${o.pattern}`) }) };
+    }
+    if (o.kind === 'consumable' || o.kind === 'forbidden') {
       return { title: optionName(o), body: t(consumableDescKey(o.id)) };
     }
     return undefined;
@@ -97,7 +110,9 @@ export function PackOpening({ g }: { g: UseGame }) {
   return (
     <div className="shop">
       <div className="shop-head panel">
-        <div className="kind">{t(`pack.${pack.offer.kind}`)}</div>
+        <div className="kind">
+          {t(`pack.type.${pack.offer.type}`)} · {t(`pack.size.${pack.offer.size}`)}
+        </div>
         <div className="money">{t('pack.picksLeft', { n: pack.picksLeft })}</div>
         <button className="btn cash" onClick={g.closePack}>
           {t('pack.done')}
@@ -108,10 +123,11 @@ export function PackOpening({ g }: { g: UseGame }) {
           {pack.offer.options.map((o, i) => {
             // A pick is blocked when the matching slot is full (item 5: consumables
             // now block too, not just jokers) — the engine no-ops such a pick anyway.
+            const takesConsumableSlot = o.kind === 'consumable' || o.kind === 'forbidden';
             const blockKey =
               o.kind === 'joker' && g.state.run.jokers.length >= BALANCE.jokerSlots
                 ? 'pack.jokersFull'
-                : o.kind === 'consumable' &&
+                : takesConsumableSlot &&
                     g.state.run.consumables.length >= g.state.run.consumableSlots
                   ? 'pack.consumablesFull'
                   : undefined;

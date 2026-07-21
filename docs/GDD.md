@@ -142,7 +142,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 
 **Stone has no letter.** Our analog of Balatro Stone's "no rank or suit" is *no letter*: `material = stone` ⟺ the tile carries no letter. A stone tile therefore cannot spell, so any word containing one fails the lexicon lookup and resolves as **gibberish** (§6.4) — chips × 1.0, no suit multiplier, always submittable. This is deliberate, and it is what stops Stone from being strictly the best tile in the game: if stone were merely skipped while spelling, `stone+C+A+T` would read "CAT" and collect +50 Chips *and* the suit multiplier. The consequence is that Stone becomes the heart of the gibberish archetype — an identity that falls out of our own rules rather than being imported. A stone is **neither vowel nor consonant** (§2.1), so vowel/consonant jokers must skip it.
 
-**Acquisition:** materials enter play two ways — pre-attached on tiles found in Letter Packs (§9.3), or applied by the Kiln consumable (§10.1). Applying Stone via Kiln destroys that tile's letter permanently.
+**Acquisition:** materials enter play two ways — pre-attached on tiles found in Type Packs (§9.3), or applied by the Kiln consumable (§10.1). Applying Stone via Kiln destroys that tile's letter permanently.
 
 ### 2.3 Fonts (Edition Layer)
 
@@ -154,7 +154,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 | Futura Inline | Edition |
 | Futura Black | Edition |
 
-**Acquisition:** pre-attached in Letter Packs, or applied by the Fountain Pen consumable (§10.1).
+**Acquisition:** pre-attached in Type Packs, or applied by the Fountain Pen consumable (§10.1).
 
 **Effects — the Balatro-seal port (confirmed).** The four non-base fonts carry the seal roles, honoring the §2 design note (this layer absorbs both edition and seal; **retrigger lives here**, materials left it unspent). Effect ids and values (→ `balance.ts`):
 
@@ -237,26 +237,35 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 1. **Whole-sequence match.** The entire phase sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) anywhere in the sequence voids all pattern matches — countered by Correction Tape (consumable) and Elision (legendary joker).
 2. **Highest single pattern only.** If a sequence satisfies multiple patterns, only the highest-value one applies (a full house does not also pay as a pair).
-3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; each absorbed modifier adds to the bonus (**additive patterns: +15 Chips per modifier; multiplicative patterns: +0.15 to the multiplier per modifier** — placeholders). This keeps the table small while making "longer sentence = bigger reward" automatic, giving the Epic Poet build its natural target.
+3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; **each absorbed modifier adds +15 Chips to the sentence bonus's Chips side** (uniform across all patterns — placeholder). This keeps the table small while making "longer sentence = bigger reward" automatic, giving the Epic Poet build its natural target.
 
 ### 5.2 The Eight Patterns (weak → strong)
 
-| # | Pattern | POS skeleton | Example | Min. phases | Bonus (placeholder) | Operation |
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired.
+
+```
+sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
+              × (patternMult × unisonMult)
+```
+
+| # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|
-| 1 | Outcry | Interjection alone | SHH / WOW | 1 | +20 Chips | Add |
-| 2 | Imperative | Verb + Noun | EAT FISH | 2 | +40 Chips, +2 Mult | Add |
-| 3 | Chant | Same verb ×3+ | RUN RUN RUN RUN | 3+ | per repeat: +15 Chips, +1.5 Mult | Add (scales with repeats) |
-| 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | +60 Chips, +3 Mult | Add |
-| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | total ×1.5 | Multiply |
-| 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | total ×2 | Multiply |
-| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | total ×2.5 | Multiply |
-| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | total ×3 | Multiply |
+| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 10 × 1 | +10, +0.5 |
+| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 15 × 2 | +10, +0.5 |
+| 3 | Chant | Same verb ×3+ | RUN RUN RUN RUN | 3+ | 15 × 2, **+10 Chips per repeat beyond the 3rd** | +10, +0.5 (repeat bonus +5/level) |
+| 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | 25 × 2 | +15, +1 |
+| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 30 × 3 | +15, +1 |
+| 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | 40 × 3 | +20, +1 |
+| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 50 × 4 | +25, +1.5 |
+| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 60 × 4 | +30, +1.5 |
+
+(Values are placeholders in `balance.ts` under `patterns`; the hierarchy is preserved from the old ranks.)
 
 Design intent:
 
 - **Outcry** finally gives vowel-less interjections (shh, brr) a home in the pattern table — a niche that meshes with the Consonant Bricklayer build.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, preserving the RUN×4 showcase as its own pattern.
-- **Multiplication starts at #5** — from the point where the linking-vs-transitive distinction (i.e., knowledge of structure) is required, the reward regime changes qualitatively. This implements the "structural sentences = multiplication" principle from §7.3.
+- **The Chips×Mult ladder climbs together** — both sides grow from #1→#8, so structural sentences (higher Mult) reward suit/joker Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
 - **#7–8 are tight-to-impossible in the base 4 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
 - **Interrogative (auxiliary inversion, e.g. "CAN BIRDS FLY") is deferred** to expansion content, consistent with the rules diet.
 
@@ -266,24 +275,24 @@ One rule replaces the v0.1 tone-overlay table:
 
 > **Unison.** If the sequence has 2+ words and *all* words share one suit, a bonus applies, sized by suit rarity: **Standard +50 Chips · Formal ×1.25 · Slang ×1.5 · Vulgar ×2** (placeholders).
 
-This preserves the flush role ("commit to one suit across phases → reward") in a single line. It stacks *on top of* the pattern bonus, so the base score reads as four clean steps: letter chips → suit multiplier → pattern bonus → unison bonus. All richer combination rules (Hypocrite, etc.) live in jokers.
+Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). It therefore amplifies the pattern's Chips — a register-mult Unison with *no* pattern (no Chips to multiply) contributes nothing, unlike the retired scheme where Unison multiplied the whole committed total. This preserves the flush role ("commit to one suit across phases → reward") within one bonus. All richer combination rules (Hypocrite, etc.) live in jokers.
 
 Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity), with the ladder deliberately gentler than the v0.1 Tirade (×3) draft. Exact values are playtest material.
 
 ### 5.4 Punctuation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Punctuation consumable (§10.2), Balatro-Planet style:
+Each pattern pairs 1:1 with a Punctuation consumable (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises that pattern's base by its `+Chips, +Mult` per-level values (the §5.2 right column) — the old multiplier-only vs flat-only split is gone.
 
 | Punctuation | Levels up | Per level (placeholder) |
 |---|---|---|
-| … Ellipsis | Outcry | +10 Chips |
-| ! Exclamation | Imperative | +15 Chips, +1 Mult |
-| ‼ Double Exclamation | Chant | per-repeat bonus +5 Chips, +0.5 Mult |
-| . Period | Simple | +20 Chips, +1 Mult |
-| : Colon | Descriptive | multiplier +0.25 |
-| ; Semicolon | Transitive | multiplier +0.25 |
-| — Dash | Ditransitive | multiplier +0.3 |
-| , Comma | Compound | multiplier +0.3 |
+| … Ellipsis | Outcry | +10 Chips, +0.5 Mult |
+| ! Exclamation | Imperative | +10 Chips, +0.5 Mult |
+| ‼ Double Exclamation | Chant | +10 Chips, +0.5 Mult (repeat bonus +5 Chips/level) |
+| . Period | Simple | +15 Chips, +1 Mult |
+| : Colon | Descriptive | +15 Chips, +1 Mult |
+| ; Semicolon | Transitive | +20 Chips, +1 Mult |
+| — Dash | Ditransitive | +25 Chips, +1.5 Mult |
+| , Comma | Compound | +30 Chips, +1.5 Mult |
 
 Thematic fits: compound sentences literally use commas + conjunctions; colons introduce descriptions; exclamation marks command. (Joker #32 was renamed **Elision** to cede the name "Ellipsis" to the punctuation card.)
 
@@ -376,17 +385,17 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush jokers are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 4-phase blind pays big; a last-phase clear pays nothing.
 - **Boss exceptions.** *The Perfectionist* disables auto-settle — one settlement check after all phases are used. *The Blindfold* is unchanged mechanically; with the projection hidden, the auto-clear now arrives unpredictably (intended spice).
 
-### 7.3 Per-Pattern Operation (+ / ×)
+### 7.3 Sentence Bonus = base Chips × Mult (unified)
 
-Additive patterns add flat points to the total; multiplicative patterns multiply the accumulated total. Assignment per pattern is fixed in §5.2 — easy patterns add, structural patterns multiply.
+Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)`, **added** to the committed total at finalization. There is no per-pattern "+ vs ×" operation — the strong/structural patterns simply carry a higher Mult (and Chips). This replaces the v0.2 add/multiply split.
 
-> **Balance warning — multiplicative sentences × projected-score preview.** Multiplicative types spike sharply in later phases. If "one more phase doubles the projected score before your eyes" is visible, no one ends early. This is both an intended temptation and a balance pressure point — how easily/often multiplicative sentences can be made governs game tempo. The #1 playtest observation point.
+> **Balance warning — high-Mult sentences × projected-score preview.** Because the bonus's Mult amplifies its own Chips (pattern base + modifiers + Standard Unison), high-Mult patterns still spike hard when the player also stacks Chips. If "one more phase visibly doubles the forecast" no one ends early. This is both an intended temptation and a balance pressure point — how easily/often high-Mult sentences can be made governs game tempo. The #1 playtest observation point.
 
 ### 7.4 Final Pipeline Summary
 
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × jokers) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
-**On ending (early/final):** finalize sentence bonus from the sequence (per-pattern +/× per §5.2) → apply Unison bonus if any (§5.3) → grant 1 gold per remaining phase → end blind.
+**On ending (early/final):** finalize the sentence bonus from the sequence — `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)` per §5.2, Unison folded in (§5.3) — add it to the committed total → grant 1 gold per remaining phase → end blind.
 
 ### 7.5 Variable Phases
 
@@ -495,13 +504,19 @@ Balatro-mirrored: **Item slots ×2** (jokers/consumables appear mixed) + **Pack 
 
 Tile acquisition is **pack-select only** (confirmed): no targeted single-letter purchase. Deck sculpting is therefore draft-flavored, fitting the roguelite grain; the "I have Q but no U" problem is solved not by the shop but by a consumable (Carving Knife, §10.1).
 
-| Pack | Contents |
-|---|---|
-| Letter Pack | 3–5 tiles shown, choose 1–2 to add to the bag. Occasionally contains tiles with **materials/fonts pre-attached** (the Standard-pack analogy) |
-| Emoji Pack | 2–4 jokers shown, choose 1 (Buffoon analogy) |
-| Consumable Packs | Stationery Pack / Punctuation Pack / Forbidden Pack (Arcana / Celestial / Spectral analogies) — contents per §10 |
+**Five pack types** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**:
 
-> **Impl note (code is a subset).** The design is **5 pack types** (Letter, Emoji, + the three Consumable packs). The engine currently ships a single consolidated **Consumable Pack** as an MVP stub — `PackKind` = `letter | emoji | consumable`, and its pool is a stub (`magnifier` only). The 3-way split into Stationery/Punctuation/Forbidden packs is the design target, pending implementation (like the full joker/consumable rosters). Collection §2.9 catalogs all 5.
+| Pack (ko / en) | Contents | Analog |
+|---|---|---|
+| 조판 팩 / **Typesetting Pack** | Punctuation cards — each **levels up** a sentence pattern (§5.4). Applied immediately on pick. | Celestial |
+| 스티커 팩 / **Sticker Pack** | Joker (emoji) choices | Buffoon |
+| 문구 팩 / **Stationery Pack** | Stationery consumable choices (§10.1) | Arcana |
+| 활자 팩 / **Type Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
+| 금서고 팩 / **Forbidden Stacks** | Forbidden Books items (§10.3), rare appearance | Spectral |
+
+**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Forbidden Stacks and Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`).
+
+> **Impl note (content is a subset).** The **framework** ships fully (5 types × 3 sizes, weights, prices, opening UI). Content pools are as implemented: Type/Sticker are complete; the Stationery pool is the implemented-consumable stub (`magnifier`); Typesetting offers the 8 Punctuation cards (which **do** work — they level patterns on pick); Forbidden Stacks delivers its 4 items as a **placeholder** (effects TBD). Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | forbidden`); display names are i18n-only. Collection §2.9 catalogs all 5.
 
 ### 9.4 Vouchers — 9, single tier
 
@@ -541,7 +556,7 @@ Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
 
 ### 10.2 Punctuation (Planet-equivalent) — pattern level-up, 8
 
-One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Punctuation card permanently levels its pattern: additive patterns gain flat amounts, multiplicative patterns gain multiplier increments — Balatro Planet behavior. Specializing punctuation into your most-played patterns is the intended play.
+One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Punctuation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing punctuation into your most-played patterns is the intended play.
 
 ### 10.3 Forbidden Books (Spectral-equivalent) — drastic effects, 4
 
@@ -559,6 +574,8 @@ One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Usi
 Jokers are represented as emoji tiles, acquired by shop purchase/draw (§9). Unlike Balatro jokers, which mostly play in the single layer of "score calculation," these jokers play across **3 layers**: **(1) Letter/Tile  (2) Suit (register)  (3) Sentence/Phase**.
 
 **Notation.** Chips = base score, Mult = multiplier, Final = Chips × Mult. **Layer** = 1/2/3. **★** = scaling. All values are balancing placeholders.
+
+**Shelf order = execution order (feature-02 D-1).** Owned jokers fire in their left-to-right shelf order, and that order is **drag-reorderable** on the owned-joker shelf (persisted in run state). Ordering is strategic in the Balatro sense — an additive joker placed before a multiplicative one is worth more than after it — so reordering is a real decision, not cosmetic.
 
 ### 11.1 Roles by Rarity
 
@@ -661,7 +678,7 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 | Negative | occupies no joker slot → **+1 owned-joker slot** |
 
 - **Slot cap.** The owned-joker cap is base **5** (today the global `BALANCE.jokerSlots`; the planned per-run field is `RunState.jokerSlots`). Each Negative joker raises the effective cap by 1.
-- **Acquisition (planned):** editions pre-attach on jokers found in Emoji Packs, or via a future consumable — to be designed alongside implementation.
+- **Acquisition (planned):** editions pre-attach on jokers found in Sticker Packs, or via a future consumable — to be designed alongside implementation.
 - **Status:** planned; ship in a dedicated slice. Until then jokers are edition-less.
 
 ---

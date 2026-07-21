@@ -75,20 +75,27 @@ export const BALANCE = {
     black: 'discardGain',
   } as Record<Exclude<TileFont, 'medium'>, FontEffectId>,
 
-  // ----- Sentence patterns (GDD §5.2) -----
+  // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
+  //       Every pattern owns a base [chips × mult]; leveling raises both by
+  //       [levelChips, levelMult] per level above 1. The sentence bonus is a
+  //       self-contained (chips × mult) value ADDED to the blind score — patterns
+  //       no longer multiply the running word total (the old add/multiply op split
+  //       is retired). Chant additionally adds `repeatChips` per repeat beyond the
+  //       3rd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
   patterns: {
-    outcry:       { rank: 1, op: 'add' as const,      flatChips: 20 },
-    imperative:   { rank: 2, op: 'add' as const,      flatChips: 40, flatMult: 2 },
-    chant:        { rank: 3, op: 'add' as const,      perRepeatChips: 15, perRepeatMult: 1.5 },
-    simple:       { rank: 4, op: 'add' as const,      flatChips: 60, flatMult: 3 },
-    descriptive:  { rank: 5, op: 'multiply' as const, totalMult: 1.5 },
-    transitive:   { rank: 6, op: 'multiply' as const, totalMult: 2.0 },
-    ditransitive: { rank: 7, op: 'multiply' as const, totalMult: 2.5 },
-    compound:     { rank: 8, op: 'multiply' as const, totalMult: 3.0 },
+    outcry:       { rank: 1, baseChips: 10, baseMult: 1, levelChips: 10, levelMult: 0.5 },
+    imperative:   { rank: 2, baseChips: 15, baseMult: 2, levelChips: 10, levelMult: 0.5 },
+    chant:        { rank: 3, baseChips: 15, baseMult: 2, levelChips: 10, levelMult: 0.5, repeatChips: 10, repeatLevelChips: 5, repeatFloor: 3 },
+    simple:       { rank: 4, baseChips: 25, baseMult: 2, levelChips: 15, levelMult: 1 },
+    descriptive:  { rank: 5, baseChips: 30, baseMult: 3, levelChips: 15, levelMult: 1 },
+    transitive:   { rank: 6, baseChips: 40, baseMult: 3, levelChips: 20, levelMult: 1 },
+    ditransitive: { rank: 7, baseChips: 50, baseMult: 4, levelChips: 25, levelMult: 1.5 },
+    compound:     { rank: 8, baseChips: 60, baseMult: 4, levelChips: 30, levelMult: 1.5 },
   },
 
-  /** modifier absorption bonuses (GDD §5.1 rule 3) */
-  modifierAbsorption: { addPatternChips: 15, multiplyPatternMult: 0.15 },
+  /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
+   *  uniform on the Chips side for every pattern (the old multiply-pattern variant is gone). */
+  modifierAbsorption: { chips: 15 },
 
   // ----- Letter hands (playtest-02 A-2) — per-word structure bonuses, applied
   //       inside WordScoringContext before the suit multiplier settles. Highest
@@ -104,25 +111,18 @@ export const BALANCE = {
   /** min word length for the Longword hand, and min length for Palindrome to count */
   letterHand: { longwordLen: 7, palindromeMinLen: 3, straightRun: 6 },
 
-  /** punctuation level-up per level (GDD §5.4) */
-  punctuationLevel: {
-    outcry:       { chips: 10 },
-    imperative:   { chips: 15, mult: 1 },
-    chant:        { perRepeatChips: 5, perRepeatMult: 0.5 },
-    simple:       { chips: 20, mult: 1 },
-    descriptive:  { totalMult: 0.25 },
-    transitive:   { totalMult: 0.25 },
-    ditransitive: { totalMult: 0.3 },
-    compound:     { totalMult: 0.3 },
-  },
+  // Punctuation level-ups are now uniform per pattern via `patterns.*.levelChips /
+  // levelMult` (feature-02 A) — the separate punctuationLevel table is retired.
 
-  // ----- Unison bonus (GDD §5.3) -----
+  // ----- Unison bonus (GDD §5.3) — folds into the sentence formula (feature-02 A):
+  //       `standard` adds to the Chips side, the register mults multiply the Mult
+  //       side. Values unchanged from the prior scheme. -----
   unison: {
     minWords: 2,
-    standard: { flatChips: 50 },
-    formal:   { totalMult: 1.25 },
-    slang:    { totalMult: 1.5 },
-    vulgar:   { totalMult: 2.0 },
+    standard: { chips: 50 },
+    formal:   { mult: 1.25 },
+    slang:    { mult: 1.5 },
+    vulgar:   { mult: 2.0 },
   },
 
   // ----- Blinds & antes (GDD §8.2) -----
@@ -155,12 +155,17 @@ export const BALANCE = {
     wideShelfSlots: 1, // Wide Shelf: +1 shop item slot
   },
 
-  // ----- Packs (GDD §9.3) -----
-  packPrice: { letter: 4, emoji: 6, consumable: 4 } as Record<string, number>,
+  // ----- Packs (GDD §9.3, feature-02 B) — 5 types × 3 sizes -----
   pack: {
-    letter: { show: 4, pick: 2 }, // 3–5 tiles shown, choose 1–2
-    emoji: { show: 3, pick: 1 }, // 2–4 jokers, choose 1
-    consumable: { show: 3, pick: 1 },
+    // size governs how many are shown / picked, and the price (Balatro 4/6/8).
+    size: {
+      normal: { show: 3, pick: 1, price: 4 },
+      jumbo:  { show: 5, pick: 1, price: 6 },
+      mega:   { show: 5, pick: 2, price: 8 },
+    },
+    // shop pack-slot roll weights. Forbidden Stacks is rare; Mega/Jumbo rarer.
+    typeWeights: { pattern: 4, joker: 4, consumable: 4, tile: 4, forbidden: 1 } as Record<string, number>,
+    sizeWeights: { normal: 6, jumbo: 3, mega: 1 } as Record<string, number>,
   },
   packEnhanceChance: { base: 0.15, connoisseur: 0.4 }, // material/font pre-attach rate
 

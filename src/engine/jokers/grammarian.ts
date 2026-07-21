@@ -14,7 +14,7 @@ export const grammarian: JokerDef = {
   price: BALANCE.jokerPrice.rare,
   hooks: {
     sentenceScoring: ({ ctx }) => {
-      if (ctx.match !== null) ctx.totalMultiplier *= BALANCE.jokers.grammarian.totalMult;
+      if (ctx.match !== null) ctx.sentenceMult *= BALANCE.jokers.grammarian.totalMult;
     },
   },
 };

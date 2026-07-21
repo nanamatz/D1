@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { BlindState, RunState, Tile } from '../../engine/types';
 import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
+import { tutorialBus } from '../tutorial';
 import { TileView } from './Tile';
 
 interface Counts {
@@ -126,6 +127,9 @@ export function BagWidget({
   const enter = () => {
     if (timer.current) clearTimeout(timer.current);
     setOpen(true);
+    // A-2: explain the pouch the first time the player hovers the widget. The bus
+    // no-ops on already-seen/tips-off.
+    tutorialBus.fire('pouchHover');
   };
   // Generous grace so the cursor can travel from the corner widget to the
   // centered modal without the modal closing (D-3).

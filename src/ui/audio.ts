@@ -64,6 +64,77 @@ export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];
 
 const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
+// ---------------------------------------------------------------------------
+// BGM (work order B phase 2) — a tiny looping chiptune SEQUENCER, same synth-only
+// philosophy as the SFX above (no asset files → swappable for bespoke tracks
+// later, see assets/AUDIO_LICENSES.md). Four loop-safe tracks; the Deadline/boss
+// blind swaps to a tenser variant of the play track (faster, minor, sawtooth).
+// ---------------------------------------------------------------------------
+
+export type MusicTrack = 'menu' | 'play' | 'shop' | 'boss';
+
+/** BGM sits UNDER the SFX in the mix; this scales the whole music bus. */
+const MUSIC_HEADROOM = 0.5;
+
+/** Note name ("C3", "F#4") → frequency in Hz. Rests are represented as null. Exposed for tests. */
+const SEMI: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+export function noteHz(name: string): number {
+  const m = /^([A-G])(#?)(\d)$/.exec(name);
+  if (!m) return 0;
+  const midi = (Number(m[3]) + 1) * 12 + SEMI[m[1]!]! + (m[2] ? 1 : 0);
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+interface Voice {
+  wave: Wave;
+  gain: number;
+  /** one note per 16th-step; null = rest. Loops when the sequencer wraps. */
+  steps: (string | null)[];
+}
+interface TrackDef {
+  bpm: number;
+  voices: Voice[];
+}
+
+// 16-step (one-bar) loops. Placeholder chiptune — bass + lead, key of C/Am.
+// `_` reads as a rest for legibility; expanded to null below.
+const R = null;
+export const MUSIC_TRACKS = ['menu', 'play', 'shop', 'boss'] as const;
+export const MUSIC: Record<MusicTrack, TrackDef> = {
+  // Calm major arpeggio — title/menu.
+  menu: {
+    bpm: 84,
+    voices: [
+      { wave: 'triangle', gain: 0.18, steps: ['C4', R, 'E4', R, 'G4', R, 'B4', R, 'A4', R, 'G4', R, 'E4', R, 'D4', R] },
+      { wave: 'square',   gain: 0.10, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
+    ],
+  },
+  // Upbeat driving loop — the play board.
+  play: {
+    bpm: 120,
+    voices: [
+      { wave: 'square',   gain: 0.14, steps: ['C4', 'E4', 'G4', 'E4', 'A4', 'G4', 'E4', 'C4', 'D4', 'F4', 'A4', 'F4', 'G4', 'E4', 'D4', 'G4'] },
+      { wave: 'triangle', gain: 0.12, steps: ['C2', R, 'C2', R, 'A1', R, 'A1', R, 'F1', R, 'F1', R, 'G1', R, 'G1', R] },
+    ],
+  },
+  // Relaxed shop lounge — the Stationery Shop.
+  shop: {
+    bpm: 100,
+    voices: [
+      { wave: 'triangle', gain: 0.16, steps: ['E4', R, 'G4', 'A4', R, 'G4', 'E4', R, 'D4', R, 'E4', 'G4', R, 'D4', 'C4', R] },
+      { wave: 'square',   gain: 0.09, steps: ['A1', R, R, R, 'E2', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
+    ],
+  },
+  // Tenser variant of `play`: minor, faster, sawtooth lead — the Deadline (boss).
+  boss: {
+    bpm: 140,
+    voices: [
+      { wave: 'sawtooth', gain: 0.13, steps: ['A3', 'C4', 'E4', 'C4', 'F4', 'E4', 'C4', 'A3', 'B3', 'D4', 'F4', 'D4', 'E4', 'C4', 'B3', 'E4'] },
+      { wave: 'square',   gain: 0.11, steps: ['A1', R, 'A1', R, 'F1', R, 'F1', R, 'D1', R, 'D1', R, 'E1', R, 'E1', R] },
+    ],
+  },
+};
+
 /** Pure gain computation — master × group × recipe, each 0..1. Exposed for tests. */
 export function effectiveGain(
   name: SfxName,
@@ -78,6 +149,14 @@ class Audio {
   private ctx: AudioContext | null = null;
   private unlocked = false;
   private vol = { master: 80, music: 70, sfx: 80 };
+  // BGM state (phase 2). The music bus is a single gain node all notes route
+  // through; a lookahead scheduler retriggers the current track's loop.
+  private musicGain: GainNode | null = null;
+  private currentTrack: MusicTrack | null = null;
+  private pendingTrack: MusicTrack | null = null; // requested before the gesture unlock
+  private schedTimer: ReturnType<typeof setInterval> | null = null;
+  private nextStepTime = 0;
+  private currentStep = 0;
 
   constructor() {
     // Install the one-shot unlock gesture listener as soon as this module loads
@@ -100,9 +179,15 @@ class Audio {
     if (!this.ctx) {
       try { this.ctx = new AC(); } catch { return; }
     }
-    void this.ctx.resume().then(() => { this.unlocked = true; }).catch(() => {});
+    const done = () => {
+      this.unlocked = true;
+      // A track requested before the gesture starts now (playMusic no-ops on a
+      // double call, so the sync + async paths are safe).
+      if (this.pendingTrack) this.playMusic(this.pendingTrack);
+    };
+    void this.ctx.resume().then(done).catch(() => {});
     // Some browsers resume synchronously; reflect that immediately too.
-    if (this.ctx.state === 'running') this.unlocked = true;
+    if (this.ctx.state === 'running') done();
   }
 
   isUnlocked(): boolean { return this.unlocked; }
@@ -113,6 +198,98 @@ class Audio {
       music: clamp(v.music, 0, 100),
       sfx: clamp(v.sfx, 0, 100),
     };
+    this.updateMusicGain(); // live-apply to a playing track
+  }
+
+  // ----- BGM (phase 2) -----
+
+  /** Start (or switch to) a looping track. No-ops if it's already the current
+   *  track; before the audio gesture-unlock it's remembered and starts on unlock. */
+  playMusic(track: MusicTrack): void {
+    if (this.currentTrack === track && this.schedTimer !== null) return;
+    if (!this.ctx || !this.unlocked) { this.pendingTrack = track; return; }
+    this.stopScheduler();
+    this.currentTrack = track;
+    this.pendingTrack = null;
+    this.ensureMusicGraph();
+    this.startScheduler();
+  }
+
+  /** Stop BGM and fade out any notes still ringing. */
+  stopMusic(): void {
+    this.pendingTrack = null;
+    this.currentTrack = null;
+    this.stopScheduler();
+    if (this.ctx && this.musicGain) {
+      this.musicGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
+    }
+  }
+
+  private ensureMusicGraph(): void {
+    if (!this.ctx) return;
+    if (!this.musicGain) {
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.connect(this.ctx.destination);
+    }
+    this.updateMusicGain();
+  }
+
+  private updateMusicGain(): void {
+    if (!this.ctx || !this.musicGain) return;
+    const level =
+      clamp(this.vol.master, 0, 100) / 100 *
+      (clamp(this.vol.music, 0, 100) / 100) *
+      MUSIC_HEADROOM;
+    this.musicGain.gain.setTargetAtTime(level, this.ctx.currentTime, 0.03);
+  }
+
+  private stopScheduler(): void {
+    if (this.schedTimer !== null) {
+      clearInterval(this.schedTimer);
+      this.schedTimer = null;
+    }
+  }
+
+  private startScheduler(): void {
+    if (!this.ctx || !this.currentTrack) return;
+    const track = MUSIC[this.currentTrack];
+    const secPerStep = 60 / track.bpm / 4; // 16th-note grid
+    const steps = track.voices[0]?.steps.length ?? 16;
+    this.nextStepTime = this.ctx.currentTime + 0.05;
+    this.currentStep = 0;
+    const tick = () => {
+      if (!this.ctx || !this.musicGain) return;
+      const horizon = this.ctx.currentTime + 0.12; // schedule ~120ms ahead
+      while (this.nextStepTime < horizon) {
+        this.scheduleStep(track, this.currentStep, this.nextStepTime, secPerStep);
+        this.nextStepTime += secPerStep;
+        this.currentStep = (this.currentStep + 1) % steps;
+      }
+    };
+    tick();
+    this.schedTimer = setInterval(tick, 25);
+  }
+
+  private scheduleStep(track: TrackDef, step: number, when: number, secPerStep: number): void {
+    if (!this.ctx || !this.musicGain) return;
+    const ctx = this.ctx;
+    const dur = secPerStep * 0.9; // slight gap between notes
+    for (const v of track.voices) {
+      const name = v.steps[step];
+      if (!name) continue;
+      const hz = noteHz(name);
+      if (!hz) continue;
+      const osc = ctx.createOscillator();
+      osc.type = v.wave;
+      osc.frequency.setValueAtTime(hz, when);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(v.gain, when + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      osc.connect(g).connect(this.musicGain);
+      osc.start(when);
+      osc.stop(when + dur);
+    }
   }
 
   play(name: SfxName, opts?: { step?: number }): void {

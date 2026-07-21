@@ -60,8 +60,8 @@ const sentCtx = (over: Partial<SentenceScoringContext>): SentenceScoringContext 
   match: null,
   unison: null,
   totalBefore: 100,
-  flatBonus: 0,
-  totalMultiplier: 1,
+  sentenceChips: 0,
+  sentenceMult: 1,
   ...over,
 });
 
@@ -115,15 +115,15 @@ describe('slice4 jokers — layer 2 (suit), never fire on gibberish (GDD §11.3)
 
 describe('slice4 jokers — layer 3 (sentence/phase) (GDD §11.4)', () => {
   it('#22 Grammarian: ×2 Mult when a pattern completed', () => {
-    const ctx = sentCtx({ match: { pattern: 'simple', rank: 4, absorbedModifiers: 0 } });
+    const ctx = sentCtx({ match: { pattern: 'simple', rank: 4, absorbedModifiers: 0 }, sentenceMult: 1 });
     bus.emit('sentenceScoring', { run, blind, ctx }, owned('grammarian'));
-    expect(ctx.totalMultiplier).toBe(2);
+    expect(ctx.sentenceMult).toBe(2);
   });
 
   it('#22 Grammarian: no effect when there is no pattern', () => {
     const ctx = sentCtx({ match: null });
     bus.emit('sentenceScoring', { run, blind, ctx }, owned('grammarian'));
-    expect(ctx.totalMultiplier).toBe(1);
+    expect(ctx.sentenceMult).toBe(1);
   });
 
   // Rush Specialist reworked (item 6): a per-WORD ×Mult (wordScoring), scaling with

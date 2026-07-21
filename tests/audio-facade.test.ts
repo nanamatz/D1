@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { audio, effectiveGain, SFX_NAMES, type SfxName } from '../src/ui/audio';
+import { audio, effectiveGain, noteHz, MUSIC, MUSIC_TRACKS, SFX_NAMES, type SfxName } from '../src/ui/audio';
 
 const FULL = { master: 100, music: 100, sfx: 100 };
 
@@ -33,5 +33,35 @@ describe('audio facade — pure logic (no Web Audio in Node)', () => {
 
   it('setVolumes clamps out-of-range values instead of throwing', () => {
     expect(() => audio.setVolumes({ master: 999, music: -5, sfx: 50 })).not.toThrow();
+  });
+});
+
+describe('BGM (phase 2) — pure data + no-op safety', () => {
+  it('noteHz matches equal-temperament anchors (A4=440, A5=880, C4≈261.63)', () => {
+    expect(noteHz('A4')).toBeCloseTo(440, 3);
+    expect(noteHz('A5')).toBeCloseTo(880, 3);
+    expect(noteHz('C4')).toBeCloseTo(261.626, 2);
+    expect(noteHz('nonsense')).toBe(0); // unparseable → 0 (skipped, never NaN)
+  });
+
+  it('every track exists and its note steps are all valid or rests', () => {
+    for (const name of MUSIC_TRACKS) {
+      const track = MUSIC[name];
+      expect(track.voices.length).toBeGreaterThan(0);
+      // all voices share one loop length so the sequencer wraps cleanly
+      const len = track.voices[0]!.steps.length;
+      for (const v of track.voices) {
+        expect(v.steps.length).toBe(len);
+        for (const s of v.steps) {
+          if (s !== null) expect(noteHz(s)).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it('playMusic / stopMusic are safe no-ops in Node (no AudioContext)', () => {
+    expect(() => audio.playMusic('play')).not.toThrow();
+    expect(() => audio.playMusic('boss')).not.toThrow();
+    expect(() => audio.stopMusic()).not.toThrow();
   });
 });

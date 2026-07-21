@@ -33,7 +33,9 @@ export interface Encounter {
 }
 
 export const ENCOUNTERS: readonly Encounter[] = [
-  { id: 'firstGibberish', group: 'scoring', icon: '🗯️' },
+  // D-3: gibberish uses the same spotlight + speech-bubble grammar as the other
+  // encounters — the hole lands in the tray, so WooDak points there.
+  { id: 'firstGibberish', group: 'scoring', icon: '🗯️', mascot: 'woodak', target: '.tray' },
   { id: 'firstLetterHand', group: 'scoring', icon: '🃏' },
   { id: 'firstPattern', group: 'scoring', icon: '📝' },
   { id: 'firstUnison', group: 'scoring', icon: '🎵' },

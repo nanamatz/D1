@@ -95,8 +95,6 @@ export interface WordSubmission {
 
 // ---------- Sentence patterns (GDD §5) ----------
 
-export type PatternOp = 'add' | 'multiply';
-
 export type PatternId =
   | 'outcry'
   | 'imperative'
@@ -111,7 +109,6 @@ export interface PatternDef {
   id: PatternId;
   /** 1 (weakest) .. 8 (strongest) — "highest single pattern only" rule (GDD §5.1 rule 2) */
   rank: number;
-  op: PatternOp;
   /** current level, raised by Punctuation consumables (GDD §5.4). Starts at 1. */
   level: number;
 }
@@ -171,10 +168,10 @@ export interface SentenceScoringContext {
   unison: UnisonResult | null;
   /** running blind total before the sentence bonus is applied */
   totalBefore: number;
-  /** additive patterns add here */
-  flatBonus: number;
-  /** multiplicative patterns multiply here */
-  totalMultiplier: number;
+  /** the sentence bonus' Chips side: patternChips + 15·absorbedModifiers + unisonChips (GDD §5.2) */
+  sentenceChips: number;
+  /** the sentence bonus' Mult side: patternMult × unisonMult (GDD §5.2) */
+  sentenceMult: number;
 }
 
 // ---------- Blind / Ante / Run state (GDD §8) ----------
@@ -241,15 +238,26 @@ export type ShopItem =
   | { kind: 'joker'; id: string; price: number }
   | { kind: 'consumable'; id: ConsumableId; price: number };
 
-/** Pack families (GDD §9.3). */
-export type PackKind = 'letter' | 'emoji' | 'consumable';
+/** Pack types (GDD §9.3, feature-02 B). Publishing-world names live in i18n:
+ *  pattern=Typesetting · joker=Sticker · consumable=Stationery · tile=Type ·
+ *  forbidden=Forbidden Stacks (rare). Code ids are semantic, not the display names. */
+export type PackType = 'pattern' | 'joker' | 'consumable' | 'tile' | 'forbidden';
+
+/** Pack sizes (GDD §9.3, feature-02 B): Normal 3/1 · Jumbo 5/1 · Mega 5/2. */
+export type PackSize = 'normal' | 'jumbo' | 'mega';
+
+/** A shop pack slot: any type × any size (weights in balance.ts). */
+export interface PackSlot {
+  type: PackType;
+  size: PackSize;
+}
 
 export interface ShopState {
   items: (ShopItem | null)[];
   /** single voucher slot, restocks each ante (GDD §9.2); null when owned/bought */
   voucher: VoucherId | null;
   /** pack slots (null = bought) */
-  packs: (PackKind | null)[];
+  packs: (PackSlot | null)[];
   /** rerolls done this visit — drives the escalating reroll cost */
   rerolls: number;
 }

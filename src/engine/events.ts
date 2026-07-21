@@ -39,7 +39,7 @@ export interface EngineEvents {
   discardUsed: { run: RunState; blind: BlindState; tiles: Tile[] };
 
   /** sentence bonus is being finalized at blind end (GDD §7.4).
-   *  Mutate ctx.flatBonus / ctx.totalMultiplier. */
+   *  Mutate ctx.sentenceChips / ctx.sentenceMult (the bonus = chips × mult). */
   sentenceScoring: { run: RunState; blind: BlindState; ctx: SentenceScoringContext };
 
   /** blind ended. early=true when ended via the projected≥target trigger */

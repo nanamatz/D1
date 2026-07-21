@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { sellValue } from '../../engine/economy';
@@ -25,14 +25,20 @@ interface Props {
   onSellConsumable?: (index: number) => void;
   /** when set (shop), clicking an owned joker opens a Sell menu (D-1) */
   onSellJoker?: (index: number) => void;
+  /** when set, the joker shelf supports drag-reorder (feature-02 D-1) */
+  onReorderJoker?: (from: number, to: number) => void;
 }
 
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
-export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker }: Props) {
+export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker, onReorderJoker }: Props) {
   const { t, lang } = useI18n();
   const settle = useSettleView();
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
   const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
+  // D-1/D-2: joker drag-reorder + dashed origin/insertion outlines.
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const endDrag = () => { setDragIdx(null); setOverIdx(null); };
   return (
     <div className="shelf">
       {/* The count sits OUTSIDE the group box, directly beneath it, so the box's
@@ -47,8 +53,35 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
             const accent = def.rarity !== 'common' ? def.rarity : undefined;
             const firing = settle.active && settle.activeJokerId === def.id;
             const className = ['joker', accent, firing ? 'firing' : ''].filter(Boolean).join(' ');
+            const dnd = onReorderJoker
+              ? {
+                  draggable: true,
+                  onDragStart: (e: DragEvent) => {
+                    e.dataTransfer.setData('text/plain', `joker:${i}`);
+                    setDragIdx(i);
+                  },
+                  onDragOver: (e: DragEvent) => {
+                    e.preventDefault();
+                    if (dragIdx !== null && dragIdx !== i) setOverIdx(i);
+                  },
+                  onDrop: (e: DragEvent) => {
+                    e.preventDefault();
+                    const from = Number((e.dataTransfer.getData('text/plain') || '').split(':')[1]);
+                    if (!Number.isNaN(from)) onReorderJoker(from, i);
+                    endDrag();
+                  },
+                  onDragEnd: endDrag,
+                }
+              : {};
+            const slotClass = [
+              'joker-slot',
+              dragIdx === i ? 'dragging' : '',
+              overIdx === i && dragIdx !== null && dragIdx !== i ? 'drop-target' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
             return (
-              <div key={i} className="joker-slot">
+              <div key={i} className={slotClass} {...dnd}>
                 <Tooltip
                   title={name}
                   body={t(jokerDescKey(def.id))}
