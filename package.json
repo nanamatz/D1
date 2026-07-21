@@ -8,13 +8,15 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "sim": "tsx src/sim/autoplay.ts",
-    "sim:materials": "tsx src/sim/materials.ts"
+    "sim:materials": "tsx src/sim/materials.ts",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.0.0",
+    "gh-pages": "^6.3.0",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vite": "^8.0.0",

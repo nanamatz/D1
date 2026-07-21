@@ -5,6 +5,6 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   // Relative asset paths so the build runs from any subpath (itch.io serves
   // HTML5 games from html.itch.zone/html/<id>/, not the domain root).
-  base: './',
+  base: '/D1/',
   plugins: [react()],
 });
