@@ -34,9 +34,9 @@ describe('P1-3a — per-submission ScoreEvent log (settle choreography source)',
     const { events } = play(newRun('x'), 'cat');
     const tiles = events.filter((e) => e.kind === 'tile');
     expect(tiles.map((e) => (e.kind === 'tile' ? [e.letter, e.chips] : null))).toEqual([
-      ['C', 3],
-      ['A', 1],
-      ['T', 1],
+      ['C', 9],
+      ['A', 3],
+      ['T', 3],
     ]);
   });
 
@@ -66,26 +66,26 @@ describe('P1-3a — per-submission ScoreEvent log (settle choreography source)',
       'consonantBricklayer',
       'jackOfAllTrades',
     ]);
-    // settle = (5 + 8) chips × (1 + 4) mult = 65 — total unchanged from the batch path
-    expect(settled).toBe(65);
+    // settle = (15 + 8) chips × (1 + 4) mult = 115 — total unchanged from the batch path
+    expect(settled).toBe(115);
   });
 
   it('ends with a settle event carrying the final chips/mult/total', () => {
     const run = equip('j', 'consonantBricklayer', 'jackOfAllTrades');
     const { events } = play(run, 'cat');
-    expect(events.at(-1)).toEqual({ kind: 'settle', chips: 13, mult: 5, total: 65 });
+    expect(events.at(-1)).toEqual({ kind: 'settle', chips: 23, mult: 5, total: 115 });
   });
 
   it('omits joker events for a jokerless run', () => {
     const { events, settled } = play(newRun('x'), 'cat');
     expect(events.some((e) => e.kind === 'joker')).toBe(false);
-    expect(settled).toBe(5);
+    expect(settled).toBe(15);
   });
 
   it('logs gibberish as tiles + null-suit ×1.0 settle', () => {
     const { events, settled } = play(newRun('x'), 'zzq'); // not a word
     expect(events.find((e) => e.kind === 'suit')).toEqual({ kind: 'suit', suit: null, mult: 1 });
-    expect(events.at(-1)).toEqual({ kind: 'settle', chips: 30, mult: 1, total: 30 });
-    expect(settled).toBe(30);
+    expect(events.at(-1)).toEqual({ kind: 'settle', chips: 90, mult: 1, total: 90 });
+    expect(settled).toBe(90);
   });
 });

@@ -15,10 +15,13 @@ export const BALANCE = {
   basePhases: 5,
   discardsPerBlind: 4, // per-blind count; no per-use tile cap (playtest-04 D-4)
 
-  // ----- Scrabble letter values (GDD §2.1) -----
+  // ----- Letter values (GDD §2.1) — Scrabble ratios × 3 (feel pass 2026-07-21):
+  //       raise the base floor so tiles feel impactful; ratios (rare-letter payoff)
+  //       are preserved. Only these scale — pattern/unison/hand/material constants
+  //       do not. Sim: src/sim/feel-chip-scale.ts verifies antes don't trivialize. -----
   letterChips: {
-    A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3,
-    N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10,
+    A: 3, B: 9, C: 9, D: 6, E: 3, F: 12, G: 6, H: 12, I: 3, J: 24, K: 15, L: 3, M: 9,
+    N: 3, O: 3, P: 9, Q: 30, R: 3, S: 3, T: 3, U: 3, V: 12, W: 12, X: 24, Y: 12, Z: 30,
   } as Record<string, number>,
 
   /**
@@ -127,7 +130,11 @@ export const BALANCE = {
 
   // ----- Blinds & antes (GDD §8.2) -----
   blindTargetMult: { small: 1.0, big: 1.5, boss: 2.0 },
-  anteBaseTargets: [100, 300, 800, 2000, 5000, 11000, 20000, 35000], // placeholder curve, antes 1..8
+  // placeholder curve, antes 1..8. Feel pass 2026-07-21: left UNCHANGED after the
+  // letterChips ×3 scaling — src/sim/feel-chip-scale.ts (200 seeds/ante, greedy
+  // best-word) shows ante 1 clearing 77.5% (not near-100%-with-phases-to-spare)
+  // and antes 2-4 falling off sharply, so the curve is not trivialized.
+  anteBaseTargets: [100, 300, 800, 2000, 5000, 11000, 20000, 35000],
   runAntes: 8,
 
   // ----- Economy (GDD §9.1) -----

@@ -138,8 +138,8 @@ describe('slice1 loop — submitWord (GDD §6.1, §7.1)', () => {
     const ids = blind.hand.slice(0, 3).map((t) => t.id); // C A T
     const { blind: after, submission } = submitWord(blind, run, lex, ids, makeRng('test'));
     expect(submission.text).toBe('CAT');
-    expect(submission.settledScore).toBe(5);
-    expect(after.committedScore).toBe(5); // layer 1 immediate (GDD §7.1)
+    expect(submission.settledScore).toBe(15);
+    expect(after.committedScore).toBe(15); // layer 1 immediate (GDD §7.1)
     expect(after.sequence).toHaveLength(1);
     expect(after.phasesUsed).toBe(1);
   });

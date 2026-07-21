@@ -89,10 +89,10 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     const { run, blind } = handOf(['B', 'O', 'O', 'K']);
     const ids = blind.hand.slice(0, 4).map((t) => t.id);
     const { submission } = submitWord(blind, run, lex, ids, makeRng('test'));
-    // chips: B3+O1+O1+K5 = 10, +Twin 10 = 20 · mult: standard 1.0 (+0) → 20
+    // chips: B9+O3+O3+K15 = 30, +Twin 10 = 40 · mult: standard 1.0 (+0) → 40
     expect(submission.text).toBe('BOOK');
     expect(submission.isGibberish).toBe(false);
-    expect(submission.settledScore).toBe(20);
+    expect(submission.settledScore).toBe(40);
   });
 
   it('gibberish QRSTUV fires Straight, stays a hole (suit/POS null)', () => {
@@ -100,10 +100,10 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     const { run, blind } = handOf(['Q', 'R', 'S', 'T', 'U', 'V']);
     const ids = blind.hand.slice(0, 6).map((t) => t.id);
     const { submission } = submitWord(blind, run, lex, ids, makeRng('test'));
-    // chips: Q10+R1+S1+T1+U1+V4 = 18, +Straight 60 = 78 · mult: gibberish 1.0 +4 = 5 → 390
+    // chips: Q30+R3+S3+T3+U3+V12 = 54, +Straight 60 = 114 · mult: gibberish 1.0 +4 = 5 → 570
     expect(submission.isGibberish).toBe(true);
     expect(submission.suit).toBeNull();
     expect(submission.posUsed).toBeNull();
-    expect(submission.settledScore).toBe(390);
+    expect(submission.settledScore).toBe(570);
   });
 });

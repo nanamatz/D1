@@ -85,8 +85,8 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
         chipsDelta: BALANCE.fontEffectValues.chipPlay.chips, multDelta: 0, goldDelta: 0,
       }),
     ]);
-    // CAT = 5 letter chips + 30 → settle sees 35 × 1.0 standard
-    expect(r.submission.settledScore).toBe(35);
+    // CAT = 15 letter chips + 30 → settle sees 45 × 1.0 standard
+    expect(r.submission.settledScore).toBe(45);
   });
 
   it('goldPlay pays gold through SubmitResult.goldDelta and logs a font event', () => {
@@ -98,7 +98,7 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
         goldDelta: BALANCE.fontEffectValues.goldPlay.gold, chipsDelta: 0,
       }),
     );
-    expect(r.submission.settledScore).toBe(5); // gold never touches chips×mult
+    expect(r.submission.settledScore).toBe(15); // gold never touches chips×mult
   });
 
   it('retriggerPlay repeats the tile scoring block once', () => {
@@ -107,8 +107,8 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
     const tId = hand[2]!.id;
     expect(r.events.filter((e) => e.kind === 'tile' && e.tileId === tId)).toHaveLength(2);
     expect(r.events.filter((e) => e.kind === 'font' && e.effect === 'retriggerPlay')).toHaveLength(1);
-    // C3 A1 T1 + retriggered T1 = 6 chips × 1.0
-    expect(r.submission.settledScore).toBe(6);
+    // C9 A3 T3 + retriggered T3 = 18 chips × 1.0
+    expect(r.submission.settledScore).toBe(18);
   });
 
   it('retriggerPlay re-fires the tile material too (retriggers compose)', () => {
@@ -117,8 +117,8 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
     const r = submit(hand);
     const matEvents = r.events.filter((e) => e.kind === 'material' && e.tileId === hand[2]!.id);
     expect(matEvents).toHaveLength(2);
-    // 5 letter chips + T again (1) + 2×30 porcelain = 66 × 1.0
-    expect(r.submission.settledScore).toBe(66);
+    // 15 letter chips + T again (3) + 2×30 porcelain = 78 × 1.0
+    expect(r.submission.settledScore).toBe(78);
   });
 
   it('font play effects fire on gibberish too (GDD §2.3 rule)', () => {

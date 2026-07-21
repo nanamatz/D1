@@ -36,20 +36,20 @@ const freshBlind = (target = 1000) => {
 describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)', () => {
   it('a bare verb no longer projects a sentence bonus (imperative needs an object)', () => {
     const { run, blind } = freshBlind();
-    const { blind: after, submission } = play(blind, run, 'run'); // RUN = 3 chips
-    expect(submission.settledScore).toBe(3);
-    expect(after.committedScore).toBe(3); // layer 1 unchanged
-    expect(after.projectedScore).toBe(3); // no imperative → projected mirrors committed
+    const { blind: after, submission } = play(blind, run, 'run'); // RUN = R+U+N = 3+3+3 = 9 chips
+    expect(submission.settledScore).toBe(9);
+    expect(after.committedScore).toBe(9); // layer 1 unchanged
+    expect(after.projectedScore).toBe(9); // no imperative → projected mirrors committed
   });
 
   it('verb + noun projects the Imperative bonus over committed', () => {
     const { run } = freshBlind();
     let b = startBlind(run, makeRng('s3'), { target: 1000 });
-    ({ blind: b } = play(b, run, 'eats')); // 4 chips
-    ({ blind: b } = play(b, run, 'fish')); // 10 chips → EATS FISH = Imperative
-    // committed = 14; both standard → Unison standard (+50 chips); Imperative 15×2.
-    expect(b.committedScore).toBe(14);
-    expect(b.projectedScore).toBe(144); // 14 + (15 + 50) × 2 = 14 + 130
+    ({ blind: b } = play(b, run, 'eats')); // 12 chips
+    ({ blind: b } = play(b, run, 'fish')); // 30 chips → EATS FISH = Imperative
+    // committed = 42; both standard → Unison standard (+50 chips); Imperative 15×2.
+    expect(b.committedScore).toBe(42);
+    expect(b.projectedScore).toBe(172); // 42 + (15 + 50) × 2 = 42 + 130
   });
 
   it('builds a Transitive sentence across phases and multiplies the total', () => {
@@ -58,10 +58,10 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     ({ blind: b } = play(b, run, 'cat'));
     ({ blind: b } = play(b, run, 'eats'));
     ({ blind: b } = play(b, run, 'fish'));
-    // committed = CAT 5 + EATS 4 + FISH 10 = 19. All standard suit → Unison
-    // standard (+50 chips) folds in: 19 + (40 + 50) × Transitive-mult 3 = 289.
-    expect(b.committedScore).toBe(19);
-    expect(b.projectedScore).toBe(289);
+    // committed = CAT 15 + EATS 12 + FISH 30 = 57. All standard suit → Unison
+    // standard (+50 chips) folds in: 57 + (40 + 50) × Transitive-mult 3 = 327.
+    expect(b.committedScore).toBe(57);
+    expect(b.projectedScore).toBe(327);
   });
 
   it('a gibberish hole collapses the sentence bonus — projected falls back to committed', () => {
@@ -84,7 +84,7 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     const result = endBlind(b, run, lex);
     expect(result.judgment.match?.pattern).toBe('transitive');
     expect(result.judgment.unison?.suit).toBe('standard');
-    expect(result.finalScore).toBe(289); // 19 + (40 + 50 unison) × 3 transitive
+    expect(result.finalScore).toBe(327); // 57 + (40 + 50 unison) × 3 transitive
     expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 5 - 3 = 2
   });
 });

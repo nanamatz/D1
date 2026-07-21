@@ -100,17 +100,17 @@ A tile is the smallest unit of the game. Each tile is one alphabet letter (the s
 
 ### 2.1 Per-Letter Score & Count (rebalanced — diverges from Scrabble on purpose)
 
-Letter **scores** stay Scrabble-standard, but the **counts** were rebalanced (playtest-04 C-2, chosen by `src/sim/tile-pool.ts`): the bag shrank **98 → 68** and its extremes were **compressed** — the E-glut cut (12 → 6) and rare letters raised (1 → 2). Scrabble's distribution assumes board-adjacency; standalone-word spelling wants a flatter curve. Blanks excluded.
+Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE.letterChips`): the base floor was raised so tiles feel more impactful, while the ratios that reward rare letters are preserved exactly. Pattern/unison/letter-hand/material constants are untouched by this scaling — only the per-tile letter chip does. `src/sim/feel-chip-scale.ts` confirms the ante curve (§8.2) isn't trivialized by the change (left unscaled). The **counts** were separately rebalanced (playtest-04 C-2, chosen by `src/sim/tile-pool.ts`): the bag shrank **98 → 68** and its extremes were **compressed** — the E-glut cut (12 → 6) and rare letters raised (1 → 2). Scrabble's distribution assumes board-adjacency; standalone-word spelling wants a flatter curve. Blanks excluded.
 
 | Score | Letters (count) | Tiles |
 |---|---|---|
-| 1 pt | E×6, A×5, I×5, O×4, U×3, N×3, R×3, T×3, L×2, S×2 | 36 |
-| 2 pt | D×2, G×2 | 4 |
-| 3 pt | B×2, C×2, M×2, P×2 | 8 |
-| 4 pt | F×2, H×2, V×2, W×2, Y×2 | 10 |
-| 5 pt | K×2 | 2 |
-| 8 pt | J×2, X×2 | 4 |
-| 10 pt | Q×2, Z×2 | 4 |
+| 3 pt | E×6, A×5, I×5, O×4, U×3, N×3, R×3, T×3, L×2, S×2 | 36 |
+| 6 pt | D×2, G×2 | 4 |
+| 9 pt | B×2, C×2, M×2, P×2 | 8 |
+| 12 pt | F×2, H×2, V×2, W×2, Y×2 | 10 |
+| 15 pt | K×2 | 2 |
+| 24 pt | J×2, X×2 | 4 |
+| 30 pt | Q×2, Z×2 | 4 |
 | **Total** | — | **68** |
 
 **Why (sim, 4000 hands @ hand 11):** vs. the old 98-tile bag, rare letters now appear **~2× as often** per hand (1.24 → 2.57), so deck-building and rare-letter payoffs gain traction; the longest makeable word stays healthy (6.9 → 6.2 letters) and the gibberish-forced rate stays near zero (0.1% → 0.3%). Connected knobs (hand size, target curve, Epic-Poet/pouch-depletion cap) get retuned against sim drift as needed.
@@ -136,7 +136,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 
 **Risk budget: Glass only.** Every other material is pure upside. Stone's letter loss is a trade-off known at the moment it is applied, not a gamble, so it does not break this rule. A destroyed Glass tile leaves the run permanently.
 
-**Numbers are Balatro's, verbatim, on purpose.** They are a validated reference point to tune *from*, not a claim that they fit our scale — our letter chips are Scrabble values ("TASTE" = 5 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. Three predicted breakages are recorded for `src/sim` to measure: Brass compounding (≈×11 off ~6 held tiles), Porcelain over-tuning, and the economy values (Ivory/Lead plate) surviving unscaled because our gold scale already matches Balatro's. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
+**Numbers are Balatro's, verbatim, on purpose.** They are a validated reference point to tune *from*, not a claim that they fit our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. Three predicted breakages are recorded for `src/sim` to measure: Brass compounding (≈×11 off ~6 held tiles), Porcelain over-tuning, and the economy values (Ivory/Lead plate) surviving unscaled because our gold scale already matches Balatro's. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
 
 **Why there is no Wild material.** Balatro's Wild card ("counts as any suit") has no translation here: **suit is a property of the word, not the tile** — the lexicon assigns it (§3.1). A tile has no suit to widen. Dropping it is what lets Balatro's 8 enhancements fit our 7 effect slots.
 

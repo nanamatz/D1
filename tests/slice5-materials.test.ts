@@ -29,9 +29,9 @@ describe('slice5 — letterless tiles (GDD §2.2 Stone)', () => {
     const s = scoreWord(tiles('_cat'), lex);
     expect(s.isGibberish).toBe(true);
     expect(s.suit).toBeNull();
-    // C3 A1 T1 = 5 chips; the stone contributes 0 letter chips but +50 material
+    // C9 A3 T3 = 15 chips; the stone contributes 0 letter chips but +50 material
     // chips (GDD §2.2, wired in slice5-materials), × 1.0 gibberish
-    expect(s.settledScore).toBe(55);
+    expect(s.settledScore).toBe(65);
   });
 
   it('the same tiles without the stone spell a real word', () => {
@@ -64,24 +64,24 @@ describe('slice5 — letterString (review finding 1)', () => {
 
 describe('slice5 — static per-tile material effects (GDD §2.2)', () => {
   it('porcelain adds +30 chips per tile', () => {
-    // CAT = 5 chips; one porcelain C = +30 → 35 × 1.0 standard
+    // CAT = 15 chips; one porcelain C = +30 → 45 × 1.0 standard
     const t = tiles('cat');
     t[0]!.material = 'porcelain';
-    expect(scoreWord(t, lex).settledScore).toBe(35);
+    expect(scoreWord(t, lex).settledScore).toBe(45);
   });
 
   it('porcelain stacks per tile', () => {
     const t = tiles('cat');
     t[0]!.material = 'porcelain';
     t[1]!.material = 'porcelain';
-    expect(scoreWord(t, lex).settledScore).toBe(65); // 5 + 60
+    expect(scoreWord(t, lex).settledScore).toBe(75); // 15 + 60
   });
 
   it('polished adds +4 mult per tile', () => {
-    // CAT = 5 chips, standard mult 1.0 + 4 = 5.0 → 25
+    // CAT = 15 chips, standard mult 1.0 + 4 = 5.0 → 75
     const t = tiles('cat');
     t[0]!.material = 'polished';
-    expect(scoreWord(t, lex).settledScore).toBe(25);
+    expect(scoreWord(t, lex).settledScore).toBe(75);
   });
 
   it('stone adds +50 chips and forces gibberish', () => {
@@ -90,7 +90,7 @@ describe('slice5 — static per-tile material effects (GDD §2.2)', () => {
   });
 
   it('ceramic changes nothing', () => {
-    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(5);
+    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(15);
   });
 });
 
@@ -149,17 +149,17 @@ describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
 
 describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
   it('doubles the mult on the word it is played in', () => {
-    // CAT = 5 chips × (1.0 standard × 2) = 10
+    // CAT = 15 chips × (1.0 standard × 2) = 30
     const t = tiles('cat');
     t[0]!.material = 'glass';
-    expect(scoreWord(t, lex).settledScore).toBe(10);
+    expect(scoreWord(t, lex).settledScore).toBe(30);
   });
 
   it('two glass tiles compound the factor', () => {
     const t = tiles('cat');
     t[0]!.material = 'glass';
     t[1]!.material = 'glass';
-    expect(scoreWord(t, lex).settledScore).toBe(20); // 5 × 1.0 × 2 × 2
+    expect(scoreWord(t, lex).settledScore).toBe(60); // 15 × 1.0 × 2 × 2
   });
 
   it('reports destroyed tiles and is seed-reproducible', () => {
