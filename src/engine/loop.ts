@@ -332,14 +332,15 @@ function scoreSubmission(
   return { submission, events, materialGold, destroyedTileIds };
 }
 
-/** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total. */
+/** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total.
+ *  Returns the post-hook breakdown so the UI can animate chips × mult (item 2). */
 function scoreSentence(
   committed: number,
   sequence: readonly WordSubmission[],
   judgment: SentenceJudgment,
   run: RunState,
   blind: BlindState,
-): number {
+): { total: number; sentenceChips: number; sentenceMult: number } {
   const base = finalizeScore(committed, judgment, run.patternLevels);
   const ctx: SentenceScoringContext = {
     sequence: sequence.slice(),
@@ -352,7 +353,11 @@ function scoreSentence(
   defaultJokerBus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
-  return ctx.totalBefore + ctx.sentenceChips * ctx.sentenceMult;
+  return {
+    total: ctx.totalBefore + ctx.sentenceChips * ctx.sentenceMult,
+    sentenceChips: ctx.sentenceChips,
+    sentenceMult: ctx.sentenceMult,
+  };
 }
 
 /**
@@ -430,7 +435,7 @@ export function submitWord(
   // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
   // sentence bonus is a projection, never accumulated per phase.
   const judgment = judgeSentence(sequence, lexicon);
-  const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind);
+  const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind).total;
 
   return { submission, events, goldDelta, destroyedTileIds, blind: { ...afterBlind, projectedScore } };
 }
@@ -439,6 +444,12 @@ export interface EndBlindResult {
   judgment: SentenceJudgment;
   /** the settled blind score after finalizing the sentence bonus (GDD §7.4) */
   finalScore: number;
+  /** the sentence bonus' Chips side, post joker/boss hooks (item 2 animation) */
+  sentenceChips: number;
+  /** the sentence bonus' Mult side, post joker/boss hooks (item 2 animation) */
+  sentenceMult: number;
+  /** the bonus itself: sentenceChips × sentenceMult */
+  bonus: number;
   /** unused phases → gold on ending (economy lands in slice ⑤) */
   phasesLeft: number;
   /** gold from materials held in hand at blind end (Ivory). The CALLER applies it —
@@ -454,10 +465,13 @@ export interface EndBlindResult {
  */
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
   const judgment = judgeSentence(blind.sequence, lexicon);
-  const finalScore = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind);
+  const scored = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind);
   return {
     judgment,
-    finalScore,
+    finalScore: scored.total,
+    sentenceChips: scored.sentenceChips,
+    sentenceMult: scored.sentenceMult,
+    bonus: scored.sentenceChips * scored.sentenceMult,
     phasesLeft: blind.phasesTotal - blind.phasesUsed,
     materialGold: collectBlindEndMaterials(blind.hand),
   };

@@ -87,4 +87,18 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     expect(result.finalScore).toBe(327); // 57 + (40 + 50 unison) × 3 transitive
     expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 5 - 3 = 2
   });
+
+  it('endBlind surfaces the sentence-bonus chips/mult breakdown', () => {
+    const { run } = freshBlind();
+    let b = startBlind(run, makeRng('s3'), { target: 1000 });
+    ({ blind: b } = play(b, run, 'cat'));
+    ({ blind: b } = play(b, run, 'eats'));
+    ({ blind: b } = play(b, run, 'fish'));
+    const result = endBlind(b, run, lex);
+    // Transitive pattern chips 40 + Unison standard 50 = 90; Transitive mult 3.
+    expect(result.sentenceChips).toBe(90);
+    expect(result.sentenceMult).toBe(3);
+    expect(result.bonus).toBe(270);
+    expect(result.finalScore).toBe(327); // committed 57 + bonus 270
+  });
 });
