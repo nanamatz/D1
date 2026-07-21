@@ -203,8 +203,8 @@ export interface RunState {
   blindIndex: 0 | 1 | 2; // small / big / boss
   gold: number;
   handSize: number; // base 11, a balance knob (GDD §6.2)
-  basePhases: number; // base 4
-  baseDiscards: number; // base 3
+  basePhases: number; // base 5
+  baseDiscards: number; // base 4
   bag: Tile[]; // the permanent 68-tile (sculpted) asset
   jokers: OwnedJoker[];
   consumables: ConsumableId[];
