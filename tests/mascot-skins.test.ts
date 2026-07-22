@@ -19,6 +19,8 @@ beforeEach(() => {
 
 const woodakUrl = WOODAK_SKINS.find((s) => s.id === 'woodak')!.art!;
 const dogUrl = WOODAK_SKINS.find((s) => s.id === 'dog')!.art!;
+const ghostUrl = WOODAK_SKINS.find((s) => s.id === 'ghost')!.art!;
+const alienUrl = WOODAK_SKINS.find((s) => s.id === 'alien')!.art!;
 const setSettings = (o: Record<string, unknown>) => { store['wj.settings'] = JSON.stringify(o); };
 
 describe('WooDak skins — availability', () => {
@@ -27,10 +29,10 @@ describe('WooDak skins — availability', () => {
     expect(skins.map((s) => s.id)).toEqual(['woodak']);
   });
 
-  it('DOG becomes available once unlocked; art-less variants never do', () => {
-    const skins = availableWooDakSkins(new Set(['DOG', 'MONSTER', 'GHOST', 'CAT']));
-    // dog has art → included; monster/ghost/cat are unlocked but art-less → excluded.
-    expect(skins.map((s) => s.id)).toEqual(['woodak', 'dog']);
+  it('DOG/GHOST/ALIEN become available once unlocked; art-less CAT never does', () => {
+    const skins = availableWooDakSkins(new Set(['DOG', 'ALIEN', 'GHOST', 'CAT']));
+    // dog/ghost/alien have art → included; cat is unlocked but art-less → excluded.
+    expect(skins.map((s) => s.id)).toEqual(['woodak', 'dog', 'ghost', 'alien']);
   });
 });
 
@@ -43,18 +45,22 @@ describe('WooDak skins — art resolution (with fallback)', () => {
     expect(woodakArt('dog', new Set(['DOG']))).toBe(dogUrl);
   });
 
+  it('returns the alien art when alien is selected and unlocked', () => {
+    expect(woodakArt('alien', new Set(['ALIEN']))).toBe(alienUrl);
+  });
+
   it('an art-less selection resolves to the default', () => {
-    expect(woodakArt('monster', new Set(['MONSTER']))).toBe(woodakUrl);
+    expect(woodakArt('cat', new Set(['CAT']))).toBe(woodakUrl);
   });
 });
 
 describe('mascotVariantArt — drives the unlock celebration', () => {
-  it('returns the art for a variant that has it (dog), null for art-less variants', () => {
-    // dog has art → the reveal shows the portrait + the "ready" message
+  it('returns the art for a variant that has it (dog/ghost/alien), null for art-less variants', () => {
+    // dog/ghost/alien have art → the reveal shows the portrait + the "ready" message
     expect(mascotVariantArt('dog')).toBe(dogUrl);
-    // monster/ghost/cat have no art yet → the reveal stays "coming soon"
-    expect(mascotVariantArt('monster')).toBeNull();
-    expect(mascotVariantArt('ghost')).toBeNull();
+    expect(mascotVariantArt('ghost')).not.toBeNull();
+    expect(mascotVariantArt('alien')).not.toBeNull();
+    // cat has no art yet → the reveal stays "coming soon"
     expect(mascotVariantArt('cat')).toBeNull();
   });
 });

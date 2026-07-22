@@ -7,7 +7,7 @@ skin shipping: **누렁이 (DOG)**, using `docs/Arts/T_Dog.png`. Selection lives
 Options → Settings. Piyak (shop proprietor) is unchanged.
 
 Follows the chromatic-unlock system (GDD §13): the mascot skins are the existing
-`{ kind: 'mascot', variant }` unlock rows (MONSTER/GHOST/DOG/CAT), which were
+`{ kind: 'mascot', variant }` unlock rows (ALIEN/GHOST/DOG/CAT), which were
 "data slots, art later." DOG now has art and a real effect.
 
 ## Decisions (from brainstorming)
@@ -16,18 +16,20 @@ Follows the chromatic-unlock system (GDD §13): the mascot skins are the existin
   surfaces: run-end companion (`WooDakMascot`), tutorial coach-marks (`SpotlightBubble`),
   tutorial popups (`TutorialPopup`). Piyak stays the fixed shop cat.
 - **Selector lists Default + unlocked skins that have art.** Today: WooDak(default) +
-  누렁이(Dog). MONSTER/GHOST/CAT appear automatically once art is added. No locked
-  placeholder entries.
+  누렁이(Dog) + 유령(Ghost) + 외계인(Alien). CAT appears automatically once art is added. No
+  locked placeholder entries.
 
 ## Architecture
 
 ### 1. `src/ui/mascots.ts` (new) — skin registry + resolver
 
-- `type WooDakSkin = 'woodak' | 'monster' | 'ghost' | 'dog' | 'cat'` (default `'woodak'`).
+- `type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'cat'` (default `'woodak'`).
 - `WOODAK_SKINS: { id: WooDakSkin; unlockId: string | null; nameKey: string; art: string | null }[]`
   - `woodak`: `unlockId: null` (always available), `art: woodak.png`.
   - `dog`: `unlockId: 'DOG'`, `art: dog.png`.
-  - `monster`/`ghost`/`cat`: `art: null` (not selectable yet).
+  - `ghost`: `unlockId: 'GHOST'`, `art: ghost.png`.
+  - `alien`: `unlockId: 'ALIEN'`, `art: alien.png`.
+  - `cat`: `art: null` (not selectable yet).
 - `availableWooDakSkins(active: Set<string>): WooDakSkin[]` — default plus every skin
   with `art != null` AND (`unlockId == null` OR `active.has(unlockId)`).
 - `mascotSrc(role: 'piyak' | 'woodak'): string` — **the single resolver used at every
@@ -70,14 +72,14 @@ components (CLAUDE.md guardrail).
 ### 5. Assets · i18n · docs
 
 - Copy `docs/Arts/T_Dog.png` → `src/ui/assets/dog.png`.
-- i18n (en + ko): `settings.mascot`, `mascot.woodak`, `mascot.dog` (+ `mascot.monster` /
+- i18n (en + ko): `settings.mascot`, `mascot.woodak`, `mascot.dog` (+ `mascot.alien` /
   `mascot.ghost` / `mascot.cat` for the future rows).
 - Update GDD §13 mascot row ("data slots now, art later" → DOG art shipped + Options
   selector) and the CLAUDE.md mascot note, in the same pass (principle 6).
 
 ## Out of scope (YAGNI)
 
-- No monster/ghost/cat art.
+- No cat art.
 - No Piyak reskinning; no global "all mascots" setting.
 - No in-shop live preview of the selection.
 

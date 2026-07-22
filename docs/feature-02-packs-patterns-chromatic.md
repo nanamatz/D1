@@ -75,7 +75,7 @@ One data-driven registry (`unlocks.ts`): `word → { effectId, celebrationCopy }
 | MUSIC | BGM enabled (wraps the feature-01 mixer's music bus) |
 | SOUND | SFX enabled (wraps the SFX bus) |
 | KOREAN | Korean locale **celebration-unlock** (see C-4) |
-| MONSTER / GHOST / DOG / CAT | mascot variant skins — **data slots now, art later** (register the rows; effect no-ops until variant art exists) |
+| ALIEN / GHOST / DOG / CAT | mascot variant skins — **data slots now, art later** (register the rows; effect no-ops until variant art exists) |
 
 ### C-3. Implementation of "grayscale"
 Not a screen-wide filter: **token-group swapping.** Palette tokens are grouped by unlock color; the locked state maps each group to desaturated equivalents, unlock swaps the true values in with a wash animation. (A blanket `filter: grayscale` would kill unlocked colors too and fight the CRT pass.) The chips/mult info floor is safe — color is never the sole info channel (existing a11y rule) — so the desaturated start is playable.

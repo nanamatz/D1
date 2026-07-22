@@ -27,7 +27,7 @@ beforeEach(() => {
 describe('chromatic unlocks — registry (feature-02 C)', () => {
   it('carries the initial table incl. the 4 color words + audio + locale + mascots', () => {
     const ids = new Set(UNLOCKS.map((u) => u.id));
-    for (const w of ['RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND', 'KOREAN', 'MONSTER', 'GHOST', 'DOG', 'CAT']) {
+    for (const w of ['RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND', 'KOREAN', 'ALIEN', 'GHOST', 'DOG', 'CAT']) {
       expect(ids.has(w)).toBe(true);
     }
     expect(UNLOCKS.length).toBe(11);

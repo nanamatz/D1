@@ -4,18 +4,20 @@
  * shop proprietor) is a fixed role and is never re-skinned.
  *
  * These skins ARE the chromatic-unlock `{ kind: 'mascot', variant }` rows (GDD §13:
- * MONSTER/GHOST/DOG/CAT) — "data slots now, art later." A skin becomes selectable once
+ * ALIEN/GHOST/DOG/CAT) — "data slots now, art later." A skin becomes selectable once
  * it has art AND the player has unlocked it (played its word, or the C-4 override is on).
- * DOG (누렁이) is the first with art. Data-driven: adding a skin = fill in its `art`
- * field — never a hard-coded word check in a component (CLAUDE.md guardrail).
+ * DOG/GHOST/ALIEN have art; CAT stays `art: null`. Data-driven: adding a skin = fill in
+ * its `art` field — never a hard-coded word check in a component (CLAUDE.md guardrail).
  */
 import { activeUnlocks } from './unlocks';
 import { SETTINGS_KEY } from './settings';
 import piyakUrl from './assets/piyak.png';
 import woodakUrl from './assets/woodak.png';
 import dogUrl from './assets/dog.png';
+import ghostUrl from './assets/ghost.png';
+import alienUrl from './assets/alien.png';
 
-export type WooDakSkin = 'woodak' | 'monster' | 'ghost' | 'dog' | 'cat';
+export type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'cat';
 
 export interface WooDakSkinDef {
   /** stable id; the non-default ids match an UNLOCKS mascot variant. */
@@ -32,8 +34,8 @@ export interface WooDakSkinDef {
 export const WOODAK_SKINS: readonly WooDakSkinDef[] = [
   { id: 'woodak', unlockId: null, nameKey: 'mascot.woodak', art: woodakUrl },
   { id: 'dog', unlockId: 'DOG', nameKey: 'mascot.dog', art: dogUrl },
-  { id: 'monster', unlockId: 'MONSTER', nameKey: 'mascot.monster', art: null },
-  { id: 'ghost', unlockId: 'GHOST', nameKey: 'mascot.ghost', art: null },
+  { id: 'ghost', unlockId: 'GHOST', nameKey: 'mascot.ghost', art: ghostUrl },
+  { id: 'alien', unlockId: 'ALIEN', nameKey: 'mascot.alien', art: alienUrl },
   { id: 'cat', unlockId: 'CAT', nameKey: 'mascot.cat', art: null },
 ];
 
@@ -58,7 +60,7 @@ export function woodakArt(selected: WooDakSkin, active: Set<string>): string {
   return woodakUrl; // default fallback (== the 'woodak' registry entry's art)
 }
 
-/** Art for a mascot unlock variant (monster/ghost/dog/cat), or null if none exists yet.
+/** Art for a mascot unlock variant (alien/ghost/dog/cat), or null if none exists yet.
  *  Used by the unlock celebration to show the newly-won ally instead of a placeholder. */
 export function mascotVariantArt(variant: string): string | null {
   return WOODAK_SKINS.find((s) => s.id === variant)?.art ?? null;
