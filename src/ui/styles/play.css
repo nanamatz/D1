@@ -754,6 +754,7 @@
   position: relative;
 }
 .consumable {
+  position: relative; /* sheen containment parity with .tile/.joker (Task 3) */
   width: 84px;
   height: 112px;
   border-radius: var(--r-md);
@@ -1044,11 +1045,33 @@
 .joker.tilting,
 .consumable.tilting {
   transform: perspective(600px)
-             rotateX(calc(var(--tilt-x, 0) * 9deg))
-             rotateY(calc(var(--tilt-y, 0) * 9deg))
-             translateY(-4px) scale(1.04) !important;
-  transition: transform 0.08s linear;
+             rotateX(calc(var(--tilt-x, 0) * 14deg))
+             rotateY(calc(var(--tilt-y, 0) * 14deg))
+             translateY(calc(var(--tilt-k, 1) * -8px))
+             scale(calc(1 + var(--tilt-k, 1) * 0.06)) !important;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 4;
+}
+/* Cursor-following specular sheen (Balatro holo glint). A last-child overlay on every
+   tilt target; inherits --tilt-x/--tilt-y/--tilt-k from the parent. Screen-blends a
+   soft white glare that tracks the cursor and fades with the tilt intensity (--tilt-k).
+   Inert (opacity 0) until the parent gains .tilting, so mini/face-down tiles are unaffected. */
+.tilt-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle at
+      calc(50% + var(--tilt-y, 0) * 45%)
+      calc(50% - var(--tilt-x, 0) * 45%),
+      rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 55%);
+  transition: opacity 0.18s ease;
+}
+.tilting > .tilt-sheen {
+  opacity: calc(var(--tilt-k, 0) * 0.55);
 }
 .tile.draggable {
   cursor: grab;

@@ -133,6 +133,7 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
     const el = ref.current;
     if (!el || !enabled || reducedMotion()) return;
     let raf = 0;
+    let leaveTimer = 0;
     let nx = 0;
     let ny = 0;
     const apply = () => {
@@ -141,17 +142,28 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
       el.style.setProperty('--tilt-x', String(-ny)); // vertical cursor → rotateX (inverted)
     };
     const onMove = (e: PointerEvent) => {
+      window.clearTimeout(leaveTimer); // cancel a pending flatten if we re-entered
       const r = el.getBoundingClientRect();
       nx = clamp(((e.clientX - r.left) / r.width) * 2 - 1, -1, 1);
       ny = clamp(((e.clientY - r.top) / r.height) * 2 - 1, -1, 1);
       el.classList.add('tilting');
+      el.style.setProperty('--tilt-k', '1'); // full intensity (drives lift/scale/sheen)
       if (!raf) raf = requestAnimationFrame(apply);
     };
     const onLeave = () => {
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      el.classList.remove('tilting');
-      el.style.removeProperty('--tilt-x');
-      el.style.removeProperty('--tilt-y');
+      // Ease everything back to flat (vars → 0) WHILE .tilting is still applied, so the
+      // transform transitions instead of snapping; drop the class after the transition.
+      el.style.setProperty('--tilt-x', '0');
+      el.style.setProperty('--tilt-y', '0');
+      el.style.setProperty('--tilt-k', '0');
+      window.clearTimeout(leaveTimer);
+      leaveTimer = window.setTimeout(() => {
+        el.classList.remove('tilting');
+        el.style.removeProperty('--tilt-x');
+        el.style.removeProperty('--tilt-y');
+        el.style.removeProperty('--tilt-k');
+      }, 180);
     };
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerleave', onLeave);
@@ -159,6 +171,7 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
       if (raf) cancelAnimationFrame(raf);
+      window.clearTimeout(leaveTimer);
     };
   }, [ref, enabled]);
 }

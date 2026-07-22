@@ -10,6 +10,7 @@ export function TiltCard({ children, ...rest }: ComponentProps<'div'>) {
   return (
     <div ref={ref} {...rest}>
       {children}
+      <span className="tilt-sheen" aria-hidden />
     </div>
   );
 }

@@ -132,6 +132,7 @@ export function TileView({
           </span>
         </span>
       )}
+      <span className="tilt-sheen" aria-hidden />
     </div>
   );
 }
