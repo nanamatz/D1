@@ -1286,11 +1286,31 @@
     opacity: 1;
   }
 }
+/* Item 4 (draw half, task 5): freshly-drawn tiles slide/fade into the hand
+   ("촤라락"). React keys hand tiles by tile.id, so this only plays on a
+   genuinely new DOM node (opening hand / post-play draw) — a FLIP reorder
+   or sort reuses the existing node and never remounts, so useFlip's
+   transform-based glide is untouched.
+   NOTE: a plain `.hand .tile { animation: tile-draw-in ... }` rule would be
+   silently shadowed here — `.hand .tile:nth-child(odd/even)` below already
+   carries the idle "wob" animation at higher specificity (0,3,0 vs 0,2,0),
+   so it would always win the cascade and the draw-in would never render.
+   Instead tile-draw-in is folded into these same nth-child rules as a
+   second, finite animation-name: per the CSS animations spec, when two
+   animations target the same property (here `transform`), the one LATER in
+   the animation-name list wins while it is in effect. Listing tile-draw-in
+   last (and WITHOUT a forwards/both fill) means it owns `transform` only
+   during its own .26s active phase, then drops out of effect and wob
+   resumes uncontested — no permanent freeze, no fighting. */
+@keyframes tile-draw-in {
+  from { opacity: 0; transform: translateY(-16px) scale(.92); }
+  to   { opacity: 1; transform: none; }
+}
 .hand .tile:nth-child(odd) {
-  animation: wob 3.4s ease-in-out infinite;
+  animation: wob 3.4s ease-in-out infinite, tile-draw-in .26s cubic-bezier(.2,.7,.3,1);
 }
 .hand .tile:nth-child(even) {
-  animation: wob 3.4s ease-in-out -1.7s infinite reverse;
+  animation: wob 3.4s ease-in-out -1.7s infinite reverse, tile-draw-in .26s cubic-bezier(.2,.7,.3,1);
 }
 /* D-4: jokers & consumables share the tiles' idle wobble family (staggered slow
    sine, ±1.2°). The firing joker is excluded so its settle wiggle wins; empty
@@ -1925,6 +1945,12 @@
 @media (prefers-reduced-motion: reduce) {
   .hand,
   .hand .tile,
+  /* Task 5: .hand .tile alone can't beat the nth-child wob/tile-draw-in
+     rules above on specificity (0,2,0 vs 0,3,0) — list the nth-child forms
+     explicitly (same 0,3,0, later in source) so reduced motion actually
+     kills both the idle wobble and the draw-in slide, not just shadow them. */
+  .hand .tile:nth-child(odd),
+  .hand .tile:nth-child(even),
   .joker,
   .consumable,
   .btn.cash,
@@ -1939,4 +1965,13 @@
   .btn {
     transition: none;
   }
+}
+/* Task 5: in-game Reduced-motion setting (body.force-reduced-motion, set in
+   settings.ts) already gets a global `* { animation: none !important }` kill
+   switch from screens.css, so this is belt-and-suspenders — but written at
+   matching nth-child specificity (0,4,0, no !important needed) so it holds
+   even if that global rule ever narrows its selector. */
+.force-reduced-motion .hand .tile:nth-child(odd),
+.force-reduced-motion .hand .tile:nth-child(even) {
+  animation: none;
 }
