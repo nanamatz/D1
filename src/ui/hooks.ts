@@ -57,18 +57,23 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const base = el.getBoundingClientRect();
     const kids = Array.from(el.children) as HTMLElement[];
+    // Measure LAYOUT positions via offsetLeft/offsetTop, NOT getBoundingClientRect.
+    // offsetLeft/Top are the untransformed layout-box offsets (relative to the shared
+    // offsetParent), so they are immune to in-flight CSS/WAAPI transforms — a tile
+    // still mid draw-in flight reads at its slot, not at the pouch it is animating
+    // from. getBoundingClientRect would capture the transformed box and store the
+    // pouch position into `prev`, fanning every survivor ~700px out on the next
+    // shift (the draw-in regression). This also cancels ancestor transforms (the
+    // screen-transition slide, playtest-06) for free, since offsets ignore them too.
     const next = new Map<string, { x: number; y: number }>();
     for (const k of kids) {
       const id = k.dataset.flipId;
       if (!id) continue;
-      const r = k.getBoundingClientRect();
-      next.set(id, { x: r.left - base.left, y: r.top - base.top });
+      next.set(id, { x: k.offsetLeft, y: k.offsetTop });
     }
     const reduce = reducedMotion();
     const o = optsRef.current;
-    const origin = o?.enterOrigin?.() ?? null;
     let enterIdx = 0;
     for (const k of kids) {
       const id = k.dataset.flipId;
@@ -79,10 +84,13 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
         // Freshly drawn tile — pouch enter (staggered), plus the per-tile sound.
         o.onEnter?.(enterIdx);
         if (!reduce) {
-          const ox = origin ? origin.x - base.left : now.x;
-          const oy = origin ? origin.y - base.top : base.height + 40;
-          const dx = ox - now.x;
-          const dy = oy - now.y;
+          // Flight vector from the tile's CLEAN live rect (it is brand-new, so not
+          // yet transformed) to the pouch — both viewport coords. Fallback (pouch
+          // not mounted): drop in from just below the row.
+          const origin = o.enterOrigin();
+          const kr = k.getBoundingClientRect();
+          const dx = origin ? origin.x - (kr.left + kr.width / 2) : 0;
+          const dy = origin ? origin.y - (kr.top + kr.height / 2) : el.clientHeight - k.offsetTop + 40;
           k.animate(
             [
               { transform: `translate(${dx}px, ${dy}px) scale(.6)`, opacity: 0 },
