@@ -29,10 +29,10 @@ describe('WooDak skins — availability', () => {
     expect(skins.map((s) => s.id)).toEqual(['woodak']);
   });
 
-  it('DOG/GHOST/ALIEN become available once unlocked; art-less CAT never does', () => {
-    const skins = availableWooDakSkins(new Set(['DOG', 'ALIEN', 'GHOST', 'CAT']));
-    // dog/ghost/alien have art → included; cat is unlocked but art-less → excluded.
-    expect(skins.map((s) => s.id)).toEqual(['woodak', 'dog', 'ghost', 'alien']);
+  it('DOG/GHOST/ALIEN/TURTLE become available once unlocked; art-less CAT never does', () => {
+    const skins = availableWooDakSkins(new Set(['DOG', 'ALIEN', 'GHOST', 'CAT', 'TURTLE']));
+    // dog/ghost/alien/turtle have art → included; cat is unlocked but art-less → excluded.
+    expect(skins.map((s) => s.id)).toEqual(['woodak', 'dog', 'ghost', 'alien', 'turtle']);
   });
 });
 

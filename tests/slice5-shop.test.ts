@@ -41,6 +41,27 @@ describe('slice5 shop — stock roll (GDD §9.2)', () => {
   });
 });
 
+describe('slice5 shop — pack art variant (cosmetic, seeded)', () => {
+  it('every stocked pack carries an in-range artVariant for its size', () => {
+    for (let i = 0; i < 12; i++) {
+      const { packs } = rollShopStock(run(), makeRng(`pack${i}`));
+      for (const p of packs) {
+        if (!p) continue;
+        const count = BALANCE.pack.artVariants[p.size];
+        expect(p.artVariant).toBeGreaterThanOrEqual(0);
+        expect(p.artVariant).toBeLessThan(count);
+        expect(Number.isInteger(p.artVariant)).toBe(true);
+      }
+    }
+  });
+
+  it('the same seed reproduces the same pack art variants', () => {
+    const a = rollShopStock(run(), makeRng('same'));
+    const b = rollShopStock(run(), makeRng('same'));
+    expect(a.packs.map((p) => p?.artVariant)).toEqual(b.packs.map((p) => p?.artVariant));
+  });
+});
+
 describe('slice5 shop — buy', () => {
   const shop = shopWith([
     { kind: 'joker', id: 'grammarian', price: 9 },

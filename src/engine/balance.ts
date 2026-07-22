@@ -7,7 +7,7 @@
  * GDD section references are noted per block.
  */
 
-import type { FontEffectId, TileFont } from './types';
+import type { FontEffectId, PackSize, TileFont } from './types';
 
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
@@ -173,6 +173,9 @@ export const BALANCE = {
     // shop pack-slot roll weights. Forbidden Stacks is rare; Mega/Jumbo rarer.
     typeWeights: { pattern: 4, joker: 4, consumable: 4, tile: 4, forbidden: 1 } as Record<string, number>,
     sizeWeights: { normal: 6, jumbo: 3, mega: 1 } as Record<string, number>,
+    // how many cosmetic art variants exist per size (== the art count in packArt.ts);
+    // the seeded RNG picks one at stock time. Bump when art is added.
+    artVariants: { normal: 3, jumbo: 2, mega: 2 } as Record<PackSize, number>,
   },
   packEnhanceChance: { base: 0.15, connoisseur: 0.4 }, // material/font pre-attach rate
 

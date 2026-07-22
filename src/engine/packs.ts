@@ -65,6 +65,8 @@ export type PackOption =
 export interface PackOffer {
   type: PackType;
   size: PackSize;
+  /** cosmetic art-variant index carried from the slot (UI → packArt.ts). */
+  artVariant: number;
   options: PackOption[];
   /** how many options the player may take */
   pick: number;
@@ -127,7 +129,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       options = drawConsumables(FORBIDDEN_POOL, show, rng, (id) => ({ kind: 'forbidden', id }));
       break;
   }
-  return { type: slot.type, size: slot.size, options, pick };
+  return { type: slot.type, size: slot.size, artVariant: slot.artVariant, options, pick };
 }
 
 /** Apply one chosen option to the run (skips silently if a slot is full). */

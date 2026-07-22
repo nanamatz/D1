@@ -5,6 +5,7 @@ import type { PackOption } from '../../engine/packs';
 import { NO_LETTER } from '../../engine/scoring';
 import { consumableDescKey, jokerDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
+import { packArt } from '../packArt';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
@@ -110,6 +111,11 @@ export function PackOpening({ g }: { g: UseGame }) {
   return (
     <div className="shop">
       <div className="shop-head panel">
+        <img
+          className="pack-open-art"
+          src={packArt(pack.offer.size, pack.offer.artVariant)}
+          alt=""
+        />
         <div className="kind">
           {t(`pack.type.${pack.offer.type}`)} · {t(`pack.size.${pack.offer.size}`)}
         </div>

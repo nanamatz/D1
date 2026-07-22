@@ -95,9 +95,12 @@ function weightedPick<T extends string>(ids: readonly T[], weights: Record<strin
 function rollPacks(rng: Rng): (PackSlot | null)[] {
   const packs: (PackSlot | null)[] = [];
   for (let i = 0; i < BALANCE.shop.packSlots; i++) {
+    const size = weightedPick(PACK_SIZES, BALANCE.pack.sizeWeights, rng);
     packs.push({
       type: weightedPick(PACK_TYPES, BALANCE.pack.typeWeights, rng),
-      size: weightedPick(PACK_SIZES, BALANCE.pack.sizeWeights, rng),
+      size,
+      // cosmetic-only, but seeded so a run reproduces its shop art exactly.
+      artVariant: rng.int(BALANCE.pack.artVariants[size]),
     });
   }
   return packs;

@@ -255,6 +255,9 @@ export type PackSize = 'normal' | 'jumbo' | 'mega';
 export interface PackSlot {
   type: PackType;
   size: PackSize;
+  /** cosmetic art-variant index for this size, seeded at stock time (UI maps it
+   *  to a PNG in packArt.ts). Purely presentational — no gameplay effect. */
+  artVariant: number;
 }
 
 export interface ShopState {

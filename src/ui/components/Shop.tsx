@@ -13,6 +13,7 @@ import { JokerShelf } from './JokerShelf';
 import { PackOpening } from './PackOpening';
 import { MoneyValue } from './MoneyValue';
 import { ShopMascot } from './ShopMascot';
+import { packArt } from '../packArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -159,7 +160,7 @@ export function Shop({ g }: { g: UseGame }) {
                     body={t(`packdesc.${p.type}`)}
                   >
                     <div className={['shopitem', `pack-${p.size}`].join(' ')}>
-                      <span className="e">📦</span>
+                      <img className="pack-img" src={packArt(p.size, p.artVariant)} alt="" />
                       <span className="n">{t(`pack.type.${p.type}`)}</span>
                       <span className="pack-size">{t(`pack.size.${p.size}`)}</span>
                       <span className="price">${BALANCE.pack.size[p.size].price}</span>

@@ -16,8 +16,9 @@ import woodakUrl from './assets/woodak.png';
 import dogUrl from './assets/dog.png';
 import ghostUrl from './assets/ghost.png';
 import alienUrl from './assets/alien.png';
+import turtleUrl from './assets/turtle.png';
 
-export type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'cat';
+export type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'cat' | 'turtle';
 
 export interface WooDakSkinDef {
   /** stable id; the non-default ids match an UNLOCKS mascot variant. */
@@ -37,6 +38,7 @@ export const WOODAK_SKINS: readonly WooDakSkinDef[] = [
   { id: 'ghost', unlockId: 'GHOST', nameKey: 'mascot.ghost', art: ghostUrl },
   { id: 'alien', unlockId: 'ALIEN', nameKey: 'mascot.alien', art: alienUrl },
   { id: 'cat', unlockId: 'CAT', nameKey: 'mascot.cat', art: null },
+  { id: 'turtle', unlockId: 'TURTLE', nameKey: 'mascot.turtle', art: turtleUrl },
 ];
 
 /** A skin is usable when it has art AND is unlocked (default is always unlocked). */

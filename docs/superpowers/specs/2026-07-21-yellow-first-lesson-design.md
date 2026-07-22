@@ -43,8 +43,9 @@ it just "deals these letters first"; the UI decides when to use it.
 ### 2. useGame: rig only the tutorial run
 
 `bootstrap` / `startRun` decide `isTutorial = !hasSeenIntro() && readTips()` (UI layer, reads
-localStorage). When tutorial, call `startBlind(run, rng, { bossId, openingLetters: TUTORIAL_WORD.split(''), target: TUTORIAL_TARGET })`.
-- `TUTORIAL_WORD = 'YELLOW'`, `TUTORIAL_TARGET = 10` (< YELLOW's ~12 so it clears).
+localStorage). When tutorial, call `startBlind(run, rng, { bossId, openingLetters: TUTORIAL_WORD.split('') })`.
+- `TUTORIAL_WORD = 'YELLOW'`.
+- **Superseded 2026-07-22:** the target is no longer lowered. `TUTORIAL_TARGET`=10 was retired — the tutorial blind keeps the normal ante-1 target (100). Submitting YELLOW (~12) ends the lesson and unlocks the board; the player then plays on to clear.
 - Non-tutorial runs are unchanged (random hand, ante-curve target).
 
 ### 3. Hard lock (`StagePanel`)

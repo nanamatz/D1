@@ -12,7 +12,8 @@ import type { UseGame } from '../useGame';
  * YELLOW (StagePanel `lockWord`, wired in RunView), and the build/submit steps auto-advance
  * when the player actually performs them — so the flow can't run ahead of the player and the
  * player can't run ahead of the flow. Submitting washes the yellow palette in (ChromaticReveal)
- * and clears the target-10 blind. Skip finishes early and releases the lock (accessibility).
+ * and ends the lesson; the target stays the normal 100, so the board then unlocks and the
+ * player plays on to clear. Skip finishes early and releases the lock (accessibility).
  */
 export function GuidedIntro({ g, onClose }: { g: UseGame; onClose: () => void }) {
   const { t } = useI18n();

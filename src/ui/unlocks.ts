@@ -18,7 +18,7 @@ export type UnlockEffect =
   | { kind: 'color'; group: UnlockGroup }
   | { kind: 'audio'; bus: 'music' | 'sfx' }
   | { kind: 'locale'; lang: 'ko' }
-  | { kind: 'mascot'; variant: 'alien' | 'ghost' | 'dog' | 'cat' };
+  | { kind: 'mascot'; variant: 'alien' | 'ghost' | 'dog' | 'cat' | 'turtle' };
 
 export interface UnlockDef {
   /** stable id (== the triggering word, uppercase) */
@@ -40,6 +40,7 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { id: 'GHOST', word: 'GHOST', effect: { kind: 'mascot', variant: 'ghost' } },
   { id: 'DOG', word: 'DOG', effect: { kind: 'mascot', variant: 'dog' } },
   { id: 'CAT', word: 'CAT', effect: { kind: 'mascot', variant: 'cat' } },
+  { id: 'TURTLE', word: 'TURTLE', effect: { kind: 'mascot', variant: 'turtle' } },
 ];
 
 const BY_WORD = new Map(UNLOCKS.map((u) => [u.word, u]));

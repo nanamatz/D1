@@ -123,7 +123,7 @@
   font-size: var(--fs-2xl);
   color: var(--gold);
 }
-/* feature-02 B: pack size badge (Normal/Jumbo/Mega) */
+/* feature-02 B: pack size badge (Base/Classic/Premium) */
 .shopitem .pack-size {
   font-size: var(--fs-2xs, 10px);
   text-transform: uppercase;
@@ -132,6 +132,21 @@
 }
 .shopitem.pack-jumbo .pack-size { color: var(--chips); }
 .shopitem.pack-mega .pack-size { color: var(--mult); }
+/* Card-pack pixel-art, in place of the old 📦 glyph. Fills the shopitem width and
+   keeps its own aspect (packArt.ts → PNG). */
+.shopitem .pack-img {
+  width: 100%;
+  max-width: 72px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+/* The larger pack art shown in the pack-opening header. */
+.pack-open-art {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 .shopitem.empty {
   color: var(--ink-dim);
   font-style: italic;

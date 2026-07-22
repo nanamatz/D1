@@ -95,12 +95,13 @@ const INTRO_KEY = 'wj.tutorialIntro';
 
 /**
  * The scripted first-run lesson (2026-07-21): the opening hand is rigged to contain this
- * word's letters and the blind target is lowered so playing it clears the blind. The word
- * MUST be a valid dictionary + colour-unlock word so submitting it teaches the Palette.
- * YELLOW = Y,E,L,L,O,W (Twin on the two L's); ~12 chips clears the target-10 blind.
+ * word's letters so the guided steps can teach build → submit. The blind target is NOT
+ * lowered — it stays the normal ante-1 value (100), so submitting YELLOW (~12 chips) teaches
+ * the Palette and ends the lesson, then the board unlocks and the player plays on to clear.
+ * The word MUST be a valid dictionary + colour-unlock word so submitting it teaches the
+ * Palette. YELLOW = Y,E,L,L,O,W (Twin on the two L's).
  */
 export const TUTORIAL_WORD = 'YELLOW';
-export const TUTORIAL_TARGET = 10;
 
 /** How an intro step advances: a Next button, or automatically when the player performs
  *  the gated action (stages the full word / plays a word). */

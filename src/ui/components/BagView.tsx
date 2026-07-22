@@ -3,6 +3,7 @@ import type { BlindState, RunState, Tile } from '../../engine/types';
 import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
 import { tutorialBus } from '../tutorial';
+import pouchUrl from '../assets/pouch.png';
 import { TileView } from './Tile';
 
 interface Counts {
@@ -149,9 +150,7 @@ export function BagWidget({
           aria-label={t('bagview.title')}
           aria-expanded={open}
         >
-          <span className="pouch-art" aria-hidden>
-            👝
-          </span>
+          <img className="pouch-art" src={pouchUrl} alt="" aria-hidden />
         </div>
         <span className="pouch-count">
           {remaining}/{total}

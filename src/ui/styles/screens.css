@@ -1666,10 +1666,12 @@ body.cb-safe .tile.hint {
 .pouch-widget.open {
   outline: 2px solid var(--gold);
 }
-/* Scaled up from 30 → 52px. An exact 1.5× (45px) is not on the display scale, so
-   this takes the next step up rather than going off-scale (see tokens.css). */
+/* The default pouch pixel-art (T_DefaultPouch), sized to the old ~52px emoji box. */
 .pouch-art {
-  font-size: var(--ds-2xl);
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 /* Font/size/colour come from the shared count rule in play.css (matched to
    .shelf-count); only the spacing under the box is local. */

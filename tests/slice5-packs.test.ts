@@ -6,7 +6,7 @@ import { BALANCE } from '../src/engine/balance';
 import type { PackSize, PackSlot, PackType, RunState } from '../src/engine/types';
 
 const run = (over: Partial<RunState> = {}): RunState => ({ ...newRun('pack'), ...over });
-const slot = (type: PackType, size: PackSize = 'normal'): PackSlot => ({ type, size });
+const slot = (type: PackType, size: PackSize = 'normal'): PackSlot => ({ type, size, artVariant: 0 });
 
 describe('slice5 packs — sizes (feature-02 B)', () => {
   it('Normal shows 3 / picks 1; Jumbo 5 / 1; Mega 5 / 2', () => {
