@@ -9,7 +9,7 @@ import { makeRng } from '../engine/rng';
 import { startBlind, submitWord, discardTiles, endBlind } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import { drawBoss } from '../engine/bosses';
-import { tutorialBus, hasSeenIntro, TUTORIAL_WORD, TUTORIAL_TARGET } from './tutorial';
+import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from './tutorial';
 import { readTips } from './settings';
 import { checkWordPlayed, unlockBus } from './unlocks';
 import type {
@@ -133,7 +133,7 @@ export interface GameState {
   /** The finalized sentence-bonus breakdown, non-null only while it lands on the
    *  round number (item 2). Drives the scorebox fill (chips → mult) in the Sidebar;
    *  null at every other time (mirrors `finalScore`). */
-  sentenceBonus: { chips: number; mult: number; pattern: PatternId | null } | null;
+  sentenceBonus: { chips: number; mult: number; pattern: PatternId | null; level: number | null } | null;
   /**
    * The player actually started this run (vs. the idle run `bootstrap` always
    * builds so the board has something to render). Gates the New Run screen's
@@ -175,15 +175,15 @@ function bootstrap(seed: string = randomSeed()): GameState {
     voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`)),
     chapterBossId: drawBoss(makeRng(`${seed}#boss-1`)),
   };
-  // First-run lesson (2026-07-21): rig the opening hand to contain YELLOW and lower the
-  // target so playing it clears the blind. Same gate as the guided intro (RunView), so a
-  // player who has done the tutorial (or turned tips off) gets a normal random hand.
+  // First-run lesson (2026-07-21): rig the opening hand to contain YELLOW so the guided
+  // steps can teach build → submit. The target is NOT lowered — it stays the normal ante-1
+  // value, so after submitting YELLOW the lesson ends and the player plays on to clear. Same
+  // gate as the guided intro (RunView), so a player who has done the tutorial (or turned tips
+  // off) gets a normal random hand.
   const tutorial = !hasSeenIntro() && readTips();
   const blind = startBlind(run, makeRng(`${seed}#0`), {
     bossId: run.chapterBossId,
-    ...(tutorial
-      ? { openingLetters: TUTORIAL_WORD.split('') as Letter[], target: TUTORIAL_TARGET }
-      : {}),
+    ...(tutorial ? { openingLetters: TUTORIAL_WORD.split('') as Letter[] } : {}),
   });
   return {
     seed,
@@ -685,34 +685,63 @@ export function useGame(): UseGame {
   // is known instantly (playtest-05 A; recurrence of 04 A-1, unifying 04 A-2: the
   // deciding sentence bonus must be *seen* pushing the score over first). The
   // signal already tracks the variable settle length (long words settle longer).
-  // Stage 1 — the last word's settle has landed: publish the finalized score so the
-  // sentence bonus counts up onto the round number (06 #1).
-  useEffect(() => {
-    if (!state.pendingEnd || !state.settleComplete || state.finalScore !== null) return;
-    const end = endBlind(state.blind, state.run, lexicon);
-    setState((prev) =>
-      prev.pendingEnd && prev.finalScore === null
-        ? {
-            ...prev,
-            finalScore: end.finalScore,
-            sentenceBonus:
-              end.bonus > 0
-                ? { chips: end.sentenceChips, mult: end.sentenceMult, pattern: end.judgment.match?.pattern ?? null }
-                : null,
-          }
-        : prev,
-    );
-  }, [state.pendingEnd, state.settleComplete, state.finalScore, state.blind, state.run, lexicon]);
+  //
+  // The bonus lands as a distinct climax in three beats (2026-07-22): BUILD fills
+  // the scorebox to the bonus' chips × mult while the round HOLDS at committed;
+  // LAND then rolls the round up; RESOLVE holds a verdict beat and auto-resolves.
+  const prefersReduce = () =>
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Stage 2 — the round number is fully updated (settle beats + bonus). Hold a short
+  // BUILD — the last word's settle has landed. Publish the sentence bonus so the
+  // scorebox fills to its chips × mult, but HOLD the round number at committed
+  // (finalScore stays null → Sidebar's round target falls back to committedScore).
+  // Reduced motion collapses build+land: set finalScore now too. A zero bonus
+  // (no pattern, no unison) skips the build entirely — just set finalScore.
+  useEffect(() => {
+    if (!state.pendingEnd || !state.settleComplete) return;
+    if (state.sentenceBonus !== null || state.finalScore !== null) return;
+    const end = endBlind(state.blind, state.run, lexicon);
+    const pattern = end.judgment.match?.pattern ?? null;
+    const level = pattern ? (state.run.patternLevels[pattern] ?? 1) : null;
+    const hasBonus = end.bonus > 0;
+    const reduce = prefersReduce();
+    setState((prev) => {
+      if (!prev.pendingEnd || prev.sentenceBonus !== null || prev.finalScore !== null) return prev;
+      const sentenceBonus = hasBonus
+        ? { chips: end.sentenceChips, mult: end.sentenceMult, pattern, level }
+        : null;
+      // Reduced motion OR no bonus → land immediately (finalScore set now).
+      const finalScore = reduce || !hasBonus ? end.finalScore : null;
+      return { ...prev, sentenceBonus, finalScore };
+    });
+  }, [state.pendingEnd, state.settleComplete, state.sentenceBonus, state.finalScore, state.blind, state.run, lexicon]);
+
+  // LAND — after the box has filled (BONUS_LAND_MS), publish finalScore so the
+  // round number rolls committed → finalized. Only runs for a real bonus in full
+  // motion (build set sentenceBonus, left finalScore null).
+  useEffect(() => {
+    if (!state.pendingEnd || state.sentenceBonus === null || state.finalScore !== null) return;
+    const end = endBlind(state.blind, state.run, lexicon);
+    const id = setTimeout(
+      () =>
+        setState((prev) =>
+          prev.pendingEnd && prev.sentenceBonus !== null && prev.finalScore === null
+            ? { ...prev, finalScore: end.finalScore }
+            : prev,
+        ),
+      BONUS_LAND_MS,
+    );
+    return () => clearTimeout(id);
+  }, [state.pendingEnd, state.sentenceBonus, state.finalScore, state.blind, state.run, lexicon]);
+
+  // RESOLVE — the round number is fully updated (settle beats + bonus). Hold a short
   // beat so the cleared score is seen, then auto-resolve to Fee Settlement / Game Over
   // (item 4: the intermediate "Cleared! + Settle button" screen was removed — the Fee
   // Settlement modal, with its own Collect button, is the only clear screen now).
   useEffect(() => {
     if (!state.pendingEnd || state.finalScore === null) return;
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = prefersReduce();
     const id = setTimeout(
       () => setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev)),
       reduce ? VERDICT_BEAT_REDUCED_MS : BONUS_LAND_MS + VERDICT_BEAT_MS,
