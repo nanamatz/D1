@@ -7,6 +7,7 @@ import { consumableDescKey, jokerDescKey, grownValue } from '../descriptions';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
+import { TiltCard } from './TiltCard';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -89,7 +90,7 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                   rarity={def.rarity}
                   down
                 >
-                  <div
+                  <TiltCard
                     className={className}
                     tabIndex={0}
                     role={onSellJoker ? 'button' : undefined}
@@ -102,7 +103,7 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                     {firing && settle.jokerPop && (
                       <JokerPop chips={settle.jokerPop.chips} mult={settle.jokerPop.mult} />
                     )}
-                  </div>
+                  </TiltCard>
                 </Tooltip>
                 {onSellJoker && jokerMenuIdx === i && (
                   // Same `bare` menu the consumable shelf uses, so Sell looks and
@@ -138,7 +139,7 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
         {run.consumables.map((c, i) => (
           <div key={i} className="consumable-slot">
             <Tooltip title={t(`consumable.${c}`)} body={t(consumableDescKey(c))} down>
-              <div
+              <TiltCard
                 className="consumable use"
                 role="button"
                 tabIndex={0}
@@ -159,7 +160,7 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
               >
                 <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
                 <span className="n">{t(`consumable.${c}`)}</span>
-              </div>
+              </TiltCard>
             </Tooltip>
             {menuIdx === i && (
               // `bare` = no wrapping box; the buttons carry the meaning by colour

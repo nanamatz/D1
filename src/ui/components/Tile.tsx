@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import type { Tile } from '../../engine/types';
 import { faceClass, fontClass, inkClass, materialClass, tileGlyph, tileValue } from '../game';
 import { useI18n } from '../i18n';
+import { usePointerTilt } from '../hooks';
 import { richText } from '../richtext';
 
 interface Props {
@@ -48,6 +50,8 @@ export function TileView({
   const { t } = useI18n();
   const interactive = !mini && !!onSelect && !disabled;
   const draggable = !mini && !!zone && !disabled;
+  const rootRef = useRef<HTMLDivElement>(null);
+  usePointerTilt(rootRef, !mini && !disabled);
   // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
   // to its material name so a screen reader announces "Stone tile, 0 chips"
   // instead of the identity-less " tile, 0 chips" (M-4).
@@ -74,6 +78,7 @@ export function TileView({
 
   return (
     <div
+      ref={rootRef}
       className={className}
       data-flip-id={tile.id}
       data-tile-id={tile.id}

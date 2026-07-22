@@ -982,6 +982,20 @@
 .tile:hover {
   transform: translateY(-4px) rotate(0deg) !important;
 }
+/* A6 · Balatro pointer parallax. The hook adds .tilting + --tilt-x/--tilt-y (unitless
+   -1..1); turn them into a 3D rotate + lift + slight scale. Element-qualified so
+   `.tile.tilting` (0,2,0) ties `.tile:hover` (0,2,0) and, coming later in the file,
+   wins; `!important` also beats the plain (non-important) joker/consumable :hover lift. */
+.tile.tilting,
+.joker.tilting,
+.consumable.tilting {
+  transform: perspective(600px)
+             rotateX(calc(var(--tilt-x, 0) * 9deg))
+             rotateY(calc(var(--tilt-y, 0) * 9deg))
+             translateY(-4px) scale(1.04) !important;
+  transition: transform 0.08s linear;
+  z-index: 4;
+}
 .tile.draggable {
   cursor: grab;
 }

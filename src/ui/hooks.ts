@@ -111,3 +111,46 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
     prev.current = next;
   }, [key, ref]);
 }
+
+const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
+
+/**
+ * Balatro-style pointer parallax. While the cursor is over `ref`'s element, adds
+ * the `tilting` class and writes `--tilt-x` / `--tilt-y` (unitless, -1..1); the CSS
+ * turns them into a 3D rotate + lift. Resets on pointerleave. No-ops under reduced
+ * motion or when `enabled` is false. rAF-throttled (one pending frame).
+ */
+export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = true): void {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !enabled || reducedMotion()) return;
+    let raf = 0;
+    let nx = 0;
+    let ny = 0;
+    const apply = () => {
+      raf = 0;
+      el.style.setProperty('--tilt-y', String(nx)); // horizontal cursor → rotateY
+      el.style.setProperty('--tilt-x', String(-ny)); // vertical cursor → rotateX (inverted)
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      nx = clamp(((e.clientX - r.left) / r.width) * 2 - 1, -1, 1);
+      ny = clamp(((e.clientY - r.top) / r.height) * 2 - 1, -1, 1);
+      el.classList.add('tilting');
+      if (!raf) raf = requestAnimationFrame(apply);
+    };
+    const onLeave = () => {
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      el.classList.remove('tilting');
+      el.style.removeProperty('--tilt-x');
+      el.style.removeProperty('--tilt-y');
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [ref, enabled]);
+}
