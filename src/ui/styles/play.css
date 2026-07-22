@@ -1890,6 +1890,28 @@
   background: rgba(9, 20, 17, 0.62);
   z-index: 60;
 }
+/* Floating options button for the Shop / Blind Select screens, which have no
+   Sidebar gear. Sits above the screen content, below the .overlay (z 50/60). */
+.options-fab {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--inset-edge);
+  border-radius: 10px;
+  background: var(--inset);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+.options-fab:hover {
+  background: var(--panel);
+}
 /* Two classes, not one: `.overlay-card` (screens.css) also sets max-width, at the
    same specificity, and screens.css loads AFTER play.css — so a lone `.pause-modal`
    loses and the modal silently stayed at the 640px default. The other modals

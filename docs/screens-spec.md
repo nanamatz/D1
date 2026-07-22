@@ -31,7 +31,7 @@ In-run overlays: Run Info · Bag View · pause menu
 ## 2. Screens
 
 ### 2.1 Main Menu
-Title treatment (our own logotype), buttons: **Play · Options · Collection · Quit**(desktop/web tab close N/A → hide on web). Profile chip bottom-left **[PLACEHOLDER: single profile "P1"]**, language toggle bottom-right (ko/en — i18n already shipped). Collection button badges a `!` when new words/jokers were discovered last run.
+Title treatment (our own logotype), buttons: **Play · Options · Collection · Quit**. Quit shows on all builds: it attempts `window.close()` (works in a desktop shell / script-opened window) and always swaps the menu for a full-screen farewell ("Thanks for playing!"), so a normal browser tab that can't self-close still ends cleanly (2026-07-22). Profile chip bottom-left **[PLACEHOLDER: single profile "P1"]**, language toggle bottom-right (ko/en — i18n already shipped). Collection button badges a `!` when new words/jokers were discovered last run.
 
 ### 2.2 New Run
 Top tabs: **New Run · Continue · Challenges**. **Continue resumes the saved run** (playtest-06): the run is persisted to `localStorage` (`wj.run`, via `src/ui/persist.ts`) on every state change, so it survives both leaving to the main menu and a page reload. The tab greys out when there is no run or the run ended (game over), and is **default-selected when a run exists** so hitting Play never wipes it by accident. Only a *resting* snapshot is saved — settle-animation fields are stripped, since the settle replays from a per-submission `ScoreEvent` log that cannot be resumed mid-flight. The save is versioned; a schema-mismatched or corrupt save is **discarded, not migrated**. Challenges **[PLACEHOLDER: hidden]**. Below, two stacked carousels + play:

@@ -42,9 +42,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
 
   // ESC in-round: close the Run Info window if it's open, otherwise toggle the
   // options/pause menu (playtest-06 #1, #2). Run Info takes priority so ESC peels
-  // one layer at a time rather than jumping straight to pause.
+  // one layer at a time rather than jumping straight to pause. Enabled on the
+  // board AND on the Shop / Blind Select screens so the player can reach the
+  // options menu (→ Main Menu) from there; cashout/gameover have their own UI.
   useEffect(() => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' && phase !== 'shop' && phase !== 'blindselect') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       // Never steal ESC from a text field (e.g. the collection's search box).
@@ -199,13 +201,31 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {!ending && !settling && showInfo && (
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />
       )}
-      {!ending && !settling && paused && (
-        // A modal over the board, not a screen swap — the board stays visible
-        // behind it, like Fee Settlement and Game Over (playtest-06 #1).
+      {settling && <CashOut g={g} />}
+      {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
+    </div>
+    );
+  };
+
+  // The pause/options menu is reachable on the board (Sidebar gear + ESC) and on
+  // the Shop / Blind Select screens (a floating gear + ESC). It's a modal over
+  // the current screen — the run stays in memory (useGame lives in App), so
+  // "Main Menu" leaves without discarding it. Suppressed during cashout/gameover
+  // (they own the screen), matching the phase gate on the ESC handler.
+  const canPause = phase === 'playing' || phase === 'shop' || phase === 'blindselect';
+  const showOptionsFab = phase === 'shop' || phase === 'blindselect';
+
+  return (
+    <>
+      <ScreenTransition screenKey={screenKey}>{content()}</ScreenTransition>
+      {showOptionsFab && (
+        <button className="options-fab" onClick={() => setPaused(true)}>
+          ⚙ {t('sidebar.options')}
+        </button>
+      )}
+      {canPause && paused && (
         <div className="overlay pause-overlay">
           <div className="overlay-card pause-modal">
-            {/* Main Menu keeps the run in memory (useGame lives in App, so
-                leaving the run view doesn't discard it). */}
             <Options
               lexicon={g.lexicon}
               onBack={() => setPaused(false)}
@@ -215,11 +235,6 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           </div>
         </div>
       )}
-      {settling && <CashOut g={g} />}
-      {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
-    </div>
-    );
-  };
-
-  return <ScreenTransition screenKey={screenKey}>{content()}</ScreenTransition>;
+    </>
+  );
 }

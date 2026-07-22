@@ -912,6 +912,19 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-md);
 }
 
+/* Quit farewell: the menu screen swapped for a goodbye after Quit is pressed. */
+.quit-farewell {
+  gap: 18px;
+}
+.quit-farewell .quit-title {
+  font-weight: 800;
+  font-size: var(--fs-xl);
+}
+.quit-farewell .quit-body {
+  color: var(--ink-dim);
+  font-size: var(--fs-md);
+}
+
 /* ---------- New Run (spec §2.2) ---------- */
 .newrun-body {
   width: min(560px, 92vw);

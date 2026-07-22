@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { unseenCount } from '../collection';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
@@ -8,10 +9,35 @@ interface Props {
   onOptions: () => void;
 }
 
-/** Main Menu (spec §2.1). Our own logotype; Quit is hidden on web. */
+/** Main Menu (spec §2.1). Our own logotype. */
 export function MainMenu({ onPlay, onCollection, onOptions }: Props) {
   const { t, lang, setLang } = useI18n();
   const unseen = unseenCount();
+  const [quit, setQuit] = useState(false);
+
+  // Quit: try to close the window (works in a script-opened window or a desktop
+  // app shell); browsers block that for a normally-navigated tab, so we always
+  // show a farewell screen too — the game ends cleanly either way.
+  const onQuit = () => {
+    audio.play('buttonPress');
+    setQuit(true);
+    window.close();
+  };
+
+  if (quit) {
+    return (
+      <div className="screen menu quit-farewell">
+        <div className="logotype" aria-label="Play the Wor!d">
+          <span className="lt-play">Play the</span>
+          <span className="lt-title">
+            Wor<span className="lt-bang">!</span>d
+          </span>
+        </div>
+        <p className="quit-title">{t('menu.quitTitle')}</p>
+        <p className="quit-body">{t('menu.quitBody')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="screen menu">
@@ -42,6 +68,9 @@ export function MainMenu({ onPlay, onCollection, onOptions }: Props) {
         >
           {t('menu.collection')}
           {unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
+        </button>
+        <button className="btn exchange" onClick={onQuit}>
+          {t('menu.quit')}
         </button>
       </div>
 
