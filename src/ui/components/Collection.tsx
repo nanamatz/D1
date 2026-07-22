@@ -8,7 +8,8 @@ import { BALANCE } from '../../engine/balance';
 import type { Lexicon } from '../../engine/lexicon';
 import type { Suit, TileFont, TileMaterial, Tile } from '../../engine/types';
 import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from '../collection';
-import { UNLOCKS, loadPlayed, playedCount } from '../unlocks';
+import { UNLOCKS, loadPlayed, playedCount, activeUnlocks } from '../unlocks';
+import { mascotCollectionRows } from '../mascots';
 import { bossDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { Tooltip } from './Tooltip';
@@ -23,6 +24,7 @@ type Category =
   | 'bosses'
   | 'packs'
   | 'palette'
+  | 'mascots'
   | 'bags';
 
 export const MATERIALS: TileMaterial[] = [
@@ -76,12 +78,16 @@ export function Collection({ lexicon, onBack }: Props) {
       bosses: { have: CORE_BOSS_IDS.length, total: CORE_BOSS_IDS.length },
       packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
       palette: { have: playedCount(), total: UNLOCKS.length },
+      mascots: {
+        have: mascotCollectionRows(activeUnlocks(false)).filter((r) => r.unlocked && r.art).length,
+        total: mascotCollectionRows(activeUnlocks(false)).length,
+      },
       bags: { have: 1, total: 1 },
     }),
     [lexicon],
   );
 
-  const CATS: Category[] = ['words', 'jokers', 'materials', 'fonts', 'vouchers', 'bosses', 'packs', 'palette', 'bags'];
+  const CATS: Category[] = ['words', 'jokers', 'materials', 'fonts', 'vouchers', 'bosses', 'packs', 'palette', 'mascots', 'bags'];
 
   if (cat === null) {
     return (
@@ -126,6 +132,7 @@ export function Collection({ lexicon, onBack }: Props) {
         {cat === 'bosses' && <BossesView />}
         {cat === 'packs' && <PacksView />}
         {cat === 'palette' && <PaletteView />}
+        {cat === 'mascots' && <MascotsView />}
         {cat === 'bags' && <BagsView />}
       </div>
 
@@ -410,6 +417,37 @@ function PaletteView() {
               <span className="cc-name">{found ? u.word : hint}</span>
             </div>
           </Tooltip>
+        );
+      })}
+    </div>
+  );
+}
+// ---------- Mascots (item 5.1) ----------
+function MascotsView() {
+  const { t } = useI18n();
+  // Display only — the unlockAll override reveals but never "discovers" (matches Palette).
+  const rows = mascotCollectionRows(activeUnlocks(false));
+  return (
+    <div className="card-grid">
+      {rows.map((r) => {
+        const reveal = r.unlocked && !!r.art; // full portrait + name
+        const silhouette = !r.unlocked && !!r.art; // teased shape, hidden name
+        return (
+          <div
+            key={r.id}
+            className={['coll-card', 'mascot-card', r.unlocked ? '' : 'locked'].filter(Boolean).join(' ')}
+          >
+            {r.art ? (
+              <img
+                className={['mascot-card-art', silhouette ? 'silhouette' : ''].filter(Boolean).join(' ')}
+                src={r.art}
+                alt=""
+              />
+            ) : (
+              <span className="cc-emoji">❔</span>
+            )}
+            <span className="cc-name">{reveal ? t(r.nameKey) : '???'}</span>
+          </div>
         );
       })}
     </div>

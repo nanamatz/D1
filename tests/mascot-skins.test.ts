@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { availableWooDakSkins, woodakArt, mascotSrc, mascotVariantArt, WOODAK_SKINS } from '../src/ui/mascots';
+import { availableWooDakSkins, woodakArt, mascotSrc, mascotVariantArt, mascotCollectionRows, WOODAK_SKINS } from '../src/ui/mascots';
 import { markPlayed, resetUnlocks } from '../src/ui/unlocks';
 
 // jsdom is not configured project-wide; provide a minimal localStorage shim
@@ -88,5 +88,18 @@ describe('mascotSrc — reads live selection from storage', () => {
 
   it('defaults to woodak when no selection is stored', () => {
     expect(mascotSrc('woodak')).toBe(woodakUrl);
+  });
+});
+
+describe('mascotCollectionRows — 도감 Mascots category (item 5.1)', () => {
+  it('lists every skin and flags unlocked ones (default always unlocked)', () => {
+    const rows = mascotCollectionRows(new Set(['ALIEN']));
+    expect(rows).toHaveLength(WOODAK_SKINS.length);
+    expect(rows.find((r) => r.id === 'woodak')!.unlocked).toBe(true); // default always
+    expect(rows.find((r) => r.id === 'alien')!.unlocked).toBe(true); // played
+    expect(rows.find((r) => r.id === 'ghost')!.unlocked).toBe(false); // not played
+    // art travels with the row so the UI can silhouette locked-but-art-backed skins
+    expect(rows.find((r) => r.id === 'ghost')!.art).toBe(ghostUrl);
+    expect(rows.find((r) => r.id === 'cat')!.art).toBeNull();
   });
 });

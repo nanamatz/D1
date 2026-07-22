@@ -1231,6 +1231,21 @@ body.cb-safe .tile.hint {
   font-weight: 700;
   text-align: center;
 }
+/* Mascot collection card (item 5.1): full portrait when unlocked; a black
+   silhouette teases a locked-but-art-backed skin (name masked to "???"). */
+.mascot-card-art {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.mascot-card-art.silhouette {
+  filter: brightness(0);
+  opacity: 0.7;
+}
+.coll-card.mascot-card.locked {
+  opacity: 0.85;
+}
 .swatch-grid {
   display: flex;
   flex-wrap: wrap;

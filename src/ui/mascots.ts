@@ -66,6 +66,20 @@ export function mascotVariantArt(variant: string): string | null {
   return WOODAK_SKINS.find((s) => s.id === variant)?.art ?? null;
 }
 
+/** Rows for the 도감 Mascots category (item 5.1): every skin, flagged unlocked (the
+ *  default is always unlocked). Locked-but-art-backed rows render as silhouettes; the
+ *  override is NOT passed here (display-only, mirrors the Palette view's rule). */
+export function mascotCollectionRows(
+  active: Set<string>,
+): { id: WooDakSkin; nameKey: string; art: string | null; unlocked: boolean }[] {
+  return WOODAK_SKINS.map((s) => ({
+    id: s.id,
+    nameKey: s.nameKey,
+    art: s.art,
+    unlocked: s.unlockId === null || active.has(s.unlockId),
+  }));
+}
+
 /** Read the live selection + override straight from localStorage (mirrors readTips):
  *  the tutorial host is long-lived, so we never trust a stale React copy. */
 function readSelection(): { mascot: WooDakSkin; unlockAll: boolean } {
