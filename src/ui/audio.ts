@@ -15,7 +15,7 @@
 export type SfxName =
   | 'tilePop' | 'countTick' | 'jokerBlip' | 'stamp' | 'multFill' | 'totalRoll'
   | 'clearFanfare' | 'failSting'
-  | 'tilePick' | 'tilePlace' | 'tileSelect' | 'dragSnap' | 'discardSwoosh'
+  | 'tilePick' | 'tilePlace' | 'tileSelect' | 'tileDeal' | 'dragSnap' | 'discardSwoosh'
   | 'submitThock' | 'buttonPress' | 'transitionWhoosh'
   | 'purchase' | 'sell' | 'reroll' | 'packOpen' | 'voucherRedeem' | 'catMeow';
 
@@ -27,7 +27,9 @@ interface Recipe {
   /** overall length in seconds */
   dur: number;
   /** one or more tone layers; noise adds a filtered-noise burst */
-  tones?: { wave: Wave; from: number; to?: number }[];
+  /** `delay` (seconds from recipe start) lets tones SEQUENCE (e.g. a coin jingle);
+   *  omitted = starts at the recipe onset like before. */
+  tones?: { wave: Wave; from: number; to?: number; delay?: number }[];
   noise?: { cutoff: number };
   /** 'music' routes through the music bus (none in phase 1) */
   bus?: 'sfx' | 'music';
@@ -46,14 +48,15 @@ const RECIPES: Record<SfxName, Recipe> = {
   failSting:        { gain: 0.30, dur: 0.35, tones: [{ wave: 'sawtooth', from: 300, to: 90 }] },
   tilePick:         { gain: 0.18, dur: 0.05, tones: [{ wave: 'triangle', from: 600 }] },
   tilePlace:        { gain: 0.18, dur: 0.05, tones: [{ wave: 'triangle', from: 400 }] },
-  tileSelect:       { gain: 0.16, dur: 0.04, tones: [{ wave: 'square', from: 700 }] },
+  tileSelect:       { gain: 0.22, dur: 0.06, tones: [{ wave: 'square', from: 150, to: 90 }], noise: { cutoff: 2200 } },
+  tileDeal:         { gain: 0.16, dur: 0.07, tones: [{ wave: 'triangle', from: 520, to: 380 }], noise: { cutoff: 3000 } },
   dragSnap:         { gain: 0.16, dur: 0.05, tones: [{ wave: 'square', from: 300, to: 500 }] },
   discardSwoosh:    { gain: 0.24, dur: 0.18, noise: { cutoff: 1600 } },
   submitThock:      { gain: 0.30, dur: 0.10, tones: [{ wave: 'square', from: 160, to: 90 }], noise: { cutoff: 700 } },
   buttonPress:      { gain: 0.18, dur: 0.05, tones: [{ wave: 'square', from: 380, to: 300 }] },
   transitionWhoosh: { gain: 0.20, dur: 0.22, noise: { cutoff: 1200 } },
-  purchase:         { gain: 0.28, dur: 0.16, tones: [{ wave: 'square', from: 784 }, { wave: 'square', from: 1046 }] },
-  sell:             { gain: 0.24, dur: 0.12, tones: [{ wave: 'square', from: 660, to: 440 }] },
+  purchase:         { gain: 0.26, dur: 0.22, tones: [{ wave: 'triangle', from: 784 }, { wave: 'triangle', from: 1046, delay: 0.05 }, { wave: 'triangle', from: 1318, delay: 0.10 }], noise: { cutoff: 3000 } },
+  sell:             { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 988 }, { wave: 'triangle', from: 1318, delay: 0.05 }], noise: { cutoff: 2600 } },
   reroll:           { gain: 0.22, dur: 0.12, tones: [{ wave: 'sawtooth', from: 300, to: 600 }] },
   packOpen:         { gain: 0.30, dur: 0.30, tones: [{ wave: 'square', from: 440, to: 880 }], noise: { cutoff: 2000 } },
   voucherRedeem:    { gain: 0.28, dur: 0.24, tones: [{ wave: 'triangle', from: 660 }, { wave: 'triangle', from: 990 }] },
@@ -103,18 +106,18 @@ export const MUSIC_TRACKS = ['menu', 'play', 'shop', 'boss'] as const;
 export const MUSIC: Record<MusicTrack, TrackDef> = {
   // Calm major arpeggio — title/menu.
   menu: {
-    bpm: 84,
+    bpm: 76,
     voices: [
-      { wave: 'triangle', gain: 0.18, steps: ['C4', R, 'E4', R, 'G4', R, 'B4', R, 'A4', R, 'G4', R, 'E4', R, 'D4', R] },
-      { wave: 'square',   gain: 0.10, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
+      { wave: 'triangle', gain: 0.16, steps: ['C4', R, R, 'E4', R, R, 'G4', R, 'A4', R, 'G4', R, 'E4', R, 'D4', R] },
+      { wave: 'square',   gain: 0.09, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
     ],
   },
   // Upbeat driving loop — the play board.
   play: {
-    bpm: 120,
+    bpm: 96,
     voices: [
-      { wave: 'square',   gain: 0.14, steps: ['C4', 'E4', 'G4', 'E4', 'A4', 'G4', 'E4', 'C4', 'D4', 'F4', 'A4', 'F4', 'G4', 'E4', 'D4', 'G4'] },
-      { wave: 'triangle', gain: 0.12, steps: ['C2', R, 'C2', R, 'A1', R, 'A1', R, 'F1', R, 'F1', R, 'G1', R, 'G1', R] },
+      { wave: 'triangle', gain: 0.15, steps: ['C4', R, 'E4', 'G4', R, 'E4', 'C4', R, 'D4', R, 'F4', 'A4', R, 'G4', 'E4', R] },
+      { wave: 'square',   gain: 0.10, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
     ],
   },
   // Relaxed shop lounge — the Stationery Shop.
@@ -339,12 +342,13 @@ class Audio {
     const bend = Math.pow(2, semis / 12);
 
     for (const t of r.tones ?? []) {
+      const start = now + (t.delay ?? 0);
       const osc = ctx.createOscillator();
       osc.type = t.wave;
-      osc.frequency.setValueAtTime(t.from * bend, now);
+      osc.frequency.setValueAtTime(t.from * bend, start);
       if (t.to !== undefined) osc.frequency.exponentialRampToValueAtTime(t.to * bend, now + r.dur);
       osc.connect(out);
-      osc.start(now);
+      osc.start(start);
       osc.stop(now + r.dur);
     }
     if (r.noise) {

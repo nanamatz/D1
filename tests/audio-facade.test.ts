@@ -25,7 +25,7 @@ describe('audio facade — pure logic (no Web Audio in Node)', () => {
   });
 
   it('every SfxName has a recipe (positive base gain) and SFX_NAMES is complete', () => {
-    expect(SFX_NAMES.length).toBe(22);
+    expect(SFX_NAMES.length).toBe(23);
     for (const n of SFX_NAMES) {
       expect(effectiveGain(n as SfxName, FULL)).toBeGreaterThan(0);
     }
