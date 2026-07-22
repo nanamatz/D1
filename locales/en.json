@@ -21,6 +21,7 @@
   "sidebar.roundNum": "Round",
   "sidebar.noBonus": "no bonus yet",
   "sidebar.unisonOnly": "unison only",
+  "sidebar.patternLevel": "Lv.{n}",
   "tray.title": "Sentence",
   "tray.empty": "No words yet — play a word to begin the sentence.",
   "tray.gibberish": "gibberish",

@@ -20,7 +20,7 @@ interface Props {
   /** blind-end final score — non-null while the sentence bonus lands (06 #1) */
   finalScore: number | null;
   /** finalized sentence-bonus breakdown while it lands (item 2), else null */
-  sentenceBonus: { chips: number; mult: number; pattern: string | null } | null;
+  sentenceBonus: { chips: number; mult: number; pattern: string | null; level: number | null } | null;
   /** the staged-word preview — its status shows above the 0×0 box (E-9) */
   preview: StagePreview | null;
   onOpenInfo: () => void;
@@ -89,6 +89,11 @@ export function Sidebar({
   // bonus' chips × mult over the same BONUS_LAND_MS the round number rolls over, so
   // the player sees the round box's chips and mult climb by the bonus.
   const bonusActive = sentenceBonus !== null;
+  // The bonus is LANDING (round is rolling) once finalScore is published — the box
+  // is full and its product flies onto the round total. During BUILD (finalScore
+  // still null) the box is filling and the round holds.
+  const landing = bonusActive && finalScore !== null;
+  const bonusTotal = bonusActive ? Math.round(sentenceBonus!.chips * sentenceBonus!.mult) : 0;
   const bonusChips = useCountUp(bonusActive ? sentenceBonus!.chips : 0, BONUS_LAND_MS);
   const bonusMult = useCountUp(bonusActive ? sentenceBonus!.mult : 0, BONUS_LAND_MS);
   // Idle is 0 × 0; the box fills only during settle (or the bonus beat), then resets
@@ -153,7 +158,11 @@ export function Sidebar({
 
       <div className="panel score-panel">
         <StatusLine preview={preview} />
-        <div className={['scorebox', (settle.active || bonusActive) && 'settling'].filter(Boolean).join(' ')}>
+        <div
+          className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing']
+            .filter(Boolean)
+            .join(' ')}
+        >
           <span className="box c">
             {Math.round(chips)}
             {settle.scorePop && settle.scorePop.chips !== 0 && (
@@ -172,8 +181,18 @@ export function Sidebar({
               </span>
             )}
           </span>
-          {bonusActive && sentenceBonus!.pattern && (
-            <span className="bonus-stamp">{t(`pattern.${sentenceBonus!.pattern}`)}</span>
+          {bonusActive && (
+            <span className="bonus-stamp">
+              {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
+              {sentenceBonus!.level != null && (
+                <span className="bonus-lvl">{t('sidebar.patternLevel', { n: sentenceBonus!.level })}</span>
+              )}
+            </span>
+          )}
+          {landing && bonusTotal > 0 && (
+            <span key="bonus-fly" className="bonus-fly">
+              +{bonusTotal}
+            </span>
           )}
         </div>
       </div>
