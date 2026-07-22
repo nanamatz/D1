@@ -33,6 +33,9 @@ export function StagePanel({
   const [sortMode, setSortMode] = usePersistedState<SortMode>('wj.sortMode', 'vowel');
   // C-3: discard marks are a separate selection from staging (hand tiles only).
   const [discardMarks, setDiscardMarks] = useState<string[]>([]);
+  // item 4 (discard half): short-lived fly-out ghosts for discarded tiles, captured
+  // relative to `.stage` so they land correctly regardless of board scale/zoom.
+  const [flying, setFlying] = useState<{ tile: Tile; x: number; y: number; w: number; h: number }[]>([]);
   // D-2: drag origin + live insertion target, for the dashed outlines.
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -133,6 +136,24 @@ export function StagePanel({
 
   const doDiscard = () => {
     audio.play('discardSwoosh');
+    const reduce =
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        document.body.classList.contains('force-reduced-motion'));
+    if (!reduce) {
+      const stageRect = handRef.current?.closest('.stage')?.getBoundingClientRect();
+      const ghosts = validMarks
+        .map((id) => {
+          const el = handRef.current?.querySelector<HTMLElement>(`[data-tile-id="${id}"]`);
+          const tile = blind.hand.find((tl) => tl.id === id);
+          if (!el || !tile || !stageRect) return null;
+          const r = el.getBoundingClientRect();
+          return { tile, x: r.left - stageRect.left, y: r.top - stageRect.top, w: r.width, h: r.height };
+        })
+        .filter(Boolean) as { tile: Tile; x: number; y: number; w: number; h: number }[];
+      setFlying(ghosts);
+      setTimeout(() => setFlying([]), 340);
+    }
     g.discard(validMarks);
     setDiscardMarks([]);
   };
@@ -239,6 +260,22 @@ export function StagePanel({
           {validMarks.length > 0 ? ` (${validMarks.length})` : ''}
         </button>
       </div>
+
+      {/* item 4 (discard half): flying ghosts of the discarded tiles, fading out while
+          the real hand FLIPs closed and replacements slide in (item 4, draw half). */}
+      {flying.length > 0 && (
+        <div className="discard-ghosts" aria-hidden>
+          {flying.map((f, i) => (
+            <span
+              key={`${f.tile.id}-${i}`}
+              className="discard-ghost"
+              style={{ left: f.x, top: f.y, width: f.w, height: f.h }}
+            >
+              <TileView tile={f.tile} />
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

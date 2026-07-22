@@ -1147,6 +1147,7 @@
    Discard row lands exactly on the pouch widget's line — board padding +
    this = --dock-bottom, the same offset the pouch is fixed at. */
 .stage {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1154,6 +1155,24 @@
   margin-top: auto;
   padding: var(--board-pad) var(--board-pad)
     calc(var(--dock-bottom) - var(--board-pad));
+}
+/* item 4 (discard half): fly-out ghosts for discarded hand tiles, positioned
+   relative to `.stage` (captured in StagePanel.doDiscard). */
+.discard-ghosts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.discard-ghost {
+  position: absolute;
+  animation: discard-fly 0.32s ease-in forwards;
+}
+@keyframes discard-fly {
+  to {
+    transform: translate(24px, 120px) scale(0.7) rotate(8deg);
+    opacity: 0;
+  }
 }
 .preview {
   background: #0f1b22;
