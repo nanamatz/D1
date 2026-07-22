@@ -50,15 +50,15 @@ const RECIPES: Record<SfxName, Recipe> = {
   failSting:        { gain: 0.30, dur: 0.35, tones: [{ wave: 'sawtooth', from: 300, to: 90 }] },
   tilePick:         { gain: 0.18, dur: 0.05, tones: [{ wave: 'triangle', from: 600 }] },
   tilePlace:        { gain: 0.18, dur: 0.05, tones: [{ wave: 'triangle', from: 400 }] },
-  tileSelect:       { gain: 0.22, dur: 0.06, tones: [{ wave: 'square', from: 150, to: 90 }], noise: { cutoff: 2200 } },
-  tileDeal:         { gain: 0.16, dur: 0.07, tones: [{ wave: 'triangle', from: 520, to: 380 }], noise: { cutoff: 3000 } },
+  tileSelect:       { gain: 0.24, dur: 0.07, tones: [{ wave: 'square', from: 150, to: 90, sub: true }], noise: { cutoff: 1400 } },
+  tileDeal:         { gain: 0.17, dur: 0.08, tones: [{ wave: 'triangle', from: 480, to: 340, detune: 8, sub: true }], noise: { cutoff: 1800 } },
   dragSnap:         { gain: 0.16, dur: 0.05, tones: [{ wave: 'square', from: 300, to: 500 }] },
   discardSwoosh:    { gain: 0.24, dur: 0.18, noise: { cutoff: 1600 } },
   submitThock:      { gain: 0.30, dur: 0.10, tones: [{ wave: 'square', from: 160, to: 90 }], noise: { cutoff: 700 } },
   buttonPress:      { gain: 0.18, dur: 0.05, tones: [{ wave: 'square', from: 380, to: 300 }] },
   transitionWhoosh: { gain: 0.20, dur: 0.22, noise: { cutoff: 1200 } },
-  purchase:         { gain: 0.26, dur: 0.22, tones: [{ wave: 'triangle', from: 784 }, { wave: 'triangle', from: 1046, delay: 0.05 }, { wave: 'triangle', from: 1318, delay: 0.10 }], noise: { cutoff: 3000 } },
-  sell:             { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 988 }, { wave: 'triangle', from: 1318, delay: 0.05 }], noise: { cutoff: 2600 } },
+  purchase:         { gain: 0.26, dur: 0.22, tones: [{ wave: 'triangle', from: 784, detune: 6 }, { wave: 'triangle', from: 1046, delay: 0.05, detune: 6 }, { wave: 'triangle', from: 1318, delay: 0.10, detune: 6 }], noise: { cutoff: 2200 } },
+  sell:             { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 988, detune: 6 }, { wave: 'triangle', from: 1318, delay: 0.05, detune: 6 }], noise: { cutoff: 2000 } },
   reroll:           { gain: 0.22, dur: 0.12, tones: [{ wave: 'sawtooth', from: 300, to: 600 }] },
   packOpen:         { gain: 0.30, dur: 0.30, tones: [{ wave: 'square', from: 440, to: 880 }], noise: { cutoff: 2000 } },
   voucherRedeem:    { gain: 0.28, dur: 0.24, tones: [{ wave: 'triangle', from: 660 }, { wave: 'triangle', from: 990 }] },
@@ -112,24 +112,27 @@ export const MUSIC: Record<MusicTrack, TrackDef> = {
   menu: {
     bpm: 76,
     voices: [
-      { wave: 'triangle', gain: 0.16, steps: ['C4', R, R, 'E4', R, R, 'G4', R, 'A4', R, 'G4', R, 'E4', R, 'D4', R] },
+      { wave: 'triangle', gain: 0.16, detune: 7, steps: ['C4', R, R, 'E4', R, R, 'G4', R, 'A4', R, 'G4', R, 'E4', R, 'D4', R] },
       { wave: 'square',   gain: 0.09, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
+      { wave: 'sine',     gain: 0.06, steps: ['C3', R, R, R, 'A2', R, R, R, 'F2', R, R, R, 'G2', R, R, R] },
     ],
   },
   // Upbeat driving loop — the play board.
   play: {
     bpm: 96,
     voices: [
-      { wave: 'triangle', gain: 0.15, steps: ['C4', R, 'E4', 'G4', R, 'E4', 'C4', R, 'D4', R, 'F4', 'A4', R, 'G4', 'E4', R] },
+      { wave: 'triangle', gain: 0.15, detune: 7, steps: ['C4', R, 'E4', 'G4', R, 'E4', 'C4', R, 'D4', R, 'F4', 'A4', R, 'G4', 'E4', R] },
       { wave: 'square',   gain: 0.10, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
+      { wave: 'sine',     gain: 0.06, steps: ['C3', R, R, R, 'A2', R, R, R, 'F2', R, R, R, 'G2', R, R, R] },
     ],
   },
   // Relaxed shop lounge — the Stationery Shop.
   shop: {
     bpm: 100,
     voices: [
-      { wave: 'triangle', gain: 0.16, steps: ['E4', R, 'G4', 'A4', R, 'G4', 'E4', R, 'D4', R, 'E4', 'G4', R, 'D4', 'C4', R] },
+      { wave: 'triangle', gain: 0.16, detune: 7, steps: ['E4', R, 'G4', 'A4', R, 'G4', 'E4', R, 'D4', R, 'E4', 'G4', R, 'D4', 'C4', R] },
       { wave: 'square',   gain: 0.09, steps: ['A1', R, R, R, 'E2', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
+      { wave: 'sine',     gain: 0.06, steps: ['A2', R, R, R, 'E3', R, R, R, 'F2', R, R, R, 'G2', R, R, R] },
     ],
   },
   // Tenser variant of `play`: minor, faster, sawtooth lead — the Deadline (boss).

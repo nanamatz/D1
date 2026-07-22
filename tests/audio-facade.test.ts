@@ -59,6 +59,13 @@ describe('BGM (phase 2) — pure data + no-op safety', () => {
     }
   });
 
+  it('non-boss tracks carry a third (pad) voice for a fuller bed', () => {
+    for (const name of MUSIC_TRACKS) {
+      const expected = name === 'boss' ? 2 : 3;
+      expect(MUSIC[name].voices.length).toBe(expected);
+    }
+  });
+
   it('playMusic / stopMusic are safe no-ops in Node (no AudioContext)', () => {
     expect(() => audio.playMusic('play')).not.toThrow();
     expect(() => audio.playMusic('boss')).not.toThrow();
