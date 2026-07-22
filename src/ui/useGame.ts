@@ -130,6 +130,10 @@ export interface GameState {
    * Null at every other time — the bonus stays a separate forecast during play.
    */
   finalScore: number | null;
+  /** The finalized sentence-bonus breakdown, non-null only while it lands on the
+   *  round number (item 2). Drives the scorebox fill (chips → mult) in the Sidebar;
+   *  null at every other time (mirrors `finalScore`). */
+  sentenceBonus: { chips: number; mult: number; pattern: PatternId | null } | null;
   /**
    * The player actually started this run (vs. the idle run `bootstrap` always
    * builds so the board has something to render). Gates the New Run screen's
@@ -203,6 +207,7 @@ function bootstrap(seed: string = randomSeed()): GameState {
     pendingEnd: false,
     settleComplete: true,
     finalScore: null,
+    sentenceBonus: null,
     runStarted: false,
     showIntro: tutorial,
   };
@@ -442,6 +447,7 @@ export function useGame(): UseGame {
         pendingEnd: false,
         settleComplete: true,
         finalScore: null,
+        sentenceBonus: null,
         rngCounter: prev.rngCounter + 1,
       };
     });
@@ -654,6 +660,7 @@ export function useGame(): UseGame {
         // UI waits for THIS word's settle to land, not the previous one's.
         settleComplete: false,
         finalScore: null,
+        sentenceBonus: null,
         // committed BEFORE this word, so the round number climbs to the new
         // committed during the settle rather than snapping (A-1).
         committedBefore: prev.blind.committedScore,
@@ -682,9 +689,18 @@ export function useGame(): UseGame {
   // sentence bonus counts up onto the round number (06 #1).
   useEffect(() => {
     if (!state.pendingEnd || !state.settleComplete || state.finalScore !== null) return;
-    const { finalScore } = endBlind(state.blind, state.run, lexicon);
+    const end = endBlind(state.blind, state.run, lexicon);
     setState((prev) =>
-      prev.pendingEnd && prev.finalScore === null ? { ...prev, finalScore } : prev,
+      prev.pendingEnd && prev.finalScore === null
+        ? {
+            ...prev,
+            finalScore: end.finalScore,
+            sentenceBonus:
+              end.bonus > 0
+                ? { chips: end.sentenceChips, mult: end.sentenceMult, pattern: end.judgment.match?.pattern ?? null }
+                : null,
+          }
+        : prev,
     );
   }, [state.pendingEnd, state.settleComplete, state.finalScore, state.blind, state.run, lexicon]);
 

@@ -19,6 +19,8 @@ interface Props {
   settleComplete: boolean;
   /** blind-end final score — non-null while the sentence bonus lands (06 #1) */
   finalScore: number | null;
+  /** finalized sentence-bonus breakdown while it lands (item 2), else null */
+  sentenceBonus: { chips: number; mult: number; pattern: string | null } | null;
   /** the staged-word preview — its status shows above the 0×0 box (E-9) */
   preview: StagePreview | null;
   onOpenInfo: () => void;
@@ -57,6 +59,7 @@ export function Sidebar({
   committedBefore,
   settleComplete,
   finalScore,
+  sentenceBonus,
   preview,
   onOpenInfo,
   onOpenOptions,
@@ -82,9 +85,16 @@ export function Sidebar({
   const round = useCountUp(roundTarget, BONUS_LAND_MS);
   // The sentence bonus as a forecast — "if the sentence ends like this: +N".
   const forecast = blind.projectedScore - blind.committedScore;
-  // Idle is 0 × 0; the box fills only during settle, then resets (UI_DESIGN §4.1, B).
-  const chips = settle.active ? settle.chips : 0;
-  const mult = settle.active ? settle.mult : 0;
+  // Sentence-bonus beat (item 2): when the bonus lands, the scorebox fills to the
+  // bonus' chips × mult over the same BONUS_LAND_MS the round number rolls over, so
+  // the player sees the round box's chips and mult climb by the bonus.
+  const bonusActive = sentenceBonus !== null;
+  const bonusChips = useCountUp(bonusActive ? sentenceBonus!.chips : 0, BONUS_LAND_MS);
+  const bonusMult = useCountUp(bonusActive ? sentenceBonus!.mult : 0, BONUS_LAND_MS);
+  // Idle is 0 × 0; the box fills only during settle (or the bonus beat), then resets
+  // (UI_DESIGN §4.1, B).
+  const chips = bonusActive ? bonusChips : settle.active ? settle.chips : 0;
+  const mult = bonusActive ? bonusMult : settle.active ? settle.mult : 0;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
 
   return (
@@ -143,7 +153,7 @@ export function Sidebar({
 
       <div className="panel score-panel">
         <StatusLine preview={preview} />
-        <div className={['scorebox', settle.active && 'settling'].filter(Boolean).join(' ')}>
+        <div className={['scorebox', (settle.active || bonusActive) && 'settling'].filter(Boolean).join(' ')}>
           <span className="box c">
             {Math.round(chips)}
             {settle.scorePop && settle.scorePop.chips !== 0 && (
@@ -162,6 +172,9 @@ export function Sidebar({
               </span>
             )}
           </span>
+          {bonusActive && sentenceBonus!.pattern && (
+            <span className="bonus-stamp">{t(`pattern.${sentenceBonus!.pattern}`)}</span>
+          )}
         </div>
       </div>
 

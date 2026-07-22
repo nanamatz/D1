@@ -169,6 +169,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           committedBefore={g.state.committedBefore}
           settleComplete={g.state.settleComplete}
           finalScore={g.state.finalScore}
+          sentenceBonus={g.state.sentenceBonus}
           preview={preview}
           onOpenInfo={() => setShowInfo(true)}
           onOpenOptions={() => setPaused(true)}
