@@ -396,7 +396,7 @@
   "tutorial.firstPattern.title": "문장 패턴",
   "tutorial.firstPattern.body": "낸 단어들이 문장으로 이어집니다. 문법 패턴을 완성하면 [b:블라인드] 종료 시 큰 보너스가 붙습니다 — 복잡한 패턴일수록 더 크게 지급됩니다.",
   "tutorial.firstUnison.title": "유니즌",
-  "tutorial.firstUnison.body": "문장의 모든 단어가 같은 접미를 공유하면(2개 이상) 유니즌 보너스가 붙습니다 — 플러시에 해당하는 규칙입니다.",
+  "tutorial.firstUnison.body": "문장의 모든 단어가 같은 슈트(색)를 공유하고 단어가 2개 이상이면 '유니즌' 보너스를 얻어요. 문장 전체를 한 색으로 맞춘 보상으로 배수가 커집니다.",
   "tutorial.firstMaterial.title": "타일 재질",
   "tutorial.firstMaterial.body": "일부 타일은 재질(자기·유리·황동…)을 지녀 득점 방식이 달라집니다. 각 재질의 효과는 도감에서 확인하세요.",
   "tutorial.firstFont.title": "폰트 씰",

@@ -396,7 +396,7 @@
   "tutorial.firstPattern.title": "Sentence Pattern",
   "tutorial.firstPattern.body": "Words you play line up into a sentence. Complete a grammatical pattern for a big [b:blind]-end bonus — the more complex the pattern, the bigger it pays.",
   "tutorial.firstUnison.title": "Unison",
-  "tutorial.firstUnison.body": "When every word in the sentence shares one suit (2 or more words), Unison adds a bonus — our take on a flush.",
+  "tutorial.firstUnison.body": "If all the words in your sentence share one suit — and there are at least 2 words — you earn a Unison bonus: a bigger multiplier for keeping the whole sentence one color.",
   "tutorial.firstMaterial.title": "Tile Material",
   "tutorial.firstMaterial.body": "Some tiles carry a material (Porcelain, Glass, Brass…) that changes how they score. Check the collection for each material's effect.",
   "tutorial.firstFont.title": "Font Seal",
