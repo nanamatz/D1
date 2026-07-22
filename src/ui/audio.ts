@@ -29,7 +29,9 @@ interface Recipe {
   /** one or more tone layers; noise adds a filtered-noise burst */
   /** `delay` (seconds from recipe start) lets tones SEQUENCE (e.g. a coin jingle);
    *  omitted = starts at the recipe onset like before. */
-  tones?: { wave: Wave; from: number; to?: number; delay?: number }[];
+  /** `detune` (cents) spawns a ±-detuned twin pair for chorus/body; `sub` adds a
+   *  quiet sine one octave below for warmth. Both optional; omitted = single tone. */
+  tones?: { wave: Wave; from: number; to?: number; delay?: number; detune?: number; sub?: boolean }[];
   noise?: { cutoff: number };
   /** 'music' routes through the music bus (none in phase 1) */
   bus?: 'sfx' | 'music';
@@ -91,6 +93,8 @@ export function noteHz(name: string): number {
 interface Voice {
   wave: Wave;
   gain: number;
+  /** cents; when set, a detuned twin oscillator thickens the voice (chorus). */
+  detune?: number;
   /** one note per 16th-step; null = rest. Loops when the sequencer wraps. */
   steps: (string | null)[];
 }
@@ -237,7 +241,10 @@ class Audio {
     if (!this.ctx) return;
     if (!this.musicGain) {
       this.musicGain = this.ctx.createGain();
-      this.musicGain.connect(this.ctx.destination);
+      const warm = this.ctx.createBiquadFilter();
+      warm.type = 'lowpass';
+      warm.frequency.value = 5000;
+      this.musicGain.connect(warm).connect(this.ctx.destination);
     }
     this.updateMusicGain();
   }
@@ -287,16 +294,22 @@ class Audio {
       if (!name) continue;
       const hz = noteHz(name);
       if (!hz) continue;
-      const osc = ctx.createOscillator();
-      osc.type = v.wave;
-      osc.frequency.setValueAtTime(hz, when);
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.0001, when);
       g.gain.exponentialRampToValueAtTime(v.gain, when + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-      osc.connect(g).connect(this.musicGain);
-      osc.start(when);
-      osc.stop(when + dur);
+      g.connect(this.musicGain);
+      // Main oscillator + optional detuned twin (chorus body for leads).
+      const dets = v.detune ? [0, v.detune] : [0];
+      for (const d of dets) {
+        const osc = ctx.createOscillator();
+        osc.type = v.wave;
+        osc.frequency.setValueAtTime(hz, when);
+        if (d) osc.detune.setValueAtTime(d, when);
+        osc.connect(g);
+        osc.start(when);
+        osc.stop(when + dur);
+      }
     }
   }
 
@@ -330,11 +343,19 @@ class Audio {
     const ctx = this.ctx;
     const now = ctx.currentTime;
     const out = ctx.createGain();
-    // Percussive envelope: fast attack, exponential decay across the recipe dur.
+    // Percussive envelope: softened 12ms attack (was 6ms — removes the tinny click),
+    // exponential decay across the recipe dur.
     out.gain.setValueAtTime(0.0001, now);
-    out.gain.exponentialRampToValueAtTime(g, now + 0.006);
+    out.gain.exponentialRampToValueAtTime(g, now + 0.012);
     out.gain.exponentialRampToValueAtTime(0.0001, now + r.dur);
-    out.connect(ctx.destination);
+    // Global tone rounding: one gentle lowpass warms every SFX (rolls off the harsh
+    // upper harmonics of square/saw blips). The noise path keeps its own per-recipe
+    // lowpass and is softened further by this one — intended.
+    const warm = ctx.createBiquadFilter();
+    warm.type = 'lowpass';
+    warm.frequency.value = 3000;
+    warm.Q.value = 0.7;
+    out.connect(warm).connect(ctx.destination);
 
     // Rising count-up tick: each consecutive tick steps the pitch up, resetting
     // per word (the caller passes an incrementing `step`, cleared between words).
@@ -343,13 +364,33 @@ class Audio {
 
     for (const t of r.tones ?? []) {
       const start = now + (t.delay ?? 0);
-      const osc = ctx.createOscillator();
-      osc.type = t.wave;
-      osc.frequency.setValueAtTime(t.from * bend, start);
-      if (t.to !== undefined) osc.frequency.exponentialRampToValueAtTime(t.to * bend, now + r.dur);
-      osc.connect(out);
-      osc.start(start);
-      osc.stop(now + r.dur);
+      // Layers: main (full), optional ±detuned twins (0.7×), optional sub-octave sine (0.5×).
+      const layers: { freqMul: number; gainMul: number; det: number; sub: boolean }[] = [
+        { freqMul: 1, gainMul: 1, det: 0, sub: false },
+      ];
+      if (t.detune) {
+        layers.push({ freqMul: 1, gainMul: 0.7, det: t.detune, sub: false });
+        layers.push({ freqMul: 1, gainMul: 0.7, det: -t.detune, sub: false });
+      }
+      if (t.sub) layers.push({ freqMul: 0.5, gainMul: 0.5, det: 0, sub: true });
+      for (const L of layers) {
+        const osc = ctx.createOscillator();
+        osc.type = L.sub ? 'sine' : t.wave; // sub is a pure sine for fundamental body
+        osc.frequency.setValueAtTime(t.from * bend * L.freqMul, start);
+        if (t.to !== undefined) {
+          osc.frequency.exponentialRampToValueAtTime(t.to * bend * L.freqMul, now + r.dur);
+        }
+        if (L.det) osc.detune.setValueAtTime(L.det, start);
+        if (L.gainMul !== 1) {
+          const lg = ctx.createGain();
+          lg.gain.value = L.gainMul;
+          osc.connect(lg).connect(out);
+        } else {
+          osc.connect(out);
+        }
+        osc.start(start);
+        osc.stop(now + r.dur);
+      }
     }
     if (r.noise) {
       const frames = Math.floor(ctx.sampleRate * r.dur);
