@@ -355,6 +355,7 @@
   "settings.unlockAll": "Reveal all presentation",
   "settings.unlockAllNote": "Unlocks every color and sound now. Playing the word still triggers its celebration once.",
   "settings.audioNote": "Chiptune SFX. BGM coming later.",
+  "settings.audioLockedHint": "Audio starts off. Spell SOUND in a run to unlock sound effects, MUSIC to unlock the soundtrack.",
   "settings.master": "Master",
   "settings.music": "Music",
   "settings.sfx": "SFX",

@@ -1445,6 +1445,11 @@ body.cb-safe .tile.hint {
   font-style: italic;
   padding: 4px 2px 8px;
 }
+/* Audio-unlock hint (feedback F1): highlights that SOUND/MUSIC unlock audio. */
+.set-note.locked-hint {
+  color: var(--gold);
+  font-style: normal;
+}
 /* 2026-07-21: WooDak ally skin picker (Settings → Game). Thumbnails of the pickable
    characters; the selected one carries the same gold accent as `.seg.on`. */
 .mascot-picker {

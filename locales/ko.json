@@ -355,6 +355,7 @@
   "settings.unlockAll": "모든 연출 공개",
   "settings.unlockAllNote": "모든 색과 소리를 지금 해제합니다. 단어를 내면 축하 연출은 한 번 표시됩니다.",
   "settings.audioNote": "칩튠 효과음. 배경음악은 추후 추가.",
+  "settings.audioLockedHint": "소리는 꺼진 채로 시작합니다. 게임에서 SOUND를 완성하면 효과음이, MUSIC을 완성하면 배경음악이 켜집니다.",
   "settings.master": "마스터",
   "settings.music": "음악",
   "settings.sfx": "효과음",

@@ -3,6 +3,7 @@ import type { Lexicon } from '../../engine/lexicon';
 import { collectionSize } from '../collection';
 import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
+import { audio } from '../audio';
 import { availableWooDakSkins } from '../mascots';
 import { activeUnlocks } from '../unlocks';
 import { useI18n } from '../i18n';
@@ -252,6 +253,9 @@ function SettingsView() {
 
         <div className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>
             <p className="set-note">{t('settings.audioNote')}</p>
+            {(!audio.isBusEnabled('sfx') || !audio.isBusEnabled('music')) && (
+              <p className="set-note locked-hint">🔇 {t('settings.audioLockedHint')}</p>
+            )}
             <Slider label={t('settings.master')} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
             <Slider label={t('settings.music')} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />
             <Slider label={t('settings.sfx')} value={settings.sfx} min={0} max={100} onChange={(v) => set('sfx', v)} />
