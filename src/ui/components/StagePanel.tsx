@@ -54,7 +54,19 @@ export function StagePanel({
   const hintIds = new Set(g.state.hint?.flatMap((w) => w.tileIds) ?? []);
   const handRef = useRef<HTMLDivElement>(null);
   const stagedRef = useRef<HTMLDivElement>(null);
-  useFlip(handRef, `${sortMode}|${hand.map((tl) => tl.id).join(',')}`);
+  // A4/A5: freshly drawn tiles fly in from the pouch dock, staggered, each with a
+  // per-tile draw sound on the same 60ms cadence. The staged row keeps plain FLIP.
+  const pouchOrigin = () => {
+    if (typeof document === 'undefined') return null;
+    const dock = document.querySelector('.pouch-dock');
+    if (!dock) return null;
+    const r = dock.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  };
+  useFlip(handRef, `${sortMode}|${hand.map((tl) => tl.id).join(',')}`, {
+    enterOrigin: pouchOrigin,
+    onEnter: (i) => { window.setTimeout(() => audio.play('tileDeal'), i * 60); },
+  });
   useFlip(stagedRef, staged.map((tl) => tl.id).join(','));
 
   const handIds = new Set(hand.map((tl) => tl.id));

@@ -36,8 +36,24 @@ export function usePersistedState<T>(key: string, initial: T): [T, (v: T) => voi
  * transform offsets the container and its children equally, so container-relative
  * deltas cancel it out and only real reordering animates.
  */
-export function useFlip(ref: RefObject<HTMLElement | null>, key: string): void {
+export interface FlipOpts {
+  /** Viewport coords of the draw origin (the pouch). Entering (freshly drawn)
+   *  tiles fly from here. Omit for containers that should NOT animate enters
+   *  (e.g. the staged row) — then only reorder/shift animate, as before. */
+  enterOrigin?: () => { x: number; y: number } | null;
+  /** Fired once per entering tile in DOM order (0-based) so the caller can play
+   *  a staggered per-tile sound. Fires even under reduced motion (sound ≠ motion). */
+  onEnter?: (index: number) => void;
+}
+
+export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: FlipOpts): void {
   const prev = useRef<Map<string, { x: number; y: number }>>(new Map());
+  // Every id ever seen in this container. A tile absent from `prev` but present in
+  // `seen` returned from the staged row (do NOT fly it from the pouch); a tile absent
+  // from both is a genuine fresh draw (fly it in).
+  const seen = useRef<Set<string>>(new Set());
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -50,13 +66,36 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string): void {
       const r = k.getBoundingClientRect();
       next.set(id, { x: r.left - base.left, y: r.top - base.top });
     }
-    if (!reducedMotion()) {
-      for (const k of kids) {
-        const id = k.dataset.flipId;
-        if (!id) continue;
+    const reduce = reducedMotion();
+    const o = optsRef.current;
+    const origin = o?.enterOrigin?.() ?? null;
+    let enterIdx = 0;
+    for (const k of kids) {
+      const id = k.dataset.flipId;
+      if (!id) continue;
+      const now = next.get(id)!;
+      const isEnter = !seen.current.has(id);
+      if (isEnter && o?.enterOrigin) {
+        // Freshly drawn tile — pouch enter (staggered), plus the per-tile sound.
+        o.onEnter?.(enterIdx);
+        if (!reduce) {
+          const ox = origin ? origin.x - base.left : now.x;
+          const oy = origin ? origin.y - base.top : base.height + 40;
+          const dx = ox - now.x;
+          const dy = oy - now.y;
+          k.animate(
+            [
+              { transform: `translate(${dx}px, ${dy}px) scale(.6)`, opacity: 0 },
+              { transform: 'none', opacity: 1 },
+            ],
+            { duration: 340, delay: enterIdx * 60, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' },
+          );
+        }
+        enterIdx++;
+      } else if (!reduce) {
+        // Reorder / shift (tile existed last layout) — the original FLIP.
         const old = prev.current.get(id);
-        const now = next.get(id);
-        if (old && now) {
+        if (old) {
           const dx = old.x - now.x;
           const dy = old.y - now.y;
           if (dx || dy) {
@@ -68,6 +107,7 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string): void {
         }
       }
     }
+    for (const id of next.keys()) seen.current.add(id);
     prev.current = next;
   }, [key, ref]);
 }
