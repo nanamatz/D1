@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { resolve } from '../src/ui/i18n';
+import { voiceChain } from '../src/ui/mascots';
 
 const EN = en as Record<string, string>;
 const KO = ko as Record<string, string>;
@@ -37,5 +38,31 @@ describe('t() key chains', () => {
       ko: { 'woodak.line': 'KO' },
     };
     expect(resolve(synthetic, 'ko', ['skin.line', 'woodak.line'])).toBe('KO');
+  });
+});
+
+describe('voiceChain — skin-aware key routing', () => {
+  const ALL = new Set(['DOG', 'GHOST', 'ALIEN', 'TURTLE']);
+
+  it('routes a non-default skin to its own key, then WooDak', () => {
+    expect(voiceChain('won', 'woodak', 'dog', ALL)).toEqual(['voice.dog.won', 'voice.woodak.won']);
+  });
+
+  it('routes the default skin to a single WooDak key', () => {
+    expect(voiceChain('tip.3', 'woodak', 'woodak', ALL)).toEqual(['voice.woodak.tip.3']);
+  });
+
+  it('ignores the skin for Piyak, a fixed role', () => {
+    expect(voiceChain('enc.shopFirstVisit', 'piyak', 'dog', ALL)).toEqual([
+      'voice.piyak.enc.shopFirstVisit',
+    ]);
+  });
+
+  it('falls back to WooDak when the selected skin is not unlocked', () => {
+    expect(voiceChain('won', 'woodak', 'ghost', new Set())).toEqual(['voice.woodak.won']);
+  });
+
+  it('falls back to WooDak for an unknown skin id', () => {
+    expect(voiceChain('won', 'woodak', 'nope' as never, ALL)).toEqual(['voice.woodak.won']);
   });
 });

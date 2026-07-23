@@ -104,3 +104,38 @@ export function mascotSrc(role: 'piyak' | 'woodak'): string {
   const { mascot, unlockAll } = readSelection();
   return woodakArt(mascot, activeUnlocks(unlockAll));
 }
+
+/**
+ * Fallback chain of locale keys for one mascot-voiced line.
+ *
+ * Piyak is a fixed role — she is never re-skinned, so her chain is a single key.
+ * WooDak applies the player's selected skin and ALWAYS keeps `voice.woodak.<line>`
+ * as the tail, so a skin that has not written a given line (or is no longer usable
+ * — unlock reset, art removed, unknown id) degrades to WooDak's copy instead of
+ * rendering a raw key. Pure so it can be tested without storage; `voicedKeys` is
+ * the storage-reading wrapper callers use.
+ */
+export function voiceChain(
+  line: string,
+  role: 'woodak' | 'piyak',
+  skin: WooDakSkin,
+  active: Set<string>,
+): string[] {
+  if (role === 'piyak') return [`voice.piyak.${line}`];
+  const def = WOODAK_SKINS.find((s) => s.id === skin);
+  if (!def || def.id === 'woodak' || !isUsable(def, active)) return [`voice.woodak.${line}`];
+  return [`voice.${def.id}.${line}`, `voice.woodak.${line}`];
+}
+
+/**
+ * THE key resolver for every mascot render site — the only place that knows which
+ * skin is speaking. Reads the live selection from storage (like `mascotSrc`), so
+ * long-lived hosts such as TutorialHost never hold a stale copy. Pass the result
+ * straight to `t()`, which resolves the chain (i18n.tsx).
+ *
+ * NEVER write a `voice.*` key literal at a call site — go through here.
+ */
+export function voicedKeys(line: string, role: 'woodak' | 'piyak' = 'woodak'): string[] {
+  const { mascot, unlockAll } = readSelection();
+  return voiceChain(line, role, mascot, activeUnlocks(unlockAll));
+}
