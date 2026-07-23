@@ -29,7 +29,7 @@ Version 0.2 — systems expansion
 8. [Blinds, Antes & Bosses](#8-blinds-antes--bosses)
 9. [Shop & Economy](#9-shop--economy)
 10. [Consumables](#10-consumables)
-11. [Jokers (Emoji Tiles)](#11-jokers-emoji-tiles)
+11. [Emoji Tiles](#11-emoji-tiles)
 12. [Open Questions & Next Steps](#12-open-questions--next-steps)
 
 ---
@@ -571,13 +571,17 @@ boss, §8.3, is a separate system and is unaffected.)*
 
 ---
 
-## 11. Jokers (Emoji Tiles)
+## 11. Emoji Tiles
 
-Jokers are represented as emoji tiles, acquired by shop purchase/draw (§9). Unlike Balatro jokers, which mostly play in the single layer of "score calculation," these jokers play across **3 layers**: **(1) Letter/Tile  (2) Suit (register)  (3) Sentence/Phase**.
+> **Terminology (2026-07-23).** The player-facing term is **Emoji Tile / 이모지 타일**.
+> The engine identifier stays `joker` (`JokerDef`, `src/engine/jokers/`,
+> `BALANCE.jokerSlots`) — display terms never rename engine identifiers.
+
+**Emoji tiles** are acquired by shop purchase/draw (§9). Unlike Balatro's jokers, which mostly play in the single layer of "score calculation," emoji tiles play across **3 layers**: **(1) Letter/Tile  (2) Suit (register)  (3) Sentence/Phase**.
 
 **Notation.** Chips = base score, Mult = multiplier, Final = Chips × Mult. **Layer** = 1/2/3. **★** = scaling. All values are balancing placeholders.
 
-**Shelf order = execution order (feature-02 D-1).** Owned jokers fire in their left-to-right shelf order, and that order is **drag-reorderable** on the owned-joker shelf (persisted in run state). Ordering is strategic in the Balatro sense — an additive joker placed before a multiplicative one is worth more than after it — so reordering is a real decision, not cosmetic.
+**Shelf order = execution order (feature-02 D-1).** Owned emoji tiles fire in their left-to-right shelf order, and that order is **drag-reorderable** on the owned-emoji-tile shelf (persisted in run state). Ordering is strategic in the Balatro sense — an additive emoji tile placed before a multiplicative one is worth more than after it — so reordering is a real decision, not cosmetic.
 
 ### 11.1 Roles by Rarity
 
@@ -667,9 +671,9 @@ Scaling jokers' counters are deliberately spread out so that "which scaling joke
 - **Rush economy combo.** Loan Shark (28) + One Stroke (35) create an extreme rush-economy build. Very strong when it runs, so its ceiling needs checking.
 - **Epic Poet multiplicative stack.** 25, 26, 34 accumulate multiplication — the "no one ends early" problem meeting the projected-score preview erupts precisely here. Two structural brakes now exist: Infinite Narrative's built-in "halve target growth," and bag depletion (§6.6). Verify these two builds' ceilings first in playtesting.
 
-### 11.8 Joker Editions (planned — not yet in the engine)
+### 11.8 Emoji Tile Editions (planned — not yet in the engine)
 
-Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): a **joker** carries an **edition**, ported from Balatro's Foil/Holo/Poly/Negative. This is design-forward — the current engine has **no `JokerEdition` type yet** (`OwnedJoker` is edition-less); it is recorded here so the two modifier systems are never conflated (a letter tile never takes an edition; a joker never takes a material/font).
+Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): an **emoji tile** carries an **edition**, ported from Balatro's Foil/Holo/Poly/Negative. This is design-forward — the current engine has **no `JokerEdition` type yet** (`OwnedJoker` is edition-less); it is recorded here so the two modifier systems are never conflated (a letter tile never takes an edition; an emoji tile never takes a material/font).
 
 | Edition | Effect (placeholder) |
 |---|---|
@@ -679,9 +683,9 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 | Polychrome | ×1.5 Mult |
 | Negative | occupies no joker slot → **+1 owned-joker slot** |
 
-- **Slot cap.** The owned-joker cap is base **5** (today the global `BALANCE.jokerSlots`; the planned per-run field is `RunState.jokerSlots`). Each Negative joker raises the effective cap by 1.
-- **Acquisition (planned):** editions pre-attach on jokers found in Sticker Packs, or via a future consumable — to be designed alongside implementation.
-- **Status:** planned; ship in a dedicated slice. Until then jokers are edition-less.
+- **Slot cap.** The owned-emoji-tile cap is base **5** (today the global `BALANCE.jokerSlots`; the planned per-run field is `RunState.jokerSlots`). Each Negative emoji tile raises the effective cap by 1.
+- **Acquisition (planned):** editions pre-attach on emoji tiles found in Sticker Packs, or via a future consumable — to be designed alongside implementation.
+- **Status:** planned; ship in a dedicated slice. Until then emoji tiles are edition-less.
 
 ---
 

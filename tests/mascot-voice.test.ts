@@ -157,3 +157,34 @@ describe('mascot display names', () => {
     }
   });
 });
+
+describe('Emoji Tile terminology', () => {
+  /** Keys whose VALUE must no longer say joker/조커. Key NAMES keep the word —
+   *  they are identifiers, not display text (CLAUDE.md terminology rule). */
+  const DISPLAY_KEYS = [
+    'collection.cat.jokers',
+    'shop.yourJokers',
+    'shop.noJokers',
+    'pack.jokersFull',
+    'tutorial.firstJoker.title',
+    'voice.woodak.enc.firstJoker',
+    'voice.woodak.enc.firstPack',
+    'voice.woodak.tip.reroll',
+    'voice.piyak.enc.shopFirstVisit',
+    'voice.piyak.welcome.3',
+  ];
+
+  it('says emoji tile, never joker, in every rewritten string', () => {
+    for (const key of DISPLAY_KEYS) {
+      expect(EN[key], `en ${key} exists`).toBeTypeOf('string');
+      expect(KO[key], `ko ${key} exists`).toBeTypeOf('string');
+      expect(EN[key]!.toLowerCase(), `en ${key}`).not.toContain('joker');
+      expect(KO[key], `ko ${key}`).not.toContain('조커');
+    }
+  });
+
+  it('keeps the pack type name unchanged (it never showed "joker")', () => {
+    expect(EN['pack.type.joker']).toBe('Charm Pack');
+    expect(KO['pack.type.joker']).toBe('부적 팩');
+  });
+});
