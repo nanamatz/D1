@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { useI18n } from '../i18n';
-import { mascotSrc } from '../mascots';
+import { mascotSrc, voicedKeys } from '../mascots';
 import type { RunStats } from '../useGame';
 
-/** Size of the woodak.tip.N generic pool in the locale files. */
+/** Size of the tip.N generic pool in the locale files. */
 const GENERIC_TIPS = 5;
 
-/** Line priority (spec 2026-07-19): discoveries → stat-based tip → random tip. */
-function pickLine(stats: RunStats): { key: string; params?: Record<string, number> } {
-  if (stats.discoveries > 0) return { key: 'woodak.discovery', params: { n: stats.discoveries } };
-  if (stats.rerollsUsed === 0) return { key: 'woodak.tip.reroll' };
-  if (stats.tilesDiscarded === 0) return { key: 'woodak.tip.discard' };
-  if (stats.itemsBought === 0) return { key: 'woodak.tip.shop' };
-  return { key: `woodak.tip.${Math.floor(Math.random() * GENERIC_TIPS)}` };
+/** Line priority (spec 2026-07-19): discoveries → stat-based tip → random tip.
+ *  Returns a bare line id — `voicedKeys` turns it into a skin-aware key chain. */
+function pickLine(stats: RunStats): { id: string; params?: Record<string, number> } {
+  if (stats.discoveries > 0) return { id: 'discovery', params: { n: stats.discoveries } };
+  if (stats.rerollsUsed === 0) return { id: 'tip.reroll' };
+  if (stats.tilesDiscarded === 0) return { id: 'tip.discard' };
+  if (stats.itemsBought === 0) return { id: 'tip.shop' };
+  return { id: `tip.${Math.floor(Math.random() * GENERIC_TIPS)}` };
 }
 
 /**
@@ -23,7 +24,8 @@ function pickLine(stats: RunStats): { key: string; params?: Record<string, numbe
 export function WooDakMascot({ stats, won }: { stats: RunStats; won: boolean }) {
   const { t } = useI18n();
   const [line] = useState(() => pickLine(stats));
-  const text = (won ? `${t('woodak.won')} ` : '') + t(line.key, line.params);
+  const text =
+    (won ? `${t(voicedKeys('won'))} ` : '') + t(voicedKeys(line.id), line.params);
   return (
     <div className="mascot go-mascot">
       <div className="mascot-bubble">{text}</div>

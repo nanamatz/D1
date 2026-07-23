@@ -67,11 +67,12 @@ describe('tutorialBus', () => {
 });
 
 describe('tutorial copy stays in sync with the registry', () => {
-  it('every encounter has title+body in both locales', () => {
+  it('every encounter has a title (terms) and a voice-namespace body (dialogue) in both locales', () => {
     for (const e of ENCOUNTERS) {
+      const role = e.mascot ?? 'woodak';
       for (const loc of [en, ko] as Record<string, string>[]) {
         expect(loc).toHaveProperty(`tutorial.${e.id}.title`);
-        expect(loc).toHaveProperty(`tutorial.${e.id}.body`);
+        expect(loc).toHaveProperty(`voice.${role}.enc.${e.id}`);
       }
     }
   });

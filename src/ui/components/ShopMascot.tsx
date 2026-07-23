@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useI18n } from '../i18n';
+import { voicedKeys } from '../mascots';
 import piyakUrl from '../assets/piyak.png';
 import cushionUrl from '../assets/piyak-cushion.png';
 
-/** Size of the mascot.welcome.N pool in the locale files. */
+/** Size of the voice.piyak.welcome.N pool in the locale files. */
 const MASCOT_WELCOME_COUNT = 8;
 
 /**
@@ -16,7 +17,7 @@ export function ShopMascot() {
   const [line] = useState(() => Math.floor(Math.random() * MASCOT_WELCOME_COUNT));
   return (
     <div className="mascot">
-      <div className="mascot-bubble">{t(`mascot.welcome.${line}`)}</div>
+      <div className="mascot-bubble">{t(voicedKeys(`welcome.${line}`, 'piyak'))}</div>
       <div className="mascot-seat">
         <img className="mascot-cushion" src={cushionUrl} alt="" />
         <img className="mascot-cat" src={piyakUrl} alt="" />

@@ -4,7 +4,7 @@ import { readTips } from '../settings';
 import { richText } from '../richtext';
 import { tutorialBus, hasSeen, markSeen, hasSeenIntro, ENCOUNTERS, type EncounterId } from '../tutorial';
 import { SpotlightBubble } from './SpotlightBubble';
-import { mascotSrc } from '../mascots';
+import { mascotSrc, voicedKeys } from '../mascots';
 
 /**
  * Layer-2 encounter popup host (work order A-2). Mounted once in App. Subscribes
@@ -39,6 +39,7 @@ export function TutorialHost() {
     setQueue((q) => q.slice(1)); // advance to the next queued encounter
   };
   const mascot = enc?.mascot;
+  const role = mascot ?? 'woodak';
 
   const body = (
     <>
@@ -46,7 +47,7 @@ export function TutorialHost() {
         <span className="tut-icon">{enc?.icon}</span>
         <span className="tut-title">{t(`tutorial.${active}.title`)}</span>
       </div>
-      <p className="tut-body">{richText(t(`tutorial.${active}.body`))}</p>
+      <p className="tut-body">{richText(t(voicedKeys(`enc.${active}`, role)))}</p>
       <button className="btn blue tut-ok" onClick={dismiss}>
         {t('tutorial.gotIt')}
       </button>

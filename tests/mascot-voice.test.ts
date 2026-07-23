@@ -3,6 +3,7 @@ import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { resolve } from '../src/ui/i18n';
 import { voiceChain } from '../src/ui/mascots';
+import { ENCOUNTERS } from '../src/ui/tutorial';
 
 const EN = en as Record<string, string>;
 const KO = ko as Record<string, string>;
@@ -64,5 +65,72 @@ describe('voiceChain — skin-aware key routing', () => {
 
   it('falls back to WooDak for an unknown skin id', () => {
     expect(voiceChain('won', 'woodak', 'nope' as never, ALL)).toEqual(['voice.woodak.won']);
+  });
+});
+
+/** Every line id the code can ask a WooDak-role mascot for. */
+const WOODAK_LINES: string[] = [
+  'won',
+  'discovery',
+  'tip.reroll',
+  'tip.discard',
+  'tip.shop',
+  'tip.0', 'tip.1', 'tip.2', 'tip.3', 'tip.4',
+  ...ENCOUNTERS.filter((e) => e.mascot === 'woodak').map((e) => `enc.${e.id}`),
+];
+
+/** Every line id the code can ask Piyak for. */
+const PIYAK_LINES: string[] = [
+  'enc.shopFirstVisit',
+  ...Array.from({ length: 8 }, (_, i) => `welcome.${i}`),
+];
+
+const RETIRED = [/^woodak\./, /^mascot\.welcome\./, /^tutorial\..*\.body$/];
+
+describe('voice namespace migration', () => {
+  it('covers 23 WooDak line ids', () => {
+    expect(WOODAK_LINES).toHaveLength(23);
+  });
+
+  it('has every WooDak line in both locales', () => {
+    for (const line of WOODAK_LINES) {
+      expect(EN[`voice.woodak.${line}`], `en voice.woodak.${line}`).toBeTypeOf('string');
+      expect(KO[`voice.woodak.${line}`], `ko voice.woodak.${line}`).toBeTypeOf('string');
+    }
+  });
+
+  it('has every Piyak line in both locales', () => {
+    for (const line of PIYAK_LINES) {
+      expect(EN[`voice.piyak.${line}`], `en voice.piyak.${line}`).toBeTypeOf('string');
+      expect(KO[`voice.piyak.${line}`], `ko voice.piyak.${line}`).toBeTypeOf('string');
+    }
+  });
+
+  it('leaves no retired keys behind', () => {
+    for (const [name, dict] of [['en', EN], ['ko', KO]] as const) {
+      const stale = Object.keys(dict).filter((k) => RETIRED.some((re) => re.test(k)));
+      expect(stale, `${name} still has retired keys`).toEqual([]);
+    }
+  });
+
+  it('has no orphan voice keys — every one is a line the code can request', () => {
+    for (const [name, dict] of [['en', EN], ['ko', KO]] as const) {
+      const orphans = Object.keys(dict)
+        .filter((k) => k.startsWith('voice.'))
+        .filter((k) => {
+          const rest = k.slice('voice.'.length);
+          const skin = rest.slice(0, rest.indexOf('.'));
+          const line = rest.slice(rest.indexOf('.') + 1);
+          return skin === 'piyak' ? !PIYAK_LINES.includes(line) : !WOODAK_LINES.includes(line);
+        });
+      expect(orphans, `${name} has orphan voice keys`).toEqual([]);
+    }
+  });
+
+  it('keeps encounter titles out of the voice namespace', () => {
+    for (const e of ENCOUNTERS) {
+      expect(EN[`tutorial.${e.id}.title`], `en title ${e.id}`).toBeTypeOf('string');
+      expect(KO[`tutorial.${e.id}.title`], `ko title ${e.id}`).toBeTypeOf('string');
+    }
   });
 });
