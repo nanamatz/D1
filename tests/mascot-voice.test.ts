@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { resolve } from '../src/ui/i18n';
-import { voiceChain } from '../src/ui/mascots';
+import { voiceChain, WOODAK_SKINS } from '../src/ui/mascots';
 import { ENCOUNTERS } from '../src/ui/tutorial';
 
 const EN = en as Record<string, string>;
@@ -131,6 +131,29 @@ describe('voice namespace migration', () => {
     for (const e of ENCOUNTERS) {
       expect(EN[`tutorial.${e.id}.title`], `en title ${e.id}`).toBeTypeOf('string');
       expect(KO[`tutorial.${e.id}.title`], `ko title ${e.id}`).toBeTypeOf('string');
+    }
+  });
+});
+
+describe('mascot display names', () => {
+  const NAMES: Record<string, { en: string; ko: string }> = {
+    'mascot.woodak': { en: 'WooDak', ko: '우땅' },
+    'mascot.dog': { en: 'Nurungi', ko: '누렁이' },
+    'mascot.ghost': { en: 'Egoya', ko: '이고야' },
+    'mascot.alien': { en: 'Egoji', ko: '이고지' },
+    'mascot.turtle': { en: 'Nemubo', ko: '느무보' },
+  };
+
+  it('names every skin in both locales', () => {
+    for (const [key, want] of Object.entries(NAMES)) {
+      expect(EN[key], `en ${key}`).toBe(want.en);
+      expect(KO[key], `ko ${key}`).toBe(want.ko);
+    }
+  });
+
+  it('has a name key for every registered skin', () => {
+    for (const s of WOODAK_SKINS) {
+      expect(Object.keys(NAMES), `skin ${s.id}`).toContain(s.nameKey);
     }
   });
 });
