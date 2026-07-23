@@ -297,13 +297,15 @@ class Audio {
       if (!name) continue;
       const hz = noteHz(name);
       if (!hz) continue;
+      // Main oscillator + optional detuned twin (chorus body for leads). The peak is
+      // divided across the layers so a detuned voice thickens WITHOUT doubling loudness.
+      const dets = v.detune ? [0, v.detune] : [0];
+      const peak = v.gain / dets.length;
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.0001, when);
-      g.gain.exponentialRampToValueAtTime(v.gain, when + 0.008);
+      g.gain.exponentialRampToValueAtTime(peak, when + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
       g.connect(this.musicGain);
-      // Main oscillator + optional detuned twin (chorus body for leads).
-      const dets = v.detune ? [0, v.detune] : [0];
       for (const d of dets) {
         const osc = ctx.createOscillator();
         osc.type = v.wave;
@@ -367,16 +369,20 @@ class Audio {
 
     for (const t of r.tones ?? []) {
       const start = now + (t.delay ?? 0);
-      // Layers: main (full), optional ±detuned twins (0.7×), optional sub-octave sine (0.5×).
-      const layers: { freqMul: number; gainMul: number; det: number; sub: boolean }[] = [
-        { freqMul: 1, gainMul: 1, det: 0, sub: false },
+      // Layers: main, optional ±detuned twins, optional sub-octave sine. `weight` is a
+      // RELATIVE mix balance — the set is normalized to sum to 1.0 below, so adding twins
+      // or a sub thickens the TIMBRE without raising the peak amplitude (warmer, not louder).
+      const layers: { freqMul: number; weight: number; det: number; sub: boolean }[] = [
+        { freqMul: 1, weight: 1, det: 0, sub: false },
       ];
       if (t.detune) {
-        layers.push({ freqMul: 1, gainMul: 0.7, det: t.detune, sub: false });
-        layers.push({ freqMul: 1, gainMul: 0.7, det: -t.detune, sub: false });
+        layers.push({ freqMul: 1, weight: 0.7, det: t.detune, sub: false });
+        layers.push({ freqMul: 1, weight: 0.7, det: -t.detune, sub: false });
       }
-      if (t.sub) layers.push({ freqMul: 0.5, gainMul: 0.5, det: 0, sub: true });
+      if (t.sub) layers.push({ freqMul: 0.5, weight: 0.5, det: 0, sub: true });
+      const totalWeight = layers.reduce((s, l) => s + l.weight, 0);
       for (const L of layers) {
+        const gainMul = L.weight / totalWeight;
         const osc = ctx.createOscillator();
         osc.type = L.sub ? 'sine' : t.wave; // sub is a pure sine for fundamental body
         osc.frequency.setValueAtTime(t.from * bend * L.freqMul, start);
@@ -384,9 +390,9 @@ class Audio {
           osc.frequency.exponentialRampToValueAtTime(t.to * bend * L.freqMul, now + r.dur);
         }
         if (L.det) osc.detune.setValueAtTime(L.det, start);
-        if (L.gainMul !== 1) {
+        if (gainMul !== 1) {
           const lg = ctx.createGain();
-          lg.gain.value = L.gainMul;
+          lg.gain.value = gainMul;
           osc.connect(lg).connect(out);
         } else {
           osc.connect(out);

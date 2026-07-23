@@ -172,6 +172,13 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
       el.removeEventListener('pointerleave', onLeave);
       if (raf) cancelAnimationFrame(raf);
       window.clearTimeout(leaveTimer);
+      // If `enabled` flips false (or the card unmounts) mid-hover or mid-flatten, no further
+      // pointer event will ever fire to clear these — reset here so a card can't be left
+      // stuck tilted (e.g. a tile that becomes tutorial-locked under the cursor).
+      el.classList.remove('tilting');
+      el.style.removeProperty('--tilt-x');
+      el.style.removeProperty('--tilt-y');
+      el.style.removeProperty('--tilt-k');
     };
   }, [ref, enabled]);
 }
