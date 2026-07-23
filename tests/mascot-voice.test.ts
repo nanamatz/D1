@@ -188,3 +188,34 @@ describe('Emoji Tile terminology', () => {
     expect(KO['pack.type.joker']).toBe('부적 팩');
   });
 });
+
+/** Skins whose full line set has been written. Each voice task appends its id. */
+const VOICED_SKINS: string[] = ['dog'];
+
+describe('skin voice completeness', () => {
+  it.each(VOICED_SKINS)('%s has all 23 lines in both locales', (skin) => {
+    for (const line of WOODAK_LINES) {
+      expect(EN[`voice.${skin}.${line}`], `en voice.${skin}.${line}`).toBeTypeOf('string');
+      expect(KO[`voice.${skin}.${line}`], `ko voice.${skin}.${line}`).toBeTypeOf('string');
+    }
+  });
+
+  it.each(VOICED_SKINS)('%s writes its own copy, never WooDak\'s verbatim', (skin) => {
+    for (const line of WOODAK_LINES) {
+      expect(EN[`voice.${skin}.${line}`], `en ${skin} ${line}`).not.toBe(EN[`voice.woodak.${line}`]);
+      expect(KO[`voice.${skin}.${line}`], `ko ${skin} ${line}`).not.toBe(KO[`voice.woodak.${line}`]);
+    }
+  });
+
+  it.each(VOICED_SKINS)('%s keeps the richtext markers of the WooDak original', (skin) => {
+    const markers = (s: string) => (s.match(/\[[a-z]:/g) ?? []).sort();
+    for (const line of WOODAK_LINES) {
+      for (const [name, dict] of [['en', EN], ['ko', KO]] as const) {
+        if (skin === 'alien') continue; // alien relabels markers in its own tongue
+        expect(markers(dict[`voice.${skin}.${line}`]!), `${name} ${skin} ${line}`).toEqual(
+          markers(dict[`voice.woodak.${line}`]!),
+        );
+      }
+    }
+  });
+});
