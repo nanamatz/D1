@@ -26,14 +26,16 @@ describe('t() key chains', () => {
   });
 
   it('resolves the whole chain in the active language before falling to English', () => {
-    // A synthetic dict pair: 'skin.line' exists only in ko, 'woodak.line'
-    // exists in both. The active-language pass over the FULL chain must find
-    // ko's 'skin.line' before any English fallback is even attempted — so a
-    // skin's Korean line is never beaten by WooDak's English line.
+    // A synthetic dict pair that distinguishes language-first from per-key fallback:
+    // 'skin.line' exists only in en, 'woodak.line' exists only in ko. The
+    // active-language pass over the FULL chain must try ALL keys in ko before
+    // EVER attempting English fallback. So ko's later key wins over en's earlier
+    // key. A per-key fallback (trying en immediately when ko misses) would
+    // wrongly return 'EN'.
     const synthetic = {
-      en: { 'woodak.line': 'Hi (en)' },
-      ko: { 'skin.line': '안녕 (ko)', 'woodak.line': '안녕 워댁 (ko)' },
+      en: { 'skin.line': 'EN' },
+      ko: { 'woodak.line': 'KO' },
     };
-    expect(resolve(synthetic, 'ko', ['skin.line', 'woodak.line'])).toBe('안녕 (ko)');
+    expect(resolve(synthetic, 'ko', ['skin.line', 'woodak.line'])).toBe('KO');
   });
 });
