@@ -12,6 +12,8 @@ import { UNLOCKS, loadPlayed, playedCount, activeUnlocks } from '../unlocks';
 import { mascotCollectionRows } from '../mascots';
 import { bossDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
+import { packArt, packGalleryPages } from '../packArt';
+import pouchUrl from '../assets/pouch.png';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
 
@@ -31,7 +33,7 @@ export const MATERIALS: TileMaterial[] = [
   'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
 ];
 const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
-const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile', 'forbidden'] as const;
+const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile'] as const;
 const PAGE = 60;
 
 const sampleTile = (over: Partial<Tile>): Tile => {
@@ -373,19 +375,50 @@ function BossesView() {
 }
 
 // ---------- Packs / Bags ----------
+/**
+ * Paged pack gallery (Reference.png): one page per pack type. Art-backed types
+ * (Tile / Charm / Ink) show every variant; a type without art yet (Consumable)
+ * shows a "coming soon" silhouette. Each pack idles (CSS), staggered.
+ */
 function PacksView() {
   const { t } = useI18n();
+  const [page, setPage] = useState(0);
+  const pages = packGalleryPages();
+  const clamped = Math.min(page, pages.length - 1);
+  const entries = pages[clamped]!;
+
   return (
-    <div className="card-grid">
-      {PACK_TYPES.map((p) => (
-        <Tooltip key={p} title={t(`pack.type.${p}`)} body={t(`packdesc.${p}`)} down>
-          <div className="coll-card">
-            <span className="cc-emoji">📦</span>
-            <span className="cc-name">{t(`pack.type.${p}`)}</span>
-          </div>
-        </Tooltip>
-      ))}
-    </div>
+    <>
+      <div className="pack-gallery">
+        {entries.map((e, i) =>
+          e.kind === 'art' ? (
+            <Tooltip
+              key={`a${i}`}
+              title={`${t(`pack.type.${e.type}`)} · ${t(`pack.size.${e.size}`)}`}
+              body={t(`packdesc.${e.type}`)}
+              down
+            >
+              <div className="pack-gallery-card">
+                <img className="pack-gallery-art" src={e.src} alt="" />
+                <span className="cc-name">
+                  {t(`pack.type.${e.type}`)} · {t(`pack.size.${e.size}`)}
+                </span>
+              </div>
+            </Tooltip>
+          ) : (
+            <Tooltip key={`c${i}`} title={t(`pack.type.${e.type}`)} body={t('collection.comingSoon')} down>
+              <div className="pack-gallery-card coming-soon">
+                {/* No art yet — a darkened pack shape stands in as a silhouette. */}
+                <img className="pack-gallery-art silhouette" src={packArt('tile', 'normal', 0)!} alt="" />
+                <span className="cc-name">{t(`pack.type.${e.type}`)}</span>
+                <span className="coming-soon-tag">{t('collection.comingSoon')}</span>
+              </div>
+            </Tooltip>
+          ),
+        )}
+      </div>
+      <Pager page={clamped} pages={pages.length} onPage={setPage} />
+    </>
   );
 }
 
@@ -458,7 +491,7 @@ function BagsView() {
   return (
     <div className="swatch-grid">
       <div className="swatch bag-detail">
-        <div className="bag-art big">🎒</div>
+        <img className="bag-art big" src={pouchUrl} alt="" />
         <span className="sw-name">{t('bag.standard.name')}</span>
         <p className="select-desc">{t('bag.standard.desc')}</p>
       </div>

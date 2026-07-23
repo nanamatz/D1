@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import type { ConsumableId, JokerRarity } from '../../engine/types';
@@ -20,7 +21,6 @@ const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
 function optionEmoji(option: PackOption): string {
   if (option.kind === 'joker') return JOKER_REGISTRY.get(option.id)?.emoji ?? '🃏';
   if (option.kind === 'punctuation') return PUNCTUATION_EMOJI[option.id] ?? '✒️';
-  if (option.kind === 'forbidden') return '📕';
   if (option.kind === 'consumable') return CONSUMABLE_EMOJI[option.id] ?? '📄';
   return '📄'; // tile carries its own face; never reached here
 }
@@ -77,10 +77,30 @@ function OptionCard({
   );
 }
 
+/** True when motion should be suppressed (OS setting or the app's reduced-motion toggle). */
+function motionOff(): boolean {
+  if (typeof window === 'undefined') return true;
+  return (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    document.body.classList.contains('force-reduced-motion')
+  );
+}
+
+const BURST_MS = 900;
+
 /** Pack selection screen (GDD §9.3): pick up to `pick` of the shown options. */
 export function PackOpening({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const pack = g.state.pack;
+  // Shared open sequence (shake → burst → cards fly in). Plays once per pack — this
+  // component mounts fresh each time a pack is opened. Skipped under reduced motion.
+  const [opening, setOpening] = useState(() => !motionOff());
+  useEffect(() => {
+    if (!opening) return;
+    const id = setTimeout(() => setOpening(false), BURST_MS);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (!pack) return null;
 
   const optionName = (o: PackOption): string => {
@@ -89,7 +109,7 @@ export function PackOpening({ g }: { g: UseGame }) {
       return def ? (lang === 'ko' ? def.nameKo : def.nameEn) : o.id;
     }
     if (o.kind === 'tile') return o.tile.letter ?? NO_LETTER;
-    return t(`consumable.${o.id}`); // consumable / punctuation / forbidden
+    return t(`consumable.${o.id}`); // consumable / punctuation
   };
 
   // Hover tooltip for non-tile options (item 4) — tiles carry their own.
@@ -102,20 +122,36 @@ export function PackOpening({ g }: { g: UseGame }) {
       // Explain it levels the mapped pattern immediately (feature-02 B).
       return { title: optionName(o), body: t('pack.punctuationLevels', { pattern: t(`pattern.${o.pattern}`) }) };
     }
-    if (o.kind === 'consumable' || o.kind === 'forbidden') {
+    if (o.kind === 'consumable') {
       return { title: optionName(o), body: t(consumableDescKey(o.id)) };
     }
     return undefined;
   };
 
+  const artSrc = packArt(pack.offer.type, pack.offer.size, pack.offer.artVariant);
+
   return (
-    <div className="shop">
+    <div className={['shop', 'pack-opening', opening ? 'opening' : 'revealed'].join(' ')}>
+      {/* Open sequence overlay: the pack shakes, flashes, and bursts; then the option
+          cards fly in beneath (they mount immediately but are hidden until reveal). */}
+      {opening && (
+        <div className="pack-open-fx" aria-hidden>
+          <div className="pack-open-flash" />
+          {artSrc ? (
+            <img className="pack-open-burst" src={artSrc} alt="" />
+          ) : (
+            <div className="pack-open-burst generic">📦</div>
+          )}
+          <div className="pack-open-particles">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <span key={i} className="pack-particle" style={{ ['--a' as string]: `${i * 36}deg` }} />
+            ))}
+          </div>
+        </div>
+      )}
       <div className="shop-head panel">
-        <img
-          className="pack-open-art"
-          src={packArt(pack.offer.size, pack.offer.artVariant)}
-          alt=""
-        />
+        {/* Tile / Charm / Ink packs have art; Consumable shows none. */}
+        {artSrc && <img className="pack-open-art" src={artSrc} alt="" />}
         <div className="kind">
           {t(`pack.type.${pack.offer.type}`)} · {t(`pack.size.${pack.offer.size}`)}
         </div>
@@ -129,7 +165,7 @@ export function PackOpening({ g }: { g: UseGame }) {
           {pack.offer.options.map((o, i) => {
             // A pick is blocked when the matching slot is full (item 5: consumables
             // now block too, not just jokers) — the engine no-ops such a pick anyway.
-            const takesConsumableSlot = o.kind === 'consumable' || o.kind === 'forbidden';
+            const takesConsumableSlot = o.kind === 'consumable';
             const blockKey =
               o.kind === 'joker' && g.state.run.jokers.length >= BALANCE.jokerSlots
                 ? 'pack.jokersFull'

@@ -47,7 +47,7 @@ describe('slice5 shop — pack art variant (cosmetic, seeded)', () => {
       const { packs } = rollShopStock(run(), makeRng(`pack${i}`));
       for (const p of packs) {
         if (!p) continue;
-        const count = BALANCE.pack.artVariants[p.size];
+        const count = BALANCE.pack.artVariants[p.type][p.size];
         expect(p.artVariant).toBeGreaterThanOrEqual(0);
         expect(p.artVariant).toBeLessThan(count);
         expect(Number.isInteger(p.artVariant)).toBe(true);

@@ -966,11 +966,24 @@ body.cb-safe .tile.hint {
   border-radius: 12px;
   padding: 14px;
 }
+/* The default-pouch pixel-art (T_DefaultPouch), shown on the New Run selector and
+   the 도감 Pouches view in place of the old 🎒 glyph. */
 .bag-art {
-  font-size: var(--ds-2xl);
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 .bag-art.big {
-  font-size: var(--ds-3xl);
+  width: 96px;
+  height: 96px;
+}
+/* Tile-pack art in the 도감 Packs grid (only the tile/Type pack has art). */
+.cc-pack-art {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 .select-desc {
   font-size: var(--fs-md);
@@ -1259,6 +1272,60 @@ body.cb-safe .tile.hint {
 .coll-card.mascot-card.locked {
   opacity: 0.85;
 }
+
+/* ---- Pack gallery (Reference.png): paged grid of pack artwork ---- */
+.pack-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Reference.png: a tidy 4-per-row grid */
+  gap: 20px 24px;
+  justify-items: center;
+  align-items: start;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 10px 0 6px;
+}
+.pack-gallery-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 128px;
+}
+.pack-gallery-art {
+  /* All pack PNGs are normalized to ratio ~0.61 (scripts/normalize-pack-art.mjs),
+     so this box matches that ratio and every pack fills it identically. */
+  width: 81px;
+  height: 132px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  transform-origin: 50% 92%;
+  animation: packIdle 3.2s ease-in-out infinite;
+}
+/* Stagger so a row doesn't bob in unison. */
+.pack-gallery-card:nth-child(2n) .pack-gallery-art { animation-delay: -0.8s; }
+.pack-gallery-card:nth-child(3n) .pack-gallery-art { animation-delay: -1.6s; }
+.pack-gallery-card:nth-child(4n) .pack-gallery-art { animation-delay: -2.4s; }
+.pack-gallery-art.silhouette {
+  filter: brightness(0);
+  opacity: 0.5;
+}
+.pack-gallery-card.coming-soon { opacity: 0.92; }
+.coming-soon-tag {
+  font-size: var(--fs-2xs, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+/* Shared pack idle — a slow bob + slight sway. Used by the gallery and the shop
+   tile-pack card. Disabled under reduced-motion (OS query + the app's body toggle). */
+@keyframes packIdle {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-7px) rotate(1.5deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pack-gallery-art { animation: none; }
+}
+
 .swatch-grid {
   display: flex;
   flex-wrap: wrap;

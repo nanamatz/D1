@@ -50,11 +50,6 @@ describe('slice5 packs — roll by type (GDD §9.3)', () => {
     }
   });
 
-  it('Forbidden Stacks pack offers forbidden items', () => {
-    const offer = rollPack(slot('forbidden'), run(), makeRng('f'));
-    for (const o of offer.options) expect(o.kind).toBe('forbidden');
-  });
-
   it('is deterministic per seed', () => {
     expect(rollPack(slot('tile'), run(), makeRng('s'))).toEqual(rollPack(slot('tile'), run(), makeRng('s')));
   });
@@ -90,11 +85,6 @@ describe('slice5 packs — apply a pick', () => {
     expect(applyPackPick(full, offer.options[0]!).consumables.length).toBe(2); // no room → unchanged
   });
 
-  it('a forbidden pick occupies a consumable slot (placeholder effect)', () => {
-    const offer = rollPack(slot('forbidden'), run(), makeRng('f'));
-    const r = applyPackPick(run(), offer.options[0]!);
-    expect(r.consumables.length).toBe(1);
-  });
 });
 
 describe('slice5 — Type packs stock all 7 non-base materials (GDD §9.3)', () => {

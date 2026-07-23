@@ -18,7 +18,7 @@ export type UnlockEffect =
   | { kind: 'color'; group: UnlockGroup }
   | { kind: 'audio'; bus: 'music' | 'sfx' }
   | { kind: 'locale'; lang: 'ko' }
-  | { kind: 'mascot'; variant: 'alien' | 'ghost' | 'dog' | 'cat' | 'turtle' };
+  | { kind: 'mascot'; variant: 'alien' | 'ghost' | 'dog' | 'turtle' };
 
 export interface UnlockDef {
   /** stable id (== the triggering word, uppercase) */
@@ -39,7 +39,6 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { id: 'ALIEN', word: 'ALIEN', effect: { kind: 'mascot', variant: 'alien' } },
   { id: 'GHOST', word: 'GHOST', effect: { kind: 'mascot', variant: 'ghost' } },
   { id: 'DOG', word: 'DOG', effect: { kind: 'mascot', variant: 'dog' } },
-  { id: 'CAT', word: 'CAT', effect: { kind: 'mascot', variant: 'cat' } },
   { id: 'TURTLE', word: 'TURTLE', effect: { kind: 'mascot', variant: 'turtle' } },
 ];
 

@@ -1,8 +1,7 @@
-import { type CSSProperties, type ReactNode, useLayoutEffect, useState } from 'react';
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { mascotSrc } from '../mascots';
-
-interface Rect { top: number; left: number; width: number; height: number }
+import { placeSpotlightBubble, type Rect } from '../spotlightPos';
 
 /**
  * Dim overlay + box-shadow spotlight on a target element + a mascot speech bubble,
@@ -41,6 +40,10 @@ export function SpotlightBubble({
   children: ReactNode;
 }) {
   const [rect, setRect] = useState<Rect | null>(null);
+  // The bubble's own measured height — needed to keep it (and its button) fully on
+  // screen when anchored above/beside a target. Tracked every frame like the rect.
+  const [wrapH, setWrapH] = useState(0);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!target) { setRect(null); return; }
@@ -55,6 +58,8 @@ export function SpotlightBubble({
         next = { top: r.top, left: r.left, width: r.width, height: r.height };
       }
       setRect((cur) => (same(cur, next) ? cur : next)); // same ref → no re-render on idle frames
+      const h = wrapRef.current?.offsetHeight ?? 0;
+      setWrapH((cur) => (cur === h ? cur : h));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -66,15 +71,12 @@ export function SpotlightBubble({
     top: rect.top - pad, left: rect.left - pad,
     width: rect.width + pad * 2, height: rect.height + pad * 2,
   };
-  // Place the bubble below the target when there's room, else above; centered w/o a rect.
-  const belowRoom = rect ? rect.top + rect.height + 200 < window.innerHeight : true;
+  // Place the bubble adjacent to the target but ALWAYS clamped inside the viewport, so
+  // a tall/high target can't push it (and its advance button) off-screen. Centered w/o
+  // a rect (handled by the `.center` class). See spotlightPos.ts.
+  const WRAP_W = 360;
   const wrapStyle: CSSProperties | undefined = rect
-    ? {
-        left: Math.max(12, Math.min(rect.left, window.innerWidth - 372)),
-        ...(belowRoom
-          ? { top: rect.top + rect.height + pad + 12 }
-          : { bottom: window.innerHeight - rect.top + pad + 12 }),
-      }
+    ? placeSpotlightBubble(rect, WRAP_W, wrapH, { w: window.innerWidth, h: window.innerHeight })
     : undefined;
 
   // Portal to body so the fixed overlay is viewport-relative — see (1) above.
@@ -90,7 +92,11 @@ export function SpotlightBubble({
           style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
         />
       )}
-      <div className={['intro-wrap', rect ? '' : 'center'].filter(Boolean).join(' ')} style={wrapStyle}>
+      <div
+        ref={wrapRef}
+        className={['intro-wrap', rect ? '' : 'center'].filter(Boolean).join(' ')}
+        style={wrapStyle}
+      >
         <div className="mascot intro-mascot">
           <div className="mascot-bubble intro-bubble">{children}</div>
           {mascot && (

@@ -27,10 +27,10 @@ beforeEach(() => {
 describe('chromatic unlocks — registry (feature-02 C)', () => {
   it('carries the initial table incl. the 4 color words + audio + locale + mascots', () => {
     const ids = new Set(UNLOCKS.map((u) => u.id));
-    for (const w of ['RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND', 'KOREAN', 'ALIEN', 'GHOST', 'DOG', 'CAT', 'TURTLE']) {
+    for (const w of ['RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND', 'KOREAN', 'ALIEN', 'GHOST', 'DOG', 'TURTLE']) {
       expect(ids.has(w)).toBe(true);
     }
-    expect(UNLOCKS.length).toBe(12);
+    expect(UNLOCKS.length).toBe(11);
   });
 
   it('every unlock word is uppercase and equals its id (data-driven, no hard-coded checks)', () => {
@@ -58,8 +58,8 @@ describe('chromatic unlocks — played persistence', () => {
 
 describe('chromatic unlocks — checkWordPlayed', () => {
   it('returns the def on first play (case-insensitive), null after / for non-unlock words', () => {
-    expect(checkWordPlayed('cat')?.id).toBe('CAT');
-    expect(checkWordPlayed('CAT')).toBeNull(); // already played
+    expect(checkWordPlayed('turtle')?.id).toBe('TURTLE');
+    expect(checkWordPlayed('TURTLE')).toBeNull(); // already played
     expect(checkWordPlayed('banana')).toBeNull(); // not an unlock word
   });
 });

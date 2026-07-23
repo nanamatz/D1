@@ -12,7 +12,7 @@ Version 0.2 — systems expansion
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 9 vouchers.
-- New: **Consumables** — 3 families: Stationery (Tarot-equiv.), Punctuation (Planet-equiv.), Forbidden Books (Spectral-equiv.).
+- New: **Consumables** — 2 families: Stationery (Tarot-equiv.), Punctuation (Planet-equiv.). *(Forbidden Books / Spectral-equiv. retired 2026-07-22, §10.3.)*
 - Jokers: #32 renamed Ellipsis → **Elision** (name ceded to the Punctuation consumable). Added **#46 Hypocrite** (demoted from base rule to joker).
 
 ---
@@ -60,7 +60,6 @@ Version 0.2 — systems expansion
 | Ante | Ante | 3 blinds; base target rises per ante |
 | Tarot cards | Stationery | Tile modification consumables |
 | Planet cards | Punctuation | Sentence-pattern level-up consumables |
-| Spectral cards | Forbidden Books | Drastic high-risk consumables |
 | Vouchers | Vouchers | Permanent upgrades; single tier (9 items) |
 | Blind skip / Tags | — (deferred) | Adoption itself on hold; revisit if early-run recovery proves weak |
 
@@ -508,19 +507,18 @@ Balatro-mirrored: **Item slots ×2** (jokers/consumables appear mixed) + **Pack 
 
 Tile acquisition is **pack-select only** (confirmed): no targeted single-letter purchase. Deck sculpting is therefore draft-flavored, fitting the roguelite grain; the "I have Q but no U" problem is solved not by the shop but by a consumable (Carving Knife, §10.1).
 
-**Five pack types** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**:
+**Four pack types** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**. *(Forbidden Stacks / Spectral retired from the design 2026-07-22; see §10.3.)*
 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
-| 조판 팩 / **Typesetting Pack** | Punctuation cards — each **levels up** a sentence pattern (§5.4). Applied immediately on pick. | Celestial |
-| 스티커 팩 / **Sticker Pack** | Joker (emoji) choices | Buffoon |
-| 문구 팩 / **Stationery Pack** | Stationery consumable choices (§10.1) | Arcana |
-| 활자 팩 / **Type Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
-| 금서고 팩 / **Forbidden Stacks** | Forbidden Books items (§10.3), rare appearance | Spectral |
+| 잉크 팩 / **Ink Pack** | Punctuation cards — each **levels up** a sentence pattern (§5.4). Applied immediately on pick. | Celestial |
+| 부적 팩 / **Charm Pack** | Joker (emoji) choices | Buffoon |
+| 소모품 팩 / **Consumable Pack** | Stationery consumable choices (§10.1) | Arcana |
+| 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Forbidden Stacks and Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`).
+**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **Three of four types have art** (`src/ui/packArt.ts`, keyed by type × size): **Tile** 7 (Basic ×3, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Ink** 8 (Basic ×4, Classic ×2, Premium ×2); **Consumable** awaits art. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
 
-> **Impl note (content is a subset).** The **framework** ships fully (5 types × 3 sizes, weights, prices, opening UI). Content pools are as implemented: Type/Sticker are complete; the Stationery pool is the implemented-consumable stub (`magnifier`); Typesetting offers the 8 Punctuation cards (which **do** work — they level patterns on pick); Forbidden Stacks delivers its 4 items as a **placeholder** (effects TBD). Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | forbidden`); display names are i18n-only. Collection §2.9 catalogs all 5.
+> **Impl note (content is a subset).** The **framework** ships fully (4 types × 3 sizes, weights, prices, opening UI). Content pools are as implemented: Tile/Charm are complete; the Consumable pool is the implemented-consumable stub (`magnifier`); Ink offers the 8 Punctuation cards (which **do** work — they level patterns on pick). Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`); display names are i18n-only. Collection §2.9 catalogs all 4 as a paged gallery — one page per type (Tile/Charm/Ink show their art variants; Consumable is a "coming soon" silhouette).
 
 ### 9.4 Vouchers — 9, single tier
 
@@ -562,14 +560,14 @@ Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
 
 One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Punctuation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing punctuation into your most-played patterns is the intended play.
 
-### 10.3 Forbidden Books (Spectral-equivalent) — drastic effects, 4
+### 10.3 Forbidden Books — RETIRED (2026-07-22)
 
-| Item | Effect |
-|---|---|
-| Book Burning | Destroy 5 random tiles from the bag; gain a random Legendary emoji joker *(Immolate+Ankh line)* |
-| Apocrypha | Apply random materials to the entire hand; hand size permanently −1 |
-| Scribbles | Randomly reassign the letters of 3 random tiles — a gamble |
-| Apocalypse | This blind only: all words count as Vulgar suit *(a one-shot trial of Tyrant #33 — a Legendary preview)* |
+The Forbidden Books consumable family (Spectral-equivalent) and its delivery pack
+(Forbidden Stacks) were cut from the design. The four placeholder items
+(Book Burning / Apocrypha / Scribbles / Apocalypse) never shipped an effect and had
+no entry point other than the removed pack, so they were deleted from the engine and
+i18n. The pack taxonomy is now the four types in §9.3. *(The **Forbidden Paper**
+boss, §8.3, is a separate system and is unaffected.)*
 
 ---
 
@@ -732,7 +730,7 @@ The game begins **desaturated and silent**; playing specific words permanently u
 | MUSIC | BGM bus enabled (wraps the feature-01 mixer's music bus) |
 | SOUND | SFX bus enabled (wraps the SFX bus) |
 | KOREAN | Korean-locale celebration entry (the language is separately selectable in Settings from the start — the gimmick is the reward, not the gate) |
-| ALIEN / GHOST / DOG / CAT | **WooDak ally skins** — selectable in Settings → Game once unlocked *and* art exists (registry `src/ui/mascots.ts`, resolver `mascotSrc`). **DOG/GHOST/ALIEN shipped** (`dog.png`/`ghost.png`/`alien.png`); CAT art-less. Piyak (shop) is never re-skinned. |
+| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in Settings → Game once unlocked *and* art exists (registry `src/ui/mascots.ts`, resolver `mascotSrc`). **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) |
 
 **"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces, the blind badge, stage backdrops) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable. *(Revises the earlier "token-swap only, never a blanket filter" note: the guard is scoped to the all-locked state, so it neither kills unlocked colors nor fights the CRT.)*
 

@@ -243,10 +243,10 @@ export type ShopItem =
   | { kind: 'joker'; id: string; price: number }
   | { kind: 'consumable'; id: ConsumableId; price: number };
 
-/** Pack types (GDD §9.3, feature-02 B). Publishing-world names live in i18n:
- *  pattern=Typesetting · joker=Sticker · consumable=Stationery · tile=Type ·
- *  forbidden=Forbidden Stacks (rare). Code ids are semantic, not the display names. */
-export type PackType = 'pattern' | 'joker' | 'consumable' | 'tile' | 'forbidden';
+/** Pack types (GDD §9.3). Publishing-world names live in i18n:
+ *  pattern=Ink · joker=Charm · consumable=Consumable · tile=Tile.
+ *  Code ids are semantic, not the display names. (Forbidden Stacks retired 2026-07-22.) */
+export type PackType = 'pattern' | 'joker' | 'consumable' | 'tile';
 
 /** Pack sizes (GDD §9.3, feature-02 B): Normal 3/1 · Jumbo 5/1 · Mega 5/2. */
 export type PackSize = 'normal' | 'jumbo' | 'mega';
@@ -282,7 +282,7 @@ export interface OwnedJoker {
 
 // ---------- Consumables & vouchers (GDD §9–10) ----------
 
-export type ConsumableFamily = 'stationery' | 'punctuation' | 'forbidden';
+export type ConsumableFamily = 'stationery' | 'punctuation';
 
 export type ConsumableId =
   // stationery
@@ -290,9 +290,7 @@ export type ConsumableId =
   | 'carvingKnife' | 'photocopier' | 'piggyBank' | 'magnifier'
   // punctuation (1:1 with patterns, GDD §5.4)
   | 'ellipsis' | 'exclamation' | 'doubleExclamation' | 'period'
-  | 'colon' | 'semicolon' | 'dash' | 'comma'
-  // forbidden books
-  | 'bookBurning' | 'apocrypha' | 'scribbles' | 'apocalypse';
+  | 'colon' | 'semicolon' | 'dash' | 'comma';
 
 export type VoucherId =
   | 'extraHand' | 'extraDiscard' | 'overtime' | 'regularsDiscount'

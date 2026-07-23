@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { availableWooDakSkins, woodakArt, mascotSrc, mascotVariantArt, mascotCollectionRows, WOODAK_SKINS } from '../src/ui/mascots';
+import { availableWooDakSkins, woodakArt, mascotSrc, mascotVariantArt, mascotCollectionRows, WOODAK_SKINS, type WooDakSkin } from '../src/ui/mascots';
 import { markPlayed, resetUnlocks } from '../src/ui/unlocks';
 
 // jsdom is not configured project-wide; provide a minimal localStorage shim
@@ -29,9 +29,8 @@ describe('WooDak skins — availability', () => {
     expect(skins.map((s) => s.id)).toEqual(['woodak']);
   });
 
-  it('DOG/GHOST/ALIEN/TURTLE become available once unlocked; art-less CAT never does', () => {
-    const skins = availableWooDakSkins(new Set(['DOG', 'ALIEN', 'GHOST', 'CAT', 'TURTLE']));
-    // dog/ghost/alien/turtle have art → included; cat is unlocked but art-less → excluded.
+  it('DOG/GHOST/ALIEN/TURTLE become available once unlocked', () => {
+    const skins = availableWooDakSkins(new Set(['DOG', 'ALIEN', 'GHOST', 'TURTLE']));
     expect(skins.map((s) => s.id)).toEqual(['woodak', 'dog', 'ghost', 'alien', 'turtle']);
   });
 });
@@ -49,19 +48,20 @@ describe('WooDak skins — art resolution (with fallback)', () => {
     expect(woodakArt('alien', new Set(['ALIEN']))).toBe(alienUrl);
   });
 
-  it('an art-less selection resolves to the default', () => {
-    expect(woodakArt('cat', new Set(['CAT']))).toBe(woodakUrl);
+  it('an unknown selection resolves to the default', () => {
+    expect(woodakArt('nope' as WooDakSkin, new Set())).toBe(woodakUrl);
   });
 });
 
 describe('mascotVariantArt — drives the unlock celebration', () => {
-  it('returns the art for a variant that has it (dog/ghost/alien), null for art-less variants', () => {
-    // dog/ghost/alien have art → the reveal shows the portrait + the "ready" message
+  it('returns the art for a variant that has it (dog/ghost/alien/turtle), null for unknown', () => {
+    // every current variant has art → the reveal shows the portrait + the "ready" message
     expect(mascotVariantArt('dog')).toBe(dogUrl);
     expect(mascotVariantArt('ghost')).not.toBeNull();
     expect(mascotVariantArt('alien')).not.toBeNull();
-    // cat has no art yet → the reveal stays "coming soon"
-    expect(mascotVariantArt('cat')).toBeNull();
+    expect(mascotVariantArt('turtle')).not.toBeNull();
+    // an unknown variant has no art → the reveal stays "coming soon"
+    expect(mascotVariantArt('nope')).toBeNull();
   });
 });
 
@@ -100,6 +100,6 @@ describe('mascotCollectionRows — 도감 Mascots category (item 5.1)', () => {
     expect(rows.find((r) => r.id === 'ghost')!.unlocked).toBe(false); // not played
     // art travels with the row so the UI can silhouette locked-but-art-backed skins
     expect(rows.find((r) => r.id === 'ghost')!.art).toBe(ghostUrl);
-    expect(rows.find((r) => r.id === 'cat')!.art).toBeNull();
+    expect(rows.find((r) => r.id === 'turtle')!.art).not.toBeNull();
   });
 });

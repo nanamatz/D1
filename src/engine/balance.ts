@@ -7,7 +7,7 @@
  * GDD section references are noted per block.
  */
 
-import type { FontEffectId, PackSize, TileFont } from './types';
+import type { FontEffectId, PackSize, PackType, TileFont } from './types';
 
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
@@ -162,7 +162,7 @@ export const BALANCE = {
     wideShelfSlots: 1, // Wide Shelf: +1 shop item slot
   },
 
-  // ----- Packs (GDD §9.3, feature-02 B) — 5 types × 3 sizes -----
+  // ----- Packs (GDD §9.3) — 4 types × 3 sizes -----
   pack: {
     // size governs how many are shown / picked, and the price (Balatro 4/6/8).
     size: {
@@ -170,12 +170,18 @@ export const BALANCE = {
       jumbo:  { show: 5, pick: 1, price: 6 },
       mega:   { show: 5, pick: 2, price: 8 },
     },
-    // shop pack-slot roll weights. Forbidden Stacks is rare; Mega/Jumbo rarer.
-    typeWeights: { pattern: 4, joker: 4, consumable: 4, tile: 4, forbidden: 1 } as Record<string, number>,
+    // shop pack-slot roll weights (Mega/Jumbo rarer via sizeWeights below).
+    typeWeights: { pattern: 4, joker: 4, consumable: 4, tile: 4 } as Record<string, number>,
     sizeWeights: { normal: 6, jumbo: 3, mega: 1 } as Record<string, number>,
-    // how many cosmetic art variants exist per size (== the art count in packArt.ts);
-    // the seeded RNG picks one at stock time. Bump when art is added.
-    artVariants: { normal: 3, jumbo: 2, mega: 2 } as Record<PackSize, number>,
+    // how many cosmetic art variants exist per (type, size) (== the art count in
+    // packArt.ts); the seeded RNG picks one at stock time. Consumable has no art yet
+    // (1 → variant 0). Bump when art is added.
+    artVariants: {
+      tile: { normal: 3, jumbo: 2, mega: 2 },
+      joker: { normal: 2, jumbo: 1, mega: 1 },
+      pattern: { normal: 4, jumbo: 2, mega: 2 },
+      consumable: { normal: 1, jumbo: 1, mega: 1 },
+    } as Record<PackType, Record<PackSize, number>>,
   },
   packEnhanceChance: { base: 0.15, connoisseur: 0.4 }, // material/font pre-attach rate
 

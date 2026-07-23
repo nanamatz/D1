@@ -40,17 +40,27 @@ Confirmed types: `pattern | joker | consumable | tile`. `forbidden` is removed.
   `tutorial.firstConsumable` copy (drop "forbidden books").
 - The `forbiddenPaper` boss ("금서") is a different system — **untouched**.
 
+### Art normalization (2026-07-22 follow-up)
+
+The 7 source pack PNGs are drawn at slightly different ratios (~0.59–0.63 w/h), which
+made `object-fit: contain` render them at inconsistent sizes. `scripts/normalize-pack-art.mjs`
+(`npm run normalize:packs`, uses `pngjs`) pads each with **transparent margins**
+(centered — no scaling, crop, or distortion) to a common **0.61** ratio and writes the
+bundled copies under `src/ui/assets/packs`. Source art in `docs/Arts/CardPacks` stays
+pristine; re-run the script whenever it changes. The gallery/shop boxes match that ratio.
+
 ## Part B — Collection → Packs paged gallery
 
 Rebuild `PacksView`:
-- Grid of pack artwork, 4 per row; a `‹ 페이지 n/m ›` pager (reuse `Pager`); the
-  existing Back bar stays.
-- **Page 1:** the 7 tile-pack arts (`PACK_ART.normal` ×3, `.jumbo` ×2, `.mega` ×2).
-- **Page 2:** Charm / Consumable / Ink packs as **locked "coming soon" silhouettes**
-  (no art yet; same silhouette style as locked mascots).
-- Pagination via a small pure helper `packGalleryPages()` returning the ordered list
-  of gallery entries (`{ kind: 'tile-art', src } | { kind: 'coming-soon', type }`),
-  chunked by page size — unit-tested.
+- Grid of pack artwork; a `‹ 페이지 n/m ›` pager (reuse `Pager`); the existing Back
+  bar stays.
+- **One page per pack type** (matching Reference.png's per-type pages), in order
+  Tile → Charm → Ink → Consumable. Art-backed types show every variant in size order
+  (Basic → Classic → Premium); a type without art (Consumable) shows a single
+  **"coming soon" silhouette**. *(Update 2026-07-23: Charm ×4 and Ink ×8 art added, so
+  only Consumable remains coming-soon — 4 pages of 7 / 4 / 8 / 1.)*
+- Pagination via a pure `packGalleryPages()` returning, per page, the ordered entries
+  (`{ kind: 'art', type, size, src } | { kind: 'comingSoon', type }`) — unit-tested.
 
 ## Part C — Pack idle animation
 

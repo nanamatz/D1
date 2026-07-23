@@ -29,7 +29,7 @@ import type {
 
 /** Consumables that actually have an effect today (grows as they're built). */
 const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
-const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'forbidden'];
+const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile'];
 const PACK_SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 
 /** All items the shop could offer this run, minus jokers already owned. */
@@ -91,16 +91,17 @@ function weightedPick<T extends string>(ids: readonly T[], weights: Record<strin
   return ids[ids.length - 1]!;
 }
 
-/** Each pack slot rolls an independent type × size (Forbidden/Mega/Jumbo rarer). */
+/** Each pack slot rolls an independent type × size (Mega/Jumbo rarer). */
 function rollPacks(rng: Rng): (PackSlot | null)[] {
   const packs: (PackSlot | null)[] = [];
   for (let i = 0; i < BALANCE.shop.packSlots; i++) {
     const size = weightedPick(PACK_SIZES, BALANCE.pack.sizeWeights, rng);
+    const type = weightedPick(PACK_TYPES, BALANCE.pack.typeWeights, rng);
     packs.push({
-      type: weightedPick(PACK_TYPES, BALANCE.pack.typeWeights, rng),
+      type,
       size,
       // cosmetic-only, but seeded so a run reproduces its shop art exactly.
-      artVariant: rng.int(BALANCE.pack.artVariants[size]),
+      artVariant: rng.int(BALANCE.pack.artVariants[type][size]),
     });
   }
   return packs;

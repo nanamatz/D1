@@ -160,7 +160,12 @@ export function Shop({ g }: { g: UseGame }) {
                     body={t(`packdesc.${p.type}`)}
                   >
                     <div className={['shopitem', `pack-${p.size}`].join(' ')}>
-                      <img className="pack-img" src={packArt(p.size, p.artVariant)} alt="" />
+                      {/* Tile / Charm / Ink packs have art; Consumable keeps the 📦 glyph. */}
+                      {packArt(p.type, p.size, p.artVariant) ? (
+                        <img className="pack-img" src={packArt(p.type, p.size, p.artVariant)!} alt="" />
+                      ) : (
+                        <span className="e">📦</span>
+                      )}
                       <span className="n">{t(`pack.type.${p.type}`)}</span>
                       <span className="pack-size">{t(`pack.size.${p.size}`)}</span>
                       <span className="price">${BALANCE.pack.size[p.size].price}</span>

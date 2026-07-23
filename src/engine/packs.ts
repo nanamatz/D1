@@ -1,6 +1,6 @@
 /**
- * Packs (GDD §9.3, feature-02 B) — where jokers, tiles, punctuation, stationery,
- * and (rarely) forbidden books enter the economy as a draft-flavored choice.
+ * Packs (GDD §9.3, feature-02 B) — where jokers, tiles, punctuation, and stationery
+ * enter the economy as a draft-flavored choice.
  * A pack slot is a { type, size }: size governs show/pick counts + price, type
  * governs the option pool. rollPack builds the offer; applyPackPick folds a pick
  * into the run. Punctuation applies IMMEDIATELY on pick (levels its pattern);
@@ -42,9 +42,6 @@ const PUNCTUATION_PATTERN: Record<string, PatternId> = {
 };
 const PUNCTUATION_POOL = Object.keys(PUNCTUATION_PATTERN) as ConsumableId[];
 
-/** Forbidden Books items (GDD §10.3) — effects TBD; the pack delivers them (placeholder). */
-const FORBIDDEN_POOL: readonly ConsumableId[] = ['bookBurning', 'apocrypha', 'scribbles', 'apocalypse'];
-
 const MATERIALS: readonly TileMaterial[] = [
   'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
 ];
@@ -59,8 +56,7 @@ export type PackOption =
   | { kind: 'joker'; id: string }
   | { kind: 'tile'; tile: Tile }
   | { kind: 'consumable'; id: ConsumableId }
-  | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId }
-  | { kind: 'forbidden'; id: ConsumableId };
+  | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId };
 
 export interface PackOffer {
   type: PackType;
@@ -125,9 +121,6 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
         pattern: PUNCTUATION_PATTERN[id]!,
       }));
       break;
-    case 'forbidden':
-      options = drawConsumables(FORBIDDEN_POOL, show, rng, (id) => ({ kind: 'forbidden', id }));
-      break;
   }
   return { type: slot.type, size: slot.size, artVariant: slot.artVariant, options, pick };
 }
@@ -141,8 +134,6 @@ export function applyPackPick(run: RunState, option: PackOption): RunState {
     case 'tile':
       return { ...run, bag: [...run.bag, option.tile] };
     case 'consumable':
-    case 'forbidden':
-      // Forbidden effects are TBD (feature-02 B placeholder); it still occupies a slot.
       if (run.consumables.length >= run.consumableSlots) return run;
       return { ...run, consumables: [...run.consumables, option.id] };
     case 'punctuation':

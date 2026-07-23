@@ -29,9 +29,15 @@ imports them):
 
 ## 1. Pouch icon
 
-`src/ui/components/BagView.tsx`: replace the `👝` text inside `.pouch-art` with
-`<img src={pouchUrl} alt="">`. Add minimal CSS to size the image to the widget.
-Count, hover, and modal behaviour are unchanged.
+The default-pouch art replaces the old bag glyph everywhere a pouch/bag is shown:
+
+- `BagView.tsx` — the in-game `.pouch-art` widget (`👝` → `<img>`); this also covers
+  the blind-select screen, where the widget renders.
+- `NewRun.tsx` — the New Run bag selector preview (`🎒` → `<img>`).
+- `Collection.tsx` `BagsView` — the 도감 Pouches detail (`🎒` → `<img>`).
+
+Minimal CSS sizes the image (`.pouch-art`, `.bag-art` / `.bag-art.big`). Count,
+hover, and modal behaviour are unchanged.
 
 ## 2. Turtle WooDak skin
 
@@ -55,7 +61,7 @@ Display strings only — engine ids stay `normal` / `jumbo` / `mega`
 
 | id | en | ko |
 |----|----|----|
-| normal | Base | 기본 |
+| normal | Basic | 기본 |
 | jumbo | Classic | 클래식 |
 | mega | Premium | 프리미엄 |
 
@@ -75,9 +81,16 @@ seeded RNG at stock time (reproducible per run seed).
   (variant guarded by modulo so an out-of-range index is safe). The engine never
   imports an image — only the UI maps `(size, artVariant) → PNG`, same split as
   `bossArt.ts`.
-- `src/ui/components/Shop.tsx`: replace the `📦` glyph with the pack art.
-- `src/ui/components/PackOpening.tsx`: show the pack art in the header next to the
-  `type · size` title.
+
+**Tile-pack only (2026-07-22).** The art is tile/Type-pack art, so it is shown
+**only for pack type `tile`**; every other pack type keeps the `📦` glyph until it
+gets its own art. `artVariant` is still rolled for every pack (harmless, unused for
+non-tile) so tile packs stay seed-reproducible.
+
+- `src/ui/components/Shop.tsx`: tile pack → pack art; other types → `📦`.
+- `src/ui/components/PackOpening.tsx`: tile pack → header art; others → none.
+- `src/ui/components/Collection.tsx` `PacksView`: the tile entry shows the art
+  (`packArt('normal', 0)` as its representative); other type entries keep `📦`.
 
 ## Tests
 
@@ -91,5 +104,6 @@ seeded RNG at stock time (reproducible per run seed).
 ## Out of scope
 
 - Pouch skins / additional pouch variants (only the single default is wired).
-- Mascot art for CAT (stays `art: null`).
+- The CAT mascot variant is retired from the roster (removed 2026-07-22 —
+  no unlock row, no skin, no i18n).
 - Any change to pack contents, sizes' show/pick/price, or roll weights.

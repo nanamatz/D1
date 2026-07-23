@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { BlindKind } from '../../engine/types';
 import { useI18n } from '../i18n';
+import pouchUrl from '../assets/pouch.png';
 
 /** Summary of the in-memory run behind the Continue tab. */
 export interface ContinueInfo {
@@ -139,7 +140,7 @@ function NewRunBody({
         <div className="select-card">
           <Carousel label={t('newrun.bag')} value={t('bag.standard.name')} />
           <div className="select-preview">
-            <div className="bag-art">🎒</div>
+            <img className="bag-art" src={pouchUrl} alt="" />
             <p className="select-desc">{t('bag.standard.desc')}</p>
           </div>
         </div>

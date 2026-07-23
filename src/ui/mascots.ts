@@ -4,10 +4,11 @@
  * shop proprietor) is a fixed role and is never re-skinned.
  *
  * These skins ARE the chromatic-unlock `{ kind: 'mascot', variant }` rows (GDD §13:
- * ALIEN/GHOST/DOG/CAT) — "data slots now, art later." A skin becomes selectable once
- * it has art AND the player has unlocked it (played its word, or the C-4 override is on).
- * DOG/GHOST/ALIEN have art; CAT stays `art: null`. Data-driven: adding a skin = fill in
- * its `art` field — never a hard-coded word check in a component (CLAUDE.md guardrail).
+ * ALIEN/GHOST/DOG plus TURTLE) — "data slots now, art later." A skin becomes selectable
+ * once it has art AND the player has unlocked it (played its word, or the C-4 override is
+ * on). All current variants (ALIEN/GHOST/DOG/TURTLE) have art. Data-driven: adding a skin
+ * = fill in its `art` field — never a hard-coded word check in a component (CLAUDE.md
+ * guardrail).
  */
 import { activeUnlocks } from './unlocks';
 import { SETTINGS_KEY } from './settings';
@@ -18,7 +19,7 @@ import ghostUrl from './assets/ghost.png';
 import alienUrl from './assets/alien.png';
 import turtleUrl from './assets/turtle.png';
 
-export type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'cat' | 'turtle';
+export type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'turtle';
 
 export interface WooDakSkinDef {
   /** stable id; the non-default ids match an UNLOCKS mascot variant. */
@@ -37,7 +38,6 @@ export const WOODAK_SKINS: readonly WooDakSkinDef[] = [
   { id: 'dog', unlockId: 'DOG', nameKey: 'mascot.dog', art: dogUrl },
   { id: 'ghost', unlockId: 'GHOST', nameKey: 'mascot.ghost', art: ghostUrl },
   { id: 'alien', unlockId: 'ALIEN', nameKey: 'mascot.alien', art: alienUrl },
-  { id: 'cat', unlockId: 'CAT', nameKey: 'mascot.cat', art: null },
   { id: 'turtle', unlockId: 'TURTLE', nameKey: 'mascot.turtle', art: turtleUrl },
 ];
 
