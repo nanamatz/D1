@@ -654,7 +654,7 @@ boss, §8.3, is a separate system and is unaffected.)*
 
 Scaling emoji tiles' counters are deliberately spread out so that "which scaling emoji tile you take" becomes "how you play."
 
-| Scaling axis | Jokers |
+| Scaling axis | Emoji Tiles |
 |---|---|
 | Total words made | Voracious Reader (15) |
 | Formal suit accumulation | Classicist (16) |
