@@ -13,7 +13,7 @@ Version 0.2 — systems expansion
 - New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 9 vouchers.
 - New: **Consumables** — 2 families: Stationery (Tarot-equiv.), Punctuation (Planet-equiv.). *(Forbidden Books / Spectral-equiv. retired 2026-07-22, §10.3.)*
-- Jokers: #32 renamed Ellipsis → **Elision** (name ceded to the Punctuation consumable). Added **#46 Hypocrite** (demoted from base rule to joker).
+- Emoji Tiles: #32 renamed Ellipsis → **Elision** (name ceded to the Punctuation consumable). Added **#46 Hypocrite** (demoted from base rule to emoji tile).
 
 ---
 
@@ -51,7 +51,7 @@ Version 0.2 — systems expansion
 | Enhancement | 8 tile materials | Ceramic (base) + Porcelain, Polished, Glass, Stone, Lead plate, Ivory, Brass |
 | Edition / Seal | 5 letter fonts | Futura Medium (base) + 4 styles |
 | Joker | Emoji tiles | 4 rarities + Legendary; shop purchase/draw; rule-breaking |
-| Hand (play) | Phase | Base 5 per blind; variable via jokers/vouchers |
+| Hand (play) | Phase | Base 5 per blind; variable via emoji tiles/vouchers |
 | Discard | Discard | Budget per blind; discarded tiles exit for the blind |
 | Poker hand table | Sentence pattern table | POS sequence matching (§5) |
 | Flush | Unison bonus | All words in the sequence share one suit |
@@ -114,7 +114,7 @@ Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE
 
 **Why (sim, 4000 hands @ hand 11):** vs. the old 98-tile bag, rare letters now appear **~2× as often** per hand (1.24 → 2.57), so deck-building and rare-letter payoffs gain traction; the longest makeable word stays healthy (6.9 → 6.2 letters) and the gibberish-forced rate stays near zero (0.1% → 0.3%). Connected knobs (hand size, target curve, Epic-Poet/pouch-depletion cap) get retuned against sim drift as needed.
 
-**Note.** Y is treated as a consonant under the traditional classification (vowel/consonant axis). Room is left to handle it as a semivowel exception in specific jokers or sentence judgments.
+**Note.** Y is treated as a consonant under the traditional classification (vowel/consonant axis). Room is left to handle it as a semivowel exception in specific emoji tiles or sentence judgments.
 
 > **Bag-size note.** The rebalanced 68-tile bag (C-2) sits between Balatro's 52-card deck and the old 98. Adding a few tiles now moves the odds more than at 98; **thinning** still buys draw consistency but with less glut to cut. Adding lives in the shop (packs); removal is deliberately reserved for consumables (Eraser, §10).
 
@@ -139,7 +139,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 
 **Why there is no Wild material.** Balatro's Wild card ("counts as any suit") has no translation here: **suit is a property of the word, not the tile** — the lexicon assigns it (§3.1). A tile has no suit to widen. Dropping it is what lets Balatro's 8 enhancements fit our 7 effect slots.
 
-**Stone has no letter.** Our analog of Balatro Stone's "no rank or suit" is *no letter*: `material = stone` ⟺ the tile carries no letter. A stone tile therefore cannot spell, so any word containing one fails the lexicon lookup and resolves as **gibberish** (§6.4) — chips × 1.0, no suit multiplier, always submittable. This is deliberate, and it is what stops Stone from being strictly the best tile in the game: if stone were merely skipped while spelling, `stone+C+A+T` would read "CAT" and collect +50 Chips *and* the suit multiplier. The consequence is that Stone becomes the heart of the gibberish archetype — an identity that falls out of our own rules rather than being imported. A stone is **neither vowel nor consonant** (§2.1), so vowel/consonant jokers must skip it.
+**Stone has no letter.** Our analog of Balatro Stone's "no rank or suit" is *no letter*: `material = stone` ⟺ the tile carries no letter. A stone tile therefore cannot spell, so any word containing one fails the lexicon lookup and resolves as **gibberish** (§6.4) — chips × 1.0, no suit multiplier, always submittable. This is deliberate, and it is what stops Stone from being strictly the best tile in the game: if stone were merely skipped while spelling, `stone+C+A+T` would read "CAT" and collect +50 Chips *and* the suit multiplier. The consequence is that Stone becomes the heart of the gibberish archetype — an identity that falls out of our own rules rather than being imported. A stone is **neither vowel nor consonant** (§2.1), so vowel/consonant emoji tiles must skip it.
 
 **Acquisition:** materials enter play two ways — pre-attached on tiles found in Type Packs (§9.3), or applied by the Kiln consumable (§10.1). Applying Stone via Kiln destroys that tile's letter permanently.
 
@@ -164,7 +164,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 | `retriggerPlay` | tile scores in a played word | retrigger this tile's scoring contribution once | Red Seal (verbatim) — the reserved retrigger, spent here |
 | `discardGain` | tile is discarded | gain 1 random consumable; **requires a free consumable slot**, otherwise nothing | Purple Seal (tarot→consumable) |
 
-Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 jokers); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis (Brass, Thrift) as intended synergy. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
+Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 emoji tiles); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis (Brass, Thrift) as intended synergy. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
 
 **Font ↔ effect mapping: data-driven, assignment TBD by design.** Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it. Until design supplies the mapping, a provisional assignment ships clearly marked; reassignment is a one-line data change (§12).
 
@@ -182,10 +182,10 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 |---|---|---|---|---|
 | Standard | Everyday vocabulary | Overwhelming majority | ×1.0 | Safe main line |
 | Formal | Academic / literary | Fewer than majority | ×1.5 | Mid-game main candidate |
-| Slang | Colloquial / informal | Few | ×2.0 | Strong when combined with jokers |
+| Slang | Colloquial / informal | Few | ×2.0 | Strong when combined with emoji tiles |
 | Vulgar | Profanity / taboo | Fewest | ×3.0 | High-risk jackpot |
 
-> **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in *how easy they are to make* (Standard common → Vulgar rare). Treating this asymmetry as a resource rather than a defect, harder-to-make suits get higher base multipliers, embedding a risk-reward curve into the suit structure itself. On top of that, "suit-pushing jokers" (layer 2) recreate Balatro-style build bias.
+> **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in *how easy they are to make* (Standard common → Vulgar rare). Treating this asymmetry as a resource rather than a defect, harder-to-make suits get higher base multipliers, embedding a risk-reward curve into the suit structure itself. On top of that, "suit-pushing emoji tiles" (layer 2) recreate Balatro-style build bias.
 
 > **Balance warning — keep the multiplier curve gentler than the rarity.** If Slang/Vulgar appear *too* rarely while only their multipliers are high, players will treat them as "suits I can't make anyway" and ignore them. Keep the multiplier gentler than the data rarity to hold the line at "hard but worth attempting." Vulgar has extremely few words, so design it not as a main build but as a "jackpot that explodes when conditions align," balanced by an adversarial relationship with censor-type bosses.
 
@@ -214,7 +214,7 @@ In each phase the player makes one word. As phases accumulate, the words line up
 
 **Level 1 — Part-of-Speech Sequence Matching (adopted).** Assign a part-of-speech (POS) tag to each word and match the completed sequence against the pattern table in §5. Pure lookup, no NLP needed.
 
-**Level 2 — Register Combination (adopted, simplified in v0.2).** v0.1 sketched a full "tone overlay" table (Academic / Tirade / Hypocrite / Mishmash…). This bloated the base rules, so it has been dieted down following the Balatro principle — *base rules stay minimal; the zoo of variations lives in jokers.* What remains in the base game is a single rule, the **Unison bonus** (§5.3). Hypocrite became joker #46; Mishmash was deleted (functionally duplicated joker #27 Code-Switching).
+**Level 2 — Register Combination (adopted, simplified in v0.2).** v0.1 sketched a full "tone overlay" table (Academic / Tirade / Hypocrite / Mishmash…). This bloated the base rules, so it has been dieted down following the Balatro principle — *base rules stay minimal; the zoo of variations lives in emoji tiles.* What remains in the base game is a single rule, the **Unison bonus** (§5.3). Hypocrite became emoji tile #46; Mishmash was deleted (functionally duplicated emoji tile #27 Code-Switching).
 
 **Level 3 — Semantic Judgment (not adopted).** Judging semantic validity — "cat eats fish" works but "fish eats cat" is odd — depends on an LLM, so it is excluded. Since scoring with absurd, funny sentences is part of this genre's fun, passing anything that is merely grammatical is also the better game-design choice.
 
@@ -234,7 +234,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.1 Matching Rules
 
-1. **Whole-sequence match.** The entire phase sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) anywhere in the sequence voids all pattern matches — countered by Correction Tape (consumable) and Elision (legendary joker).
+1. **Whole-sequence match.** The entire phase sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) anywhere in the sequence voids all pattern matches — countered by Correction Tape (consumable) and Elision (legendary emoji tile).
 2. **Highest single pattern only.** If a sequence satisfies multiple patterns, only the highest-value one applies (a full house does not also pay as a pair).
 3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; **each absorbed modifier adds +15 Chips to the sentence bonus's Chips side** (uniform across all patterns — placeholder). This keeps the table small while making "longer sentence = bigger reward" automatic, giving the Epic Poet build its natural target.
 
@@ -264,7 +264,7 @@ Design intent:
 
 - **Outcry** finally gives vowel-less interjections (shh, brr) a home in the pattern table — a niche that meshes with the Consonant Bricklayer build.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, preserving the RUN×4 showcase as its own pattern.
-- **The Chips×Mult ladder climbs together** — both sides grow from #1→#8, so structural sentences (higher Mult) reward suit/joker Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
+- **The Chips×Mult ladder climbs together** — both sides grow from #1→#8, so structural sentences (higher Mult) reward suit/emoji tile Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
 - **#7–8 are tight-to-impossible in the base 5 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
 - **Interrogative (auxiliary inversion, e.g. "CAN BIRDS FLY") is deferred** to expansion content, consistent with the rules diet.
 
@@ -274,7 +274,7 @@ One rule replaces the v0.1 tone-overlay table:
 
 > **Unison.** If the sequence has 2+ words and *all* words share one suit, a bonus applies, sized by suit rarity: **Standard +50 Chips · Formal ×1.25 · Slang ×1.5 · Vulgar ×2** (placeholders).
 
-Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). It therefore amplifies the pattern's Chips — a register-mult Unison with *no* pattern (no Chips to multiply) contributes nothing, unlike the retired scheme where Unison multiplied the whole committed total. This preserves the flush role ("commit to one suit across phases → reward") within one bonus. All richer combination rules (Hypocrite, etc.) live in jokers.
+Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). It therefore amplifies the pattern's Chips — a register-mult Unison with *no* pattern (no Chips to multiply) contributes nothing, unlike the retired scheme where Unison multiplied the whole committed total. This preserves the flush role ("commit to one suit across phases → reward") within one bonus. All richer combination rules (Hypocrite, etc.) live in emoji tiles.
 
 Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity), with the ladder deliberately gentler than the v0.1 Tirade (×3) draft. Exact values are playtest material.
 
@@ -293,7 +293,7 @@ Each pattern pairs 1:1 with a Punctuation consumable (§10.2), Balatro-Planet st
 | — Dash | Ditransitive | +25 Chips, +1.5 Mult |
 | , Comma | Compound | +30 Chips, +1.5 Mult |
 
-Thematic fits: compound sentences literally use commas + conjunctions; colons introduce descriptions; exclamation marks command. (Joker #32 was renamed **Elision** to cede the name "Ellipsis" to the punctuation card.)
+Thematic fits: compound sentences literally use commas + conjunctions; colons introduce descriptions; exclamation marks command. (Emoji tile #32 was renamed **Elision** to cede the name "Ellipsis" to the punctuation card.)
 
 ### 5.5 Letter Hands (글자 족보) — per-word structure bonuses (playtest-02 A-2)
 
@@ -313,7 +313,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +60 Chips, +4 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **Out of scope (for now):** leveling letter hands (Punctuation levels sentence patterns only) and jokers keyed to letter hands — see §12 open items.
+- **Out of scope (for now):** leveling letter hands (Punctuation levels sentence patterns only) and emoji tiles keyed to letter hands — see §12 open items.
 
 ---
 
@@ -343,7 +343,7 @@ Letter scores are intrinsic tile value, so they must be recoverable regardless o
 - **Payout:** sum of letter Chips × 1.0. No suit (hence no suit multiplier), no POS.
 - **Sequence effect (b-2):** the gibberish entry is recorded as a **hole** in the sentence sequence. Under whole-sequence matching (§5.1) a hole voids all pattern matches. Counters: Correction Tape removes a hole; Elision forgives one.
 - **Letter hands (§5.5):** even as a hole, a gibberish submission can still score the gibberish-eligible letter hands — **Vowel Flush** and **Straight**. The Straight jackpot (dumping Q-R-S-T-U-V) is the headline case; suit/POS stay null and the hole is still recorded.
-- **Joker interaction (proposed):** layer-1 (letter-level) jokers fire on gibberish; layer-2/3 jokers naturally cannot (no suit, no POS) — no special-case rule needed. Gibberish without joker support is strictly inferior to any valid word, so no extra penalty multiplier is required. A dedicated joker (candidate: *Dadaist* — "gibberish counts as Slang suit, ×2 Mult") can elevate gibberish into a legitimate archetype, Balatro-high-card-build style.
+- **Emoji tile interaction (proposed):** layer-1 (letter-level) emoji tiles fire on gibberish; layer-2/3 emoji tiles naturally cannot (no suit, no POS) — no special-case rule needed. Gibberish without emoji-tile support is strictly inferior to any valid word, so no extra penalty multiplier is required. A dedicated emoji tile (candidate: *Dadaist* — "gibberish counts as Slang suit, ×2 Mult") can elevate gibberish into a legitimate archetype, Balatro-high-card-build style.
 - **UI note:** the projected-score preview (§7) shows the sentence bonus collapsing the moment a gibberish submission is staged — the rule explains itself without warning dialogs.
 - **UX surfacing (playtest-01 P0-3):** when staged tiles are not a valid word, the staged preview must say so explicitly (e.g. *"Not a word — submit as gibberish: +N chips, breaks the sentence"*) and the play button relabels to *Submit gibberish*. With the escape valve visible, the "my phase was wasted" complaint becomes impossible.
 
@@ -351,7 +351,7 @@ Letter scores are intrinsic tile value, so they must be recoverable regardless o
 
 The Scrabble-style 2-letter floor is **removed**. Scrabble needs the floor because turns are unlimited; here **phases are the scarce resource**, so opportunity cost self-regulates cheap plays. Two ripples, both welcome:
 
-- **"I" and "a" become budget sentence parts.** I (pronoun) + RUN (verb) = Simple in 2 phases. Opens a rush/sentence hybrid line; meshes with joker #7 Short & Sharp.
+- **"I" and "a" become budget sentence parts.** I (pronoun) + RUN (verb) = Simple in 2 phases. Opens a rush/sentence hybrid line; meshes with emoji tile #7 Short & Sharp.
 - **1-tile gibberish = a paid mini-discard.** Dumping one dead tile spends a phase (and leaves a hole) instead of discard budget — a deliberate discard↔phase↔hole currency triangle.
 
 The removed minimum-word-length floor stays removed globally. (It was once slated to return as a boss rule — "The Editor" — but the 2026-07-21 boss roster dropped that boss; no current boss re-imposes a length floor. §8.3.)
@@ -368,7 +368,7 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 
 ### 7.1 Two-Layer Settlement + Projected Score
 
-- **Layer 1 — individual word score (settled immediately).** On each phase submission, (letter score × suit multiplier × jokers) is settled and accumulated immediately. Irreversible. Secures per-phase feedback.
+- **Layer 1 — individual word score (settled immediately).** On each phase submission, (letter score × suit multiplier × emoji tiles) is settled and accumulated immediately. Irreversible. Secures per-phase feedback.
 - **Layer 2 — sentence bonus (projected → final).** Each phase, the "sequence so far" is judged (§5) and the projected score is updated — **overwrite, not accumulate**. The bonus is finalized from the sequence at the moment the blind ends.
 
 > **Displayed round score = committed ONLY (playtest-04 A — canonical fix for "score drops").** The big round number on screen is the **committed** score (layer 1) and **never decreases** — it climbs, per beat, during each word's settle. The **sentence bonus is a separate on-screen forecast** ("if the sentence ends like this: +N"), a ghost near the target, not part of the committed number. Merging the two (showing committed + projected as one number) makes a pattern-breaking word *lower* the total — the exact bug this split removes. The bonus resolves visibly in the settle sequence (§7.2) when it's the deciding factor.
@@ -381,7 +381,7 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 
 - **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
 - **Remaining phases = money.** Unchanged: 1 gold per remaining phase, paid as a Fee Settlement line item (§9.1).
-- **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush jokers are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 5-phase blind pays big; a last-phase clear pays nothing.
+- **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). Because auto-settle makes "phases remaining" the *default*, the rush emoji tiles are now **proportional to how many** phases are left, not a fixed threshold (playtest-04 C-1): #24 Rush Specialist = ×(1 + 0.5 × phasesLeft); #28 Loan Shark = +$1 per phase left at clear (values in `balance.ts`). A 1-phase clear of a 5-phase blind pays big; a last-phase clear pays nothing.
 - **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 12-boss roster (§8.3, 2026-07-21) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
 ### 7.3 Sentence Bonus = base Chips × Mult (unified)
@@ -392,13 +392,13 @@ Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(p
 
 ### 7.4 Final Pipeline Summary
 
-**Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × jokers) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
+**Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
 **On ending (early/final):** finalize the sentence bonus from the sequence — `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)` per §5.2, Unison folded in (§5.3) — add it to the committed total → grant 1 gold per remaining phase → end blind.
 
 ### 7.5 Variable Phases
 
-Base 5 phases per blind. Increases via jokers/vouchers; the player may also end in a single phase. "Longer sentences → higher multipliers" (patterns #7–8, modifier absorption) versus the 1-phase rush creates the game's central strategic opposition — Rush ↔ Epic Poet — which the joker pool deliberately amplifies (§11.7).
+Base 5 phases per blind. Increases via emoji tiles/vouchers; the player may also end in a single phase. "Longer sentences → higher multipliers" (patterns #7–8, modifier absorption) versus the 1-phase rush creates the game's central strategic opposition — Rush ↔ Epic Poet — which the emoji tile pool deliberately amplifies (§11.7).
 
 ---
 
@@ -413,9 +413,9 @@ All v0.1 uses of "ante" in the scoring chapter meant "blind" and are corrected t
 
 ### 8.2 Scaling & Run Length
 
-Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**; exponential growth between antes (Balatro's curve steps roughly ×1.6–2.5 per ante — exact curve is playtest material, tuned together with the joker power curve). **A run = 8 antes + endless mode** (default, adopted as-is). **Victory (implemented):** clearing the ante-8 Deadline ends the run as a win — the engine flags it (`BlindOutcome.won`) while still paying out and advancing the run, and the UI routes to the run-end screen's win framing, skipping Fee Settlement and the shop. **Endless mode (planned, not yet implemented):** the win modal will gain an "무한 모드 →" button that routes into the normal Fee Settlement → shop flow and continues record-chasing chapters (ante 9+ target formula comes with it).
+Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**; exponential growth between antes (Balatro's curve steps roughly ×1.6–2.5 per ante — exact curve is playtest material, tuned together with the emoji tile power curve). **A run = 8 antes + endless mode** (default, adopted as-is). **Victory (implemented):** clearing the ante-8 Deadline ends the run as a win — the engine flags it (`BlindOutcome.won`) while still paying out and advancing the run, and the UI routes to the run-end screen's win framing, skipping Fee Settlement and the shop. **Endless mode (planned, not yet implemented):** the win modal will gain an "무한 모드 →" button that routes into the normal Fee Settlement → shop flow and continues record-chasing chapters (ante 9+ target formula comes with it).
 
-**Blind skip & tags: deferred.** Adoption itself is on hold, not just the tag pool. Recorded implication: with no skip, every blind is a mandatory stop, removing one tempo-variation tool; in Balatro, skipping doubles as a recovery route for weak early builds (rush to shops for jokers). **Trigger to revisit:** if playtests show unrecoverable early runs when joker luck is poor.
+**Blind skip & tags: deferred.** Adoption itself is on hold, not just the tag pool. Recorded implication: with no skip, every blind is a mandatory stop, removing one tempo-variation tool; in Balatro, skipping doubles as a recovery route for weak early builds (rush to shops for jokers). **Trigger to revisit:** if playtests show unrecoverable early runs when emoji-tile luck is poor.
 
 ### 8.3 Boss Pool — Design Principles & 12 Bosses
 
@@ -472,9 +472,9 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 
 **Retired (2026-07-21).** The earlier design carried two ante-8-only finishers (The Proofreader, Babel) on top of a 12-boss pool. The publishing-frame roster above is a single flat pool of **12**, drawn randomly each ante including ante 8 — there is no separate finisher tier. Memoirs (`memoirs`) inherits the Proofreader's "already-played words are dead" idea, scoped to the ante rather than the whole run. A dedicated ante-8 finisher may return later; if so it is added to this section, not folded silently into §8.3.
 
-**Pool intent:** the 12 bosses cover each system roughly once, and every major build among the 46 jokers has at least one counter boss (Rush ↔ History Book, Vulgar ↔ White Paper, verb/Imperative lines ↔ Burnt Paper, Code-Switching ↔ Forbidden Paper, narrow vocab ↔ Memoirs, economy ↔ Bond…). Bosses draw randomly from the pool per ante, Balatro-style.
+**Pool intent:** the 12 bosses cover each system roughly once, and every major build among the 46 emoji tiles has at least one counter boss (Rush ↔ History Book, Vulgar ↔ White Paper, verb/Imperative lines ↔ Burnt Paper, Code-Switching ↔ Forbidden Paper, narrow vocab ↔ Memoirs, economy ↔ Bond…). Bosses draw randomly from the pool per ante, Balatro-style.
 
-**Debuff convention.** "Debuffed" (White Paper, Burnt Paper, Memoirs) means the affected word scores **0** — its Chips and Mult are both zeroed after jokers, mirroring Balatro's disabled cards (decision 2026-07-21).
+**Debuff convention.** "Debuffed" (White Paper, Burnt Paper, Memoirs) means the affected word scores **0** — its Chips and Mult are both zeroed after emoji tiles, mirroring Balatro's disabled cards (decision 2026-07-21).
 
 ---
 
@@ -487,13 +487,13 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 | Blind clear reward | Small 3 / Big 4 / Boss 5 gold |
 | Remaining phases on blind end | 1 gold per phase |
 | Interest | 1 gold per 5 held, **cap 5** (max interest from 25 gold) |
-| Selling jokers | Half of purchase price |
+| Selling emoji tiles | Half of purchase price |
 
-> **Interest is the heart** (adopted as-is): the cap creates the "save to 25, spend above it" rhythm and the early-game conflict between buying jokers and building an interest base. Jokers #9 Miser (Mult per held gold) and #28 Loan Shark (early-end scaling) run directly on this system, as does the Bond boss (§8.3, −$1 per tile played).
+> **Interest is the heart** (adopted as-is): the cap creates the "save to 25, spend above it" rhythm and the early-game conflict between buying emoji tiles and building an interest base. Emoji tiles #9 Miser (Mult per held gold) and #28 Loan Shark (early-end scaling) run directly on this system, as does the Bond boss (§8.3, −$1 per tile played).
 
 ### 9.2 Shop Layout — five stalls
 
-Balatro-mirrored: **Item slots ×2** (jokers/consumables appear mixed) + **Pack slots ×2** + **Voucher slot ×1**. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
+Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **Pack slots ×2** + **Voucher slot ×1**. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
 
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
@@ -501,7 +501,7 @@ Balatro-mirrored: **Item slots ×2** (jokers/consumables appear mixed) + **Pack 
 - **Restock timing:** the voucher slot restocks when the Deadline (boss blind) ends — the *next* chapter's shop carries the new voucher. Within a chapter, the same voucher persists across the Draft/Revision/Deadline shops.
 - **Reappearance (Balatro-style):** purchased vouchers never reappear this run; **unpurchased** vouchers stay in the pool and may reappear in a later chapter (preserves "buy now or gamble on later").
 
-**Joker pricing (placeholder):** Common 4–5 / Uncommon 6–7 / Rare 8–10 / Legendary 20.
+**Emoji tile pricing (placeholder):** Common 4–5 / Uncommon 6–7 / Rare 8–10 / Legendary 20.
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
@@ -512,7 +512,7 @@ Tile acquisition is **pack-select only** (confirmed): no targeted single-letter 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
 | 잉크 팩 / **Ink Pack** | Punctuation cards — each **levels up** a sentence pattern (§5.4). Applied immediately on pick. | Celestial |
-| 부적 팩 / **Charm Pack** | Joker (emoji) choices | Buffoon |
+| 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
 | 소모품 팩 / **Consumable Pack** | Stationery consumable choices (§10.1) | Arcana |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
@@ -652,7 +652,7 @@ boss, §8.3, is a separate system and is unaffected.)*
 
 ### 11.6 Scaling Axis Distribution (8 axes)
 
-Scaling jokers' counters are deliberately spread out so that "which scaling joker you take" becomes "how you play."
+Scaling emoji tiles' counters are deliberately spread out so that "which scaling emoji tile you take" becomes "how you play."
 
 | Scaling axis | Jokers |
 |---|---|
@@ -695,13 +695,13 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 
 **Still open:**
 
-- **Value balancing across the board.** All numbers remain placeholders (jokers, patterns, unison, vouchers, prices, target-score curve). Playtest-driven.
+- **Value balancing across the board.** All numbers remain placeholders (emoji tiles, patterns, unison, vouchers, prices, target-score curve). Playtest-driven.
 - **Blind skip & tags.** Adoption itself deferred. Revisit trigger: unrecoverable early runs in playtests (§8.2).
 - **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, uppercase, slang-friendly…). Untouched.
 - **Stakes (difficulty) & unlock structure.** Replayability layer. Untouched.
 - **Voucher tier 2 (upgraded versions).** Deferred to content expansion.
 - **Interrogative pattern.** Auxiliary-inversion pattern + Question Mark punctuation; deferred to expansion (§5.2).
-- **Dadaist joker.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
+- **Dadaist emoji tile.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
 - **Font ↔ effect mapping.** Effects are now defined (§2.3 seal port: `goldPlay`/`chipPlay`/`retriggerPlay`/`discardGain`); the **assignment of which font gets which effect** is design-supplied and still pending — ships as a provisional `balance.ts` `fontEffects` mapping until then.
 - **Tutorial system.** Layered (first-run guided intro → first-encounter one-time popups → Help/Glossary screen), hosted by **우땅 (WooDak)** per §1's mascot roles; Piyak keeps shop greetings. Work order: `docs/feature-01-tutorial-sound-fontseals.md`.
 - **Audio.** Chiptune/8-bit, SFX-first (settle-sequence sounds with pitch-escalating chip ticks before any BGM); real mixer replaces the Settings stub. Same work order.
@@ -709,7 +709,7 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 - **Word collection (도감) UI.** First-play-per-word tracking ships now (localStorage; gibberish excluded); the collection screen itself is a later milestone (playtest-01 P2-2).
 - **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch classification → baked table; one-word = one-suit/POS resolution rule (§3.2, §4.2).
 - **Finisher boss count.** 2 concepts exist; decide whether the pool needs more for endless-mode variety.
-- **Jokers keyed to letter hands (§5.5).** Letter Hands ship without joker support; a family of jokers that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open joker material.
+- **Emoji tiles keyed to letter hands (§5.5).** Letter Hands ship without emoji-tile support; a family of emoji tiles that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open emoji-tile material.
 - **Letter-hand leveling (if ever).** Punctuation levels sentence patterns only; whether letter hands should ever be levelable (and by what consumable) is deferred.
 - **Ink colors = stakes (playtest-03 A).** The deferred difficulty/stake ladder is re-skinned as **Ink** (검정 → 빨강 …); red ink = the editor's pen. Reframed as matcher-leniency knobs (per playtest-01), not true grammar checking.
 - **Touch long-press marking (playtest-03 F).** Discard-marking uses right-click (desktop-only); a long-press gesture for touch devices is open. No change now.
@@ -727,7 +727,7 @@ The game begins **desaturated and silent**; playing specific words permanently u
 
 | Word | Unlocks |
 |---|---|
-| RED | red token group — `--mult`, red buttons, rare-joker frames |
+| RED | red token group — `--mult`, red buttons, rare-emoji-tile frames |
 | YELLOW | gold token group — money, gold UI, early-end glow |
 | GREEN | green token group — desk/blind backgrounds (`--bg-desk`) |
 | BLUE | blue token group — `--chips`, blue buttons |
