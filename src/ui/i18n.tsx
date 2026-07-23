@@ -19,7 +19,30 @@ export type TParams = Record<string, string | number>;
 interface I18n {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (key: string, params?: TParams) => string;
+  /** A plain key, or an ordered chain: the first key present wins. Used by the
+   *  mascot voice router (mascots.ts `voicedKeys`) to fall back to WooDak's line. */
+  t: (key: string | string[], params?: TParams) => string;
+}
+
+/** Resolve a key (or an ordered chain — first key present wins) against the
+ *  language dict, then English, then the last key verbatim; then interpolate
+ *  {param} placeholders. Pure and exported so tests exercise the real resolver
+ *  rather than a copy of it. */
+export function resolve(
+  dicts: Record<Lang, Record<string, string>>,
+  lang: Lang,
+  key: string | string[],
+  params?: TParams,
+): string {
+  const keys = Array.isArray(key) ? key : [key];
+  let s =
+    keys.map((k) => dicts[lang][k]).find((v) => v !== undefined) ??
+    keys.map((k) => dicts.en[k]).find((v) => v !== undefined) ??
+    keys[keys.length - 1]!;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
+  }
+  return s;
 }
 
 const Ctx = createContext<I18n | null>(null);
@@ -30,13 +53,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({
       lang,
       setLang,
-      t: (key, params) => {
-        let s = DICTS[lang][key] ?? DICTS.en[key] ?? key;
-        if (params) {
-          for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
-        }
-        return s;
-      },
+      t: (key, params) => resolve(DICTS, lang, key, params),
     }),
     [lang, setLang],
   );
