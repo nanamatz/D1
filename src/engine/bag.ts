@@ -26,6 +26,7 @@ export function buildBag(): Tile[] {
         case: 'upper',
         material: 'ceramic',
         font: 'medium',
+        edition: 'base',
       });
     }
   }

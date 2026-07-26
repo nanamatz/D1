@@ -6,6 +6,8 @@ import { patternChipsMult } from '../../engine/patterns';
 import { bossDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { Tooltip } from './Tooltip';
+import { VoucherCard } from './VoucherCard';
+import { voucherArt } from '../voucherArt';
 
 interface Props {
   run: RunState;
@@ -93,9 +95,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 const name = lang === 'ko' ? v.nameKo : v.nameEn;
                 return (
                   <Tooltip key={id} title={name} body={t(voucherDescKey(id))} down>
-                    <span className="ri-voucher">
-                      {v.emoji} {name}
-                    </span>
+                    <VoucherCard emoji={v.emoji} name={name} artSrc={voucherArt(v.id)} />
                   </Tooltip>
                 );
               })}

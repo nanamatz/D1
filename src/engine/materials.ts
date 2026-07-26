@@ -21,6 +21,8 @@ export interface MaterialSideEffects {
   goldDelta?: number;
   /** remove this tile from the run's bag permanently (Glass) */
   destroy?: boolean;
+  /** Wood grows once per play, after its current bonus scores. */
+  growWood?: boolean;
 }
 
 export interface MaterialDef {
@@ -34,8 +36,8 @@ export interface MaterialDef {
 
 const porcelain: MaterialDef = {
   id: 'porcelain',
-  nameKo: '자기',
-  nameEn: 'Porcelain',
+  nameKo: '도자기',
+  nameEn: 'Ceramic',
   onTileScored: (ctx) => {
     ctx.chips += BALANCE.materials.porcelain.chips;
   },
@@ -47,6 +49,16 @@ const polished: MaterialDef = {
   nameEn: 'Polished',
   onTileScored: (ctx) => {
     ctx.mult += BALANCE.materials.polished.mult;
+  },
+};
+
+const wood: MaterialDef = {
+  id: 'wood',
+  nameKo: '목재',
+  nameEn: 'Wood',
+  onTileScored: (ctx, tile) => {
+    ctx.chips += tile.woodBonusChips ?? BALANCE.materials.wood.baseChips;
+    return { growWood: true };
   },
 };
 
@@ -105,7 +117,7 @@ const ivory: MaterialDef = {
 };
 
 export const MATERIAL_REGISTRY: ReadonlyMap<TileMaterial, MaterialDef> = new Map(
-  [porcelain, polished, stone, leadPlate, glass, brass, ivory].map((m) => [m.id, m]),
+  [porcelain, polished, stone, leadPlate, glass, brass, ivory, wood].map((m) => [m.id, m]),
 );
 
 /**

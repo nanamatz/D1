@@ -37,7 +37,9 @@ describe('slice5 packs — roll by type (GDD §9.3)', () => {
     const offer = rollPack(slot('tile'), run(), makeRng('l'));
     for (const o of offer.options) {
       expect(o.kind).toBe('tile');
-      if (o.kind === 'tile') expect(o.tile.letter).toMatch(/^[A-Z]$/);
+      if (o.kind === 'tile') {
+        expect(o.tile.letter === null || /^[A-Z]$/.test(o.tile.letter)).toBe(true);
+      }
     }
   });
 
@@ -69,14 +71,14 @@ describe('slice5 packs — apply a pick', () => {
     expect(r.bag.length).toBe(before + 1);
   });
 
-  it('a punctuation pick levels its mapped pattern immediately (no slot used)', () => {
+  it('a punctuation pick enters the consumable zone and waits to be used', () => {
     const offer = rollPack(slot('pattern'), run(), makeRng('p'));
     const opt = offer.options[0]!;
     if (opt.kind !== 'punctuation') throw new Error('expected punctuation');
     const before = run().patternLevels[opt.pattern];
     const r = applyPackPick(run(), opt);
-    expect(r.patternLevels[opt.pattern]).toBe(before + 1);
-    expect(r.consumables.length).toBe(0); // did not occupy a consumable slot
+    expect(r.patternLevels[opt.pattern]).toBe(before);
+    expect(r.consumables).toContain(opt.id);
   });
 
   it('a consumable pick respects consumable slots', () => {
@@ -87,7 +89,7 @@ describe('slice5 packs — apply a pick', () => {
 
 });
 
-describe('slice5 — Type packs stock all 7 non-base materials (GDD §9.3)', () => {
+describe('slice5 — Type packs stock every non-base material (GDD §9.3)', () => {
   it('can roll every material across many seeds, and stone tiles are letterless', () => {
     const seen = new Set<string>();
     for (let i = 0; i < 3000; i++) {

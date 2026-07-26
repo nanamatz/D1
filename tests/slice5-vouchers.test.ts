@@ -1,50 +1,84 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { BALANCE } from '../src/engine/balance';
+import { interest, rerollCost } from '../src/engine/economy';
+import { newRun } from '../src/engine/run';
 import {
-  applyVoucher,
-  hasVoucher,
-  rerollDiscount,
-  interestCap,
-  shopItemSlots,
   ALL_VOUCHER_IDS,
+  applyVoucher,
+  availableVoucherIds,
+  discountedPrice,
+  hasVoucher,
+  interestCap,
+  rerollDiscount,
+  shopItemSlots,
   VOUCHER_REGISTRY,
 } from '../src/engine/vouchers';
-import { newRun } from '../src/engine/run';
-import { rerollCost, interest } from '../src/engine/economy';
-import { BALANCE } from '../src/engine/balance';
 
-describe('slice5 vouchers — knob bumps applied on purchase (GDD §9.4)', () => {
-  it('Extra Hand → hand size +1', () => {
-    const r = applyVoucher(newRun('v'), 'extraHand');
-    expect(r.handSize).toBe(BALANCE.handSize + 1);
-    expect(hasVoucher(r, 'extraHand')).toBe(true);
+describe('two-tier vouchers — direct resource effects', () => {
+  it('stacks hand, discard, phase, and slot upgrades', () => {
+    let run = applyVoucher(newRun('v'), 'memo');
+    run = applyVoucher(run, 'notebook');
+    run = applyVoucher(run, 'poetryBook');
+    run = applyVoucher(run, 'sheetMusic');
+    run = applyVoucher(run, 'fourCutPhoto');
+    run = applyVoucher(run, 'pictureDiary');
+    run = applyVoucher(run, 'zeroScore');
+    run = applyVoucher(run, 'kungfuManual');
+    expect(run.basePhases).toBe(BALANCE.basePhases + 2);
+    expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind + 2);
+    expect(run.handSize).toBe(BALANCE.handSize + 2);
+    expect(run.consumableSlots).toBe(BALANCE.consumableSlots + 1);
+    expect(run.jokerSlots).toBe(BALANCE.jokerSlots + 1);
   });
-  it('Extra Discard → discards +1, Overtime → phases +1, Pencil Case → consumable slots +1', () => {
-    expect(applyVoucher(newRun('v'), 'extraDiscard').baseDiscards).toBe(BALANCE.discardsPerBlind + 1);
-    expect(applyVoucher(newRun('v'), 'overtime').basePhases).toBe(BALANCE.basePhases + 1);
-    expect(applyVoucher(newRun('v'), 'pencilCase').consumableSlots).toBe(BALANCE.consumableSlots + 1);
+
+  it('History/Old Book each lower ante and apply their penalties', () => {
+    let run = { ...newRun('v'), ante: 5 };
+    run = applyVoucher(run, 'historyBook');
+    run = applyVoucher(run, 'oldBook');
+    expect(run.ante).toBe(3);
+    expect(run.basePhases).toBe(BALANCE.basePhases - 1);
+    expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind - 1);
   });
 });
 
-describe('slice5 vouchers — economy modifiers read at use sites', () => {
-  it("Regular's Discount cuts reroll cost by 2", () => {
-    const r = applyVoucher(newRun('v'), 'regularsDiscount');
-    expect(rerollDiscount(r)).toBe(2);
-    expect(rerollCost(0, rerollDiscount(r))).toBe(BALANCE.shop.rerollBase - 2);
+describe('two-tier vouchers — derived economy effects', () => {
+  it('stacks the two reroll discounts', () => {
+    const run = applyVoucher(applyVoucher(newRun('v'), 'fashionBook'), 'fashionMagazine');
+    expect(rerollDiscount(run)).toBe(4);
+    expect(rerollCost(0, rerollDiscount(run))).toBe(1);
   });
-  it('Compound Interest raises the interest cap 5 → 10', () => {
-    const r = applyVoucher(newRun('v'), 'compoundInterest');
-    expect(interestCap(r)).toBe(10);
-    expect(interest(100, interestCap(r))).toBe(10); // uncapped-at-5 now
+
+  it('uses the strongest interest and shop-discount tier', () => {
+    let run = applyVoucher(newRun('v'), 'receipt');
+    expect(interest(100, interestCap(run))).toBe(10);
+    run = applyVoucher(run, 'householdLedger');
+    expect(interestCap(run)).toBe(20);
+    run = applyVoucher(run, 'newspaper');
+    expect(discountedPrice(run, 8)).toBe(6);
+    run = applyVoucher(run, 'papyrus');
+    expect(discountedPrice(run, 8)).toBe(4);
   });
-  it('Wide Shelf adds a shop item slot', () => {
-    const r = applyVoucher(newRun('v'), 'wideShelf');
-    expect(shopItemSlots(r)).toBe(BALANCE.shop.itemSlots + 1);
+
+  it('Catalog and Coupon Book grow the shop to four slots', () => {
+    let run = applyVoucher(newRun('v'), 'catalog');
+    expect(shopItemSlots(run)).toBe(3);
+    run = applyVoucher(run, 'couponBook');
+    expect(shopItemSlots(run)).toBe(4);
   });
 });
 
-describe('slice5 vouchers — registry', () => {
-  it('registers all nine vouchers with a price', () => {
-    expect(ALL_VOUCHER_IDS).toHaveLength(9);
-    for (const id of ALL_VOUCHER_IDS) expect(VOUCHER_REGISTRY.get(id)?.price).toBeGreaterThan(0);
+describe('two-tier voucher pool and registry', () => {
+  it('registers 16 base and 16 upgraded vouchers', () => {
+    expect(ALL_VOUCHER_IDS).toHaveLength(32);
+    for (const id of ALL_VOUCHER_IDS) expect(VOUCHER_REGISTRY.get(id)?.price).toBe(10);
+  });
+
+  it('requires profile unlock and the base in this run before an upgrade appears', () => {
+    const fresh = newRun('v');
+    expect(availableVoucherIds(fresh, new Set(['novel']))).not.toContain('novel');
+    const withBase = applyVoucher(fresh, 'storyBook');
+    expect(hasVoucher(withBase, 'storyBook')).toBe(true);
+    expect(availableVoucherIds(withBase, new Set())).not.toContain('novel');
+    expect(availableVoucherIds(withBase, new Set(['novel']))).toContain('novel');
   });
 });

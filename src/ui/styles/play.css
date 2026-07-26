@@ -93,6 +93,7 @@
   width: var(--shop-card-w);
 }
 .shopitem {
+  position: relative;
   background: var(--badge-bg);
   border-radius: 12px;
   border-top: 1px solid var(--panel-edge);
@@ -110,6 +111,34 @@
 .shopitem.rare {
   border: 2px solid var(--mult);
 }
+.edition-foil {
+  box-shadow: inset 0 0 0 2px #dcecff, 0 0 8px rgba(190, 225, 255, 0.75), var(--shadow);
+}
+.edition-holographic {
+  background-image: linear-gradient(135deg, rgba(89, 221, 255, 0.28), rgba(255, 99, 215, 0.3), rgba(255, 231, 95, 0.28));
+}
+.edition-polychrome {
+  background-image: linear-gradient(120deg, rgba(255, 64, 96, 0.32), rgba(255, 225, 66, 0.26), rgba(75, 224, 160, 0.28), rgba(93, 135, 255, 0.34));
+}
+.edition-negative {
+  filter: invert(0.88) hue-rotate(180deg);
+}
+.edition-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  max-width: calc(100% - 4px);
+  overflow: hidden;
+  padding: 1px 3px;
+  background: #111;
+  color: #fff;
+  font-family: 'Jersey 10';
+  font-size: var(--fs-2xs);
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 .shopitem .e {
   font-size: var(--ds-sm);
 }
@@ -121,6 +150,19 @@
 .shopitem .price {
   font-family: 'Jersey 10';
   font-size: var(--fs-2xl);
+  color: var(--gold);
+}
+.voucher-shop-stack {
+  width: var(--voucher-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.voucher-shop-stack .price {
+  font-family: 'Jersey 10';
+  font-size: var(--fs-2xl);
+  line-height: 1;
   color: var(--gold);
 }
 /* feature-02 B: pack size badge (Base/Classic/Premium) */
@@ -746,7 +788,7 @@
 }
 /* item 8 + fixed footprint: the row is pinned to the 2-slot width (two 84px
    cards spaced by --consumable-gap, the room the Use/Sell menu needs) and never
-   grows — a +1-slot voucher (pencilCase) fits its third card inside the same
+   grows — a +1-slot voucher (Zero Score) fits its third card inside the same
    width by letting space-between collapse the gaps (~4px). At 3 slots the menu
    may overlap the next card; that is accepted. */
 .consumables {
@@ -866,6 +908,17 @@
 }
 .consumable .e {
   font-size: var(--ds-xs);
+}
+.consumable-art {
+  width: 58px;
+  height: 64px;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.consumable-menu button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
 }
 .consumable .g {
   font-family: 'Jost';
@@ -1302,6 +1355,13 @@
     inset 0 2px 2px rgba(255, 250, 220, 0.6),
     inset 0 -3px 4px rgba(90, 60, 10, 0.4);
   border: 1px solid #7a5a1a;
+}
+.tile.wood {
+  background:
+    repeating-linear-gradient(8deg, rgba(74, 38, 15, 0.18) 0 2px, transparent 2px 9px),
+    linear-gradient(145deg, #d9a866, #9a6031 72%, #6e3f20);
+  border-color: #5d351d;
+  color: #2d190d;
 }
 /* font editions (Jost styles) */
 .tile.f-bold {

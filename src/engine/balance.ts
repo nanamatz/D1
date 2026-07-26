@@ -57,6 +57,7 @@ export const BALANCE = {
     leadPlate: { multChance: 0.2, mult: 20, goldChance: 1 / 15, gold: 20 }, // Balatro Lucky
     ivory: { gold: 3 }, // Balatro Gold
     brass: { multFactor: 1.5 }, // Balatro Steel
+    wood: { baseChips: 15, chipsPerPlay: 10 },
   },
 
   /**
@@ -147,20 +148,22 @@ export const BALANCE = {
   // ----- Shop (GDD §9.2) -----
   shop: { itemSlots: 2, packSlots: 2, rerollBase: 5, rerollIncrement: 1 },
   jokerPrice: { common: 5, uncommon: 7, rare: 9, legendary: 20 },
-  jokerSlots: 5, // Balatro-parity joker cap (placeholder)
+  jokerSlots: 5,
   consumablePrice: 3, // flat consumable price (placeholder, GDD §9.2)
+  tilePrice: 3,
 
-  // ----- Vouchers (GDD §9.4) — single tier, 9 -----
-  voucherPrice: {
-    extraHand: 6, extraDiscard: 6, overtime: 10, regularsDiscount: 5, compoundInterest: 7,
-    thrift: 5, wideShelf: 7, connoisseur: 6, pencilCase: 6,
-  } as Record<string, number>,
+  // ----- Vouchers (GDD §9.4) — 16 base + 16 unlocked upgrades -----
+  voucherPrice: 10,
   voucher: {
-    rerollDiscount: 2, // Regular's Discount
-    interestCap: 10, // Compound Interest (base cap 5 → 10)
-    thriftPerDiscard: 1, // Thrift: gold per unused discard on blind end
-    wideShelfSlots: 1, // Wide Shelf: +1 shop item slot
+    rerollDiscount: 2,
+    baseInterestCap: 10,
+    upgradedInterestCap: 20,
+    baseShopDiscount: 0.25,
+    upgradedShopDiscount: 0.5,
+    bossRerollPrice: 10,
+    editionChance: 0.08,
   },
+  edition: { foilChips: 50, holographicMult: 10, polychromeFactor: 1.5 },
 
   // ----- Packs (GDD §9.3) — 4 types × 3 sizes -----
   pack: {
@@ -183,7 +186,7 @@ export const BALANCE = {
       consumable: { normal: 1, jumbo: 1, mega: 1 },
     } as Record<PackType, Record<PackSize, number>>,
   },
-  packEnhanceChance: { base: 0.15, connoisseur: 0.4 }, // material/font pre-attach rate
+  packEnhanceChance: { base: 0.15 }, // material/font pre-attach rate
 
   // ----- Jokers (GDD §11) — per-joker knobs (proof set for slice ④) -----
   jokers: {

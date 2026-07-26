@@ -64,7 +64,7 @@ Big gold banner button confirms and transitions to the Stationery Shop.
 
 ### 2.6 Shop (Stationery Shop)
 Left rail: **Next Blind** (red) + **Reroll $N** (green, escalating). Main column, top → bottom (playtest-04 D-2): **owned jokers + consumables shelf → items for sale → vouchers & packs**. The owned shelf is the **same component/position as the play screen** (D-1); clicking an owned joker opens a **Sell $N** menu to its right, consumables a Use/Sell menu. Tooltips per §0.
-- **Wide Shelf voucher** grows the item-slot count **immediately** this same visit (D-6/B-2) — a new item fills the extra slot.
+- **Catalog/Coupon Book vouchers** grow the item-slot count immediately in the same visit; each newly opened slot is filled without rerolling existing stock.
 - **Sticker Pack** joker choices are **greyed / non-selectable when joker slots are full** (D-5), with a "joker slots full" note.
 - Voucher slot rules per GDD §9.2 (reroll-immune, one purchase per chapter, restocks at Deadline).
 - **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a speech bubble showing one random `mascot.welcome.*` line per shop entry, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Art: `docs/Piyak.png` → `src/ui/assets/piyak.png`.
@@ -86,22 +86,25 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 **Remaining-count definition (D-1):** `remaining` = the undrawn pouch (`blind.bag`) **only** — tiles in hand, played, or discarded have left the pouch.
 
 ### 2.9 Collection (도감)
-**Root screen = category button menu** (not tabs — too many categories): each button shows `discovered/total` and a `!` badge for new finds. Consumable families group visually into a sub-panel (like the reference's grouped box). Each category opens its own screen using the shared grid card + pagination patterns (§0).
+**Root screen = centred category modal** (not tabs — too many categories): a framed two-column menu uses thick red buttons and a full-width orange Back bar, following the reference layout. Each button shows `discovered/total` and a `!` badge for new finds. Button height is proportional to a normalized estimate of the category's visible content rows; the two columns have equal total weight. Each category opens a content-sized detail modal using the shared grid card + pagination patterns (§0), so short categories no longer inherit the Words view's height. Mobile collapses the menu to one column.
 
 | Category | Contents | Notes |
 |---|---|---|
 | **Words** | discovered words as tile-styled entries, `N/total`, filter by suit & length, paginated | our unique category; data already tracked |
-| Jokers | all 46, rarity-ordered, paginated grid | tooltip shows full effect |
+| Jokers | all Emoji Tiles, rarity-ordered, paginated grid | tooltip shows full effect |
 | Materials | 8 tile faces (ceramic + 7) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
 | Fonts | 5 (Futura variants) | rendered as the same letter in each style; shows each font's seal effect from `balance.ts` `fontEffects` (GDD §2.3); maps the reference's "editions" screen |
-| Stationery | 9 (incl. Magnifier) | |
-| Punctuation | 8 | shows which pattern each levels |
-| Forbidden Books | 4 | |
-| Packs | 5 pack types | Typesetting / Sticker / Stationery / Type / Forbidden Stacks (feature-02 B) |
+| Vouchers | 32 tickets | 16 base/upgraded pairs; four pairs per page; locked upgrades show their profile condition |
+| **Fable Cards** | 18 implemented cards | supplied pixel art in a 5-column, 10-per-page gallery; hover shows the full effect |
+| **Constellation Cards** | content pending | empty 5-column card gallery shell; grouped with the other card families in the root menu |
+| **Ink Cards** | content pending | empty 5-column card gallery shell; grouped with the other card families in the root menu |
+| Packs | current pack families | paged artwork gallery with tooltip details |
 | **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
-| Vouchers | 9 tickets | single tier — no upgraded pair slot |
+| Mascots | WooDak skin roster | locked skins use silhouettes; unlocked art uses the shared mascot registry |
 | Bags | carousel detail view (bag art + description) | **[PLACEHOLDER: 1 entry]** |
 | **Blinds & Bosses** | left: ante → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Small/Big badges + 12 boss chips + 2 finisher chips (undiscovered = `?`) | doubles as the player-facing difficulty-curve reference |
+
+Constellation and Ink remain presentation scaffolds until their dedicated art/content passes. Fable reports `18/18` and uses its real registry; the two pending families deliberately report `0/0` and render uniform `?` slots.
 
 **Omitted by design (no equivalents — do not add):** Seals (their roles are absorbed into the font layer — GDD §2.3 seal-port — so no separate category) and Tags (skip/tag system deferred, GDD §8.2).
 

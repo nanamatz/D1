@@ -119,6 +119,7 @@
   gap: 4px;
 }
 .tt-body {
+  white-space: pre-line;
   font-size: var(--fs-sm);
   /* The card's own grey, so the plate reads as a window cut out of it. */
   color: var(--tt-bg);
@@ -1080,73 +1081,185 @@ body.cb-safe .tile.hint {
 }
 
 /* ---------- Collection (spec §2.9) ---------- */
-/* Wider than the 860px .screen default: the word grid is the one view that can
-   outgrow the viewport, and rows are what cost height. At this width a page of
-   60 chips wraps in ~5 rows instead of ~8, so nothing scrolls. */
+/* The Collection is a centred framed modal, matching the reference's compendium
+   grammar. Detail height is content-driven: categories with fewer rows produce a
+   shorter modal instead of inheriting the Words view's footprint. */
 .collection {
   justify-content: flex-start;
   gap: 16px;
-  max-width: min(1240px, 96vw);
+  width: 100%;
+  max-width: none;
   padding-top: 24px;
   padding-bottom: 24px;
 }
-/* These three size to their CONTAINER, not the viewport: the Collection renders
-   both as a standalone screen and inside the pause modal, and a viewport-derived
-   width overflows the modal (and scrolls it sideways) rather than fitting it. */
+.collection-modal {
+  width: min(1180px, 96vw);
+  margin-block: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--panel);
+  border: 3px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 3px var(--inset-edge),
+    7px 7px 0 rgba(0, 0, 0, 0.48);
+}
+.collection-menu-modal {
+  width: min(820px, 96vw);
+}
+.collection-modal > .scr-title {
+  margin: 0;
+  line-height: 1;
+}
+.collection-modal .back-bar {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  font-size: var(--fs-xl);
+  border-color: #9a6a18;
+  box-shadow: var(--shadow-sm);
+}
+/* Each column has the same total scale (8.6), so --category-scale maps to the
+   same physical thickness in either column while preserving a full-height menu. */
 .cat-menu {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 30px;
   width: 100%;
-  max-width: min(1180px, 96vw);
+  height: min(500px, 64vh);
+  min-height: 440px;
+  padding: 8px 20px;
+  background: rgba(6, 15, 18, 0.42);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+.cat-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.cat-block {
+  --category-scale: 1;
+  display: flex;
+  flex: var(--category-scale) 1 0;
+  min-height: 48px;
+}
+.cat-block:not(.cat-family-block) > .cat-btn {
+  width: 100%;
+  flex: 1 1 auto;
+}
+.cat-family-block {
+  flex-direction: column;
+  gap: 7px;
+  min-height: 164px;
+  padding: 8px;
+  background: rgba(6, 15, 18, 0.58);
+  border: 2px solid var(--inset-edge);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.22);
 }
 .cat-btn {
+  --category-scale: 1;
   position: relative;
   display: flex;
-  justify-content: space-between;
+  flex: var(--category-scale) 1 0;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  background: var(--badge-bg);
-  border: 1px solid var(--panel-edge);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  padding: 14px 16px;
+  gap: 1px;
+  min-height: 48px;
+  background: var(--mult);
+  border: 2px solid #7f2529;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 -6px 0 rgba(91, 16, 22, 0.28),
+    var(--shadow-sm);
+  padding: 7px 12px 11px;
   cursor: pointer;
-  color: var(--ink);
+  color: #fff;
+  text-align: center;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.36);
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.cat-family-block .cat-btn {
+  flex: var(--category-scale) 1 0;
+}
+.cat-fableCards {
+  background: #b14fbd;
+  border-color: #713278;
+}
+.cat-constellationCards {
+  background: #08a9d6;
+  border-color: #086d91;
+}
+.cat-inkCards {
+  background: #249a62;
+  border-color: #166340;
 }
 .cat-btn:hover {
   transform: translateY(-2px);
+  filter: brightness(1.08);
 }
 .cat-name {
   font-weight: 700;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-xl);
+  line-height: 1;
 }
 .cat-count {
   font-family: 'Jersey 10';
   font-size: var(--fs-xl);
-  color: var(--gold);
+  color: #fff;
+  line-height: 0.9;
 }
 .coll-head {
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
-  max-width: min(1180px, 96vw);
 }
 .coll-head .scr-title {
   flex: 1;
   text-align: left;
+  margin: 0;
 }
 .coll-detail {
   width: 100%;
-  max-width: min(1180px, 96vw);
   display: flex;
   flex-direction: column;
   gap: 14px;
   align-items: center;
-  /* D-7: every category fills to the Words category's height, so switching
-     categories doesn't resize the panel (content stays top-aligned). */
-  min-height: 68vh;
   justify-content: flex-start;
+}
+@media (max-width: 720px) {
+  .collection {
+    padding: 10px 6px;
+  }
+  .collection-modal {
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .cat-menu {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
+    gap: 12px;
+    padding: 8px;
+  }
+  .cat-column {
+    height: 520px;
+  }
+  .coll-head {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .coll-head .scr-title {
+    text-align: center;
+  }
 }
 /* Word search — with the whole dictionary listed, this is the only practical way
    to reach a specific word (paging alone is ~500 pages). */
@@ -1286,6 +1399,206 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-2xl);
   font-weight: 700;
   text-align: center;
+}
+
+/* ---------- shared CSS voucher ticket ----------
+   The approved ticket reference defines the shape; the UI draws the ticket so
+   all 32 vouchers stay identical in size, ratio, frame, and typography. */
+.voucher-card {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 var(--voucher-w);
+  width: var(--voucher-w);
+  height: var(--voucher-h);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 13px 1fr 13px;
+  grid-template-rows: 1fr 22px;
+  align-items: center;
+  padding: 7px 8px 6px;
+  color: #201b15;
+  background: #17140f;
+  clip-path: polygon(
+    8px 0, calc(100% - 8px) 0,
+    calc(100% - 8px) 3px, calc(100% - 3px) 3px,
+    calc(100% - 3px) 8px, 100% 8px,
+    100% 34%, calc(100% - 5px) 34%,
+    calc(100% - 5px) 66%, 100% 66%,
+    100% calc(100% - 8px), calc(100% - 3px) calc(100% - 8px),
+    calc(100% - 3px) calc(100% - 3px), calc(100% - 8px) calc(100% - 3px),
+    calc(100% - 8px) 100%, 8px 100%,
+    8px calc(100% - 3px), 3px calc(100% - 3px),
+    3px calc(100% - 8px), 0 calc(100% - 8px),
+    0 66%, 5px 66%, 5px 34%, 0 34%,
+    0 8px, 3px 8px, 3px 3px, 8px 3px
+  );
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.42));
+}
+.voucher-card::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  background:
+    linear-gradient(90deg, rgba(117, 80, 29, 0.10) 1px, transparent 1px) 0 0 / 11px 11px,
+    linear-gradient(rgba(117, 80, 29, 0.08) 1px, transparent 1px) 4px 4px / 13px 13px,
+    radial-gradient(circle at 50% 42%, #fff9e8 0 24%, transparent 58%),
+    #ead8ab;
+  clip-path: polygon(
+    6px 0, calc(100% - 6px) 0,
+    calc(100% - 6px) 3px, 100% 3px,
+    100% 31%, calc(100% - 4px) 31%,
+    calc(100% - 4px) 69%, 100% 69%,
+    100% calc(100% - 3px), calc(100% - 6px) calc(100% - 3px),
+    calc(100% - 6px) 100%, 6px 100%,
+    6px calc(100% - 3px), 0 calc(100% - 3px),
+    0 69%, 4px 69%, 4px 31%, 0 31%,
+    0 3px, 6px 3px
+  );
+  box-shadow: inset 0 0 0 2px #fff5d7, inset 0 0 0 4px rgba(71, 52, 29, 0.24);
+}
+.voucher-card__side {
+  z-index: 1;
+  grid-row: 1;
+  justify-self: center;
+  color: #695d4c;
+  font-family: 'Jersey 10';
+  font-size: var(--fs-2xs);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  writing-mode: vertical-rl;
+}
+.voucher-card__side--left {
+  grid-column: 1;
+  transform: rotate(180deg);
+}
+.voucher-card__side--right {
+  grid-column: 3;
+}
+.voucher-card__icon {
+  z-index: 1;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  font-size: var(--ds-sm);
+  line-height: 1;
+  transform: translateY(1px);
+  filter: drop-shadow(2px 2px 0 rgba(44, 30, 13, 0.3));
+}
+.voucher-card__art {
+  z-index: 1;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(2px 2px 0 rgba(44, 30, 13, 0.32));
+}
+.voucher-card__name {
+  z-index: 1;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  width: 100%;
+  height: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1px 5px 0;
+  border: 2px solid #4c4437;
+  background: #111;
+  color: #fff4d5;
+  font-family: 'Jersey 10', 'Noto Sans KR', sans-serif;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 0 0 2px #17140f;
+}
+.voucher-card.muted {
+  filter: grayscale(1) brightness(0.62) drop-shadow(0 3px 0 rgba(0, 0, 0, 0.42));
+}
+/* Collection voucher book: four base→upgrade pairs per page, matching
+   docs/reference.png's 2×2 paired-slot composition. */
+.voucher-collection {
+  width: min(680px, 96vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.voucher-reference-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+  padding: 24px 20px;
+  border: 3px solid var(--panel-edge);
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 50%, transparent 50%) 0 0 / 100% 4px,
+    var(--panel);
+  box-shadow:
+    inset 0 0 0 3px var(--inset),
+    inset 0 0 28px rgba(0, 0, 0, 0.42),
+    var(--shadow);
+}
+.voucher-pair {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, var(--voucher-w));
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.voucher-pair > .tt-anchor {
+  width: var(--voucher-w);
+}
+.voucher-pair .voucher-card.muted {
+  background: #27323b;
+}
+.voucher-pair .voucher-card.muted::before {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px),
+    #35424d;
+  box-shadow: inset 0 0 0 2px #657681, inset 0 0 0 4px rgba(10, 17, 22, 0.45);
+}
+.voucher-pair .voucher-card.muted .voucher-card__icon {
+  color: #8d9aa3;
+  font-family: 'Jersey 10';
+  font-size: var(--ds-lg);
+  filter: none;
+}
+.voucher-collection .pager {
+  gap: 8px;
+}
+.voucher-collection .pager-label {
+  min-width: 190px;
+  padding: 7px 24px;
+  border: 2px solid #7f2529;
+  border-radius: var(--r-sm);
+  background: var(--mult);
+  color: #fff;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.voucher-collection .car-arrow {
+  border: 2px solid #7f2529;
+  background: var(--mult);
+  color: #fff;
+}
+@media (max-width: 720px) {
+  .voucher-reference-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding-inline: 8px;
+  }
 }
 /* Mascot collection card (item 5.1): full portrait when unlocked; a black
    silhouette teases a locked-but-art-backed skin (name masked to "???"). */
@@ -1481,6 +1794,111 @@ body.cb-safe .tile.hint {
   color: var(--ink-dim);
   font-style: italic;
   text-align: center;
+}
+.card-family-gallery {
+  width: min(900px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: rgba(6, 15, 18, 0.38);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+.fable-collection {
+  width: min(920px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.fable-card-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(92px, 1fr));
+  gap: 16px;
+  padding: 14px;
+  background: rgba(6, 15, 18, 0.38);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+.fable-card {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  overflow: hidden;
+  border: 2px solid #dfc58f;
+  border-radius: 9px;
+  background: #17130d;
+  box-shadow: var(--shadow-sm);
+}
+.fable-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.shop-consumable-art {
+  width: 64px;
+  height: 84px;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.card-family-placeholder-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(82px, 1fr));
+  gap: 16px;
+}
+.card-family-slot {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--panel-edge);
+  border-radius: 9px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    repeating-linear-gradient(45deg, var(--menu-btn-bg) 0 8px, var(--panel) 8px 16px);
+  box-shadow:
+    inset 0 0 0 3px rgba(0, 0, 0, 0.3),
+    var(--shadow-sm);
+}
+.card-family-slot::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 2px solid currentColor;
+  opacity: 0.32;
+}
+.card-family-slot span {
+  z-index: 1;
+  font-family: 'Jersey 10';
+  font-size: clamp(36px, 5vw, 64px);
+  color: var(--ink-dim);
+}
+.card-family-gallery.fableCards .card-family-slot {
+  color: #d782d5;
+}
+.card-family-gallery.constellationCards .card-family-slot {
+  color: var(--chips);
+}
+.card-family-gallery.inkCards .card-family-slot {
+  color: #7188ff;
+}
+@media (max-width: 720px) {
+  .fable-card-grid {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    gap: 12px;
+    padding: 10px;
+  }
+  .card-family-placeholder-grid {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    gap: 12px;
+  }
 }
 .pager {
   display: flex;
@@ -2096,13 +2514,8 @@ body.cb-safe .tile.hint {
   flex-wrap: wrap;
   gap: 8px;
 }
-.ri-voucher {
-  background: var(--inset);
-  border: 1px solid var(--inset-edge);
-  border-radius: var(--r-sm);
-  padding: 9px 12px;
-  font-size: var(--fs-md);
-  font-weight: 700;
+.ri-vouchers > .tt-anchor {
+  width: var(--voucher-w);
 }
 
 @media (prefers-reduced-motion: reduce) {

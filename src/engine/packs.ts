@@ -9,7 +9,16 @@
 
 import { BALANCE } from './balance';
 import { ALL_JOKERS } from './jokers';
-import { packEnhanceChance } from './vouchers';
+import { rollJokerEdition, rollTileEdition } from './editions';
+import { CONSTELLATION_IDS, FABLE_IDS } from './fables';
+import {
+  canAddJoker,
+  fablePacksContainInk,
+  hasVoucher,
+  mostPlayedPattern,
+  packEnhanceChance,
+  PATTERN_CONSUMABLE,
+} from './vouchers';
 import type { Rng } from './rng';
 import type {
   ConsumableId,
@@ -24,8 +33,8 @@ import type {
   TileMaterial,
 } from './types';
 
-/** Stationery consumables that actually have an effect today (grows as built). */
-export const STATIONERY_POOL: readonly ConsumableId[] = ['magnifier'];
+/** Fable-card pool (legacy export name retained for existing semantic call sites). */
+export const STATIONERY_POOL: readonly ConsumableId[] = FABLE_IDS;
 /** Back-compat alias — some call sites still import CONSUMABLE_POOL (discardGain). */
 export const CONSUMABLE_POOL = STATIONERY_POOL;
 
@@ -40,10 +49,10 @@ const PUNCTUATION_PATTERN: Record<string, PatternId> = {
   dash: 'ditransitive',
   comma: 'compound',
 };
-const PUNCTUATION_POOL = Object.keys(PUNCTUATION_PATTERN) as ConsumableId[];
+export const PUNCTUATION_POOL = [...CONSTELLATION_IDS];
 
 const MATERIALS: readonly TileMaterial[] = [
-  'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
+  'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
 ];
 const FONTS: readonly TileFont[] = ['lightItalic', 'bold', 'inline', 'black'];
 
@@ -53,7 +62,7 @@ const WEIGHTED_LETTERS: readonly Letter[] = Object.entries(BALANCE.bagCompositio
 );
 
 export type PackOption =
-  | { kind: 'joker'; id: string }
+  | { kind: 'joker'; id: string; edition: import('./types').JokerEdition }
   | { kind: 'tile'; tile: Tile }
   | { kind: 'consumable'; id: ConsumableId }
   | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId };
@@ -68,11 +77,11 @@ export interface PackOffer {
   pick: number;
 }
 
-function rollTile(run: RunState, rng: Rng, index: number): Tile {
+export function rollTile(run: RunState, rng: Rng, index: number, enhance = true): Tile {
   const letter = WEIGHTED_LETTERS[rng.int(WEIGHTED_LETTERS.length)]!;
   let material: TileMaterial = 'ceramic';
   let font: TileFont = 'medium';
-  if (rng.next() < packEnhanceChance(run)) {
+  if (enhance && rng.next() < packEnhanceChance(run)) {
     if (rng.next() < 0.5) material = MATERIALS[rng.int(MATERIALS.length)]!;
     else font = FONTS[rng.int(FONTS.length)]!;
   }
@@ -83,6 +92,7 @@ function rollTile(run: RunState, rng: Rng, index: number): Tile {
     case: 'upper',
     material,
     font,
+    edition: enhance ? rollTileEdition(run, rng) : 'base',
   };
 }
 
@@ -103,7 +113,11 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
     case 'joker': {
       const owned = new Set(run.jokers.map((j) => j.defId));
       const pool = ALL_JOKERS.filter((j) => !owned.has(j.id));
-      options = rng.shuffle(pool).slice(0, show).map((j) => ({ kind: 'joker', id: j.id }));
+      options = rng.shuffle(pool).slice(0, show).map((j) => ({
+        kind: 'joker',
+        id: j.id,
+        edition: rollJokerEdition(run, rng),
+      }));
       break;
     }
     case 'tile': {
@@ -111,16 +125,33 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       for (let i = 0; i < show; i++) options.push({ kind: 'tile', tile: rollTile(run, rng, i) });
       break;
     }
-    case 'consumable':
-      options = drawConsumables(STATIONERY_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
+    case 'consumable': {
+      const pool = fablePacksContainInk(run)
+        ? [...STATIONERY_POOL, ...PUNCTUATION_POOL]
+        : STATIONERY_POOL;
+      options = drawConsumables(pool, show, rng, (id) => {
+        const pattern = PUNCTUATION_PATTERN[id];
+        return pattern
+          ? { kind: 'punctuation', id, pattern }
+          : { kind: 'consumable', id };
+      });
       break;
-    case 'pattern':
+    }
+    case 'pattern': {
       options = drawConsumables(PUNCTUATION_POOL, show, rng, (id) => ({
         kind: 'punctuation',
         id,
         pattern: PUNCTUATION_PATTERN[id]!,
       }));
+      if (hasVoucher(run, 'bwPhoto')) {
+        const favorite = mostPlayedPattern(run);
+        const id = favorite ? PATTERN_CONSUMABLE[favorite] : null;
+        if (favorite && id && !options.some((o) => o.kind === 'punctuation' && o.pattern === favorite)) {
+          options[options.length - 1] = { kind: 'punctuation', id, pattern: favorite };
+        }
+      }
       break;
+    }
   }
   return { type: slot.type, size: slot.size, artVariant: slot.artVariant, options, pick };
 }
@@ -129,21 +160,18 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
 export function applyPackPick(run: RunState, option: PackOption): RunState {
   switch (option.kind) {
     case 'joker':
-      if (run.jokers.length >= BALANCE.jokerSlots) return run;
-      return { ...run, jokers: [...run.jokers, { defId: option.id, state: {} }] };
+      if (!canAddJoker(run, option.edition)) return run;
+      return {
+        ...run,
+        jokers: [...run.jokers, { defId: option.id, edition: option.edition, state: {} }],
+      };
     case 'tile':
       return { ...run, bag: [...run.bag, option.tile] };
     case 'consumable':
       if (run.consumables.length >= run.consumableSlots) return run;
       return { ...run, consumables: [...run.consumables, option.id] };
     case 'punctuation':
-      // Applies immediately: level the mapped pattern (no slot needed).
-      return {
-        ...run,
-        patternLevels: {
-          ...run.patternLevels,
-          [option.pattern]: (run.patternLevels[option.pattern] ?? 1) + 1,
-        },
-      };
+      if (run.consumables.length >= run.consumableSlots) return run;
+      return { ...run, consumables: [...run.consumables, option.id] };
   }
 }

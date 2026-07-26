@@ -6,6 +6,7 @@ import { bossDescKey } from '../descriptions';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
+import { bossRerollLimit, bossRerollPrice } from '../../engine/vouchers';
 
 type Status = 'defeated' | 'current' | 'upcoming';
 
@@ -76,6 +77,15 @@ export function BlindSelect({ g }: { g: UseGame }) {
                 <div className={['bs-status', status].join(' ')}>
                   {t(`blindselect.${status}`)}
                 </div>
+              )}
+              {kind === 'boss' && bossRerollLimit(run) > run.bossRerollsUsed && (
+                <button
+                  className="btn green sm"
+                  disabled={run.gold < bossRerollPrice()}
+                  onClick={g.rerollBoss}
+                >
+                  {t('blindselect.rerollBoss', { cost: bossRerollPrice() })}
+                </button>
               )}
             </div>
           );

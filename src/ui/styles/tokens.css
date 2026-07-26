@@ -108,6 +108,10 @@
      even though the three live in different-width rows — otherwise each sized to its
      own name and they never lined up (item 2). */
   --shop-card-w: 138px;
+  /* One physical voucher ticket everywhere: shop, collection, and run info.
+     The 3:2 ratio follows the approved 2026-07-26 ticket reference. */
+  --voucher-w: 138px;
+  --voucher-h: 92px;
 
   /* ---- Type scale (playtest-06 #10) ----
      Every font-size comes from here; the CSS had 29 ad-hoc values across 138

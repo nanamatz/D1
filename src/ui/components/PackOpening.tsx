@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
-import { BALANCE } from '../../engine/balance';
 import type { ConsumableId, JokerRarity } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
 import { NO_LETTER } from '../../engine/scoring';
@@ -10,6 +9,9 @@ import { packArt } from '../packArt';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
+import { canAddJoker } from '../../engine/vouchers';
+import { isFableId } from '../../engine/fables';
+import { fableArt } from '../fableArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
@@ -49,14 +51,21 @@ function OptionCard({
   onPick: () => void;
 }) {
   const { t } = useI18n();
+  const edition =
+    option.kind === 'joker' ? option.edition
+      : option.kind === 'tile' ? (option.tile.edition ?? 'base')
+        : 'base';
   const card = (
-    <div className={['shopitem', blockKey && 'blocked'].filter(Boolean).join(' ')}>
+    <div className={['shopitem', `edition-${edition}`, blockKey && 'blocked'].filter(Boolean).join(' ')}>
       {option.kind === 'tile' ? (
         <TileView tile={option.tile} />
+      ) : option.kind === 'consumable' && isFableId(option.id) ? (
+        <img className="shop-consumable-art" src={fableArt(option.id)} alt="" />
       ) : (
         <span className="e">{optionEmoji(option)}</span>
       )}
       <span className="n">{name}</span>
+      {edition !== 'base' && <span className="edition-badge">{edition}</span>}
       {blockKey ? (
         <span className="pack-block">{t(blockKey)}</span>
       ) : (
@@ -165,9 +174,9 @@ export function PackOpening({ g }: { g: UseGame }) {
           {pack.offer.options.map((o, i) => {
             // A pick is blocked when the matching slot is full (item 5: consumables
             // now block too, not just jokers) — the engine no-ops such a pick anyway.
-            const takesConsumableSlot = o.kind === 'consumable';
+            const takesConsumableSlot = o.kind === 'consumable' || o.kind === 'punctuation';
             const blockKey =
-              o.kind === 'joker' && g.state.run.jokers.length >= BALANCE.jokerSlots
+              o.kind === 'joker' && !canAddJoker(g.state.run, o.edition)
                 ? 'pack.jokersFull'
                 : takesConsumableSlot &&
                     g.state.run.consumables.length >= g.state.run.consumableSlots

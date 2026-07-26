@@ -1,22 +1,27 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { ALL_JOKERS, JOKER_REGISTRY } from '../../engine/jokers';
-import { VOUCHER_REGISTRY, ALL_VOUCHER_IDS } from '../../engine/vouchers';
+import { VOUCHER_REGISTRY, ALL_VOUCHER_IDS, BASE_VOUCHER_IDS } from '../../engine/vouchers';
 import { BOSS_REGISTRY, CORE_BOSS_IDS } from '../../engine/bosses';
 import { BOSS_ART, BLIND_ART } from '../bossArt';
 import { blindTarget } from '../../engine/economy';
 import { BALANCE } from '../../engine/balance';
 import type { Lexicon } from '../../engine/lexicon';
-import type { Suit, TileFont, TileMaterial, Tile } from '../../engine/types';
+import type { Suit, TileFont, TileMaterial, Tile, VoucherId } from '../../engine/types';
 import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from '../collection';
 import { UNLOCKS, loadPlayed, playedCount, activeUnlocks } from '../unlocks';
 import { mascotCollectionRows } from '../mascots';
-import { bossDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
+import { bossDescKey, consumableDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { packArt, packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import pouchUrl from '../assets/pouch.png';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
+import { VoucherCard } from './VoucherCard';
+import { voucherArt } from '../voucherArt';
+import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from '../voucherProgress';
+import { FABLE_DEFS } from '../../engine/fables';
+import { fableArt } from '../fableArt';
 
 type Category =
   | 'words'
@@ -24,14 +29,55 @@ type Category =
   | 'materials'
   | 'fonts'
   | 'vouchers'
+  | 'fableCards'
+  | 'constellationCards'
+  | 'inkCards'
   | 'bosses'
   | 'packs'
   | 'palette'
   | 'mascots'
   | 'bags';
 
+type CategoryMenuItem = {
+  id: Category;
+  scale: number;
+};
+
+type CategoryMenuBlock = {
+  /** Relative detail-row footprint. Both columns intentionally total 8.6. */
+  scale: number;
+  items: CategoryMenuItem[];
+  family?: 'cards';
+};
+
+const CATEGORY_COLUMNS: CategoryMenuBlock[][] = [
+  [
+    { scale: 2.2, items: [{ id: 'words', scale: 1 }] },
+    { scale: 1.8, items: [{ id: 'jokers', scale: 1 }] },
+    { scale: 1.6, items: [{ id: 'vouchers', scale: 1 }] },
+    {
+      scale: 3,
+      family: 'cards',
+      items: [
+        { id: 'fableCards', scale: 1 },
+        { id: 'constellationCards', scale: 1 },
+        { id: 'inkCards', scale: 1 },
+      ],
+    },
+  ],
+  [
+    { scale: 1.9, items: [{ id: 'bosses', scale: 1 }] },
+    { scale: 1.5, items: [{ id: 'packs', scale: 1 }] },
+    { scale: 1, items: [{ id: 'materials', scale: 1 }] },
+    { scale: 1, items: [{ id: 'fonts', scale: 1 }] },
+    { scale: 1.2, items: [{ id: 'palette', scale: 1 }] },
+    { scale: 1.1, items: [{ id: 'mascots', scale: 1 }] },
+    { scale: 0.9, items: [{ id: 'bags', scale: 1 }] },
+  ],
+];
+
 export const MATERIALS: TileMaterial[] = [
-  'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass',
+  'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
 ];
 const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
 const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile'] as const;
@@ -77,7 +123,13 @@ export function Collection({ lexicon, onBack }: Props) {
       jokers: { have: ALL_JOKERS.length, total: ALL_JOKERS.length },
       materials: { have: MATERIALS.length, total: MATERIALS.length },
       fonts: { have: FONTS.length, total: FONTS.length },
-      vouchers: { have: ALL_VOUCHER_IDS.length, total: ALL_VOUCHER_IDS.length },
+      vouchers: {
+        have: BASE_VOUCHER_IDS.length + loadVoucherProgress().unlocked.length,
+        total: ALL_VOUCHER_IDS.length,
+      },
+      fableCards: { have: FABLE_DEFS.length, total: FABLE_DEFS.length },
+      constellationCards: { have: 0, total: 0 },
+      inkCards: { have: 0, total: 0 },
       bosses: { have: CORE_BOSS_IDS.length, total: CORE_BOSS_IDS.length },
       packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
       palette: { have: playedCount(), total: UNLOCKS.length },
@@ -90,58 +142,80 @@ export function Collection({ lexicon, onBack }: Props) {
     [lexicon],
   );
 
-  const CATS: Category[] = ['words', 'jokers', 'materials', 'fonts', 'vouchers', 'bosses', 'packs', 'palette', 'mascots', 'bags'];
-
   if (cat === null) {
     return (
       <div className="screen collection">
-        <h2 className="scr-title">{t('collection.title')}</h2>
-        <div className="cat-menu">
-          {CATS.map((c) => {
-            const n = counts[c];
-            return (
-              <button key={c} className="cat-btn" onClick={() => setCat(c)}>
-                <span className="cat-name">{t(`collection.cat.${c}`)}</span>
-                <span className="cat-count">
-                  {n.have}/{n.total}
-                </span>
-                {c === 'words' && unseenCount() > 0 && <span className="badge">!</span>}
-              </button>
-            );
-          })}
-        </div>
-        <button className="btn back-bar" onClick={onBack}>
-          {t('common.back')}
-        </button>
+        <section className="collection-modal collection-menu-modal">
+          <h2 className="scr-title">{t('collection.title')}</h2>
+          <div className="cat-menu">
+            {CATEGORY_COLUMNS.map((column, columnIndex) => (
+              <div className="cat-column" key={columnIndex}>
+                {column.map((block) => (
+                  <div
+                    key={block.items.map(({ id }) => id).join('-')}
+                    className={`cat-block${block.family ? ` cat-family-block ${block.family}` : ''}`}
+                    style={{ '--category-scale': block.scale } as CSSProperties}
+                  >
+                    {block.items.map(({ id, scale }) => {
+                      const n = counts[id];
+                      return (
+                        <button
+                          key={id}
+                          className={`cat-btn cat-${id}`}
+                          style={{ '--category-scale': scale } as CSSProperties}
+                          onClick={() => setCat(id)}
+                        >
+                          <span className="cat-name">{t(`collection.cat.${id}`)}</span>
+                          <span className="cat-count">
+                            {n.have}/{n.total}
+                          </span>
+                          {id === 'words' && unseenCount() > 0 && <span className="badge">!</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <button className="btn back-bar" onClick={onBack}>
+            {t('common.back')}
+          </button>
+        </section>
       </div>
     );
   }
 
   return (
     <div className="screen collection">
-      <div className="coll-head">
-        <button className="btn exchange sm" onClick={() => setCat(null)}>
-          ‹ {t('collection.categories')}
+      <section className={`collection-modal collection-detail-modal detail-${cat}`}>
+        <div className="coll-head">
+          <button className="btn exchange sm" onClick={() => setCat(null)}>
+            ‹ {t('collection.categories')}
+          </button>
+          <h2 className="scr-title">{t(`collection.cat.${cat}`)}</h2>
+        </div>
+
+        <div className="coll-detail">
+          {cat === 'words' && <WordsView lexicon={lexicon} />}
+          {cat === 'jokers' && <JokersView />}
+          {cat === 'materials' && <MaterialsView />}
+          {cat === 'fonts' && <FontsView />}
+          {cat === 'vouchers' && <VouchersView />}
+          {cat === 'fableCards' && <FablesView />}
+          {cat === 'constellationCards' && <CardFamilyView family="constellationCards" />}
+          {cat === 'inkCards' && <CardFamilyView family="inkCards" />}
+          {cat === 'bosses' && <BossesView />}
+          {cat === 'packs' && <PacksView />}
+          {cat === 'palette' && <PaletteView />}
+          {cat === 'mascots' && <MascotsView />}
+          {cat === 'bags' && <BagsView />}
+        </div>
+
+        <button className="btn back-bar" onClick={onBack}>
+          {t('common.back')}
         </button>
-        <h2 className="scr-title">{t(`collection.cat.${cat}`)}</h2>
-      </div>
-
-      <div className="coll-detail">
-        {cat === 'words' && <WordsView lexicon={lexicon} />}
-        {cat === 'jokers' && <JokersView />}
-        {cat === 'materials' && <MaterialsView />}
-        {cat === 'fonts' && <FontsView />}
-        {cat === 'vouchers' && <VouchersView />}
-        {cat === 'bosses' && <BossesView />}
-        {cat === 'packs' && <PacksView />}
-        {cat === 'palette' && <PaletteView />}
-        {cat === 'mascots' && <MascotsView />}
-        {cat === 'bags' && <BagsView />}
-      </div>
-
-      <button className="btn back-bar" onClick={onBack}>
-        {t('common.back')}
-      </button>
+      </section>
     </div>
   );
 }
@@ -292,19 +366,54 @@ function FontsView() {
 // ---------- Vouchers ----------
 function VouchersView() {
   const { t, lang } = useI18n();
+  const [page, setPage] = useState(0);
+  const progress = loadVoucherProgress();
+  const unlocked = new Set(progress.unlocked);
+  const pairs = BASE_VOUCHER_IDS.map((baseId) => {
+    const upgrade = ALL_VOUCHER_IDS
+      .map((id) => VOUCHER_REGISTRY.get(id)!)
+      .find((v) => v.baseId === baseId);
+    return { baseId, upgradeId: upgrade?.id ?? null };
+  });
+  const pairsPerPage = 4;
+  const pages = Math.ceil(pairs.length / pairsPerPage);
+  const clamped = Math.min(page, pages - 1);
+  const visible = pairs.slice(clamped * pairsPerPage, (clamped + 1) * pairsPerPage);
+
+  const ticket = (id: VoucherId, locked: boolean, down: boolean) => {
+    const v = VOUCHER_REGISTRY.get(id)!;
+    const rule = VOUCHER_UNLOCK_RULES.find((r) => r.id === id);
+    const body = locked && rule
+      ? `${t(voucherDescKey(id))}\n🔒 ${lang === 'ko' ? rule.conditionKo : rule.conditionEn}`
+      : t(voucherDescKey(id));
+    return (
+      <Tooltip
+        key={id}
+        title={lang === 'ko' ? v.nameKo : v.nameEn}
+        body={body}
+        down={down}
+      >
+        <VoucherCard
+          emoji={locked ? '?' : v.emoji}
+          name={locked ? '???' : (lang === 'ko' ? v.nameKo : v.nameEn)}
+          muted={locked}
+          {...(!locked ? { artSrc: voucherArt(v.id) } : {})}
+        />
+      </Tooltip>
+    );
+  };
+
   return (
-    <div className="card-grid">
-      {ALL_VOUCHER_IDS.map((id) => {
-        const v = VOUCHER_REGISTRY.get(id)!;
-        return (
-          <Tooltip key={id} title={lang === 'ko' ? v.nameKo : v.nameEn} body={t(voucherDescKey(id))} down>
-            <div className="coll-card">
-              <span className="cc-emoji">{v.emoji}</span>
-              <span className="cc-name">{lang === 'ko' ? v.nameKo : v.nameEn}</span>
-            </div>
-          </Tooltip>
-        );
-      })}
+    <div className="voucher-collection">
+      <div className="voucher-reference-grid">
+        {visible.map(({ baseId, upgradeId }, index) => (
+          <div className="voucher-pair" key={baseId}>
+            {ticket(baseId, false, index < 2)}
+            {upgradeId && ticket(upgradeId, !unlocked.has(upgradeId), index < 2)}
+          </div>
+        ))}
+      </div>
+      <Pager page={clamped} pages={pages} onPage={setPage} />
     </div>
   );
 }
@@ -495,6 +604,54 @@ function BagsView() {
         <span className="sw-name">{t('bag.standard.name')}</span>
         <p className="select-desc">{t('bag.standard.desc')}</p>
       </div>
+    </div>
+  );
+}
+
+// ---------- Card families (content registry arrives in the next content pass) ----------
+function FablesView() {
+  const { t } = useI18n();
+  const [page, setPage] = useState(0);
+  const perPage = 10;
+  const pages = Math.ceil(FABLE_DEFS.length / perPage);
+  const visible = FABLE_DEFS.slice(page * perPage, (page + 1) * perPage);
+  return (
+    <div className="fable-collection">
+      <div className="fable-card-grid">
+        {visible.map((def) => (
+          <Tooltip
+            key={def.id}
+            title={t(`consumable.${def.id}`)}
+            body={t(consumableDescKey(def.id))}
+            down
+          >
+            <div className="fable-card">
+              <img src={fableArt(def.id)} alt="" />
+            </div>
+          </Tooltip>
+        ))}
+      </div>
+      <Pager page={page} pages={pages} onPage={setPage} />
+    </div>
+  );
+}
+
+function CardFamilyView({
+  family,
+}: {
+  family: 'fableCards' | 'constellationCards' | 'inkCards';
+}) {
+  const { t } = useI18n();
+  return (
+    <div className={`card-family-gallery ${family}`}>
+      <div className="card-family-placeholder-grid" aria-hidden="true">
+        {Array.from({ length: 10 }, (_, index) => (
+          <div className="card-family-slot" key={index}>
+            <span>?</span>
+          </div>
+        ))}
+      </div>
+      <p className="coll-empty">{t('collection.comingSoon')}</p>
     </div>
   );
 }

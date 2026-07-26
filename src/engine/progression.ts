@@ -6,7 +6,7 @@
 
 import { BALANCE } from './balance';
 import { blindTarget, clearReward, interest } from './economy';
-import { hasVoucher, interestCap } from './vouchers';
+import { interestCap } from './vouchers';
 import type { BlindKind, BlindState, RunState } from './types';
 
 const KINDS = ['small', 'big', 'boss'] as const;
@@ -25,8 +25,6 @@ export interface BlindEarnings {
   reward: number;
   phases: number;
   interest: number;
-  /** Thrift voucher: gold per unused discard (GDD §9.4) */
-  thrift: number;
   total: number;
 }
 
@@ -41,7 +39,7 @@ export interface BlindOutcome {
   run: RunState;
 }
 
-const NO_EARNINGS: BlindEarnings = { reward: 0, phases: 0, interest: 0, thrift: 0, total: 0 };
+const NO_EARNINGS: BlindEarnings = { reward: 0, phases: 0, interest: 0, total: 0 };
 
 function advance(ante: number, blindIndex: 0 | 1 | 2): { ante: number; blindIndex: 0 | 1 | 2 } {
   if (blindIndex < 2) return { ante, blindIndex: (blindIndex + 1) as 0 | 1 | 2 };
@@ -60,16 +58,13 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
   const reward = clearReward(blind.kind);
   const phases = (blind.phasesTotal - blind.phasesUsed) * BALANCE.goldPerRemainingPhase;
   const interestGold = interest(run.gold, interestCap(run));
-  const thrift = hasVoucher(run, 'thrift')
-    ? blind.discardsLeft * BALANCE.voucher.thriftPerDiscard
-    : 0;
-  const total = reward + phases + interestGold + thrift;
+  const total = reward + phases + interestGold;
   const next = advance(run.ante, run.blindIndex);
   return {
     cleared: true,
     gameOver: false,
     won: run.ante === BALANCE.runAntes && run.blindIndex === 2,
-    earned: { reward, phases, interest: interestGold, thrift, total },
+    earned: { reward, phases, interest: interestGold, total },
     run: { ...run, gold: run.gold + total, ante: next.ante, blindIndex: next.blindIndex },
   };
 }

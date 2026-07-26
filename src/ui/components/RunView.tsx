@@ -179,7 +179,8 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <main className="main">
           <JokerShelf
             run={run}
-            onUseConsumable={() => g.useMagnifier()}
+            onUseConsumable={g.useConsumable}
+            canUseConsumable={g.canUseConsumable}
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}

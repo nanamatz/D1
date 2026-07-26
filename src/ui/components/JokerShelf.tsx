@@ -8,6 +8,9 @@ import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
+import { jokerSlotLimit } from '../../engine/vouchers';
+import { isFableId } from '../../engine/fables';
+import { fableArt } from '../fableArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -23,6 +26,7 @@ function JokerPop({ chips, mult }: { chips: number; mult: number }) {
 interface Props {
   run: RunState;
   onUseConsumable?: (id: ConsumableId) => void;
+  canUseConsumable?: (id: ConsumableId) => boolean;
   onSellConsumable?: (index: number) => void;
   /** when set (shop), clicking an owned joker opens a Sell menu (D-1) */
   onSellJoker?: (index: number) => void;
@@ -31,7 +35,14 @@ interface Props {
 }
 
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
-export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker, onReorderJoker }: Props) {
+export function JokerShelf({
+  run,
+  onUseConsumable,
+  canUseConsumable,
+  onSellConsumable,
+  onSellJoker,
+  onReorderJoker,
+}: Props) {
   const { t, lang } = useI18n();
   const settle = useSettleView();
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
@@ -53,7 +64,12 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
             const accent = def.rarity !== 'common' ? def.rarity : undefined;
             const firing = settle.active && settle.activeJokerId === def.id;
-            const className = ['joker', accent, firing ? 'firing' : ''].filter(Boolean).join(' ');
+            const className = [
+              'joker',
+              accent,
+              `edition-${owned.edition ?? 'base'}`,
+              firing ? 'firing' : '',
+            ].filter(Boolean).join(' ');
             const dnd = onReorderJoker
               ? {
                   draggable: true,
@@ -100,6 +116,9 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                   >
                     <span className="e">{def.emoji}</span>
                     <span className="n">{name}</span>
+                    {(owned.edition ?? 'base') !== 'base' && (
+                      <span className="edition-badge">{owned.edition}</span>
+                    )}
                     {firing && settle.jokerPop && (
                       <JokerPop chips={settle.jokerPop.chips} mult={settle.jokerPop.mult} />
                     )}
@@ -124,13 +143,13 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
               </div>
             );
           })}
-          {Array.from({ length: Math.max(0, BALANCE.jokerSlots - run.jokers.length) }, (_, i) => (
+          {Array.from({ length: Math.max(0, jokerSlotLimit(run) - run.jokers.length) }, (_, i) => (
             <div key={`empty-${i}`} className="joker empty" aria-hidden />
           ))}
           </div>
         </div>
         <div className="shelf-count left">
-          {run.jokers.length}/{BALANCE.jokerSlots}
+          {run.jokers.length}/{jokerSlotLimit(run)}
         </div>
       </div>
       <div className="shelf-col consumables-col">
@@ -158,7 +177,11 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                   }
                 }}
               >
-                <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
+                {isFableId(c) ? (
+                  <img className="consumable-art" src={fableArt(c)} alt="" />
+                ) : (
+                  <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
+                )}
                 <span className="n">{t(`consumable.${c}`)}</span>
               </TiltCard>
             </Tooltip>
@@ -182,6 +205,7 @@ export function JokerShelf({ run, onUseConsumable, onSellConsumable, onSellJoker
                   <button
                     className="use"
                     role="menuitem"
+                    disabled={canUseConsumable ? !canUseConsumable(c) : false}
                     onClick={() => {
                       onUseConsumable(c);
                       setMenuIdx(null);

@@ -96,7 +96,8 @@ export function accumulate(
     e.kind === 'joker' ||
     e.kind === 'boss' ||
     e.kind === 'material' ||
-    e.kind === 'font'
+    e.kind === 'font' ||
+    e.kind === 'edition'
   ) {
     return { chips: chips + e.chipsDelta, mult: mult + e.multDelta };
   }
@@ -192,7 +193,7 @@ export function SettleProvider({
             audio.play('countTick', { step: tickStep++ });
           } else if (e.kind === 'suit' || e.kind === 'letterHand' || e.kind === 'boss') {
             audio.play('stamp');
-          } else if (e.kind === 'joker' || e.kind === 'font') {
+          } else if (e.kind === 'joker' || e.kind === 'font' || e.kind === 'edition') {
             audio.play('jokerBlip');
           } else if (e.kind === 'material') {
             audio.play('multFill');
@@ -246,6 +247,16 @@ export function SettleProvider({
             // grows the tile's +N pop the way per-tile jokers do.
             if (e.chipsDelta !== 0) pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
             setView({ ...base, tilePops: { ...pops }, activeTileId: e.tileId });
+          } else if (e.kind === 'edition') {
+            if (e.tileId && e.chipsDelta !== 0) {
+              pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
+            }
+            setView({
+              ...base,
+              tilePops: { ...pops },
+              activeTileId: e.tileId ?? null,
+              activeJokerId: e.jokerId ?? null,
+            });
           }
         }, i * step),
       );

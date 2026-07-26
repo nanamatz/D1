@@ -17,6 +17,7 @@ import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, spell, letterString } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
+import { applyEdition } from './editions';
 import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
@@ -24,6 +25,7 @@ import { defaultJokerBus } from './jokers';
 import { BOSS_REGISTRY, drawBoss } from './bosses';
 import { blindTarget } from './economy';
 import { kindForIndex } from './progression';
+import { constellationPassiveFactor } from './vouchers';
 import type {
   BlindKind,
   BlindState,
@@ -179,6 +181,8 @@ export interface SubmitResult {
   goldDelta: number;
   /** tiles destroyed by their material (Glass) — the caller removes them from run.bag */
   destroyedTileIds: string[];
+  /** Wood tiles that scored this play and permanently gain +10 Chips. */
+  grownWoodTileIds: string[];
 }
 
 /**
@@ -194,7 +198,13 @@ function scoreSubmission(
   run: RunState,
   blind: BlindState,
   rng: Rng,
-): { submission: WordSubmission; events: ScoreEvent[]; materialGold: number; destroyedTileIds: string[] } {
+): {
+  submission: WordSubmission;
+  events: ScoreEvent[];
+  materialGold: number;
+  destroyedTileIds: string[];
+  grownWoodTileIds: string[];
+} {
   const b = baseScore(tiles, lexicon);
   const submission: WordSubmission = {
     tiles: tiles.slice(),
@@ -209,6 +219,7 @@ function scoreSubmission(
   const ctx: WordScoringContext = { submission, chips: 0, mult: b.mult };
   let materialGold = 0;
   const destroyedTileIds: string[] = [];
+  const grownWoodTileIds: string[] = [];
   for (const t of tiles) {
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     const fontEffect = fontEffectOf(t.font);
@@ -227,10 +238,22 @@ function scoreSubmission(
       ctx.chips += chips;
       events.push({ kind: 'tile', tileId: t.id, letter: t.letter, chips });
 
+      const tileEdition = t.edition ?? 'base';
+      const tileEditionDelta = applyEdition(ctx, tileEdition);
+      if (tileEditionDelta) {
+        events.push({
+          kind: 'edition',
+          edition: tileEdition,
+          tileId: t.id,
+          ...tileEditionDelta,
+        });
+      }
+
       const mat = applyTileMaterial(ctx, t, rng);
       if (mat) {
         materialGold += mat.side.goldDelta ?? 0;
         if (mat.side.destroy && !destroyedTileIds.includes(t.id)) destroyedTileIds.push(t.id);
+        if (mat.side.growWood && !grownWoodTileIds.includes(t.id)) grownWoodTileIds.push(t.id);
         if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
           events.push({
             kind: 'material',
@@ -310,6 +333,16 @@ function scoreSubmission(
     if (chipsDelta !== 0 || multDelta !== 0) {
       events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta });
     }
+    const jokerEdition = joker.edition ?? 'base';
+    const jokerEditionDelta = applyEdition(ctx, jokerEdition);
+    if (jokerEditionDelta) {
+      events.push({
+        kind: 'edition',
+        edition: jokerEdition,
+        jokerId: joker.defId,
+        ...jokerEditionDelta,
+      });
+    }
   }
 
   // Boss word-scoring effects run after jokers (GDD §8.3).
@@ -329,7 +362,7 @@ function scoreSubmission(
   if (boss?.voids?.(submission, blind.sequence)) total = 0; // Forbidden Paper single-suit lock
   submission.settledScore = total;
   events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
-  return { submission, events, materialGold, destroyedTileIds };
+  return { submission, events, materialGold, destroyedTileIds, grownWoodTileIds };
 }
 
 /** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total.
@@ -351,6 +384,7 @@ function scoreSentence(
     sentenceMult: base.sentenceMult,
   };
   defaultJokerBus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
+  ctx.sentenceMult *= constellationPassiveFactor(run, ctx.match?.pattern ?? null);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
   return {
@@ -383,7 +417,7 @@ export function submitWord(
     throw new Error('boss: this word cannot be submitted');
   }
 
-  const { submission, events, materialGold, destroyedTileIds } = scoreSubmission(
+  const { submission, events, materialGold, destroyedTileIds, grownWoodTileIds } = scoreSubmission(
     used,
     lexicon,
     run,
@@ -437,7 +471,14 @@ export function submitWord(
   const judgment = judgeSentence(sequence, lexicon);
   const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind).total;
 
-  return { submission, events, goldDelta, destroyedTileIds, blind: { ...afterBlind, projectedScore } };
+  return {
+    submission,
+    events,
+    goldDelta,
+    destroyedTileIds,
+    grownWoodTileIds,
+    blind: { ...afterBlind, projectedScore },
+  };
 }
 
 export interface EndBlindResult {

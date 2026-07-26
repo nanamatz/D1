@@ -11,9 +11,9 @@ Version 0.2 — systems expansion
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 8 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
-- New: **Shop & Economy** — money sources, interest, shop layout, packs, 9 vouchers.
-- New: **Consumables** — 2 families: Stationery (Tarot-equiv.), Punctuation (Planet-equiv.). *(Forbidden Books / Spectral-equiv. retired 2026-07-22, §10.3.)*
-- Emoji Tiles: #32 renamed Ellipsis → **Elision** (name ceded to the Punctuation consumable). Added **#46 Hypocrite** (demoted from base rule to emoji tile).
+- New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
+- Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (8 implemented), and Ink (content pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
+- Emoji Tiles: #32 renamed Ellipsis → **Elision** (name ceded to the matching Constellation card). Added **#46 Hypocrite** (demoted from base rule to emoji tile).
 
 ---
 
@@ -40,7 +40,7 @@ Version 0.2 — systems expansion
 
 **Language.** English (confirmed).
 **Art direction.** Pixel-art with a CRT finish, in the Balatro lineage (the earlier "ceramic letterpress, deliberately un-Balatro" direction is retired). Tile materials/fonts (§2.2–2.3) and the publishing-world fiction (§1.2) are unchanged in *design* — only their *rendering style* is pixel-art. Full visual spec in `docs/UI_DESIGN.md`; a pixel-art shop mascot — 삐약이 (Piyak), the tuxedo cat proprietor — lives in the Stationery Shop (art: docs/Piyak.png). A second mascot, **우땅 (WooDak)** — a pixel-art orangutan, the player's ally/editor-mentor — appears on the run-end screen with tips and discovery mentions, and will later host tutorials and notifications (art: docs/WooDak.png).
-**Special characters.** Excluded as playable tiles (punctuation returns as a consumable family; see §10). *Re-examined and re-affirmed in playtest-05 D:* wildcard/blank tiles and `?`/`!` mood-marker tiles were both explored and **dropped**, because each duplicated a system we already have — wildcards overlap the Carving Knife consumable (letter change) and the pouch's draft-flavored sculpting; mood markers overlap the Punctuation consumables (which already map `!`→Imperative and reserve `?`→Interrogative) and would force a large change to the §5 pattern system. Revisit only if a concrete need appears that no existing system covers.
+**Special characters.** Excluded as playable tiles (punctuation-shaped pattern levels return as Constellation cards; see §10). *Re-examined and re-affirmed in playtest-05 D:* wildcard/blank tiles and `?`/`!` mood-marker tiles were both explored and **dropped**, because each duplicated a system we already have — alphabet sculpting now belongs to Fable #16 and the pouch's draft-flavored tools; mood markers overlap the Constellation cards and would force a large change to the §5 pattern system. Revisit only if a concrete need appears that no existing system covers.
 
 ### 1.1 Balatro → This Game Mapping
 
@@ -48,7 +48,7 @@ Version 0.2 — systems expansion
 |---|---|---|
 | Deck / Cards | Alphabet tiles (the "bag") | Scrabble-style per-letter score & count; 68 tiles (§2.1) |
 | Suits (♠♥♦♣) | 4 register suits | Formal / Standard / Slang / Vulgar — asymmetric |
-| Enhancement | 8 tile materials | Ceramic (base) + Porcelain, Polished, Glass, Stone, Lead plate, Ivory, Brass |
+| Enhancement | 9 tile materials | Porcelain (base) + Ceramic, Polished, Glass, Stone, Lead plate, Ivory, Brass, Wood |
 | Edition / Seal | 5 letter fonts | Futura Medium (base) + 4 styles |
 | Joker | Emoji tiles | 4 rarities + Legendary; shop purchase/draw; rule-breaking |
 | Hand (play) | Phase | Base 5 per blind; variable via emoji tiles/vouchers |
@@ -58,9 +58,10 @@ Version 0.2 — systems expansion
 | High card | Gibberish submission | Non-word tile dump; letter chips only |
 | Blind (Small/Big/Boss) | Blind | One round: phases + discard budget + target score |
 | Ante | Ante | 3 blinds; base target rises per ante |
-| Tarot cards | Stationery | Tile modification consumables |
-| Planet cards | Punctuation | Sentence-pattern level-up consumables |
-| Vouchers | Vouchers | Permanent upgrades; single tier (9 items) |
+| Tarot cards | Fable Cards | 18 one-shot tile/economy/tool effects |
+| Planet cards | Constellation Cards | Sentence-pattern level-up consumables |
+| Spectral cards | Ink Cards | Third family; content pending |
+| Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
 | Blind skip / Tags | — (deferred) | Adoption itself on hold; revisit if early-run recovery proves weak |
 
 ### 1.2 Fiction & Glossary — the publishing frame (playtest-03 A)
@@ -122,26 +123,27 @@ Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE
 
 | Material | Korean | Effect | Balatro source |
 |---|---|---|---|
-| Ceramic | 세라믹 | Base — un-enhanced baseline tile | plain card |
-| Porcelain | 자기 | **+30 Chips** | Bonus |
-| Polished | 연마 | **+4 Mult** | Mult |
+| Porcelain (base) | 자기 | Base — un-enhanced baseline tile | plain card |
+| Ceramic | 도자기 | **+30 Chips** | Bonus |
+| Polished | 광택 | **+4 Mult** | Mult |
 | Glass | 유리 | **×2 Mult**, 1/4 chance to destroy the tile after the word settles | Glass |
 | Stone | 석재 | **+50 Chips, no letter** (see below) | Stone |
 | Lead plate | 연판 | **1/5 → +20 Mult; 1/15 → $20** (independent rolls) | Lucky |
 | Ivory | 상아 | **$3** if held in hand at blind end | Gold |
 | Brass | 황동 | **×1.5 Mult** while held in hand | Steel |
+| Wood | 목재 | Starts at **+15 Chips**; permanently gains **+10 Chips** each time that tile is played during the run | custom |
 
-Effects are **per tile** and stack: three Porcelain tiles in one word give +90 Chips; two Ivory tiles held at blind end pay $6.
+Effects are **per tile** and stack: three Ceramic tiles in one word give +90 Chips; two Ivory tiles held at blind end pay $6. Wood growth is stored on that individual tile and survives blind transitions for the rest of the run.
 
 **Risk budget: Glass only.** Every other material is pure upside. Stone's letter loss is a trade-off known at the moment it is applied, not a gamble, so it does not break this rule. A destroyed Glass tile leaves the run permanently.
 
-**Numbers are Balatro's, verbatim, on purpose.** They are a validated reference point to tune *from*, not a claim that they fit our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. Three predicted breakages are recorded for `src/sim` to measure: Brass compounding (≈×11 off ~6 held tiles), Porcelain over-tuning, and the economy values (Ivory/Lead plate) surviving unscaled because our gold scale already matches Balatro's. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
+**Numbers are Balatro's reference values except for the custom Wood growth curve.** They are a validated point to tune *from*, not a claim that they fit our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. Three predicted breakages are recorded for `src/sim` to measure: Brass compounding (≈×11 off ~6 held tiles), Ceramic over-tuning, and the economy values (Ivory/Lead plate) surviving unscaled because our gold scale already matches Balatro's. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
 
-**Why there is no Wild material.** Balatro's Wild card ("counts as any suit") has no translation here: **suit is a property of the word, not the tile** — the lexicon assigns it (§3.1). A tile has no suit to widen. Dropping it is what lets Balatro's 8 enhancements fit our 7 effect slots.
+**Why there is no Wild material.** Balatro's Wild card ("counts as any suit") has no translation here: **suit is a property of the word, not the tile** — the lexicon assigns it (§3.1). A tile has no suit to widen. Wood occupies the added custom effect slot instead.
 
 **Stone has no letter.** Our analog of Balatro Stone's "no rank or suit" is *no letter*: `material = stone` ⟺ the tile carries no letter. A stone tile therefore cannot spell, so any word containing one fails the lexicon lookup and resolves as **gibberish** (§6.4) — chips × 1.0, no suit multiplier, always submittable. This is deliberate, and it is what stops Stone from being strictly the best tile in the game: if stone were merely skipped while spelling, `stone+C+A+T` would read "CAT" and collect +50 Chips *and* the suit multiplier. The consequence is that Stone becomes the heart of the gibberish archetype — an identity that falls out of our own rules rather than being imported. A stone is **neither vowel nor consonant** (§2.1), so vowel/consonant emoji tiles must skip it.
 
-**Acquisition:** materials enter play two ways — pre-attached on tiles found in Type Packs (§9.3), or applied by the Kiln consumable (§10.1). Applying Stone via Kiln destroys that tile's letter permanently.
+**Acquisition:** materials enter play pre-attached on tiles found in Tile Packs (§9.3), or through the matching Fable cards (§10.1). A Fable that turns a tile into Stone hides and remembers its letter; a later non-Stone transformation restores it.
 
 ### 2.3 Fonts (Edition Layer)
 
@@ -164,7 +166,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 | `retriggerPlay` | tile scores in a played word | retrigger this tile's scoring contribution once | Red Seal (verbatim) — the reserved retrigger, spent here |
 | `discardGain` | tile is discarded | gain 1 random consumable; **requires a free consumable slot**, otherwise nothing | Purple Seal (tarot→consumable) |
 
-Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 emoji tiles); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis (Brass, Thrift) as intended synergy. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
+Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 emoji tiles); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
 
 **Font ↔ effect mapping: data-driven, assignment TBD by design.** Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it. Until design supplies the mapping, a provisional assignment ships clearly marked; reassignment is a one-line data change (§12).
 
@@ -280,7 +282,7 @@ Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional 
 
 ### 5.4 Punctuation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Punctuation consumable (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises that pattern's base by its `+Chips, +Mult` per-level values (the §5.2 right column) — the old multiplier-only vs flat-only split is gone.
+Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises that pattern's base by its `+Chips, +Mult` per-level values (the §5.2 right column) — the old multiplier-only vs flat-only split is gone.
 
 | Punctuation | Levels up | Per level (placeholder) |
 |---|---|---|
@@ -333,7 +335,7 @@ Baseline hand size **11** (placeholder within the 10–12 band). Larger than Bal
 
 Mirroring Balatro's discards (3 per blind, up to 5 cards each): **4 discards per blind, up to 5 tiles each** (structure confirmed; values are placeholders). **Discarded tiles exit play for the rest of the blind** — they move to the discarded pile (like played tiles) and are NOT returned to the bag mid-blind; the same number are drawn from the remaining bag. Discarded tiles return to the bag only when the blind ends. (Earlier design returned tiles to the bag immediately; that was dropped in favor of the Balatro-aligned semantics so a discarded letter can't be redrawn within the same blind.)
 
-The budget is **per blind, not per phase** — this is the point. Sharing the budget across phases creates inter-phase resource management ("burn discards now or save them for later phases"). A per-phase allowance would reduce it to a resetting convenience with no strategic weight. Unused discards can hook into the economy via voucher (Thrift, §9.4).
+The budget is **per blind, not per phase** — this is the point. Sharing the budget across phases creates inter-phase resource management ("burn discards now or save them for later phases"). A per-phase allowance would reduce it to a resetting convenience with no strategic weight.
 
 ### 6.4 Gibberish Submission (the high-card equivalent) — decision b-2
 
@@ -505,69 +507,90 @@ Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
-Tile acquisition is **pack-select only** (confirmed): no targeted single-letter purchase. Deck sculpting is therefore draft-flavored, fitting the roguelite grain; the "I have Q but no U" problem is solved not by the shop but by a consumable (Carving Knife, §10.1).
+Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows individual letter tiles to appear in shop card slots; **Encyclopedia** lets those shop tiles roll material, font, and edition modifiers.
 
 **Four pack types** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**. *(Forbidden Stacks / Spectral retired from the design 2026-07-22; see §10.3.)*
 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
-| 잉크 팩 / **Ink Pack** | Punctuation cards — each **levels up** a sentence pattern (§5.4). Applied immediately on pick. | Celestial |
+| 별자리 팩 / **Constellation Pack** | Constellation cards — held in the consumable zone, then used to **level up** their sentence pattern (§5.4). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 소모품 팩 / **Consumable Pack** | Stationery consumable choices (§10.1) | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1); Comic Book can add Ink cards once that content pool lands | Arcana |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
 **Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **Three of four types have art** (`src/ui/packArt.ts`, keyed by type × size): **Tile** 7 (Basic ×3, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Ink** 8 (Basic ×4, Classic ×2, Premium ×2); **Consumable** awaits art. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
 
-> **Impl note (content is a subset).** The **framework** ships fully (4 types × 3 sizes, weights, prices, opening UI). Content pools are as implemented: Tile/Charm are complete; the Consumable pool is the implemented-consumable stub (`magnifier`); Ink offers the 8 Punctuation cards (which **do** work — they level patterns on pick). Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`); display names are i18n-only. Collection §2.9 catalogs all 4 as a paged gallery — one page per type (Tile/Charm/Ink show their art variants; Consumable is a "coming soon" silhouette).
+> **Impl note.** The **framework** ships fully (4 types × 3 sizes, weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 8 pattern cards. Constellation cards enter the held consumable zone and level their mapped pattern when used. Ink-card content is pending; Comic Book is already the rule that will allow those cards in Fable packs. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`); display names are i18n-only.
 
-### 9.4 Vouchers — 9, single tier
+### 9.4 Vouchers — 16 base + 16 upgraded
 
-Single-tier launch set (the Balatro base+upgraded two-tier structure is deferred to content expansion). The game's system knobs become the merchandise:
+Changed 2026-07-26: the former 9-item single-tier set is retired. Every pair has a base voucher and a profile-unlocked upgrade. An upgrade can enter the run pool only after its profile condition is met **and** its base voucher is owned in that run. One purchase per chapter and fixed chapter offers still apply.
 
-| Voucher | Effect |
-|---|---|
-| Extra Hand | Hand size +1 |
-| Extra Discard | Discards +1 per blind |
-| Overtime | Phases +1 per blind *(priced high — multiplies with Epic Poet builds)* |
-| Regular's Discount | Reroll cost −2 |
-| Compound Interest | Interest cap 5 → 10 |
-| Thrift | +1 gold per unused discard on blind end |
-| Wide Shelf | Shop item slots +1 |
-| Connoisseur | Higher rate of material/font pre-attached tiles in packs |
-| Pencil Case | Consumable slots +1 |
+| Base → Upgrade | Base effect → upgraded effect | Upgrade unlock |
+|---|---|---|
+| Story Book → Novel | Fable shop weight ×2 → ×4 | Buy 50 Fable cards from shops |
+| Bible → The Law | Constellation shop weight ×2 → ×4 | Buy 50 Constellation cards from shops |
+| Fashion Book → Fashion Magazine | Reroll −$2 → an additional −$2 | 100 shop rerolls |
+| Flyer → Wanted Poster | Foil/Holo/Poly rate ×2 → ×4 on letter tiles and Charms | Own 5 editioned Charms at once |
+| Newspaper → Papyrus | Shop cards/packs 25% off → 50% off | Use 10 vouchers in one run |
+| Memo → Notebook | +1 hand per round → another +1 | Play 5,000 tiles |
+| Poetry Book → Sheet Music | +1 discard per round → another +1 | Discard 5,000 tiles |
+| Four-cut Photo → Picture Diary | Hand size +1 → another +1 | Reduce hand size to 8 |
+| EN-KO Dictionary → Encyclopedia | Shop may sell plain tiles → shop tiles may carry material/font/edition | Buy 20 shop tiles |
+| Receipt → Household Ledger | Interest cap $10 → $20 | Hit the interest cap 10 rounds consecutively |
+| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls | Discover all 12 current bosses (temporary cap) |
+| Catalog → Coupon Book | Shop card slots 3 → 4 | Spend $2,500 in shops |
+| History Book → Old Book | −1 Ante and −1 hand/round → another −1 Ante and −1 discard/round | Reach Ante 12 |
+| Blank Paper → Kung Fu Manual | No effect → +1 Charm slot | Use Blank Paper 10 times |
+| B&W Photo → Yearbook | Constellation pack guarantees the most-played pattern's card → a held matching card grants ×1.5 sentence Mult | Use 100 Constellation cards |
+| Zero Score → Comic Book | +1 consumable slot → Ink cards may appear in Fable packs | Use 50 Fable cards |
+
+All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vouchers`, outside `RunState`.
 
 ---
 
 ## 10. Consumables
 
-Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Pencil Case). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and the three consumable packs.
+Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Zero Score). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and packs.
 
-### 10.1 Stationery (Tarot-equivalent) — tile modification & tools, 9
+### 10.1 Fable Cards (Tarot-equivalent), 18
 
-| Item | Effect |
-|---|---|
-| Kiln | Apply a random material to 1 chosen tile *(the "apply" route for materials; packs are the "pre-attached" route)* |
-| Fountain Pen | Apply a random font to 1 chosen tile |
-| Shift | Convert up to 3 tiles to uppercase, or to lowercase |
-| Eraser | **Permanently remove** up to 2 tiles from the bag *(the reserved deck-thinning tool — see the bag-size note in §2.1: thinning still buys draw consistency at 68, with less glut to cut than at 98)* |
-| Correction Tape | Remove 1 hole (gibberish entry) from the current blind's sequence *(the reserved b-2 aftercare tool)* |
-| Carving Knife | Change 1 tile's letter to match another owned tile's letter *(Death analogy; solves "Q but no U")* |
-| Photocopier | Duplicate 1 tile (material & font included) |
-| Piggy Bank | Double gold (cap +20) *(Hermit analogy — plugs into the interest economy)* |
-| Magnifier 🔍 | Highlight up to 3 valid words spellable from the current hand (prefer highest-scoring) *(playtest-01 P2-1; hints as an economy resource — no free/always-on highlighting)* |
+Targeted effects use the tiles currently staged on the board. A target-requiring
+card cannot be consumed until the exact valid target count is staged. Random
+creation respects the destination slot cap.
 
-### 10.2 Punctuation (Planet-equivalent) — pattern level-up, 8
+| # | Fable | Effect |
+|---:|---|---|
+| 1 | The North Wind and the Sun | Magnifier: show up to 3 spellable words in the current hand |
+| 2 | The Boy Who Cried Wolf | Create the last Fable or Constellation card used this run |
+| 3 | The Ant and the Grasshopper | Create up to 2 random Fable cards while slots are available |
+| 4 | The Golden Axe and the Silver Axe | Turn 2 selected tiles into Lead Plate |
+| 5 | The Fox and the Crane | Turn 1 selected tile into Stone |
+| 6 | The Tortoise and the Hare | Turn 2 selected tiles into Polished |
+| 7 | The Fox and the Sour Grapes | Turn 2 selected tiles into Ceramic (+30 Chips) |
+| 8 | The Lion and the Mouse | Turn 1 selected tile into Glass |
+| 9 | The Goose That Laid the Golden Eggs | Gain gold equal to current gold, capped at +$20 |
+| 10 | The Town Mouse and the Country Mouse | Create up to 2 random Constellation cards while slots are available |
+| 11 | The Bear and the Travelers | Turn 1 selected tile into Ivory |
+| 12 | Belling the Cat | Turn 1 selected tile into Brass |
+| 13 | The Wolf and the Crane | Turn 1 selected tile into Wood |
+| 14 | Heungbu and Nolbu | Create 1 random Charm if a Charm slot is available |
+| 15 | The Cowherd and the Weaver Girl | 1/4 chance to give one random uneditioned Charm Foil, Holographic, or Polychrome; unusable if none is eligible |
+| 16 | The Rabbit and the Turtle | Raise 2 selected tile letters by one alphabet rank; Z wraps to A |
+| 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Charms, capped at +$50 |
+| 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
 
-One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Punctuation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing punctuation into your most-played patterns is the intended play.
+### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 8
 
-### 10.3 Forbidden Books — RETIRED (2026-07-22)
+One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing into the most-played patterns is the intended play.
 
-The Forbidden Books consumable family (Spectral-equivalent) and its delivery pack
-(Forbidden Stacks) were cut from the design. The four placeholder items
-(Book Burning / Apocrypha / Scribbles / Apocalypse) never shipped an effect and had
-no entry point other than the removed pack, so they were deleted from the engine and
-i18n. The pack taxonomy is now the four types in §9.3. *(The **Forbidden Paper**
-boss, §8.3, is a separate system and is unaffected.)*
+### 10.3 Ink Cards — content pending
+
+Ink is the third card family and already has a Collection category. Its card
+registry and individual effects are intentionally pending. Comic Book (§9.4)
+allows Ink cards to appear in Fable packs once that registry is populated. The
+former Forbidden Books/Spectral placeholder roster remains retired and is not
+being restored under the Ink name.
 
 ---
 
@@ -671,9 +694,9 @@ Scaling emoji tiles' counters are deliberately spread out so that "which scaling
 - **Rush economy combo.** Loan Shark (28) + One Stroke (35) create an extreme rush-economy build. Very strong when it runs, so its ceiling needs checking.
 - **Epic Poet multiplicative stack.** 25, 26, 34 accumulate multiplication — the "no one ends early" problem meeting the projected-score preview erupts precisely here. Two structural brakes now exist: Infinite Narrative's built-in "halve target growth," and bag depletion (§6.6). Verify these two builds' ceilings first in playtesting.
 
-### 11.8 Emoji Tile Editions (planned — not yet in the engine)
+### 11.8 Editions (implemented)
 
-Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): an **emoji tile** carries an **edition**, ported from Balatro's Foil/Holo/Poly/Negative. This is design-forward — the current engine has **no `JokerEdition` type yet** (`OwnedJoker` is edition-less); it is recorded here so the two modifier systems are never conflated (a letter tile never takes an edition; an emoji tile never takes a material/font).
+Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles/Charms each carry a dedicated edition field. `TileEdition` and `JokerEdition` are separate type unions; neither replaces a letter tile's material/font, and Emoji Tiles still never receive letter material/font modifiers.
 
 | Edition | Effect (placeholder) |
 |---|---|
@@ -683,9 +706,8 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 | Polychrome | ×1.5 Mult |
 | Negative | occupies no joker slot → **+1 owned-joker slot** |
 
-- **Slot cap.** The owned-emoji-tile cap is base **5** (today the global `BALANCE.jokerSlots`; the planned per-run field is `RunState.jokerSlots`). Each Negative emoji tile raises the effective cap by 1.
-- **Acquisition (planned):** editions pre-attach on emoji tiles found in Sticker Packs, or via a future consumable — to be designed alongside implementation.
-- **Status:** planned; ship in a dedicated slice. Until then emoji tiles are edition-less.
+- **Slot cap.** The owned-emoji-tile cap is `RunState.jokerSlots` (base 5). Kung Fu Manual raises it by 1; each Negative Emoji Tile raises effective capacity by 1.
+- **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Foil/Holo/Poly odds.
 
 ---
 
@@ -699,7 +721,6 @@ Distinct from tile materials/fonts (§2.2–2.3, which live on *letter* tiles): 
 - **Blind skip & tags.** Adoption itself deferred. Revisit trigger: unrecoverable early runs in playtests (§8.2).
 - **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, uppercase, slang-friendly…). Untouched.
 - **Stakes (difficulty) & unlock structure.** Replayability layer. Untouched.
-- **Voucher tier 2 (upgraded versions).** Deferred to content expansion.
 - **Interrogative pattern.** Auxiliary-inversion pattern + Question Mark punctuation; deferred to expansion (§5.2).
 - **Dadaist emoji tile.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
 - **Font ↔ effect mapping.** Effects are now defined (§2.3 seal port: `goldPlay`/`chipPlay`/`retriggerPlay`/`discardGain`); the **assignment of which font gets which effect** is design-supplied and still pending — ships as a provisional `balance.ts` `fontEffects` mapping until then.

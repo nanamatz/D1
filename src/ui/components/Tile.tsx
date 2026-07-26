@@ -70,6 +70,7 @@ export function TileView({
     fontClass(tile.font),
     inkClass(tileValue(tile)),
     faceClass(tile),
+    `edition-${tile.edition ?? 'base'}`,
     faceDown && 'facedown',
     disabled && 'locked',
   ]

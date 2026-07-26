@@ -16,10 +16,13 @@ export type LetterCase = 'upper' | 'lower';
 /** Enhancement layer (GDD §2.2). 'ceramic' is the unenhanced base. */
 export type TileMaterial =
   | 'ceramic' | 'porcelain' | 'polished' | 'glass' | 'stone'
-  | 'leadPlate' | 'ivory' | 'brass';
+  | 'leadPlate' | 'ivory' | 'brass' | 'wood';
 
 /** Edition layer (GDD §2.3). 'medium' (Futura Medium) is the base. */
 export type TileFont = 'medium' | 'lightItalic' | 'bold' | 'inline' | 'black';
+
+/** Balatro-style visual/scoring edition, separate from material and font. */
+export type TileEdition = 'base' | 'foil' | 'holographic' | 'polychrome';
 
 /** Font seal effects (GDD §2.3) — the edition layer's Balatro-seal port. */
 export type FontEffectId = 'goldPlay' | 'chipPlay' | 'retriggerPlay' | 'discardGain';
@@ -32,6 +35,12 @@ export interface Tile {
   case: LetterCase;
   material: TileMaterial;
   font: TileFont;
+  /** Missing only on legacy saves/test fixtures; engine treats it as `base`. */
+  edition?: TileEdition;
+  /** Wood's persistent, per-tile Chips value. Missing means the base +15. */
+  woodBonusChips?: number;
+  /** Stone hides its original letter; restoring another material restores it. */
+  letterBeforeStone?: Letter;
 }
 
 export const VOWELS: ReadonlySet<Letter> = new Set(['A', 'E', 'I', 'O', 'U'] as Letter[]);
@@ -109,7 +118,7 @@ export interface PatternDef {
   id: PatternId;
   /** 1 (weakest) .. 8 (strongest) — "highest single pattern only" rule (GDD §5.1 rule 2) */
   rank: number;
-  /** current level, raised by Punctuation consumables (GDD §5.4). Starts at 1. */
+  /** current level, raised by Constellation cards (GDD §5.4). Starts at 1. */
   level: number;
 }
 
@@ -156,6 +165,7 @@ export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter | null; chips: number }
   | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }
   | { kind: 'font'; font: TileFont; effect: FontEffectId; tileId: string; chipsDelta: number; multDelta: number; goldDelta: number }
+  | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; tileId?: string }
@@ -208,8 +218,12 @@ export interface RunState {
   bag: Tile[]; // the permanent 68-tile (sculpted) asset
   jokers: OwnedJoker[];
   consumables: ConsumableId[];
+  /** Last used Fable/Constellation card, for The Boy Who Cried Wolf. */
+  lastFableOrConstellation?: ConsumableId | null;
   consumableSlots: number; // base 2
+  jokerSlots: number; // base 5; Kung Fu Manual adds one
   patternLevels: Record<PatternId, number>;
+  patternPlayCounts: Record<PatternId, number>;
   vouchers: VoucherId[];
   /** the current chapter's offered voucher (fixed per chapter; playtest-03 C) */
   voucherOffer: VoucherId | null;
@@ -222,6 +236,8 @@ export interface RunState {
    *  Reset when a new ante begins; read by the Memoirs boss (회고록) to debuff
    *  any word already played this ante (GDD §8.3). */
   wordsThisAnte: string[];
+  /** Boss rerolls spent this chapter; reset when the Deadline clears. */
+  bossRerollsUsed: number;
   /** scaling counters (GDD §11.6) — one per axis, jokers read/write these */
   counters: ScalingCounters;
 }
@@ -240,8 +256,10 @@ export interface ScalingCounters {
 
 /** One purchasable in a shop item slot. `null` in a slot means bought/empty. */
 export type ShopItem =
-  | { kind: 'joker'; id: string; price: number }
-  | { kind: 'consumable'; id: ConsumableId; price: number };
+  | { kind: 'joker'; id: string; edition?: JokerEdition; price: number }
+  | { kind: 'consumable'; id: ConsumableId; price: number }
+  | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId; price: number }
+  | { kind: 'tile'; tile: Tile; price: number };
 
 /** Pack types (GDD §9.3). Publishing-world names live in i18n:
  *  pattern=Ink · joker=Charm · consumable=Consumable · tile=Tile.
@@ -273,9 +291,12 @@ export interface ShopState {
 // ---------- Jokers (GDD §11) ----------
 
 export type JokerRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+export type JokerEdition = 'base' | 'foil' | 'holographic' | 'polychrome' | 'negative';
 
 export interface OwnedJoker {
   defId: string;
+  /** Missing only on legacy saves/test fixtures; engine treats it as `base`. */
+  edition?: JokerEdition;
   /** per-instance mutable state for scaling jokers (e.g. Classicist's grown mult) */
   state: Record<string, number>;
 }
@@ -290,8 +311,26 @@ export type ConsumableId =
   | 'carvingKnife' | 'photocopier' | 'piggyBank' | 'magnifier'
   // punctuation (1:1 with patterns, GDD §5.4)
   | 'ellipsis' | 'exclamation' | 'doubleExclamation' | 'period'
-  | 'colon' | 'semicolon' | 'dash' | 'comma';
+  | 'colon' | 'semicolon' | 'dash' | 'comma'
+  // fable cards
+  | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
+  | 'fable7' | 'fable8' | 'fable9' | 'fable10' | 'fable11' | 'fable12'
+  | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18';
 
 export type VoucherId =
-  | 'extraHand' | 'extraDiscard' | 'overtime' | 'regularsDiscount'
-  | 'compoundInterest' | 'thrift' | 'wideShelf' | 'connoisseur' | 'pencilCase';
+  | 'storyBook' | 'novel'
+  | 'bible' | 'theLaw'
+  | 'fashionBook' | 'fashionMagazine'
+  | 'flyer' | 'wantedPoster'
+  | 'newspaper' | 'papyrus'
+  | 'memo' | 'notebook'
+  | 'poetryBook' | 'sheetMusic'
+  | 'fourCutPhoto' | 'pictureDiary'
+  | 'enKoDictionary' | 'encyclopedia'
+  | 'receipt' | 'householdLedger'
+  | 'sketchBook' | 'portrait'
+  | 'catalog' | 'couponBook'
+  | 'historyBook' | 'oldBook'
+  | 'blankPaper' | 'kungfuManual'
+  | 'bwPhoto' | 'yearBook'
+  | 'zeroScore' | 'comicBook';

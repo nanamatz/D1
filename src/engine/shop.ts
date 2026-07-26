@@ -7,16 +7,24 @@
 import { BALANCE } from './balance';
 import { ALL_JOKERS, JOKER_REGISTRY } from './jokers';
 import { rerollCost, sellValue } from './economy';
+import { rollJokerEdition } from './editions';
+import { PUNCTUATION_POOL, rollTile, STATIONERY_POOL } from './packs';
 import {
-  ALL_VOUCHER_IDS,
+  CONSUMABLE_PATTERN,
   VOUCHER_REGISTRY,
   applyVoucher,
+  availableVoucherIds,
+  canAddJoker,
+  constellationShopWeight,
+  discountedPrice,
+  fableShopWeight,
   rerollDiscount,
+  shopSellsTiles,
+  shopTilesCanBeEnhanced,
   shopItemSlots,
 } from './vouchers';
 import type { Rng } from './rng';
 import type {
-  ConsumableId,
   OwnedJoker,
   PackSize,
   PackSlot,
@@ -27,29 +35,45 @@ import type {
   VoucherId,
 } from './types';
 
-/** Consumables that actually have an effect today (grows as they're built). */
-const CONSUMABLE_POOL: readonly ConsumableId[] = ['magnifier'];
 const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile'];
 const PACK_SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 
 /** All items the shop could offer this run, minus jokers already owned. */
-function buildPool(run: RunState): ShopItem[] {
+function buildPool(run: RunState, rng: Rng): ShopItem[] {
   const owned = new Set(run.jokers.map((j) => j.defId));
   const jokers: ShopItem[] = ALL_JOKERS.filter((j) => !owned.has(j.id)).map((j) => ({
     kind: 'joker',
     id: j.id,
-    price: BALANCE.jokerPrice[j.rarity],
+    edition: rollJokerEdition(run, rng),
+    price: discountedPrice(run, BALANCE.jokerPrice[j.rarity]),
   }));
-  const consumables: ShopItem[] = CONSUMABLE_POOL.map((id) => ({
-    kind: 'consumable',
-    id,
-    price: BALANCE.consumablePrice,
-  }));
-  return [...jokers, ...consumables];
+  const consumables: ShopItem[] = Array.from({ length: fableShopWeight(run) }, () =>
+    STATIONERY_POOL.map((id) => ({
+      kind: 'consumable' as const,
+      id,
+      price: discountedPrice(run, BALANCE.consumablePrice),
+    })),
+  ).flat();
+  const punctuation: ShopItem[] = Array.from({ length: constellationShopWeight(run) }, () =>
+    PUNCTUATION_POOL.map((id) => ({
+      kind: 'punctuation' as const,
+      id,
+      pattern: CONSUMABLE_PATTERN[id]!,
+      price: discountedPrice(run, BALANCE.consumablePrice),
+    })),
+  ).flat();
+  const tiles: ShopItem[] = shopSellsTiles(run)
+    ? Array.from({ length: 4 }, (_, i) => ({
+        kind: 'tile' as const,
+        tile: rollTile(run, rng, i, shopTilesCanBeEnhanced(run)),
+        price: discountedPrice(run, BALANCE.tilePrice),
+      }))
+    : [];
+  return [...jokers, ...consumables, ...punctuation, ...tiles];
 }
 
 function rollItems(run: RunState, rng: Rng): (ShopItem | null)[] {
-  const shuffled = rng.shuffle(buildPool(run));
+  const shuffled = rng.shuffle(buildPool(run, rng));
   const items: (ShopItem | null)[] = [];
   for (let i = 0; i < shopItemSlots(run); i++) items.push(shuffled[i] ?? null); // Wide Shelf +1
   return items;
@@ -65,8 +89,13 @@ export function rollExtraItem(
   existing: readonly (ShopItem | null)[],
   rng: Rng,
 ): ShopItem | null {
-  const shown = new Set(existing.filter((it): it is ShopItem => !!it).map((it) => `${it.kind}:${it.id}`));
-  const pool = buildPool(run).filter((it) => !shown.has(`${it.kind}:${it.id}`));
+  const shown = new Set(existing.filter((it): it is ShopItem => !!it).map((it) =>
+    it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`,
+  ));
+  const pool = buildPool(run, rng).filter((it) => {
+    const key = it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`;
+    return !shown.has(key);
+  });
   return pool.length ? rng.shuffle(pool)[0]! : null;
 }
 
@@ -75,8 +104,12 @@ export function rollExtraItem(
  * Purchased vouchers are in run.vouchers and thus never reappear; unpurchased
  * ones stay in the pool and may reappear in a later chapter.
  */
-export function rollVoucherOffer(run: RunState, rng: Rng): VoucherId | null {
-  const available = ALL_VOUCHER_IDS.filter((id) => !run.vouchers.includes(id));
+export function rollVoucherOffer(
+  run: RunState,
+  rng: Rng,
+  profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+): VoucherId | null {
+  const available = availableVoucherIds(run, profileUnlocked);
   return available.length ? rng.shuffle(available)[0]! : null;
 }
 
@@ -135,12 +168,14 @@ export function buyItem(run: RunState, shop: ShopState, index: number): BuyResul
 
   let nextRun: RunState;
   if (item.kind === 'joker') {
-    if (run.jokers.length >= BALANCE.jokerSlots) return fail;
+    if (!canAddJoker(run, item.edition ?? 'base')) return fail;
     nextRun = {
       ...run,
       gold: run.gold - item.price,
-      jokers: [...run.jokers, { defId: item.id, state: {} }],
+      jokers: [...run.jokers, { defId: item.id, edition: item.edition ?? 'base', state: {} }],
     };
+  } else if (item.kind === 'tile') {
+    nextRun = { ...run, gold: run.gold - item.price, bag: [...run.bag, item.tile] };
   } else {
     if (run.consumables.length >= run.consumableSlots) return fail;
     nextRun = { ...run, gold: run.gold - item.price, consumables: [...run.consumables, item.id] };

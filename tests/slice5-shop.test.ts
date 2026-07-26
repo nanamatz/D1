@@ -27,7 +27,7 @@ describe('slice5 shop — stock roll (GDD §9.2)', () => {
     const { items } = rollShopStock(run(), makeRng('y'));
     for (const item of items) {
       if (!item) continue;
-      expect(['joker', 'consumable']).toContain(item.kind);
+      expect(['joker', 'consumable', 'punctuation', 'tile']).toContain(item.kind);
       expect(item.price).toBeGreaterThan(0);
     }
   });
@@ -126,10 +126,10 @@ describe('slice5 shop — sell & reroll', () => {
   });
 
   it('buys the offered voucher: gold spent, effect applied, slot cleared', () => {
-    const shop = shopWith([], 0, 'extraHand');
+    const shop = shopWith([], 0, 'fourCutPhoto');
     const res = buyVoucher(run({ gold: 20 }), shop);
     expect(res.ok).toBe(true);
-    expect(res.run.vouchers).toContain('extraHand');
+    expect(res.run.vouchers).toContain('fourCutPhoto');
     expect(res.run.handSize).toBe(BALANCE.handSize + 1);
     expect(res.shop.voucher).toBeNull();
   });

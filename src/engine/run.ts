@@ -14,6 +14,12 @@ function freshPatternLevels(): Record<PatternId, number> {
   return levels;
 }
 
+function freshPatternCounts(): Record<PatternId, number> {
+  const counts = {} as Record<PatternId, number>;
+  for (const id of Object.keys(BALANCE.patterns) as PatternId[]) counts[id] = 0;
+  return counts;
+}
+
 function freshCounters(): ScalingCounters {
   return {
     totalWords: 0,
@@ -39,13 +45,17 @@ export function newRun(seed: string): RunState {
     bag: buildBag(),
     jokers: [],
     consumables: [],
+    lastFableOrConstellation: null,
     consumableSlots: BALANCE.consumableSlots,
+    jokerSlots: BALANCE.jokerSlots,
     patternLevels: freshPatternLevels(),
+    patternPlayCounts: freshPatternCounts(),
     vouchers: [],
     voucherOffer: null, // rolled at run start / each new chapter (playtest-03 C)
     voucherLocked: false,
     chapterBossId: null, // drawn at chapter start (playtest-04 D-6)
     wordsThisAnte: [], // reset per ante; read by Memoirs (회고록)
+    bossRerollsUsed: 0,
     counters: freshCounters(),
   };
 }

@@ -2,7 +2,7 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
-import { rerollDiscount } from '../../engine/vouchers';
+import { canAddJoker, discountedPrice, rerollDiscount } from '../../engine/vouchers';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
 import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { audio } from '../audio';
@@ -13,8 +13,12 @@ import { JokerShelf } from './JokerShelf';
 import { PackOpening } from './PackOpening';
 import { MoneyValue } from './MoneyValue';
 import { ShopMascot } from './ShopMascot';
+import { VoucherCard } from './VoucherCard';
 import { packArt } from '../packArt';
 import { packTooltip } from '../packTooltip';
+import { voucherArt } from '../voucherArt';
+import { isFableId } from '../../engine/fables';
+import { fableArt } from '../fableArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -30,6 +34,7 @@ export function Shop({ g }: { g: UseGame }) {
     emoji: string;
     name: string;
     desc: string;
+    art?: string | undefined;
     accent?: string | undefined;
     rarity?: JokerRarity | undefined;
   } => {
@@ -43,18 +48,28 @@ export function Shop({ g }: { g: UseGame }) {
         rarity: def?.rarity,
       };
     }
+    if (item.kind === 'tile') {
+      return {
+        emoji: item.tile.letter ?? '◆',
+        name: item.tile.letter ?? t('material.stone'),
+        desc: t('tile.chips', {
+          n: item.tile.letter ? (BALANCE.letterChips[item.tile.letter] ?? 0) : 0,
+        }),
+      };
+    }
     return {
       emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',
       name: t(`consumable.${item.id}`),
       desc: t(consumableDescKey(item.id)),
+      art: isFableId(item.id) ? fableArt(item.id) : undefined,
     };
   };
 
   const affordable = (item: ShopItem): boolean => {
     if (run.gold < item.price) return false;
     return item.kind === 'joker'
-      ? run.jokers.length < BALANCE.jokerSlots
-      : run.consumables.length < run.consumableSlots;
+      ? canAddJoker(run, item.edition ?? 'base')
+      : item.kind === 'tile' || run.consumables.length < run.consumableSlots;
   };
 
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
@@ -102,11 +117,16 @@ export function Shop({ g }: { g: UseGame }) {
                 );
               }
               const m = itemMeta(item);
+              const edition =
+                item.kind === 'joker' ? (item.edition ?? 'base')
+                  : item.kind === 'tile' ? (item.tile.edition ?? 'base')
+                    : 'base';
               return (
                 <Tooltip key={i} title={m.name} body={m.desc} rarity={m.rarity}>
-                  <div className={['shopitem', m.accent].filter(Boolean).join(' ')}>
-                    <span className="e">{m.emoji}</span>
+                  <div className={['shopitem', m.accent, `edition-${edition}`].filter(Boolean).join(' ')}>
+                    {m.art ? <img className="shop-consumable-art" src={m.art} alt="" /> : <span className="e">{m.emoji}</span>}
                     <span className="n">{m.name}</span>
+                    {edition !== 'base' && <span className="edition-badge">{edition}</span>}
                     <span className="price">${item.price}</span>
                     <button
                       className="btn exchange sm"
@@ -131,9 +151,12 @@ export function Shop({ g }: { g: UseGame }) {
                   title={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
                   body={t(voucherDescKey(voucher.id))}
                 >
-                  <div className="shopitem">
-                    <span className="e">{voucher.emoji}</span>
-                    <span className="n">{lang === 'ko' ? voucher.nameKo : voucher.nameEn}</span>
+                  <div className="voucher-shop-stack">
+                    <VoucherCard
+                      emoji={voucher.emoji}
+                      name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                      artSrc={voucherArt(voucher.id)}
+                    />
                     <span className="price">${voucher.price}</span>
                     <button
                       className="btn exchange sm"
@@ -145,7 +168,7 @@ export function Shop({ g }: { g: UseGame }) {
                   </div>
                 </Tooltip>
               ) : (
-                <div className="shopitem empty">{t('shop.sold')}</div>
+                <VoucherCard emoji="—" name={t('shop.sold')} muted />
               )}
             </div>
           </div>
@@ -173,10 +196,10 @@ export function Shop({ g }: { g: UseGame }) {
                       )}
                       <span className="n">{t(`pack.type.${p.type}`)}</span>
                       <span className="pack-size">{t(`pack.size.${p.size}`)}</span>
-                      <span className="price">${BALANCE.pack.size[p.size].price}</span>
+                      <span className="price">${discountedPrice(run, BALANCE.pack.size[p.size].price)}</span>
                       <button
                         className="btn green sm"
-                        disabled={run.gold < BALANCE.pack.size[p.size].price}
+                        disabled={run.gold < discountedPrice(run, BALANCE.pack.size[p.size].price)}
                         onClick={() => g.buyPack(i)}
                       >
                         {t('pack.open')}

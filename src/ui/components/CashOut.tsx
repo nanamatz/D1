@@ -34,7 +34,6 @@ export function CashOut({ g }: { g: UseGame }) {
     { key: 'cashout.phases', params: { n: e.phases }, amount: e.phases },
     { key: 'cashout.interest', amount: e.interest },
   ];
-  if (e.thrift > 0) lines.push({ key: 'cashout.thrift', amount: e.thrift });
 
   const shown = useReveal(lines.length);
   const total = useCountUp(shown >= lines.length ? e.total : 0, 500);

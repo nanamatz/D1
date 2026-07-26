@@ -30,7 +30,7 @@ import {
   rollVoucherOffer,
   rollExtraItem,
 } from '../engine/shop';
-import { sellValue } from '../engine/economy';
+import { rerollCost, sellValue } from '../engine/economy';
 import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
 import { BALANCE } from '../engine/balance';
 import { findSpellableWords, type HintWord } from '../engine/hint';
@@ -40,6 +40,17 @@ import { recordRunEnd } from './lifetime';
 import { loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
+import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
+import { canUseFable, isFableId, useFable } from '../engine/fables';
+import {
+  bossRerollLimit,
+  bossRerollPrice,
+  CONSUMABLE_PATTERN,
+  discountedPrice,
+  interestCap,
+  rerollDiscount,
+  VOUCHER_REGISTRY,
+} from '../engine/vouchers';
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -172,7 +183,7 @@ function bootstrap(seed: string = randomSeed()): GameState {
   // Chapter 1's voucher offer + Deadline boss (fixed per chapter; playtest-03 C, 04 D-6).
   const run: RunState = {
     ...base,
-    voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`)),
+    voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`), unlockedVoucherSet()),
     chapterBossId: drawBoss(makeRng(`${seed}#boss-1`)),
   };
   // First-run lesson (2026-07-21): rig the opening hand to contain YELLOW so the guided
@@ -222,7 +233,8 @@ export interface UseGame {
   reorderHand: (fromId: string, toId: string) => void;
   reorderJokers: (from: number, to: number) => void;
   reorderStaged: (fromId: string, toId: string) => void;
-  useMagnifier: () => void;
+  useConsumable: (id: import('../engine/types').ConsumableId) => void;
+  canUseConsumable: (id: import('../engine/types').ConsumableId) => boolean;
   canMagnify: boolean;
   sellConsumable: (index: number) => void;
   buy: (index: number) => void;
@@ -230,6 +242,7 @@ export interface UseGame {
   reroll: () => void;
   leaveShop: () => void;
   buyVoucher: () => void;
+  rerollBoss: () => void;
   buyPack: (index: number) => void;
   pickPackOption: (index: number) => void;
   closePack: () => void;
@@ -295,10 +308,19 @@ export function useGame(): UseGame {
         ...s.run,
         gold: s.run.gold + final.materialGold,
       };
-      const outcome = resolveBlind(runWithMaterialGold, s.blind, final.finalScore);
+      const p = final.judgment.match?.pattern;
+      const runWithPattern: RunState = p
+        ? {
+            ...runWithMaterialGold,
+            patternPlayCounts: {
+              ...runWithMaterialGold.patternPlayCounts,
+              [p]: (runWithMaterialGold.patternPlayCounts[p] ?? 0) + 1,
+            },
+          }
+        : runWithMaterialGold;
+      const outcome = resolveBlind(runWithPattern, s.blind, final.finalScore);
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
-      const p = final.judgment.match?.pattern;
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
       const stats: RunStats = { ...s.stats, patternCounts };
 
@@ -318,6 +340,14 @@ export function useGame(): UseGame {
           },
         };
       }
+      recordVoucherProgress({
+        kind: 'blindCleared',
+        ante: s.run.ante,
+        bossId: s.blind.bossId,
+        interest: outcome.earned.interest,
+        interestCap: interestCap(runWithPattern),
+        handSize: s.blind.hand.length,
+      });
       // Final-chapter Deadline cleared → the run is WON (spec 2026-07-19).
       // Skip Fee Settlement/shop for now; outcome.run (advanced, paid out) is
       // still applied so the planned endless mode can later route this through
@@ -355,8 +385,13 @@ export function useGame(): UseGame {
       if (runWithMaterialGold.blindIndex === 2) {
         advancedRun = {
           ...advancedRun,
-          voucherOffer: rollVoucherOffer(advancedRun, makeRng(`${s.seed}#voucher-${advancedRun.ante}`)),
+          voucherOffer: rollVoucherOffer(
+            advancedRun,
+            makeRng(`${s.seed}#voucher-${advancedRun.ante}`),
+            unlockedVoucherSet(),
+          ),
           voucherLocked: false,
+          bossRerollsUsed: 0,
           chapterBossId: drawBoss(makeRng(`${s.seed}#boss-${advancedRun.ante}`)),
           wordsThisAnte: [], // new ante → Memoirs' pool resets (회고록)
         };
@@ -386,6 +421,18 @@ export function useGame(): UseGame {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const res = buyItem(prev.run, prev.shop, index);
       if (!res.ok) return prev;
+      const item = prev.shop.items[index]!;
+      if (item.kind !== 'joker') {
+        recordVoucherProgress({
+          kind: 'shopBuy',
+          item: item.kind === 'tile' ? 'tile' : item.kind === 'punctuation' ? 'constellation' : 'fable',
+          spent: item.price,
+        });
+      } else recordVoucherProgress({ kind: 'shopBuy', item: 'other', spent: item.price });
+      recordVoucherProgress({
+        kind: 'editionedJokers',
+        count: res.run.jokers.filter((j) => (j.edition ?? 'base') !== 'base').length,
+      });
       audio.play('purchase');
       return {
         ...prev,
@@ -414,6 +461,7 @@ export function useGame(): UseGame {
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const res = rerollShop(prev.run, prev.shop, rng);
       if (!res.ok) return prev;
+      recordVoucherProgress({ kind: 'reroll', spent: rerollCost(prev.shop.rerolls, rerollDiscount(prev.run)) });
       audio.play('reroll');
       return {
         ...prev,
@@ -464,7 +512,13 @@ export function useGame(): UseGame {
 
   /** Blind Select (§2.3) confirmed → begin the (already-drawn) blind. */
   const selectBlind = useCallback(() => {
-    setState((prev) => (prev.phase === 'blindselect' ? { ...prev, phase: 'playing' } : prev));
+    setState((prev) => {
+      if (prev.phase !== 'blindselect') return prev;
+      recordVoucherProgress({ kind: 'handSize', size: prev.blind.hand.length });
+      recordVoucherProgress({ kind: 'anteReached', ante: prev.run.ante });
+      if (prev.blind.bossId) recordVoucherProgress({ kind: 'bossSeen', id: prev.blind.bossId });
+      return { ...prev, phase: 'playing' };
+    });
   }, []);
 
   /** SettleProvider signals the settle timeline has landed — arms the clear UI (05 A). */
@@ -478,12 +532,19 @@ export function useGame(): UseGame {
       const boughtId = prev.shop.voucher;
       const res = buyVoucher(prev.run, prev.shop);
       if (!res.ok) return prev;
+      if (boughtId) {
+        recordVoucherProgress({
+          kind: 'voucherBuy',
+          id: boughtId,
+          spent: VOUCHER_REGISTRY.get(boughtId)?.price ?? 0,
+        });
+      }
       audio.play('voucherRedeem');
       tutorialBus.fire('firstVoucher');
-      // B-2: Wide Shelf's +1 item slot fills immediately, this same visit.
+      // Catalog upgrades open and fill their new sale slot immediately.
       let shop = res.shop;
       let rngCounter = prev.rngCounter;
-      if (boughtId === 'wideShelf') {
+      if (boughtId === 'catalog' || boughtId === 'couponBook') {
         const extra = rollExtraItem(res.run, res.shop.items, makeRng(`${prev.seed}#${rngCounter}`));
         shop = { ...res.shop, items: [...res.shop.items, extra] };
         rngCounter += 1;
@@ -503,7 +564,7 @@ export function useGame(): UseGame {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const slot = prev.shop.packs[index];
       if (!slot) return prev;
-      const price = BALANCE.pack.size[slot.size].price;
+      const price = discountedPrice(prev.run, BALANCE.pack.size[slot.size].price);
       if (prev.run.gold < price) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const offer = rollPack(slot, prev.run, rng);
@@ -511,6 +572,7 @@ export function useGame(): UseGame {
       packs[index] = null;
       audio.play('packOpen');
       tutorialBus.fire('firstPack');
+      recordVoucherProgress({ kind: 'packBuy', spent: price });
       return {
         ...prev,
         run: { ...prev.run, gold: prev.run.gold - price },
@@ -528,6 +590,10 @@ export function useGame(): UseGame {
       const option = prev.pack.offer.options[optionIndex];
       if (!option) return prev;
       const run = applyPackPick(prev.run, option);
+      recordVoucherProgress({
+        kind: 'editionedJokers',
+        count: run.jokers.filter((j) => (j.edition ?? 'base') !== 'base').length,
+      });
       const options = prev.pack.offer.options.filter((_, i) => i !== optionIndex);
       const picksLeft = prev.pack.picksLeft - 1;
       const pack =
@@ -591,13 +657,57 @@ export function useGame(): UseGame {
     });
   }, []);
 
-  const useMagnifier = useCallback(() => {
+  const useConsumable = useCallback((id: import('../engine/types').ConsumableId) => {
     setState((prev) => {
-      if (prev.phase !== 'playing' || !prev.run.consumables.includes('magnifier')) return prev;
-      const idx = prev.run.consumables.indexOf('magnifier');
+      if (prev.phase !== 'playing' || !prev.run.consumables.includes(id)) return prev;
+      if (isFableId(id)) {
+        const result = useFable(
+          id,
+          prev.run,
+          prev.blind,
+          prev.selected,
+          makeRng(`${prev.seed}#${prev.rngCounter}`),
+        );
+        if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
+        recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+        recordVoucherProgress({
+          kind: 'editionedJokers',
+          count: result.run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
+        });
+        const hint = result.requestHint
+          ? findSpellableWords(result.blind.hand, lexicon, 3)
+          : prev.hint;
+        return {
+          ...prev,
+          run: result.run,
+          blind: result.blind,
+          selected: [],
+          hint,
+          message: null,
+          rngCounter: prev.rngCounter + 1,
+        };
+      }
+      const idx = prev.run.consumables.indexOf(id);
       const consumables = prev.run.consumables.slice();
       consumables.splice(idx, 1);
-      const hint = findSpellableWords(prev.blind.hand, lexicon, 3);
+      const pattern = CONSUMABLE_PATTERN[id];
+      if (pattern) {
+        recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
+        return {
+          ...prev,
+          run: {
+            ...prev.run,
+            consumables,
+            lastFableOrConstellation: id,
+            patternLevels: {
+              ...prev.run.patternLevels,
+              [pattern]: (prev.run.patternLevels[pattern] ?? 1) + 1,
+            },
+          },
+        };
+      }
+      recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+      const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, lexicon, 3) : prev.hint;
       return { ...prev, run: { ...prev.run, consumables }, hint };
     });
   }, [lexicon]);
@@ -619,7 +729,25 @@ export function useGame(): UseGame {
         // Boss legality (e.g. The Noun Lock) — surface, don't crash.
         return { ...prev, message: { key: 'boss.blocked' } };
       }
-      const { blind, events, submission, goldDelta, destroyedTileIds } = result;
+      const { events, submission, goldDelta, destroyedTileIds, grownWoodTileIds } = result;
+      const growWood = (tile: import('../engine/types').Tile) =>
+        grownWoodTileIds.includes(tile.id)
+          ? {
+              ...tile,
+              woodBonusChips:
+                (tile.woodBonusChips ?? BALANCE.materials.wood.baseChips) +
+                BALANCE.materials.wood.chipsPerPlay,
+            }
+          : tile;
+      const blind = grownWoodTileIds.length
+        ? {
+            ...result.blind,
+            hand: result.blind.hand.map(growWood),
+            bag: result.blind.bag.map(growWood),
+            discardedThisBlind: result.blind.discardedThisBlind.map(growWood),
+          }
+        : result.blind;
+      recordVoucherProgress({ kind: 'tilesPlayed', count: submission.tiles.length });
       if (submission.isGibberish) tutorialBus.fire('firstGibberish');
       // Chromatic unlocks (feature-02 C): a VALID word may write a presentation
       // layer into the world on its first-ever play. Gibberish never unlocks.
@@ -634,9 +762,9 @@ export function useGame(): UseGame {
       const nextRun: RunState = {
         ...prev.run,
         gold: Math.max(0, prev.run.gold + goldDelta),
-        bag: destroyedTileIds.length
-          ? prev.run.bag.filter((t) => !destroyedTileIds.includes(t.id))
-          : prev.run.bag,
+        bag: prev.run.bag
+          .filter((t) => !destroyedTileIds.includes(t.id))
+          .map(growWood),
         // Track played words this ante for the Memoirs boss (회고록); gibberish is
         // never tracked. Reset per ante in finalize when the chapter's Deadline clears.
         wordsThisAnte: submission.isGibberish
@@ -765,6 +893,7 @@ export function useGame(): UseGame {
         valid,
         makeRng(`${prev.seed}#${prev.rngCounter}`),
       );
+      recordVoucherProgress({ kind: 'tilesDiscarded', count: valid.length });
       return {
         ...prev,
         blind,
@@ -791,13 +920,42 @@ export function useGame(): UseGame {
     });
   }, []);
 
-  const newGame = useCallback(() => setState({ ...bootstrap(), runStarted: true }), []);
+  const rerollBoss = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== 'blindselect') return prev;
+      if (prev.run.gold < bossRerollPrice()) return prev;
+      if (prev.run.bossRerollsUsed >= bossRerollLimit(prev.run)) return prev;
+      const rng = makeRng(`${prev.seed}#boss-reroll-${prev.rngCounter}`);
+      let bossId = drawBoss(rng);
+      if (bossId === prev.run.chapterBossId) bossId = drawBoss(rng);
+      const run = {
+        ...prev.run,
+        gold: prev.run.gold - bossRerollPrice(),
+        chapterBossId: bossId,
+        bossRerollsUsed: prev.run.bossRerollsUsed + 1,
+      };
+      const blind = prev.run.blindIndex === 2
+        ? startBlind(run, rng, { kind: 'boss', bossId })
+        : prev.blind;
+      return { ...prev, run, blind, rngCounter: prev.rngCounter + 1 };
+    });
+  }, []);
+
+  const newGame = useCallback(() => {
+    const next = { ...bootstrap(), runStarted: true };
+    recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+    setState(next);
+  }, []);
   const startRun = useCallback(
     (seed?: string) =>
-      setState({
-        ...bootstrap(seed && seed.trim() ? seed.trim() : undefined),
-        runStarted: true,
-      }),
+      {
+        const next = {
+          ...bootstrap(seed && seed.trim() ? seed.trim() : undefined),
+          runStarted: true,
+        };
+        recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+        setState(next);
+      },
     [],
   );
 
@@ -814,14 +972,21 @@ export function useGame(): UseGame {
     reorderHand,
     reorderJokers,
     reorderStaged,
-    useMagnifier,
-    canMagnify: state.phase === 'playing' && state.run.consumables.includes('magnifier'),
+    useConsumable,
+    canUseConsumable: (id) =>
+      state.phase === 'playing' &&
+      !state.pendingEnd &&
+      (!isFableId(id) || canUseFable(id, state.run, state.blind, state.selected)),
+    canMagnify:
+      state.phase === 'playing' &&
+      (state.run.consumables.includes('magnifier') || state.run.consumables.includes('fable1')),
     sellConsumable,
     buy,
     sell,
     reroll,
     leaveShop,
     buyVoucher: buyVoucherAction,
+    rerollBoss,
     buyPack,
     pickPackOption,
     closePack,
