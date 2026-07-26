@@ -66,10 +66,10 @@ describe('packGalleryPages — 도감 Packs gallery (Reference.png)', () => {
     }
   });
 
-  it('tile page holds 7, joker 4, ink(pattern) 8', () => {
+  it('tile page holds 8, joker 4, ink(pattern) 8', () => {
     const pages = packGalleryPages();
     const len = (type: PackType) => pages.find((p) => p[0]!.kind === 'art' && p[0]!.type === type)!.length;
-    expect(len('tile')).toBe(7);
+    expect(len('tile')).toBe(8);
     expect(len('joker')).toBe(4);
     expect(len('pattern')).toBe(8);
   });

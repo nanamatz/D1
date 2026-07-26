@@ -13,6 +13,7 @@ import { mascotCollectionRows } from '../mascots';
 import { bossDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { packArt, packGalleryPages } from '../packArt';
+import { packTooltip } from '../packTooltip';
 import pouchUrl from '../assets/pouch.png';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
@@ -394,8 +395,7 @@ function PacksView() {
           e.kind === 'art' ? (
             <Tooltip
               key={`a${i}`}
-              title={`${t(`pack.type.${e.type}`)} · ${t(`pack.size.${e.size}`)}`}
-              body={t(`packdesc.${e.type}`)}
+              {...packTooltip(e.type, e.size, t)}
               down
             >
               <div className="pack-gallery-card">

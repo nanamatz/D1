@@ -3,9 +3,14 @@
  *
  * Description strings in locales/*.json tag the parts that must stand out:
  *
- *   [m:…]  a Mult value      → red chip, white text
- *   [c:…]  a Chips value     → blue chip, white text
- *   [b:…]  the word "Blind"  → sky-blue text
+ *   [m:…]  a Mult value       → red chip, white text
+ *   [c:…]  a Chips value      → blue chip, white text
+ *   [b:…]  the word "Blind"   → sky-blue text
+ *   [n:…]  a count ("5")      → orange text   (pack copy: "up to 5 … choose 2")
+ *   [k:…]  a card-kind noun   → red text      (pack copy: "Punctuation", "Charm")
+ *
+ * n/k recolour inline text rather than drawing a filled chip: a pack description is
+ * prose about how many cards of what kind, not a Chips/Mult value readout.
  *
  * The tags live in the copy rather than being sniffed out of it with regexes,
  * because what counts as a Mult value is a fact about the sentence, not about
@@ -15,12 +20,14 @@
  */
 import type { ReactNode } from 'react';
 
-const TAG = /\[([mcb]):([^\]]*)\]/g;
+const TAG = /\[([mcbnk]):([^\]]*)\]/g;
 
 const CLASS: Record<string, string> = {
   m: 'hl-mult',
   c: 'hl-chips',
   b: 'hl-blind',
+  n: 'hl-count',
+  k: 'hl-kind',
 };
 
 /**

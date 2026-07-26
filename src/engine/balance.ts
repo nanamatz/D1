@@ -177,7 +177,7 @@ export const BALANCE = {
     // packArt.ts); the seeded RNG picks one at stock time. Consumable has no art yet
     // (1 → variant 0). Bump when art is added.
     artVariants: {
-      tile: { normal: 3, jumbo: 2, mega: 2 },
+      tile: { normal: 4, jumbo: 2, mega: 2 },
       joker: { normal: 2, jumbo: 1, mega: 1 },
       pattern: { normal: 4, jumbo: 2, mega: 2 },
       consumable: { normal: 1, jumbo: 1, mega: 1 },

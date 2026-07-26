@@ -14,6 +14,7 @@ import { PackOpening } from './PackOpening';
 import { MoneyValue } from './MoneyValue';
 import { ShopMascot } from './ShopMascot';
 import { packArt } from '../packArt';
+import { packTooltip } from '../packTooltip';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -152,13 +153,17 @@ export function Shop({ g }: { g: UseGame }) {
           <div className="panel">
             <div className="label">{t('shop.packs')}</div>
             <div className="shop-row">
-              {shop.packs.map((p, i) =>
-                p ? (
-                  <Tooltip
-                    key={i}
-                    title={`${t(`pack.type.${p.type}`)} · ${t(`pack.size.${p.size}`)}`}
-                    body={t(`packdesc.${p.type}`)}
-                  >
+              {shop.packs.map((p, i) => {
+                if (!p) {
+                  return (
+                    <div key={i} className="shopitem empty">
+                      {t('shop.sold')}
+                    </div>
+                  );
+                }
+                const tip = packTooltip(p.type, p.size, t);
+                return (
+                  <Tooltip key={i} title={tip.title} body={tip.body} grade={tip.grade}>
                     <div className={['shopitem', `pack-${p.size}`].join(' ')}>
                       {/* Tile / Charm / Ink packs have art; Consumable keeps the 📦 glyph. */}
                       {packArt(p.type, p.size, p.artVariant) ? (
@@ -178,12 +183,8 @@ export function Shop({ g }: { g: UseGame }) {
                       </button>
                     </div>
                   </Tooltip>
-                ) : (
-                  <div key={i} className="shopitem empty">
-                    {t('shop.sold')}
-                  </div>
-                ),
-              )}
+                );
+              })}
             </div>
           </div>
         </div>

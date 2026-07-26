@@ -10,13 +10,14 @@
 import type { PackSize, PackType } from '../engine/types';
 
 // Tile pack (활자 → 타일)
-import tileBasic1 from './assets/packs/T_BasicPack1.png';
-import tileBasic2 from './assets/packs/T_BasicPack2.png';
-import tileBasic3 from './assets/packs/T_BasicPack3.png';
-import tileClassic1 from './assets/packs/T_ClassicPack1.png';
-import tileClassic2 from './assets/packs/T_ClassicPack2.png';
-import tilePremium1 from './assets/packs/T_PremiumPack1.png';
-import tilePremium2 from './assets/packs/T_PremiumPack2.png';
+import tileBasic1 from './assets/packs/T_BasicTilePack1.png';
+import tileBasic2 from './assets/packs/T_BasicTilePack2.png';
+import tileBasic3 from './assets/packs/T_BasicTilePack3.png';
+import tileBasic4 from './assets/packs/T_BasicTilePack4.png';
+import tileClassic1 from './assets/packs/T_ClassicTilePack1.png';
+import tileClassic2 from './assets/packs/T_ClassicTilePack2.png';
+import tilePremium1 from './assets/packs/T_PremiumTilePack1.png';
+import tilePremium2 from './assets/packs/T_PremiumTilePack2.png';
 // Charm pack (부적 = joker)
 import charmBasic1 from './assets/packs/T_BasicCharmPack.png';
 import charmBasic2 from './assets/packs/T_BasicCharmPack2.png';
@@ -38,7 +39,7 @@ import inkPremium2 from './assets/packs/T_PremiumInkPack2.png';
  */
 export const PACK_ART: Partial<Record<PackType, Record<PackSize, readonly string[]>>> = {
   tile: {
-    normal: [tileBasic1, tileBasic2, tileBasic3],
+    normal: [tileBasic1, tileBasic2, tileBasic3, tileBasic4],
     jumbo: [tileClassic1, tileClassic2],
     mega: [tilePremium1, tilePremium2],
   },

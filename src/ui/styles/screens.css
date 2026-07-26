@@ -149,8 +149,26 @@
   color: #2f8fd4;
   font-weight: 700;
 }
-/* Rarity badge — jokers only, beneath the description plate. */
-.tt-rarity {
+ /* Pack copy highlights: a count and the kind of card. Recoloured inline text, not
+   chips (see richtext.tsx). Darker than the reference's neon orange/red because
+   these sit on the WHITE description plate and have to stay legible. Plain hex like
+   .hl-blind above — world-mono greyscales .frame, so the colourless start still holds. */
+.hl-count {
+  color: #b35c00;
+  font-weight: 700;
+}
+.hl-kind {
+  color: #b8342b;
+  font-weight: 700;
+}
+/* Pack descriptions read as a centred two/three-line blurb (Reference.png). Scoped to
+   .pack so joker copy keeps its left alignment. */
+.tt-card.pack .tt-body {
+  text-align: center;
+}
+/* Badges beneath the description plate: joker rarity, or pack grade. */
+.tt-rarity,
+.tt-grade {
   align-self: center;
   font-size: var(--fs-2xs);
   font-weight: 700;
@@ -170,6 +188,18 @@
   background: var(--mult);
 }
 .tt-rarity.legendary {
+  background: var(--gold);
+  color: #20160a;
+}
+/* Grade tones escalate like rarity does, so the badge reads at a glance.
+   Tokens (not raw hex) so the chromatic-unlock palette still governs them. */
+.tt-grade.normal {
+  background: #6b7a84;
+}
+.tt-grade.jumbo {
+  background: var(--chips);
+}
+.tt-grade.mega {
   background: var(--gold);
   color: #20160a;
 }
@@ -1733,10 +1763,14 @@ body.cb-safe .tile.hint {
 .pouch-widget.open {
   outline: 2px solid var(--gold);
 }
-/* The default pouch pixel-art (T_DefaultPouch), sized to the old ~52px emoji box. */
+/* The default pouch pixel-art (T_DefaultPouch), bumped up from the old 52px
+   emoji box. NOTE: the runtime copy (src/ui/assets/pouch.png) is the master art
+   TRIMMED to its alpha bounds — the delivered T_DefaultPouch is a 1408×768 sheet
+   with the 510×511 pouch floating in the middle, so `contain` used to shrink it
+   to ~19px inside a 52px box. Box size now equals the pouch's drawn size. */
 .pouch-art {
-  width: 52px;
-  height: 52px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   image-rendering: pixelated;
 }
