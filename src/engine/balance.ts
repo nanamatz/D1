@@ -95,6 +95,10 @@ export const BALANCE = {
     transitive:   { rank: 6, baseChips: 40, baseMult: 3, levelChips: 20, levelMult: 1 },
     ditransitive: { rank: 7, baseChips: 50, baseMult: 4, levelChips: 25, levelMult: 1.5 },
     compound:     { rank: 8, baseChips: 60, baseMult: 4, levelChips: 30, levelMult: 1.5 },
+    objectComplement: { rank: 9, baseChips: 75, baseMult: 5, levelChips: 35, levelMult: 2 },
+    interrogative:    { rank: 10, baseChips: 90, baseMult: 5, levelChips: 40, levelMult: 2 },
+    negative:         { rank: 11, baseChips: 110, baseMult: 6, levelChips: 45, levelMult: 2.5 },
+    complex:          { rank: 12, baseChips: 130, baseMult: 6, levelChips: 50, levelMult: 2.5 },
   },
 
   /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
@@ -115,7 +119,7 @@ export const BALANCE = {
   /** min word length for the Longword hand, and min length for Palindrome to count */
   letterHand: { longwordLen: 7, palindromeMinLen: 3, straightRun: 6 },
 
-  // Punctuation level-ups are now uniform per pattern via `patterns.*.levelChips /
+  // Constellation level-ups are uniform per pattern via `patterns.*.levelChips /
   // levelMult` (feature-02 A) — the separate punctuationLevel table is retired.
 
   // ----- Unison bonus (GDD §5.3) — folds into the sentence formula (feature-02 A):

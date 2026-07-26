@@ -21,7 +21,9 @@ import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from '../voucherProgress';
 import { FABLE_DEFS } from '../../engine/fables';
-import { fableArt } from '../fableArt';
+import { FableCardArt } from './FableCardArt';
+import { CONSTELLATION_DEFS } from '../../engine/constellations';
+import { constellationArt } from '../constellationArt';
 
 type Category =
   | 'words'
@@ -128,7 +130,10 @@ export function Collection({ lexicon, onBack }: Props) {
         total: ALL_VOUCHER_IDS.length,
       },
       fableCards: { have: FABLE_DEFS.length, total: FABLE_DEFS.length },
-      constellationCards: { have: 0, total: 0 },
+      constellationCards: {
+        have: CONSTELLATION_DEFS.length,
+        total: CONSTELLATION_DEFS.length,
+      },
       inkCards: { have: 0, total: 0 },
       bosses: { have: CORE_BOSS_IDS.length, total: CORE_BOSS_IDS.length },
       packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
@@ -203,7 +208,7 @@ export function Collection({ lexicon, onBack }: Props) {
           {cat === 'fonts' && <FontsView />}
           {cat === 'vouchers' && <VouchersView />}
           {cat === 'fableCards' && <FablesView />}
-          {cat === 'constellationCards' && <CardFamilyView family="constellationCards" />}
+          {cat === 'constellationCards' && <ConstellationsView />}
           {cat === 'inkCards' && <CardFamilyView family="inkCards" />}
           {cat === 'bosses' && <BossesView />}
           {cat === 'packs' && <PacksView />}
@@ -626,7 +631,7 @@ function FablesView() {
             down
           >
             <div className="fable-card">
-              <img src={fableArt(def.id)} alt="" />
+              <FableCardArt id={def.id} title={t(`consumable.${def.id}`)} />
             </div>
           </Tooltip>
         ))}
@@ -636,10 +641,32 @@ function FablesView() {
   );
 }
 
+function ConstellationsView() {
+  const { t } = useI18n();
+  return (
+    <div className="constellation-collection">
+      <div className="constellation-card-grid">
+        {CONSTELLATION_DEFS.map((def) => (
+          <Tooltip
+            key={def.id}
+            title={t(`consumable.${def.id}`)}
+            body={t('pack.constellationLevels', { pattern: t(`pattern.${def.pattern}`) })}
+            down
+          >
+            <div className="constellation-card">
+              <img src={constellationArt(def.id)} alt="" />
+            </div>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CardFamilyView({
   family,
 }: {
-  family: 'fableCards' | 'constellationCards' | 'inkCards';
+  family: 'fableCards' | 'inkCards';
 }) {
   const { t } = useI18n();
   return (

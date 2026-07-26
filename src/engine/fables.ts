@@ -3,6 +3,7 @@
  * currently staged tile ids and a seeded RNG, then renders the returned state.
  */
 import { BALANCE } from './balance';
+import { CONSTELLATION_IDS } from './constellations';
 import { sellValue } from './economy';
 import { ALL_JOKERS, JOKER_REGISTRY } from './jokers';
 import type {
@@ -26,11 +27,6 @@ export const FABLE_IDS: readonly FableId[] = [
   'fable1', 'fable2', 'fable3', 'fable4', 'fable5', 'fable6',
   'fable7', 'fable8', 'fable9', 'fable10', 'fable11', 'fable12',
   'fable13', 'fable14', 'fable15', 'fable16', 'fable17', 'fable18',
-];
-
-export const CONSTELLATION_IDS: readonly ConsumableId[] = [
-  'ellipsis', 'exclamation', 'doubleExclamation', 'period',
-  'colon', 'semicolon', 'dash', 'comma',
 ];
 
 export const isFableId = (id: ConsumableId): id is FableId =>

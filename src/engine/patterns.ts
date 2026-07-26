@@ -2,7 +2,7 @@
  * Sentence pattern matching (GDD §5) — the game's "poker hand" table.
  *
  * Level-1 judgment only (GDD §4.1): assign each word a POS from its allowed set
- * and match the whole sequence against the eight patterns. No NLP.
+ * and match the whole sequence against the twelve patterns. No external NLP.
  *
  * Matching rules (§5.1):
  *   1. Whole-sequence match; a gibberish hole (§6.4) voids ALL matches.
@@ -45,6 +45,36 @@ const LINKING: Slot = (w) => can(w, 'verbLinking');
 const INTERJECTION: Slot = (w) => can(w, 'interjection');
 const ANYVERB: Slot = (w) => canVerb(w);
 
+const OBJECT_COMPLEMENT_VERBS = new Set([
+  'make', 'makes', 'made',
+  'call', 'calls', 'called',
+  'find', 'finds', 'found',
+  'name', 'names', 'named',
+  'keep', 'keeps', 'kept',
+  'consider', 'considers', 'considered',
+  'elect', 'elects', 'elected',
+  'paint', 'paints', 'painted',
+]);
+const QUESTION_OPENERS = new Set([
+  'who', 'whom', 'whose', 'what', 'which', 'when', 'where', 'why', 'how',
+  'am', 'is', 'are', 'was', 'were',
+  'do', 'does', 'did',
+  'can', 'could', 'will', 'would', 'shall', 'should',
+  'have', 'has', 'had', 'may', 'might', 'must',
+]);
+const NEGATIVE_WORDS = new Set([
+  'not', 'never',
+  'dont', 'isnt', 'arent', 'wasnt', 'werent',
+  'cant', 'couldnt', 'wont', 'wouldnt', 'shouldnt',
+  'hasnt', 'havent', 'hadnt', 'didnt', 'doesnt',
+]);
+const CONTRACTED_NEGATIVES = new Set(
+  [...NEGATIVE_WORDS].filter((word) => word !== 'not' && word !== 'never'),
+);
+const SUBORDINATORS = new Set([
+  'because', 'when', 'if', 'although', 'while', 'unless', 'since', 'after', 'before',
+]);
+
 /**
  * Match a core skeleton against the words, allowing modifiers to be absorbed
  * anywhere. Returns the absorbed-modifier count, or null if no parse exists.
@@ -81,6 +111,7 @@ const CLAUSE_SKELETONS: readonly Slot[][] = [
   [NOUN, LINKING, ADJ], // descriptive
   [NOUN, TRANS, NOUN], // transitive
   [NOUN, TRANS, NOUN, NOUN], // ditransitive
+  [NOUN, ANYVERB, ANYVERB], // auxiliary + lexical verb
 ];
 
 const matchesAnyClause = (words: readonly POSWord[]): boolean =>
@@ -120,6 +151,46 @@ function matchChant(words: readonly POSWord[]): number | null {
   return allSame ? words.length : null;
 }
 
+/** S + object-complement verb + O + adjective/noun complement. */
+function matchObjectComplement(words: readonly POSWord[]): number | null {
+  const predicate: Slot = (word) =>
+    can(word, 'verbTransitive') && OBJECT_COMPLEMENT_VERBS.has(word.text.toLowerCase());
+  const adjective = matchSkeleton(words, [NOUN, predicate, NOUN, ADJ]);
+  const noun = matchSkeleton(words, [NOUN, predicate, NOUN, NOUN]);
+  if (adjective === null) return noun;
+  if (noun === null) return adjective;
+  return Math.min(adjective, noun);
+}
+
+/** Question mark tiles are unnecessary: an interrogative/auxiliary opener is the signal. */
+function matchInterrogative(words: readonly POSWord[]): number | null {
+  if (words.length < 2 || !QUESTION_OPENERS.has(words[0]!.text.toLowerCase())) return null;
+  return words.some((word) => canVerb(word)) && words.some((word) => can(word, 'noun')) ? 0 : null;
+}
+
+/** NOT/NEVER and apostrophe-free contractions such as DONT/ISNT/CANT. */
+function matchNegative(words: readonly POSWord[]): number | null {
+  const texts = words.map((word) => word.text.toLowerCase());
+  if (!texts.some((word) => NEGATIVE_WORDS.has(word))) return null;
+  const hasSubject = words.some((word) => can(word, 'noun'));
+  const hasPredicate =
+    words.some((word) => canVerb(word)) ||
+    texts.some((word) => CONTRACTED_NEGATIVES.has(word));
+  return hasSubject && hasPredicate ? 0 : null;
+}
+
+/** Initial subordinator + complete subordinate clause + complete main clause. */
+function matchComplex(words: readonly POSWord[]): number | null {
+  if (words.length < 5 || !SUBORDINATORS.has(words[0]!.text.toLowerCase())) return null;
+  for (let split = 3; split < words.length; split += 1) {
+    if (
+      matchesAnyClause(words.slice(1, split)) &&
+      matchesAnyClause(words.slice(split))
+    ) return 0;
+  }
+  return null;
+}
+
 interface Candidate {
   id: PatternId;
   absorbed: number;
@@ -148,6 +219,11 @@ function candidates(words: readonly POSWord[]): Candidate[] {
 
   const compound = matchCompound(words);
   if (compound !== null) push('compound', compound);
+
+  push('objectComplement', matchObjectComplement(words));
+  push('interrogative', matchInterrogative(words));
+  push('negative', matchNegative(words));
+  push('complex', matchComplex(words));
 
   return out;
 }

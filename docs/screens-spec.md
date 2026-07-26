@@ -92,11 +92,11 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 |---|---|---|
 | **Words** | discovered words as tile-styled entries, `N/total`, filter by suit & length, paginated | our unique category; data already tracked |
 | Jokers | all Emoji Tiles, rarity-ordered, paginated grid | tooltip shows full effect |
-| Materials | 8 tile faces (ceramic + 7) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
+| Materials | 9 tile faces (base + 8 enhanced, including Wood) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
 | Fonts | 5 (Futura variants) | rendered as the same letter in each style; shows each font's seal effect from `balance.ts` `fontEffects` (GDD §2.3); maps the reference's "editions" screen |
 | Vouchers | 32 tickets | 16 base/upgraded pairs; four pairs per page; locked upgrades show their profile condition |
-| **Fable Cards** | 18 implemented cards | supplied pixel art in a 5-column, 10-per-page gallery; hover shows the full effect |
-| **Constellation Cards** | content pending | empty 5-column card gallery shell; grouped with the other card families in the root menu |
+| **Fable Cards** | 18 implemented cards | supplied pixel art normalized through one 5:7 SVG card surface, in a 5-column, 10-per-page gallery; hover shows the full effect |
+| **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art in a 6-column × 2-row gallery; hover shows the mapped sentence pattern |
 | **Ink Cards** | content pending | empty 5-column card gallery shell; grouped with the other card families in the root menu |
 | Packs | current pack families | paged artwork gallery with tooltip details |
 | **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
@@ -104,7 +104,7 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 | Bags | carousel detail view (bag art + description) | **[PLACEHOLDER: 1 entry]** |
 | **Blinds & Bosses** | left: ante → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Small/Big badges + 12 boss chips + 2 finisher chips (undiscovered = `?`) | doubles as the player-facing difficulty-curve reference |
 
-Constellation and Ink remain presentation scaffolds until their dedicated art/content passes. Fable reports `18/18` and uses its real registry; the two pending families deliberately report `0/0` and render uniform `?` slots.
+Fable reports `18/18` and Constellation reports `12/12`, both using their real registries and supplied art. Ink remains the only pending family and reports `0/0` with uniform `?` slots.
 
 **Omitted by design (no equivalents — do not add):** Seals (their roles are absorbed into the font layer — GDD §2.3 seal-port — so no separate category) and Tags (skip/tag system deferred, GDD §8.2).
 

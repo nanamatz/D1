@@ -6,6 +6,10 @@
  */
 import { BALANCE } from './balance';
 import type { JokerEdition, PatternId, RunState, VoucherId } from './types';
+import {
+  CONSTELLATION_PATTERN,
+  PATTERN_CONSTELLATION,
+} from './constellations';
 
 export interface VoucherDef {
   id: VoucherId;
@@ -187,16 +191,8 @@ export const jokerSlotLimit = (run: RunState): number =>
 export const canAddJoker = (run: RunState, edition: JokerEdition = 'base'): boolean =>
   run.jokers.length < jokerSlotLimit(run) + (edition === 'negative' ? 1 : 0);
 
-export const PATTERN_CONSUMABLE: Record<PatternId, import('./types').ConsumableId> = {
-  outcry: 'ellipsis',
-  imperative: 'exclamation',
-  chant: 'doubleExclamation',
-  simple: 'period',
-  descriptive: 'colon',
-  transitive: 'semicolon',
-  ditransitive: 'dash',
-  compound: 'comma',
-};
+export const PATTERN_CONSUMABLE: Record<PatternId, import('./types').ConsumableId> =
+  PATTERN_CONSTELLATION;
 
 export const CONSUMABLE_PATTERN: Partial<Record<import('./types').ConsumableId, PatternId>> =
-  Object.fromEntries(Object.entries(PATTERN_CONSUMABLE).map(([pattern, id]) => [id, pattern]));
+  CONSTELLATION_PATTERN;

@@ -54,6 +54,22 @@ describe('slice3 scoring — base pattern Chips × Mult, added to the total (GDD
   it('Compound: 60 × 4 = +240', () => {
     expect(finalizeScore(100, jm('compound'), LV()).total).toBe(100 + 240);
   });
+
+  it('Object Complement: 75 × 5 = +375', () => {
+    expect(finalizeScore(0, jm('objectComplement'), LV()).total).toBe(375);
+  });
+
+  it('Interrogative: 90 × 5 = +450', () => {
+    expect(finalizeScore(0, jm('interrogative'), LV()).total).toBe(450);
+  });
+
+  it('Negative: 110 × 6 = +660', () => {
+    expect(finalizeScore(0, jm('negative'), LV()).total).toBe(660);
+  });
+
+  it('Complex: 130 × 6 = +780', () => {
+    expect(finalizeScore(0, jm('complex'), LV()).total).toBe(780);
+  });
 });
 
 describe('slice3 scoring — modifiers add +15 chips each, uniformly (GDD §5.1 rule 3)', () => {

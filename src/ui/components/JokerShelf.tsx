@@ -10,7 +10,9 @@ import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
 import { jokerSlotLimit } from '../../engine/vouchers';
 import { isFableId } from '../../engine/fables';
-import { fableArt } from '../fableArt';
+import { isConstellationId } from '../../engine/constellations';
+import { constellationArt } from '../constellationArt';
+import { FableCardArt } from './FableCardArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -178,7 +180,17 @@ export function JokerShelf({
                 }}
               >
                 {isFableId(c) ? (
-                  <img className="consumable-art" src={fableArt(c)} alt="" />
+                  <FableCardArt
+                    id={c}
+                    className="consumable-art"
+                    title={t(`consumable.${c}`)}
+                  />
+                ) : isConstellationId(c) ? (
+                  <img
+                    className="consumable-art"
+                    src={constellationArt(c)}
+                    alt=""
+                  />
                 ) : (
                   <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
                 )}

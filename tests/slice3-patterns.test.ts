@@ -26,6 +26,39 @@ const L = makeLexicon([], {
   the: { suit: 'standard', pos: ['article'] },
   big: { suit: 'standard', pos: ['adjective'] },
   very: { suit: 'standard', pos: ['adverb'] },
+  made: { suit: 'standard', pos: ['verbTransitive'] },
+  called: { suit: 'standard', pos: ['verbTransitive'] },
+  found: { suit: 'standard', pos: ['verbTransitive'] },
+  she: { suit: 'standard', pos: ['noun'] },
+  we: { suit: 'standard', pos: ['noun'] },
+  me: { suit: 'standard', pos: ['noun'] },
+  tom: { suit: 'standard', pos: ['noun'] },
+  it: { suit: 'standard', pos: ['noun'] },
+  happy: { suit: 'standard', pos: ['adjective'] },
+  useful: { suit: 'standard', pos: ['adjective'] },
+  are: { suit: 'standard', pos: ['verbLinking'] },
+  you: { suit: 'standard', pos: ['noun'] },
+  ready: { suit: 'standard', pos: ['adjective'] },
+  do: { suit: 'standard', pos: ['verbTransitive'] },
+  know: { suit: 'standard', pos: ['verbTransitive', 'verbIntransitive'] },
+  where: { suit: 'standard', pos: ['adverb'] },
+  not: { suit: 'standard', pos: ['adverb'] },
+  never: { suit: 'standard', pos: ['adverb'] },
+  isnt: { suit: 'standard', pos: [] },
+  here: { suit: 'standard', pos: ['adverb'] },
+  he: { suit: 'standard', pos: ['noun'] },
+  lies: { suit: 'standard', pos: ['verbIntransitive'] },
+  because: { suit: 'standard', pos: ['conjunction'] },
+  when: { suit: 'standard', pos: ['conjunction', 'adverb'] },
+  if: { suit: 'standard', pos: ['conjunction'] },
+  rained: { suit: 'standard', pos: ['verbIntransitive'] },
+  stayed: { suit: 'standard', pos: ['verbTransitive', 'verbIntransitive'] },
+  home: { suit: 'standard', pos: ['noun'] },
+  arrived: { suit: 'standard', pos: ['verbIntransitive'] },
+  started: { suit: 'standard', pos: ['verbIntransitive'] },
+  study: { suit: 'standard', pos: ['verbIntransitive'] },
+  will: { suit: 'standard', pos: ['verbTransitive'] },
+  pass: { suit: 'standard', pos: ['verbIntransitive'] },
 });
 
 // Minimal WordSubmission builder — judge only reads text / suit / isGibberish.
@@ -45,7 +78,7 @@ const seq = (spec: Array<string | { t: string; suit?: Suit | null; gib?: boolean
 
 const pattern = (words: Parameters<typeof seq>[0]) => judgeSentence(seq(words), L).match?.pattern ?? null;
 
-describe('slice3 patterns — the eight matchers (GDD §5.2)', () => {
+describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
   it('Outcry: interjection alone', () => {
     expect(pattern(['WOW'])).toBe('outcry');
   });
@@ -85,6 +118,34 @@ describe('slice3 patterns — the eight matchers (GDD §5.2)', () => {
 
   it('Compound: clause + conjunction + clause (CATS RUN AND DOGS SLEEP)', () => {
     expect(pattern(['CATS', 'RUN', 'AND', 'DOGS', 'SLEEP'])).toBe('compound');
+  });
+
+  it('Object Complement: subject + selected transitive verb + object + complement', () => {
+    expect(pattern(['I', 'MADE', 'HIM', 'HAPPY'])).toBe('objectComplement');
+    expect(pattern(['SHE', 'CALLED', 'ME', 'TOM'])).toBe('objectComplement');
+    expect(pattern(['WE', 'FOUND', 'IT', 'USEFUL'])).toBe('objectComplement');
+  });
+
+  it('does not misclassify an ordinary ditransitive sentence as Object Complement', () => {
+    expect(pattern(['I', 'GIVE', 'HIM', 'FISH'])).toBe('ditransitive');
+  });
+
+  it('Interrogative: detects openers without a question-mark tile', () => {
+    expect(pattern(['ARE', 'YOU', 'READY'])).toBe('interrogative');
+    expect(pattern(['DO', 'YOU', 'KNOW'])).toBe('interrogative');
+    expect(pattern(['WHERE', 'ARE', 'YOU'])).toBe('interrogative');
+  });
+
+  it('Negative: accepts NOT, NEVER, and apostrophe-free contractions', () => {
+    expect(pattern(['I', 'DO', 'NOT', 'KNOW'])).toBe('negative');
+    expect(pattern(['SHE', 'ISNT', 'HERE'])).toBe('negative');
+    expect(pattern(['HE', 'NEVER', 'LIES'])).toBe('negative');
+  });
+
+  it('Complex: subordinator + subordinate clause + main clause', () => {
+    expect(pattern(['BECAUSE', 'IT', 'RAINED', 'I', 'STAYED', 'HOME'])).toBe('complex');
+    expect(pattern(['WHEN', 'HE', 'ARRIVED', 'WE', 'STARTED'])).toBe('complex');
+    expect(pattern(['IF', 'YOU', 'STUDY', 'YOU', 'WILL', 'PASS'])).toBe('complex');
   });
 });
 

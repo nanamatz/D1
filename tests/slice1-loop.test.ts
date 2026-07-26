@@ -31,7 +31,7 @@ describe('slice1 run — newRun initialization', () => {
   it('starts every sentence pattern at level 1 (GDD §5.4)', () => {
     const run = newRun('seed');
     for (const level of Object.values(run.patternLevels)) expect(level).toBe(1);
-    expect(Object.keys(run.patternLevels).length).toBe(8);
+    expect(Object.keys(run.patternLevels).length).toBe(12);
   });
 });
 

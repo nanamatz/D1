@@ -112,7 +112,11 @@ export type PatternId =
   | 'descriptive'
   | 'transitive'
   | 'ditransitive'
-  | 'compound';
+  | 'compound'
+  | 'objectComplement'
+  | 'interrogative'
+  | 'negative'
+  | 'complex';
 
 export interface PatternDef {
   id: PatternId;
@@ -303,15 +307,18 @@ export interface OwnedJoker {
 
 // ---------- Consumables & vouchers (GDD §9–10) ----------
 
-export type ConsumableFamily = 'stationery' | 'punctuation';
+export type ConsumableFamily = 'fable' | 'constellation' | 'ink';
 
 export type ConsumableId =
   // stationery
   | 'kiln' | 'fountainPen' | 'shift' | 'eraser' | 'correctionTape'
   | 'carvingKnife' | 'photocopier' | 'piggyBank' | 'magnifier'
-  // punctuation (1:1 with patterns, GDD §5.4)
+  // retired punctuation ids retained for compatibility with old serialized/dev data
   | 'ellipsis' | 'exclamation' | 'doubleExclamation' | 'period'
   | 'colon' | 'semicolon' | 'dash' | 'comma'
+  // constellation cards (1:1 with the 12 sentence patterns)
+  | 'libra' | 'leo' | 'aquarius' | 'aries' | 'taurus' | 'gemini'
+  | 'cancer' | 'virgo' | 'scorpio' | 'sagittarius' | 'capricorn' | 'pisces'
   // fable cards
   | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
   | 'fable7' | 'fable8' | 'fable9' | 'fable10' | 'fable11' | 'fable12'

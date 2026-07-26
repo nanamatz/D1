@@ -8,9 +8,10 @@
  */
 
 import { BALANCE } from './balance';
+import { CONSTELLATION_IDS, CONSTELLATION_PATTERN } from './constellations';
 import { ALL_JOKERS } from './jokers';
 import { rollJokerEdition, rollTileEdition } from './editions';
-import { CONSTELLATION_IDS, FABLE_IDS } from './fables';
+import { FABLE_IDS } from './fables';
 import {
   canAddJoker,
   fablePacksContainInk,
@@ -38,17 +39,7 @@ export const STATIONERY_POOL: readonly ConsumableId[] = FABLE_IDS;
 /** Back-compat alias — some call sites still import CONSUMABLE_POOL (discardGain). */
 export const CONSUMABLE_POOL = STATIONERY_POOL;
 
-/** Punctuation card → the pattern it levels (GDD §5.4). Typesetting-pack contents. */
-const PUNCTUATION_PATTERN: Record<string, PatternId> = {
-  ellipsis: 'outcry',
-  exclamation: 'imperative',
-  doubleExclamation: 'chant',
-  period: 'simple',
-  colon: 'descriptive',
-  semicolon: 'transitive',
-  dash: 'ditransitive',
-  comma: 'compound',
-};
+/** Constellation-card pool. The legacy variable name is internal only. */
 export const PUNCTUATION_POOL = [...CONSTELLATION_IDS];
 
 const MATERIALS: readonly TileMaterial[] = [
@@ -130,7 +121,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
         ? [...STATIONERY_POOL, ...PUNCTUATION_POOL]
         : STATIONERY_POOL;
       options = drawConsumables(pool, show, rng, (id) => {
-        const pattern = PUNCTUATION_PATTERN[id];
+        const pattern = CONSTELLATION_PATTERN[id];
         return pattern
           ? { kind: 'punctuation', id, pattern }
           : { kind: 'consumable', id };
@@ -141,7 +132,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       options = drawConsumables(PUNCTUATION_POOL, show, rng, (id) => ({
         kind: 'punctuation',
         id,
-        pattern: PUNCTUATION_PATTERN[id]!,
+        pattern: CONSTELLATION_PATTERN[id]!,
       }));
       if (hasVoucher(run, 'bwPhoto')) {
         const favorite = mostPlayedPattern(run);

@@ -22,7 +22,7 @@ const KEY = 'wj.run';
  * Bump whenever GameState's shape changes. Mismatched saves are DISCARDED, not
  * migrated — a stale save that half-fits is worse than a fresh run.
  */
-const VERSION = 3;
+const VERSION = 4;
 
 interface Envelope {
   version: number;

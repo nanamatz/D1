@@ -30001,3 +30001,17 @@ zooms
 zoos
 zucchini
 zydeco
+# Apostrophe-free contractions accepted by the tile-only grammar.
+arent
+couldnt
+didnt
+doesnt
+dont
+hadnt
+hasnt
+havent
+isnt
+shouldnt
+wasnt
+werent
+wouldnt

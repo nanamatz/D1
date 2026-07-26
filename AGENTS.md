@@ -43,7 +43,7 @@ Balatro-inspired word-building roguelite for the web. **The full design document
   fixed role (`voice.piyak.*`). Encounter **titles** stay `tutorial.<id>.title` — they are
   terms, not dialogue — and `intro.step.*` is always WooDak (the guided intro only runs on a
   profile with no unlocks, so no skin can ever speak it).
-- **Sentence-pattern scoring is unified base Chips × Mult (feature-02 A, GDD §5.2):** every pattern owns `{ baseChips, baseMult, levelChips, levelMult }` in `BALANCE.patterns`; the sentence bonus is a self-contained `(patternChips + 15·mods + unisonChips) × (patternMult × unisonMult)` **added** to the committed total. There is no `add`/`multiply` op split (retired) — patterns never multiply the running word total. Punctuation levels raise both sides uniformly; Unison folds into the formula (Standard on Chips, register mults on Mult).
+- **Sentence-pattern scoring is unified base Chips × Mult (feature-02 A, GDD §5.2):** every pattern owns `{ baseChips, baseMult, levelChips, levelMult }` in `BALANCE.patterns`; the sentence bonus is a self-contained `(patternChips + 15·mods + unisonChips) × (patternMult × unisonMult)` **added** to the committed total. There is no `add`/`multiply` op split (retired) — patterns never multiply the running word total. Constellation cards raise both sides uniformly; Unison folds into the formula (Standard on Chips, register mults on Mult).
 
 ## Spec-conflict protocol (always apply)
 
@@ -60,7 +60,7 @@ Never implement against a doc rule without doing this. A silent divergence betwe
 
 1. **Slice ① Core loop:** `rng.ts`, `bag.ts` (build from `BALANCE.bagComposition`, shuffle, draw), `lexicon.ts` (word `Set` from `data/dictionary.txt` + `data/lexicon.json` lookup), hand/discard state machine, word submission with letter-chip scoring + gibberish path. Tests: bag counts, discard budget, gibberish scoring.
 2. **Slice ② Suits + projection:** suit multiplier application, committed vs projected score split, early-end trigger (`projected >= target`).
-3. **Slice ③ Sentences:** `patterns.ts` — POS assignment search, whole-sequence matchers for the 8 patterns, modifier absorption, highest-only, Unison check; sentence finalization at blind end. This slice makes the game *fun* — test heavily (RUN×4 → chant; PIZZA TASTES GOOD → descriptive; hole voids match).
+3. **Slice ③ Sentences:** `patterns.ts` — POS assignment search, whole-sequence matchers for the 12 patterns, modifier absorption, highest-only, Unison check; sentence finalization at blind end. This slice makes the game *fun* — test heavily (RUN×4 → chant; PIZZA TASTES GOOD → descriptive; hole voids match).
 4. **Slice ④ Joker bus + first 6 jokers:** implement `JokerBus` wiring in the pipeline, then jokers #1, #2, #10 (layer 1), #12 (layer 2), #22, #24 (layer 3) as the proof set spanning all hook types.
 5. **Slice ⑤ Blind/ante/shop:** blind state machine (small/big/boss), target curve, gold flows (clear reward / remaining phases / interest / sell), shop stock + reroll, then bosses and consumables.
 

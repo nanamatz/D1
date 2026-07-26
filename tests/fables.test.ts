@@ -92,20 +92,20 @@ describe('Fable registry', () => {
   it('creates Constellation cards in available consumable slots', () => {
     const { run, blind } = setup('fable10');
     const result = useFable('fable10', run, blind, [], zeroRng);
-    expect(result.run.consumables).toEqual(['ellipsis', 'ellipsis']);
+    expect(result.run.consumables).toEqual(['libra', 'libra']);
   });
 
   it('copies the last Fable or Constellation card', () => {
     const { run, blind } = setup('fable2');
     const result = useFable(
       'fable2',
-      { ...run, lastFableOrConstellation: 'comma' },
+      { ...run, lastFableOrConstellation: 'virgo' },
       blind,
       [],
       zeroRng,
     );
-    expect(result.run.consumables).toEqual(['comma']);
-    expect(result.run.lastFableOrConstellation).toBe('comma');
+    expect(result.run.consumables).toEqual(['virgo']);
+    expect(result.run.lastFableOrConstellation).toBe('virgo');
   });
 
   it('advances alphabet ranks and wraps Z to A', () => {

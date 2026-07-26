@@ -24,6 +24,10 @@ const PATTERN_ORDER: PatternId[] = [
   'transitive',
   'ditransitive',
   'compound',
+  'objectComplement',
+  'interrogative',
+  'negative',
+  'complex',
 ];
 
 /** Run Info overlay (spec §2.4): blind/ante, boss, pattern levels, vouchers. */
@@ -66,7 +70,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
           <div className="ri-patterns">
             {PATTERN_ORDER.map((p) => {
               // feature-02 A-3: the Balatro-style hand list — live [Chips × Mult]
-              // at the pattern's current level, updating as Punctuation cards level it.
+              // at the pattern's current level, updating as Constellation cards level it.
               const cm = patternChipsMult(p, run.patternLevels[p]);
               return (
                 <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>

@@ -11,6 +11,12 @@ describe('P0-1 — real validity dictionary', () => {
     }
   });
 
+  it('accepts apostrophe-free negative contractions used by tile grammar', () => {
+    for (const w of ['dont', 'isnt', 'arent', 'couldnt', 'wouldnt']) {
+      expect(lex.isWord(w), w).toBe(true);
+    }
+  });
+
   it('is a real curated size, not the ~2k stub', () => {
     expect(lex.size).toBeGreaterThan(20000);
   });

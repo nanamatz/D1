@@ -8,11 +8,12 @@ Version 0.2 — systems expansion
 **Changelog v0.1 → v0.2**
 
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
-- New: **Sentence Pattern Table** (the game's "poker hand table") — 8 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
+- New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
-- Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (8 implemented), and Ink (content pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
+- Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Ink (content pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
+- Changed 2026-07-26: the sentence-pattern table expanded from 8 to 12 with Object Complement, Interrogative, Negative, and Complex. Interrogatives use lexical/auxiliary detection without a `?` tile; apostrophe-free negative contractions are valid tile words (§5.2–§5.4).
 - Emoji Tiles: #32 renamed Ellipsis → **Elision** (name ceded to the matching Constellation card). Added **#46 Hypocrite** (demoted from base rule to emoji tile).
 
 ---
@@ -240,7 +241,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 2. **Highest single pattern only.** If a sequence satisfies multiple patterns, only the highest-value one applies (a full house does not also pay as a pair).
 3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; **each absorbed modifier adds +15 Chips to the sentence bonus's Chips side** (uniform across all patterns — placeholder). This keeps the table small while making "longer sentence = bigger reward" automatic, giving the Epic Poet build its natural target.
 
-### 5.2 The Eight Patterns (weak → strong)
+### 5.2 The Twelve Patterns (weak → strong)
 
 Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired.
 
@@ -259,6 +260,10 @@ sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
 | 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | 40 × 3 | +20, +1 |
 | 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 50 × 4 | +25, +1.5 |
 | 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 60 × 4 | +30, +1.5 |
+| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 75 × 5 | +35, +2 |
+| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 90 × 5 | +40, +2 |
+| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 110 × 6 | +45, +2.5 |
+| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 130 × 6 | +50, +2.5 |
 
 (Values are placeholders in `balance.ts` under `patterns`; the hierarchy is preserved from the old ranks.)
 
@@ -266,9 +271,12 @@ Design intent:
 
 - **Outcry** finally gives vowel-less interjections (shh, brr) a home in the pattern table — a niche that meshes with the Consonant Bricklayer build.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, preserving the RUN×4 showcase as its own pattern.
-- **The Chips×Mult ladder climbs together** — both sides grow from #1→#8, so structural sentences (higher Mult) reward suit/emoji tile Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
-- **#7–8 are tight-to-impossible in the base 5 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
-- **Interrogative (auxiliary inversion, e.g. "CAN BIRDS FLY") is deferred** to expansion content, consistent with the rules diet.
+- **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences (higher Mult) reward suit/emoji tile Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
+- **#7–12 are tight-to-impossible in the base 5 phases** — the reasons to extend phases (Overtime voucher, Infinite Narrative) are built into the table itself.
+- **Object Complement uses a controlled verb family** (`MAKE/CALL/FIND/NAME/KEEP/CONSIDER/ELECT/PAINT` and inflections), because POS alone cannot distinguish `I GIVE HIM FISH` (Ditransitive) from `I MADE HIM HAPPY` (Object Complement).
+- **Interrogative does not require a Question Mark tile.** An interrogative word or auxiliary opener is sufficient. This preserves the alphabet-only pouch rule (§2.1).
+- **Negative contractions omit apostrophes on tiles:** `DONT`, `ISNT`, `ARENT`, `CANT`, etc. are valid words for pattern judgment.
+- **Complex requires two complete clauses** after an initial subordinator such as `BECAUSE`, `WHEN`, or `IF`.
 
 ### 5.3 Unison Bonus (the flush substitute)
 
@@ -280,22 +288,24 @@ Unison folds directly into the §5.2 formula: **Standard adds to the Chips side;
 
 Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity), with the ladder deliberately gentler than the v0.1 Tirade (×3) draft. Exact values are playtest material.
 
-### 5.4 Punctuation Mapping (level-up consumables)
+### 5.4 Constellation Mapping (level-up consumables)
 
 Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises that pattern's base by its `+Chips, +Mult` per-level values (the §5.2 right column) — the old multiplier-only vs flat-only split is gone.
 
-| Punctuation | Levels up | Per level (placeholder) |
+| Constellation | Levels up | Per level (placeholder) |
 |---|---|---|
-| … Ellipsis | Outcry | +10 Chips, +0.5 Mult |
-| ! Exclamation | Imperative | +10 Chips, +0.5 Mult |
-| ‼ Double Exclamation | Chant | +10 Chips, +0.5 Mult (repeat bonus +5 Chips/level) |
-| . Period | Simple | +15 Chips, +1 Mult |
-| : Colon | Descriptive | +15 Chips, +1 Mult |
-| ; Semicolon | Transitive | +20 Chips, +1 Mult |
-| — Dash | Ditransitive | +25 Chips, +1.5 Mult |
-| , Comma | Compound | +30 Chips, +1.5 Mult |
-
-Thematic fits: compound sentences literally use commas + conjunctions; colons introduce descriptions; exclamation marks command. (Emoji tile #32 was renamed **Elision** to cede the name "Ellipsis" to the punctuation card.)
+| Libra / 천칭자리 | Outcry | +10 Chips, +0.5 Mult |
+| Leo / 사자자리 | Imperative | +10 Chips, +0.5 Mult |
+| Aquarius / 물병자리 | Chant | +10 Chips, +0.5 Mult (repeat bonus +5 Chips/level) |
+| Aries / 양자리 | Simple | +15 Chips, +1 Mult |
+| Taurus / 황소자리 | Descriptive | +15 Chips, +1 Mult |
+| Gemini / 쌍둥이자리 | Transitive | +20 Chips, +1 Mult |
+| Cancer / 게자리 | Ditransitive | +25 Chips, +1.5 Mult |
+| Virgo / 처녀자리 | Compound | +30 Chips, +1.5 Mult |
+| Scorpio / 전갈자리 | Object Complement | +35 Chips, +2 Mult |
+| Sagittarius / 궁수자리 | Interrogative | +40 Chips, +2 Mult |
+| Capricorn / 염소자리 | Negative | +45 Chips, +2.5 Mult |
+| Pisces / 물고기자리 | Complex | +50 Chips, +2.5 Mult |
 
 ### 5.5 Letter Hands (글자 족보) — per-word structure bonuses (playtest-02 A-2)
 
@@ -315,7 +325,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +60 Chips, +4 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **Out of scope (for now):** leveling letter hands (Punctuation levels sentence patterns only) and emoji tiles keyed to letter hands — see §12 open items.
+- **Out of scope (for now):** leveling letter hands (Constellation cards level sentence patterns only) and emoji tiles keyed to letter hands — see §12 open items.
 
 ---
 
@@ -520,7 +530,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **Three of four types have art** (`src/ui/packArt.ts`, keyed by type × size): **Tile** 7 (Basic ×3, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Ink** 8 (Basic ×4, Classic ×2, Premium ×2); **Consumable** awaits art. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
 
-> **Impl note.** The **framework** ships fully (4 types × 3 sizes, weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 8 pattern cards. Constellation cards enter the held consumable zone and level their mapped pattern when used. Ink-card content is pending; Comic Book is already the rule that will allow those cards in Fable packs. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`); display names are i18n-only.
+> **Impl note.** The **framework** ships fully (4 types × 3 sizes, weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 12 zodiac pattern cards. Constellation cards enter the held consumable zone and level their mapped pattern when used. Ink-card content is pending; Comic Book is already the rule that will allow those cards in Fable packs. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -559,6 +569,17 @@ Targeted effects use the tiles currently staged on the board. A target-requiring
 card cannot be consumed until the exact valid target count is staged. Random
 creation respects the destination slot cap.
 
+**Art rendering (changed 2026-07-26).** All 18 supplied pixel illustrations are
+high-detail, path-only SVG assets normalized to one `500×700` canvas (fixed 5:7
+ratio, 32-color palette, `250×350` logical pixel grid). Every source illustration
+is stretched to the full common image bounds established by The North Wind and
+the Sun, so all 18 cards have identical visible width and height with no cropping
+or unequal internal margins. No SVG embeds a raster image. Collection, shop, pack
+opening, and the held-card shelf all reuse the shared framed component. The
+original English title plate remains part of each traced illustration; the
+localized card name is also available through the surrounding tooltip and
+accessible label.
+
 | # | Fable | Effect |
 |---:|---|---|
 | 1 | The North Wind and the Sun | Magnifier: show up to 3 spellable words in the current hand |
@@ -580,9 +601,11 @@ creation respects the destination slot cap.
 | 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Charms, capped at +$50 |
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
 
-### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 8
+### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
 One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing into the most-played patterns is the intended play.
+
+The Collection displays all 12 supplied monochrome zodiac illustrations in a 6×2 grid, including the correctly spelled `Aquarius.png` / `aquarius` mapping.
 
 ### 10.3 Ink Cards — content pending
 
@@ -721,7 +744,6 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles/Char
 - **Blind skip & tags.** Adoption itself deferred. Revisit trigger: unrecoverable early runs in playtests (§8.2).
 - **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, uppercase, slang-friendly…). Untouched.
 - **Stakes (difficulty) & unlock structure.** Replayability layer. Untouched.
-- **Interrogative pattern.** Auxiliary-inversion pattern + Question Mark punctuation; deferred to expansion (§5.2).
 - **Dadaist emoji tile.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
 - **Font ↔ effect mapping.** Effects are now defined (§2.3 seal port: `goldPlay`/`chipPlay`/`retriggerPlay`/`discardGain`); the **assignment of which font gets which effect** is design-supplied and still pending — ships as a provisional `balance.ts` `fontEffects` mapping until then.
 - **Tutorial system.** Layered (first-run guided intro → first-encounter one-time popups → Help/Glossary screen), hosted by **우땅 (WooDak)** per §1's mascot roles; Piyak keeps shop greetings. Work order: `docs/feature-01-tutorial-sound-fontseals.md`.
@@ -731,7 +753,7 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles/Char
 - **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch classification → baked table; one-word = one-suit/POS resolution rule (§3.2, §4.2).
 - **Finisher boss count.** 2 concepts exist; decide whether the pool needs more for endless-mode variety.
 - **Emoji tiles keyed to letter hands (§5.5).** Letter Hands ship without emoji-tile support; a family of emoji tiles that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open emoji-tile material.
-- **Letter-hand leveling (if ever).** Punctuation levels sentence patterns only; whether letter hands should ever be levelable (and by what consumable) is deferred.
+- **Letter-hand leveling (if ever).** Constellation cards level sentence patterns only; whether letter hands should ever be levelable (and by what consumable) is deferred.
 - **Ink colors = stakes (playtest-03 A).** The deferred difficulty/stake ladder is re-skinned as **Ink** (검정 → 빨강 …); red ink = the editor's pen. Reframed as matcher-leniency knobs (per playtest-01), not true grammar checking.
 - **Touch long-press marking (playtest-03 F).** Discard-marking uses right-click (desktop-only); a long-press gesture for touch devices is open. No change now.
 - **Suit dataset batch (playtest-03 F).** The real 20–30k LLM batch classification stays an offline design-side task; the lexicon loader format is kept stable so a larger baked table drops in without code changes.

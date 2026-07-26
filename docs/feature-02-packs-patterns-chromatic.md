@@ -34,7 +34,7 @@ sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
 | 8 | Compound | 60 × 4 | +30, +1.5 |
 
 ### A-3. Run Info — the pattern table (currently levels only)
-Run Info gains the Balatro-style hand list: all 8 patterns × [name | level | current Chips × Mult], updating live as Punctuation cards level them. The staged-word/sentence forecast keeps showing projected totals, but the *source values* are now inspectable here.
+Run Info gains the Balatro-style hand list: all 12 patterns × [name | level | current Chips × Mult], updating live as Constellation cards level them. The staged-word/sentence forecast keeps showing projected totals, but the *source values* are now inspectable here. (Updated 2026-07-26: the original eight-pattern/punctuation-card roster was replaced by the twelve-pattern zodiac roster.)
 
 ### A-4. Docs sync
 GDD §5.2 rewritten to the table above; §5.3 note that unison applies inside the formula (values unchanged); §5.4 punctuation effects become uniform per-pattern (+levelChips/+levelMult); §7.4 wording sweep; cross-reference sweep for "add/multiply pattern" mentions (CLAUDE.md guardrails included if any).
@@ -45,7 +45,7 @@ GDD §5.2 rewritten to the table above; §5.3 note that unison applies inside th
 
 | Pack | Contents | Name (ko / en) | Balatro analog |
 |---|---|---|---|
-| Pattern pack | Punctuation cards (pattern level-ups) | **조판 팩 / Typesetting Pack** | Celestial |
+| Pattern pack | Constellation cards (pattern level-ups) | **별자리 팩 / Constellation Pack** | Celestial |
 | Joker pack | joker (emoji) choices | **스티커 팩 / Sticker Pack** *(renames "Emoji Pack" everywhere)* | Buffoon |
 | Consumable pack | Stationery consumable choices | **문구 팩 / Stationery Pack** | Arcana |
 | Tile pack | letter tiles, enhanced (material/font) variants appear | **활자 팩 / Type Pack** *(renames "Letter Pack")* | Standard |

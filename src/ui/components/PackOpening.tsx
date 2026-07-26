@@ -11,7 +11,9 @@ import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
 import { canAddJoker } from '../../engine/vouchers';
 import { isFableId } from '../../engine/fables';
-import { fableArt } from '../fableArt';
+import { isConstellationId } from '../../engine/constellations';
+import { constellationArt } from '../constellationArt';
+import { FableCardArt } from './FableCardArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
@@ -59,8 +61,14 @@ function OptionCard({
     <div className={['shopitem', `edition-${edition}`, blockKey && 'blocked'].filter(Boolean).join(' ')}>
       {option.kind === 'tile' ? (
         <TileView tile={option.tile} />
+      ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
+        <img className="shop-consumable-art" src={constellationArt(option.id)} alt="" />
       ) : option.kind === 'consumable' && isFableId(option.id) ? (
-        <img className="shop-consumable-art" src={fableArt(option.id)} alt="" />
+        <FableCardArt
+          id={option.id}
+          className="shop-consumable-art"
+          title={name}
+        />
       ) : (
         <span className="e">{optionEmoji(option)}</span>
       )}
@@ -129,7 +137,7 @@ export function PackOpening({ g }: { g: UseGame }) {
     }
     if (o.kind === 'punctuation') {
       // Explain it levels the mapped pattern immediately (feature-02 B).
-      return { title: optionName(o), body: t('pack.punctuationLevels', { pattern: t(`pattern.${o.pattern}`) }) };
+      return { title: optionName(o), body: t('pack.constellationLevels', { pattern: t(`pattern.${o.pattern}`) }) };
     }
     if (o.kind === 'consumable') {
       return { title: optionName(o), body: t(consumableDescKey(o.id)) };

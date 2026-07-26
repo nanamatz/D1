@@ -17,8 +17,10 @@ import { VoucherCard } from './VoucherCard';
 import { packArt } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { voucherArt } from '../voucherArt';
-import { isFableId } from '../../engine/fables';
-import { fableArt } from '../fableArt';
+import { isFableId, type FableId } from '../../engine/fables';
+import { isConstellationId } from '../../engine/constellations';
+import { constellationArt } from '../constellationArt';
+import { FableCardArt } from './FableCardArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -35,6 +37,7 @@ export function Shop({ g }: { g: UseGame }) {
     name: string;
     desc: string;
     art?: string | undefined;
+    fableId?: FableId | undefined;
     accent?: string | undefined;
     rarity?: JokerRarity | undefined;
   } => {
@@ -61,7 +64,8 @@ export function Shop({ g }: { g: UseGame }) {
       emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',
       name: t(`consumable.${item.id}`),
       desc: t(consumableDescKey(item.id)),
-      art: isFableId(item.id) ? fableArt(item.id) : undefined,
+      fableId: isFableId(item.id) ? item.id : undefined,
+      art: isConstellationId(item.id) ? constellationArt(item.id) : undefined,
     };
   };
 
@@ -124,7 +128,17 @@ export function Shop({ g }: { g: UseGame }) {
               return (
                 <Tooltip key={i} title={m.name} body={m.desc} rarity={m.rarity}>
                   <div className={['shopitem', m.accent, `edition-${edition}`].filter(Boolean).join(' ')}>
-                    {m.art ? <img className="shop-consumable-art" src={m.art} alt="" /> : <span className="e">{m.emoji}</span>}
+                    {m.fableId ? (
+                      <FableCardArt
+                        id={m.fableId}
+                        className="shop-consumable-art"
+                        title={m.name}
+                      />
+                    ) : m.art ? (
+                      <img className="shop-consumable-art" src={m.art} alt="" />
+                    ) : (
+                      <span className="e">{m.emoji}</span>
+                    )}
                     <span className="n">{m.name}</span>
                     {edition !== 'base' && <span className="edition-badge">{edition}</span>}
                     <span className="price">${item.price}</span>

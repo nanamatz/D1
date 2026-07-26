@@ -42,6 +42,10 @@ const PATTERN_LABEL: Record<PatternId, string> = {
   transitive: 'Transitive',
   ditransitive: 'Ditransitive',
   compound: 'Compound',
+  objectComplement: 'Object Complement',
+  interrogative: 'Interrogative',
+  negative: 'Negative',
+  complex: 'Complex',
 };
 export const patternLabel = (id: PatternId): string => PATTERN_LABEL[id];
 
