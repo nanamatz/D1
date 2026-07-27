@@ -190,7 +190,7 @@ describe('Emoji Tile terminology', () => {
 });
 
 /** Skins whose full line set has been written. Each voice task appends its id. */
-const VOICED_SKINS: string[] = ['dog'];
+const VOICED_SKINS: string[] = ['dog', 'ghost'];
 
 describe('skin voice completeness', () => {
   it.each(VOICED_SKINS)('%s has all 23 lines in both locales', (skin) => {
