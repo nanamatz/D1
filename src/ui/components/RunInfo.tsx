@@ -98,7 +98,13 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 if (!v) return null;
                 const name = lang === 'ko' ? v.nameKo : v.nameEn;
                 return (
-                  <Tooltip key={id} title={name} body={t(voucherDescKey(id))} down>
+                  <Tooltip
+                    key={id}
+                    title={name}
+                    body={t(voucherDescKey(id))}
+                    classification="voucher"
+                    down
+                  >
                     <VoucherCard emoji={v.emoji} name={name} artSrc={voucherArt(v.id)} />
                   </Tooltip>
                 );

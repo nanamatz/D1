@@ -75,7 +75,20 @@ export function StagePanel({
     if (lock) return; // discard is disabled during the lesson lock
     setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
   };
-  const selectTile = (id: string) => { audio.play('tileSelect'); g.toggleTile(id); };
+  const selectTile = (id: string) => {
+    // A-2: an enhanced tile speaks in its own material voice on selection; a plain
+    // tile keeps the default select click. Wood's knock climbs with its growth.
+    const tile = blind.hand.find((tl) => tl.id === id);
+    if (tile && tile.material !== 'ceramic') {
+      const step = tile.material === 'wood'
+        ? Math.max(0, Math.round(((tile.woodBonusChips ?? 15) - 15) / 10))
+        : undefined;
+      audio.material(tile.material, step !== undefined ? { step } : undefined);
+    } else {
+      audio.play('tileSelect');
+    }
+    g.toggleTile(id);
+  };
   // Ancient Paper (고대 문서): vowel tiles stay face-down (identity hidden) until
   // played — in both the hand and the staged word, so staging can't scout them.
   const faceDown = (tile: Tile) => !!blind.vowelsHidden && isVowel(tile.letter);

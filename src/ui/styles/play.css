@@ -54,7 +54,11 @@
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-@media (max-width: 680px) {
+.shop-two > .panel {
+  min-height: var(--shop-lower-panel-h);
+  box-sizing: border-box;
+}
+@media (max-width: 840px) {
   .shop-two {
     grid-template-columns: 1fr;
   }
@@ -79,7 +83,7 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  align-items: stretch;
+  align-items: flex-start;
   margin-top: 8px;
 }
 /* item 2: pin every shop card to ONE width so for-sale items, the voucher, and
@@ -88,9 +92,163 @@
    row — both are fixed here, and the global `.tt-anchor > :not(.tt-card)` rule then
    stretches the inner .shopitem to fill its anchor. */
 .shop-row > .tt-anchor,
-.shop-row > .shopitem {
+.shop-row > .shopitem,
+.shop-row > .shop-offer {
   flex: 0 0 var(--shop-card-w);
   width: var(--shop-card-w);
+}
+.shop-offer {
+  position: relative;
+  z-index: 1;
+  width: var(--shop-card-w);
+  height: calc(var(--shop-card-h) + 13px);
+  padding-top: 13px;
+  overflow: visible;
+}
+.shop-row > .tt-anchor:has(.shop-offer.selected),
+.shop-offer.selected {
+  z-index: 24;
+}
+.shop-offer-price {
+  position: absolute;
+  top: -23px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  min-width: 52px;
+  padding: 3px 10px 2px;
+  border: 2px solid #0b1518;
+  border-radius: 8px 8px 4px 4px;
+  background: #18282d;
+  box-shadow: 0 4px 0 rgba(5, 12, 14, 0.48);
+  color: var(--gold);
+  font-family: 'Jersey 10';
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  text-align: center;
+}
+.shop-offer-card {
+  position: relative;
+  width: 100%;
+  height: var(--shop-card-h);
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  background: transparent;
+  cursor: pointer;
+}
+.shop-offer-card > .tilt-sheen {
+  display: none;
+}
+.shop-offer-visual {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  outline: 0 solid transparent;
+  outline-offset: 4px;
+  transform-style: preserve-3d;
+  transition:
+    translate 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.18s ease,
+    outline-color 0.18s ease;
+}
+.shop-offer-visual:has(> .shop-offer-art > .voucher-card) {
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+.shop-offer-visual:has(> .shop-offer-art .pack-img) {
+  top: var(--shop-pack-y);
+  width: auto;
+  height: 88%;
+  aspect-ratio: 61 / 100;
+}
+.shop-offer-visual:has(> .shop-offer-art .shop-consumable-art) {
+  width: auto;
+  aspect-ratio: 5 / 7;
+}
+.shop-offer-visual:has(> .shop-offer-art > .shop-tile-art) {
+  width: 85%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.shop-offer-art {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}
+.shop-offer-art > .shopitem {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+.shop-offer-art > .voucher-card {
+  flex: none;
+  width: 100%;
+  height: 100%;
+}
+.shop-offer-card:hover .shop-offer-visual,
+.shop-offer-card:focus-visible .shop-offer-visual {
+  translate: 0 -3px;
+  filter: brightness(1.08);
+}
+.shop-offer.selected .shop-offer-visual {
+  translate: 0 -5px;
+  outline: 3px solid var(--gold);
+  filter: drop-shadow(0 7px 0 rgba(5, 12, 14, 0.46));
+}
+.shop-offer-action {
+  position: absolute;
+  left: 50%;
+  bottom: -43px;
+  z-index: 9;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-9px) scale(0.9);
+  transform-origin: 50% 100%;
+  visibility: hidden;
+  transition:
+    opacity 0.16s ease,
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    visibility 0.22s;
+}
+.shop-offer.selected .shop-offer-action {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+  visibility: visible;
+}
+.shop-offer-action .btn {
+  min-width: 82px;
+}
+.shop-offer.empty .shop-offer-card {
+  cursor: default;
+  opacity: 0;
+}
+.shop-tile-art {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.shop-tile-art .tile {
+  width: 100%;
+  height: 100%;
+  font-size: 72px;
 }
 .shopitem {
   position: relative;
@@ -178,14 +336,34 @@
    keeps its own aspect (packArt.ts → PNG). */
 .shopitem .pack-img {
   width: 100%;
-  max-width: 72px;
+  height: 100%;
+  max-width: none;
   object-fit: contain;
   image-rendering: pixelated;
   transform-origin: 50% 92%;
-  animation: packIdle 3.2s ease-in-out infinite; /* keyframe in screens.css */
+}
+.shop-offer-art .shop-consumable-art {
+  width: 100%;
+  height: 100%;
+}
+.shop-offer-art .shopitem .e {
+  font-size: 104px;
+  line-height: 1;
+}
+.shopitem-image-only:has(.shop-consumable-art),
+.shopitem-image-only:has(.pack-img) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .shopitem .pack-img { animation: none; }
+  .shop-offer-card,
+  .shop-offer-visual,
+  .shop-offer-action {
+    transition: none;
+  }
 }
 /* The larger pack art shown in the pack-opening header. */
 .pack-open-art {
@@ -445,6 +623,41 @@
   background-image: url(../assets/tomato.png);
   filter: none;
 }
+/* D-1 · tomato reactions (UI_DESIGN §4.6). Layout and motion deliberately live on
+   separate elements: the anchor fixes the panel position while descendants animate
+   locally. Keyframes therefore cannot replace the anchor transform and teleport it. */
+.tomato-anchor,
+.tomato-motion {
+  display: inline-block;
+}
+.tomato-motion {
+  transform-origin: 50% 90%;
+}
+.round-num .tomato-icon {
+  transform-origin: 50% 90%;
+  animation: tomato-pop 0.34s cubic-bezier(0.22, 0.75, 0.28, 1);
+}
+.tomato-motion.hop {
+  animation: tomato-hop 0.48s cubic-bezier(0.22, 0.75, 0.28, 1);
+}
+@keyframes tomato-pop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  24% { transform: translateY(1px) scale(1.08, 0.94); }
+  58% { transform: translateY(-4px) scale(0.97, 1.06); }
+  82% { transform: translateY(0) scale(1.02, 0.99); }
+}
+@keyframes tomato-hop {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  20% { transform: translateY(1px) scale(1.04, 0.96); }
+  52% { transform: translateY(-4px) scale(0.98, 1.03); }
+  78% { transform: translateY(0) scale(1.02, 0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .round-num .tomato-icon,
+  .tomato-motion.hop {
+    animation: none;
+  }
+}
 /* Placeholder chip token — CSS-drawn, no asset yet. */
 .chip-icon {
   flex: none;
@@ -523,6 +736,129 @@
   padding: 2px 8px;
   box-shadow: var(--shadow);
   position: relative; /* anchor the +N/×N pop (item 6) */
+}
+/* D-2 · burning score boxes (UI_DESIGN §4.7). Ignite while the settling total ≥ the
+   blind target; --flame (0..1, set inline, scales with the overshoot) drives both the
+   box glow and a flame licking up from behind each box's top edge. Because auto-settle
+   (GDD §7.2) has no cash-out button, the flame IS the "you've cleared it" tell — the
+   JS lights it DURING the count-up, a beat before the settlement resolves. */
+.scorebox.burning .box {
+  box-shadow:
+    var(--shadow),
+    0 0 calc(8px + var(--flame, 0) * 22px) rgba(255, 150, 40, calc(0.45 + var(--flame, 0) * 0.5));
+  overflow: visible;
+}
+.scorebox.burning .box::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 10px);
+  translate: -50% 0;
+  width: calc(52% + var(--flame, 0) * 40%);
+  height: calc(24px + var(--flame, 0) * 42px);
+  background: radial-gradient(
+    50% 100% at 50% 100%,
+    rgba(255, 238, 130, 0.95) 0%,
+    rgba(255, 150, 40, 0.85) 42%,
+    rgba(214, 60, 24, 0.32) 72%,
+    transparent 100%
+  );
+  border-radius: 50% 50% 46% 46% / 64% 64% 36% 36%;
+  filter: blur(1px);
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  animation: flame-flicker 0.3s ease-in-out infinite alternate;
+  z-index: -1;
+}
+@keyframes flame-flicker {
+  0% {
+    transform: scaleY(0.9) scaleX(1.03) skewX(-3deg);
+    opacity: 0.82;
+  }
+  100% {
+    transform: scaleY(1.13) scaleX(0.95) skewX(4deg);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Static ember — the glow stays, the flicker stops (§4.7 reduced-motion). */
+  .scorebox.burning .box::before {
+    animation: none;
+  }
+}
+
+/* D-3 · ambient desk objects (UI_DESIGN §4.8). Pinned to the VIEWPORT margins, well
+   clear of the centred board, so a mis-click can never hit a tile. Cosmetic — the
+   button grants nothing. Emoji placeholder pending the pixel-art pass. */
+.desk-object {
+  position: fixed;
+  z-index: 40;
+  border: none;
+  background: none;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 40px;
+  line-height: 1;
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.4));
+}
+.desk-left {
+  left: 14px;
+}
+.desk-right {
+  right: 14px;
+}
+.desk-glyph {
+  display: inline-block;
+}
+/* Greyscale to match the monochrome start (world-mono), like the coach-mark mascot. */
+:root.world-mono .desk-object {
+  filter: grayscale(1) drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.4));
+}
+.desk-left.desk-entering {
+  animation: desk-in-left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.desk-right.desk-entering {
+  animation: desk-in-right 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.desk-left.desk-leaving {
+  animation: desk-out-left 0.55s ease-in both;
+}
+.desk-right.desk-leaving {
+  animation: desk-out-right 0.55s ease-in both;
+}
+.desk-object.desk-entering .desk-glyph {
+  animation: desk-bob 2.6s ease-in-out 0.7s infinite;
+}
+@keyframes desk-in-left {
+  from { transform: translateX(-160%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes desk-in-right {
+  from { transform: translateX(160%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes desk-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-160%); opacity: 0; }
+}
+@keyframes desk-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(160%); opacity: 0; }
+}
+@keyframes desk-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+.desk-still,
+.desk-still .desk-glyph {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .desk-object.desk-entering,
+  .desk-object.desk-leaving,
+  .desk-object.desk-entering .desk-glyph {
+    animation: none;
+  }
 }
 /* item 6: each scoring beat floats how much the box grew, rising up and fading. It
    re-mounts per beat (React key on the beat id), so every tile/joker contribution
@@ -933,6 +1269,66 @@
   text-align: center;
   line-height: 1;
 }
+/* A held consumable is its supplied art acting as the object. The slot reserves
+   space only; it contributes no second card background, crop, label, or sheen. */
+.consumable-object {
+  position: relative;
+  z-index: 2;
+  width: 84px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+.consumable-object > .tilt-sheen {
+  display: none;
+}
+.consumable-object-art {
+  position: relative;
+  width: 80px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  outline: 0 solid transparent;
+  outline-offset: 3px;
+  transition:
+    translate 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.18s ease,
+    outline-color 0.18s ease;
+}
+.consumable-object-art .consumable-art {
+  width: 100%;
+  height: 100%;
+}
+.consumable-object-art .e {
+  font-size: var(--ds-md);
+  line-height: 1;
+}
+.consumable-object:hover .consumable-object-art,
+.consumable-object:focus-visible .consumable-object-art {
+  translate: 0 -3px;
+  filter: brightness(1.08);
+}
+.consumable-slot.menu-open {
+  z-index: 24;
+}
+.consumable-slot.menu-open .consumable-object-art {
+  translate: 0 -5px;
+  outline: 3px solid var(--gold);
+  filter: drop-shadow(0 7px 0 rgba(5, 12, 14, 0.46));
+}
+@media (prefers-reduced-motion: reduce) {
+  .consumable-object-art,
+  .consumable-slot > .consumable-menu.bare {
+    animation: none;
+    transition: none;
+  }
+}
 
 /* ---------- sentence tray (signature) ---------- */
 .tray {
@@ -1184,7 +1580,8 @@
    wins; `!important` also beats the plain (non-important) joker/consumable :hover lift. */
 .tile.tilting,
 .joker.tilting,
-.consumable.tilting {
+.consumable.tilting,
+.motion-card.tilting {
   transform: perspective(600px)
              rotateX(calc(var(--tilt-x, 0) * 14deg))
              rotateY(calc(var(--tilt-y, 0) * 14deg))
@@ -1362,6 +1759,44 @@
     linear-gradient(145deg, #d9a866, #9a6031 72%, #6e3f20);
   border-color: #5d351d;
   color: #2d190d;
+}
+/* B-2 · per-material ink contrast (UI_DESIGN §3.1 ③): dark faces flip letter +
+   value + corner glyph to a light ink, overriding the value-tier ink so a
+   high-value letter on a dark plate can never stay dark-on-dark. Specificity
+   (0,2,0) and later source order beat the .tile.ink-* tiers above. Accessibility
+   floor — holds in both the monochrome start and the full palette (the face and
+   the light ink are both fixed literals, not palette tokens). */
+.tile.leadPlate,
+.tile.leadPlate .val,
+.tile.leadPlate .mat-glyph {
+  color: var(--tile-ink-light, #f4f0e7);
+}
+
+/* B-1 · conditional-material corner glyph — the "why is this tile special" read
+   without a tooltip. Top-left so it never collides with the .val badge (bottom-
+   right). Inherits the tile's letter color (currentColor) so it auto-flips light
+   on dark faces via the rule above. Non-interactive; hidden on mini/face-down. */
+.tile .mat-glyph {
+  position: absolute;
+  left: 5px;
+  top: 3px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  font-family: var(--ctl-font);
+  line-height: 1;
+  opacity: 0.72;
+  pointer-events: none;
+  color: inherit;
+}
+.tile .mat-glyph.mat-glyph-wood {
+  /* the live growth counter reads as a value, so give it full contrast */
+  opacity: 0.92;
+  left: 4px;
+  font-size: var(--fs-2xs);
+  color: #2d190d;
+}
+.tile.mini .mat-glyph {
+  display: none; /* 36px face has no room; mini tiles rely on their tooltip */
 }
 /* font editions (Jost styles) */
 .tile.f-bold {
@@ -1764,6 +2199,13 @@
 /* C-4: consumable Use / Sell menu (never instant-use). */
 .consumable-slot {
   position: relative;
+  width: 84px;
+  height: 112px;
+  overflow: visible;
+}
+.consumable-slot > .tt-anchor {
+  width: 100%;
+  height: 100%;
 }
 /* item 7: Use / Sell buttons appear to the RIGHT of the clicked element. */
 .consumable-menu {
@@ -1801,6 +2243,23 @@
   /* Roomier than the boxed menu's 4px — with no box to group them, the two
      buttons need the space to read as separate actions. */
   gap: 12px;
+}
+.consumable-slot > .consumable-menu.bare {
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 25;
+  transform: translateX(-50%);
+  animation: consumableActionsIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes consumableActionsIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 }
 .consumable-menu.bare button {
   border: none;
@@ -1974,11 +2433,16 @@
 .round-panel {
   position: relative;
 }
-.round-panel .tomato-icon {
+.round-panel .tomato-anchor {
   position: absolute;
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
+  line-height: 0;
+}
+.round-panel .tomato-icon {
+  position: static;
+  vertical-align: middle;
 }
 /* A: sentence-bonus forecast — a ghost, clearly separate from the committed number. */
 .round-forecast {
@@ -2155,6 +2619,27 @@
    same specificity, and screens.css loads AFTER play.css — so a lone `.pause-modal`
    loses and the modal silently stayed at the 640px default. The other modals
    (.overlay-card.cashout / .gameover / .runinfo) are all written this way. */
+/* B-3 · same-axis overwrite confirm (GDD §2.4). A compact centred dialog over the
+   board — reuses the base .overlay / .overlay-card, just narrower with a button row. */
+.overlay-card.overwrite-modal {
+  max-width: 420px;
+  text-align: center;
+}
+.overwrite-title {
+  font-size: var(--fs-2xl);
+  margin: 0 0 10px;
+}
+.overwrite-msg {
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+.overwrite-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
 .overlay-card.pause-modal {
   max-width: 920px;
   max-height: 86vh;

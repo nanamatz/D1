@@ -17,7 +17,18 @@ export type SfxName =
   | 'clearFanfare' | 'failSting'
   | 'tilePick' | 'tilePlace' | 'tileSelect' | 'tileDeal' | 'dragSnap' | 'discardSwoosh'
   | 'submitThock' | 'buttonPress' | 'transitionWhoosh'
-  | 'purchase' | 'sell' | 'reroll' | 'packOpen' | 'voucherRedeem' | 'catMeow';
+  | 'purchase' | 'sell' | 'reroll' | 'packOpen' | 'voucherRedeem' | 'catMeow'
+  // D-3 ambient desk objects (feature-03): each click plays its own small sound.
+  | 'deskCup' | 'deskPencil' | 'deskPlane'
+  // feature-04 A-1 · money is never silent — a rising coin gain / falling coin loss,
+  // distinguishable by contour, fired centrally on every gold change.
+  | 'coinGain' | 'coinLoss'
+  // feature-04 A-3 · object actions get an audible confirm.
+  | 'consumableUse' | 'packPick'
+  // feature-04 A-2 · per-material tile voices (played on selection AND when the tile
+  // triggers during scoring). Mapped from TileMaterial via MATERIAL_SFX below.
+  | 'matCeramic' | 'matChime' | 'matGlass' | 'matGlassBreak' | 'matStone'
+  | 'matThunk' | 'matTock' | 'matRing' | 'matWood';
 
 type Wave = OscillatorType; // 'sine' | 'square' | 'sawtooth' | 'triangle'
 
@@ -63,9 +74,48 @@ const RECIPES: Record<SfxName, Recipe> = {
   packOpen:         { gain: 0.30, dur: 0.30, tones: [{ wave: 'square', from: 440, to: 880 }], noise: { cutoff: 2000 } },
   voucherRedeem:    { gain: 0.28, dur: 0.24, tones: [{ wave: 'triangle', from: 660 }, { wave: 'triangle', from: 990 }] },
   catMeow:          { gain: 0.30, dur: 0.30, tones: [{ wave: 'sawtooth', from: 620, to: 780 }] },
+  // D-3 desk objects: a gulp/drain glug (cup), a short wooden roll (pencil), an airy
+  // whoosh (paper plane). Cosmetic, so kept soft — they never step on gameplay beats.
+  deskCup:          { gain: 0.24, dur: 0.68, tones: [{ wave: 'sine', from: 340, to: 165, sub: true }, { wave: 'triangle', from: 520, to: 210, delay: 0.12 }, { wave: 'sine', from: 250, to: 120, delay: 0.28, sub: true }], noise: { cutoff: 850 } },
+  deskPencil:       { gain: 0.18, dur: 0.14, tones: [{ wave: 'triangle', from: 220, to: 300 }], noise: { cutoff: 1200 } },
+  deskPlane:        { gain: 0.18, dur: 0.30, noise: { cutoff: 2600 } },
+  // A-1 money: gain RISES, loss FALLS — distinguishable by contour (playtest 9, 15).
+  coinGain:         { gain: 0.24, dur: 0.16, tones: [{ wave: 'triangle', from: 784, detune: 5 }, { wave: 'triangle', from: 1175, delay: 0.06, detune: 5 }], noise: { cutoff: 2200 } },
+  coinLoss:         { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 660, to: 392 }] },
+  // A-3 object actions.
+  consumableUse:    { gain: 0.26, dur: 0.22, tones: [{ wave: 'triangle', from: 523 }, { wave: 'triangle', from: 784, delay: 0.06 }, { wave: 'sine', from: 1046, delay: 0.12 }] },
+  packPick:         { gain: 0.24, dur: 0.12, tones: [{ wave: 'square', from: 660, to: 990 }] },
+  // A-2 per-material tile voices — each matches the material's physicality (playtest 16).
+  matCeramic:       { gain: 0.20, dur: 0.06, tones: [{ wave: 'triangle', from: 900, to: 1100 }] },        // light ceramic clink
+  matChime:         { gain: 0.20, dur: 0.16, tones: [{ wave: 'sine', from: 1046, detune: 4 }] },          // smooth glassy chime (Polished)
+  matGlass:         { gain: 0.20, dur: 0.20, tones: [{ wave: 'sine', from: 1318, detune: 3 }] },          // bright ring (Glass)
+  matGlassBreak:    { gain: 0.30, dur: 0.22, tones: [{ wave: 'square', from: 1400, to: 300 }], noise: { cutoff: 5000 } }, // sharp shatter
+  matStone:         { gain: 0.26, dur: 0.10, tones: [{ wave: 'square', from: 150, to: 90, sub: true }], noise: { cutoff: 500 } }, // dull heavy knock
+  matThunk:         { gain: 0.26, dur: 0.10, tones: [{ wave: 'triangle', from: 200, to: 130 }], noise: { cutoff: 900 } },        // metallic dull thunk (Lead plate)
+  matTock:          { gain: 0.20, dur: 0.10, tones: [{ wave: 'sine', from: 420, to: 360, sub: true }] },  // warm hollow tock (Ivory)
+  matRing:          { gain: 0.20, dur: 0.20, tones: [{ wave: 'triangle', from: 988, to: 1245, detune: 6 }] }, // bright metallic ring (Brass)
+  matWood:          { gain: 0.22, dur: 0.09, tones: [{ wave: 'triangle', from: 300, to: 240 }], noise: { cutoff: 1100 } },       // dry woody knock (rises via `step`)
 };
 
 export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];
+
+/**
+ * feature-04 A-2 · TileMaterial → its voice. The map lives in the facade (never
+ * call-site branching, per the work order); any material without an entry falls
+ * back to the default tile sound so nothing is ever silent. Keyed by the engine's
+ * TileMaterial string (kept loose to avoid an engine import in the audio layer).
+ */
+export const MATERIAL_SFX: Record<string, SfxName> = {
+  ceramic: 'matCeramic',
+  porcelain: 'matCeramic',
+  polished: 'matChime',
+  glass: 'matGlass',
+  stone: 'matStone',
+  leadPlate: 'matThunk',
+  ivory: 'matTock',
+  brass: 'matRing',
+  wood: 'matWood',
+};
 
 const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
@@ -338,6 +388,21 @@ class Audio {
   }
 
   isBusEnabled(bus: 'sfx' | 'music'): boolean { return this.busEnabled[bus]; }
+
+  /**
+   * A-2 · play a tile material's voice. Falls back to the default tile sound for any
+   * material without a sample, so a tile is never silent. `step` lets Wood's knock
+   * climb as its +Chips grows (the caller passes its growth count).
+   */
+  material(name: string, opts?: { step?: number }): void {
+    this.play(MATERIAL_SFX[name] ?? 'tilePop', opts);
+  }
+
+  /** A-1 · money is never silent: a rising coin on gain, a falling one on loss. */
+  money(delta: number): void {
+    if (delta > 0) this.play('coinGain');
+    else if (delta < 0) this.play('coinLoss');
+  }
 
   play(name: SfxName, opts?: { step?: number }): void {
     if (!this.busEnabled.sfx) return; // bus gated off until SOUND is unlocked (C-6)

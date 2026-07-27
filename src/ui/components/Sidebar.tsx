@@ -1,3 +1,4 @@
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { BlindState, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { clearReward } from '../../engine/economy';
@@ -102,6 +103,43 @@ export function Sidebar({
   const mult = bonusActive ? bonusMult : settle.active ? settle.mult : 0;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
 
+  // D-2 · burning score boxes (UI_DESIGN §4.7): the chips/mult boxes ignite while
+  // the SETTLING total is at or above the blind target — the flame is the "you've
+  // cleared it" tell that arrives a beat before auto-settle resolves (GDD §7.2), so
+  // it must light DURING the count-up, not after. Live total = the pre-word committed
+  // + this word's chips×mult during settle; the finalized round total while the bonus
+  // lands. Flame size scales with the overshoot (0 at target … 1 at ≥3×).
+  const liveTotal = bonusActive
+    ? roundTarget
+    : settle.active
+      ? committedBefore + settle.chips * settle.mult
+      : blind.committedScore;
+  const burning = (settle.active || bonusActive) && blind.target > 0 && liveTotal >= blind.target;
+  const flame = burning ? Math.min(1, (liveTotal / blind.target - 1) / 2) : 0;
+
+  // D-1 · tomato idle hop (UI_DESIGN §4.6): a few times per blind, on a long random
+  // timer, never rhythmic. Positioning lives on a separate anchor so neither this
+  // hop nor the per-beat bounce can replace the icon's panel-relative transform.
+  const [hop, setHop] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    let live = true;
+    let clear: ReturnType<typeof setTimeout>;
+    const schedule = (): ReturnType<typeof setTimeout> =>
+      setTimeout(() => {
+        if (!live) return;
+        setHop(true);
+        clear = setTimeout(() => setHop(false), 480);
+        timer = schedule();
+      }, 8000 + Math.random() * 12000);
+    let timer = schedule();
+    return () => {
+      live = false;
+      clearTimeout(timer);
+      clearTimeout(clear);
+    };
+  }, []);
+
   return (
     <aside className="sidebar">
       {/* Centered row: the kind emblem on the left, the target/reward stats panel
@@ -147,7 +185,22 @@ export function Sidebar({
       <div className="panel round-panel">
         <div className="round-row">
           <span className="label">{t('sidebar.round')}</span>
-          <span className="round-num"><span className="tomato-icon" aria-hidden /> {Math.round(round)}</span>
+          <span className="round-num">
+            {/* The anchor owns layout; only its child moves. Keeping those layers
+                separate prevents a score beat from making the tomato jump to a new
+                containing-block origin when animation transforms begin. */}
+            <span className="tomato-anchor">
+              <span
+                className={[
+                  'tomato-motion',
+                  hop && !settle.active && !bonusActive && 'hop',
+                ].filter(Boolean).join(' ')}
+              >
+                <span className="tomato-icon" key={settle.scorePop?.id ?? 'idle'} aria-hidden />
+              </span>
+            </span>{' '}
+            {Math.round(round)}
+          </span>
         </div>
         {!blind.previewHidden && forecast > 0 && (
           <div className="round-forecast">
@@ -159,9 +212,10 @@ export function Sidebar({
       <div className="panel score-panel">
         <StatusLine preview={preview} />
         <div
-          className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing']
+          className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing', burning && 'burning']
             .filter(Boolean)
             .join(' ')}
+          style={burning ? ({ '--flame': flame.toFixed(3) } as CSSProperties) : undefined}
         >
           <span className="box c">
             {Math.round(chips)}

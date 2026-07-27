@@ -1,16 +1,16 @@
 import type { ConstellationId } from '../engine/constellations';
-import aquarius from '../../docs/Arts/Cards/Constellation/Aquarius.png';
-import aries from '../../docs/Arts/Cards/Constellation/Aries.png';
-import cancer from '../../docs/Arts/Cards/Constellation/Cancer.png';
-import capricorn from '../../docs/Arts/Cards/Constellation/Capricorn.png';
-import gemini from '../../docs/Arts/Cards/Constellation/Gemini.png';
-import leo from '../../docs/Arts/Cards/Constellation/Leo.png';
-import libra from '../../docs/Arts/Cards/Constellation/Libra.png';
-import pisces from '../../docs/Arts/Cards/Constellation/Pisces.png';
-import sagittarius from '../../docs/Arts/Cards/Constellation/Sagittarius.png';
-import scorpio from '../../docs/Arts/Cards/Constellation/Scorpio.png';
-import taurus from '../../docs/Arts/Cards/Constellation/Taurus.png';
-import virgo from '../../docs/Arts/Cards/Constellation/Virgo.png';
+import aquarius from '../../docs/Arts/Cards/Constellation/Vector/Aquarius.svg';
+import aries from '../../docs/Arts/Cards/Constellation/Vector/Aries.svg';
+import cancer from '../../docs/Arts/Cards/Constellation/Vector/Cancer.svg';
+import capricorn from '../../docs/Arts/Cards/Constellation/Vector/Capricorn.svg';
+import gemini from '../../docs/Arts/Cards/Constellation/Vector/Gemini.svg';
+import leo from '../../docs/Arts/Cards/Constellation/Vector/Leo.svg';
+import libra from '../../docs/Arts/Cards/Constellation/Vector/Libra.svg';
+import pisces from '../../docs/Arts/Cards/Constellation/Vector/Pisces.svg';
+import sagittarius from '../../docs/Arts/Cards/Constellation/Vector/Sagittarius.svg';
+import scorpio from '../../docs/Arts/Cards/Constellation/Vector/Scorpio.svg';
+import taurus from '../../docs/Arts/Cards/Constellation/Vector/Taurus.svg';
+import virgo from '../../docs/Arts/Cards/Constellation/Vector/Virgo.svg';
 
 export const CONSTELLATION_ART: Record<ConstellationId, string> = {
   libra,

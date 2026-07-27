@@ -70,13 +70,13 @@ export const BALANCE = {
     retriggerPlay: { extraTriggers: 1 }, // Red Seal — the reserved retrigger, spent here
     discardGain: {}, // Purple Seal (tarot → consumable)
   },
-  // PROVISIONAL — awaiting design mapping (GDD §2.3/§12): reassigning a font is
-  // a one-line change here; tooltips and scoring read this table.
+  // Confirmed mapping (GDD §2.3, 2026-07-27): reassigning a font is a one-line
+  // change here; tooltips and scoring read this table.
   fontEffects: {
     lightItalic: 'goldPlay',
     bold: 'chipPlay',
-    inline: 'retriggerPlay',
-    black: 'discardGain',
+    inline: 'discardGain',
+    black: 'retriggerPlay',
   } as Record<Exclude<TileFont, 'medium'>, FontEffectId>,
 
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
@@ -178,19 +178,30 @@ export const BALANCE = {
       mega:   { show: 5, pick: 2, price: 8 },
     },
     // shop pack-slot roll weights (Mega/Jumbo rarer via sizeWeights below).
-    typeWeights: { pattern: 4, joker: 4, consumable: 4, tile: 4 } as Record<string, number>,
-    sizeWeights: { normal: 6, jumbo: 3, mega: 1 } as Record<string, number>,
+    // Display names (GDD §9.3): consumable=Fable, pattern=Constellation, tile=Tile,
+    // joker=Charm, ink=Ink. Ink stays UNROLLABLE until its Gambler registry lands —
+    // the weight lives here but `ink` is absent from shop.ts PACK_TYPES, so enabling
+    // it is a one-line flag flip (add 'ink' to PACK_TYPES), not a data change (C-3).
+    typeWeights: { consumable: 4, pattern: 4, tile: 4, joker: 2, ink: 0.6 } as Record<string, number>,
+    sizeWeights: { normal: 8, jumbo: 3, mega: 1 } as Record<string, number>,
     // how many cosmetic art variants exist per (type, size) (== the art count in
-    // packArt.ts); the seeded RNG picks one at stock time. Consumable has no art yet
-    // (1 → variant 0). Bump when art is added.
+    // packArt.ts); the seeded RNG picks one at stock time.
     artVariants: {
       tile: { normal: 4, jumbo: 2, mega: 2 },
       joker: { normal: 2, jumbo: 1, mega: 1 },
       pattern: { normal: 4, jumbo: 2, mega: 2 },
-      consumable: { normal: 1, jumbo: 1, mega: 1 },
+      consumable: { normal: 4, jumbo: 2, mega: 2 },
     } as Record<PackType, Record<PackSize, number>>,
   },
   packEnhanceChance: { base: 0.15 }, // material/font pre-attach rate
+
+  // ----- Emoji Tiles / Charm (GDD §9.2) — rarity offer weights. Legendary is
+  //       OMITTED on purpose: it has no acquisition route yet (§12 open), so an
+  //       absent weight (→ 0) means it NEVER rolls in the shop or a Charm Pack,
+  //       rather than silently appearing. Adding a route = add its weight here. -----
+  emoji: {
+    rarityWeights: { common: 70, uncommon: 25, rare: 5 } as Record<string, number>,
+  },
 
   // ----- Jokers (GDD §11) — per-joker knobs (proof set for slice ④) -----
   jokers: {

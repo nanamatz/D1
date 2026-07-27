@@ -12,7 +12,8 @@ Version 0.2 — systems expansion
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
-- Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Ink (content pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
+- Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (content pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
+- Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the (pending) source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
 - Changed 2026-07-26: the sentence-pattern table expanded from 8 to 12 with Object Complement, Interrogative, Negative, and Complex. Interrogatives use lexical/auxiliary detection without a `?` tile; apostrophe-free negative contractions are valid tile words (§5.2–§5.4).
 - Emoji Tiles: #32 renamed Ellipsis → **Elision** (name ceded to the matching Constellation card). Added **#46 Hypocrite** (demoted from base rule to emoji tile).
 
@@ -61,7 +62,7 @@ Version 0.2 — systems expansion
 | Ante | Ante | 3 blinds; base target rises per ante |
 | Tarot cards | Fable Cards | 18 one-shot tile/economy/tool effects |
 | Planet cards | Constellation Cards | Sentence-pattern level-up consumables |
-| Spectral cards | Ink Cards | Third family; content pending |
+| Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); content pending |
 | Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
 | Blind skip / Tags | — (deferred) | Adoption itself on hold; revisit if early-run recovery proves weak |
 
@@ -169,9 +170,26 @@ Effects are **per tile** and stack: three Ceramic tiles in one word give +90 Chi
 
 Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 emoji tiles); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
 
-**Font ↔ effect mapping: data-driven, assignment TBD by design.** Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it. Until design supplies the mapping, a provisional assignment ships clearly marked; reassignment is a one-line data change (§12).
+**Font ↔ effect mapping (confirmed 2026-07-27).** Assigned so that a glyph's visual weight predicts its effect's character — the heavier the ink, the more it does to the score:
+
+| Font | Effect | Reading |
+|---|---|---|
+| Light Italic | `goldPlay` — +$3 when the tile scores | the lightest touch pays out sideways, in money rather than score |
+| Bold | `chipPlay` — +30 Chips when the tile scores | thick ink = substantial, the plainly additive one |
+| Inline | `discardGain` — gain 1 consumable when discarded (needs a free slot) | the hollow glyph has something inside it |
+| Black | `retriggerPlay` — retrigger the tile's scoring contribution once | the heaviest ink prints twice |
+
+Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. Reassignment stays a one-line data change.
 
 > **Decision — fonts unified as style variants within the Futura family.** A font functions as a visual signal that "this tile has a special effect." Weight/italic/inline variants within one family are instantly distinguishable from a single glyph while keeping the screen's tone coherent. Mixing distinct typefaces blurs the information axis ("is this a different font, or a different letter/material?"), so it is avoided. Room is left to give only the top rarity an exceptional emphasis. (License note: Futura is a paid commercial font. Prototype-stage alternatives — Jost, Spartan, Century Gothic family.)
+
+### 2.4 Enhancement Stacking & Replacement
+
+A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Bold / Foil tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
+
+**Same-axis replacement is destructive (rule).** Applying an enhancement to a tile that already carries one **on the same axis** overwrites it; the previous one is discarded, not stored or refunded. Re-applying Polished to a Ceramic tile leaves a Polished tile, not both. Cross-axis application never conflicts (a Fable that sets material leaves font and edition untouched). The UI must warn before a destructive overwrite when the target already carries a same-axis enhancement.
+
+**One exception — Stone's letter memory (§2.2).** Because `material = stone` also strips the tile's letter, a Stone transformation *hides and remembers* the letter, and a later non-Stone material restores it. This is a property of the letter, not of the material slot: the material itself is still overwritten normally.
 
 ---
 
@@ -507,6 +525,8 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 
 Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **Pack slots ×2** + **Voucher slot ×1**. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
 
+**Offer interaction (changed 2026-07-27).** Shop stalls are image-first: every product reserves the same proportion-preserving `144×185px` transparent stage, while the product art, price, and action form one aspect-ratio-aware foreground layer above the shop layout. Tall pack art uses 88% of the stage height and a 12px upward offset so its full animation remains within the pack stall. Voucher and pack background panels retain a `273px` minimum height, 5px taller than the preceding layout. The price tag sits 23px above the image's top edge and moves with all idle/hover/selection motion. Selecting an offer raises that foreground and animates an absolutely attached action below the image — **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs — without reflowing the stall layout. Product animation is never clipped. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
+
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
 - **One voucher purchase per chapter (ante)**; only an effect that explicitly grants extra purchases can exceed this. Buying greys the slot for the rest of the chapter.
@@ -515,26 +535,39 @@ Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **
 
 **Emoji tile pricing (placeholder):** Common 4–5 / Uncommon 6–7 / Rare 8–10 / Legendary 20.
 
+**Emoji tile appearance rates by rarity (placeholder → `balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution, adopted as the tuning start point: **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs** — it needs a dedicated route (Balatro gates its Legendary jokers behind The Soul spectral card), which for us is open design space: a Gambler card, a Legendary-only pack, or a boss reward. Until that route exists, Legendary tiles are unobtainable in normal play — flagged in §12.
+
+**No duplicate Emoji Tiles (rule).** The shop and packs **never offer an Emoji Tile the player already owns** — the offer pool excludes owned tiles, exactly as Balatro excludes owned jokers. Two consequences worth stating: the pool shrinks as a run goes long (intended — late shops concentrate on what you lack), and selling a tile returns it to the pool.
+**Exception — only an explicit effect may break this.** A consumable or Emoji Tile whose text says so (Balatro's Showman) re-enables duplicates while owned/active. No such item exists yet; one is required for this rule to have a designed escape hatch (§12).
+
 ### 9.3 Packs — where materials & fonts enter the economy
 
 Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows individual letter tiles to appear in shop card slots; **Encyclopedia** lets those shop tiles roll material, font, and edition modifiers.
 
-**Four pack types** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**. *(Forbidden Stacks / Spectral retired from the design 2026-07-22; see §10.3.)*
+**Five pack types in the design** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**. *(Changed 2026-07-27: the third consumable pack returns as the **Ink Pack** — the source of the Gambler cards (§10.3) — so the consumable packs are Fable / Ink / Constellation. The older Forbidden Stacks / Spectral naming stays retired. The engine currently ships the four packs below with a roll; the Ink Pack's roll is pending its Gambler-card registry, exactly like the cards themselves — see the impl note.)*
 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
 | 별자리 팩 / **Constellation Pack** | Constellation cards — held in the consumable zone, then used to **level up** their sentence pattern (§5.4). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1); Comic Book can add Ink cards once that content pool lands | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1); Comic Book can add Gambler cards once that content pool lands | Arcana |
+| 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3); roll pending the Gambler-card registry | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **Three of four types have art** (`src/ui/packArt.ts`, keyed by type × size): **Tile** 7 (Basic ×3, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Ink** 8 (Basic ×4, Classic ×2, Premium ×2); **Consumable** awaits art. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
+**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **Four families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium); **Fable** awaits art. Ink remains Collection-only until its Gambler-card registry and engine roll land. All 24 runtime illustrations are 32-color, path-only SVGs normalized to a shared `244×400` canvas and `122×200` logical grid; source PNGs remain in `docs/Arts/CardPacks`. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
 
-> **Impl note.** The **framework** ships fully (4 types × 3 sizes, weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 12 zodiac pattern cards. Constellation cards enter the held consumable zone and level their mapped pattern when used. Ink-card content is pending; Comic Book is already the rule that will allow those cards in Fable packs. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`); display names are i18n-only.
+**Appearance weights (placeholder → `balance.ts`).** Balatro's shape, mapped onto our five families. Type weights (`pack.typeWeights`): **Fable 4 · Constellation 4 · Tile 4 · Charm 2 · Ink 0.6** — the two consumable staples and tiles are the common backbone, Charm (emoji tiles) is deliberately scarcer because each pull is a build decision, and Ink is the rare thrill (Spectral's role). Size weights (`pack.sizeWeights`): **Normal 8 · Jumbo 3 · Mega 1**. The two axes roll independently, so a Mega Ink pack is the jackpot of the shop. All values are tuning starts for `src/sim`, not claims of balance.
+
+> **Impl note.** The **framework** ships four engine pack types × 3 sizes (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 12 zodiac pattern cards. Constellation cards enter the held consumable zone and level their mapped pattern when used. Fourteen Gambler-card illustrations are registered for the collection, but their effects and acquisition registry are still pending; the **Ink Pack** is the designed native source of those cards and Comic Book is the rule that will also allow them in Fable packs — both wait on the Gambler-card registry. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`, with `ink` to be added when the Gambler registry lands); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
 Changed 2026-07-26: the former 9-item single-tier set is retired. Every pair has a base voucher and a profile-unlocked upgrade. An upgrade can enter the run pool only after its profile condition is met **and** its base voucher is owned in that run. One purchase per chapter and fixed chapter offers still apply.
+
+**Collection disclosure (changed 2026-07-27).** A profile-locked upgrade is
+listed as **Undiscovered / 발견되지 않음**. Its Collection tooltip shows only the
+unseeded-run redemption hint; its real name, effect, unlock condition, and
+progress remain hidden until the profile unlock is earned.
 
 | Base → Upgrade | Base effect → upgraded effect | Upgrade unlock |
 |---|---|---|
@@ -553,7 +586,7 @@ Changed 2026-07-26: the former 9-item single-tier set is retired. Every pair has
 | History Book → Old Book | −1 Ante and −1 hand/round → another −1 Ante and −1 discard/round | Reach Ante 12 |
 | Blank Paper → Kung Fu Manual | No effect → +1 Charm slot | Use Blank Paper 10 times |
 | B&W Photo → Yearbook | Constellation pack guarantees the most-played pattern's card → a held matching card grants ×1.5 sentence Mult | Use 100 Constellation cards |
-| Zero Score → Comic Book | +1 consumable slot → Ink cards may appear in Fable packs | Use 50 Fable cards |
+| Zero Score → Comic Book | +1 consumable slot → Gambler cards may appear in Fable packs | Use 50 Fable cards |
 
 All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vouchers`, outside `RunState`.
 
@@ -562,6 +595,8 @@ All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vo
 ## 10. Consumables
 
 Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Zero Score). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and packs.
+
+**Held-slot presentation (changed 2026-07-27).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Idle/hover/focus/select motion applies to the image object itself, and clicking raises it above the shelf with Sell/Use actions attached beneath the image without reflowing the shelf.
 
 ### 10.1 Fable Cards (Tarot-equivalent), 18
 
@@ -605,15 +640,35 @@ accessible label.
 
 One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing into the most-played patterns is the intended play.
 
-The Collection displays all 12 supplied monochrome zodiac illustrations in a 6×2 grid, including the correctly spelled `Aquarius.png` / `aquarius` mapping.
+Each of the 12 monochrome zodiac illustrations is traced into a 32-color,
+path-only SVG and stretched without cropping to the Fable card standard:
+`500×700` output, fixed 5:7 ratio, and a `250×350` logical pixel grid (changed
+2026-07-27). Collection, shop, pack, and held-card surfaces all use the same
+shared SVG frame component as Fable and Gambler cards. The correctly
+spelled `Aquarius.svg` / `aquarius` mapping is retained.
 
-### 10.3 Ink Cards — content pending
+### 10.3 Gambler Cards — artwork registered, effects pending
 
-Ink is the third card family and already has a Collection category. Its card
-registry and individual effects are intentionally pending. Comic Book (§9.4)
-allows Ink cards to appear in Fable packs once that registry is populated. The
-former Forbidden Books/Spectral placeholder roster remains retired and is not
-being restored under the Ink name.
+**Gambler cards / 노름꾼 카드** are the third card family (renamed from "Ink
+Cards / 잉크 카드", 2026-07-27) and already have a Collection category. Their
+designed native source is the **Ink Pack / 잉크 팩** (§9.3) — the Ink name moved
+from the family to its pack. Fourteen supplied illustrations are registered in
+the UI-only gallery: Barn Swallow, Boar, Bridge, Bush Warbler, Butterflies,
+Crane and Sun, Cuckoo, Curtain, Deer, Full Moon, Geese, Phoenix, Rainman, and
+Sake Cup (a hwatu/화투 motif set — hence the gambler framing). Each source PNG
+is traced into the same 32-color, path-only SVG standard as Fable and
+Constellation cards: `500×700`, fixed 5:7 ratio, and a `250×350` logical pixel
+grid. All three families use the same shared SVG frame. The engine card registry
+and individual effects remain intentionally pending, so neither the Ink Pack
+roll nor Comic Book (§9.4, which also routes Gambler cards into Fable packs)
+draws them yet; artwork registration alone does not add the cards to current
+pack rolls. The former Forbidden Books/Spectral placeholder roster stays retired
+— the Ink name now belongs to the pack, not to a card family. The Collection key
+stays `inkCards` (display-only rename).
+
+**Class (confirmed 2026-07-27): Gambler cards are our Spectral analog.** When their effects are designed they should be **rare, powerful, and usually double-edged** — the family that changes a run rather than nudging it, in the way Balatro's spectrals do (dramatic upside paid for with a cost or a risk). This is what justifies the Ink Pack's low roll weight (§9.3, weight 0.6): the pack is a jackpot, not a staple. The hwatu motif set reinforces the framing — these are gambles.
+
+**Ink Pack naming: settled.** The pack is the **Ink Pack / 잉크 팩** and the Gambler cards are its contents. The "Forbidden Books / 금서 팩" line stays **deferred** — not revived as a separate sixth pack, not used as an alternate name for this one. Revisit only if a concrete need appears that the five existing families cannot cover.
 
 ---
 
@@ -745,7 +800,10 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles/Char
 - **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, uppercase, slang-friendly…). Untouched.
 - **Stakes (difficulty) & unlock structure.** Replayability layer. Untouched.
 - **Dadaist emoji tile.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
-- **Font ↔ effect mapping.** Effects are now defined (§2.3 seal port: `goldPlay`/`chipPlay`/`retriggerPlay`/`discardGain`); the **assignment of which font gets which effect** is design-supplied and still pending — ships as a provisional `balance.ts` `fontEffects` mapping until then.
+- **Duplicate-breaker item (Showman-equivalent).** §9.2 forbids duplicate Emoji Tile offers and reserves an explicit-effect exception, but no such item exists. Needs designing as either a Fable card or an Emoji Tile.
+- **Legendary acquisition route.** §9.2 excludes Legendary from shop/Charm-Pack rolls (Balatro gates its Legendaries behind The Soul). Our route is undecided — candidates: a Gambler card, a Legendary-only pack, or a finisher-boss reward. Until decided, the 5 Legendary tiles are unreachable in normal play.
+- **Acronyms in the lexicon.** Adding MVP/VIP-class abbreviations is requested. Open sub-decision: treat them as ordinary case-insensitive words, or make them **uppercase-only plays** with a bonus (which would create a new strategic axis and connect to the deferred uppercase-bag idea). They are absent from ENABLE-class lists, so either way they need a separate curated list feeding §3.2's pipeline.
+- **Gambler card effects (14).** Artwork and the Collection category exist; effect design is **deliberately deferred** (§10.3). Until it lands the Ink Pack cannot roll, so the whole Ink line stays Collection-only. This is now the single biggest piece of locked-but-authored content.
 - **Tutorial system.** Layered (first-run guided intro → first-encounter one-time popups → Help/Glossary screen), hosted by **우땅 (WooDak)** per §1's mascot roles; Piyak keeps shop greetings. Work order: `docs/feature-01-tutorial-sound-fontseals.md`.
 - **Audio.** Chiptune/8-bit, SFX-first (settle-sequence sounds with pitch-escalating chip ticks before any BGM); real mixer replaces the Settings stub. Same work order.
 - **Stakes = matcher-leniency knobs (reframed, playtest-01).** True grammar checking stays out (§4.1 level 3); instead, future stake levels modulate knobs that already exist — modifier absorption on/off, hole forgiveness, unison strictness.

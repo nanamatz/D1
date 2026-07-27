@@ -1,7 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 const reducedMotion = (): boolean =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  typeof window !== 'undefined'
+  && (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    || document.body.classList.contains('force-reduced-motion')
+  );
 
 /** useState mirrored to localStorage (P1-1 persists the sort choice). */
 export function usePersistedState<T>(key: string, initial: T): [T, (v: T) => void] {

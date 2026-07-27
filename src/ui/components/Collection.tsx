@@ -9,21 +9,26 @@ import type { Lexicon } from '../../engine/lexicon';
 import type { Suit, TileFont, TileMaterial, Tile, VoucherId } from '../../engine/types';
 import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from '../collection';
 import { UNLOCKS, loadPlayed, playedCount, activeUnlocks } from '../unlocks';
+import type { UnlockDef, UnlockEffect } from '../unlocks';
 import { mascotCollectionRows } from '../mascots';
-import { bossDescKey, consumableDescKey, fontDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
+import { bossDescKey, consumableDescKey, fontDescKey, jokerDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
-import { packArt, packGalleryPages } from '../packArt';
+import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import pouchUrl from '../assets/pouch.png';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
 import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
-import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from '../voucherProgress';
+import { loadVoucherProgress } from '../voucherProgress';
 import { FABLE_DEFS } from '../../engine/fables';
 import { FableCardArt } from './FableCardArt';
 import { CONSTELLATION_DEFS } from '../../engine/constellations';
-import { constellationArt } from '../constellationArt';
+import { voucherCollectionCopy } from '../voucherCollection';
+import { GAMBLER_CARDS } from '../gamblerArt';
+import { ConstellationCardArt } from './ConstellationCardArt';
+import { FamilyCardArt } from './FamilyCardArt';
+import { TiltCard } from './TiltCard';
 
 type Category =
   | 'words'
@@ -134,7 +139,7 @@ export function Collection({ lexicon, onBack }: Props) {
         have: CONSTELLATION_DEFS.length,
         total: CONSTELLATION_DEFS.length,
       },
-      inkCards: { have: 0, total: 0 },
+      inkCards: { have: GAMBLER_CARDS.length, total: GAMBLER_CARDS.length },
       bosses: { have: CORE_BOSS_IDS.length, total: CORE_BOSS_IDS.length },
       packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
       palette: { have: playedCount(), total: UNLOCKS.length },
@@ -195,9 +200,6 @@ export function Collection({ lexicon, onBack }: Props) {
     <div className="screen collection">
       <section className={`collection-modal collection-detail-modal detail-${cat}`}>
         <div className="coll-head">
-          <button className="btn exchange sm" onClick={() => setCat(null)}>
-            ‹ {t('collection.categories')}
-          </button>
           <h2 className="scr-title">{t(`collection.cat.${cat}`)}</h2>
         </div>
 
@@ -209,7 +211,7 @@ export function Collection({ lexicon, onBack }: Props) {
           {cat === 'vouchers' && <VouchersView />}
           {cat === 'fableCards' && <FablesView />}
           {cat === 'constellationCards' && <ConstellationsView />}
-          {cat === 'inkCards' && <CardFamilyView family="inkCards" />}
+          {cat === 'inkCards' && <GamblerCardsView />}
           {cat === 'bosses' && <BossesView />}
           {cat === 'packs' && <PacksView />}
           {cat === 'palette' && <PaletteView />}
@@ -217,7 +219,9 @@ export function Collection({ lexicon, onBack }: Props) {
           {cat === 'bags' && <BagsView />}
         </div>
 
-        <button className="btn back-bar" onClick={onBack}>
+        {/* 뒤로 = the previous screen: from a detail view that's the category
+            list; the category list's own 뒤로 exits the collection (back-stack). */}
+        <button className="btn back-bar" onClick={() => setCat(null)}>
           {t('common.back')}
         </button>
       </section>
@@ -387,20 +391,18 @@ function VouchersView() {
 
   const ticket = (id: VoucherId, locked: boolean, down: boolean) => {
     const v = VOUCHER_REGISTRY.get(id)!;
-    const rule = VOUCHER_UNLOCK_RULES.find((r) => r.id === id);
-    const body = locked && rule
-      ? `${t(voucherDescKey(id))}\n🔒 ${lang === 'ko' ? rule.conditionKo : rule.conditionEn}`
-      : t(voucherDescKey(id));
+    const { name, body } = voucherCollectionCopy(id, locked, lang, t);
     return (
       <Tooltip
         key={id}
-        title={lang === 'ko' ? v.nameKo : v.nameEn}
+        title={name}
         body={body}
+        classification={locked ? undefined : 'voucher'}
         down={down}
       >
         <VoucherCard
           emoji={locked ? '?' : v.emoji}
-          name={locked ? '???' : (lang === 'ko' ? v.nameKo : v.nameEn)}
+          name={name}
           muted={locked}
           {...(!locked ? { artSrc: voucherArt(v.id) } : {})}
         />
@@ -490,11 +492,7 @@ function BossesView() {
 }
 
 // ---------- Packs / Bags ----------
-/**
- * Paged pack gallery (Reference.png): one page per pack type. Art-backed types
- * (Tile / Charm / Ink) show every variant; a type without art yet (Consumable)
- * shows a "coming soon" silhouette. Each pack idles (CSS), staggered.
- */
+/** Image-only paged gallery for all supplied Tile, Charm, Constellation, and Ink art. */
 function PacksView() {
   const { t } = useI18n();
   const [page, setPage] = useState(0);
@@ -505,31 +503,27 @@ function PacksView() {
   return (
     <>
       <div className="pack-gallery">
-        {entries.map((e, i) =>
-          e.kind === 'art' ? (
+        {entries.map((e, i) => {
+          const tip = packTooltip(e.family, e.size, t);
+          return (
             <Tooltip
-              key={`a${i}`}
-              {...packTooltip(e.type, e.size, t)}
+              key={`${e.family}-${e.size}-${i}`}
+              title={tip.title}
+              body={tip.body}
+              grade={tip.grade}
               down
             >
-              <div className="pack-gallery-card">
+              <TiltCard
+                idle
+                className="pack-gallery-card"
+                role="img"
+                aria-label={`${tip.title} · ${t(`pack.size.${e.size}`)}`}
+              >
                 <img className="pack-gallery-art" src={e.src} alt="" />
-                <span className="cc-name">
-                  {t(`pack.type.${e.type}`)} · {t(`pack.size.${e.size}`)}
-                </span>
-              </div>
+              </TiltCard>
             </Tooltip>
-          ) : (
-            <Tooltip key={`c${i}`} title={t(`pack.type.${e.type}`)} body={t('collection.comingSoon')} down>
-              <div className="pack-gallery-card coming-soon">
-                {/* No art yet — a darkened pack shape stands in as a silhouette. */}
-                <img className="pack-gallery-art silhouette" src={packArt('tile', 'normal', 0)!} alt="" />
-                <span className="cc-name">{t(`pack.type.${e.type}`)}</span>
-                <span className="coming-soon-tag">{t('collection.comingSoon')}</span>
-              </div>
-            </Tooltip>
-          ),
-        )}
+          );
+        })}
       </div>
       <Pager page={clamped} pages={pages.length} onPage={setPage} />
     </>
@@ -537,33 +531,53 @@ function PacksView() {
 }
 
 // ---------- Palette (chromatic unlocks, feature-02 C-5) ----------
+// Split by effect kind into four sections — 색상 / 음향 / 캐릭터 / 언어. The
+// section is derived from `effect.kind`; adding a future unlock kind = adding a
+// row here, never a hard-coded word check (CLAUDE.md palette guardrail).
+const PALETTE_SECTIONS: { key: string; kind: UnlockEffect['kind'] }[] = [
+  { key: 'color', kind: 'color' },
+  { key: 'audio', kind: 'audio' },
+  { key: 'mascot', kind: 'mascot' },
+  { key: 'locale', kind: 'locale' },
+];
+
 function PaletteView() {
   const { t } = useI18n();
   const played = loadPlayed();
+  const paletteCard = (u: UnlockDef) => {
+    const found = played.has(u.id);
+    // Locked = silhouette with a letter-count hint ("R _ _"); unlocked = the word.
+    const hint = u.word[0] + ' _'.repeat(u.word.length - 1);
+    const group = u.effect.kind === 'color' ? u.effect.group : null;
+    const descKey =
+      u.effect.kind === 'color' ? `unlock.body.${u.effect.group}`
+      : u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? 'unlock.body.music' : 'unlock.body.sound')
+      : u.effect.kind === 'locale' ? 'unlock.body.korean'
+      : 'unlock.body.mascot';
+    return (
+      <Tooltip
+        key={u.id}
+        title={found ? u.word : t('collection.palette.locked')}
+        body={found ? t(descKey) : t('collection.palette.hint')}
+        down
+      >
+        <div className={['coll-card', 'palette-card', found ? `chroma-${group ?? 'audio'}` : 'locked'].join(' ')}>
+          <span className="cc-emoji">🎨</span>
+          <span className="cc-name">{found ? u.word : hint}</span>
+        </div>
+      </Tooltip>
+    );
+  };
   return (
-    <div className="card-grid">
-      {UNLOCKS.map((u) => {
-        const found = played.has(u.id);
-        // Locked = silhouette with a letter-count hint ("R _ _"); unlocked = the word.
-        const hint = u.word[0] + ' _'.repeat(u.word.length - 1);
-        const group = u.effect.kind === 'color' ? u.effect.group : null;
-        const descKey =
-          u.effect.kind === 'color' ? `unlock.body.${u.effect.group}`
-          : u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? 'unlock.body.music' : 'unlock.body.sound')
-          : u.effect.kind === 'locale' ? 'unlock.body.korean'
-          : 'unlock.body.mascot';
+    <div className="palette-sections">
+      {PALETTE_SECTIONS.map((sec) => {
+        const items = UNLOCKS.filter((u) => u.effect.kind === sec.kind);
+        if (items.length === 0) return null;
         return (
-          <Tooltip
-            key={u.id}
-            title={found ? u.word : t('collection.palette.locked')}
-            body={found ? t(descKey) : t('collection.palette.hint')}
-            down
-          >
-            <div className={['coll-card', 'palette-card', found ? `chroma-${group ?? 'audio'}` : 'locked'].join(' ')}>
-              <span className="cc-emoji">🎨</span>
-              <span className="cc-name">{found ? u.word : hint}</span>
-            </div>
-          </Tooltip>
+          <div className="palette-section" key={sec.key}>
+            <div className="palette-section-title">{t(`collection.palette.section.${sec.key}`)}</div>
+            <div className="card-grid">{items.map(paletteCard)}</div>
+          </div>
         );
       })}
     </div>
@@ -613,7 +627,7 @@ function BagsView() {
   );
 }
 
-// ---------- Card families (content registry arrives in the next content pass) ----------
+// ---------- Card families ----------
 function FablesView() {
   const { t } = useI18n();
   const [page, setPage] = useState(0);
@@ -628,11 +642,12 @@ function FablesView() {
             key={def.id}
             title={t(`consumable.${def.id}`)}
             body={t(consumableDescKey(def.id))}
+            classification="fable"
             down
           >
-            <div className="fable-card">
+            <TiltCard idle className="fable-card">
               <FableCardArt id={def.id} title={t(`consumable.${def.id}`)} />
-            </div>
+            </TiltCard>
           </Tooltip>
         ))}
       </div>
@@ -643,42 +658,59 @@ function FablesView() {
 
 function ConstellationsView() {
   const { t } = useI18n();
+  const [page, setPage] = useState(0);
+  const perPage = 10;
+  const pages = Math.ceil(CONSTELLATION_DEFS.length / perPage);
+  const visible = CONSTELLATION_DEFS.slice(page * perPage, (page + 1) * perPage);
   return (
     <div className="constellation-collection">
       <div className="constellation-card-grid">
-        {CONSTELLATION_DEFS.map((def) => (
+        {visible.map((def) => (
           <Tooltip
             key={def.id}
             title={t(`consumable.${def.id}`)}
             body={t('pack.constellationLevels', { pattern: t(`pattern.${def.pattern}`) })}
+            classification="constellation"
             down
           >
-            <div className="constellation-card">
-              <img src={constellationArt(def.id)} alt="" />
-            </div>
+            <TiltCard idle className="constellation-card">
+              <ConstellationCardArt id={def.id} title={t(`consumable.${def.id}`)} />
+            </TiltCard>
           </Tooltip>
         ))}
       </div>
+      <Pager page={page} pages={pages} onPage={setPage} />
     </div>
   );
 }
 
-function CardFamilyView({
-  family,
-}: {
-  family: 'fableCards' | 'inkCards';
-}) {
-  const { t } = useI18n();
+function GamblerCardsView() {
+  const { t, lang } = useI18n();
+  const [page, setPage] = useState(0);
+  const perPage = 10;
+  const pages = Math.ceil(GAMBLER_CARDS.length / perPage);
+  const visible = GAMBLER_CARDS.slice(page * perPage, (page + 1) * perPage);
   return (
-    <div className={`card-family-gallery ${family}`}>
-      <div className="card-family-placeholder-grid" aria-hidden="true">
-        {Array.from({ length: 10 }, (_, index) => (
-          <div className="card-family-slot" key={index}>
-            <span>?</span>
-          </div>
-        ))}
+    <div className="gambler-collection">
+      <div className="gambler-card-grid">
+        {visible.map((card) => {
+          const name = lang === 'ko' ? card.nameKo : card.nameEn;
+          return (
+            <Tooltip
+              key={card.id}
+              title={name}
+              body={t('collection.gambler.effectPending')}
+              classification="gambler"
+              down
+            >
+              <TiltCard idle className="gambler-card">
+                <FamilyCardArt src={card.art} title={name} />
+              </TiltCard>
+            </Tooltip>
+          );
+        })}
       </div>
-      <p className="coll-empty">{t('collection.comingSoon')}</p>
+      <Pager page={page} pages={pages} onPage={setPage} />
     </div>
   );
 }

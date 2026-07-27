@@ -5,7 +5,8 @@
  */
 
 import { BALANCE } from './balance';
-import { ALL_JOKERS, JOKER_REGISTRY } from './jokers';
+import { JOKER_REGISTRY } from './jokers';
+import { sampleJokerDefs } from './offers';
 import { rerollCost, sellValue } from './economy';
 import { rollJokerEdition } from './editions';
 import { PUNCTUATION_POOL, rollTile, STATIONERY_POOL } from './packs';
@@ -40,8 +41,13 @@ const PACK_SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 
 /** All items the shop could offer this run, minus jokers already owned. */
 function buildPool(run: RunState, rng: Rng): ShopItem[] {
-  const owned = new Set(run.jokers.map((j) => j.defId));
-  const jokers: ShopItem[] = ALL_JOKERS.filter((j) => !owned.has(j.id)).map((j) => ({
+  // Rarity-weighted, no-duplicate joker candidates via the shared offer pool
+  // (C-1/C-2). A bounded sample (slots + spare, capped by the pool) keeps the
+  // joker : Fable : Constellation : tile type-mix balanced while respecting the
+  // rarity odds — listing every joker once would both ignore rarity and flood the
+  // pool. Legendary never appears (weight 0); a fully-owned pool yields none.
+  const jokerCount = shopItemSlots(run) + 2;
+  const jokers: ShopItem[] = sampleJokerDefs(run, jokerCount, rng).map((j) => ({
     kind: 'joker',
     id: j.id,
     edition: rollJokerEdition(run, rng),

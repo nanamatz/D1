@@ -9,7 +9,7 @@
 
 import { BALANCE } from './balance';
 import { CONSTELLATION_IDS, CONSTELLATION_PATTERN } from './constellations';
-import { ALL_JOKERS } from './jokers';
+import { sampleJokerDefs } from './offers';
 import { rollJokerEdition, rollTileEdition } from './editions';
 import { FABLE_IDS } from './fables';
 import {
@@ -102,9 +102,8 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
   let options: PackOption[];
   switch (slot.type) {
     case 'joker': {
-      const owned = new Set(run.jokers.map((j) => j.defId));
-      const pool = ALL_JOKERS.filter((j) => !owned.has(j.id));
-      options = rng.shuffle(pool).slice(0, show).map((j) => ({
+      // Rarity-weighted, no-duplicate draw via the shared offer pool (C-1/C-2).
+      options = sampleJokerDefs(run, show, rng).map((j) => ({
         kind: 'joker',
         id: j.id,
         edition: rollJokerEdition(run, rng),

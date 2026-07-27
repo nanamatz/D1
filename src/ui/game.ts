@@ -147,6 +147,31 @@ export function materialClass(material: Tile['material']): string {
   return material === 'ceramic' ? '' : material;
 }
 
+/**
+ * Corner glyph for a material whose effect fires on a *condition* (UI_DESIGN §3.1
+ * ②) — the "why is this tile special" read without a tooltip. Monochrome text
+ * glyphs only, so they survive the desaturated start (§13). Wood shows its LIVE
+ * growth counter (its current +Chips, which climbs +10 per play). Flat/base
+ * materials (Ceramic base, Porcelain, Polished, Stone) return null — Stone is
+ * already unique by having no letter, the flat ones need no condition cue.
+ */
+export function materialGlyph(tile: Tile): string | null {
+  switch (tile.material) {
+    case 'glass':
+      return '✕'; // crack / 1-in-4 destroy risk
+    case 'leadPlate':
+      return '⚄'; // dice pip — the Lucky rolls
+    case 'ivory':
+      return '$'; // pays at blind end if held
+    case 'brass':
+      return '☞'; // hand — ×1.5 while held
+    case 'wood':
+      return `+${tile.woodBonusChips ?? BALANCE.materials.wood.baseChips}`;
+    default:
+      return null;
+  }
+}
+
 /** Font edition → css class ('' for the medium base). */
 export function fontClass(font: Tile['font']): string {
   switch (font) {

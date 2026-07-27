@@ -5,7 +5,7 @@
  * The play-trigger effects (goldPlay/chipPlay/retriggerPlay) fire inside the
  * per-tile scoring block in loop.ts (so retriggerPlay repeats the whole
  * block); discardGain fires in discardTiles. The font↔effect mapping lives in
- * BALANCE.fontEffects (PROVISIONAL until design supplies the final mapping).
+ * BALANCE.fontEffects (confirmed GDD §2.3, 2026-07-27).
  */
 
 import { BALANCE } from './balance';

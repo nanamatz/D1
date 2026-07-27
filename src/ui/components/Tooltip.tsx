@@ -15,10 +15,14 @@ interface Props {
    *  separate from `rarity`: different domains, and merging them would churn
    *  four working joker call sites for no gain. */
   grade?: PackSize | undefined;
+  /** Card family/type badge beneath the description. Hidden cards omit this. */
+  classification?: TooltipClassification | undefined;
   /** open the card downward instead of upward (shelf tooltips, E-7) */
   down?: boolean;
   children: ReactNode;
 }
+
+export type TooltipClassification = 'voucher' | 'fable' | 'constellation' | 'gambler';
 
 /**
  * Shared anchored card tooltip (spec §0): wraps any card and reveals an anchored
@@ -28,7 +32,16 @@ interface Props {
  * plate, and — for jokers only — a rarity badge beneath it. Body copy carries
  * highlight markup (see richtext.tsx).
  */
-export function Tooltip({ title, body, extra, rarity, grade, down, children }: Props) {
+export function Tooltip({
+  title,
+  body,
+  extra,
+  rarity,
+  grade,
+  classification,
+  down,
+  children,
+}: Props) {
   const { t } = useI18n();
   return (
     <span className="tt-anchor">
@@ -44,6 +57,11 @@ export function Tooltip({ title, body, extra, rarity, grade, down, children }: P
         </span>
         {rarity && <span className={['tt-rarity', rarity].join(' ')}>{t(`rarity.${rarity}`)}</span>}
         {grade && <span className={['tt-grade', grade].join(' ')}>{t(`pack.size.${grade}`)}</span>}
+        {classification && (
+          <span className={['tt-classification', classification].join(' ')}>
+            {t(`tooltip.classification.${classification}`)}
+          </span>
+        )}
       </span>
     </span>
   );

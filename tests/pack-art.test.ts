@@ -1,10 +1,12 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { PACK_ART, packArt, hasPackArt, packGalleryPages } from '../src/ui/packArt';
 import { BALANCE } from '../src/engine/balance';
 import type { PackSize, PackType } from '../src/engine/types';
 
 const SIZES: PackSize[] = ['normal', 'jumbo', 'mega'];
-const ART_TYPES: PackType[] = ['tile', 'joker', 'pattern']; // consumable has no art yet
+const ART_TYPES: PackType[] = ['tile', 'joker', 'consumable', 'pattern'];
 
 describe('packArt — (type, size) → art mapping', () => {
   it('the art count per (type, size) matches BALANCE.pack.artVariants', () => {
@@ -35,48 +37,77 @@ describe('packArt — (type, size) → art mapping', () => {
     }
   });
 
-  it('consumable has no art yet: packArt is null, hasPackArt is false', () => {
-    expect(PACK_ART.consumable).toBeUndefined();
-    expect(hasPackArt('consumable')).toBe(false);
-    for (const size of SIZES) expect(packArt('consumable', size, 0)).toBeNull();
-  });
-
   it('the art-backed types report hasPackArt true', () => {
     for (const type of ART_TYPES) expect(hasPackArt(type)).toBe(true);
   });
+
+  it('ships all 32 runtime artworks as Star-Pack-sized path-only SVGs', () => {
+    const directory = fileURLToPath(
+      new URL('../src/ui/assets/packs/', import.meta.url),
+    );
+    const files = readdirSync(directory);
+    const svgFiles = files.filter((file) => file.endsWith('.svg'));
+    expect(svgFiles).toHaveLength(32);
+    expect(files.some((file) => file.endsWith('.png'))).toBe(false);
+
+    for (const file of svgFiles) {
+      const svg = readFileSync(`${directory}/${file}`, 'utf8');
+      expect(svg).toContain('width="244" height="400"');
+      expect(svg).toContain('viewBox="0 0 122 200"');
+      expect(svg).toContain('32-color path trace');
+      expect(svg).toContain('stretch fit');
+      expect(svg).toContain('<path ');
+      expect(svg).not.toMatch(/<image|data:image|\.png/);
+    }
+  });
 });
 
-describe('packGalleryPages — 도감 Packs gallery (Reference.png)', () => {
-  it('has one page per pack type, in tile → joker → pattern → consumable order', () => {
+describe('packGalleryPages — Collection pack gallery', () => {
+  it('has image-only pages for tile, charm, Fable, constellation, and Ink art', () => {
     const pages = packGalleryPages();
-    expect(pages).toHaveLength(4);
-    const firstTypeOf = (p: (typeof pages)[number]) => (p[0]!.kind === 'art' ? p[0]!.type : p[0]!.type);
-    expect(pages.map(firstTypeOf)).toEqual(['tile', 'joker', 'pattern', 'consumable']);
+    expect(pages).toHaveLength(5);
+    expect(pages.map((page) => page[0]!.family)).toEqual([
+      'tile',
+      'joker',
+      'consumable',
+      'pattern',
+      'ink',
+    ]);
   });
 
-  it('each art page lists all that type\'s variants in Basic→Classic→Premium order', () => {
+  it('each runtime art page lists variants in Basic→Classic→Premium order', () => {
     const pages = packGalleryPages();
     for (const type of ART_TYPES) {
-      const page = pages.find((p) => p[0]!.kind === 'art' && p[0]!.type === type)!;
+      const page = pages.find((p) => p[0]!.family === type)!;
       const total = SIZES.reduce((n, s) => n + PACK_ART[type]![s].length, 0);
       expect(page.length).toBe(total);
-      expect(page.every((e) => e.kind === 'art')).toBe(true);
-      const srcs = page.map((e) => (e.kind === 'art' ? e.src : null));
+      const srcs = page.map((e) => e.src);
       expect(srcs).toEqual([...PACK_ART[type]!.normal, ...PACK_ART[type]!.jumbo, ...PACK_ART[type]!.mega]);
     }
   });
 
-  it('tile page holds 8, joker 4, ink(pattern) 8', () => {
+  it('shows all 32 supplied images: tile 8, charm 4, Fable 8, constellation 8, Ink 4', () => {
     const pages = packGalleryPages();
-    const len = (type: PackType) => pages.find((p) => p[0]!.kind === 'art' && p[0]!.type === type)!.length;
-    expect(len('tile')).toBe(8);
-    expect(len('joker')).toBe(4);
-    expect(len('pattern')).toBe(8);
+    expect(pages.map((page) => page.length)).toEqual([8, 4, 8, 8, 4]);
+    expect(pages.flat()).toHaveLength(32);
   });
 
-  it('consumable is a single coming-soon card (no art)', () => {
-    const page = packGalleryPages()[3]!;
-    expect(page).toHaveLength(1);
-    expect(page[0]).toEqual({ kind: 'comingSoon', type: 'consumable' });
+  it('renders motion-enabled images with tooltips but no persistent labels', () => {
+    const source = readFileSync(
+      fileURLToPath(new URL('../src/ui/components/Collection.tsx', import.meta.url)),
+      'utf8',
+    );
+    const packsView = source.slice(
+      source.indexOf('function PacksView()'),
+      source.indexOf('// ---------- Palette'),
+    );
+    expect(packsView).toContain('<TiltCard');
+    expect(packsView).toContain('idle');
+    expect(packsView).toContain('className="pack-gallery-art"');
+    expect(packsView).toContain('packTooltip(e.family, e.size, t)');
+    expect(packsView).toContain('<Tooltip');
+    expect(packsView).toContain('grade={tip.grade}');
+    expect(packsView).not.toContain('className="cc-name"');
+    expect(packsView).not.toContain('coming-soon-tag');
   });
 });

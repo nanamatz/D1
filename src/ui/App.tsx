@@ -11,11 +11,15 @@ import { ScreenTransition } from './components/ScreenTransition';
 import { TutorialHost } from './components/TutorialPopup';
 import { ChromaticReveal } from './components/ChromaticReveal';
 import { CrtOverlay } from './components/CrtOverlay';
+import { LoadingScreen } from './components/LoadingScreen';
 
 type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
 export function App() {
   const g = useGame();
+  // D-4: preload assets behind a loading screen before the Main Menu. Falls through
+  // immediately when everything is cached (LoadingScreen reports real progress).
+  const [loading, setLoading] = useState(true);
   // `usePersistedState` is a plain per-instance useState with no cross-instance
   // sync, so this App-level instance is frozen at page-load values and its
   // effect fires once at mount — it does NOT stay "live" across screens.
@@ -97,9 +101,15 @@ export function App() {
   // transition. In-run phase changes use the same component inside RunView.
   return (
     <>
-      <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>
-      <TutorialHost />
-      <ChromaticReveal />
+      {loading ? (
+        <LoadingScreen onDone={() => setLoading(false)} />
+      ) : (
+        <>
+          <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>
+          <TutorialHost />
+          <ChromaticReveal />
+        </>
+      )}
       <CrtOverlay />
     </>
   );

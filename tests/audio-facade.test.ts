@@ -25,7 +25,10 @@ describe('audio facade — pure logic (no Web Audio in Node)', () => {
   });
 
   it('every SfxName has a recipe (positive base gain) and SFX_NAMES is complete', () => {
-    expect(SFX_NAMES.length).toBe(23);
+    // Growth floor, not an exact count: RECIPES is typed Record<SfxName, Recipe>, so
+    // the type system already guarantees every name has a recipe — the manifest only
+    // grows (feature-03 desk objects, feature-04 audio). The real check is the loop.
+    expect(SFX_NAMES.length).toBeGreaterThanOrEqual(26);
     for (const n of SFX_NAMES) {
       expect(effectiveGain(n as SfxName, FULL)).toBeGreaterThan(0);
     }

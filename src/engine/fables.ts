@@ -111,6 +111,23 @@ export function canUseFable(
   return true;
 }
 
+/**
+ * True when using this fable would REPLACE an existing enhancement on any selected
+ * tile — a same-axis overwrite (GDD §2.4). The UI confirms before applying; cross-
+ * axis application never conflicts and stays silent. Only material fables target
+ * tiles today, so a non-base material on a target is the sole overwrite case; the
+ * predicate is axis-shaped so a future font/edition fable slots in without a rewrite.
+ */
+export function fableOverwritesEnhancement(
+  id: FableId,
+  blind: BlindState,
+  selectedIds: readonly string[],
+): boolean {
+  const effect = FABLE_REGISTRY.get(id)?.effect;
+  if (effect?.kind !== 'material') return false;
+  return selectedTiles(blind, selectedIds).some((tile) => tile.material !== 'ceramic');
+}
+
 const patchTiles = (
   run: RunState,
   blind: BlindState,

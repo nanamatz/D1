@@ -11,8 +11,9 @@ import { TiltCard } from './TiltCard';
 import { jokerSlotLimit } from '../../engine/vouchers';
 import { isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
-import { constellationArt } from '../constellationArt';
 import { FableCardArt } from './FableCardArt';
+import { ConstellationCardArt } from './ConstellationCardArt';
+import { consumableClassification } from '../cardClassification';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -158,10 +159,19 @@ export function JokerShelf({
         <div className="shelf-group consumables-group">
           <div className="consumables">
         {run.consumables.map((c, i) => (
-          <div key={i} className="consumable-slot">
-            <Tooltip title={t(`consumable.${c}`)} body={t(consumableDescKey(c))} down>
+          <div
+            key={i}
+            className={['consumable-slot', menuIdx === i ? 'menu-open' : ''].filter(Boolean).join(' ')}
+          >
+            <Tooltip
+              title={t(`consumable.${c}`)}
+              body={t(consumableDescKey(c))}
+              classification={consumableClassification(c)}
+              down
+            >
               <TiltCard
-                className="consumable use"
+                idle
+                className="consumable-object"
                 role="button"
                 tabIndex={0}
                 aria-haspopup="menu"
@@ -179,22 +189,23 @@ export function JokerShelf({
                   }
                 }}
               >
-                {isFableId(c) ? (
-                  <FableCardArt
-                    id={c}
-                    className="consumable-art"
-                    title={t(`consumable.${c}`)}
-                  />
-                ) : isConstellationId(c) ? (
-                  <img
-                    className="consumable-art"
-                    src={constellationArt(c)}
-                    alt=""
-                  />
-                ) : (
-                  <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
-                )}
-                <span className="n">{t(`consumable.${c}`)}</span>
+                <div className="consumable-object-art">
+                  {isFableId(c) ? (
+                    <FableCardArt
+                      id={c}
+                      className="consumable-art"
+                      title={t(`consumable.${c}`)}
+                    />
+                  ) : isConstellationId(c) ? (
+                    <ConstellationCardArt
+                      id={c}
+                      className="consumable-art"
+                      title={t(`consumable.${c}`)}
+                    />
+                  ) : (
+                    <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
+                  )}
+                </div>
               </TiltCard>
             </Tooltip>
             {menuIdx === i && (

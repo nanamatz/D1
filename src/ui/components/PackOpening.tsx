@@ -8,12 +8,14 @@ import { useI18n } from '../i18n';
 import { packArt } from '../packArt';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
-import { Tooltip } from './Tooltip';
+import { Tooltip, type TooltipClassification } from './Tooltip';
 import { canAddJoker } from '../../engine/vouchers';
 import { isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
-import { constellationArt } from '../constellationArt';
 import { FableCardArt } from './FableCardArt';
+import { ConstellationCardArt } from './ConstellationCardArt';
+import { TiltCard } from './TiltCard';
+import { consumableClassification } from '../cardClassification';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
@@ -33,6 +35,7 @@ interface Tip {
   title: string;
   body: string;
   rarity?: JokerRarity | undefined;
+  classification?: TooltipClassification | undefined;
 }
 
 function OptionCard({
@@ -58,11 +61,18 @@ function OptionCard({
       : option.kind === 'tile' ? (option.tile.edition ?? 'base')
         : 'base';
   const card = (
-    <div className={['shopitem', `edition-${edition}`, blockKey && 'blocked'].filter(Boolean).join(' ')}>
+    <TiltCard
+      idle
+      className={['shopitem', `edition-${edition}`, blockKey && 'blocked'].filter(Boolean).join(' ')}
+    >
       {option.kind === 'tile' ? (
         <TileView tile={option.tile} />
       ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
-        <img className="shop-consumable-art" src={constellationArt(option.id)} alt="" />
+        <ConstellationCardArt
+          id={option.id}
+          className="shop-consumable-art"
+          title={name}
+        />
       ) : option.kind === 'consumable' && isFableId(option.id) ? (
         <FableCardArt
           id={option.id}
@@ -81,12 +91,18 @@ function OptionCard({
           {label}
         </button>
       )}
-    </div>
+    </TiltCard>
   );
   // The tooltip wraps the whole card, so it shows on hover even when the pick is
   // blocked (item 4) — hover is CSS-driven and independent of the block state.
   return tip ? (
-    <Tooltip title={tip.title} body={tip.body} rarity={tip.rarity} down>
+    <Tooltip
+      title={tip.title}
+      body={tip.body}
+      rarity={tip.rarity}
+      classification={tip.classification}
+      down
+    >
       {card}
     </Tooltip>
   ) : (
@@ -137,10 +153,18 @@ export function PackOpening({ g }: { g: UseGame }) {
     }
     if (o.kind === 'punctuation') {
       // Explain it levels the mapped pattern immediately (feature-02 B).
-      return { title: optionName(o), body: t('pack.constellationLevels', { pattern: t(`pattern.${o.pattern}`) }) };
+      return {
+        title: optionName(o),
+        body: t('pack.constellationLevels', { pattern: t(`pattern.${o.pattern}`) }),
+        classification: 'constellation',
+      };
     }
     if (o.kind === 'consumable') {
-      return { title: optionName(o), body: t(consumableDescKey(o.id)) };
+      return {
+        title: optionName(o),
+        body: t(consumableDescKey(o.id)),
+        classification: consumableClassification(o.id),
+      };
     }
     return undefined;
   };

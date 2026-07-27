@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { Tile } from '../../engine/types';
-import { faceClass, fontClass, inkClass, materialClass, tileGlyph, tileValue } from '../game';
+import { faceClass, fontClass, inkClass, materialClass, materialGlyph, tileGlyph, tileValue } from '../game';
 import { useI18n } from '../i18n';
 import { usePointerTilt } from '../hooks';
 import { richText } from '../richtext';
@@ -27,6 +27,8 @@ interface Props {
   /** Locked by the first-run lesson: dimmed and non-interactive (not the next YELLOW
    *  letter). Distinct from faceDown — the letter is still visible. */
   disabled?: boolean;
+  /** Disable local tilt when a parent surface owns the whole interaction layer. */
+  tilt?: boolean;
   /** anchored hover tooltip for the tile (C-4): chip value, material, font */
   tooltip?: { title: string; body: string };
 }
@@ -45,13 +47,16 @@ export function TileView({
   dropTarget = false,
   faceDown = false,
   disabled = false,
+  tilt = true,
   tooltip,
 }: Props) {
   const { t } = useI18n();
   const interactive = !mini && !!onSelect && !disabled;
   const draggable = !mini && !!zone && !disabled;
+  // Conditional-material corner glyph (B-1) — hidden face-down (identity hidden).
+  const matGlyph = faceDown ? null : materialGlyph(tile);
   const rootRef = useRef<HTMLDivElement>(null);
-  usePointerTilt(rootRef, !mini && !disabled);
+  usePointerTilt(rootRef, tilt && !mini && !disabled);
   // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
   // to its material name so a screen reader announces "Stone tile, 0 chips"
   // instead of the identity-less " tile, 0 chips" (M-4).
@@ -123,6 +128,14 @@ export function TileView({
         <>
           {tileGlyph(tile)}
           <span className="val">{tileValue(tile)}</span>
+          {matGlyph && (
+            <span
+              className={`mat-glyph${tile.material === 'wood' ? ' mat-glyph-wood' : ''}`}
+              aria-hidden
+            >
+              {matGlyph}
+            </span>
+          )}
         </>
       )}
       {!faceDown && tooltip && (

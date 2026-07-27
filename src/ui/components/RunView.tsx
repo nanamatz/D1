@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { judgeSentence } from '../../engine/patterns';
+import { FABLE_REGISTRY, isFableId } from '../../engine/fables';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
@@ -21,6 +22,7 @@ import { RunInfo } from './RunInfo';
 import { Options } from './Options';
 import { ScreenTransition } from './ScreenTransition';
 import { GuidedIntro } from './GuidedIntro';
+import { DeskObjects } from './DeskObjects';
 
 interface Props {
   g: UseGame;
@@ -68,6 +70,19 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   useEffect(() => {
     if (phase === 'playing' && g.state.showIntro && !hasSeenIntro() && readTips()) setIntroOpen(true);
   }, [phase, g.state.showIntro]);
+
+  // feature-04 A-1 · money is never silent. One central watcher on run.gold plays a
+  // rising coin on gain, a falling one on loss — so EVERY gold change sounds, wherever
+  // it happens (purchase, sell, reroll, pack buy, Fee Settlement, interest, the goldPlay
+  // font, Ivory/Brass/Lead-plate payouts, Bond drains) without bolting a call onto each
+  // site. The explicit button dings (purchase/sell/reroll) still fire as confirmations.
+  const prevGold = useRef(run.gold);
+  useEffect(() => {
+    if (run.gold !== prevGold.current) {
+      audio.money(run.gold - prevGold.current);
+      prevGold.current = run.gold;
+    }
+  }, [run.gold]);
 
   // Mascot beat on shop enter + blind-resolution stings (B-1 settle-set:
   // clearFanfare / failSting), keyed purely on phase transitions.
@@ -202,6 +217,33 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {!ending && !settling && showInfo && (
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />
       )}
+      {/* B-3 · same-axis overwrite confirm (GDD §2.4). Pops when a material Fable
+          targets a tile that already carries an enhancement — replacing discards it. */}
+      {!ending && !settling && g.state.pendingConsumable && (() => {
+        const id = g.state.pendingConsumable;
+        const effect = isFableId(id) ? FABLE_REGISTRY.get(id)?.effect : undefined;
+        if (effect?.kind !== 'material') return null;
+        const next = t(`material.${effect.material}`);
+        const current = blind.hand.find((tl) => selected.includes(tl.id) && tl.material !== 'ceramic');
+        return (
+          <div className="overlay overwrite-overlay">
+            <div className="overlay-card overwrite-modal">
+              <h3 className="overwrite-title">{t('overwrite.title')}</h3>
+              <p className="overwrite-msg">
+                {current
+                  ? t('overwrite.body', { current: t(`material.${current.material}`), next })
+                  : t('overwrite.bodyGeneric', { next })}
+              </p>
+              <div className="overwrite-actions">
+                <button className="btn" onClick={g.cancelConsumable}>{t('overwrite.cancel')}</button>
+                <button className="btn cash" onClick={g.confirmConsumable}>
+                  {t('overwrite.confirm')}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {settling && <CashOut g={g} />}
       {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
     </div>
@@ -219,6 +261,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   return (
     <>
       <ScreenTransition screenKey={screenKey}>{content()}</ScreenTransition>
+      {/* D-3 · ambient desk objects in the viewport margins — cosmetic, only while
+          actively playing (not during the guided intro or a pause menu). */}
+      <DeskObjects active={phase === 'playing' && !introOpen && !paused} />
       {showOptionsFab && (
         <button className="options-fab" onClick={() => setPaused(true)}>
           ⚙ {t('sidebar.options')}

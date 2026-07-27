@@ -196,7 +196,9 @@ export function SettleProvider({
           } else if (e.kind === 'joker' || e.kind === 'font' || e.kind === 'edition') {
             audio.play('jokerBlip');
           } else if (e.kind === 'material') {
-            audio.play('multFill');
+            // A-2: the material's own voice when it triggers during scoring (Brass ring,
+            // Stone knock, Wood knock, …), not a generic fill.
+            audio.material(e.material);
           }
           // This beat's increase drives the floating +N pops (item 6). Every settle
           // beat is additive, so multOp is 'add'; a future multiplicative beat would

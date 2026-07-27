@@ -17,6 +17,8 @@
   --gold: #b0aca4; /* YELLOW; unlock-yellow → #f0b23e */
   --tile-face: #e9e8e4; /* YELLOW (warm cream); unlock-yellow → #f4eddf */
   --tile-ink: #2b2620; /* neutral (near-black) */
+  --tile-ink-light: #f4f0e7; /* light ink for dark faces (Lead plate) — accessibility
+                                floor (UI_DESIGN §3.1 ③); stays light under grayscale */
   --suit-standard: #c2c3c4; /* neutral grey */
   --suit-formal: #979799; /* BLUE; unlock-blue → #7e96f2 */
   --suit-slang: #a3a09b; /* YELLOW; unlock-yellow → #f09437 */
@@ -104,10 +106,11 @@
      for a tooltip wider than one card (see .card-grid) and the two numbers must not
      drift apart. */
   --coll-card-min: 120px;
-  /* Every shop card (for-sale joker/consumable, voucher, pack) is this ONE width,
-     even though the three live in different-width rows — otherwise each sized to its
-     own name and they never lined up (item 2). */
-  --shop-card-w: 138px;
+  /* Every sale offer uses one large image stage, regardless of product family. */
+  --shop-card-w: 144px;
+  --shop-card-h: 185px;
+  --shop-pack-y: -12px;
+  --shop-lower-panel-h: 273px;
   /* One physical voucher ticket everywhere: shop, collection, and run info.
      The 3:2 ratio follows the approved 2026-07-26 ticket reference. */
   --voucher-w: 138px;

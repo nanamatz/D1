@@ -15,6 +15,7 @@ import { checkWordPlayed, unlockBus } from './unlocks';
 import type {
   BlindKind,
   BlindState,
+  ConsumableId,
   Letter,
   PatternId,
   RunState,
@@ -41,7 +42,7 @@ import { loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
 import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
-import { canUseFable, isFableId, useFable } from '../engine/fables';
+import { canUseFable, fableOverwritesEnhancement, isFableId, useFable } from '../engine/fables';
 import {
   bossRerollLimit,
   bossRerollPrice,
@@ -159,6 +160,13 @@ export interface GameState {
    * flip it on and open the hard-lock on a non-rigged blind (that softlocks). Replay = new run.
    */
   showIntro: boolean;
+  /**
+   * A material Fable awaiting overwrite confirmation (GDD §2.4, feature-03 B-3):
+   * the player targeted a tile that already carries a same-axis enhancement, so
+   * applying would REPLACE it. Non-null pops the confirm modal; confirm applies,
+   * cancel clears. Cross-axis application never lands here (it's silent).
+   */
+  pendingConsumable: ConsumableId | null;
 }
 
 const randomSeed = (): string => Math.random().toString(36).slice(2);
@@ -221,6 +229,7 @@ function bootstrap(seed: string = randomSeed()): GameState {
     sentenceBonus: null,
     runStarted: false,
     showIntro: tutorial,
+    pendingConsumable: null,
   };
 }
 
@@ -234,6 +243,10 @@ export interface UseGame {
   reorderJokers: (from: number, to: number) => void;
   reorderStaged: (fromId: string, toId: string) => void;
   useConsumable: (id: import('../engine/types').ConsumableId) => void;
+  /** Confirm the pending §2.4 same-axis overwrite (B-3). */
+  confirmConsumable: () => void;
+  /** Dismiss the pending overwrite confirm without applying (B-3). */
+  cancelConsumable: () => void;
   canUseConsumable: (id: import('../engine/types').ConsumableId) => boolean;
   canMagnify: boolean;
   sellConsumable: (index: number) => void;
@@ -590,6 +603,9 @@ export function useGame(): UseGame {
       const option = prev.pack.offer.options[optionIndex];
       if (!option) return prev;
       const run = applyPackPick(prev.run, option);
+      // A-4: confirm sound only on an APPLIED pick — applyPackPick returns the same
+      // run object when the slot is full (a blocked pick stays silent, per §2.6.1).
+      if (run !== prev.run) audio.play('packPick');
       recordVoucherProgress({
         kind: 'editionedJokers',
         count: run.jokers.filter((j) => (j.edition ?? 'base') !== 'base').length,
@@ -657,10 +673,18 @@ export function useGame(): UseGame {
     });
   }, []);
 
-  const useConsumable = useCallback((id: import('../engine/types').ConsumableId) => {
-    setState((prev) => {
+  // Apply a consumable to the current state. `force` skips the §2.4 overwrite
+  // confirm (set once the player confirms). Pure state→state; the two callers are
+  // useConsumable (force=false, may divert to a confirm) and confirmConsumable.
+  const applyConsumable = useCallback(
+    (prev: GameState, id: ConsumableId, force: boolean): GameState => {
       if (prev.phase !== 'playing' || !prev.run.consumables.includes(id)) return prev;
       if (isFableId(id)) {
+        // §2.4 overwrite guard (B-3): if this would replace a same-axis enhancement,
+        // divert to a confirm instead of applying. Cross-axis never lands here.
+        if (!force && fableOverwritesEnhancement(id, prev.blind, prev.selected)) {
+          return { ...prev, pendingConsumable: id, message: null };
+        }
         const result = useFable(
           id,
           prev.run,
@@ -669,6 +693,7 @@ export function useGame(): UseGame {
           makeRng(`${prev.seed}#${prev.rngCounter}`),
         );
         if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
+        audio.play('consumableUse'); // A-3: object actions are audible
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
         recordVoucherProgress({
           kind: 'editionedJokers',
@@ -691,6 +716,7 @@ export function useGame(): UseGame {
       const consumables = prev.run.consumables.slice();
       consumables.splice(idx, 1);
       const pattern = CONSUMABLE_PATTERN[id];
+      audio.play('consumableUse'); // A-3
       if (pattern) {
         recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
         return {
@@ -709,8 +735,29 @@ export function useGame(): UseGame {
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
       const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, lexicon, 3) : prev.hint;
       return { ...prev, run: { ...prev.run, consumables }, hint };
+    },
+    [lexicon],
+  );
+
+  const useConsumable = useCallback(
+    (id: ConsumableId) => setState((prev) => applyConsumable(prev, id, false)),
+    [applyConsumable],
+  );
+
+  /** Confirm the pending §2.4 overwrite (B-3) → apply the diverted Fable, forced. */
+  const confirmConsumable = useCallback(() => {
+    setState((prev) => {
+      const id = prev.pendingConsumable;
+      if (!id) return prev;
+      audio.play('buttonPress');
+      return applyConsumable({ ...prev, pendingConsumable: null }, id, true);
     });
-  }, [lexicon]);
+  }, [applyConsumable]);
+
+  /** Dismiss the overwrite confirm without applying (B-3). */
+  const cancelConsumable = useCallback(() => {
+    setState((prev) => (prev.pendingConsumable ? { ...prev, pendingConsumable: null } : prev));
+  }, []);
 
   const playWord = useCallback(() => {
     setState((prev) => {
@@ -973,6 +1020,8 @@ export function useGame(): UseGame {
     reorderJokers,
     reorderStaged,
     useConsumable,
+    confirmConsumable,
+    cancelConsumable,
     canUseConsumable: (id) =>
       state.phase === 'playing' &&
       !state.pendingEnd &&

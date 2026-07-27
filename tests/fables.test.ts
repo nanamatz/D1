@@ -4,6 +4,7 @@ import {
   FABLE_DEFS,
   FABLE_IDS,
   canUseFable,
+  fableOverwritesEnhancement,
   useFable,
 } from '../src/engine/fables';
 import { applyTileMaterial } from '../src/engine/materials';
@@ -159,6 +160,21 @@ describe('Fable registry', () => {
     );
     expect(result.run.gold).toBeLessThanOrEqual(53);
     expect(result.run.gold).toBeGreaterThan(3);
+  });
+
+  it('flags a same-axis overwrite (GDD §2.4 B-3): non-base material target → confirm', () => {
+    const { run, blind } = setup('fable6'); // polished material fable
+    const ids = blind.hand.slice(0, 2).map((t) => t.id);
+    // ceramic (base) targets → no overwrite, applies silently
+    expect(fableOverwritesEnhancement('fable6', blind, ids)).toBe(false);
+    // one target already enhanced (porcelain) → applying polished would replace it
+    const enhanced = {
+      ...blind,
+      hand: blind.hand.map((t, i) => (i === 0 ? { ...t, material: 'porcelain' as const } : t)),
+    };
+    expect(fableOverwritesEnhancement('fable6', enhanced, ids)).toBe(true);
+    // a non-material fable never triggers the overwrite confirm
+    expect(fableOverwritesEnhancement('fable9', enhanced, ids)).toBe(false);
   });
 
   it('destroys up to two selected tiles from the live blind and permanent pouch', () => {

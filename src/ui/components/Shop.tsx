@@ -1,3 +1,4 @@
+import { useEffect, useState, type ReactNode } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
@@ -8,7 +9,7 @@ import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
-import { Tooltip } from './Tooltip';
+import { Tooltip, type TooltipClassification } from './Tooltip';
 import { JokerShelf } from './JokerShelf';
 import { PackOpening } from './PackOpening';
 import { MoneyValue } from './MoneyValue';
@@ -21,6 +22,73 @@ import { isFableId, type FableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { constellationArt } from '../constellationArt';
 import { FableCardArt } from './FableCardArt';
+import { FamilyCardArt } from './FamilyCardArt';
+import { TiltCard } from './TiltCard';
+import { consumableClassification } from '../cardClassification';
+import { TileView } from './Tile';
+
+interface ShopOfferProps {
+  label: string;
+  price: number;
+  selected: boolean;
+  actionLabel: string;
+  actionClassName: string;
+  disabled: boolean;
+  onSelect: () => void;
+  onAction: () => void;
+  children: ReactNode;
+}
+
+/** Image-first sale slot. Selecting the art reveals its contextual action below. */
+function ShopOffer({
+  label,
+  price,
+  selected,
+  actionLabel,
+  actionClassName,
+  disabled,
+  onSelect,
+  onAction,
+  children,
+}: ShopOfferProps) {
+  return (
+    <div className={['shop-offer', selected ? 'selected' : ''].filter(Boolean).join(' ')}>
+      <TiltCard
+        idle
+        className="shop-offer-card"
+        role="button"
+        tabIndex={0}
+        aria-label={`${label} · $${price}`}
+        aria-pressed={selected}
+        onClick={onSelect}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
+      >
+        <div className="shop-offer-visual">
+          <div className="shop-offer-art">{children}</div>
+          <span className="shop-offer-price" aria-label={`$${price}`}>${price}</span>
+          <div className="shop-offer-action" aria-hidden={!selected}>
+            <button
+              className={['btn', actionClassName, 'sm'].join(' ')}
+              disabled={disabled}
+              tabIndex={selected ? 0 : -1}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction();
+              }}
+            >
+              {actionLabel}
+            </button>
+          </div>
+        </div>
+      </TiltCard>
+    </div>
+  );
+}
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -28,7 +96,13 @@ const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '�
 export function Shop({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const { run, shop } = g.state;
+  const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
+  useEffect(() => setSelectedOffer(null), [shop]);
   if (!shop) return null;
+
+  const toggleOffer = (key: string) => {
+    setSelectedOffer((current) => current === key ? null : key);
+  };
 
   const itemMeta = (
     item: ShopItem,
@@ -40,6 +114,7 @@ export function Shop({ g }: { g: UseGame }) {
     fableId?: FableId | undefined;
     accent?: string | undefined;
     rarity?: JokerRarity | undefined;
+    classification?: TooltipClassification | undefined;
   } => {
     if (item.kind === 'joker') {
       const def = JOKER_REGISTRY.get(item.id);
@@ -66,6 +141,7 @@ export function Shop({ g }: { g: UseGame }) {
       desc: t(consumableDescKey(item.id)),
       fableId: isFableId(item.id) ? item.id : undefined,
       art: isConstellationId(item.id) ? constellationArt(item.id) : undefined,
+      classification: consumableClassification(item.id),
     };
   };
 
@@ -115,8 +191,8 @@ export function Shop({ g }: { g: UseGame }) {
             {shop.items.map((item, i) => {
               if (!item) {
                 return (
-                  <div key={i} className="shopitem empty">
-                    {t('shop.sold')}
+                  <div key={i} className="shop-offer empty" aria-label={t('shop.sold')}>
+                    <div className="shop-offer-card shopitem empty" aria-hidden />
                   </div>
                 );
               }
@@ -125,31 +201,56 @@ export function Shop({ g }: { g: UseGame }) {
                 item.kind === 'joker' ? (item.edition ?? 'base')
                   : item.kind === 'tile' ? (item.tile.edition ?? 'base')
                     : 'base';
+              const offerKey = `item-${i}`;
               return (
-                <Tooltip key={i} title={m.name} body={m.desc} rarity={m.rarity}>
-                  <div className={['shopitem', m.accent, `edition-${edition}`].filter(Boolean).join(' ')}>
-                    {m.fableId ? (
-                      <FableCardArt
-                        id={m.fableId}
-                        className="shop-consumable-art"
-                        title={m.name}
-                      />
-                    ) : m.art ? (
-                      <img className="shop-consumable-art" src={m.art} alt="" />
+                <Tooltip
+                  key={i}
+                  title={m.name}
+                  body={m.desc}
+                  rarity={m.rarity}
+                  classification={m.classification}
+                >
+                  <ShopOffer
+                    label={m.name}
+                    price={item.price}
+                    selected={selectedOffer === offerKey}
+                    actionLabel={t('shop.buy')}
+                    actionClassName="exchange"
+                    disabled={!affordable(item)}
+                    onSelect={() => toggleOffer(offerKey)}
+                    onAction={() => g.buy(i)}
+                  >
+                    {item.kind === 'tile' ? (
+                      <div className="shop-tile-art">
+                        <TileView tile={item.tile} tilt={false} />
+                      </div>
                     ) : (
-                      <span className="e">{m.emoji}</span>
+                      <div
+                        className={[
+                          'shopitem',
+                          'shopitem-image-only',
+                          m.accent,
+                          `edition-${edition}`,
+                        ].filter(Boolean).join(' ')}
+                      >
+                        {m.fableId ? (
+                          <FableCardArt
+                            id={m.fableId}
+                            className="shop-consumable-art"
+                            title={m.name}
+                          />
+                        ) : m.art ? (
+                          <FamilyCardArt
+                            src={m.art}
+                            className="shop-consumable-art"
+                            title={m.name}
+                          />
+                        ) : (
+                          <span className="e">{m.emoji}</span>
+                        )}
+                      </div>
                     )}
-                    <span className="n">{m.name}</span>
-                    {edition !== 'base' && <span className="edition-badge">{edition}</span>}
-                    <span className="price">${item.price}</span>
-                    <button
-                      className="btn exchange sm"
-                      disabled={!affordable(item)}
-                      onClick={() => g.buy(i)}
-                    >
-                      {t('shop.buy')}
-                    </button>
-                  </div>
+                  </ShopOffer>
                 </Tooltip>
               );
             })}
@@ -164,25 +265,30 @@ export function Shop({ g }: { g: UseGame }) {
                 <Tooltip
                   title={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
                   body={t(voucherDescKey(voucher.id))}
+                  classification="voucher"
                 >
-                  <div className="voucher-shop-stack">
+                  <ShopOffer
+                    label={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                    price={voucher.price}
+                    selected={selectedOffer === 'voucher'}
+                    actionLabel={t('shop.redeem')}
+                    actionClassName="exchange"
+                    disabled={run.gold < voucher.price}
+                    onSelect={() => toggleOffer('voucher')}
+                    onAction={g.buyVoucher}
+                  >
                     <VoucherCard
                       emoji={voucher.emoji}
                       name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
                       artSrc={voucherArt(voucher.id)}
+                      motion={false}
                     />
-                    <span className="price">${voucher.price}</span>
-                    <button
-                      className="btn exchange sm"
-                      disabled={run.gold < voucher.price}
-                      onClick={g.buyVoucher}
-                    >
-                      {t('shop.buy')}
-                    </button>
-                  </div>
+                  </ShopOffer>
                 </Tooltip>
               ) : (
-                <VoucherCard emoji="—" name={t('shop.sold')} muted />
+                <div className="shop-offer empty" aria-label={t('shop.sold')}>
+                  <div className="shop-offer-card shopitem empty" aria-hidden />
+                </div>
               )}
             </div>
           </div>
@@ -193,32 +299,37 @@ export function Shop({ g }: { g: UseGame }) {
               {shop.packs.map((p, i) => {
                 if (!p) {
                   return (
-                    <div key={i} className="shopitem empty">
-                      {t('shop.sold')}
+                    <div key={i} className="shop-offer empty" aria-label={t('shop.sold')}>
+                      <div className="shop-offer-card shopitem empty" aria-hidden />
                     </div>
                   );
                 }
                 const tip = packTooltip(p.type, p.size, t);
+                const price = discountedPrice(run, BALANCE.pack.size[p.size].price);
+                const offerKey = `pack-${i}`;
+                const art = packArt(p.type, p.size, p.artVariant);
                 return (
                   <Tooltip key={i} title={tip.title} body={tip.body} grade={tip.grade}>
-                    <div className={['shopitem', `pack-${p.size}`].join(' ')}>
-                      {/* Tile / Charm / Ink packs have art; Consumable keeps the 📦 glyph. */}
-                      {packArt(p.type, p.size, p.artVariant) ? (
-                        <img className="pack-img" src={packArt(p.type, p.size, p.artVariant)!} alt="" />
-                      ) : (
-                        <span className="e">📦</span>
-                      )}
-                      <span className="n">{t(`pack.type.${p.type}`)}</span>
-                      <span className="pack-size">{t(`pack.size.${p.size}`)}</span>
-                      <span className="price">${discountedPrice(run, BALANCE.pack.size[p.size].price)}</span>
-                      <button
-                        className="btn green sm"
-                        disabled={run.gold < discountedPrice(run, BALANCE.pack.size[p.size].price)}
-                        onClick={() => g.buyPack(i)}
+                    <ShopOffer
+                      label={tip.title}
+                      price={price}
+                      selected={selectedOffer === offerKey}
+                      actionLabel={t('pack.open')}
+                      actionClassName="green"
+                      disabled={run.gold < price}
+                      onSelect={() => toggleOffer(offerKey)}
+                      onAction={() => g.buyPack(i)}
+                    >
+                      <div
+                        className={['shopitem', 'shopitem-image-only', `pack-${p.size}`].join(' ')}
                       >
-                        {t('pack.open')}
-                      </button>
-                    </div>
+                        {art ? (
+                          <img className="pack-img" src={art} alt="" />
+                        ) : (
+                          <span className="e">📦</span>
+                        )}
+                      </div>
+                    </ShopOffer>
                   </Tooltip>
                 );
               })}

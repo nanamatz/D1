@@ -8,9 +8,11 @@ Derived from 18 Balatro reference screenshots. **The screenshots are layout/flow
 - **Back button**: full-width gold bar pinned at the bottom of every sub-screen.
 - **Carousel selector** `< value >` for enumerated options (deck, stake, window mode).
 - **Slider + value badge** for continuous options (volume, screenshake).
-- **Card tooltip**: hovering any joker/consumable anywhere (shelf, shop, collection) opens an anchored tooltip: name, effect text, and — for scaling jokers — the **current grown value** (e.g. "currently ×1.5"). One shared component.
+- **Card tooltip — universal, no exceptions.** Hovering **any** interactive object anywhere opens an anchored tooltip: Emoji Tiles, consumables, letter tiles, vouchers, packs, **and every item revealed inside an opened pack**. Contents: name, full effect text, and — for scaling Emoji Tiles — the **current grown value** (e.g. "currently ×1.5") and for letter tiles the material/font/edition each spelled out. One shared component; a surface that renders objects without wiring it is a bug, not a gap.
+  - **Hover feedback accompanies it:** anything that shows a tooltip also reacts to the cursor (lift/scale + shadow), so hoverability is discoverable without hunting.
+  - **The tooltip never inherits its subject's styling.** Tooltip text always uses the standard UI face at full contrast — a Light Italic tile does *not* get a thin italic tooltip, a dark-material tile does not get dark tooltip text. The tooltip describes the object; it does not imitate it. (Playtest: the Light Italic tooltip was unreadable for exactly this reason.)
 - **Pagination carousel**: long grids page with a `< Page N/M >` pill control (jokers, words).
-- **Collection grid card**: shared component — discovered = full render + tooltip on hover; undiscovered = silhouette/back-face, no tooltip.
+- **Collection grid card**: shared component — discovered = full render + tooltip on hover; undiscovered = silhouette/back-face, no tooltip. Voucher, Fable, Constellation, and Gambler cards share a subtle idle float/sway and cursor-position 3D tilt with moving sheen; reduced-motion settings freeze both.
 - **New-discovery badge**: category buttons and the main-menu Collection button show a `!` badge when they contain undiscovered-then-found items since last view.
 - **Score popups**: during word settle, each tile pops a small `+N` chip-blue tag above it as it scores (adds to the juice spec, UI_DESIGN §4 step 1).
 
@@ -29,6 +31,16 @@ In-run overlays: Run Info · Bag View · pause menu
 ```
 
 ## 2. Screens
+
+### 2.0 Loading screen (asset preload)
+
+Shown once on app start, before the Main Menu. The build now carries real weight — pixel art, 24 pack illustrations, mascot sprites, and (after feature-01 B) an audio bundle — so a blank first paint is no longer acceptable.
+
+- **Preloads** critical assets (fonts, tile/pack/mascot sprites, the audio sprite sheet) and reports **real progress**, not a fake timer.
+- Pixel-grammar progress bar + the title logotype; a mascot may idle here (WooDak — this is a natural first-contact beat, and it is *not* a tutorial step).
+- **Respects the monochrome start (§13 Chromatic Unlocks):** on a fresh profile the loading screen is greyscale too, or the world's first color would leak before it is earned.
+- Under the CRT pass like every other screen. Falls through immediately when assets are already cached — never add artificial delay.
+- **Audio caveat:** decoding may begin here, but playback still cannot start until the first user gesture (feature-01 B-3), so the loading screen stays silent by design.
 
 ### 2.1 Main Menu
 Title treatment (our own logotype), buttons: **Play · Options · Collection · Quit**. Quit shows on all builds: it attempts `window.close()` (works in a desktop shell / script-opened window) and always swaps the menu for a full-screen farewell ("Thanks for playing!"), so a normal browser tab that can't self-close still ends cleanly (2026-07-22). Profile chip bottom-left **[PLACEHOLDER: single profile "P1"]**, language toggle bottom-right (ko/en — i18n already shipped). Collection button badges a `!` when new words/jokers were discovered last run.
@@ -65,9 +77,20 @@ Big gold banner button confirms and transitions to the Stationery Shop.
 ### 2.6 Shop (Stationery Shop)
 Left rail: **Next Blind** (red) + **Reroll $N** (green, escalating). Main column, top → bottom (playtest-04 D-2): **owned jokers + consumables shelf → items for sale → vouchers & packs**. The owned shelf is the **same component/position as the play screen** (D-1); clicking an owned joker opens a **Sell $N** menu to its right, consumables a Use/Sell menu. Tooltips per §0.
 - **Catalog/Coupon Book vouchers** grow the item-slot count immediately in the same visit; each newly opened slot is filled without rerolling existing stock.
-- **Sticker Pack** joker choices are **greyed / non-selectable when joker slots are full** (D-5), with a "joker slots full" note.
+- **Charm Pack** emoji-tile choices are **greyed / non-selectable when joker slots are full** (D-5), with a "joker slots full" note.
 - Voucher slot rules per GDD §9.2 (reroll-immune, one purchase per chapter, restocks at Deadline).
 - **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a speech bubble showing one random `mascot.welcome.*` line per shop entry, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Art: `docs/Piyak.png` → `src/ui/assets/piyak.png`.
+
+### 2.6.1 Pack opening (overlay)
+
+Opening a pack takes over the screen as an overlay above the shop. Balatro's layout is the reference: **contents fan out large and centred, one clear action, no other UI competing.**
+
+- **Layout:** pack contents fan across the centre at full card size (the same framed SVG component used in Collection), evenly arced, with the pack's own art visible as the opener. The pick counter is explicit — "Pick 1 of 3" / "Pick 2 of 5" (§9.3 sizes) — and decrements as picks are made.
+- **Skip:** a single, always-available Skip button. Packs may be left unpicked; unpicked contents are discarded.
+- **Selection feedback is mandatory** (playtest: selecting an item currently does nothing visible): the chosen card lifts and pulses, gains a selected outline, the counter ticks down, and a confirm SFX fires. When the last pick is spent the overlay closes on a short beat, not instantly.
+- **Every revealed item is hoverable with a full tooltip** — see §0. This is the surface where it was missing.
+- **Blocked picks read clearly:** when a choice cannot be taken (Emoji Tile slots full, §2.6), it greys with a reason label rather than failing silently on click.
+- Under the CRT pass; respects reduced motion (fan appears without the flight animation).
 
 ### 2.7 Run End (Game Over / Published)
 One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeated-by panel; **win** — gold "출간 완료!/Published!", final-Deadline record panel; stats/seed/actions shared. A future **endless mode** button will join the action row (routing into Fee Settlement → shop; planned, not implemented). **우땅 (WooDak)**, the orangutan mentor mascot, stands beside the card (hidden ≤720px) with a speech bubble: discovery mention (`{n}` new words) → stat-based tip → random tip; a congratulation leads on a win. Idle = shared single-sprite breathe + slow sway. Art: `docs/WooDak.png` → `src/ui/assets/woodak.png`. Stats panel, translated to our terms:
@@ -94,17 +117,17 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 | Jokers | all Emoji Tiles, rarity-ordered, paginated grid | tooltip shows full effect |
 | Materials | 9 tile faces (base + 8 enhanced, including Wood) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
 | Fonts | 5 (Futura variants) | rendered as the same letter in each style; shows each font's seal effect from `balance.ts` `fontEffects` (GDD §2.3); maps the reference's "editions" screen |
-| Vouchers | 32 tickets | 16 base/upgraded pairs; four pairs per page; locked upgrades show their profile condition |
-| **Fable Cards** | 18 implemented cards | supplied pixel art normalized through one 5:7 SVG card surface, in a 5-column, 10-per-page gallery; hover shows the full effect |
-| **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art in a 6-column × 2-row gallery; hover shows the mapped sentence pattern |
-| **Ink Cards** | content pending | empty 5-column card gallery shell; grouped with the other card families in the root menu |
-| Packs | current pack families | paged artwork gallery with tooltip details |
+| Vouchers | 32 tickets | 16 base/upgraded pairs; four pairs per page; locked upgrades show only “Undiscovered” and the unseeded-run discovery hint — no name, effect, condition, or progress |
+| **Fable Cards** | 18 implemented cards | supplied pixel art normalized to the shared `500×700` 5:7 SVG surface, in a 5-column, 10-per-page gallery; hover shows the full effect |
+| **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art normalized to the same `500×700` path-only SVG surface and 5-column, 10-per-page gallery; hover shows the mapped sentence pattern |
+| **Gambler Cards** | 14 artworks; effects pending | supplied artwork normalized to the same `500×700` path-only SVG surface and 5-column, 10-per-page gallery; hover marks the effect as pending |
+| Packs | Tile 8 · Charm 4 · Constellation 8 · Ink 4 | image-only paged gallery; all 24 supplied artworks use a shared `244×400` path-only SVG canvas plus the common idle and cursor tilt/sheen, with no persistent type/grade/coming-soon labels; hover or keyboard focus restores the shared type/description/grade tooltip |
 | **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
 | Mascots | WooDak skin roster | locked skins use silhouettes; unlocked art uses the shared mascot registry |
 | Bags | carousel detail view (bag art + description) | **[PLACEHOLDER: 1 entry]** |
 | **Blinds & Bosses** | left: ante → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Small/Big badges + 12 boss chips + 2 finisher chips (undiscovered = `?`) | doubles as the player-facing difficulty-curve reference |
 
-Fable reports `18/18` and Constellation reports `12/12`, both using their real registries and supplied art. Ink remains the only pending family and reports `0/0` with uniform `?` slots.
+Fable reports `18/18`, Constellation reports `12/12`, and Gambler reports `14/14` supplied artworks. The Gambler family's engine registry, effects, and acquisition (via the Ink Pack, §9.3) remain pending even though its Collection artwork is visible.
 
 **Omitted by design (no equivalents — do not add):** Seals (their roles are absorbed into the font layer — GDD §2.3 seal-port — so no separate category) and Tags (skip/tag system deferred, GDD §8.2).
 
@@ -135,5 +158,6 @@ Sub-screen **Word/Joker stats** (reference: per-card bar chart): per-joker "blin
   - **Performance:** CSS `transform: translateX` on a GPU-composited layer; never per-frame React re-renders. The transform must **not** persist after the slide (`animation-fill-mode: backwards`, not `forwards`) or the panel stays a containing block for its `position: fixed` descendants.
   - **Applies to:** all screen swaps (menu↔run, blind→blind, →shop). **Exception:** Fee Settlement and Game Over are *overlays* on the still-visible board, not screen swaps (§2.4, playtest-04 A-2/A-4) — they keep the board's key and play no slide.
   - **Reduced motion:** `prefers-reduced-motion` replaces the slide+overshoot with a plain crossfade.
+- **Screen entry and board animations are sequential, never simultaneous (playtest 2026-07-27).** When entering a blind, the slide transition must **finish** before the hand-draw animation begins. Overlapping them reads as a single muddled motion and the draw stops looking like a draw. General rule: a transition owns the screen until it completes, then the incoming screen plays its own entrance (draw, shelf fill, boss stamp) — chain them off the transition's completion signal, the same discipline the settle sequence uses for the clear verdict.
 - Every string through i18n (ko/en) from day one.
 - Priority order: **2.5 Cash Out → 2.6 Shop → 2.3 Blind Select → 2.7 Game Over → 2.2 New Run → 2.1 Main Menu → 2.8 Bag View → 2.9 Collection → 2.10–2.12 Options/Stats**. (The first four complete the run loop; the rest are shell.)

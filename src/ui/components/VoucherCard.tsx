@@ -1,8 +1,12 @@
+import { TiltCard } from './TiltCard';
+
 interface VoucherCardProps {
   emoji: string;
   name: string;
   artSrc?: string;
   muted?: boolean;
+  /** ShopOffer owns motion for its whole image/price/action foreground layer. */
+  motion?: boolean;
 }
 
 /**
@@ -11,9 +15,15 @@ interface VoucherCardProps {
  * Keep the ticket itself free of shop-only controls so every voucher appearance
  * uses the same silhouette, aspect ratio, and internal layout.
  */
-export function VoucherCard({ emoji, name, artSrc, muted = false }: VoucherCardProps) {
-  return (
-    <div className={`voucher-card${muted ? ' muted' : ''}`}>
+export function VoucherCard({
+  emoji,
+  name,
+  artSrc,
+  muted = false,
+  motion = true,
+}: VoucherCardProps) {
+  const content = (
+    <>
       <span className="voucher-card__side voucher-card__side--left" aria-hidden="true">
         VOUCHER
       </span>
@@ -26,6 +36,10 @@ export function VoucherCard({ emoji, name, artSrc, muted = false }: VoucherCardP
         VOUCHER
       </span>
       <span className="voucher-card__name">{name}</span>
-    </div>
+    </>
   );
+  const className = `voucher-card${muted ? ' muted' : ''}`;
+  return motion
+    ? <TiltCard idle className={className}>{content}</TiltCard>
+    : <div className={className}>{content}</div>;
 }

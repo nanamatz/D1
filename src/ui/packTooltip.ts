@@ -24,8 +24,11 @@ export interface PackTooltipContent {
   grade: PackSize;
 }
 
+/** Display-only Ink support does not add an engine PackType before its registry lands. */
+export type PackTooltipType = PackType | 'ink';
+
 export function packTooltip(
-  type: PackType,
+  type: PackTooltipType,
   size: PackSize,
   t: (key: string, params?: TParams) => string,
 ): PackTooltipContent {
