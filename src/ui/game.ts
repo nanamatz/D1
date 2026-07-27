@@ -9,6 +9,7 @@ import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
 import { isVowel } from '../engine/types';
+import { fontDescKey } from './descriptions';
 import type { Lexicon } from '../engine/lexicon';
 import type {
   BlindState,
@@ -145,6 +146,35 @@ export function nextLockLetter(staged: readonly (string | null)[], word: string)
 /** Material → css class ('' for the ceramic base). */
 export function materialClass(material: Tile['material']): string {
   return material === 'ceramic' ? '' : material;
+}
+
+/** A translate fn that also takes interpolation params (tile chips line needs one). */
+type TFull = (key: string, params?: Record<string, string | number>) => string;
+
+/**
+ * The shared letter-tile tooltip (feature-04 B, GDD §2.4). Spells out the three
+ * enhancement axes SEPARATELY, each with its own effect text: material, font, and
+ * edition — only the ones a tile actually carries. One builder so every surface
+ * (hand, tray, pouch, shop, opened packs, collection) shows the identical read, and
+ * a Light-Italic Lead-plate Foil tile is legible in a single hover. Newline-joined;
+ * `.tt-body` is `white-space: pre-line`, so each axis lands on its own line.
+ */
+export function tileTooltip(tile: Tile, t: TFull): { title: string; body: string } {
+  const lines: string[] = [t('tile.chips', { n: tileValue(tile) })];
+  if (tile.material !== 'ceramic') {
+    lines.push(`${t(`material.${tile.material}`)} — ${t(`materialdesc.${tile.material}`)}`);
+  }
+  if (tile.font !== 'medium') {
+    // fonteffectdesc is keyed by EFFECT, resolved through the balance mapping.
+    lines.push(`${t(`font.${tile.font}`)} — ${t(fontDescKey(tile.font))}`);
+  }
+  const edition = tile.edition ?? 'base';
+  if (edition !== 'base') {
+    lines.push(`${t(`edition.${edition}`)} — ${t(`editiondesc.${edition}`)}`);
+  }
+  // Stone has no glyph — title falls back to its material name so the card is identifiable.
+  const title = tileGlyph(tile) || t(`material.${tile.material}`);
+  return { title, body: lines.join('\n') };
 }
 
 /**

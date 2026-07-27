@@ -1,10 +1,11 @@
-import { useState, type DragEvent } from 'react';
+import { useRef, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { sellValue } from '../../engine/economy';
 import type { ConsumableId, RunState } from '../../engine/types';
 import { consumableDescKey, jokerDescKey, grownValue } from '../descriptions';
 import { useI18n } from '../i18n';
+import { audio } from '../audio';
 import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
@@ -14,6 +15,7 @@ import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
 import { consumableClassification } from '../cardClassification';
+import { useShelfDrag } from '../drag';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -50,17 +52,39 @@ export function JokerShelf({
   const settle = useSettleView();
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
   const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
-  // D-1/D-2: joker drag-reorder + dashed origin/insertion outlines.
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [overIdx, setOverIdx] = useState<number | null>(null);
-  const endDrag = () => { setDragIdx(null); setOverIdx(null); };
+  // A-3: pair every object action with a brief on-object animation before it resolves
+  // — pop/dissolve when consumed, slide-away when sold — so it never looks like nothing
+  // happened. The state change is delayed one beat so the animation is seen.
+  const [leaving, setLeaving] = useState<{ zone: 'consumable' | 'joker'; index: number; mode: 'use' | 'sell' } | null>(null);
+  const beginLeave = (
+    zone: 'consumable' | 'joker',
+    index: number,
+    mode: 'use' | 'sell',
+    apply: () => void,
+  ) => {
+    const reduce =
+      typeof window !== 'undefined' &&
+      (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
+        document.body.classList.contains('force-reduced-motion'));
+    if (reduce) { apply(); return; }
+    setLeaving({ zone, index, mode });
+    window.setTimeout(() => { apply(); setLeaving(null); }, 260);
+  };
+  // feature-04 D: spring-physics reorder for the Emoji-Tile shelf (same feel as the
+  // hand), replacing native DnD. Commits reorderJoker(from, to) once on drop.
+  const jokersRef = useRef<HTMLDivElement>(null);
+  useShelfDrag(jokersRef, !!onReorderJoker, {
+    reorder: (from, to) => onReorderJoker?.(from, to),
+    playGrab: () => audio.play('tilePick'),
+    playDrop: () => audio.play('dragSnap'),
+  });
   return (
     <div className="shelf">
       {/* The count sits OUTSIDE the group box, directly beneath it, so the box's
           height is the joker tile's alone (playtest-06 #1–2). */}
       <div className="shelf-col jokers-col">
         <div className="shelf-group jokers-group">
-          <div className="jokers">
+          <div className="jokers" ref={jokersRef}>
           {run.jokers.map((owned, i) => {
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
@@ -73,35 +97,13 @@ export function JokerShelf({
               `edition-${owned.edition ?? 'base'}`,
               firing ? 'firing' : '',
             ].filter(Boolean).join(' ');
-            const dnd = onReorderJoker
-              ? {
-                  draggable: true,
-                  onDragStart: (e: DragEvent) => {
-                    e.dataTransfer.setData('text/plain', `joker:${i}`);
-                    setDragIdx(i);
-                  },
-                  onDragOver: (e: DragEvent) => {
-                    e.preventDefault();
-                    if (dragIdx !== null && dragIdx !== i) setOverIdx(i);
-                  },
-                  onDrop: (e: DragEvent) => {
-                    e.preventDefault();
-                    const from = Number((e.dataTransfer.getData('text/plain') || '').split(':')[1]);
-                    if (!Number.isNaN(from)) onReorderJoker(from, i);
-                    endDrag();
-                  },
-                  onDragEnd: endDrag,
-                }
-              : {};
-            const slotClass = [
-              'joker-slot',
-              dragIdx === i ? 'dragging' : '',
-              overIdx === i && dragIdx !== null && dragIdx !== i ? 'drop-target' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
+            const jokerLeaving = leaving?.zone === 'joker' && leaving.index === i;
             return (
-              <div key={i} className={slotClass} {...dnd}>
+              <div
+                key={i}
+                className={['joker-slot', jokerLeaving && 'leave-sell'].filter(Boolean).join(' ')}
+                {...(onReorderJoker ? { 'data-drag-idx': i } : {})}
+              >
                 <Tooltip
                   title={name}
                   body={t(jokerDescKey(def.id))}
@@ -135,8 +137,8 @@ export function JokerShelf({
                       className="sell"
                       role="menuitem"
                       onClick={() => {
-                        onSellJoker(i);
                         setJokerMenuIdx(null);
+                        beginLeave('joker', i, 'sell', () => onSellJoker(i));
                       }}
                     >
                       {t('shop.sell', { value: sellValue(BALANCE.jokerPrice[def.rarity]) })}
@@ -161,7 +163,11 @@ export function JokerShelf({
         {run.consumables.map((c, i) => (
           <div
             key={i}
-            className={['consumable-slot', menuIdx === i ? 'menu-open' : ''].filter(Boolean).join(' ')}
+            className={[
+              'consumable-slot',
+              menuIdx === i ? 'menu-open' : '',
+              leaving?.zone === 'consumable' && leaving.index === i ? `leave-${leaving.mode}` : '',
+            ].filter(Boolean).join(' ')}
           >
             <Tooltip
               title={t(`consumable.${c}`)}
@@ -218,8 +224,8 @@ export function JokerShelf({
                   className="sell"
                   role="menuitem"
                   onClick={() => {
-                    onSellConsumable?.(i);
                     setMenuIdx(null);
+                    beginLeave('consumable', i, 'sell', () => onSellConsumable?.(i));
                   }}
                 >
                   {t('consumable.sellAction', { value: sellValue(BALANCE.consumablePrice) })}
@@ -230,8 +236,8 @@ export function JokerShelf({
                     role="menuitem"
                     disabled={canUseConsumable ? !canUseConsumable(c) : false}
                     onClick={() => {
-                      onUseConsumable(c);
                       setMenuIdx(null);
+                      beginLeave('consumable', i, 'use', () => onUseConsumable(c));
                     }}
                   >
                     {t('consumable.useAction')}

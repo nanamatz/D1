@@ -88,6 +88,10 @@ export function TileView({
       className={className}
       data-flip-id={tile.id}
       data-tile-id={tile.id}
+      // feature-04 D: the spring-drag controller (useStageDrag) owns dragging via
+      // pointer events; the home zone is read from here. Native HTML5 drag is off —
+      // it can't spring-follow or rotate (the browser owns its drag image).
+      data-zone={zone}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}
@@ -98,10 +102,7 @@ export function TileView({
             : `${idLabel} tile, ${t('tile.chips', { n: tileValue(tile) })}`
           : undefined
       }
-      draggable={draggable}
-      onDragStart={
-        draggable ? (e) => e.dataTransfer.setData('text/plain', `${zone}:${tile.id}`) : undefined
-      }
+      draggable={false}
       onClick={interactive ? () => onSelect!(tile.id) : undefined}
       onContextMenu={
         onMark

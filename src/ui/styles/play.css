@@ -420,14 +420,56 @@
   opacity: 0;
   animation: packParticle 0.9s ease-out forwards;
 }
-/* Option cards fly in, staggered, once the burst clears. */
-.pack-opening.revealed .shop-row .shopitem {
-  animation: packCardIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+/* feature-04 C · Balatro fan layout: cards arc across the centre at full size. The
+   arc (rotation + drop) is per-card from its index; the transition eases the re-arc
+   when a card is taken. */
+.pack-fan {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 34px 12px 44px;
+  min-height: 250px;
 }
-.pack-opening.revealed .shop-row .shopitem:nth-child(2) { animation-delay: 0.06s; }
-.pack-opening.revealed .shop-row .shopitem:nth-child(3) { animation-delay: 0.12s; }
-.pack-opening.revealed .shop-row .shopitem:nth-child(4) { animation-delay: 0.18s; }
-.pack-opening.revealed .shop-row .shopitem:nth-child(5) { animation-delay: 0.24s; }
+.pack-fan-card {
+  transform: rotate(var(--fan-rot, 0deg)) translateY(var(--fan-y, 0px));
+  transform-origin: 50% 135%;
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+/* Cards fade in, staggered, once the burst clears — opacity only, so the fan arc
+   (an inline transform) is never fought by a fly-in transform. */
+.pack-opening.revealed .pack-fan-card {
+  animation: packFanIn 0.4s ease backwards;
+}
+.pack-opening.revealed .pack-fan-card:nth-child(2) { animation-delay: 0.06s; }
+.pack-opening.revealed .pack-fan-card:nth-child(3) { animation-delay: 0.12s; }
+.pack-opening.revealed .pack-fan-card:nth-child(4) { animation-delay: 0.18s; }
+.pack-opening.revealed .pack-fan-card:nth-child(5) { animation-delay: 0.24s; }
+@keyframes packFanIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* Selection reaction (§2.6.1, the actual complaint): the chosen card lifts out of the
+   arc, pulses, and holds a gold outline for the pick beat before it applies. Held with
+   `forwards` so it stays lifted until the card is taken. Overrides TiltCard's idle
+   transform (a CSS animation outranks inline styles for the animated property). */
+.pack-fan-card .shopitem.picked {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  z-index: 6;
+  animation: packPicked 0.32s ease forwards;
+}
+@keyframes packPicked {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-16px) scale(1.09); }
+  100% { transform: translateY(-9px) scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pack-opening.revealed .pack-fan-card,
+  .pack-fan-card .shopitem.picked {
+    animation: none;
+  }
+}
 
 @keyframes packShakeBurst {
   0% { transform: scale(1) rotate(0deg); }
@@ -558,6 +600,20 @@
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
+  transform-origin: 50% 78%;
+  animation: blind-emblem-idle 3.2s ease-in-out infinite;
+}
+@keyframes blind-emblem-idle {
+  0%, 100% { transform: translateY(0) rotate(-0.6deg) scale(1); }
+  50% { transform: translateY(-3px) rotate(0.6deg) scale(1.018); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-art {
+    animation: none;
+  }
+}
+.force-reduced-motion .bb-art {
+  animation: none;
 }
 /* Stats panel — darker than the badge so it reads as inset. */
 .bb-stats {
@@ -589,6 +645,8 @@
   width: 74px;
   height: 74px;
   vertical-align: middle;
+  transform-origin: 50% 90%;
+  animation: tomato-idle 2.8s steps(8, end) infinite;
 }
 /* D-5: pixel tomato beside score numbers (docs/T_Tomato.png).
    Thematically: tomatoes thrown at bad manuscripts.
@@ -637,6 +695,9 @@
   transform-origin: 50% 90%;
   animation: tomato-pop 0.34s cubic-bezier(0.22, 0.75, 0.28, 1);
 }
+.tomato-motion.idle {
+  animation: tomato-idle 2.8s steps(8, end) infinite;
+}
 .tomato-motion.hop {
   animation: tomato-hop 0.48s cubic-bezier(0.22, 0.75, 0.28, 1);
 }
@@ -652,11 +713,23 @@
   52% { transform: translateY(-4px) scale(0.98, 1.03); }
   78% { transform: translateY(0) scale(1.02, 0.98); }
 }
+@keyframes tomato-idle {
+  0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+  24% { transform: translateY(-1px) rotate(-1deg) scale(1.01, 0.99); }
+  50% { transform: translateY(0) rotate(0) scale(0.99, 1.01); }
+  76% { transform: translateY(-1px) rotate(1deg) scale(1.01, 0.99); }
+}
 @media (prefers-reduced-motion: reduce) {
+  .bs-target-row .tomato-icon,
+  .tomato-motion.idle,
   .round-num .tomato-icon,
   .tomato-motion.hop {
     animation: none;
   }
+}
+.force-reduced-motion .bs-target-row .tomato-icon,
+.force-reduced-motion .tomato-motion {
+  animation: none;
 }
 /* Placeholder chip token — CSS-drawn, no asset yet. */
 .chip-icon {
@@ -787,11 +860,14 @@
   }
 }
 
-/* D-3 · ambient desk objects (UI_DESIGN §4.8). Pinned to the VIEWPORT margins, well
-   clear of the centred board, so a mis-click can never hit a tile. Cosmetic — the
-   button grants nothing. Emoji placeholder pending the pixel-art pass. */
+/* D-3 · ambient desk objects (UI_DESIGN §4.8). The pixel-art cup and call bell are
+   pinned to viewport margins, clear of the board, and grant nothing. */
 .desk-object {
+  --desk-stack-base: max(8px, 2vh);
+  --desk-zone-step: min(23vh, 240px);
   position: fixed;
+  top: auto;
+  bottom: max(8px, 2vh);
   z-index: 40;
   border: none;
   background: none;
@@ -800,15 +876,334 @@
   font-size: 40px;
   line-height: 1;
   filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.4));
+  transition: bottom 0.34s steps(6, end);
+}
+.desk-slot-0 {
+  bottom: var(--desk-stack-base);
+}
+.desk-slot-1 {
+  bottom: calc(var(--desk-stack-base) + var(--desk-zone-step));
+}
+.desk-slot-2 {
+  bottom: calc(var(--desk-stack-base) + var(--desk-zone-step) + var(--desk-zone-step));
 }
 .desk-left {
   left: 14px;
 }
 .desk-right {
+  /* The lowest right-side encounter begins above the complete pouch dock
+     (art, padding and count), never on top of its click target. */
+  --desk-stack-base: max(136px, 14vh);
   right: 14px;
 }
 .desk-glyph {
   display: inline-block;
+}
+.desk-cup,
+.desk-bell,
+.desk-refill {
+  padding: 0;
+  width: clamp(112px, 11vw, 168px);
+  height: clamp(112px, 11vw, 168px);
+}
+.desk-check {
+  padding: 0;
+  width: clamp(144px, min(17vw, 22vh), 260px);
+  height: clamp(144px, min(17vw, 22vh), 260px);
+}
+.desk-cup-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.desk-cup-art {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-coffee-liquid {
+  position: absolute;
+  z-index: 3;
+  left: 27%;
+  top: 23%;
+  width: 48%;
+  height: 13%;
+  border: 3px solid #2d2014;
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, #966135 0 22%, #5e3921 23% 70%, #2d1c13 71%);
+  box-shadow: inset 0 3px 0 rgba(255, 215, 145, 0.28);
+  transform-origin: 50% 70%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-coffee-steam {
+  position: absolute;
+  z-index: 4;
+  left: 29%;
+  top: 7%;
+  width: 43%;
+  height: 24%;
+  pointer-events: none;
+  transition: opacity 0.18s steps(2, end);
+}
+.desk-coffee-steam i {
+  position: absolute;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+  background: rgba(238, 244, 226, 0.82);
+  box-shadow:
+    4px -6px 0 rgba(238, 244, 226, 0.68),
+    0 -12px 0 rgba(238, 244, 226, 0.48),
+    -4px -18px 0 rgba(238, 244, 226, 0.24);
+  animation: coffee-steam-rise 1.65s steps(6, end) infinite;
+}
+.desk-coffee-steam i:nth-child(1) {
+  left: 18%;
+  animation-delay: -0.35s;
+}
+.desk-coffee-steam i:nth-child(2) {
+  left: 48%;
+  animation-delay: -1.05s;
+}
+.desk-coffee-steam i:nth-child(3) {
+  left: 76%;
+  animation-delay: -0.7s;
+}
+.desk-cup.desk-drinking .desk-coffee-steam {
+  opacity: 0;
+}
+.desk-cup.desk-drinking .desk-coffee-liquid {
+  animation: coffee-drain 0.82s steps(5, end) forwards;
+}
+.desk-cup.desk-drinking .desk-cup-sprite {
+  animation: cup-sip 0.82s steps(4, end);
+}
+.desk-cup.desk-empty .desk-coffee-steam {
+  opacity: 0;
+}
+.desk-cup.desk-empty .desk-coffee-liquid {
+  opacity: 0;
+  transform: translateY(10px) scale(0.35, 0.08);
+}
+.desk-cup.desk-refilling .desk-coffee-liquid {
+  animation: coffee-fill 1.05s steps(6, end) forwards;
+}
+.desk-cup.desk-refilling .desk-coffee-steam {
+  animation: coffee-steam-return 1.05s steps(4, end) forwards;
+}
+.desk-cup.desk-refilling .desk-cup-sprite::after {
+  content: '';
+  position: absolute;
+  z-index: 5;
+  left: 47%;
+  top: 20%;
+  width: 8px;
+  height: 5px;
+  opacity: 0;
+  background: #b9783c;
+  box-shadow:
+    -11px -5px 0 #754522,
+    12px -8px 0 #d39a57,
+    -17px 3px 0 #4a2c1a,
+    18px 2px 0 #8f572c;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: coffee-cup-splash 1.05s steps(8, end) forwards;
+}
+.desk-bell-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 88%;
+}
+.desk-bell-art {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-bell-body {
+  /* Start at the fixed collar/dome. The moving layer below contains only the
+     button cap + stem, so no duplicate dome can slide over this body. */
+  clip-path: inset(25% 0 0);
+}
+.desk-bell-switch {
+  /* Tight crop around the source sprite's cap and narrow stem (x 39–64%,
+     y 12–25%). A broad top strip also captured the bell dome and produced a
+     second overlapping dome whenever the switch moved. */
+  clip-path: inset(12% 36% 75% 39%);
+  transform-origin: 50% 30%;
+}
+.desk-bell-rings {
+  position: absolute;
+  inset: 18% -4% 16%;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+}
+.desk-bell-rings i {
+  position: absolute;
+  top: 34%;
+  width: 18px;
+  height: 6px;
+  background: #ffe77c;
+  box-shadow:
+    0 -13px 0 #fff1a6,
+    0 13px 0 #dcae38;
+}
+.desk-bell-rings i:first-child {
+  left: 0;
+}
+.desk-bell-rings i:last-child {
+  right: 0;
+}
+.desk-bell.desk-ringing .desk-bell-sprite {
+  animation: call-bell-ring 0.72s steps(8, end);
+}
+.desk-bell.desk-ringing .desk-bell-switch {
+  animation: call-bell-switch-press 0.72s steps(7, end);
+}
+.desk-bell.desk-ringing .desk-bell-rings {
+  animation: call-bell-waves 0.72s steps(4, end);
+}
+.desk-check-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 55%;
+}
+.desk-check-art {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-check-sign-zone {
+  position: absolute;
+  z-index: 3;
+  left: 58%;
+  top: 61%;
+  width: 33%;
+  height: 13%;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+.desk-check-signature {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.desk-check-signature polyline {
+  fill: none;
+  stroke: #17291d;
+  stroke-width: 5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+.desk-check-pen {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  top: 50%;
+  width: 7px;
+  height: 34px;
+  opacity: 0;
+  background: linear-gradient(90deg, #17291d 0 45%, #d5b65a 46% 72%, #eee5c6 73%);
+  transform: translate(-50%, -60%) rotate(38deg);
+  transform-origin: 50% 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-check.desk-drawing .desk-check-pen {
+  opacity: 1;
+}
+.desk-check.desk-signing .desk-check-sprite {
+  animation: check-paper-sign 0.3s steps(3, end);
+}
+.desk-check.desk-signing .desk-check-signature {
+  filter: drop-shadow(1px 1px 0 rgba(213, 182, 90, 0.55));
+}
+.desk-refill-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 42% 64%;
+}
+.desk-refill-art {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-pour-stream {
+  position: absolute;
+  z-index: 1;
+  left: 78%;
+  top: 51%;
+  width: 9px;
+  height: 104px;
+  opacity: 0;
+  background:
+    linear-gradient(90deg, #3b2416 0 25%, #9a6030 26% 55%, #63391e 56% 100%);
+  clip-path: polygon(8% 0, 100% 0, 72% 100%, 24% 100%);
+  filter: drop-shadow(2px 0 0 rgba(35, 19, 10, 0.55));
+  transform: rotate(-8deg) scale(0.45, 0);
+  transform-origin: 50% 0;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-pour-stream::before {
+  content: '';
+  position: absolute;
+  inset: 3px auto 7px 2px;
+  width: 2px;
+  background: rgba(231, 170, 96, 0.58);
+}
+.desk-pour-stream::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  bottom: -8px;
+  width: 6px;
+  height: 8px;
+  opacity: 0;
+  background: #754522;
+  box-shadow:
+    -5px 13px 0 -1px #9a6030,
+    5px 26px 0 -1px #4a2c1a;
+}
+.desk-refill.desk-pouring .desk-refill-sprite {
+  animation: coffee-pot-pour 1.1s steps(7, end);
+}
+.desk-refill.desk-pouring .desk-pour-stream {
+  animation: coffee-pour-stream 1.1s steps(9, end);
+}
+.desk-refill.desk-pouring .desk-pour-stream::after {
+  animation: coffee-pour-droplets 1.1s steps(9, end);
 }
 /* Greyscale to match the monochrome start (world-mono), like the coach-mark mascot. */
 :root.world-mono .desk-object {
@@ -820,13 +1215,19 @@
 .desk-right.desk-entering {
   animation: desk-in-right 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+.desk-cup.desk-entering,
+.desk-bell.desk-entering,
+.desk-check.desk-entering,
+.desk-refill.desk-entering {
+  animation: desk-cup-down 0.78s cubic-bezier(0.2, 0.82, 0.28, 1.08) both;
+}
 .desk-left.desk-leaving {
   animation: desk-out-left 0.55s ease-in both;
 }
 .desk-right.desk-leaving {
   animation: desk-out-right 0.55s ease-in both;
 }
-.desk-object.desk-entering .desk-glyph {
+.desk-object:not(.desk-cup):not(.desk-bell):not(.desk-check):not(.desk-refill).desk-entering .desk-glyph {
   animation: desk-bob 2.6s ease-in-out 0.7s infinite;
 }
 @keyframes desk-in-left {
@@ -845,6 +1246,100 @@
   from { transform: translateX(0); opacity: 1; }
   to { transform: translateX(160%); opacity: 0; }
 }
+@keyframes desk-cup-down {
+  from { transform: translateY(calc(-100vh - 110%)); opacity: 0; }
+  82% { transform: translateY(5px); opacity: 1; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes coffee-drain {
+  0% { transform: scale(1); opacity: 1; }
+  45% { transform: translateY(4px) scale(0.82, 0.62); opacity: 0.9; }
+  78% { transform: translateY(8px) scale(0.55, 0.28); opacity: 0.55; }
+  100% { transform: translateY(10px) scale(0.35, 0.08); opacity: 0; }
+}
+@keyframes coffee-fill {
+  0% { transform: translateY(10px) scale(0.35, 0.08); opacity: 0; }
+  36% { transform: translateY(7px) scale(0.58, 0.32); opacity: 0.58; }
+  72% { transform: translateY(3px) scale(0.84, 0.68); opacity: 0.9; }
+  84% { transform: translateY(1px) scale(1.04, 0.88); opacity: 1; }
+  94% { transform: translateY(0) scale(0.97, 1.03); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes coffee-cup-splash {
+  0%, 31% { transform: translateY(8px) scale(0.4); opacity: 0; }
+  39% { transform: translateY(1px) scale(0.72); opacity: 1; }
+  52% { transform: translateY(-7px) scale(1); opacity: 0.9; }
+  68% { transform: translateY(-3px) scale(0.8); opacity: 0.64; }
+  82%, 100% { transform: translateY(2px) scale(0.5); opacity: 0; }
+}
+@keyframes coffee-steam-return {
+  0%, 64% { opacity: 0; }
+  82% { opacity: 0.48; }
+  100% { opacity: 1; }
+}
+@keyframes coffee-steam-rise {
+  0% { transform: translate(0, 5px) scale(0.8); opacity: 0; }
+  18% { opacity: 0.82; }
+  52% { transform: translate(4px, -5px) scale(1); opacity: 0.66; }
+  78% { transform: translate(-3px, -13px) scale(0.9); opacity: 0.36; }
+  100% { transform: translate(2px, -22px) scale(0.72); opacity: 0; }
+}
+@keyframes cup-sip {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: translateY(2px) rotate(-2deg); }
+  50% { transform: translateY(-2px) rotate(2deg); }
+  75% { transform: translateY(1px) rotate(-1deg); }
+}
+@keyframes call-bell-ring {
+  0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+  10% { transform: translateY(2px) scale(1.01, 0.98); }
+  24% { transform: translateY(0) rotate(-5deg) scale(0.98, 1.03); }
+  38% { transform: rotate(5deg); }
+  52% { transform: rotate(-3deg); }
+  66% { transform: rotate(3deg); }
+  82% { transform: rotate(-1deg); }
+}
+@keyframes call-bell-switch-press {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  12% { transform: translateY(7px) scaleY(0.86); }
+  30% { transform: translateY(9px) scaleY(0.78); }
+  46% { transform: translateY(7px) scaleY(0.86); }
+  62% { transform: translateY(-2px) scaleY(1.04); }
+  78% { transform: translateY(1px) scaleY(0.98); }
+}
+@keyframes call-bell-waves {
+  0%, 12% { opacity: 0; transform: scaleX(0.45); }
+  26%, 64% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.28); }
+}
+@keyframes check-paper-sign {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(2px) rotate(-1deg); }
+  70% { transform: translateY(-1px) rotate(0.7deg); }
+}
+@keyframes coffee-pot-pour {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  18% { transform: translate(3px, 3px) rotate(5deg); }
+  34%, 72% { transform: translate(8px, 8px) rotate(24deg); }
+  88% { transform: translate(2px, 2px) rotate(6deg); }
+}
+@keyframes coffee-pour-stream {
+  0%, 25% { opacity: 0; transform: rotate(-8deg) translateX(0) scale(0.45, 0); }
+  34% { opacity: 1; transform: rotate(-8deg) translateX(1px) scale(0.68, 0.48); }
+  45% { opacity: 1; transform: rotate(-7deg) translateX(-1px) scale(0.88, 1); }
+  57% { opacity: 1; transform: rotate(-9deg) translateX(1px) scale(1.08, 0.97); }
+  70% { opacity: 1; transform: rotate(-7deg) translateX(-1px) scale(0.78, 1); }
+  82% { opacity: 0.82; transform: rotate(-9deg) translateX(1px) scale(0.55, 0.62); }
+  92%, 100% { opacity: 0; transform: rotate(-8deg) translateX(0) scale(0.35, 0.12); }
+}
+@keyframes coffee-pour-droplets {
+  0%, 35% { opacity: 0; transform: translateY(-4px); }
+  43% { opacity: 1; transform: translateY(0); }
+  58% { opacity: 0; transform: translate(-3px, 25px); }
+  64% { opacity: 1; transform: translate(2px, 4px); }
+  79% { opacity: 0; transform: translate(4px, 31px); }
+  100% { opacity: 0; transform: translateY(36px); }
+}
 @keyframes desk-bob {
   0%, 100% { transform: translateY(0) rotate(-3deg); }
   50% { transform: translateY(-6px) rotate(3deg); }
@@ -854,10 +1349,33 @@
   animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
+  .desk-object {
+    transition: none;
+  }
   .desk-object.desk-entering,
   .desk-object.desk-leaving,
-  .desk-object.desk-entering .desk-glyph {
+  .desk-object:not(.desk-cup):not(.desk-bell):not(.desk-check):not(.desk-refill).desk-entering .desk-glyph,
+  .desk-coffee-steam i,
+  .desk-cup.desk-drinking .desk-coffee-liquid,
+  .desk-cup.desk-drinking .desk-cup-sprite,
+  .desk-cup.desk-refilling .desk-coffee-liquid,
+  .desk-cup.desk-refilling .desk-coffee-steam,
+  .desk-cup.desk-refilling .desk-cup-sprite::after,
+  .desk-bell.desk-ringing .desk-bell-sprite,
+  .desk-bell.desk-ringing .desk-bell-switch,
+  .desk-bell.desk-ringing .desk-bell-rings,
+  .desk-check.desk-signing .desk-check-sprite,
+  .desk-refill.desk-pouring .desk-refill-sprite,
+  .desk-refill.desk-pouring .desk-pour-stream,
+  .desk-refill.desk-pouring .desk-pour-stream::after {
     animation: none;
+  }
+  .desk-coffee-steam i {
+    opacity: 0.42;
+  }
+  .desk-cup.desk-refilling .desk-coffee-liquid {
+    opacity: 1;
+    transform: none;
   }
 }
 /* item 6: each scoring beat floats how much the box grew, rising up and fading. It
@@ -1218,6 +1736,45 @@
 }
 .joker-slot {
   position: relative;
+}
+/* feature-04 A-3 · object-action exit animations. Consumed = pop + dissolve; sold =
+   slide away (+ the coin SFX/money watcher). The state change is delayed one beat so
+   these are seen. Reduced motion skips straight to removal (no class applied). */
+.consumable-slot.leave-use .consumable-object,
+.joker-slot.leave-use .joker {
+  animation: obj-pop 0.26s ease-in forwards;
+  pointer-events: none;
+}
+.consumable-slot.leave-sell .consumable-object,
+.joker-slot.leave-sell .joker {
+  animation: obj-sell 0.26s cubic-bezier(0.5, 0, 0.9, 0.4) forwards;
+  pointer-events: none;
+}
+@keyframes obj-pop {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.4); opacity: 0; }
+}
+@keyframes obj-sell {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(60px, -40px) rotate(14deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consumable-slot.leave-use .consumable-object,
+  .joker-slot.leave-use .joker,
+  .consumable-slot.leave-sell .consumable-object,
+  .joker-slot.leave-sell .joker {
+    animation: none;
+  }
+}
+
+/* feature-04 D · a grabbed Emoji Tile rises above the shelf; its transform is written
+   inline by the spring loop, so only the non-transform lift cues live here. */
+.joker-slot.grabbed {
+  cursor: grabbing;
+  z-index: 30 !important;
+  filter: drop-shadow(8px 12px 0 rgba(0, 0, 0, 0.4));
+  transition: none !important;
 }
 .consumable {
   position: relative; /* sheen containment parity with .tile/.joker (Task 3) */
@@ -1617,6 +2174,24 @@
 .tile.draggable:active {
   cursor: grabbing;
 }
+/* feature-04 D · the grabbed card rises above its neighbours with a deeper shadow.
+   Its transform (translate + rotate + scale) is written inline by the rAF spring
+   loop each frame, so DON'T set transform here — only the non-transform lift cues.
+   `!important` beats the .tilting/:hover transform rules for shadow/z while grabbed. */
+.tile.grabbed {
+  cursor: grabbing;
+  z-index: 30 !important;
+  box-shadow: 8px 12px 0 rgba(0, 0, 0, 0.4) !important;
+  transition: none !important; /* the spring owns motion; no CSS easing fighting it */
+}
+.tile.grabbed .tilt-sheen {
+  opacity: 0.5;
+}
+/* On release the inline transform clears with an Ease-Out-Back transition (set inline)
+   so the card springs into its slot with a small overshoot instead of snapping. */
+.tile.dropping {
+  z-index: 20;
+}
 /* First-run lesson lock: tiles that aren't the next YELLOW letter are dimmed and inert. */
 .tile.locked {
   opacity: 0.28;
@@ -1979,31 +2554,19 @@
     opacity: 1;
   }
 }
-/* Item 4 (draw half, task 5): freshly-drawn tiles slide/fade into the hand
-   ("촤라락"). React keys hand tiles by tile.id, so this only plays on a
-   genuinely new DOM node (opening hand / post-play draw) — a FLIP reorder
-   or sort reuses the existing node and never remounts, so useFlip's
-   transform-based glide is untouched.
-   NOTE: a plain `.hand .tile { animation: tile-draw-in ... }` rule would be
-   silently shadowed here — `.hand .tile:nth-child(odd/even)` below already
-   carries the idle "wob" animation at higher specificity (0,3,0 vs 0,2,0),
-   so it would always win the cascade and the draw-in would never render.
-   Instead tile-draw-in is folded into these same nth-child rules as a
-   second, finite animation-name: per the CSS animations spec, when two
-   animations target the same property (here `transform`), the one LATER in
-   the animation-name list wins while it is in effect. Listing tile-draw-in
-   last (and WITHOUT a forwards/both fill) means it owns `transform` only
-   during its own .26s active phase, then drops out of effect and wob
-   resumes uncontested — no permanent freeze, no fighting. */
-@keyframes tile-draw-in {
-  from { opacity: 0; transform: translateY(-16px) scale(.92); }
-  to   { opacity: 1; transform: none; }
-}
+/* Fresh draws are animated exactly once by useFlip from the live pouch origin.
+   CSS owns only the idle wobble; duplicating entry motion here made the finite
+   transform reveal an already-running wobble and caused a post-draw hop. */
 .hand .tile:nth-child(odd) {
-  animation: wob 3.4s ease-in-out infinite, tile-draw-in .26s cubic-bezier(.2,.7,.3,1);
+  animation: wob 3.4s ease-in-out infinite;
 }
 .hand .tile:nth-child(even) {
-  animation: wob 3.4s ease-in-out -1.7s infinite reverse, tile-draw-in .26s cubic-bezier(.2,.7,.3,1);
+  animation: wob 3.4s ease-in-out -1.7s infinite reverse;
+}
+/* useFlip adds this before first paint and removes it only after the pouch flight
+   lands at -1.2deg. Wobble then begins at the same angle with no hand-off jump. */
+.hand .tile.flip-entering {
+  animation: none;
 }
 /* D-4: jokers & consumables share the tiles' idle wobble family (staggered slow
    sine, ±1.2°). The firing joker is excluded so its settle wiggle wins; empty
@@ -2194,6 +2757,17 @@
    next to the shared @starting-style block to stay in sync with it. */
 .tile .tile-tt {
   cursor: default;
+  /* feature-04 B (playtest 13): the tooltip DESCRIBES the tile — it must never
+     inherit the tile's own font styling. Light Italic must not italicise it, Inline
+     must not outline it (color:transparent + text-stroke), Bold/Black must not
+     embolden it. Reset to the standard UI face at full contrast; .tt-title/.tt-body/
+     .hl-* still set their own colour and weight on top. */
+  font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: normal;
+  -webkit-text-stroke: 0;
+  color: var(--ink);
 }
 
 /* C-4: consumable Use / Sell menu (never instant-use). */

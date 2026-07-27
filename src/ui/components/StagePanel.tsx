@@ -1,18 +1,14 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { isVowel, type Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
-import { SORT_MODES, sortHand, tileGlyph, tilesByIds, tileValue, nextLockLetter } from '../game';
-import { fontDescKey } from '../descriptions';
+import { SORT_MODES, sortHand, tilesByIds, tileTooltip, nextLockLetter } from '../game';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { audio } from '../audio';
 import { TileView } from './Tile';
-
-interface Drag {
-  zone: 'hand' | 'staged';
-  id: string;
-}
+import { useEntering } from './ScreenTransition';
+import { useStageDrag, type StageDragCallbacks, type StageDragState } from '../drag';
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
@@ -36,10 +32,7 @@ export function StagePanel({
   // item 4 (discard half): short-lived fly-out ghosts for discarded tiles, captured
   // relative to `.stage` so they land correctly regardless of board scale/zoom.
   const [flying, setFlying] = useState<{ tile: Tile; x: number; y: number; w: number; h: number }[]>([]);
-  // D-2: drag origin + live insertion target, for the dashed outlines.
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
-  const endDrag = () => { setDragId(null); setOverId(null); };
+  const stageRef = useRef<HTMLDivElement>(null);
   const staged = tilesByIds(blind.hand, selected);
   // First-run lesson hard-lock: only the next YELLOW letter is clickable, and Play lights
   // only when the staged word matches. Order is enforced, so `staged` is always a prefix.
@@ -54,6 +47,12 @@ export function StagePanel({
   const hintIds = new Set(g.state.hint?.flatMap((w) => w.tileIds) ?? []);
   const handRef = useRef<HTMLDivElement>(null);
   const stagedRef = useRef<HTMLDivElement>(null);
+  // feature-04 E: hold the hand deal until the blind's slide-in completes, so the
+  // board arrives empty and THEN draws — the entrance chains off the transition
+  // signal instead of running concurrently. `shownHand` is empty while sliding, so
+  // useFlip captures the empty→full change and flies the tiles in from the pouch.
+  const entering = useEntering();
+  const shownHand = entering ? [] : hand;
   // A4/A5: freshly drawn tiles fly in from the pouch dock, staggered, each with a
   // per-tile draw sound on the same 60ms cadence. The staged row keeps plain FLIP.
   const pouchOrigin = () => {
@@ -63,7 +62,7 @@ export function StagePanel({
     const r = dock.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   };
-  useFlip(handRef, `${sortMode}|${hand.map((tl) => tl.id).join(',')}`, {
+  useFlip(handRef, `${sortMode}|${entering ? 'entering' : ''}|${shownHand.map((tl) => tl.id).join(',')}`, {
     enterOrigin: pouchOrigin,
     onEnter: (i) => { window.setTimeout(() => audio.play('tileDeal'), i * 60); },
   });
@@ -93,71 +92,30 @@ export function StagePanel({
   // played — in both the hand and the staged word, so staging can't scout them.
   const faceDown = (tile: Tile) => !!blind.vowelsHidden && isVowel(tile.letter);
 
-  const tileTip = (tile: Tile) => ({
-    title: tileGlyph(tile),
-    body: [
-      t('tile.chips', { n: tileValue(tile) }),
-      tile.material !== 'ceramic' ? t(`material.${tile.material}`) : '',
-      tile.font !== 'medium' ? `${t(`font.${tile.font}`)} — ${t(fontDescKey(tile.font))}` : '',
-    ]
-      .filter(Boolean)
-      .join(' · '),
-  });
+  const tileTip = (tile: Tile) => tileTooltip(tile, t);
 
-  // ----- drag & drop (C-2): pointer-position insertion, hand ↔ zone both ways -----
-  const parseDrag = (e: DragEvent): Drag | null => {
-    const [zone, id] = (e.dataTransfer.getData('text/plain') || '').split(':');
-    return (zone === 'hand' || zone === 'staged') && id ? { zone, id } : null;
+  // ----- drag & drop (feature-04 D): spring-physics pointer drag, hand ↔ tray both
+  //       ways, replacing native HTML5 DnD (which can't spring-follow or rotate). The
+  //       controller owns pointer motion via a rAF loop + GPU transforms; React state
+  //       changes only on drop. `stateRef` carries the live ids for future use. -----
+  const stateRef = useRef<StageDragState>({ handIds: [], stagedIds: [] });
+  stateRef.current = { handIds: hand.map((tl) => tl.id), stagedIds: staged.map((tl) => tl.id) };
+  const dragCb: StageDragCallbacks = {
+    stage: (id) => { audio.play('tilePlace'); g.toggleTile(id); },
+    unstage: (id) => { audio.play('tilePick'); g.toggleTile(id); },
+    reorderHand: (fromId, toId) => {
+      const to = toId ?? hand[hand.length - 1]?.id ?? null;
+      if (to && to !== fromId) g.reorderHand(fromId, to);
+    },
+    reorderStaged: (fromId, toId) => {
+      const to = toId ?? staged[staged.length - 1]?.id ?? null;
+      if (to && to !== fromId) g.reorderStaged(fromId, to);
+    },
+    onManualReorder: () => setSortMode('manual'),
+    playGrab: () => audio.play('tilePick'),
+    playDrop: () => audio.play('dragSnap'),
   };
-  const targetAt = (container: HTMLElement | null, clientX: number): string | null => {
-    if (!container) return null;
-    for (const el of Array.from(container.querySelectorAll<HTMLElement>('[data-tile-id]'))) {
-      const r = el.getBoundingClientRect();
-      if (clientX < r.left + r.width / 2) return el.dataset.tileId ?? null;
-    }
-    return null; // past the last tile → append
-  };
-  const allowDrop = (e: DragEvent) => {
-    e.preventDefault();
-    // D-2: reflect the live insertion gap. Pick the zone by pointer Y, then the
-    // tile the cursor is before (null = appending past the last tile).
-    const zoneRef = dropZoneAt(e.clientY) === 'staged' ? stagedRef.current : handRef.current;
-    setOverId(targetAt(zoneRef, e.clientX));
-  };
-  // item 9: the WHOLE stage area is a drop target. The zone is chosen by pointer
-  // Y (generously: anything at/above the staged row counts as the tray), so drops
-  // no longer need to land precisely inside a small box.
-  const dropZoneAt = (clientY: number): 'staged' | 'hand' => {
-    const r = stagedRef.current?.getBoundingClientRect();
-    return r && clientY <= r.bottom + 28 ? 'staged' : 'hand';
-  };
-  const onStageDrop = (e: DragEvent) => {
-    e.preventDefault();
-    endDrag();
-    const d = parseDrag(e);
-    if (!d) return;
-    audio.play('dragSnap');
-    if (dropZoneAt(e.clientY) === 'staged') {
-      if (d.zone === 'hand') {
-        audio.play('tilePlace');
-        g.toggleTile(d.id); // stage
-        return;
-      }
-      const to = targetAt(stagedRef.current, e.clientX) ?? staged[staged.length - 1]?.id;
-      if (to && to !== d.id) g.reorderStaged(d.id, to);
-    } else {
-      if (d.zone === 'staged') {
-        audio.play('tilePick');
-        g.toggleTile(d.id); // unstage → back to hand
-        return;
-      }
-      const to = targetAt(handRef.current, e.clientX) ?? hand[hand.length - 1]?.id;
-      if (to && to !== d.id) {
-        setSortMode('manual'); // manual drag order overrides the active sort
-        g.reorderHand(d.id, to);
-      }
-    }
-  };
+  useStageDrag(stageRef, handRef, stagedRef, !lock, stateRef, dragCb);
 
   const doDiscard = () => {
     audio.play('discardSwoosh');
@@ -185,14 +143,7 @@ export function StagePanel({
   const canDiscard = g.canDiscard && validMarks.length > 0 && !lock; // no per-use tile cap (D-4)
 
   return (
-    <div
-      className="stage"
-      // Drag & drop is disabled during the lesson lock — staging is click-only there.
-      onDragOver={lock ? undefined : allowDrop}
-      onDrop={lock ? undefined : onStageDrop}
-      onDragStart={lock ? undefined : (e) => setDragId((e.target as HTMLElement).dataset.tileId ?? null)}
-      onDragEnd={lock ? undefined : endDrag}
-    >
+    <div className="stage" ref={stageRef}>
       {message && <div className="toast warn-toast">{t(message.key, message.params)}</div>}
 
       <div className="staged" ref={stagedRef}>
@@ -202,8 +153,6 @@ export function StagePanel({
             key={tile.id}
             tile={tile}
             zone="staged"
-            dragging={dragId === tile.id}
-            dropTarget={overId === tile.id}
             faceDown={faceDown(tile)}
             onSelect={selectTile}
             tooltip={tileTip(tile)}
@@ -235,15 +184,13 @@ export function StagePanel({
       )}
 
       <div className="hand" ref={handRef}>
-        {hand.map((tile) => (
+        {shownHand.map((tile) => (
           <TileView
             key={tile.id}
             tile={tile}
             zone="hand"
             hinted={hintIds.has(tile.id)}
             marked={validMarks.includes(tile.id)}
-            dragging={dragId === tile.id}
-            dropTarget={overId === tile.id}
             faceDown={faceDown(tile)}
             disabled={lock && tile.letter !== nextLetter}
             onSelect={selectTile}

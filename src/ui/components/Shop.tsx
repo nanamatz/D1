@@ -8,6 +8,7 @@ import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
 import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
+import { tileTooltip } from '../game';
 import type { UseGame } from '../useGame';
 import { Tooltip, type TooltipClassification } from './Tooltip';
 import { JokerShelf } from './JokerShelf';
@@ -127,13 +128,10 @@ export function Shop({ g }: { g: UseGame }) {
       };
     }
     if (item.kind === 'tile') {
-      return {
-        emoji: item.tile.letter ?? '◆',
-        name: item.tile.letter ?? t('material.stone'),
-        desc: t('tile.chips', {
-          n: item.tile.letter ? (BALANCE.letterChips[item.tile.letter] ?? 0) : 0,
-        }),
-      };
+      // The shared 3-axis tile tooltip (feature-04 B) — material/font/edition each
+      // with its effect, so a shop tile reads the same as one in hand.
+      const tip = tileTooltip(item.tile, t);
+      return { emoji: item.tile.letter ?? '◆', name: tip.title, desc: tip.body };
     }
     return {
       emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',

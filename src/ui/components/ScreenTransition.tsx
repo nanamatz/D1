@@ -13,8 +13,20 @@
  * Motion is pure CSS transform on a composited layer — never per-frame React
  * re-renders. Reduced motion → a plain crossfade (see screens.css).
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { audio } from '../audio';
+
+/**
+ * feature-04 E · the incoming screen's "am I still sliding in?" signal. True while
+ * the incoming pane is animating, false once the slide lands (or the reduced-motion
+ * safety net fires). Descendants chain their own entrance off it — the hand-draw,
+ * shelf fill, and boss stamp start AFTER the slide, never alongside it (screens-spec
+ * build notes). Nested transitions shadow correctly: the board reads RunView's inner
+ * transition (the blind slide), not the outer menu→run one.
+ */
+const TransitionContext = createContext(false);
+/** True while the nearest incoming screen is still sliding in (feature-04 E). */
+export const useEntering = (): boolean => useContext(TransitionContext);
 
 interface Entry {
   key: string;
@@ -87,7 +99,7 @@ export function ScreenTransition({ screenKey, children }: Props) {
           if (e.target === e.currentTarget) setOutgoing(null);
         }}
       >
-        {children}
+        <TransitionContext.Provider value={transitioning}>{children}</TransitionContext.Provider>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { BlindEarnings } from '../../engine/progression';
 import { useCountUp, useReveal } from '../useAnim';
 import { audio } from '../audio';
@@ -37,6 +38,17 @@ export function CashOut({ g }: { g: UseGame }) {
 
   const shown = useReveal(lines.length);
   const total = useCountUp(shown >= lines.length ? e.total : 0, 500);
+
+  // A polish: each settlement line lands on a pitch-escalating tick (like the chip
+  // counter), then a coin flourish when the total rolls — the count-up isn't silent.
+  const lastShown = useRef(0);
+  useEffect(() => {
+    if (shown > lastShown.current) {
+      audio.play('countTick', { step: (shown - 1) * 3 });
+      if (shown >= lines.length) audio.play('coinGain');
+      lastShown.current = shown;
+    }
+  }, [shown, lines.length]);
 
   // A-2: overlay the darkened, still-visible board (like Game Over) — no swap.
   return (

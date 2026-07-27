@@ -193,6 +193,7 @@ export function Sidebar({
               <span
                 className={[
                   'tomato-motion',
+                  !settle.active && !bonusActive && 'idle',
                   hop && !settle.active && !bonusActive && 'hop',
                 ].filter(Boolean).join(' ')}
               >

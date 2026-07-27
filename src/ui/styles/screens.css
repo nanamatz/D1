@@ -2258,7 +2258,9 @@ body.cb-safe .tile.hint {
    dock's bottom keeps the --dock-bottom line it shares with the Discard row. */
 .pouch-dock {
   position: fixed;
-  right: 18px;
+  /* Hang the pouch well beyond main.main and the black play surface while
+     retaining a visible, clickable slice at the viewport edge. */
+  right: -96px;
   bottom: var(--dock-bottom);
   z-index: 45;
   display: flex;

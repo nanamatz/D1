@@ -33,7 +33,7 @@ describe('feature-04 A-2 — per-material tile voices', () => {
 
 describe('feature-04 A-1/A-3/A-4 — new manifest entries exist and are audible', () => {
   it('money, object and pack sounds are present', () => {
-    for (const n of ['coinGain', 'coinLoss', 'consumableUse', 'packPick', 'matGlassBreak'] as SfxName[]) {
+    for (const n of ['coinGain', 'coinLoss', 'consumableUse', 'packPick', 'matGlassBreak', 'matDiceRattle'] as SfxName[]) {
       expect(SFX_NAMES).toContain(n);
       expect(effectiveGain(n, FULL)).toBeGreaterThan(0);
     }

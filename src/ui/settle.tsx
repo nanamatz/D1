@@ -199,6 +199,8 @@ export function SettleProvider({
             // A-2: the material's own voice when it triggers during scoring (Brass ring,
             // Stone knock, Wood knock, …), not a generic fill.
             audio.material(e.material);
+            // Lead plate's Lucky roll landed a Mult hit → its dice rattle (A polish).
+            if (e.material === 'leadPlate' && e.multDelta > 0) audio.play('matDiceRattle');
           }
           // This beat's increase drives the floating +N pops (item 6). Every settle
           // beat is additive, so multOp is 'add'; a future multiplicative beat would

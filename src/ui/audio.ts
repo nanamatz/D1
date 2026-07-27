@@ -19,7 +19,7 @@ export type SfxName =
   | 'submitThock' | 'buttonPress' | 'transitionWhoosh'
   | 'purchase' | 'sell' | 'reroll' | 'packOpen' | 'voucherRedeem' | 'catMeow'
   // D-3 ambient desk objects (feature-03): each click plays its own small sound.
-  | 'deskCup' | 'deskPencil' | 'deskPlane'
+  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour'
   // feature-04 A-1 · money is never silent — a rising coin gain / falling coin loss,
   // distinguishable by contour, fired centrally on every gold change.
   | 'coinGain' | 'coinLoss'
@@ -28,7 +28,7 @@ export type SfxName =
   // feature-04 A-2 · per-material tile voices (played on selection AND when the tile
   // triggers during scoring). Mapped from TileMaterial via MATERIAL_SFX below.
   | 'matCeramic' | 'matChime' | 'matGlass' | 'matGlassBreak' | 'matStone'
-  | 'matThunk' | 'matTock' | 'matRing' | 'matWood';
+  | 'matThunk' | 'matTock' | 'matRing' | 'matWood' | 'matDiceRattle';
 
 type Wave = OscillatorType; // 'sine' | 'square' | 'sawtooth' | 'triangle'
 
@@ -74,11 +74,12 @@ const RECIPES: Record<SfxName, Recipe> = {
   packOpen:         { gain: 0.30, dur: 0.30, tones: [{ wave: 'square', from: 440, to: 880 }], noise: { cutoff: 2000 } },
   voucherRedeem:    { gain: 0.28, dur: 0.24, tones: [{ wave: 'triangle', from: 660 }, { wave: 'triangle', from: 990 }] },
   catMeow:          { gain: 0.30, dur: 0.30, tones: [{ wave: 'sawtooth', from: 620, to: 780 }] },
-  // D-3 desk objects: a gulp/drain glug (cup), a short wooden roll (pencil), an airy
-  // whoosh (paper plane). Cosmetic, so kept soft — they never step on gameplay beats.
+  // D-3 desk objects: a gulp/drain glug (cup) and a bright hotel-bell ding.
+  // Cosmetic, so kept soft — they never step on gameplay beats.
   deskCup:          { gain: 0.24, dur: 0.68, tones: [{ wave: 'sine', from: 340, to: 165, sub: true }, { wave: 'triangle', from: 520, to: 210, delay: 0.12 }, { wave: 'sine', from: 250, to: 120, delay: 0.28, sub: true }], noise: { cutoff: 850 } },
-  deskPencil:       { gain: 0.18, dur: 0.14, tones: [{ wave: 'triangle', from: 220, to: 300 }], noise: { cutoff: 1200 } },
-  deskPlane:        { gain: 0.18, dur: 0.30, noise: { cutoff: 2600 } },
+  deskBell:         { gain: 0.25, dur: 0.78, tones: [{ wave: 'sine', from: 1175, to: 1100, detune: 4 }, { wave: 'sine', from: 1760, to: 1540, delay: 0.025 }, { wave: 'triangle', from: 880, to: 740, delay: 0.06, sub: true }] },
+  deskCheck:        { gain: 0.18, dur: 1.05, tones: [{ wave: 'triangle', from: 310, to: 260, delay: 0.04 }, { wave: 'triangle', from: 360, to: 290, delay: 0.38 }, { wave: 'triangle', from: 330, to: 250, delay: 0.7 }], noise: { cutoff: 3200 } },
+  deskPour:         { gain: 0.19, dur: 1.08, tones: [{ wave: 'sine', from: 205, to: 145, delay: 0.08, sub: true }, { wave: 'triangle', from: 290, to: 190, delay: 0.42 }], noise: { cutoff: 1050 } },
   // A-1 money: gain RISES, loss FALLS — distinguishable by contour (playtest 9, 15).
   coinGain:         { gain: 0.24, dur: 0.16, tones: [{ wave: 'triangle', from: 784, detune: 5 }, { wave: 'triangle', from: 1175, delay: 0.06, detune: 5 }], noise: { cutoff: 2200 } },
   coinLoss:         { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 660, to: 392 }] },
@@ -95,6 +96,7 @@ const RECIPES: Record<SfxName, Recipe> = {
   matTock:          { gain: 0.20, dur: 0.10, tones: [{ wave: 'sine', from: 420, to: 360, sub: true }] },  // warm hollow tock (Ivory)
   matRing:          { gain: 0.20, dur: 0.20, tones: [{ wave: 'triangle', from: 988, to: 1245, detune: 6 }] }, // bright metallic ring (Brass)
   matWood:          { gain: 0.22, dur: 0.09, tones: [{ wave: 'triangle', from: 300, to: 240 }], noise: { cutoff: 1100 } },       // dry woody knock (rises via `step`)
+  matDiceRattle:    { gain: 0.24, dur: 0.20, tones: [{ wave: 'square', from: 900, to: 500 }], noise: { cutoff: 3500 } },        // Lead plate's Lucky roll
 };
 
 export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];

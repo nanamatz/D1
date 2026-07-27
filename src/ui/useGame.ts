@@ -603,9 +603,9 @@ export function useGame(): UseGame {
       const option = prev.pack.offer.options[optionIndex];
       if (!option) return prev;
       const run = applyPackPick(prev.run, option);
-      // A-4: confirm sound only on an APPLIED pick — applyPackPick returns the same
-      // run object when the slot is full (a blocked pick stays silent, per §2.6.1).
-      if (run !== prev.run) audio.play('packPick');
+      // A-4 confirm SFX fires in PackOpening on selection (immediate feedback, feature-04
+      // C) rather than here — blocked picks there never reach the pick action, so they
+      // stay silent without a run-identity check.
       recordVoucherProgress({
         kind: 'editionedJokers',
         count: run.jokers.filter((j) => (j.edition ?? 'base') !== 'base').length,
@@ -777,6 +777,9 @@ export function useGame(): UseGame {
         return { ...prev, message: { key: 'boss.blocked' } };
       }
       const { events, submission, goldDelta, destroyedTileIds, grownWoodTileIds } = result;
+      // Glass shatter (A polish): a tile broke this play. Delayed so the shatter lands
+      // during the settle, after the glass tile's own ring beat — not at submit.
+      if (destroyedTileIds.length > 0) window.setTimeout(() => audio.play('matGlassBreak'), 450);
       const growWood = (tile: import('../engine/types').Tile) =>
         grownWoodTileIds.includes(tile.id)
           ? {

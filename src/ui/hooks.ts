@@ -88,6 +88,9 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
         // Freshly drawn tile — pouch enter (staggered), plus the per-tile sound.
         o.onEnter?.(enterIdx);
         if (!reduce) {
+          // Suspend CSS idle motion during the pouch flight. Otherwise the flight
+          // ends over a wobble already halfway through its cycle and visibly hops.
+          k.classList.add('flip-entering');
           // Flight vector from the tile's CLEAN live rect (it is brand-new, so not
           // yet transformed) to the pouch — both viewport coords. Fallback (pouch
           // not mounted): drop in from just below the row.
@@ -95,13 +98,16 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
           const kr = k.getBoundingClientRect();
           const dx = origin ? origin.x - (kr.left + kr.width / 2) : 0;
           const dy = origin ? origin.y - (kr.top + kr.height / 2) : el.clientHeight - k.offsetTop + 40;
-          k.animate(
+          const flight = k.animate(
             [
               { transform: `translate(${dx}px, ${dy}px) scale(.6)`, opacity: 0 },
-              { transform: 'none', opacity: 1 },
+              { transform: 'rotate(-1.2deg)', opacity: 1 },
             ],
             { duration: 340, delay: enterIdx * 60, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' },
           );
+          const beginIdle = () => k.classList.remove('flip-entering');
+          flight.addEventListener('finish', beginIdle, { once: true });
+          flight.addEventListener('cancel', beginIdle, { once: true });
         }
         enterIdx++;
       } else if (!reduce) {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { BlindState, RunState, Tile } from '../../engine/types';
 import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
+import { tileTooltip } from '../game';
 import { tutorialBus } from '../tutorial';
 import pouchUrl from '../assets/pouch.png';
 import { TileView } from './Tile';
@@ -93,7 +94,7 @@ function PouchContents({ blind }: { blind: BlindState }) {
 
       <div className="pouch-tiles">
         {sortForDisplay(tiles).map((tile) => (
-          <TileView key={tile.id} tile={tile} mini />
+          <TileView key={tile.id} tile={tile} mini tooltip={tileTooltip(tile, t)} />
         ))}
       </div>
     </div>
