@@ -190,7 +190,7 @@ describe('Emoji Tile terminology', () => {
 });
 
 /** Skins whose full line set has been written. Each voice task appends its id. */
-const VOICED_SKINS: string[] = ['dog', 'ghost', 'alien'];
+const VOICED_SKINS: string[] = ['dog', 'ghost', 'alien', 'turtle'];
 
 describe('skin voice completeness', () => {
   it.each(VOICED_SKINS)('%s has all 23 lines in both locales', (skin) => {
@@ -280,5 +280,12 @@ describe('이고지 (alien) speech', () => {
     const used = new Set(WOODAK_LINES.flatMap((l) => alienTokens(EN[`voice.alien.${l}`]!)));
     const unused = Object.keys(ALIEN_LEXICON).filter((k) => !used.has(k));
     expect(unused, `unused lexicon entries: ${unused.join(', ')}`).toEqual([]);
+  });
+});
+
+describe('voice coverage guard', () => {
+  it('every registered non-default skin has a written voice', () => {
+    const need = WOODAK_SKINS.filter((s) => s.id !== 'woodak').map((s) => s.id);
+    expect([...need].sort()).toEqual([...VOICED_SKINS].sort());
   });
 });
