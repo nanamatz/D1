@@ -190,7 +190,7 @@ describe('Emoji Tile terminology', () => {
 });
 
 /** Skins whose full line set has been written. Each voice task appends its id. */
-const VOICED_SKINS: string[] = ['dog', 'ghost'];
+const VOICED_SKINS: string[] = ['dog', 'ghost', 'alien'];
 
 describe('skin voice completeness', () => {
   it.each(VOICED_SKINS)('%s has all 23 lines in both locales', (skin) => {
@@ -217,5 +217,68 @@ describe('skin voice completeness', () => {
         );
       }
     }
+  });
+});
+
+/**
+ * 이고지's fixed vocabulary. Every token in every `voice.alien.*` string must appear
+ * here — that constraint is what makes the speech read as a real language rather
+ * than noise, and it is the reason a new line cannot be improvised. If a line needs
+ * a concept with no token, prefer rephrasing with existing vocabulary; add a row
+ * only for a genuinely new concept, and record it in the design spec too.
+ */
+const ALIEN_LEXICON: Record<string, string> = {
+  "an'ka": 'new', ao: 'vowel', "ar'ti": 'article/adjective', blin: 'blind',
+  "bou'nak": 'pouch', "chap'ta": 'chapter', chi: 'chips', "del'vo": 'discard',
+  "do'gan": 'collection/book', "em'ji": 'emoji', "fa'zen": 'phase', "flu'sha": 'flush',
+  "fon'ta": 'font', "glo'ba": 'gibberish', "gru'vak": 'big', "hol'na": 'hole',
+  "il'ma": 'see/look', "ka'lith": 'hand', "ka'shen": 'same', "kel'dan": 'money',
+  "kon'su": 'consumable', "kre'sha": 'grow', "ku'ren": 'fire/trigger', "lo'ren": 'late',
+  "ma'gni": 'magnifier', "ma'run": 'material', "mi'ren": 'you', "mor'ka": 'shop',
+  mul: 'multiplier', "nak'ta": 'draw', "ne'sha": 'rule', nu: 'not',
+  "nu'kha": 'none/did not', "nu'ven": 'few/small', "ol'dan": 'order', ollu: 'all',
+  "pa'tarn": 'pattern', pak: 'pack', "pen'ta": 'five', "qa'shi": 'score',
+  "re'rol": 'reroll', reth: 'remain/keep', "se'la": 'seal', "sen'tal": 'sentence',
+  shen: 'suit/color', "shi'mela": 'good', "ta'wen": 'two', thal: 'end',
+  tolun: 'word', "tor'un": 'tile', "tri'un": 'three', "u'nizn": 'unison',
+  unn: 'one', vai: 'void', "vau'cha": 'voucher', vell: 'when/if',
+  "vok'tu": 'change', vor: 'and/then', "vor'nak": 'achieved', "zar'ka": 'boss',
+  "zin'ka": 'twin', "zk'tha": 'joy', "zor'ga": 'hard/stiff',
+};
+
+/** Strip richtext markup, params and punctuation; return lowercase word tokens.
+ *  Order matters: `{n}` and `[c:` must go before the generic punctuation strip, and
+ *  the apostrophe is deliberately NOT stripped — it is part of every alien token. */
+function alienTokens(s: string): string[] {
+  return s
+    .replace(/\{n\}/g, ' ')
+    .replace(/\[[a-z]:/g, ' ')
+    .replace(/[.,!?:;=\]—…"×$0-9]/g, ' ')
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+describe('이고지 (alien) speech', () => {
+  it('is byte-identical between ko and en', () => {
+    for (const line of WOODAK_LINES) {
+      expect(KO[`voice.alien.${line}`], `alien ${line}`).toBe(EN[`voice.alien.${line}`]);
+    }
+  });
+
+  it('uses only approved lexicon tokens', () => {
+    const unknown = new Set<string>();
+    for (const line of WOODAK_LINES) {
+      for (const tok of alienTokens(EN[`voice.alien.${line}`]!)) {
+        if (!(tok in ALIEN_LEXICON)) unknown.add(`${tok} (in ${line})`);
+      }
+    }
+    expect([...unknown]).toEqual([]);
+  });
+
+  it('exercises most of the lexicon — an unused token is dead vocabulary', () => {
+    const used = new Set(WOODAK_LINES.flatMap((l) => alienTokens(EN[`voice.alien.${l}`]!)));
+    const unused = Object.keys(ALIEN_LEXICON).filter((k) => !used.has(k));
+    expect(unused, `unused lexicon entries: ${unused.join(', ')}`).toEqual([]);
   });
 });
