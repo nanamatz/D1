@@ -77,7 +77,7 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('@keyframes call-bell-switch-press');
     expect(css).toContain('.desk-bell.desk-ringing .desk-bell-switch');
     expect(css).toContain('@keyframes call-bell-waves');
-    expect(audio).toMatch(/deskBell:\s+\{[^}]*dur:\s*0\.78/s);
+    expect(audio).toMatch(/deskBell:\s+\{[^}]*dur:\s*0\.92/s);
     expect(audio).not.toContain('deskPencil:');
     expect(audio).not.toContain('deskPlane:');
   });

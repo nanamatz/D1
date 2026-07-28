@@ -19,7 +19,11 @@ Derived from 18 Balatro reference screenshots. **The screenshots are layout/flow
 ## 1. Screen flow map
 
 ```
-Main Menu ─ Play ─→ New Run ─→ [Blind Select] → PLAY SCREEN ─(auto-settle)→ Fee Settlement → Shop ─┐
+Main Menu ─ Play ─→ New Run ─→ PERSISTENT RUN TABLE
+                                      ├─ Blind work panel
+                                      ├─ Fee Settlement overlay
+                                      ├─ Shop / Pack panel
+                                      └─ Blind-select panel
     │                                   ↑                                        │
     │                                   └────────────── next blind ←─────────────┘
     │                                   (loss) → Game Over → New Run / Main Menu
@@ -27,7 +31,8 @@ Main Menu ─ Play ─→ New Run ─→ [Blind Select] → PLAY SCREEN ─(auto
     └─ Options ─┬─ Settings (Game / Video / Audio tabs)
                 ├─ Statistics (+ per-joker stats [PLACEHOLDER])
                 └─ Credits
-In-run overlays: Run Info · Bag View · pause menu
+Persistent in-run surfaces: sidebar · Emoji Tile/consumable shelves · pouch
+In-run overlays: Run Info · Fee Settlement · pause menu
 ```
 
 ## 2. Screens
@@ -52,8 +57,8 @@ Top tabs: **New Run · Continue · Challenges**. **Continue resumes the saved ru
 - **Seeded run** toggle + seed input (engine already supports `RunState.seed`).
 - Big blue **Play** button.
 
-### 2.3 Blind Select (before each blind)
-Draft/Revision/Deadline cards with target score and reward preview. The **Deadline boss always shows its effect text** (playtest-04 D-6) — no hiding, no `?`. The chapter's boss is drawn at chapter start (`run.chapterBossId`) so the player can prepare from the first card. Skip/tags are **deferred by design** (GDD §8.2) — do NOT add a skip button.
+### 2.3 Blind Select (before each blind; changed 2026-07-28)
+The persistent sidebar, owned shelves and pouch remain mounted. Its blind badge reads “Choose the next blind”; the shop panel exits downward and the Draft/Revision/Deadline cards rise from below with the current card emphasized. Selecting it sends the cards downward, then deals the hand and reveals play/sort/discard controls. Target and reward preview remain unchanged. The **Deadline boss always shows its effect text** (playtest-04 D-6) — no hiding, no `?`. The chapter's boss is drawn at chapter start (`run.chapterBossId`) so the player can prepare from the first card. Skip/tags are **deferred by design** (GDD §8.2) — do NOT add a skip button.
 
 ### 2.4 Play Screen
 Already specced (`docs/UI_DESIGN.md`, `docs/mockups/play-screen.html`). Additions:
@@ -61,6 +66,7 @@ Already specced (`docs/UI_DESIGN.md`, `docs/mockups/play-screen.html`). Addition
 - **Per-tile `+N` score popups** during settle (§0); joker wiggle + contribution popups (playtest-02 B).
 - **Sidebar** (playtest-03 E-9, ref `docs/reference/balatro/RoundInfoUI.png`): stage banner (Draft/Revision/Deadline) + ❄target + reward `$$$`; round score; large **0 × 0** box; the **selected-tile status text** (letter-hand name / "not a word" / suit name) renders as plain text **above the 0×0 box** (no floating info near the hand); **Run Info** and **Options** buttons; phase & discard counts; `$` fee; **Chapter N/8**.
 - **No cash-out button** — the blind auto-settles (GDD §7.2).
+- **Deadline entry reveal (changed 2026-07-28):** trigger only when the Deadline board actually enters `playing`, never while its card is visible on Blind Select. Continuing a saved run already inside that boss blind triggers the reveal again. Show the boss emblem, localized name, and full debuff text in a centred card; once the entrance lands, hold it for **0.5 seconds**, then remove it with a lift/fade-out. It is informational and non-blocking; reduced motion removes the flourish.
 - **Unified board** (E-5): tray + hand are one continuous board; only the joker/consumable shelves have a dark translucent panel, with `N/max` counts under them (E-6). Sort buttons sit in the Play/Discard cluster (E-8). Play word = blue, Discard = red (playtest-02 C-5).
 - **Pouch widget** (bottom-right) → **bottom drawer** per §2.8.
 
@@ -73,19 +79,22 @@ Clear reward .......... $3~5   ($$$ icons)
 Interest ($1 per $5, max 5) ... $1
 ```
 Big gold banner button confirms and transitions to the Stationery Shop.
+The modal is centred on the **physical viewport**, not on the main play column; the
+persistent left rail must not shift it sideways.
 
-### 2.6 Shop (Stationery Shop)
-Left rail: **Next Blind** (red) + **Reroll $N** (green, escalating). Main column, top → bottom (playtest-04 D-2): **owned jokers + consumables shelf → items for sale → vouchers & packs**. The owned shelf is the **same component/position as the play screen** (D-1); clicking an owned joker opens a **Sell $N** menu to its right, consumables a Use/Sell menu. Tooltips per §0.
+### 2.6 Shop (Stationery Shop; changed 2026-07-28)
+The completed blind does not navigate away. The persistent sidebar resets round score, Chips, Mult, hands and discards to zero and changes its blind badge to a large, centred marquee **SHOP** sign with a restrained idle glow/bulb cycle. Owned Emoji Tiles, consumables and the pouch remain in place. A lower shop panel rises in this order: **Next Blind → Reroll → items for sale → voucher → packs**. The sale layer and every ancestor keep overflow visible so tooltips can cross panel boundaries without clipping. Tooltips per §0.
 - **Catalog/Coupon Book vouchers** grow the item-slot count immediately in the same visit; each newly opened slot is filled without rerolling existing stock.
+- A full consumable shelf disables **Buy** on consumable offers but leaves **Use now** available when affordable; instant use never occupies a resting slot.
 - **Charm Pack** emoji-tile choices are **greyed / non-selectable when joker slots are full** (D-5), with a "joker slots full" note.
 - Voucher slot rules per GDD §9.2 (reroll-immune, one purchase per chapter, restocks at Deadline).
 - **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a speech bubble showing one random `mascot.welcome.*` line per shop entry, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Art: `docs/Piyak.png` → `src/ui/assets/piyak.png`.
 
-### 2.6.1 Pack opening (overlay)
+### 2.6.1 Pack opening (persistent-table panel)
 
-Opening a pack takes over the screen as an overlay above the shop. Balatro's layout is the reference: **contents fan out large and centred, one clear action, no other UI competing.**
+Opening a pack sends the shop panel downward and replaces only the lower work panel; the persistent sidebar, owned shelves and pouch never unmount (changed again 2026-07-28; both the earlier overlay and dedicated screen are retired). Balatro's layout is the reference: **contents fan out large and centred, one clear action, no other UI competing.**
 
-- **Layout:** pack contents fan across the centre at full card size (the same framed SVG component used in Collection), evenly arced, with the pack's own art visible as the opener. The pick counter is explicit — "Pick 1 of 3" / "Pick 2 of 5" (§9.3 sizes) — and decrements as picks are made.
+- **Layout:** pack contents fan across the centre as widened, image-first selection objects. The item art fills the whole choice footprint; names/effects stay in the tooltip and the Pick control attaches below rather than shrinking the image. A Fable Pack first deals ten seeded tiles from the current pouch as the candidate field for tile-targeting Fable effects; random Fable choices appear with them. Current pack information and Skip sit along the bottom. The pick counter is explicit — "Pick 1 of 3" / "Pick 2 of 5" (§9.3 sizes) — and decrements as picks are made.
 - **Skip:** a single, always-available Skip button. Packs may be left unpicked; unpicked contents are discarded.
 - **Selection feedback is mandatory** (playtest: selecting an item currently does nothing visible): the chosen card lifts and pulses, gains a selected outline, the counter ticks down, and a confirm SFX fires. When the last pick is spent the overlay closes on a short beat, not instantly.
 - **Every revealed item is hoverable with a full tooltip** — see §0. This is the surface where it was missing.
@@ -135,6 +144,9 @@ Fable reports `18/18`, Constellation reports `12/12`, and Gambler reports `14/14
 Buttons: **Settings · Statistics · Help · Credits** (Help = the tutorial glossary, feature-01 A-3; entries unlock as encountered). (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
 
 ### 2.11 Settings
+The standalone screen and the in-run pause version are centred on the physical
+viewport in fullscreen as well as windowed mode. In-run Options is portalled outside
+the zoomed board root so fullscreen/UI scaling cannot pull it toward the top.
 Tabs — trimmed for a web game:
 - **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle · **"don't show tips" toggle** (kills the first-encounter tutorial popups, feature-01 A-2).
 - **Graphics**: **CRT effect on/off · CRT intensity slider · CRT bloom on/off** (the pixel-art/CRT finish is now core identity — the reference build exposed exactly these; see UI_DESIGN §"Surface language") · pixel-perfect/integer-scale toggle.
@@ -149,15 +161,11 @@ Sub-screen **Word/Joker stats** (reference: per-card bar chart): per-joker "blin
 ## 3. Build notes
 
 - All new screens are pure UI over existing engine state; no new game rules are introduced by this spec. Anything not in the engine yet (profiles, challenges, audio) ships as stubs behind the flagged placeholders.
-- **Screen transitions — canonical (playtest-05 B; supersedes the E-1 "wipe").** One shared component (`src/ui/components/ScreenTransition.tsx`) drives every screen change. Reference feel: **Animal Crossing**.
-  - **Type:** Overlay wipe — the outgoing panel stays fixed while the incoming panel swipes over it (masked). The outgoing tree stays *mounted under its original key* so it never remounts or re-runs effects; it renders frozen at its last props.
-  - **Axis & direction — UNIFIED: horizontal, right-to-left.** New screens slide in from the **right, moving left**. Strict X-axis translation; no diagonal.
-  - **Edge:** hard, pixel-crisp — no gradient/alpha fade. A dark, narrow, near-zero-blur semi-transparent shadow sits just off the leading edge to make the Z-depth step read.
-  - **Z-order:** hierarchical — the incoming screen renders over the outgoing one.
-  - **Curve:** Ease-Out Back (`cubic-bezier(.34,1.56,.64,1)`) — decelerates hard, **overshoots** the target, settles back. Never linear.
-  - **Performance:** CSS `transform: translateX` on a GPU-composited layer; never per-frame React re-renders. The transform must **not** persist after the slide (`animation-fill-mode: backwards`, not `forwards`) or the panel stays a containing block for its `position: fixed` descendants.
-  - **Applies to:** all screen swaps (menu↔run, blind→blind, →shop). **Exception:** Fee Settlement and Game Over are *overlays* on the still-visible board, not screen swaps (§2.4, playtest-04 A-2/A-4) — they keep the board's key and play no slide.
-  - **Reduced motion:** `prefers-reduced-motion` replaces the slide+overshoot with a plain crossfade.
-- **Screen entry and board animations are sequential, never simultaneous (playtest 2026-07-27).** When entering a blind, the slide transition must **finish** before the hand-draw animation begins. Overlapping them reads as a single muddled motion and the draw stops looking like a draw. General rule: a transition owns the screen until it completes, then the incoming screen plays its own entrance (draw, shelf fill, boss stamp) — chain them off the transition's completion signal, the same discipline the settle sequence uses for the clear verdict.
+- **Persistent in-run table (changed 2026-07-28).** `ScreenTransition` is retired from blind↔shop↔pack↔blind-select changes and remains available only for shell navigation such as menu↔run.
+  - **Panel direction:** phase panels enter from below and leave toward the bottom. Use Ease-Out Back for entry and a short ease-in for exit.
+  - **Performance:** CSS transforms on the panel wrapper; never per-frame React re-renders. Action resolution waits for the exit beat so an unmount cannot cut it off.
+  - **In-run motion:** lower panels enter upward and leave downward. Sidebar, owned shelves, Run Info access and pouch remain mounted. Fee Settlement and Game Over remain overlays.
+  - **Reduced motion:** `prefers-reduced-motion` removes panel travel.
+- **Panel and board animations are sequential.** Blind cards leave downward before the hand draw and play/sort/discard controls enter. Pack contents begin only after the shop panel has left.
 - Every string through i18n (ko/en) from day one.
 - Priority order: **2.5 Cash Out → 2.6 Shop → 2.3 Blind Select → 2.7 Game Over → 2.2 New Run → 2.1 Main Menu → 2.8 Bag View → 2.9 Collection → 2.10–2.12 Options/Stats**. (The first four complete the run loop; the rest are shell.)

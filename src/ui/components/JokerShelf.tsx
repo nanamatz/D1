@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { sellValue } from '../../engine/economy';
@@ -10,7 +10,7 @@ import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
 import { jokerSlotLimit } from '../../engine/vouchers';
-import { isFableId } from '../../engine/fables';
+import { isFableId, jokerSellGoldValue } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
@@ -56,6 +56,26 @@ export function JokerShelf({
   // — pop/dissolve when consumed, slide-away when sold — so it never looks like nothing
   // happened. The state change is delayed one beat so the animation is seen.
   const [leaving, setLeaving] = useState<{ zone: 'consumable' | 'joker'; index: number; mode: 'use' | 'sell' } | null>(null);
+  // Objects added while this shelf is mounted pop into their slot once. Initial
+  // shelf contents and screen remounts stay quiet; this is acquisition feedback,
+  // not a generic entrance animation.
+  const previousCounts = useRef({ jokers: run.jokers.length, consumables: run.consumables.length });
+  const [arriving, setArriving] = useState<{ zone: 'joker' | 'consumable'; from: number } | null>(null);
+  useEffect(() => {
+    const prev = previousCounts.current;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (run.jokers.length > prev.jokers) {
+      setArriving({ zone: 'joker', from: prev.jokers });
+      timer = setTimeout(() => setArriving(null), 520);
+    } else if (run.consumables.length > prev.consumables) {
+      setArriving({ zone: 'consumable', from: prev.consumables });
+      timer = setTimeout(() => setArriving(null), 520);
+    }
+    previousCounts.current = { jokers: run.jokers.length, consumables: run.consumables.length };
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [run.jokers.length, run.consumables.length]);
   const beginLeave = (
     zone: 'consumable' | 'joker',
     index: number,
@@ -101,7 +121,11 @@ export function JokerShelf({
             return (
               <div
                 key={i}
-                className={['joker-slot', jokerLeaving && 'leave-sell'].filter(Boolean).join(' ')}
+                className={[
+                  'joker-slot',
+                  jokerLeaving && 'leave-sell',
+                  arriving?.zone === 'joker' && i >= arriving.from && 'slot-arriving',
+                ].filter(Boolean).join(' ')}
                 {...(onReorderJoker ? { 'data-drag-idx': i } : {})}
               >
                 <Tooltip
@@ -167,11 +191,15 @@ export function JokerShelf({
               'consumable-slot',
               menuIdx === i ? 'menu-open' : '',
               leaving?.zone === 'consumable' && leaving.index === i ? `leave-${leaving.mode}` : '',
+              arriving?.zone === 'consumable' && i >= arriving.from ? 'slot-arriving' : '',
             ].filter(Boolean).join(' ')}
           >
             <Tooltip
               title={t(`consumable.${c}`)}
               body={t(consumableDescKey(c))}
+              {...(c === 'fable17'
+                ? { extra: t('consumable.currentSellValue', { value: jokerSellGoldValue(run) }) }
+                : {})}
               classification={consumableClassification(c)}
               sub={consumableAxisTip(c, t) ?? undefined}
               down

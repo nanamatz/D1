@@ -282,14 +282,11 @@
 /* ---------- Cash Out / Fee Settlement (spec §2.5; A-2 overlay) ---------- */
 .overlay.cashout-overlay {
   background: rgba(14, 26, 20, 0.62);
-  /* item 2: the BACKDROP covers the whole board (inset:0 over the position:relative
-     .frame) and blocks interaction with everything behind — only the modal is live.
-     The card still centres over the MAIN column: the extra left padding skips the
-     rail so flex-centering lands over the play area, not the whole board. */
-  position: absolute;
+  /* Fee Settlement is centred on the physical viewport, not on the main column.
+     RunView renders it outside `.frame`, escaping the rail and board filters. */
+  position: fixed;
   inset: 0;
-  padding: var(--board-pad) var(--board-pad) var(--board-pad)
-    calc(var(--board-pad) + var(--rail-w) + var(--rail-gap));
+  padding: 20px;
 }
 .overlay-card.cashout {
   max-width: 480px;
@@ -2048,9 +2045,9 @@ body.cb-safe .tile.hint {
 
 /* ---------- Options / Settings / Stats (spec §2.10–2.12) ---------- */
 .options {
-  justify-content: flex-start;
+  justify-content: center;
   gap: 16px;
-  padding-top: 40px;
+  padding-block: 32px;
 }
 /* Every tab panel occupies the same single grid cell, so the grid sizes itself to
    the tallest of them and switching tabs never changes the panel's height. No

@@ -26,6 +26,7 @@ interface Props {
   preview: StagePreview | null;
   onOpenInfo: () => void;
   onOpenOptions: () => void;
+  mode?: 'blind' | 'shop' | 'blindselect';
 }
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
@@ -64,9 +65,10 @@ export function Sidebar({
   preview,
   onOpenInfo,
   onOpenOptions,
+  mode = 'blind',
 }: Props) {
   const { t, lang } = useI18n();
-  const phasesLeft = blind.phasesTotal - blind.phasesUsed;
+  const phasesLeft = mode === 'blind' ? blind.phasesTotal - blind.phasesUsed : 0;
   const settle = useSettleView();
   const reward = clearReward(blind.kind);
   // A (playtest-04) + item 7: the ROUND score is committed ONLY and never decreases,
@@ -82,14 +84,17 @@ export function Sidebar({
   // a frame where committedScore is new but the hold is off. settle.active flips a
   // frame later (a layout effect), which briefly targeted the new committed and made
   // the number jump up, drop to committedBefore, then roll again (the item-5 bug).
-  const roundTarget = finalScore ?? (settleComplete ? blind.committedScore : committedBefore);
+  const roundTarget =
+    mode === 'blind'
+      ? finalScore ?? (settleComplete ? blind.committedScore : committedBefore)
+      : 0;
   const round = useCountUp(roundTarget, BONUS_LAND_MS);
   // The sentence bonus as a forecast — "if the sentence ends like this: +N".
-  const forecast = blind.projectedScore - blind.committedScore;
+  const forecast = mode === 'blind' ? blind.projectedScore - blind.committedScore : 0;
   // Sentence-bonus beat (item 2): when the bonus lands, the scorebox fills to the
   // bonus' chips × mult over the same BONUS_LAND_MS the round number rolls over, so
   // the player sees the round box's chips and mult climb by the bonus.
-  const bonusActive = sentenceBonus !== null;
+  const bonusActive = mode === 'blind' && sentenceBonus !== null;
   // The bonus is LANDING (round is rolling) once finalScore is published — the box
   // is full and its product flies onto the round total. During BUILD (finalScore
   // still null) the box is filling and the round holds.
@@ -99,8 +104,8 @@ export function Sidebar({
   const bonusMult = useCountUp(bonusActive ? sentenceBonus!.mult : 0, BONUS_LAND_MS);
   // Idle is 0 × 0; the box fills only during settle (or the bonus beat), then resets
   // (UI_DESIGN §4.1, B).
-  const chips = bonusActive ? bonusChips : settle.active ? settle.chips : 0;
-  const mult = bonusActive ? bonusMult : settle.active ? settle.mult : 0;
+  const chips = mode === 'blind' ? (bonusActive ? bonusChips : settle.active ? settle.chips : 0) : 0;
+  const mult = mode === 'blind' ? (bonusActive ? bonusMult : settle.active ? settle.mult : 0) : 0;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
 
   // D-2 · burning score boxes (UI_DESIGN §4.7): the chips/mult boxes ignite while
@@ -114,7 +119,16 @@ export function Sidebar({
     : settle.active
       ? committedBefore + settle.chips * settle.mult
       : blind.committedScore;
-  const burning = (settle.active || bonusActive) && blind.target > 0 && liveTotal >= blind.target;
+  // Once the live chips × mult crosses the target, keep the board lit through the
+  // rest of the blind. The threshold check is evaluated directly in render, so the
+  // flame appears on the exact scoring beat that crosses it (not one effect later).
+  const crossedTarget = blind.target > 0 && liveTotal >= blind.target;
+  const [ignited, setIgnited] = useState(false);
+  useEffect(() => {
+    if (mode !== 'blind') setIgnited(false);
+    else if (crossedTarget) setIgnited(true);
+  }, [crossedTarget, mode]);
+  const burning = crossedTarget || ignited;
   const flame = burning ? Math.min(1, (liveTotal / blind.target - 1) / 2) : 0;
 
   // D-1 · tomato idle hop (UI_DESIGN §4.6): a few times per blind, on a long random
@@ -141,7 +155,7 @@ export function Sidebar({
   }, []);
 
   return (
-    <aside className="sidebar">
+    <aside className={['sidebar', `sidebar-${mode}`].join(' ')}>
       {/* Centered row: the kind emblem on the left, the target/reward stats panel
           on the right. `.bb-eff` between the heading and the row is a slot of
           fixed height that is ALWAYS present — empty on a normal blind, holding
@@ -149,9 +163,34 @@ export function Sidebar({
           whole rail) exactly as tall either way; before, the boss-only block grew
           it. The heading doubles as the boss's name on a boss blind — the kind
           label still reads off the emblem below (04 D-6: the effect always shows). */}
-      <div className={['blind-badge', blind.kind].join(' ')}>
-        <div className="kind">{boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : t(`blind.${blind.kind}`)}</div>
-        <div className="bb-eff">{boss && <span className="bosseff">{t(`bossdesc.${boss.id}`)}</span>}</div>
+      <div className={['blind-badge', mode === 'blind' ? blind.kind : mode].join(' ')}>
+        <div className="kind">
+          {mode === 'blind'
+            ? boss
+              ? (lang === 'ko' ? boss.nameKo : boss.nameEn)
+              : t(`blind.${blind.kind}`)
+            : mode === 'shop'
+              ? <span className="shop-sign-word">SHOP</span>
+              : (
+                <span className="blindselect-prompt">
+                  {t('blindselect.prompt')}
+                </span>
+              )}
+        </div>
+        <div className="bb-eff">
+          {mode === 'blind' && boss && <span className="bosseff">{t(`bossdesc.${boss.id}`)}</span>}
+        </div>
+        {mode !== 'blind' ? (
+          <div className="sidebar-mode-emblem" aria-hidden>
+            {mode === 'shop' ? (
+              <span className="shop-sign-lights">
+                {Array.from({ length: 9 }, (_, i) => <i key={i} />)}
+              </span>
+            ) : (
+              <span className="blindselect-caret">▼</span>
+            )}
+          </div>
+        ) : (
         <div className="bb-row">
           {/* Pixel-art emblem: the boss art on a boss blind, else the Draft/Revision
               kind art (bossArt.ts). Falls back to the kind emoji if art is missing.
@@ -180,6 +219,7 @@ export function Sidebar({
             </div>
           </div>
         </div>
+        )}
       </div>
 
       <div className="panel round-panel">
@@ -203,7 +243,7 @@ export function Sidebar({
             {Math.round(round)}
           </span>
         </div>
-        {!blind.previewHidden && forecast > 0 && (
+        {mode === 'blind' && !blind.previewHidden && forecast > 0 && (
           <div className="round-forecast">
             {t('sidebar.forecast', { n: Math.round(forecast) })}
           </div>
@@ -211,7 +251,7 @@ export function Sidebar({
       </div>
 
       <div className="panel score-panel">
-        <StatusLine preview={preview} />
+          <StatusLine preview={mode === 'blind' ? preview : null} />
         <div
           className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing', burning && 'burning']
             .filter(Boolean)
@@ -269,7 +309,7 @@ export function Sidebar({
         </div>
         <div className="sb-cell">
           <span className="label">{t('sidebar.discards')}</span>
-          <span className="cnum red">{blind.discardsLeft}</span>
+          <span className="cnum red">{mode === 'blind' ? blind.discardsLeft : 0}</span>
         </div>
         <div className="sb-cell money-cell">
           <MoneyValue value={run.gold} />

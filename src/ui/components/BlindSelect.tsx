@@ -7,6 +7,7 @@ import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { bossRerollLimit, bossRerollPrice } from '../../engine/vouchers';
+import { useState } from 'react';
 
 type Status = 'defeated' | 'current' | 'upcoming';
 
@@ -18,9 +19,10 @@ type Status = 'defeated' | 'current' | 'upcoming';
 export function BlindSelect({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const { run, blind } = g.state;
+  const [leaving, setLeaving] = useState(false);
 
   return (
-    <div className="screen blindselect">
+    <div className={['blindselect', leaving && 'phase-panel-leaving'].filter(Boolean).join(' ')}>
       <div className="bs-head">
         <span className="label">{t('blindselect.title')}</span>
         <span className="ante">{t('sidebar.ante', { n: run.ante })}</span>
@@ -68,7 +70,12 @@ export function BlindSelect({ g }: { g: UseGame }) {
               {status === 'current' ? (
                 <button
                   className="btn play bs-select"
-                  onClick={() => { audio.play('buttonPress'); g.selectBlind(); }}
+                  onClick={() => {
+                    if (leaving) return;
+                    audio.play('buttonPress');
+                    setLeaving(true);
+                    window.setTimeout(g.selectBlind, 360);
+                  }}
                   autoFocus
                 >
                   {t('blindselect.select')}

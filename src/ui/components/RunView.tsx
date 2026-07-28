@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { judgeSentence } from '../../engine/patterns';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
@@ -19,10 +20,11 @@ import { GameOver } from './GameOver';
 import { BagWidget } from './BagView';
 import { RunInfo } from './RunInfo';
 import { Options } from './Options';
-import { ScreenTransition } from './ScreenTransition';
 import { GuidedIntro } from './GuidedIntro';
 import { DeskObjects } from './DeskObjects';
 import { PouchSelectModal } from './PouchSelectModal';
+import { PackOpening } from './PackOpening';
+import { BossIntro } from './BossIntro';
 
 interface Props {
   g: UseGame;
@@ -126,54 +128,30 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     if (hasMagnifier) tutorialBus.fire('magnifier');
   }, [phase, hasMaterialTile, hasFontTile, hasPattern, hasUnison, hasMagnifier]);
 
-  // 'playing', 'gameover' and 'cashout' share the board — Game Over and Fee
-  // Settlement overlay the still-visible (darkened) board, no full-screen swap
-  // (A-2, A-4). The run stays frozen on the cleared blind during cash-out.
+  // Balatro-style persistent table: the sidebar, owned shelves and pouch never
+  // swap screens. Only the work surface below them changes phase.
   const ending = phase === 'gameover';
   const settling = phase === 'cashout';
-  // Remount the board each blind (key on the blind's identity) so no score/settle
-  // remnants carry over (B-1).
   const boardKey = `${run.ante}-${run.blindIndex}`;
-  // B (playtest-05): one shared transition drives every in-run screen swap
-  // (blindselect → board → shop → next blind). 'cashout'/'gameover' keep the
-  // BOARD's key on purpose — they overlay the still-visible board rather than
-  // swapping screens (A-2/A-4), so no slide plays for them.
-  const screenKey =
-    phase === 'blindselect'
-      ? `blindselect-${boardKey}`
-      : phase === 'shop'
-        ? `shop-${boardKey}`
-        : `board-${boardKey}`;
+  const preview =
+    phase === 'playing' ? stagePreview(blind, run, g.lexicon, selected, t) : null;
+  const sidebarMode =
+    phase === 'shop' ? 'shop' : phase === 'blindselect' ? 'blindselect' : 'blind';
+  const boardVisible = phase === 'playing' || settling || ending;
 
-  const content = () => {
-    if (phase === 'blindselect') return <BlindSelect g={g} />;
-    if (phase === 'shop') {
-      // item 7: the pack-opening modal is rendered inside Shop, over the sale region
-      // only, so the joker/consumable shelf stays visible and sellable.
-      return (
-        <div className="frame shop-frame">
-          <Shop g={g} />
-        </div>
-      );
-    }
-    const preview = stagePreview(blind, run, g.lexicon, selected, t);
-    // `judgment` is computed once in the component body (drives the A-2 fires too)
-    // `ending` reddens the board — that is the DEFEAT visual, so it is Game Over
-    // ONLY. Clearing a blind must never turn the board red; Fee Settlement darkens
-    // it on its own via .overlay.cashout-overlay, keeping the board visible (A-2).
-    return (
-    <div
-      key={boardKey}
-      className={[
-        'frame',
-        // D-6: per-stage backdrop (초고 Draft / 퇴고 Revision / 마감 Deadline).
-        `stage-${blind.kind === 'small' ? 'draft' : blind.kind === 'big' ? 'revision' : 'deadline'}`,
-        ending && 'ending',
-        pouchOpen && 'pouch-open',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+  return (
+    <>
+      <div
+        key={boardKey}
+        className={[
+          'frame',
+          'persistent-run',
+          `phase-${phase}`,
+          `stage-${blind.kind === 'small' ? 'draft' : blind.kind === 'big' ? 'revision' : 'deadline'}`,
+          ending && 'ending',
+          pouchOpen && 'pouch-open',
+        ].filter(Boolean).join(' ')}
+      >
       <SettleProvider
         events={g.state.lastEvents}
         settleId={g.state.settleId}
@@ -190,6 +168,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           preview={preview}
           onOpenInfo={() => setShowInfo(true)}
           onOpenOptions={() => setPaused(true)}
+          mode={sidebarMode}
         />
         <main className="main">
           <JokerShelf
@@ -200,15 +179,29 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}
           />
-          <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
-          {/* Lesson lock: while the guided intro is open (first tutorial blind) the board is
-              hard-locked to spelling YELLOW. Skipping the intro releases it. */}
-          <StagePanel g={g} preview={preview} {...(introOpen ? { lockWord: TUTORIAL_WORD } : {})} />
+          <section className="phase-workspace">
+            {boardVisible && (
+              <div className="blind-workspace">
+                <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
+                <StagePanel
+                  g={g}
+                  preview={preview}
+                  {...(introOpen ? { lockWord: TUTORIAL_WORD } : {})}
+                />
+              </div>
+            )}
+            {phase === 'shop' && (
+              g.state.pack
+                ? <div className="phase-panel pack-phase-panel"><PackOpening g={g} /></div>
+                : <div className="phase-panel shop-phase-panel"><Shop g={g} /></div>
+            )}
+            {phase === 'blindselect' && (
+              <div className="phase-panel blindselect-phase-panel"><BlindSelect g={g} /></div>
+            )}
+          </section>
         </main>
       </SettleProvider>
-      {/* item 4: the intermediate "Cleared! + Settle" screen is gone — the blind
-          auto-resolves to the Fee Settlement modal after the score lands (useGame). */}
-      {!ending && !settling && (
+      {!ending && (
         <BagWidget run={run} blind={blind} onOpenChange={setPouchOpen} />
       )}
       {!ending && !settling && introOpen && (
@@ -217,34 +210,23 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {!ending && !settling && showInfo && (
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />
       )}
-      {settling && <CashOut g={g} />}
+      {/* The reveal belongs to actual boss-blind entry, never blind selection.
+          A resumed playing save remounts RunView/BossIntro and shows it once. */}
+      {!ending && !settling && !introOpen && phase === 'playing' && blind.kind === 'boss' && (
+        <BossIntro blind={blind} />
+      )}
       {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
-    </div>
-    );
-  };
-
-  // The pause/options menu is reachable on the board (Sidebar gear + ESC) and on
-  // the Shop / Blind Select screens (a floating gear + ESC). It's a modal over
-  // the current screen — the run stays in memory (useGame lives in App), so
-  // "Main Menu" leaves without discarding it. Suppressed during cashout/gameover
-  // (they own the screen), matching the phase gate on the ESC handler.
-  const canPause = phase === 'playing' || phase === 'shop' || phase === 'blindselect';
-  const showOptionsFab = phase === 'shop' || phase === 'blindselect';
-
-  return (
-    <>
-      <ScreenTransition screenKey={screenKey}>{content()}</ScreenTransition>
+      </div>
+      {/* Viewport-centred overlays live outside `.frame`: the persistent board
+          owns a left rail and may carry a filter/zoom containing block, neither
+          of which should offset a modal from the physical screen centre. */}
+      {settling && <CashOut g={g} />}
       {/* D-3 · ambient desk objects in the viewport margins — cosmetic, only while
           actively playing (not during the guided intro or a pause menu). */}
       <DeskObjects active={phase === 'playing' && !introOpen && !paused} />
       {/* feedback #4 · pouch-tile picker for a shop-used tile Fable. */}
       {g.state.pouchSelect && <PouchSelectModal g={g} />}
-      {showOptionsFab && (
-        <button className="options-fab" onClick={() => setPaused(true)}>
-          ⚙ {t('sidebar.options')}
-        </button>
-      )}
-      {canPause && paused && (
+      {(phase === 'playing' || phase === 'shop' || phase === 'blindselect') && paused && createPortal((
         <div className="overlay pause-overlay">
           <div className="overlay-card pause-modal">
             <Options
@@ -255,7 +237,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             />
           </div>
         </div>
-      )}
+      ), document.body)}
     </>
   );
 }

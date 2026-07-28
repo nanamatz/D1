@@ -77,7 +77,10 @@ const RECIPES: Record<SfxName, Recipe> = {
   // D-3 desk objects: a gulp/drain glug (cup) and a bright hotel-bell ding.
   // Cosmetic, so kept soft — they never step on gameplay beats.
   deskCup:          { gain: 0.24, dur: 0.68, tones: [{ wave: 'sine', from: 340, to: 165, sub: true }, { wave: 'triangle', from: 520, to: 210, delay: 0.12 }, { wave: 'sine', from: 250, to: 120, delay: 0.28, sub: true }], noise: { cutoff: 850 } },
-  deskBell:         { gain: 0.25, dur: 0.78, tones: [{ wave: 'sine', from: 1175, to: 1100, detune: 4 }, { wave: 'sine', from: 1760, to: 1540, delay: 0.025 }, { wave: 'triangle', from: 880, to: 740, delay: 0.06, sub: true }] },
+  // A struck hotel call bell: hard metallic attack followed by two inharmonic,
+  // slowly decaying dome resonances. The previous descending chord read as a UI
+  // jingle rather than a physical bell.
+  deskBell:         { gain: 0.28, dur: 0.92, tones: [{ wave: 'sine', from: 1568, to: 1535, detune: 7 }, { wave: 'sine', from: 2350, to: 2260, delay: 0.008, detune: 5 }, { wave: 'triangle', from: 784, to: 760, delay: 0.018, sub: true }], noise: { cutoff: 5200 } },
   deskCheck:        { gain: 0.18, dur: 1.05, tones: [{ wave: 'triangle', from: 310, to: 260, delay: 0.04 }, { wave: 'triangle', from: 360, to: 290, delay: 0.38 }, { wave: 'triangle', from: 330, to: 250, delay: 0.7 }], noise: { cutoff: 3200 } },
   deskPour:         { gain: 0.19, dur: 1.08, tones: [{ wave: 'sine', from: 205, to: 145, delay: 0.08, sub: true }, { wave: 'triangle', from: 290, to: 190, delay: 0.42 }], noise: { cutoff: 1050 } },
   // A-1 money: gain RISES, loss FALLS — distinguishable by contour (playtest 9, 15).

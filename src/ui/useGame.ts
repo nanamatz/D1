@@ -121,7 +121,7 @@ export interface GameState {
   /** shop stock while phase === 'shop', else null */
   shop: ShopState | null;
   /** an open pack awaiting selection, else null */
-  pack: { offer: PackOffer; picksLeft: number } | null;
+  pack: { offer: PackOffer; picksLeft: number; candidateTiles: Tile[] } | null;
   /** blind settlement line items while phase === 'cashout', else null */
   cashout: BlindEarnings | null;
   /** the advanced run (gold + next chapter/blind) to apply when Fee Settlement is
@@ -605,7 +605,14 @@ export function useGame(): UseGame {
         ...prev,
         run: { ...prev.run, gold: prev.run.gold - price },
         shop: { ...prev.shop, packs },
-        pack: { offer, picksLeft: offer.pick },
+        pack: {
+          offer,
+          picksLeft: offer.pick,
+          // Fable packs expose ten pouch tiles as the candidate field for
+          // tile-targeting card effects. Other pack families need no candidates.
+          candidateTiles:
+            slot.type === 'consumable' ? rng.shuffle(prev.run.bag).slice(0, 10) : [],
+        },
         rngCounter: prev.rngCounter + 1,
         stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
       };
@@ -630,7 +637,7 @@ export function useGame(): UseGame {
       const pack =
         picksLeft <= 0 || options.length === 0
           ? null
-          : { offer: { ...prev.pack.offer, options }, picksLeft };
+          : { ...prev.pack, offer: { ...prev.pack.offer, options }, picksLeft };
       return { ...prev, run, pack };
     });
   }, []);

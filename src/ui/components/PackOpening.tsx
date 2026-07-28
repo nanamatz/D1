@@ -18,6 +18,7 @@ import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
+import { useEntering } from './ScreenTransition';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
@@ -69,33 +70,34 @@ function OptionCard({
   const card = (
     <TiltCard
       idle
-      className={['shopitem', `edition-${edition}`, blockKey && 'blocked', picked && 'picked']
+      className={['shopitem', 'pack-option-card', `edition-${edition}`, blockKey && 'blocked', picked && 'picked']
         .filter(Boolean)
         .join(' ')}
     >
-      {option.kind === 'tile' ? (
-        <TileView tile={option.tile} />
-      ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
-        <ConstellationCardArt
-          id={option.id}
-          className="shop-consumable-art"
-          title={name}
-        />
-      ) : option.kind === 'consumable' && isFableId(option.id) ? (
-        <FableCardArt
-          id={option.id}
-          className="shop-consumable-art"
-          title={name}
-        />
-      ) : (
-        <span className="e">{optionEmoji(option)}</span>
-      )}
-      <span className="n">{name}</span>
+      <div className="pack-option-visual">
+        {option.kind === 'tile' ? (
+          <TileView tile={option.tile} />
+        ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
+          <ConstellationCardArt
+            id={option.id}
+            className="shop-consumable-art"
+            title={name}
+          />
+        ) : option.kind === 'consumable' && isFableId(option.id) ? (
+          <FableCardArt
+            id={option.id}
+            className="shop-consumable-art"
+            title={name}
+          />
+        ) : (
+          <span className="e">{optionEmoji(option)}</span>
+        )}
+      </div>
       {edition !== 'base' && <span className="edition-badge">{edition}</span>}
       {blockKey ? (
-        <span className="pack-block">{t(blockKey)}</span>
+        <span className="pack-option-action pack-block">{t(blockKey)}</span>
       ) : (
-        <button className="btn exchange sm" onClick={onPick}>
+        <button className="btn exchange sm pack-option-action" onClick={onPick}>
           {label}
         </button>
       )}
@@ -134,19 +136,32 @@ const BURST_MS = 900;
 export function PackOpening({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const pack = g.state.pack;
+  const entering = useEntering();
   // Shared open sequence (shake → burst → cards fly in). Plays once per pack — this
-  // component mounts fresh each time a pack is opened. Skipped under reduced motion.
-  const [opening, setOpening] = useState(() => !motionOff());
+  // component mounts fresh each time a pack is opened. Shop delays the state
+  // change until its lower panel has exited, so this starts after that exit beat.
+  const [opening, setOpening] = useState(false);
+  const [started, setStarted] = useState(false);
   // feature-04 C: the card just chosen (a stable option key), held for a short beat
   // so its lift + pulse + outline is SEEN before the pick applies and the fan re-arcs
   // (or the overlay closes on the last pick) — selecting used to do nothing visible.
   const [picking, setPicking] = useState<string | null>(null);
+  const [closing, setClosing] = useState(false);
+  // Transition completion only STARTS the sequence. Keep its end timer in a
+  // separate effect: when this effect sets `started`, React reruns it, and a
+  // cleanup returned from here would cancel the timer immediately.
+  useEffect(() => {
+    if (entering || started) return;
+    setStarted(true);
+    if (motionOff()) return;
+    setOpening(true);
+  }, [entering, started]);
+
   useEffect(() => {
     if (!opening) return;
     const id = setTimeout(() => setOpening(false), BURST_MS);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [opening]);
   if (!pack) return null;
 
   const PICK_BEAT = motionOff() ? 0 : 320;
@@ -155,9 +170,19 @@ export function PackOpening({ g }: { g: UseGame }) {
     audio.play('packPick'); // confirm SFX on selection (A-4 / C)
     setPicking(key);
     window.setTimeout(() => {
-      g.pickPackOption(i);
+      if (pack.picksLeft <= 1) {
+        setClosing(true);
+        window.setTimeout(() => g.pickPackOption(i), 360);
+      } else {
+        g.pickPackOption(i);
+      }
       setPicking(null);
     }, PICK_BEAT);
+  };
+  const close = () => {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(g.closePack, 360);
   };
 
   const optionName = (o: PackOption): string => {
@@ -198,9 +223,19 @@ export function PackOpening({ g }: { g: UseGame }) {
   };
 
   const artSrc = packArt(pack.offer.type, pack.offer.size, pack.offer.artVariant);
+  // Old resting saves may contain a pre-candidate pack snapshot. Treat it as an
+  // empty candidate field instead of crashing during resume.
+  const candidateTiles = pack.candidateTiles ?? [];
 
   return (
-    <div className={['shop', 'pack-opening', opening ? 'opening' : 'revealed'].join(' ')}>
+    <div
+      className={[
+        'shop',
+        'pack-opening',
+        closing ? 'phase-panel-leaving' :
+        entering || !started ? 'preparing' : opening ? 'opening' : 'revealed',
+      ].join(' ')}
+    >
       {/* Open sequence overlay: the pack shakes, flashes, and bursts; then the option
           cards fly in beneath (they mount immediately but are hidden until reveal). */}
       {opening && (
@@ -218,20 +253,23 @@ export function PackOpening({ g }: { g: UseGame }) {
           </div>
         </div>
       )}
-      <div className="shop-head panel">
-        {/* Tile / Charm / Ink packs have art; Consumable shows none. */}
-        {artSrc && <img className="pack-open-art" src={artSrc} alt="" />}
-        <div className="kind">
-          {t(`pack.type.${pack.offer.type}`)} · {t(`pack.size.${pack.offer.size}`)}
-        </div>
-        {/* Explicit "Pick N of M" (§2.6.1) — N picks remaining, of the M still shown. */}
-        <div className="money">{t('pack.pickOf', { n: pack.picksLeft, m: pack.offer.options.length })}</div>
-        {/* A single, always-available Skip — unpicked contents are discarded. */}
-        <button className="btn cash" onClick={g.closePack}>
-          {t('pack.skip')}
-        </button>
-      </div>
       <div className="panel">
+        {candidateTiles.length > 0 && (
+          <div className="pack-candidates">
+            <div className="label">{t('pack.effectCandidates')}</div>
+            <div className="pack-candidate-row">
+              {candidateTiles.map((tile, i) => (
+                <div
+                  key={tile.id}
+                  className="pack-candidate-tile"
+                  style={{ ['--candidate-i' as string]: i }}
+                >
+                  <TileView tile={tile} tooltip={tileTooltip(tile, t)} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Balatro fan: cards arc across the centre at full size (§2.6.1). Each card's
             rotation + arc-drop comes from its position; the middle sits highest. */}
         <div className="pack-fan">
@@ -268,6 +306,18 @@ export function PackOpening({ g }: { g: UseGame }) {
             );
           })}
         </div>
+      </div>
+      <div className="shop-head panel pack-footer">
+        {artSrc && <img className="pack-open-art" src={artSrc} alt="" />}
+        <div className="kind">
+          {t(`pack.type.${pack.offer.type}`)} · {t(`pack.size.${pack.offer.size}`)}
+        </div>
+        <div className="money">
+          {t('pack.pickOf', { n: pack.picksLeft, m: pack.offer.options.length })}
+        </div>
+        <button className="btn cash" onClick={close}>
+          {t('pack.skip')}
+        </button>
       </div>
     </div>
   );

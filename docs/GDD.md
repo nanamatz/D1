@@ -527,6 +527,10 @@ Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **
 
 **Offer interaction (changed 2026-07-27).** Shop stalls are image-first: every product reserves the same proportion-preserving `144×185px` transparent stage, while the product art, price, and action form one aspect-ratio-aware foreground layer above the shop layout. Tall pack art uses 88% of the stage height and a 12px upward offset so its full animation remains within the pack stall. Voucher and pack background panels retain a `273px` minimum height, 5px taller than the preceding layout. The price tag sits 23px above the image's top edge and moves with all idle/hover/selection motion. Selecting an offer raises that foreground and animates an absolutely attached action below the image — **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs — without reflowing the stall layout. Product animation is never clipped. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
 
+**Persistent framing (changed 2026-07-28).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted.
+
+**Full consumable slots (changed 2026-07-28).** A full held-consumable zone disables only **Buy** for a consumable offer. **Use now** remains available when the player can afford the card because it resolves immediately and never occupies a resting slot.
+
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
 - **One voucher purchase per chapter (ante)**; only an effect that explicitly grants extra purchases can exceed this. Buying greys the slot for the rest of the chapter.
@@ -550,7 +554,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 |---|---|---|
 | 별자리 팩 / **Constellation Pack** | Constellation cards — held in the consumable zone, then used to **level up** their sentence pattern (§5.4). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1); Comic Book can add Gambler cards once that content pool lands | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles shown as the candidate field for tile-targeting Fable effects; Comic Book can add Gambler cards once that content pool lands | Arcana |
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3); roll pending the Gambler-card registry | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
@@ -633,7 +637,7 @@ accessible label.
 | 14 | Heungbu and Nolbu | Create 1 random Charm if a Charm slot is available |
 | 15 | The Cowherd and the Weaver Girl | 1/4 chance to give one random uneditioned Charm Foil, Holographic, or Polychrome; unusable if none is eligible |
 | 16 | The Rabbit and the Turtle | Raise 2 selected tile letters by one alphabet rank; Z wraps to A |
-| 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Charms, capped at +$50 |
+| 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Charms, capped at +$50; its tooltip shows the live capped payout from the currently owned Charms |
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12

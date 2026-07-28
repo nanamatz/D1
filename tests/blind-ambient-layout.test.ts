@@ -12,8 +12,8 @@ describe('blind ambient layout and tile entry', () => {
     expect(play).toContain('.force-reduced-motion .bb-art');
   });
 
-  it('hangs the pouch beyond the right viewport edge', () => {
-    expect(screens).toMatch(/\.pouch-dock\s*\{[^}]*right:\s*-96px/s);
+  it('keeps the persistent pouch visible at the right viewport edge', () => {
+    expect(screens).toMatch(/\.pouch-dock\s*\{[^}]*right:\s*10px/s);
   });
 
   it('hands a fresh tile from its flight to idle without a second hop', () => {

@@ -11,15 +11,13 @@ import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
 import type { UseGame } from '../useGame';
 import { Tooltip, type TooltipClassification } from './Tooltip';
-import { JokerShelf } from './JokerShelf';
-import { PackOpening } from './PackOpening';
 import { MoneyValue } from './MoneyValue';
 import { ShopMascot } from './ShopMascot';
 import { VoucherCard } from './VoucherCard';
 import { packArt } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { voucherArt } from '../voucherArt';
-import { isBlindOnlyConsumable, isFableId, type FableId } from '../../engine/fables';
+import { isBlindOnlyConsumable, isFableId, jokerSellGoldValue, type FableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { constellationArt } from '../constellationArt';
 import { FableCardArt } from './FableCardArt';
@@ -120,11 +118,17 @@ export function Shop({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const { run, shop } = g.state;
   const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
   useEffect(() => setSelectedOffer(null), [shop]);
   if (!shop) return null;
 
   const toggleOffer = (key: string) => {
     setSelectedOffer((current) => current === key ? null : key);
+  };
+  const leavePanel = (action: () => void) => {
+    if (leaving) return;
+    setLeaving(true);
+    window.setTimeout(action, 360);
   };
 
   const itemMeta = (
@@ -139,6 +143,7 @@ export function Shop({ g }: { g: UseGame }) {
     rarity?: JokerRarity | undefined;
     classification?: TooltipClassification | undefined;
     sub?: { title: string; body: string } | undefined;
+    extra?: string | undefined;
   } => {
     if (item.kind === 'joker') {
       const def = JOKER_REGISTRY.get(item.id);
@@ -164,6 +169,10 @@ export function Shop({ g }: { g: UseGame }) {
       art: isConstellationId(item.id) ? constellationArt(item.id) : undefined,
       classification: consumableClassification(item.id),
       sub: consumableAxisTip(item.id, t) ?? undefined,
+      extra:
+        item.id === 'fable17'
+          ? t('consumable.currentSellValue', { value: jokerSellGoldValue(run) })
+          : undefined,
     };
   };
 
@@ -178,11 +187,14 @@ export function Shop({ g }: { g: UseGame }) {
   const voucher = shop.voucher ? VOUCHER_REGISTRY.get(shop.voucher) : undefined;
 
   return (
-    <div className="shop2">
+    <div className={['shop2', leaving && 'phase-panel-leaving'].filter(Boolean).join(' ')}>
       <aside className="shop-rail">
         <button
           className="btn play next-blind"
-          onClick={() => { audio.play('buttonPress'); g.leaveShop(); }}
+          onClick={() => {
+            audio.play('buttonPress');
+            leavePanel(g.leaveShop);
+          }}
         >
           {t('shop.next')}
         </button>
@@ -197,22 +209,6 @@ export function Shop({ g }: { g: UseGame }) {
       </aside>
 
       <div className="shop-main">
-        {/* D-1/D-2: owned jokers + consumables persist at the top, same shelf as
-            the play screen; then items for sale; then vouchers & packs. */}
-        <div className="shop-shelf">
-          <JokerShelf
-            run={run}
-            onUseConsumable={g.useConsumable}
-            canUseConsumable={g.canUseConsumable}
-            onSellConsumable={g.sellConsumable}
-            onSellJoker={g.sell}
-            onReorderJoker={g.reorderJokers}
-          />
-        </div>
-
-        {/* item 7: the pack-opening modal covers ONLY this sale region (for-sale,
-            vouchers, packs). The shelf above stays visible and interactive so jokers
-            and consumables can still be sold while a pack is open. */}
         <div className="shop-sale-region">
         <div className="panel">
           <div className="label">{t('shop.forSale')}</div>
@@ -239,6 +235,7 @@ export function Shop({ g }: { g: UseGame }) {
                   rarity={m.rarity}
                   classification={m.classification}
                   sub={m.sub}
+                  {...(m.extra ? { extra: m.extra } : {})}
                 >
                   <ShopOffer
                     label={m.name}
@@ -254,7 +251,7 @@ export function Shop({ g }: { g: UseGame }) {
                       ? {
                           action2Label: t('shop.instantUse'),
                           action2ClassName: 'green',
-                          action2Disabled: !affordable(item),
+                          action2Disabled: run.gold < item.price,
                           onAction2: () => g.buyAndUse(i),
                         }
                       : {})}
@@ -357,7 +354,7 @@ export function Shop({ g }: { g: UseGame }) {
                       actionClassName="green"
                       disabled={run.gold < price}
                       onSelect={() => toggleOffer(offerKey)}
-                      onAction={() => g.buyPack(i)}
+                      onAction={() => leavePanel(() => g.buyPack(i))}
                     >
                       <div
                         className={['shopitem', 'shopitem-image-only', `pack-${p.size}`].join(' ')}
@@ -376,13 +373,6 @@ export function Shop({ g }: { g: UseGame }) {
           </div>
         </div>
 
-        {g.state.pack && (
-          <div className="pack-overlay-region">
-            <div className="overlay-card pack-modal">
-              <PackOpening g={g} />
-            </div>
-          </div>
-        )}
         </div>
       </div>
     </div>

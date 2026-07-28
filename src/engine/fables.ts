@@ -112,6 +112,17 @@ export function fablePickCount(id: FableId): { min: number; max: number } {
   return { min: 0, max: 0 };
 }
 
+/** Live payout shared by The Heavenly Maiden and the Woodcutter's tooltip and
+ * effect resolution, so the displayed amount can never drift from the award. */
+export const jokerSellGoldValue = (run: RunState): number =>
+  Math.min(
+    run.jokers.reduce((sum, owned) => {
+      const def = JOKER_REGISTRY.get(owned.defId);
+      return sum + sellValue(def ? BALANCE.jokerPrice[def.rarity] : 0);
+    }, 0),
+    50,
+  );
+
 /**
  * Apply a tile-targeting Fable to tiles in the POUCH (run.bag) by id — the shop path
  * (feedback #4), where there is no live hand. Mirrors the in-blind effects (toMaterial
@@ -330,11 +341,7 @@ export function useFable(
       ...(tile.letterBeforeStone ? { letterBeforeStone: nextLetter(tile.letterBeforeStone) } : {}),
     })));
   } else if (effect.kind === 'jokerSellGold') {
-    const total = nextRun.jokers.reduce((sum, owned) => {
-      const def = JOKER_REGISTRY.get(owned.defId);
-      return sum + sellValue(def ? BALANCE.jokerPrice[def.rarity] : 0);
-    }, 0);
-    nextRun = { ...nextRun, gold: nextRun.gold + Math.min(total, 50) };
+    nextRun = { ...nextRun, gold: nextRun.gold + jokerSellGoldValue(nextRun) };
   } else if (effect.kind === 'destroy') {
     ({ run: nextRun, blind: nextBlind } = removeIds(nextRun, nextBlind, new Set(selectedIds)));
   }
