@@ -87,7 +87,10 @@ export const MATERIALS: TileMaterial[] = [
   'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
 ];
 const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
-const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile'] as const;
+// The five pack families the Collection shows (feedback): the three consumable packs
+// Fable / Ink / Constellation, plus Charm and Tile. `ink` is presentation-only until
+// its Gambler registry lands, but it still counts as a family in the gallery.
+const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile', 'ink'] as const;
 const PAGE = 60;
 
 const sampleTile = (over: Partial<Tile>): Tile => {

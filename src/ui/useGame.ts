@@ -21,6 +21,7 @@ import type {
   RunState,
   ScoreEvent,
   ShopState,
+  Tile,
 } from '../engine/types';
 import {
   rollShopStock,
@@ -41,8 +42,18 @@ import { recordRunEnd } from './lifetime';
 import { loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
+import { patternLevelBus } from './patternLevel';
 import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
-import { canUseFable, fableOverwritesEnhancement, isFableId, useFable } from '../engine/fables';
+import {
+  canUseFable,
+  fablePickCount,
+  fableTargetsTiles,
+  isBlindOnlyConsumable,
+  isFableId,
+  useFable,
+  useFableOnPouch,
+  type FableId,
+} from '../engine/fables';
 import {
   bossRerollLimit,
   bossRerollPrice,
@@ -161,12 +172,14 @@ export interface GameState {
    */
   showIntro: boolean;
   /**
-   * A material Fable awaiting overwrite confirmation (GDD §2.4, feature-03 B-3):
-   * the player targeted a tile that already carries a same-axis enhancement, so
-   * applying would REPLACE it. Non-null pops the confirm modal; confirm applies,
-   * cancel clears. Cross-axis application never lands here (it's silent).
+   * feedback #4: a tile-targeting consumable used OUTSIDE a blind (the shop) is picking
+   * its pouch targets. Holds the fable + up to 10 tiles drawn at random from the pouch
+   * and the pick range; the PouchSelect modal renders it, confirm applies to run.bag.
    */
-  pendingConsumable: ConsumableId | null;
+  pouchSelect: { fableId: FableId; tiles: Tile[]; min: number; max: number } | null;
+  /** feedback #2: chromatic-unlock ids earned THIS run (RED, MUSIC, ALIEN, …). Game
+   *  Over announces them via the mascot and shows a card for each. Reset per run. */
+  runUnlocks: string[];
 }
 
 const randomSeed = (): string => Math.random().toString(36).slice(2);
@@ -229,7 +242,8 @@ function bootstrap(seed: string = randomSeed()): GameState {
     sentenceBonus: null,
     runStarted: false,
     showIntro: tutorial,
-    pendingConsumable: null,
+    pouchSelect: null,
+    runUnlocks: [],
   };
 }
 
@@ -243,10 +257,11 @@ export interface UseGame {
   reorderJokers: (from: number, to: number) => void;
   reorderStaged: (fromId: string, toId: string) => void;
   useConsumable: (id: import('../engine/types').ConsumableId) => void;
-  /** Confirm the pending §2.4 same-axis overwrite (B-3). */
-  confirmConsumable: () => void;
-  /** Dismiss the pending overwrite confirm without applying (B-3). */
-  cancelConsumable: () => void;
+  /** feedback #3: buy a shop consumable and use it in one action. */
+  buyAndUse: (index: number) => void;
+  /** feedback #4: confirm the pouch-tile selection for a shop-used tile Fable. */
+  confirmPouchSelect: (tileIds: string[]) => void;
+  cancelPouchSelect: () => void;
   canUseConsumable: (id: import('../engine/types').ConsumableId) => boolean;
   canMagnify: boolean;
   sellConsumable: (index: number) => void;
@@ -673,18 +688,17 @@ export function useGame(): UseGame {
     });
   }, []);
 
-  // Apply a consumable to the current state. `force` skips the §2.4 overwrite
-  // confirm (set once the player confirms). Pure state→state; the two callers are
-  // useConsumable (force=false, may divert to a confirm) and confirmConsumable.
+  // Apply a consumable to the current state. Pure state→state. A same-axis overwrite
+  // just replaces the enhancement — no confirm modal (feedback: players learn by doing,
+  // GDD §2.4 revised 2026-07-28).
   const applyConsumable = useCallback(
-    (prev: GameState, id: ConsumableId, force: boolean): GameState => {
-      if (prev.phase !== 'playing' || !prev.run.consumables.includes(id)) return prev;
+    (prev: GameState, id: ConsumableId): GameState => {
+      // Consumables are usable on the board AND in the shop (feedback #3). Tile-targeting
+      // Fables in the shop are routed to the pouch picker before reaching here.
+      if ((prev.phase !== 'playing' && prev.phase !== 'shop') || !prev.run.consumables.includes(id)) {
+        return prev;
+      }
       if (isFableId(id)) {
-        // §2.4 overwrite guard (B-3): if this would replace a same-axis enhancement,
-        // divert to a confirm instead of applying. Cross-axis never lands here.
-        if (!force && fableOverwritesEnhancement(id, prev.blind, prev.selected)) {
-          return { ...prev, pendingConsumable: id, message: null };
-        }
         const result = useFable(
           id,
           prev.run,
@@ -739,25 +753,83 @@ export function useGame(): UseGame {
     [lexicon],
   );
 
+  // Draw up to 10 random pouch tiles for a tile-targeting Fable used outside a blind
+  // (feedback #4) → the PouchSelect modal. Returns the new state (or prev if not owned).
+  const openPouchSelect = useCallback((prev: GameState, id: FableId): GameState => {
+    if (!prev.run.consumables.includes(id)) return prev;
+    const drawn = makeRng(`${prev.seed}#pouch${prev.rngCounter}`).shuffle(prev.run.bag).slice(0, 10);
+    if (drawn.length === 0) return { ...prev, message: { key: 'consumable.emptyPouch' } };
+    const { min, max } = fablePickCount(id);
+    return { ...prev, pouchSelect: { fableId: id, tiles: drawn, min, max }, rngCounter: prev.rngCounter + 1 };
+  }, []);
+
   const useConsumable = useCallback(
-    (id: ConsumableId) => setState((prev) => applyConsumable(prev, id, false)),
-    [applyConsumable],
+    (id: ConsumableId) =>
+      setState((prev) => {
+        // In the shop, a tile-targeting Fable picks pouch tiles instead of hand tiles.
+        if (prev.phase === 'shop' && fableTargetsTiles(id) && prev.run.consumables.includes(id)) {
+          audio.play('buttonPress');
+          return openPouchSelect(prev, id as FableId);
+        }
+        const pattern = CONSUMABLE_PATTERN[id];
+        const from = pattern ? (prev.run.patternLevels[pattern] ?? 1) : 0;
+        const next = applyConsumable(prev, id);
+        // feedback #6: a Constellation card just leveled its pattern → fire the flourish.
+        if (pattern && next !== prev && next.run.patternLevels[pattern] !== prev.run.patternLevels[pattern]) {
+          patternLevelBus.emit({ pattern, from, to: next.run.patternLevels[pattern] ?? from + 1 });
+        }
+        return next;
+      }),
+    [applyConsumable, openPouchSelect],
   );
 
-  /** Confirm the pending §2.4 overwrite (B-3) → apply the diverted Fable, forced. */
-  const confirmConsumable = useCallback(() => {
+  /** Confirm the pouch-tile selection (feedback #4) → apply the Fable to those pouch tiles. */
+  const confirmPouchSelect = useCallback((tileIds: string[]) => {
     setState((prev) => {
-      const id = prev.pendingConsumable;
-      if (!id) return prev;
-      audio.play('buttonPress');
-      return applyConsumable({ ...prev, pendingConsumable: null }, id, true);
+      const sel = prev.pouchSelect;
+      if (!sel || tileIds.length < sel.min || tileIds.length > sel.max) return prev;
+      const { ok, run } = useFableOnPouch(sel.fableId, prev.run, tileIds);
+      if (!ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
+      audio.play('consumableUse');
+      recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+      return { ...prev, run, pouchSelect: null };
     });
-  }, [applyConsumable]);
-
-  /** Dismiss the overwrite confirm without applying (B-3). */
-  const cancelConsumable = useCallback(() => {
-    setState((prev) => (prev.pendingConsumable ? { ...prev, pendingConsumable: null } : prev));
   }, []);
+
+  const cancelPouchSelect = useCallback(
+    () => setState((prev) => (prev.pouchSelect ? { ...prev, pouchSelect: null } : prev)),
+    [],
+  );
+
+  // feedback #3: "instant use" a shop consumable — buy AND use in one action, skipping
+  // the consumable-slot cap (it never rests in a slot). A tile-targeting Fable opens the
+  // pouch picker (feedback #4); others apply straight away.
+  const buyAndUse = useCallback((index: number) => {
+    setState((prev) => {
+      if (prev.phase !== 'shop' || !prev.shop) return prev;
+      const item = prev.shop.items[index];
+      if (!item || (item.kind !== 'consumable' && item.kind !== 'punctuation')) return prev;
+      if (prev.run.gold < item.price) return prev;
+      const id = item.id;
+      const items = prev.shop.items.slice();
+      items[index] = null;
+      const paid: GameState = {
+        ...prev,
+        run: { ...prev.run, gold: prev.run.gold - item.price, consumables: [...prev.run.consumables, id] },
+        shop: { ...prev.shop, items },
+        stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
+      };
+      audio.play('purchase');
+      if (fableTargetsTiles(id)) return openPouchSelect(paid, id as FableId);
+      const pattern = CONSUMABLE_PATTERN[id];
+      const from = pattern ? (paid.run.patternLevels[pattern] ?? 1) : 0;
+      const next = applyConsumable(paid, id);
+      if (pattern && next !== paid && next.run.patternLevels[pattern] !== paid.run.patternLevels[pattern]) {
+        patternLevelBus.emit({ pattern, from, to: next.run.patternLevels[pattern] ?? from + 1 });
+      }
+      return next;
+    });
+  }, [applyConsumable, openPouchSelect]);
 
   const playWord = useCallback(() => {
     setState((prev) => {
@@ -801,9 +873,13 @@ export function useGame(): UseGame {
       if (submission.isGibberish) tutorialBus.fire('firstGibberish');
       // Chromatic unlocks (feature-02 C): a VALID word may write a presentation
       // layer into the world on its first-ever play. Gibberish never unlocks.
+      let unlockedId: string | null = null;
       if (!submission.isGibberish) {
         const unlocked = checkWordPlayed(submission.text);
-        if (unlocked) unlockBus.emit(unlocked);
+        if (unlocked) {
+          unlockBus.emit(unlocked);
+          unlockedId = unlocked.id; // feedback #2: remembered so Game Over can announce it
+        }
       }
       // A-2: a per-word structure bonus (Twin/Vowel Flush/Straight…) landed —
       // explain Letter Hands the first time one actually scores. The event is
@@ -832,6 +908,7 @@ export function useGame(): UseGame {
         blind,
         selected: [],
         message: null,
+        runUnlocks: unlockedId ? [...prev.runUnlocks, unlockedId] : prev.runUnlocks,
         lastEvents: events,
         settleId: prev.settleId + 1,
         // A new settle starts; the completion signal re-arms (05 A) so the clear
@@ -1023,12 +1100,25 @@ export function useGame(): UseGame {
     reorderJokers,
     reorderStaged,
     useConsumable,
-    confirmConsumable,
-    cancelConsumable,
-    canUseConsumable: (id) =>
-      state.phase === 'playing' &&
-      !state.pendingEnd &&
-      (!isFableId(id) || canUseFable(id, state.run, state.blind, state.selected)),
+    buyAndUse,
+    confirmPouchSelect,
+    cancelPouchSelect,
+    canUseConsumable: (id) => {
+      // On the board: tile-targeting Fables need a valid hand selection; others are free.
+      if (state.phase === 'playing' && !state.pendingEnd) {
+        return !isFableId(id) || canUseFable(id, state.run, state.blind, state.selected);
+      }
+      // In the shop (feedback #3): blind-only effects (hint) can't be used here;
+      // tile-targeting Fables open the pouch picker (need pouch tiles); non-tile Fables
+      // use their own precondition; Constellations always level.
+      if (state.phase === 'shop') {
+        if (isBlindOnlyConsumable(id)) return false;
+        if (fableTargetsTiles(id)) return state.run.bag.length > 0;
+        if (!isFableId(id)) return true;
+        return canUseFable(id, state.run, state.blind, []);
+      }
+      return false;
+    },
     canMagnify:
       state.phase === 'playing' &&
       (state.run.consumables.includes('magnifier') || state.run.consumables.includes('fable1')),

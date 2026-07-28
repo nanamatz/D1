@@ -46,7 +46,10 @@
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  width: var(--tt-w);
+  /* feedback: size to content, not a fixed 220px slab — short tooltips read tight,
+     long copy still wraps at --tt-w rather than stretching off-screen. */
+  width: max-content;
+  max-width: var(--tt-w);
   background: var(--tt-bg);
   border-radius: var(--tt-r);
   box-shadow: var(--shadow);
@@ -129,6 +132,31 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: #8a6a1c;
+}
+/* feedback · the material/font sub-tooltip is a SEPARATE card 3px below the main one
+   (not a section merged into it) — its own dark card, positioned just under the
+   parent tooltip so it reads as a distinct, secondary tooltip. */
+.tt-sub-card {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  background: var(--tt-bg);
+  border-radius: var(--tt-r);
+  box-shadow: var(--shadow);
+  padding: 6px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+.tt-sub-title {
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  color: #fff;
+}
+.tt-sub-card .tt-body {
+  color: var(--ink); /* light text on the dark sub-card, not the white-plate grey */
 }
 /* Highlights inside description copy (see richtext.tsx). Values get a filled
    chip; "Blind" is only recoloured — it's a noun, not a number. */
@@ -2260,7 +2288,7 @@ body.cb-safe .tile.hint {
   position: fixed;
   /* Hang the pouch well beyond main.main and the black play surface while
      retaining a visible, clickable slice at the viewport edge. */
-  right: -96px;
+  right: 10px;
   bottom: var(--dock-bottom);
   z-index: 45;
   display: flex;
@@ -2971,4 +2999,151 @@ body.cb-safe .tile.hint {
   .loading-mascot {
     animation: none;
   }
+}
+
+/* feedback #6 · constellation level-up flourish. Centred badge; the new level pops in
+   over the old with a scale bounce, then the whole card fades out. */
+.pattern-levelup {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: plu-hold 1.7s ease forwards;
+}
+.plu-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 34px;
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  border-top: 2px solid var(--panel-edge);
+  box-shadow: 0 12px 0 rgba(0, 0, 0, 0.45);
+  animation: plu-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.plu-badge {
+  font-family: var(--ctl-font);
+  font-size: var(--fs-sm);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.plu-name {
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-xl);
+  color: var(--ink);
+}
+.plu-levels {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-lg);
+}
+.plu-from {
+  color: var(--ink-dim);
+}
+.plu-arrow {
+  color: var(--ink-dim);
+  font-size: var(--ds-md);
+}
+.plu-to {
+  color: var(--gold);
+  display: inline-block;
+  animation: plu-to-pop 0.5s cubic-bezier(0.34, 1.8, 0.5, 1) 0.25s backwards;
+}
+@keyframes plu-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes plu-to-pop {
+  0% { transform: scale(2); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes plu-hold {
+  0%, 78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pattern-levelup,
+  .plu-card,
+  .plu-to {
+    animation: plu-hold 1.7s linear forwards;
+  }
+}
+
+/* feedback · Run Info tabs (Patterns / Blinds / Vouchers). */
+.ri-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--panel-edge);
+}
+.ri-tab {
+  flex: 1;
+  padding: 8px 10px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  color: var(--ink-dim);
+  font-family: var(--ctl-font);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+.ri-tab.active {
+  background: var(--badge-bg);
+  color: var(--ink);
+  font-weight: 700;
+}
+.ri-blinds {
+  margin-top: 4px;
+}
+
+/* feedback #2 · Game Over "unlocked this run" cards. */
+.go-unlocks {
+  text-align: center;
+}
+.go-unlock-cards {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.go-unlock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--r-md);
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  animation: plu-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+.go-unlock-swatch {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ds-sm);
+  color: #fff;
+  background: var(--panel);
+}
+.sw-red { background: #f5504e; }
+.sw-yellow { background: #f0b23e; }
+.sw-green { background: #3c9b5c; }
+.sw-blue { background: #3fa7f5; }
+.go-unlock-word {
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-lg);
+  color: var(--ink);
 }

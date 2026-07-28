@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import type { Tile } from '../../engine/types';
 import { faceClass, fontClass, inkClass, materialClass, materialGlyph, tileGlyph, tileValue } from '../game';
 import { useI18n } from '../i18n';
@@ -57,6 +58,17 @@ export function TileView({
   const matGlyph = faceDown ? null : materialGlyph(tile);
   const rootRef = useRef<HTMLDivElement>(null);
   usePointerTilt(rootRef, tilt && !mini && !disabled);
+  // feedback #1: the tooltip must never warp. Rendered in a body PORTAL positioned at
+  // the tile's rect, so it escapes the tile's tilt/drag 3D transform (a descendant
+  // would inherit it and skew). Shown on hover; hidden the moment a drag press starts.
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+  const showTip = () => {
+    if (faceDown || !tooltip) return;
+    const r = rootRef.current?.getBoundingClientRect();
+    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+  const hideTip = () => setTipPos(null);
+  useEffect(() => hideTip, []); // clear if the tile unmounts while hovered
   // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
   // to its material name so a screen reader announces "Stone tile, 0 chips"
   // instead of the identity-less " tile, 0 chips" (M-4).
@@ -103,6 +115,9 @@ export function TileView({
           : undefined
       }
       draggable={false}
+      onPointerEnter={showTip}
+      onPointerLeave={hideTip}
+      onPointerDown={hideTip}
       onClick={interactive ? () => onSelect!(tile.id) : undefined}
       onContextMenu={
         onMark
@@ -139,14 +154,20 @@ export function TileView({
           )}
         </>
       )}
-      {!faceDown && tooltip && (
-        <span className="tt-card tile-tt" role="tooltip">
-          <span className="tt-title">{tooltip.title}</span>
-          <span className="tt-desc">
-            <span className="tt-body">{richText(tooltip.body)}</span>
-          </span>
-        </span>
-      )}
+      {!faceDown && tooltip && tipPos &&
+        createPortal(
+          <span
+            className="tt-card tile-tt-portal"
+            role="tooltip"
+            style={{ left: `${tipPos.x}px`, top: `${tipPos.y}px` } as CSSProperties}
+          >
+            <span className="tt-title">{tooltip.title}</span>
+            <span className="tt-desc">
+              <span className="tt-body">{richText(tooltip.body)}</span>
+            </span>
+          </span>,
+          document.body,
+        )}
       <span className="tilt-sheen" aria-hidden />
     </div>
   );

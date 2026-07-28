@@ -5,6 +5,7 @@ import type { PatternId } from '../../engine/types';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { WooDakMascot } from './WooDakMascot';
+import { UNLOCKS } from '../unlocks';
 
 /** The most-frequent finalized sentence pattern this run, with its count. */
 function topPattern(counts: Partial<Record<PatternId, number>>): { id: PatternId; n: number } | null {
@@ -34,6 +35,11 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
   const top = topPattern(stats.patternCounts);
   const bestWord = stats.bestWord;
   const won = gameover.won;
+  // feedback #2: the chromatic unlocks earned THIS run — announced by the mascot and
+  // shown as cards below (deduped, in play order).
+  const unlocks = [...new Set(g.state.runUnlocks)]
+    .map((id) => UNLOCKS.find((u) => u.id === id))
+    .filter((u): u is (typeof UNLOCKS)[number] => !!u);
 
   const copySeed = () => {
     navigator.clipboard?.writeText(seed).then(
@@ -47,7 +53,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
 
   return (
     <div className="overlay gameover-overlay">
-      <WooDakMascot stats={stats} won={won} />
+      <WooDakMascot stats={stats} won={won} unlocked={unlocks.length} />
       <div className={['overlay-card', 'gameover', won ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
       <div className="go-title">{t(won ? 'gameover.wonTitle' : 'gameover.title')}</div>
 
@@ -76,6 +82,24 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
           {t('gameover.score', { score: gameover.finalScore, target: gameover.target })}
         </div>
       </div>
+
+      {unlocks.length > 0 && (
+        <div className="panel go-unlocks">
+          <span className="label">{t('gameover.unlocked')}</span>
+          <div className="go-unlock-cards">
+            {unlocks.map((u) => (
+              <div key={u.id} className={['go-unlock-card', `unlock-${u.effect.kind}`].join(' ')}>
+                <div className={['go-unlock-swatch', u.effect.kind === 'color' ? `sw-${u.effect.group}` : ''].filter(Boolean).join(' ')}>
+                  {u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? '♪' : '🔊')
+                    : u.effect.kind === 'mascot' ? '★'
+                    : u.effect.kind === 'locale' ? '가' : ''}
+                </div>
+                <span className="go-unlock-word">{u.word}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="panel go-stats">
         <div className="go-stat wide">

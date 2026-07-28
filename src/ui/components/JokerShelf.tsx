@@ -3,7 +3,7 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { sellValue } from '../../engine/economy';
 import type { ConsumableId, RunState } from '../../engine/types';
-import { consumableDescKey, jokerDescKey, grownValue } from '../descriptions';
+import { consumableDescKey, jokerDescKey, grownValue, consumableAxisTip } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
 import { useSettleView } from '../settle';
@@ -173,6 +173,7 @@ export function JokerShelf({
               title={t(`consumable.${c}`)}
               body={t(consumableDescKey(c))}
               classification={consumableClassification(c)}
+              sub={consumableAxisTip(c, t) ?? undefined}
               down
             >
               <TiltCard

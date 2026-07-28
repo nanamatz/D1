@@ -4,8 +4,10 @@ import {
   FABLE_DEFS,
   FABLE_IDS,
   canUseFable,
-  fableOverwritesEnhancement,
+  fablePickCount,
+  fableTargetsTiles,
   useFable,
+  useFableOnPouch,
 } from '../src/engine/fables';
 import { applyTileMaterial } from '../src/engine/materials';
 import { startBlind } from '../src/engine/loop';
@@ -162,19 +164,35 @@ describe('Fable registry', () => {
     expect(result.run.gold).toBeGreaterThan(3);
   });
 
-  it('flags a same-axis overwrite (GDD §2.4 B-3): non-base material target → confirm', () => {
+  it('a same-axis overwrite just replaces the material — no confirm (GDD §2.4 revised)', () => {
     const { run, blind } = setup('fable6'); // polished material fable
     const ids = blind.hand.slice(0, 2).map((t) => t.id);
-    // ceramic (base) targets → no overwrite, applies silently
-    expect(fableOverwritesEnhancement('fable6', blind, ids)).toBe(false);
-    // one target already enhanced (porcelain) → applying polished would replace it
+    // both targets already Porcelain; applying Polished replaces it silently.
     const enhanced = {
       ...blind,
-      hand: blind.hand.map((t, i) => (i === 0 ? { ...t, material: 'porcelain' as const } : t)),
+      hand: blind.hand.map((t, i) => (i < 2 ? { ...t, material: 'porcelain' as const } : t)),
     };
-    expect(fableOverwritesEnhancement('fable6', enhanced, ids)).toBe(true);
-    // a non-material fable never triggers the overwrite confirm
-    expect(fableOverwritesEnhancement('fable9', enhanced, ids)).toBe(false);
+    const result = useFable('fable6', run, enhanced, ids, zeroRng);
+    expect(result.ok).toBe(true);
+    expect(result.blind.hand.filter((t) => ids.includes(t.id)).every((t) => t.material === 'polished')).toBe(true);
+  });
+
+  it('applies a tile Fable to POUCH tiles by id (feedback #4 shop path)', () => {
+    const base = newRun('pouch');
+    const run = { ...base, consumables: ['fable6' as const] }; // Polished ×2
+    expect(fableTargetsTiles('fable6')).toBe(true);
+    expect(fablePickCount('fable6')).toEqual({ min: 2, max: 2 });
+    const ids = run.bag.slice(0, 2).map((t) => t.id);
+    const { ok, run: after } = useFableOnPouch('fable6', run, ids);
+    expect(ok).toBe(true);
+    expect(after.bag.filter((t) => ids.includes(t.id)).every((t) => t.material === 'polished')).toBe(true);
+    expect(after.consumables).toEqual([]); // the card was consumed
+  });
+
+  it('rejects a pouch application with the wrong count', () => {
+    const run = { ...newRun('pouch2'), consumables: ['fable6' as const] };
+    const one = run.bag.slice(0, 1).map((t) => t.id);
+    expect(useFableOnPouch('fable6', run, one).ok).toBe(false); // needs exactly 2
   });
 
   it('destroys up to two selected tiles from the live blind and permanent pouch', () => {

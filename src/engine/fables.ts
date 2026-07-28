@@ -85,6 +85,85 @@ const selectedTiles = (blind: BlindState, ids: readonly string[]): Tile[] => {
 const canRestoreLetter = (tile: Tile): boolean =>
   tile.material !== 'stone' || tile.letterBeforeStone !== undefined;
 
+/**
+ * True when a consumable's effect is only meaningful INSIDE a blind — currently just
+ * the `hint` effect (Magnifier / Fable 1), which highlights spellable words in the live
+ * hand. The shop hides its instant-use and disables its Use button (feedback 2026-07-28).
+ */
+export function isBlindOnlyConsumable(id: ConsumableId): boolean {
+  if (id === 'magnifier') return true;
+  return isFableId(id) && FABLE_REGISTRY.get(id)?.effect.kind === 'hint';
+}
+
+/** True when a Fable's effect targets specific letter tiles (material / rank-up /
+ *  destroy). Outside a blind (the shop) these open the pouch-tile picker (feedback #4);
+ *  the rest apply straight away. */
+export function fableTargetsTiles(id: ConsumableId): boolean {
+  if (!isFableId(id)) return false;
+  const kind = FABLE_REGISTRY.get(id)?.effect.kind;
+  return kind === 'material' || kind === 'rankUp' || kind === 'destroy';
+}
+
+/** How many tiles the player must pick for a tile-targeting Fable. */
+export function fablePickCount(id: FableId): { min: number; max: number } {
+  const effect = FABLE_REGISTRY.get(id)?.effect;
+  if (effect?.kind === 'material' || effect?.kind === 'rankUp') return { min: effect.count, max: effect.count };
+  if (effect?.kind === 'destroy') return { min: 1, max: effect.max };
+  return { min: 0, max: 0 };
+}
+
+/**
+ * Apply a tile-targeting Fable to tiles in the POUCH (run.bag) by id — the shop path
+ * (feedback #4), where there is no live hand. Mirrors the in-blind effects (toMaterial
+ * / rank-up / destroy) but patches only run.bag, and consumes the card. Returns ok:false
+ * (unchanged run) if the selection is invalid.
+ */
+export function useFableOnPouch(
+  id: FableId,
+  run: RunState,
+  tileIds: readonly string[],
+): { ok: boolean; run: RunState } {
+  const effect = FABLE_REGISTRY.get(id)?.effect;
+  if (!effect || !run.consumables.includes(id)) return { ok: false, run };
+  const ids = new Set(tileIds);
+  const targets = run.bag.filter((t) => ids.has(t.id));
+  if (targets.length !== tileIds.length) return { ok: false, run };
+  const consumed = (): ConsumableId[] => {
+    const c = run.consumables.slice();
+    c.splice(c.indexOf(id), 1);
+    return c;
+  };
+  const commit = (bag: Tile[]): { ok: true; run: RunState } => ({
+    ok: true,
+    run: { ...run, bag, consumables: consumed(), lastFableOrConstellation: id },
+  });
+
+  if (effect.kind === 'material') {
+    if (tileIds.length !== effect.count) return { ok: false, run };
+    if (effect.material !== 'stone' && !targets.every(canRestoreLetter)) return { ok: false, run };
+    return commit(run.bag.map((t) => (ids.has(t.id) ? toMaterial(t, effect.material) : t)));
+  }
+  if (effect.kind === 'rankUp') {
+    if (tileIds.length !== effect.count || !targets.every((t) => t.letter !== null)) return { ok: false, run };
+    return commit(
+      run.bag.map((t) =>
+        ids.has(t.id)
+          ? {
+              ...t,
+              letter: nextLetter(t.letter!),
+              ...(t.letterBeforeStone ? { letterBeforeStone: nextLetter(t.letterBeforeStone) } : {}),
+            }
+          : t,
+      ),
+    );
+  }
+  if (effect.kind === 'destroy') {
+    if (tileIds.length < 1 || tileIds.length > effect.max) return { ok: false, run };
+    return commit(run.bag.filter((t) => !ids.has(t.id)));
+  }
+  return { ok: false, run };
+}
+
 export function canUseFable(
   id: FableId,
   run: RunState,
@@ -109,23 +188,6 @@ export function canUseFable(
     return run.jokers.some((joker) => (joker.edition ?? 'base') === 'base');
   }
   return true;
-}
-
-/**
- * True when using this fable would REPLACE an existing enhancement on any selected
- * tile — a same-axis overwrite (GDD §2.4). The UI confirms before applying; cross-
- * axis application never conflicts and stays silent. Only material fables target
- * tiles today, so a non-base material on a target is the sole overwrite case; the
- * predicate is axis-shaped so a future font/edition fable slots in without a rewrite.
- */
-export function fableOverwritesEnhancement(
-  id: FableId,
-  blind: BlindState,
-  selectedIds: readonly string[],
-): boolean {
-  const effect = FABLE_REGISTRY.get(id)?.effect;
-  if (effect?.kind !== 'material') return false;
-  return selectedTiles(blind, selectedIds).some((tile) => tile.material !== 'ceramic');
 }
 
 const patchTiles = (

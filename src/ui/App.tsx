@@ -12,6 +12,7 @@ import { TutorialHost } from './components/TutorialPopup';
 import { ChromaticReveal } from './components/ChromaticReveal';
 import { CrtOverlay } from './components/CrtOverlay';
 import { LoadingScreen } from './components/LoadingScreen';
+import { PatternLevelUp } from './components/PatternLevelUp';
 
 type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
 
@@ -108,6 +109,7 @@ export function App() {
           <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>
           <TutorialHost />
           <ChromaticReveal />
+          <PatternLevelUp />
         </>
       )}
       <CrtOverlay />

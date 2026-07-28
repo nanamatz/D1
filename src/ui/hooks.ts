@@ -82,6 +82,10 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
     for (const k of kids) {
       const id = k.dataset.flipId;
       if (!id) continue;
+      // feature-04 D: a card the spring-drag controller is moving/settling owns its own
+      // transform — FLIP must not also animate it (that teleports it back to its old slot
+      // and flies it across). Its position is still recorded below for the next diff.
+      if (k.classList.contains('grabbed') || k.classList.contains('dropping')) continue;
       const now = next.get(id)!;
       const isEnter = !seen.current.has(id);
       if (isEnter && o?.enterOrigin) {

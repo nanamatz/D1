@@ -5,7 +5,7 @@ import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
 import { canAddJoker, discountedPrice, rerollDiscount } from '../../engine/vouchers';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
-import { consumableDescKey, jokerDescKey, voucherDescKey } from '../descriptions';
+import { consumableDescKey, jokerDescKey, voucherDescKey, consumableAxisTip } from '../descriptions';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
@@ -19,7 +19,7 @@ import { VoucherCard } from './VoucherCard';
 import { packArt } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { voucherArt } from '../voucherArt';
-import { isFableId, type FableId } from '../../engine/fables';
+import { isBlindOnlyConsumable, isFableId, type FableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { constellationArt } from '../constellationArt';
 import { FableCardArt } from './FableCardArt';
@@ -37,6 +37,11 @@ interface ShopOfferProps {
   disabled: boolean;
   onSelect: () => void;
   onAction: () => void;
+  /** feedback #3: an optional second action (e.g. shop "Use") shown beside the first. */
+  action2Label?: string | undefined;
+  action2ClassName?: string | undefined;
+  action2Disabled?: boolean | undefined;
+  onAction2?: (() => void) | undefined;
   children: ReactNode;
 }
 
@@ -50,6 +55,10 @@ function ShopOffer({
   disabled,
   onSelect,
   onAction,
+  action2Label,
+  action2ClassName,
+  action2Disabled,
+  onAction2,
   children,
 }: ShopOfferProps) {
   return (
@@ -84,6 +93,19 @@ function ShopOffer({
             >
               {actionLabel}
             </button>
+            {action2Label && onAction2 && (
+              <button
+                className={['btn', action2ClassName ?? 'green', 'sm'].join(' ')}
+                disabled={action2Disabled}
+                tabIndex={selected ? 0 : -1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAction2();
+                }}
+              >
+                {action2Label}
+              </button>
+            )}
           </div>
         </div>
       </TiltCard>
@@ -116,6 +138,7 @@ export function Shop({ g }: { g: UseGame }) {
     accent?: string | undefined;
     rarity?: JokerRarity | undefined;
     classification?: TooltipClassification | undefined;
+    sub?: { title: string; body: string } | undefined;
   } => {
     if (item.kind === 'joker') {
       const def = JOKER_REGISTRY.get(item.id);
@@ -140,6 +163,7 @@ export function Shop({ g }: { g: UseGame }) {
       fableId: isFableId(item.id) ? item.id : undefined,
       art: isConstellationId(item.id) ? constellationArt(item.id) : undefined,
       classification: consumableClassification(item.id),
+      sub: consumableAxisTip(item.id, t) ?? undefined,
     };
   };
 
@@ -176,7 +200,14 @@ export function Shop({ g }: { g: UseGame }) {
         {/* D-1/D-2: owned jokers + consumables persist at the top, same shelf as
             the play screen; then items for sale; then vouchers & packs. */}
         <div className="shop-shelf">
-          <JokerShelf run={run} onSellConsumable={g.sellConsumable} onSellJoker={g.sell} onReorderJoker={g.reorderJokers} />
+          <JokerShelf
+            run={run}
+            onUseConsumable={g.useConsumable}
+            canUseConsumable={g.canUseConsumable}
+            onSellConsumable={g.sellConsumable}
+            onSellJoker={g.sell}
+            onReorderJoker={g.reorderJokers}
+          />
         </div>
 
         {/* item 7: the pack-opening modal covers ONLY this sale region (for-sale,
@@ -207,6 +238,7 @@ export function Shop({ g }: { g: UseGame }) {
                   body={m.desc}
                   rarity={m.rarity}
                   classification={m.classification}
+                  sub={m.sub}
                 >
                   <ShopOffer
                     label={m.name}
@@ -217,6 +249,15 @@ export function Shop({ g }: { g: UseGame }) {
                     disabled={!affordable(item)}
                     onSelect={() => toggleOffer(offerKey)}
                     onAction={() => g.buy(i)}
+                    {...((item.kind === 'consumable' || item.kind === 'punctuation') &&
+                    !isBlindOnlyConsumable(item.id)
+                      ? {
+                          action2Label: t('shop.instantUse'),
+                          action2ClassName: 'green',
+                          action2Disabled: !affordable(item),
+                          onAction2: () => g.buyAndUse(i),
+                        }
+                      : {})}
                   >
                     {item.kind === 'tile' ? (
                       <div className="shop-tile-art">

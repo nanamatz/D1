@@ -22,6 +22,22 @@ import { audio } from './audio';
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/**
+ * feedback #2: flash the tile whose MATERIAL just triggered — imperatively, by
+ * data-tile-id, so it works for a played tile (in the tray) AND a held tile in the
+ * hand (Brass et al.) without coupling every TileView to the settle context. A short
+ * glow-pulse makes "this material fired" visible; the sound already plays (A-2).
+ */
+function flashTileMaterial(tileId: string): void {
+  if (typeof document === 'undefined') return;
+  const el = document.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(tileId)}"]`);
+  if (!el) return;
+  el.classList.remove('mat-flash');
+  void el.offsetWidth; // reflow so the animation restarts if it fires again quickly
+  el.classList.add('mat-flash');
+  window.setTimeout(() => el.classList.remove('mat-flash'), 560);
+}
+
 export interface SettleView {
   active: boolean;
   chips: number;
@@ -201,6 +217,8 @@ export function SettleProvider({
             audio.material(e.material);
             // Lead plate's Lucky roll landed a Mult hit → its dice rattle (A polish).
             if (e.material === 'leadPlate' && e.multDelta > 0) audio.play('matDiceRattle');
+            // feedback #2: visibly flash the triggering tile (played OR held in hand).
+            flashTileMaterial(e.tileId);
           }
           // This beat's increase drives the floating +N pops (item 6). Every settle
           // beat is additive, so multOp is 'add'; a future multiplicative beat would

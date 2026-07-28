@@ -19,6 +19,9 @@ interface Props {
   classification?: TooltipClassification | undefined;
   /** open the card downward instead of upward (shelf tooltips, E-7) */
   down?: boolean;
+  /** feedback #5: a second, boxed tooltip beneath the main one — used when a consumable
+   *  references a material/font, to explain that axis inline. */
+  sub?: { title: string; body: string } | undefined;
   children: ReactNode;
 }
 
@@ -40,6 +43,7 @@ export function Tooltip({
   grade,
   classification,
   down,
+  sub,
   children,
 }: Props) {
   const { t } = useI18n();
@@ -60,6 +64,13 @@ export function Tooltip({
         {classification && (
           <span className={['tt-classification', classification].join(' ')}>
             {t(`tooltip.classification.${classification}`)}
+          </span>
+        )}
+        {/* feedback: the referenced material/font as a SEPARATE tooltip card, 3px below. */}
+        {sub && (
+          <span className="tt-sub-card">
+            <span className="tt-sub-title">{sub.title}</span>
+            <span className="tt-body">{richText(sub.body)}</span>
           </span>
         )}
       </span>

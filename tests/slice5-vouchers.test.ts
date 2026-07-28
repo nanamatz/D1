@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/engine/balance';
-import { interest, rerollCost } from '../src/engine/economy';
+import { blindTarget, interest, rerollCost } from '../src/engine/economy';
 import { newRun } from '../src/engine/run';
 import {
   ALL_VOUCHER_IDS,
@@ -32,12 +32,23 @@ describe('two-tier vouchers — direct resource effects', () => {
   });
 
   it('History/Old Book each lower ante and apply their penalties', () => {
-    let run = { ...newRun('v'), ante: 5 };
+    let run: import('../src/engine/types').RunState = { ...newRun('v'), ante: 5, blindIndex: 2 };
     run = applyVoucher(run, 'historyBook');
     run = applyVoucher(run, 'oldBook');
     expect(run.ante).toBe(3);
-    expect(run.basePhases).toBe(BALANCE.basePhases - 1);
+    expect(run.blindIndex).toBe(0); // each restarts the ante at its Draft (feedback)
+    expect(run.handSize).toBe(BALANCE.handSize - 1); // History Book −1 hand (per its tooltip)
     expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind - 1);
+  });
+
+  it('History Book can push the ante to 0 with a valid (easier) target', () => {
+    const run = applyVoucher({ ...newRun('v'), ante: 1 }, 'historyBook');
+    expect(run.ante).toBe(0); // feedback: ante 1 → 0, not clamped at 1
+    // ante 0 Draft must be a real, easier target — not NaN.
+    const target = blindTarget(0, 'small');
+    expect(Number.isFinite(target)).toBe(true);
+    expect(target).toBeGreaterThan(0);
+    expect(target).toBeLessThan(blindTarget(1, 'small'));
   });
 });
 

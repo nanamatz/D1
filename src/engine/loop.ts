@@ -142,6 +142,14 @@ export interface DiscardResult {
  * bag; the rng is used ONLY for discardGain font rolls (GDD §2.3), never for
  * drawing. Budget is PER BLIND with NO per-use tile cap (playtest-04 D-4).
  */
+/** The blind's target hand size — the run's hand size adjusted by the boss (e.g. Budget
+ *  Book −3, §8.3). Draw-backs fill the hand UP TO this, so it never sits below full while
+ *  the bag has tiles (feedback #9: draw by empty slots, not by the count removed). */
+function effectiveHandSize(run: RunState, blind: BlindState): number {
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  return Math.max(1, run.handSize + (boss?.handSizeDelta ?? 0));
+}
+
 export function discardTiles(
   blind: BlindState,
   run: RunState,
@@ -155,7 +163,11 @@ export function discardTiles(
 
   const removedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !removedIds.has(t.id));
-  const { drawn, bag } = drawTiles(blind.bag, removed.length);
+  // Draw to REFILL empty slots (feedback #9), not merely the number discarded — so a
+  // hand short of full (e.g. a Glass shatter or a tile-removing consumable left a gap)
+  // comes back to full. Equivalent to the old draw-per-removed when the hand was full.
+  const need = Math.max(0, effectiveHandSize(run, blind) - keptHand.length);
+  const { drawn, bag } = drawTiles(blind.bag, need);
   const { gained, slotsBlocked } = rollDiscardGains(run, removed, rng);
 
   return {
@@ -432,7 +444,10 @@ export function submitWord(
 
   const usedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !usedIds.has(t.id));
-  const { drawn, bag } = drawTiles(blind.bag, used.length);
+  // Draw back UP TO the hand size (feedback #9), filling any empty slots — not just the
+  // number played. Equivalent to draw-per-played when the hand was full going in.
+  const need = Math.max(0, effectiveHandSize(run, blind) - keptHand.length);
+  const { drawn, bag } = drawTiles(blind.bag, need);
 
   // Build the post-phase blind first so layer-3 jokers (e.g. Rush Specialist)
   // read the correct phases-remaining when projecting.

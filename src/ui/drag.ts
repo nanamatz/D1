@@ -19,6 +19,14 @@ import { useEffect, useRef, type RefObject } from 'react';
 
 const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
+/** Drop the per-tile pointer-parallax state so it can't fight the drag/drop transform. */
+function clearTilt(node: HTMLElement): void {
+  node.classList.remove('tilting');
+  node.style.removeProperty('--tilt-x');
+  node.style.removeProperty('--tilt-y');
+  node.style.removeProperty('--tilt-k');
+}
+
 const reduced = (): boolean =>
   typeof window !== 'undefined' &&
   (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
@@ -89,7 +97,11 @@ export function useStageDrag(
     let curY = 0;
     let prevX = 0;
     let rot = 0;
-    let cardW = 0;
+    let cardW = 0; // local px (offsetWidth + gap) for neighbour yield
+    // The board is `zoom`-scaled (screens.css), so getBoundingClientRect is in POST-zoom
+    // viewport px while a CSS `transform` is applied in PRE-zoom local px. Dividing the
+    // follow delta by this scale keeps the card pinned under the cursor instead of lagging.
+    let scale = 1;
     let insertBefore: string | null = null;
 
     const zoneOf = (node: HTMLElement): 'hand' | 'staged' =>
@@ -148,7 +160,13 @@ export function useStageDrag(
       const vel = curX - prevX;
       // rotation eases toward the velocity-driven angle, and back to 0 when slow.
       rot += (clamp(vel * ROT_K, -ROT_MAX, ROT_MAX) - rot) * 0.25;
-      el.style.transform = `translate(${curX - homeX}px, ${curY - homeY}px) rotate(${rot.toFixed(2)}deg) scale(1.08)`;
+      // `!important` so the drag beats `.tile.tilting`'s own !important transform (the
+      // per-tile pointer-parallax fires under the captured pointer and would otherwise win).
+      el.style.setProperty(
+        'transform',
+        `translate(${(curX - homeX) / scale}px, ${(curY - homeY) / scale}px) rotate(${rot.toFixed(2)}deg) scale(1.08)`,
+        'important',
+      );
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -168,7 +186,8 @@ export function useStageDrag(
       curX = targetX = r.left;
       curY = targetY = r.top;
       prevX = r.left;
-      cardW = r.width + 8;
+      scale = t.offsetWidth ? r.width / t.offsetWidth : 1;
+      cardW = t.offsetWidth + 8; // local px, for the neighbour shift
       rot = 0;
       dragging = false;
     };
@@ -191,7 +210,7 @@ export function useStageDrag(
       targetX = e.clientX - grabDX;
       targetY = e.clientY - grabDY;
       if (reduced() && el) {
-        el.style.transform = `translate(${targetX - homeX}px, ${targetY - homeY}px)`;
+        el.style.transform = `translate(${(targetX - homeX) / scale}px, ${(targetY - homeY) / scale}px)`;
       }
       layoutNeighbours(zoneAtY(e.clientY), e.clientX);
     };
@@ -228,18 +247,16 @@ export function useStageDrag(
         justDragged = true;
         window.setTimeout(() => { justDragged = false; }, 60);
         finishDrop();
-        // Let the card settle to its new slot: FLIP (useFlip) re-animates on the
-        // committed reorder, so just clear our inline transform after a beat with a
-        // spring-back on the leftover offset (overshoot handled by the CSS class).
+        // Settle: clear our (important) transform + tilt state and hand the card to its
+        // new slot. `.dropping` makes useFlip SKIP it (so it doesn't teleport back to the
+        // old slot and fly across) and plays a small settle-pop; neighbours FLIP normally.
         const node = el;
         node.classList.remove('grabbed');
+        clearTilt(node);
         node.classList.add('dropping');
-        node.style.transform = '';
-        node.style.transition = 'transform 0.32s cubic-bezier(.34,1.56,.64,1)';
-        window.setTimeout(() => {
-          node.classList.remove('dropping');
-          node.style.transition = '';
-        }, 340);
+        node.style.removeProperty('transform');
+        node.style.transition = '';
+        window.setTimeout(() => node.classList.remove('dropping'), 300);
       }
       try { el.releasePointerCapture(pointerId); } catch { /* ignore */ }
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
@@ -317,6 +334,7 @@ export function useShelfDrag(
     let prevX = 0;
     let rot = 0;
     let cardW = 0;
+    let scale = 1; // board zoom (see useStageDrag) — keeps the follow pinned to the cursor
 
     const cards = (): HTMLElement[] =>
       Array.from(container.querySelectorAll<HTMLElement>('[data-drag-idx]'));
@@ -356,7 +374,11 @@ export function useShelfDrag(
       curX += (targetX - curX) * STIFF;
       curY += (targetY - curY) * STIFF;
       rot += (clamp((curX - prevX) * ROT_K, -ROT_MAX, ROT_MAX) - rot) * 0.25;
-      el.style.transform = `translate(${curX - homeX}px, ${curY - homeY}px) rotate(${rot.toFixed(2)}deg) scale(1.08)`;
+      el.style.setProperty(
+        'transform',
+        `translate(${(curX - homeX) / scale}px, ${(curY - homeY) / scale}px) rotate(${rot.toFixed(2)}deg) scale(1.08)`,
+        'important',
+      );
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -373,7 +395,8 @@ export function useShelfDrag(
       grabDY = e.clientY - r.top;
       homeX = curX = targetX = prevX = r.left;
       homeY = curY = targetY = r.top;
-      cardW = r.width + 8;
+      scale = t.offsetWidth ? r.width / t.offsetWidth : 1;
+      cardW = t.offsetWidth + 8;
       rot = 0;
       dragging = false;
     };
@@ -390,7 +413,9 @@ export function useShelfDrag(
       }
       targetX = e.clientX - grabDX;
       targetY = e.clientY - grabDY;
-      if (reduced() && el) el.style.transform = `translate(${targetX - homeX}px, ${targetY - homeY}px)`;
+      if (reduced() && el) {
+        el.style.setProperty('transform', `translate(${(targetX - homeX) / scale}px, ${(targetY - homeY) / scale}px)`, 'important');
+      }
       layoutNeighbours(e.clientX);
     };
 
@@ -404,9 +429,11 @@ export function useShelfDrag(
         cbRef.current.playDrop?.();
         const node = el;
         node.classList.remove('grabbed');
-        node.style.transform = '';
-        node.style.transition = 'transform 0.32s cubic-bezier(.34,1.56,.64,1)';
-        window.setTimeout(() => { node.style.transition = ''; }, 340);
+        clearTilt(node);
+        node.classList.add('dropping');
+        node.style.removeProperty('transform');
+        node.style.transition = '';
+        window.setTimeout(() => node.classList.remove('dropping'), 300);
       }
       try { el.releasePointerCapture(pointerId); } catch { /* ignore */ }
       if (raf) { cancelAnimationFrame(raf); raf = 0; }

@@ -2187,10 +2187,22 @@
 .tile.grabbed .tilt-sheen {
   opacity: 0.5;
 }
-/* On release the inline transform clears with an Ease-Out-Back transition (set inline)
-   so the card springs into its slot with a small overshoot instead of snapping. */
-.tile.dropping {
+/* On release the card lands in its new slot (FLIP skips it) with a small settle-pop
+   overshoot instead of a dead snap. */
+.tile.dropping,
+.joker-slot.dropping {
   z-index: 20;
+  animation: drop-settle 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes drop-settle {
+  0% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile.dropping,
+  .joker-slot.dropping {
+    animation: none;
+  }
 }
 /* First-run lesson lock: tiles that aren't the next YELLOW letter are dimmed and inert. */
 .tile.locked {
@@ -2345,6 +2357,25 @@
 .tile.leadPlate .val,
 .tile.leadPlate .mat-glyph {
   color: var(--tile-ink-light, #f4f0e7);
+}
+
+/* feedback #2 · material-trigger flash: a bright glow pulse on the tile whose material
+   just fired — a played tile in the tray, or a held tile (Brass) in the hand. Glow +
+   brightness only (no transform), so it never fights the tilt/drag transforms. */
+.tile.mat-flash {
+  animation: mat-flash 0.55s ease;
+  z-index: 6;
+}
+@keyframes mat-flash {
+  0% { box-shadow: var(--shadow); }
+  25% {
+    box-shadow: var(--shadow), 0 0 0 3px rgba(255, 226, 140, 0.95), 0 0 18px 5px rgba(255, 198, 84, 0.75);
+    filter: brightness(1.35);
+  }
+  100% { box-shadow: var(--shadow); filter: brightness(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile.mat-flash { animation: none; }
 }
 
 /* B-1 · conditional-material corner glyph — the "why is this tile special" read
@@ -2755,6 +2786,23 @@
 /* C-4: tile hover tooltip (reuses the shared .tt-card look, anchored to the tile).
    Its reveal lives with the other tooltips in screens.css — that rule has to sit
    next to the shared @starting-style block to stay in sync with it. */
+/* feedback #1 · the tile tooltip is portalled to <body> and positioned fixed at the
+   tile, so it never inherits the tile's tilt/drag 3D transform (no warp) — and, being
+   outside .tile, never inherits the tile's font either (Light Italic / Inline stay
+   normal, full contrast). Overrides the base .tt-card (which is display:none). */
+.tt-card.tile-tt-portal {
+  position: fixed;
+  bottom: auto;
+  display: flex;
+  opacity: 1;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  z-index: 60;
+  font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  -webkit-text-stroke: 0;
+}
 .tile .tile-tt {
   cursor: default;
   /* feature-04 B (playtest 13): the tooltip DESCRIBES the tile — it must never
@@ -3315,4 +3363,73 @@
 .force-reduced-motion .hand .tile:nth-child(odd),
 .force-reduced-motion .hand .tile:nth-child(even) {
   animation: none;
+}
+
+/* feedback #4/#7 · pouch-tile picker — a FULL-SCREEN take-over, not a small modal. */
+.pouch-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: rgba(8, 10, 12, 0.92);
+  animation: pouch-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+@keyframes pouch-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.pouch-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.pouch-title {
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-lg);
+  margin: 0;
+  color: var(--ink);
+}
+.pouch-prompt {
+  font-size: var(--fs-lg);
+  color: var(--gold);
+}
+.pouch-head .btn.red {
+  margin-top: 6px;
+}
+.pouch-fan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  align-items: flex-end;
+  max-width: 900px;
+  padding: 10px;
+}
+/* feedback #7 · selection lift + gold ring (the wrapper lifts so the tile's own tilt
+   transform is untouched). */
+.pouch-slot {
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pouch-slot.picked {
+  transform: translateY(-14px);
+}
+.pouch-slot.picked .tile {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+.pouch-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+/* While the effect applies, dim the unchosen tiles so the flash on the chosen ones reads. */
+.pouch-screen.applying .pouch-slot:not(.picked) {
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
 }

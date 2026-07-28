@@ -5,7 +5,8 @@
  */
 import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';
-import type { OwnedJoker, TileFont } from '../engine/types';
+import type { ConsumableId, OwnedJoker, TileFont } from '../engine/types';
+import { FABLE_REGISTRY, isFableId } from '../engine/fables';
 
 export const jokerDescKey = (id: string): string => `jokerdesc.${id}`;
 export const voucherDescKey = (id: string): string => `voucherdesc.${id}`;
@@ -16,6 +17,24 @@ export const bossDescKey = (id: string): string => `bossdesc.${id}`;
  *  mapping (GDD §2.3): remapping a font in balance.ts must update every tooltip. */
 export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
+
+/**
+ * feedback #5: a consumable whose effect references a material (or, later, a font)
+ * carries a SUB-tooltip explaining that material/font, shown below the card's own
+ * tooltip. Returns null for consumables that reference neither. Data-driven off the
+ * Fable registry — no per-consumable hard-coding.
+ */
+export function consumableAxisTip(
+  id: ConsumableId,
+  t: (key: string) => string,
+): { title: string; body: string } | null {
+  if (!isFableId(id)) return null;
+  const effect = FABLE_REGISTRY.get(id)?.effect;
+  if (effect?.kind === 'material') {
+    return { title: t(`material.${effect.material}`), body: t(`materialdesc.${effect.material}`) };
+  }
+  return null;
+}
 
 /**
  * A scaling joker's live grown value as a display string, or null when the

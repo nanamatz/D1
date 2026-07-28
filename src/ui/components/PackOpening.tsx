@@ -3,7 +3,7 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import type { ConsumableId, JokerRarity } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
 import { NO_LETTER } from '../../engine/scoring';
-import { consumableDescKey, jokerDescKey } from '../descriptions';
+import { consumableDescKey, jokerDescKey, consumableAxisTip } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
 import { packArt } from '../packArt';
@@ -38,6 +38,7 @@ interface Tip {
   body: string;
   rarity?: JokerRarity | undefined;
   classification?: TooltipClassification | undefined;
+  sub?: { title: string; body: string } | undefined;
 }
 
 function OptionCard({
@@ -108,6 +109,7 @@ function OptionCard({
       body={tip.body}
       rarity={tip.rarity}
       classification={tip.classification}
+      sub={tip.sub}
       down
     >
       {card}
@@ -189,6 +191,7 @@ export function PackOpening({ g }: { g: UseGame }) {
         title: optionName(o),
         body: t(consumableDescKey(o.id)),
         classification: consumableClassification(o.id),
+        sub: consumableAxisTip(o.id, t) ?? undefined,
       };
     }
     return undefined;

@@ -15,7 +15,11 @@ import type { BlindKind } from './types';
 export function blindTarget(ante: number, kind: BlindKind): number {
   const table = BALANCE.anteBaseTargets;
   let base: number;
-  if (ante <= table.length) {
+  if (ante < 1) {
+    // History Book can push the ante below 1 (feedback 2026-07-28): extrapolate the
+    // curve DOWN from the first two antes so a lower ante is genuinely easier, not NaN.
+    base = table[0]! * Math.pow(table[0]! / table[1]!, 1 - ante);
+  } else if (ante <= table.length) {
     base = table[ante - 1]!;
   } else {
     const last = table[table.length - 1]!;

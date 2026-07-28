@@ -108,11 +108,14 @@ export function applyVoucher(run: RunState, id: VoucherId): RunState {
     case 'pictureDiary':
       r = { ...r, handSize: r.handSize + 1 };
       break;
+    // History Book / Old Book send the run BACK an ante (feedback): ante −1 (may reach 0)
+    // and the next blind restarts at that ante's Draft (blindIndex 0). Their secondary
+    // effect matches the tooltip — History Book −1 hand, Old Book −1 discard.
     case 'historyBook':
-      r = { ...r, ante: Math.max(1, r.ante - 1), basePhases: Math.max(1, r.basePhases - 1) };
+      r = { ...r, ante: Math.max(0, r.ante - 1), blindIndex: 0, handSize: Math.max(1, r.handSize - 1) };
       break;
     case 'oldBook':
-      r = { ...r, ante: Math.max(1, r.ante - 1), baseDiscards: Math.max(0, r.baseDiscards - 1) };
+      r = { ...r, ante: Math.max(0, r.ante - 1), blindIndex: 0, baseDiscards: Math.max(0, r.baseDiscards - 1) };
       break;
     case 'kungfuManual':
       r = { ...r, jokerSlots: r.jokerSlots + 1 };
