@@ -2374,8 +2374,33 @@
   }
   100% { box-shadow: var(--shadow); filter: brightness(1); }
 }
+/* feedback #3 · a single upward BOUNCE when the tile's material/font/edition triggers
+   (runs together with the glow). Placed after .tile.mat-flash so its combined animation
+   (glow + bounce) wins the `animation` property — the two classes always co-occur. */
+.tile.trig-bounce {
+  z-index: 6;
+  animation: mat-flash 0.55s ease, trig-bounce 0.42s cubic-bezier(0.3, 1.5, 0.55, 1);
+}
+@keyframes trig-bounce {
+  0% { transform: translateY(0); }
+  34% { transform: translateY(-16px); }
+  62% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+/* feedback #4 · destroy application: the tile shrinks + fades out (shown in the pouch
+   picker before the effect commits). Placed after the others so its animation wins. */
+.tile.mat-destroy {
+  z-index: 6;
+  animation: mat-flash 0.4s ease, mat-destroy 0.55s ease 0.1s forwards;
+}
+@keyframes mat-destroy {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.35) rotate(14deg); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .tile.mat-flash { animation: none; }
+  .tile.mat-flash,
+  .tile.trig-bounce,
+  .tile.mat-destroy { animation: none; }
 }
 
 /* B-1 · conditional-material corner glyph — the "why is this tile special" read
@@ -2802,6 +2827,12 @@
   font-style: normal;
   font-weight: 500;
   -webkit-text-stroke: 0;
+  /* feedback: the tile tooltip's copy is centre-aligned (title + every line). */
+  text-align: center;
+}
+.tile-tt-portal .tt-desc,
+.tile-tt-portal .tt-body {
+  text-align: center;
 }
 .tile .tile-tt {
   cursor: default;
@@ -3432,4 +3463,27 @@
 .pouch-screen.applying .pouch-slot:not(.picked) {
   opacity: 0.35;
   transition: opacity 0.3s ease;
+}
+/* feedback #4 · the effect landing on a chosen tile: a "뿅" pop as its new material/
+   letter swaps in (the wrapper animates, so React re-rendering the tile can't reset it);
+   destroy shrinks + fades away. */
+.pouch-slot.applied {
+  animation: pouch-apply-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+  z-index: 4;
+}
+.pouch-slot.destroying {
+  animation: pouch-apply-destroy 0.5s ease forwards;
+}
+@keyframes pouch-apply-pop {
+  0% { transform: translateY(-14px) scale(1); }
+  30% { transform: translateY(-14px) scale(1.4); filter: brightness(1.5); }
+  100% { transform: translateY(-14px) scale(1); filter: brightness(1); }
+}
+@keyframes pouch-apply-destroy {
+  0% { transform: translateY(-14px) scale(1); opacity: 1; }
+  100% { transform: translateY(-14px) scale(0.3) rotate(16deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pouch-slot.applied,
+  .pouch-slot.destroying { animation: none; }
 }

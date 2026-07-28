@@ -23,19 +23,19 @@ const reducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * feedback #2: flash the tile whose MATERIAL just triggered — imperatively, by
- * data-tile-id, so it works for a played tile (in the tray) AND a held tile in the
- * hand (Brass et al.) without coupling every TileView to the settle context. A short
- * glow-pulse makes "this material fired" visible; the sound already plays (A-2).
+ * feedback: when a tile's MATERIAL / FONT / EDITION triggers during scoring, make the
+ * tile itself react — a glow pulse (this fired) AND a single upward bounce ("통 튀는").
+ * Imperative by data-tile-id, so it works for a played tile (tray) AND a held tile in
+ * the hand (Brass et al.) without coupling every TileView to the settle context.
  */
-function flashTileMaterial(tileId: string): void {
+function triggerTile(tileId: string): void {
   if (typeof document === 'undefined') return;
   const el = document.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(tileId)}"]`);
   if (!el) return;
-  el.classList.remove('mat-flash');
-  void el.offsetWidth; // reflow so the animation restarts if it fires again quickly
-  el.classList.add('mat-flash');
-  window.setTimeout(() => el.classList.remove('mat-flash'), 560);
+  el.classList.remove('mat-flash', 'trig-bounce');
+  void el.offsetWidth; // reflow so the animations restart if it fires again quickly
+  el.classList.add('mat-flash', 'trig-bounce');
+  window.setTimeout(() => el.classList.remove('mat-flash', 'trig-bounce'), 560);
 }
 
 export interface SettleView {
@@ -209,16 +209,22 @@ export function SettleProvider({
             audio.play('countTick', { step: tickStep++ });
           } else if (e.kind === 'suit' || e.kind === 'letterHand' || e.kind === 'boss') {
             audio.play('stamp');
-          } else if (e.kind === 'joker' || e.kind === 'font' || e.kind === 'edition') {
+          } else if (e.kind === 'joker') {
             audio.play('jokerBlip');
+          } else if (e.kind === 'font') {
+            audio.play('jokerBlip');
+            triggerTile(e.tileId); // feedback #3: font trigger bounces its tile
+          } else if (e.kind === 'edition') {
+            audio.play('jokerBlip');
+            if (e.tileId) triggerTile(e.tileId); // feedback #3: edition trigger bounces the tile
           } else if (e.kind === 'material') {
             // A-2: the material's own voice when it triggers during scoring (Brass ring,
             // Stone knock, Wood knock, …), not a generic fill.
             audio.material(e.material);
             // Lead plate's Lucky roll landed a Mult hit → its dice rattle (A polish).
             if (e.material === 'leadPlate' && e.multDelta > 0) audio.play('matDiceRattle');
-            // feedback #2: visibly flash the triggering tile (played OR held in hand).
-            flashTileMaterial(e.tileId);
+            // feedback #2/#3: flash + a single upward bounce on the triggering tile.
+            triggerTile(e.tileId);
           }
           // This beat's increase drives the floating +N pops (item 6). Every settle
           // beat is additive, so multOp is 'add'; a future multiplicative beat would

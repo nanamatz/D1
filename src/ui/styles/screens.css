@@ -138,7 +138,11 @@
    parent tooltip so it reads as a distinct, secondary tooltip. */
 .tt-sub-card {
   position: absolute;
-  top: calc(100% + 3px);
+  /* feedback: an UP-opening tooltip stacks the sub ABOVE the main, so the sub's bottom
+     stays above the object's top (never covering the object). A DOWN tooltip (shelf)
+     already sits below the object, so its sub goes below the main (override further down). */
+  bottom: calc(100% + 3px);
+  top: auto;
   left: 0;
   right: 0;
   background: var(--tt-bg);
@@ -149,6 +153,10 @@
   flex-direction: column;
   gap: 3px;
   text-align: left;
+}
+.tt-card.down .tt-sub-card {
+  top: calc(100% + 3px);
+  bottom: auto;
 }
 .tt-sub-title {
   font-weight: 700;
@@ -2583,6 +2591,9 @@ body.cb-safe .tile.hint {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* feedback: uniform height across tabs — sized to the tallest (the 12-pattern list),
+     so switching tabs doesn't resize the modal. Shorter tabs pad out to this. */
+  min-height: 664px;
 }
 .ri-row {
   display: flex;

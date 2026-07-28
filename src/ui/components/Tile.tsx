@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import type { Tile } from '../../engine/types';
 import { faceClass, fontClass, inkClass, materialClass, materialGlyph, tileGlyph, tileValue } from '../game';
@@ -34,8 +34,11 @@ interface Props {
   tooltip?: { title: string; body: string };
 }
 
-/** A ceramic letter tile (UI_DESIGN §3). Interactive unless `mini` or no handler. */
-export function TileView({
+/** A ceramic letter tile (UI_DESIGN §3). Interactive unless `mini` or no handler.
+ *  Memoized: tray tiles (stable props, no callbacks) skip the per-beat re-renders the
+ *  settle drives, so an imperative trigger class (mat-flash / trig-bounce) on a PLAYED
+ *  tile survives long enough to animate (feedback #3). */
+function TileViewImpl({
   tile,
   mini = false,
   selected = false,
@@ -172,3 +175,5 @@ export function TileView({
     </div>
   );
 }
+
+export const TileView = memo(TileViewImpl);
