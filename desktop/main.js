@@ -30,6 +30,9 @@ function createWindow() {
 
   const win = new BrowserWindow({
     ...bounds,
+    // Packaged builds take the icon from the exe (electron-builder win.icon);
+    // this is what gives `npm run desktop:run` the same one instead of Electron's.
+    icon: path.join(DIR, 'icon.ico'),
     minWidth: MIN_SIZE.width,
     minHeight: MIN_SIZE.height,
     useContentSize: true,

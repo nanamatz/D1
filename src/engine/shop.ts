@@ -81,7 +81,15 @@ function buildPool(run: RunState, rng: Rng): ShopItem[] {
 function rollItems(run: RunState, rng: Rng): (ShopItem | null)[] {
   const shuffled = rng.shuffle(buildPool(run, rng));
   const items: (ShopItem | null)[] = [];
-  for (let i = 0; i < shopItemSlots(run); i++) items.push(shuffled[i] ?? null); // Wide Shelf +1
+  const shown = new Set<string>();
+  for (const item of shuffled) {
+    const key = item.kind === 'tile' ? `${item.kind}:${item.tile.id}` : `${item.kind}:${item.id}`;
+    if (shown.has(key)) continue;
+    shown.add(key);
+    items.push(item);
+    if (items.length === shopItemSlots(run)) break;
+  }
+  while (items.length < shopItemSlots(run)) items.push(null);
   return items;
 }
 
@@ -119,23 +127,29 @@ export function rollVoucherOffer(
   return available.length ? rng.shuffle(available)[0]! : null;
 }
 
-/** Weighted pick from a list of ids using a {id: weight} table. */
-function weightedPick<T extends string>(ids: readonly T[], weights: Record<string, number>, rng: Rng): T {
-  const total = ids.reduce((s, id) => s + (weights[id] ?? 0), 0);
-  let r = rng.next() * total;
-  for (const id of ids) {
-    r -= weights[id] ?? 0;
-    if (r < 0) return id;
-  }
-  return ids[ids.length - 1]!;
-}
-
 /** Each pack slot rolls an independent type × size (Mega/Jumbo rarer). */
+// Weighted type/size draws without replacement; Mega/Jumbo remain rarer.
 function rollPacks(rng: Rng): (PackSlot | null)[] {
+  const pool = PACK_TYPES.flatMap((type) =>
+    PACK_SIZES.map((size) => ({
+      type,
+      size,
+      weight: (BALANCE.pack.typeWeights[type] ?? 0) * (BALANCE.pack.sizeWeights[size] ?? 0),
+    })),
+  );
   const packs: (PackSlot | null)[] = [];
   for (let i = 0; i < BALANCE.shop.packSlots; i++) {
-    const size = weightedPick(PACK_SIZES, BALANCE.pack.sizeWeights, rng);
-    const type = weightedPick(PACK_TYPES, BALANCE.pack.typeWeights, rng);
+    const total = pool.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = rng.next() * total;
+    let index = pool.length - 1;
+    for (let j = 0; j < pool.length; j++) {
+      roll -= pool[j]!.weight;
+      if (roll < 0) {
+        index = j;
+        break;
+      }
+    }
+    const { type, size } = pool.splice(index, 1)[0]!;
     packs.push({
       type,
       size,

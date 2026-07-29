@@ -107,7 +107,7 @@ export function fableTargetsTiles(id: ConsumableId): boolean {
 /** How many tiles the player must pick for a tile-targeting Fable. */
 export function fablePickCount(id: FableId): { min: number; max: number } {
   const effect = FABLE_REGISTRY.get(id)?.effect;
-  if (effect?.kind === 'material' || effect?.kind === 'rankUp') return { min: effect.count, max: effect.count };
+  if (effect?.kind === 'material' || effect?.kind === 'rankUp') return { min: 1, max: effect.count };
   if (effect?.kind === 'destroy') return { min: 1, max: effect.max };
   return { min: 0, max: 0 };
 }
@@ -181,11 +181,12 @@ export function canUseFableOnPouch(
   const targets = run.bag.filter((tile) => ids.has(tile.id));
   if (targets.length !== tileIds.length) return false;
   if (effect.kind === 'material') {
-    return tileIds.length === effect.count &&
+    return tileIds.length >= 1 && tileIds.length <= effect.count &&
       (effect.material === 'stone' || targets.every(canRestoreLetter));
   }
   if (effect.kind === 'rankUp') {
-    return tileIds.length === effect.count && targets.every((tile) => tile.letter !== null);
+    return tileIds.length >= 1 && tileIds.length <= effect.count &&
+      targets.every((tile) => tile.letter !== null);
   }
   return effect.kind === 'destroy' && tileIds.length >= 1 && tileIds.length <= effect.max;
 }
@@ -200,12 +201,13 @@ export function canUseFable(
   if (!effect || !run.consumables.includes(id)) return false;
   const selected = selectedTiles(blind, selectedIds);
   if (effect.kind === 'material') {
-    return selected.length === effect.count &&
+    return selected.length >= 1 && selected.length <= effect.count &&
       selected.every((tile) => tile.material !== effect.material) &&
       (effect.material === 'stone' || selected.every(canRestoreLetter));
   }
   if (effect.kind === 'rankUp') {
-    return selected.length === effect.count && selected.every((tile) => tile.letter !== null);
+    return selected.length >= 1 && selected.length <= effect.count &&
+      selected.every((tile) => tile.letter !== null);
   }
   if (effect.kind === 'destroy') return selected.length >= 1 && selected.length <= effect.max;
   if (effect.kind === 'copyLast') {
@@ -239,10 +241,14 @@ export function canUseFableFromPack(
   tileIds: readonly string[],
 ): boolean {
   if (isBlindOnlyConsumable(id)) return run.consumables.length < run.consumableSlots;
-  const staged = { ...run, consumables: [...run.consumables, id] };
   return fableTargetsTiles(id)
-    ? canUseFableOnPouch(id, staged, tileIds)
-    : canUseFable(id, staged, blind, []);
+    ? canUseFableOnPouch(id, { ...run, consumables: [...run.consumables, id] }, tileIds)
+    : canUseUnheldFable(id, run, blind);
+}
+
+/** Gate an offered Fable before it is paid for and temporarily staged for use. */
+export function canUseUnheldFable(id: FableId, run: RunState, blind: BlindState): boolean {
+  return canUseFable(id, { ...run, consumables: [...run.consumables, id] }, blind, []);
 }
 
 const patchTiles = (

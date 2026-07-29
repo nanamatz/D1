@@ -5,13 +5,36 @@
  */
 import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';
-import type { ConsumableId, OwnedJoker, TileFont } from '../engine/types';
-import { FABLE_REGISTRY, isFableId } from '../engine/fables';
+import type { ConsumableId, OwnedJoker, RunState, TileFont } from '../engine/types';
+import { FABLE_REGISTRY, isFableId, jokerSellGoldValue } from '../engine/fables';
+import { CONSTELLATION_PATTERN } from '../engine/constellations';
+import type { TParams } from './i18n';
+
+type Translate = (key: string | string[], params?: TParams) => string;
 
 export const jokerDescKey = (id: string): string => `jokerdesc.${id}`;
 export const voucherDescKey = (id: string): string => `voucherdesc.${id}`;
 export const consumableDescKey = (id: string): string => `consumabledesc.${id}`;
 export const bossDescKey = (id: string): string => `bossdesc.${id}`;
+
+/** Canonical consumable body used by shop, shelf, opened packs, and Collection. */
+export function consumableTooltipBody(id: ConsumableId, t: Translate): string {
+  const pattern = CONSTELLATION_PATTERN[id];
+  return pattern
+    ? t('pack.constellationLevels', { pattern: t(`pattern.${pattern}`) })
+    : t(consumableDescKey(id));
+}
+
+/** Run-dependent tooltip lines stay identical on every surface that has a run. */
+export function consumableTooltipExtra(
+  id: ConsumableId,
+  run: RunState,
+  t: Translate,
+): string | null {
+  return id === 'fable17'
+    ? t('consumable.currentSellValue', { value: jokerSellGoldValue(run) })
+    : null;
+}
 
 /** Font tooltip copy resolves through BALANCE.fontEffects — never hard-code the
  *  mapping (GDD §2.3): remapping a font in balance.ts must update every tooltip. */
@@ -26,7 +49,7 @@ export const fontDescKey = (font: TileFont): string =>
  */
 export function consumableAxisTip(
   id: ConsumableId,
-  t: (key: string) => string,
+  t: Translate,
 ): { title: string; body: string } | null {
   if (!isFableId(id)) return null;
   const effect = FABLE_REGISTRY.get(id)?.effect;

@@ -134,6 +134,7 @@ describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
     expect(pattern(['ARE', 'YOU', 'READY'])).toBe('interrogative');
     expect(pattern(['DO', 'YOU', 'KNOW'])).toBe('interrogative');
     expect(pattern(['WHERE', 'ARE', 'YOU'])).toBe('interrogative');
+    expect(pattern(['WHY', 'ME'])).toBe('interrogative');
   });
 
   it('Negative: accepts NOT, NEVER, and apostrophe-free contractions', () => {

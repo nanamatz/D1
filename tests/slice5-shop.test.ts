@@ -39,6 +39,19 @@ describe('slice5 shop — stock roll (GDD §9.2)', () => {
       for (const it of items) if (it?.kind === 'joker') expect(it.id).not.toBe('grammarian');
     }
   });
+
+  it('never repeats an item id or pack type/size pair in one shop', () => {
+    for (let i = 0; i < 40; i++) {
+      const stock = rollShopStock(run(), makeRng(`unique-${i}`));
+      const itemKeys = stock.items
+        .filter((item): item is ShopItem => item !== null)
+        .map((item) => item.kind === 'tile' ? `tile:${item.tile.id}` : `${item.kind}:${item.id}`);
+      const packKeys = stock.packs
+        .flatMap((pack) => pack ? [`${pack.type}:${pack.size}`] : []);
+      expect(new Set(itemKeys).size).toBe(itemKeys.length);
+      expect(new Set(packKeys).size).toBe(packKeys.length);
+    }
+  });
 });
 
 describe('slice5 shop — pack art variant (cosmetic, seeded)', () => {

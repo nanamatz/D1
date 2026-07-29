@@ -24,11 +24,11 @@ describe('Fable Pack resolution', () => {
     expect(canUseFableFromPack('fable1', full, blind, [])).toBe(false);
   });
 
-  it('gates a tile-targeting Fable on its required candidate count', () => {
+  it('accepts one through the listed maximum candidate count', () => {
     const { run, blind } = setup();
     const ids = run.bag.slice(0, 2).map((tile) => tile.id);
     expect(canUseFableFromPack('fable4', run, blind, [])).toBe(false);
-    expect(canUseFableFromPack('fable4', run, blind, ids.slice(0, 1))).toBe(false);
+    expect(canUseFableFromPack('fable4', run, blind, ids.slice(0, 1))).toBe(true);
     expect(canUseFableFromPack('fable4', run, blind, ids)).toBe(true);
   });
 

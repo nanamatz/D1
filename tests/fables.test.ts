@@ -4,6 +4,7 @@ import {
   FABLE_DEFS,
   FABLE_IDS,
   canUseFable,
+  canUseUnheldFable,
   fablePickCount,
   fableTargetsTiles,
   useFable,
@@ -35,10 +36,11 @@ describe('Fable registry', () => {
     );
   });
 
-  it('requires the exact staged count for targeted enhancements', () => {
+  it('accepts one through the listed maximum for targeted enhancements', () => {
     const { run, blind } = setup('fable4');
-    expect(canUseFable('fable4', run, blind, [blind.hand[0]!.id])).toBe(false);
+    expect(canUseFable('fable4', run, blind, [blind.hand[0]!.id])).toBe(true);
     expect(canUseFable('fable4', run, blind, blind.hand.slice(0, 2).map((t) => t.id))).toBe(true);
+    expect(canUseFable('fable4', run, blind, blind.hand.slice(0, 3).map((t) => t.id))).toBe(false);
   });
 
   it('enhances selected tiles in both the live blind and permanent pouch', () => {
@@ -110,6 +112,17 @@ describe('Fable registry', () => {
     );
     expect(result.run.consumables).toEqual(['virgo']);
     expect(result.run.lastFableOrConstellation).toBe('virgo');
+  });
+
+  it('disables an unheld Boy Who Cried Wolf until this run has a card to copy', () => {
+    const { run, blind } = setup('fable2');
+    const offeredRun = { ...run, consumables: [] };
+    expect(canUseUnheldFable('fable2', offeredRun, blind)).toBe(false);
+    expect(canUseUnheldFable(
+      'fable2',
+      { ...offeredRun, lastFableOrConstellation: 'virgo' },
+      blind,
+    )).toBe(true);
   });
 
   it('advances alphabet ranks and wraps Z to A', () => {
@@ -201,7 +214,7 @@ describe('Fable registry', () => {
     const base = newRun('pouch');
     const run = { ...base, consumables: ['fable6' as const] }; // Polished ×2
     expect(fableTargetsTiles('fable6')).toBe(true);
-    expect(fablePickCount('fable6')).toEqual({ min: 2, max: 2 });
+    expect(fablePickCount('fable6')).toEqual({ min: 1, max: 2 });
     const ids = run.bag.slice(0, 2).map((t) => t.id);
     const { ok, run: after } = useFableOnPouch('fable6', run, ids);
     expect(ok).toBe(true);
@@ -209,10 +222,10 @@ describe('Fable registry', () => {
     expect(after.consumables).toEqual([]); // the card was consumed
   });
 
-  it('rejects a pouch application with the wrong count', () => {
+  it('accepts one pouch target when the listed maximum is two', () => {
     const run = { ...newRun('pouch2'), consumables: ['fable6' as const] };
     const one = run.bag.slice(0, 1).map((t) => t.id);
-    expect(useFableOnPouch('fable6', run, one).ok).toBe(false); // needs exactly 2
+    expect(useFableOnPouch('fable6', run, one).ok).toBe(true);
   });
 
   it('destroys up to two selected tiles from the live blind and permanent pouch', () => {

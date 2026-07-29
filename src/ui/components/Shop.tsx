@@ -5,7 +5,13 @@ import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
 import { canAddJoker, discountedPrice, rerollDiscount } from '../../engine/vouchers';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
-import { consumableDescKey, jokerDescKey, voucherDescKey, consumableAxisTip } from '../descriptions';
+import {
+  consumableAxisTip,
+  consumableTooltipBody,
+  consumableTooltipExtra,
+  jokerDescKey,
+  voucherDescKey,
+} from '../descriptions';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
@@ -18,10 +24,10 @@ import { packArt } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { voucherArt } from '../voucherArt';
 import {
+  canUseUnheldFable,
   fableTargetsTiles,
   isBlindOnlyConsumable,
   isFableId,
-  jokerSellGoldValue,
   type FableId,
 } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
@@ -164,15 +170,12 @@ export function Shop({ g }: { g: UseGame }) {
     return {
       emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',
       name: t(`consumable.${item.id}`),
-      desc: t(consumableDescKey(item.id)),
+      desc: consumableTooltipBody(item.id, t),
       fableId: isFableId(item.id) ? item.id : undefined,
       art: isConstellationId(item.id) ? constellationArt(item.id) : undefined,
       classification: consumableClassification(item.id),
       sub: consumableAxisTip(item.id, t) ?? undefined,
-      extra:
-        item.id === 'fable17'
-          ? t('consumable.currentSellValue', { value: jokerSellGoldValue(run) })
-          : undefined,
+      extra: consumableTooltipExtra(item.id, run, t) ?? undefined,
     };
   };
 
@@ -249,7 +252,8 @@ export function Shop({ g }: { g: UseGame }) {
                       ? {
                           action2Label: t('shop.instantUse'),
                           action2ClassName: 'green',
-                          action2Disabled: run.gold < item.price,
+                          action2Disabled: run.gold < item.price ||
+                            (isFableId(item.id) && !canUseUnheldFable(item.id, run, g.state.blind)),
                           onAction2: () => g.buyAndUse(i),
                         }
                       : {})}

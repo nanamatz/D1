@@ -32,12 +32,13 @@ describe('feedback 4 UI regressions', () => {
     expect(zone).not.toContain('left: 42%');
   });
 
-  it('places instant use to the right and protects the right consumable tooltip', () => {
+  it('keeps instant use right of its offer and protects the right consumable tooltip', () => {
     const shop = source('src/ui/components/Shop.tsx');
     const css = source('src/ui/styles/play.css');
 
     expect(shop).toContain('shop-offer-action-secondary');
     expect(css).toContain('left: calc(100% + 12px)');
+    expect(css).not.toContain('left: calc(50% + 38px)');
     expect(css).toContain('.consumable-slot:nth-child(n + 2)');
   });
 

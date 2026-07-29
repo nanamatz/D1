@@ -3,7 +3,12 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import type { ConsumableId, JokerRarity, Tile } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
 import { NO_LETTER } from '../../engine/scoring';
-import { consumableDescKey, jokerDescKey, consumableAxisTip } from '../descriptions';
+import {
+  consumableAxisTip,
+  consumableTooltipBody,
+  consumableTooltipExtra,
+  jokerDescKey,
+} from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
 import { packArt } from '../packArt';
@@ -46,6 +51,7 @@ function optionEmoji(option: PackOption): string {
 interface Tip {
   title: string;
   body: string;
+  extra?: string | undefined;
   rarity?: JokerRarity | undefined;
   classification?: TooltipClassification | undefined;
   sub?: { title: string; body: string } | undefined;
@@ -144,6 +150,7 @@ function OptionCard({
     <Tooltip
       title={tip.title}
       body={tip.body}
+      {...(tip.extra ? { extra: tip.extra } : {})}
       rarity={tip.rarity}
       classification={tip.classification}
       sub={tip.sub}
@@ -294,6 +301,7 @@ export function PackOpening({
     resolvePick: () => void,
   ) => {
     if (picking) return;
+    const targetIds = fableTargetsTiles(fableId) ? tileIds : [];
     const effectKind = FABLE_REGISTRY.get(fableId)?.effect.kind;
     const kind =
       effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
@@ -305,10 +313,10 @@ export function PackOpening({
     setFableFx({
       key,
       kind,
-      tileIds,
+      tileIds: targetIds,
       preview: new Map(
         (pack.candidateTiles ?? [])
-          .filter((tile) => tileIds.includes(tile.id))
+          .filter((tile) => targetIds.includes(tile.id))
           .map((tile) => [tile.id, previewFableTile(fableId, tile)]),
       ),
     });
@@ -354,17 +362,17 @@ export function PackOpening({
       return { title: optionName(o), body: t(jokerDescKey(o.id)), rarity: def?.rarity };
     }
     if (o.kind === 'punctuation') {
-      // Explain it levels the mapped pattern immediately (feature-02 B).
       return {
         title: optionName(o),
-        body: t('pack.constellationLevels', { pattern: t(`pattern.${o.pattern}`) }),
+        body: consumableTooltipBody(o.id, t),
         classification: 'constellation',
       };
     }
     if (o.kind === 'consumable') {
       return {
         title: optionName(o),
-        body: t(consumableDescKey(o.id)),
+        body: consumableTooltipBody(o.id, t),
+        extra: consumableTooltipExtra(o.id, g.state.run, t) ?? undefined,
         classification: consumableClassification(o.id),
         sub: consumableAxisTip(o.id, t) ?? undefined,
       };

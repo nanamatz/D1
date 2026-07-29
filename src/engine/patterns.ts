@@ -165,6 +165,8 @@ function matchObjectComplement(words: readonly POSWord[]): number | null {
 /** Question mark tiles are unnecessary: an interrogative/auxiliary opener is the signal. */
 function matchInterrogative(words: readonly POSWord[]): number | null {
   if (words.length < 2 || !QUESTION_OPENERS.has(words[0]!.text.toLowerCase())) return null;
+  // Common elliptical question: the predicate is understood ("Why [is it] me?").
+  if (words.length === 2 && words[0]!.text.toLowerCase() === 'why' && NOUN(words[1]!)) return 0;
   return words.some((word) => canVerb(word)) && words.some((word) => can(word, 'noun')) ? 0 : null;
 }
 

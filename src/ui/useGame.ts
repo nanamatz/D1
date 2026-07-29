@@ -49,6 +49,7 @@ import {
   canUseFable,
   canUseFableFromPack,
   canUseFableOnPouch,
+  canUseUnheldFable,
   fableTargetsTiles,
   isBlindOnlyConsumable,
   isFableId,
@@ -984,6 +985,7 @@ export function useGame(): UseGame {
       if (prev.run.gold < item.price) return prev;
       const id = item.id;
       if (fableTargetsTiles(id) || isBlindOnlyConsumable(id)) return prev;
+      if (isFableId(id) && !canUseUnheldFable(id, prev.run, prev.blind)) return prev;
       const items = prev.shop.items.slice();
       items[index] = null;
       const paid: GameState = {

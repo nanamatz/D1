@@ -17,6 +17,7 @@ describe('image-first shop offers', () => {
     expect(shop).toContain('aria-pressed={selected}');
     expect(shop).toContain('className="shop-offer-select"');
     expect(shop).toContain('type="button"');
+    expect(css).toMatch(/\.shop-offer-select\s*\{[^}]*inset:\s*0 0 -12px/s);
   });
 
   it('uses contextual actions for stock, vouchers, and packs', () => {
@@ -25,6 +26,13 @@ describe('image-first shop offers', () => {
     expect(shop).toContain("actionLabel={t('pack.open')}");
     expect(en['shop.redeem']).toBe('Redeem');
     expect(ko['shop.redeem']).toBe('교환');
+  });
+
+  it('keeps Buy below and places Use now outside the card on the right', () => {
+    expect(css).toMatch(/\.shop-offer-action\s*\{[^}]*top:\s*calc\(100% \+ 8px\)/s);
+    expect(css).toMatch(
+      /\.shop-offer-action-secondary\s*\{[^}]*top:\s*50%[^}]*left:\s*calc\(100% \+ 12px\)/s,
+    );
   });
 
   it('attaches price to the shared art card and reveals the action only on selection', () => {

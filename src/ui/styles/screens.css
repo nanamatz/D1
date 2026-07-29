@@ -452,6 +452,9 @@
 .blindselect .bs-card.current {
   height: 386px;
 }
+.blindselect .bs-card.current.boss {
+  height: 450px;
+}
 .bs-card.current .bs-kind {
   font-size: var(--fs-xl);
   font-weight: 900;

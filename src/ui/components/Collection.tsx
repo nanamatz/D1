@@ -11,7 +11,13 @@ import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from 
 import { UNLOCKS, loadPlayed, playedCount, activeUnlocks } from '../unlocks';
 import type { UnlockDef, UnlockEffect } from '../unlocks';
 import { mascotCollectionRows } from '../mascots';
-import { bossDescKey, consumableDescKey, fontDescKey, jokerDescKey } from '../descriptions';
+import {
+  bossDescKey,
+  consumableAxisTip,
+  consumableTooltipBody,
+  fontDescKey,
+  jokerDescKey,
+} from '../descriptions';
 import { useI18n } from '../i18n';
 import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
@@ -688,8 +694,9 @@ function FablesView() {
           <Tooltip
             key={def.id}
             title={t(`consumable.${def.id}`)}
-            body={t(consumableDescKey(def.id))}
+            body={consumableTooltipBody(def.id, t)}
             classification="fable"
+            sub={consumableAxisTip(def.id, t) ?? undefined}
             down
           >
             <TiltCard idle className="fable-card">
@@ -716,7 +723,7 @@ function ConstellationsView() {
           <Tooltip
             key={def.id}
             title={t(`consumable.${def.id}`)}
-            body={t('pack.constellationLevels', { pattern: t(`pattern.${def.pattern}`) })}
+            body={consumableTooltipBody(def.id, t)}
             classification="constellation"
             down
           >

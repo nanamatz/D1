@@ -80,4 +80,17 @@ describe('latest feedback UI regressions', () => {
     );
     expect(play).toContain('@keyframes workspace-not-allowed');
   });
+
+  it('keeps instant use right of its card and reserves boss-reroll space', () => {
+    expect(play).toContain('left: calc(100% + 12px)');
+    expect(play).not.toContain('left: calc(50% + 38px)');
+    expect(screens).toMatch(/\.blindselect \.bs-card\.current\.boss\s*\{[^}]*height:\s*450px/s);
+  });
+
+  it('keeps non-target Fables off candidate tiles and shows live pack tooltip values', () => {
+    const pack = source('src/ui/components/PackOpening.tsx');
+    expect(pack).toContain('const targetIds = fableTargetsTiles(fableId) ? tileIds : [];');
+    expect(pack).toContain('consumableTooltipExtra(o.id, g.state.run, t)');
+    expect(pack).toContain('tip.extra ? { extra: tip.extra }');
+  });
 });

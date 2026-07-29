@@ -420,7 +420,9 @@
 }
 .shop-offer-select {
   position: absolute;
-  inset: 0;
+  /* The outer tilt lifts 5px and the inner hover lift adds 3px. Keep the
+     moving button under a pointer that entered through the card's bottom. */
+  inset: 0 0 -12px;
   z-index: 7;
   border: 0;
   background: transparent;

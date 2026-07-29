@@ -21,6 +21,13 @@ describe('persistent Balatro-style run table', () => {
     expect(shop).toContain('action2Disabled: run.gold < item.price');
   });
 
+  it('gates instant Fable use before charging for an unusable offer', () => {
+    expect(shop).toContain('!canUseUnheldFable(item.id, run, g.state.blind)');
+    expect(readFileSync('src/ui/useGame.ts', 'utf8')).toContain(
+      '!canUseUnheldFable(id, prev.run, prev.blind)',
+    );
+  });
+
   it('shows ten seeded Fable effect candidates and keeps pack info in the footer', () => {
     expect(pack).toContain('candidateTiles.map');
     expect(pack).toContain('className="shop-head panel pack-footer"');

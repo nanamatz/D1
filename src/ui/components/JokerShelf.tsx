@@ -3,14 +3,20 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { sellValue } from '../../engine/economy';
 import type { ConsumableId, RunState } from '../../engine/types';
-import { consumableDescKey, jokerDescKey, grownValue, consumableAxisTip } from '../descriptions';
+import {
+  consumableAxisTip,
+  consumableTooltipBody,
+  consumableTooltipExtra,
+  grownValue,
+  jokerDescKey,
+} from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
 import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
 import { jokerSlotLimit } from '../../engine/vouchers';
-import { fableTargetsTiles, isFableId, jokerSellGoldValue } from '../../engine/fables';
+import { fableTargetsTiles, isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
@@ -199,10 +205,8 @@ export function JokerShelf({
           >
             <Tooltip
               title={t(`consumable.${c}`)}
-              body={t(consumableDescKey(c))}
-              {...(c === 'fable17'
-                ? { extra: t('consumable.currentSellValue', { value: jokerSellGoldValue(run) }) }
-                : {})}
+              body={consumableTooltipBody(c, t)}
+              extra={consumableTooltipExtra(c, run, t)}
               classification={consumableClassification(c)}
               sub={consumableAxisTip(c, t) ?? undefined}
               down
