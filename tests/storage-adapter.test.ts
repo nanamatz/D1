@@ -136,6 +136,29 @@ describe('one-time migration', () => {
     expect(writes).toEqual([['wj.collection', '{"cat":1}']]);
   });
 
+  it('deletes the originals so deleting the saves folder really starts clean', () => {
+    localStorage.setItem('wj.collection', '{"cat":1}');
+    localStorage.setItem('wj.unlocks', '["red"]');
+    const { bridge } = fakeBridge({}, true);
+    installBridge(bridge);
+
+    readValue('wj.collection'); // triggers the migration
+    expect(localStorage.getItem('wj.collection')).toBeNull();
+    expect(localStorage.getItem('wj.unlocks')).toBeNull();
+  });
+
+  it('leaves preference keys in localStorage while migrating', () => {
+    localStorage.setItem('wj.collection', '{"cat":1}');
+    localStorage.setItem('wj.lang', '"ko"');
+    localStorage.setItem('wj.settings', '{"tips":false}');
+    const { bridge } = fakeBridge({}, true);
+    installBridge(bridge);
+
+    readValue('wj.collection');
+    expect(localStorage.getItem('wj.lang')).toBe('"ko"');
+    expect(localStorage.getItem('wj.settings')).toBe('{"tips":false}');
+  });
+
   it('does not import when the bridge is not fresh', () => {
     localStorage.setItem('wj.collection', '{"cat":1}');
     const { bridge, writes } = fakeBridge({}, false);
@@ -143,15 +166,18 @@ describe('one-time migration', () => {
 
     expect(readValue('wj.collection')).toBeNull();
     expect(writes).toEqual([]);
+    // Not fresh means the migration never ran, so nothing was deleted either.
+    expect(localStorage.getItem('wj.collection')).toBe('{"cat":1}');
   });
 
-  it('never overwrites a key the snapshot already has', () => {
+  it('never overwrites a key the snapshot already has, and drops the stale copy', () => {
     localStorage.setItem('wj.collection', '{"stale":1}');
     const { bridge, writes } = fakeBridge({ 'wj.collection': '{"fresh":2}' }, true);
     installBridge(bridge);
 
     expect(readValue<Record<string, number>>('wj.collection')).toEqual({ fresh: 2 });
     expect(writes).toEqual([]);
+    expect(localStorage.getItem('wj.collection')).toBeNull();
   });
 
   it('runs at most once even across many reads', () => {

@@ -200,11 +200,16 @@ previous file instead of breaking.
 The desktop app already holds real data from cell 1's manual verification. Main
 reports `fresh: true` alongside the snapshot when the `saves/` directory did not
 exist at boot. **Only when `fresh`**, the adapter reads the eight save keys from
-`localStorage` and writes them through the bridge.
+`localStorage`, writes them through the bridge, **and deletes the originals**.
 
 Gating on `fresh` rather than on "the file has no value for this key" matters: the
-weaker rule would resurrect stale `localStorage` data every time a player
-deliberately deleted their save.
+weaker rule would re-import on every launch after any single key was cleared.
+
+Deleting the originals matters for a case `fresh` alone does not cover (found
+during execution, when the first migration left the `localStorage` copies in
+place): deleting the `saves/` folder makes `fresh` true again, so a leftover copy
+would resurrect the old profile — exactly what "delete my save and start over"
+must not do. Only save keys are deleted; preferences are untouched.
 
 ## Testing
 
@@ -219,7 +224,7 @@ obscure the cause of any regression.
 
 | Target | Method |
 |---|---|
-| `src/ui/storage.ts` | Unit: key routing (save keys → bridge, preference keys → `localStorage`), backend selection, parse-failure fallback, `fresh` migration running exactly once |
+| `src/ui/storage.ts` | Unit: key routing (save keys → bridge, preference keys → `localStorage`), backend selection, parse-failure fallback, `fresh` migration running exactly once and deleting only the save-key originals |
 | `desktop/save-store.js` | Unit in a temp directory: round-trip; corrupt primary falls back to `.bak`; both corrupt starts empty; `.bak` is always the previous complete file; unknown key rejected |
 | IPC wiring and preload | **Not unit-tested** — same rationale as cell 1: fixture cost exceeds the value for this much static glue |
 | Existing 582 tests | Staying green is the refactor's acceptance bar |
@@ -231,3 +236,5 @@ obscure the cause of any regression.
 3. Corrupt `run.json` by hand, relaunch — the game recovers from `run.json.bak`.
 4. Delete both files and both backups, relaunch — a clean profile, no crash.
 5. Confirm settings, language and hand-sort order did **not** move into `saves/`.
+6. Delete the whole `saves/` folder, relaunch — still a clean profile, because
+   the migration deleted the `localStorage` originals and cannot re-run.

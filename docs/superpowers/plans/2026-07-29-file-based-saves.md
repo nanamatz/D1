@@ -321,21 +321,31 @@ function getBridge(): StorageBridge | null {
 /**
  * Carry an existing localStorage profile into the files the first time the
  * desktop build runs. Gated on `fresh` (the saves directory was absent) rather
- * than on "this key has no file value" — the weaker rule would resurrect stale
- * localStorage every time a player deliberately deleted their save.
+ * than on "this key has no file value" — the weaker rule would re-import on
+ * every launch after any single key was cleared.
+ *
+ * The originals are DELETED once copied. `fresh` alone is not enough: deleting
+ * the saves folder makes it true again, so a leftover localStorage copy would
+ * resurrect the old profile — exactly what "delete my save and start over" must
+ * not do. Only save keys are touched; preferences stay where they are.
  */
 function migrate(bridge: StorageBridge, into: Map<string, string>): void {
   for (const key of SAVE_KEYS) {
-    if (into.has(key)) continue;
     let raw: string | null;
     try {
       raw = localStorage.getItem(key);
     } catch {
       return; // no localStorage at all — nothing to migrate
     }
-    if (raw === null) continue;
-    into.set(key, raw);
-    bridge.write(key, raw);
+    if (raw !== null && !into.has(key)) {
+      into.set(key, raw);
+      bridge.write(key, raw);
+    }
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -416,7 +426,7 @@ export function remove(key: string): void {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/storage-adapter.test.ts`
-Expected: PASS, 17 tests.
+Expected: PASS, 19 tests.
 
 - [ ] **Step 5: Commit**
 
