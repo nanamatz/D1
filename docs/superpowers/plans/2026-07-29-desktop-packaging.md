@@ -308,8 +308,26 @@ Expected: still FAIL, but **only** with `external-url` violations for `fonts.goo
 
 - [ ] **Step 3: Verify the web build still works from a subpath**
 
-Run: `npx vite preview --outDir dist`
-Open the printed URL. Expected: the game loads, art and styles render (fonts will still come from the CDN at this point — that is Task 3).
+Serve `dist` under a subpath and confirm assets resolve relative to it:
+
+```bash
+MSYS_NO_PATHCONV=1 npx vite preview --outDir dist --base /sub/ --port 4320 &
+sleep 4
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4320/sub/
+curl -s http://localhost:4320/sub/ | grep -o 'src="[^"]*"'
+```
+
+Expected: `200`, and the script `src` reads `./assets/index-<hash>.js`, not `/D1/assets/...`. Fetch that asset URL under `/sub/` and confirm `200` as well.
+
+`MSYS_NO_PATHCONV=1` is required in Git Bash — without it `/sub/` is rewritten into a Windows path (`C:/Program Files/Git/sub/`) and every request 404s.
+
+Also confirm the CSS bundle's image references became relative:
+
+```bash
+curl -s http://localhost:4320/sub/assets/index-<hash>.css | grep -o 'url([^)]*)' | head
+```
+
+Expected: `url(./tomato-<hash>.png)` — relative to the CSS file, which is what makes `file://` work.
 
 - [ ] **Step 4: Commit**
 
