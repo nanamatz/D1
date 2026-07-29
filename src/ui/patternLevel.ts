@@ -5,7 +5,8 @@
  * Kept off RunState — it's transient presentation, like the chromatic-reveal bus.
  */
 export interface PatternLevelEvent {
-  pattern: string;
+  cardId: ConstellationId;
+  pattern: PatternId;
   from: number;
   to: number;
 }
@@ -24,3 +25,5 @@ class PatternLevelBus {
 }
 
 export const patternLevelBus = new PatternLevelBus();
+import type { ConstellationId } from '../engine/constellations';
+import type { PatternId } from '../engine/types';

@@ -1257,7 +1257,7 @@ localStorage.setItem('wj.unlocks', JSON.stringify(['DOG','GHOST','ALIEN','TURTLE
 location.reload();
 ```
 
-Open Settings → Game. Confirm the mascot picker lists **우땅 / 누렁이 / 이고야 / 이고지 / 느무보** (Korean) and **WooDak / Nurungi / Egoya / Egoji / Nemubo** (English), matching Task 4.
+Open Collection → Mascots. Confirm the picker lists **우땅 / 누렁이 / 이고야 / 이고지 / 느무보** (Korean) and **WooDak / Nurungi / Egoya / Egoji / Nemubo** (English), matching Task 4.
 
 - [ ] **Step 3: Check a run-end line per skin**
 

@@ -96,8 +96,8 @@ export function isBlindOnlyConsumable(id: ConsumableId): boolean {
 }
 
 /** True when a Fable's effect targets specific letter tiles (material / rank-up /
- *  destroy). Outside a blind (the shop) these open the pouch-tile picker (feedback #4);
- *  the rest apply straight away. */
+ *  destroy). Shop copies may only be bought and held for a blind; Fable Packs use
+ *  their dealt pouch candidates directly. */
 export function fableTargetsTiles(id: ConsumableId): boolean {
   if (!isFableId(id)) return false;
   const kind = FABLE_REGISTRY.get(id)?.effect.kind;
@@ -124,8 +124,8 @@ export const jokerSellGoldValue = (run: RunState): number =>
   );
 
 /**
- * Apply a tile-targeting Fable to tiles in the POUCH (run.bag) by id — the shop path
- * (feedback #4), where there is no live hand. Mirrors the in-blind effects (toMaterial
+ * Apply a tile-targeting Fable to tiles in the POUCH (run.bag) by id — the Fable Pack
+ * candidate path, where there is no live hand. Mirrors the in-blind effects (toMaterial
  * / rank-up / destroy) but patches only run.bag, and consumes the card. Returns ok:false
  * (unchanged run) if the selection is invalid.
  */
@@ -135,10 +135,8 @@ export function useFableOnPouch(
   tileIds: readonly string[],
 ): { ok: boolean; run: RunState } {
   const effect = FABLE_REGISTRY.get(id)?.effect;
-  if (!effect || !run.consumables.includes(id)) return { ok: false, run };
+  if (!effect || !canUseFableOnPouch(id, run, tileIds)) return { ok: false, run };
   const ids = new Set(tileIds);
-  const targets = run.bag.filter((t) => ids.has(t.id));
-  if (targets.length !== tileIds.length) return { ok: false, run };
   const consumed = (): ConsumableId[] => {
     const c = run.consumables.slice();
     c.splice(c.indexOf(id), 1);
@@ -150,12 +148,9 @@ export function useFableOnPouch(
   });
 
   if (effect.kind === 'material') {
-    if (tileIds.length !== effect.count) return { ok: false, run };
-    if (effect.material !== 'stone' && !targets.every(canRestoreLetter)) return { ok: false, run };
     return commit(run.bag.map((t) => (ids.has(t.id) ? toMaterial(t, effect.material) : t)));
   }
   if (effect.kind === 'rankUp') {
-    if (tileIds.length !== effect.count || !targets.every((t) => t.letter !== null)) return { ok: false, run };
     return commit(
       run.bag.map((t) =>
         ids.has(t.id)
@@ -169,10 +164,30 @@ export function useFableOnPouch(
     );
   }
   if (effect.kind === 'destroy') {
-    if (tileIds.length < 1 || tileIds.length > effect.max) return { ok: false, run };
     return commit(run.bag.filter((t) => !ids.has(t.id)));
   }
   return { ok: false, run };
+}
+
+/** Pure validation twin of useFableOnPouch, used to gate a pack's Use button. */
+export function canUseFableOnPouch(
+  id: FableId,
+  run: RunState,
+  tileIds: readonly string[],
+): boolean {
+  const effect = FABLE_REGISTRY.get(id)?.effect;
+  if (!effect || !run.consumables.includes(id)) return false;
+  const ids = new Set(tileIds);
+  const targets = run.bag.filter((tile) => ids.has(tile.id));
+  if (targets.length !== tileIds.length) return false;
+  if (effect.kind === 'material') {
+    return tileIds.length === effect.count &&
+      (effect.material === 'stone' || targets.every(canRestoreLetter));
+  }
+  if (effect.kind === 'rankUp') {
+    return tileIds.length === effect.count && targets.every((tile) => tile.letter !== null);
+  }
+  return effect.kind === 'destroy' && tileIds.length >= 1 && tileIds.length <= effect.max;
 }
 
 export function canUseFable(
@@ -193,12 +208,39 @@ export function canUseFable(
     return selected.length === effect.count && selected.every((tile) => tile.letter !== null);
   }
   if (effect.kind === 'destroy') return selected.length >= 1 && selected.length <= effect.max;
-  if (effect.kind === 'copyLast') return (run.lastFableOrConstellation ?? null) !== null;
+  if (effect.kind === 'copyLast') {
+    return (run.lastFableOrConstellation ?? null) !== null &&
+      run.consumables.length <= run.consumableSlots;
+  }
+  if (effect.kind === 'createFable' || effect.kind === 'createConstellation') {
+    // A held card frees its own slot as it resolves. A pack-use card is staged
+    // temporarily; if that pushes the list over capacity, there is no destination
+    // slot for the created card and the action must remain disabled.
+    return run.consumables.length <= run.consumableSlots;
+  }
   if (effect.kind === 'createJoker') return canAddJoker(run, 'base');
   if (effect.kind === 'editionJoker') {
     return run.jokers.some((joker) => (joker.edition ?? 'base') === 'base');
   }
   return true;
+}
+
+/**
+ * Whether a Fable selected inside an opened pack can resolve now. Pack-use cards
+ * are staged temporarily so ordinary data-driven preconditions remain the single
+ * source of truth. Blind-only cards are selected into a held slot instead.
+ */
+export function canUseFableFromPack(
+  id: FableId,
+  run: RunState,
+  blind: BlindState,
+  tileIds: readonly string[],
+): boolean {
+  if (isBlindOnlyConsumable(id)) return run.consumables.length < run.consumableSlots;
+  const staged = { ...run, consumables: [...run.consumables, id] };
+  return fableTargetsTiles(id)
+    ? canUseFableOnPouch(id, staged, tileIds)
+    : canUseFable(id, staged, blind, []);
 }
 
 const patchTiles = (

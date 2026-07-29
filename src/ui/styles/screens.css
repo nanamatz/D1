@@ -160,8 +160,11 @@
 }
 .tt-sub-title {
   font-weight: 700;
-  font-size: var(--fs-xs);
-  color: #fff;
+  font-size: var(--fs-md);
+  line-height: 1.15;
+  color: var(--gold);
+  letter-spacing: .025em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .45);
 }
 .tt-sub-card .tt-body {
   color: var(--ink); /* light text on the dark sub-card, not the white-plate grey */
@@ -197,6 +200,13 @@
 .hl-kind {
   color: #b8342b;
   font-weight: 700;
+}
+.hl-axis {
+  color: #9a6500;
+  font-size: 1.08em;
+  font-weight: 900;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 0 rgba(255, 215, 106, .34);
 }
 /* Pack descriptions read as a centred two/three-line blurb (Reference.png). Scoped to
    .pack so joker copy keeps its left alignment. */
@@ -372,9 +382,14 @@
   gap: 16px;
   width: 100%;
   justify-content: center;
+  position: relative;
+  z-index: 6;
+  margin-bottom: 22px;
+  transform: translateY(-28px);
 }
 .bs-head .label {
-  font-size: var(--fs-2xl);
+  font-size: var(--ds-xs);
+  font-weight: 900;
   color: var(--ink);
 }
 .bs-head .ante {
@@ -385,6 +400,7 @@
 .bs-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: center;
   gap: 16px;
   width: 100%;
 }
@@ -394,6 +410,7 @@
   }
 }
 .bs-card {
+  --blind-accent: var(--panel-edge);
   background: var(--badge-bg);
   border-radius: 14px;
   border-top: 1px solid var(--panel-edge);
@@ -403,23 +420,41 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  border: 2px solid transparent;
+  border: 2px solid var(--blind-accent);
+  box-sizing: border-box;
 }
 .bs-card.small {
-  border-color: var(--suit-standard);
+  --blind-accent: var(--suit-standard);
 }
 .bs-card.big {
-  border-color: var(--gold);
+  --blind-accent: var(--gold);
 }
 .bs-card.boss {
-  border-color: var(--mult);
+  --blind-accent: var(--mult);
 }
 .bs-card.upcoming {
   opacity: 0.55;
 }
 .bs-card.current {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.35);
+  padding-block: 30px;
+  border-width: 5px;
+  outline: 3px solid var(--blind-accent);
+  outline-offset: 3px;
+  transform: translateY(-8px);
+  box-shadow:
+    0 12px 0 rgba(0, 0, 0, 0.38),
+    0 0 24px color-mix(in srgb, var(--blind-accent) 46%, transparent);
+  z-index: 2;
+}
+.blindselect .bs-card {
+  height: 342px;
+}
+.blindselect .bs-card.current {
+  height: 386px;
+}
+.bs-card.current .bs-kind {
+  font-size: var(--fs-xl);
+  font-weight: 900;
 }
 .bs-kind {
   font-weight: 700;
@@ -1718,6 +1753,45 @@ body.cb-safe .tile.hint {
 .coll-card.mascot-card.locked {
   opacity: 0.85;
 }
+.mascot-collection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.mascot-collection-help {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  text-align: center;
+}
+.coll-card.mascot-card:not(.locked) {
+  cursor: pointer;
+}
+.coll-card.mascot-card.selected {
+  border-color: var(--gold);
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, .44), 0 0 18px rgba(255, 215, 106, .4);
+}
+.mascot-equip {
+  min-width: 68px;
+  padding: 2px 8px;
+  border: 2px solid var(--inset-edge);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink-dim);
+  font-family: var(--ctl-font);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  text-align: center;
+}
+.mascot-equip.on {
+  border-color: #8f6a17;
+  background: var(--gold);
+  color: #241a08;
+}
 
 /* ---- Pack gallery (Reference.png): paged grid of pack artwork ---- */
 .pack-gallery {
@@ -2109,41 +2183,6 @@ body.cb-safe .tile.hint {
 .set-note.locked-hint {
   color: var(--gold);
   font-style: normal;
-}
-/* 2026-07-21: WooDak ally skin picker (Settings → Game). Thumbnails of the pickable
-   characters; the selected one carries the same gold accent as `.seg.on`. */
-.mascot-picker {
-  display: flex;
-  gap: 8px;
-}
-.mascot-choice {
-  width: 52px;
-  height: 52px;
-  border-radius: 10px;
-  background: #0f1b22;
-  border: 2px solid var(--inset-edge);
-  padding: 3px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.12s, box-shadow 0.12s, transform 0.08s;
-}
-.mascot-choice img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-.mascot-choice:hover {
-  border-color: var(--ink-dim);
-}
-.mascot-choice.on {
-  border-color: var(--gold);
-  box-shadow: inset 0 0 0 2px var(--gold);
-}
-.mascot-choice:active {
-  transform: translateY(1px);
 }
 .segmented {
   display: flex;
@@ -3009,79 +3048,212 @@ body.cb-safe .tile.hint {
   }
 }
 
-/* feedback #6 · constellation level-up flourish. Centred badge; the new level pops in
-   over the old with a scale bounce, then the whole card fades out. */
+/* Constellation use: shake the source, reveal old Mult/Chips, add each green
+   increment in order, flip the level, then pixel-dissolve the card. */
 .pattern-levelup {
   position: fixed;
   inset: 0;
   z-index: 70;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   pointer-events: none;
-  animation: plu-hold 1.7s ease forwards;
+  background: rgba(3, 9, 13, .46);
+  animation: plu-overlay 3.9s ease forwards;
 }
-.plu-card {
-  display: flex;
-  flex-direction: column;
+.plu-stage {
+  display: grid;
+  grid-template-columns: 190px minmax(300px, 430px);
   align-items: center;
-  gap: 8px;
-  padding: 22px 34px;
+  gap: 28px;
+  padding: 26px 32px;
   border-radius: var(--r-lg);
   background: var(--panel);
-  border-top: 2px solid var(--panel-edge);
-  box-shadow: 0 12px 0 rgba(0, 0, 0, 0.45);
-  animation: plu-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 3px solid var(--panel-edge);
+  box-shadow: 0 12px 0 rgba(0, 0, 0, .45), 0 0 32px rgba(55, 171, 220, .28);
+  animation: plu-stage-in .32s cubic-bezier(.34, 1.56, .64, 1) both;
 }
-.plu-badge {
-  font-family: var(--ctl-font);
-  font-size: var(--fs-sm);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--gold);
+.plu-source {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 5 / 7;
+  animation: plu-shake 2.9s linear both;
+}
+.plu-source-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .42));
+  animation: plu-card-vanish .7s steps(8, end) 2.9s both;
+}
+.plu-dissolve {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(circle, var(--gold) 0 2px, transparent 3px) 8% 15% / 19px 23px,
+    radial-gradient(circle, var(--chips) 0 2px, transparent 3px) 62% 40% / 23px 17px;
+  animation: plu-particles .75s steps(6, end) 2.82s both;
+}
+.plu-score {
+  min-width: 0;
 }
 .plu-name {
   font-family: 'Jersey 10', var(--ctl-font);
   font-size: var(--ds-xl);
   color: var(--ink);
+  text-align: center;
+  opacity: 0;
+  animation: plu-copy-in .22s ease .28s forwards;
 }
 .plu-levels {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 4px 0 12px;
   font-family: 'Jersey 10', var(--ctl-font);
-  font-size: var(--ds-lg);
+  font-size: var(--ds-md);
 }
 .plu-from {
-  color: var(--ink-dim);
+  color: var(--ink);
+  animation: plu-level-old 3.1s ease both;
 }
 .plu-arrow {
   color: var(--ink-dim);
-  font-size: var(--ds-md);
+  opacity: 0;
+  animation: plu-level-new .25s ease 2.35s forwards;
 }
 .plu-to {
   color: var(--gold);
-  display: inline-block;
-  animation: plu-to-pop 0.5s cubic-bezier(0.34, 1.8, 0.5, 1) 0.25s backwards;
+  opacity: 0;
+  animation: plu-level-new .42s cubic-bezier(.34, 1.8, .5, 1) 2.35s forwards;
 }
-@keyframes plu-pop {
-  0% { transform: scale(0.6); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+.plu-values {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
 }
-@keyframes plu-to-pop {
-  0% { transform: scale(2); opacity: 0; }
-  60% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); }
+.plu-times {
+  color: var(--ink-dim);
+  font-family: 'Jersey 10';
+  font-size: var(--ds-lg);
 }
-@keyframes plu-hold {
-  0%, 78% { opacity: 1; }
+.plu-value {
+  position: relative;
+  min-height: 104px;
+  display: grid;
+  place-items: center;
+  border: 4px solid rgba(255, 255, 255, .55);
+  border-radius: var(--r-md);
+  color: #fff;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-xl);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .2), 0 6px 0 rgba(0, 0, 0, .38);
+  opacity: 0;
+  animation: plu-copy-in .24s ease .4s forwards;
+}
+.plu-value.mult { background: var(--mult); }
+.plu-value.chips { background: var(--chips); }
+.plu-value-label {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  right: 0;
+  font-family: var(--ctl-font);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.plu-old,
+.plu-new {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.plu-new { opacity: 0; }
+.plu-delta {
+  position: absolute;
+  top: 42px;
+  left: calc(100% + 8px);
+  z-index: 3;
+  color: #65f08c;
+  font-size: var(--ds-md);
+  line-height: 1;
+  opacity: 0;
+  text-shadow: 0 3px 0 #15371d, 0 0 8px rgba(101, 240, 140, .55);
+}
+.plu-value.mult .plu-delta {
+  animation: plu-delta-in .5s ease .75s both, plu-delta-merge .42s ease 1.2s forwards;
+}
+.plu-value.mult .plu-old { animation: plu-old-out .2s ease 1.48s forwards; }
+.plu-value.mult .plu-new { animation: plu-new-in .35s ease 1.48s forwards; }
+.plu-value.chips .plu-delta {
+  animation: plu-delta-in .5s ease 1.42s both, plu-delta-merge .42s ease 1.87s forwards;
+}
+.plu-value.chips .plu-old { animation: plu-old-out .2s ease 2.15s forwards; }
+.plu-value.chips .plu-new { animation: plu-new-in .35s ease 2.15s forwards; }
+@keyframes plu-stage-in {
+  from { opacity: 0; transform: scale(.82) translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes plu-copy-in { to { opacity: 1; } }
+@keyframes plu-shake {
+  0%, 8% { transform: rotate(0); }
+  10%, 18%, 26%, 34%, 42%, 50%, 58%, 66%, 74%, 82%, 90% { transform: rotate(-2.2deg) translateX(-2px); }
+  14%, 22%, 30%, 38%, 46%, 54%, 62%, 70%, 78%, 86%, 94% { transform: rotate(2.2deg) translateX(2px); }
+  100% { transform: none; }
+}
+@keyframes plu-delta-in {
+  from { opacity: 0; transform: translateX(18px) scale(.7); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes plu-delta-merge {
+  to { opacity: 0; transform: translateX(-62px) scale(.55); }
+}
+@keyframes plu-old-out { to { opacity: 0; transform: scale(.75); } }
+@keyframes plu-new-in {
+  from { opacity: 0; transform: scale(1.8); color: #65f08c; }
+  to { opacity: 1; transform: scale(1); color: #fff; }
+}
+@keyframes plu-level-old {
+  0%, 74% { opacity: 1; transform: none; }
+  82%, 100% { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes plu-level-new {
+  from { opacity: 0; transform: translateY(8px) scale(1.5); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes plu-card-vanish {
+  0% { opacity: 1; filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .42)); }
+  100% { opacity: 0; filter: brightness(2) contrast(1.5); transform: scale(.82); }
+}
+@keyframes plu-particles {
+  0% { opacity: 0; transform: scale(.75); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-40px) scale(1.35); }
+}
+@keyframes plu-overlay {
+  0%, 88% { opacity: 1; }
   100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pattern-levelup,
-  .plu-card,
-  .plu-to {
-    animation: plu-hold 1.7s linear forwards;
+  .pattern-levelup { animation: plu-overlay 3.9s linear forwards; }
+  .plu-stage,
+  .plu-source,
+  .plu-source-art,
+  .plu-dissolve,
+  .plu-name,
+  .plu-levels *,
+  .plu-value,
+  .plu-value * {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
   }
 }
 

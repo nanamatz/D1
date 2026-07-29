@@ -17,7 +17,13 @@ import { VoucherCard } from './VoucherCard';
 import { packArt } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { voucherArt } from '../voucherArt';
-import { isBlindOnlyConsumable, isFableId, jokerSellGoldValue, type FableId } from '../../engine/fables';
+import {
+  fableTargetsTiles,
+  isBlindOnlyConsumable,
+  isFableId,
+  jokerSellGoldValue,
+  type FableId,
+} from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { constellationArt } from '../constellationArt';
 import { FableCardArt } from './FableCardArt';
@@ -84,6 +90,7 @@ function ShopOffer({
               className={['btn', actionClassName, 'sm'].join(' ')}
               disabled={disabled}
               tabIndex={selected ? 0 : -1}
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onAction();
@@ -91,11 +98,14 @@ function ShopOffer({
             >
               {actionLabel}
             </button>
-            {action2Label && onAction2 && (
+          </div>
+          {action2Label && onAction2 && (
+            <div className="shop-offer-action-secondary" aria-hidden={!selected}>
               <button
                 className={['btn', action2ClassName ?? 'green', 'sm'].join(' ')}
                 disabled={action2Disabled}
                 tabIndex={selected ? 0 : -1}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onAction2();
@@ -103,8 +113,8 @@ function ShopOffer({
               >
                 {action2Label}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </TiltCard>
     </div>
@@ -213,14 +223,11 @@ export function Shop({ g }: { g: UseGame }) {
         <div className="panel">
           <div className="label">{t('shop.forSale')}</div>
           <div className="shop-row">
-            {shop.items.map((item, i) => {
-              if (!item) {
-                return (
-                  <div key={i} className="shop-offer empty" aria-label={t('shop.sold')}>
-                    <div className="shop-offer-card shopitem empty" aria-hidden />
-                  </div>
-                );
-              }
+            {shop.items
+              .map((item, i) => ({ item, i }))
+              .filter((entry): entry is { item: NonNullable<typeof entry.item>; i: number } =>
+                entry.item !== null)
+              .map(({ item, i }) => {
               const m = itemMeta(item);
               const edition =
                 item.kind === 'joker' ? (item.edition ?? 'base')
@@ -247,7 +254,8 @@ export function Shop({ g }: { g: UseGame }) {
                     onSelect={() => toggleOffer(offerKey)}
                     onAction={() => g.buy(i)}
                     {...((item.kind === 'consumable' || item.kind === 'punctuation') &&
-                    !isBlindOnlyConsumable(item.id)
+                    !isBlindOnlyConsumable(item.id) &&
+                    !fableTargetsTiles(item.id)
                       ? {
                           action2Label: t('shop.instantUse'),
                           action2ClassName: 'green',
@@ -289,7 +297,7 @@ export function Shop({ g }: { g: UseGame }) {
                   </ShopOffer>
                 </Tooltip>
               );
-            })}
+              })}
           </div>
         </div>
 
@@ -321,25 +329,18 @@ export function Shop({ g }: { g: UseGame }) {
                     />
                   </ShopOffer>
                 </Tooltip>
-              ) : (
-                <div className="shop-offer empty" aria-label={t('shop.sold')}>
-                  <div className="shop-offer-card shopitem empty" aria-hidden />
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
 
           <div className="panel">
             <div className="label">{t('shop.packs')}</div>
             <div className="shop-row">
-              {shop.packs.map((p, i) => {
-                if (!p) {
-                  return (
-                    <div key={i} className="shop-offer empty" aria-label={t('shop.sold')}>
-                      <div className="shop-offer-card shopitem empty" aria-hidden />
-                    </div>
-                  );
-                }
+              {shop.packs
+                .map((p, i) => ({ p, i }))
+                .filter((entry): entry is { p: NonNullable<typeof entry.p>; i: number } =>
+                  entry.p !== null)
+                .map(({ p, i }) => {
                 const tip = packTooltip(p.type, p.size, t);
                 const price = discountedPrice(run, BALANCE.pack.size[p.size].price);
                 const offerKey = `pack-${i}`;
@@ -368,7 +369,7 @@ export function Shop({ g }: { g: UseGame }) {
                     </ShopOffer>
                   </Tooltip>
                 );
-              })}
+                })}
             </div>
           </div>
         </div>

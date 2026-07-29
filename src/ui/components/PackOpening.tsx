@@ -12,7 +12,13 @@ import { TileView } from './Tile';
 import { tileTooltip } from '../game';
 import { Tooltip, type TooltipClassification } from './Tooltip';
 import { canAddJoker } from '../../engine/vouchers';
-import { isFableId } from '../../engine/fables';
+import {
+  canUseFableFromPack,
+  fablePickCount,
+  fableTargetsTiles,
+  isBlindOnlyConsumable,
+  isFableId,
+} from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
@@ -48,8 +54,12 @@ function OptionCard({
   name,
   blockKey,
   tip,
+  selected,
+  actionVisible,
+  actionDisabled,
   picked,
-  onPick,
+  onSelect,
+  onAction,
 }: {
   option: PackOption;
   label: string;
@@ -58,9 +68,13 @@ function OptionCard({
   blockKey?: string | undefined;
   /** hover tooltip (item 4) — shown on joker/consumable options regardless of blocked */
   tip?: Tip | undefined;
+  selected?: boolean;
+  actionVisible?: boolean;
+  actionDisabled?: boolean;
   /** feature-04 C: this card is the one just chosen — lifts, pulses, gains an outline */
   picked?: boolean;
-  onPick: () => void;
+  onSelect?: (() => void) | undefined;
+  onAction: () => void;
 }) {
   const { t } = useI18n();
   const edition =
@@ -70,9 +84,26 @@ function OptionCard({
   const card = (
     <TiltCard
       idle
-      className={['shopitem', 'pack-option-card', `edition-${edition}`, blockKey && 'blocked', picked && 'picked']
+      className={[
+        'shopitem',
+        'pack-option-card',
+        `edition-${edition}`,
+        blockKey && 'blocked',
+        selected && 'selected',
+        picked && 'picked',
+      ]
         .filter(Boolean)
         .join(' ')}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-pressed={onSelect ? selected : undefined}
+      onClick={onSelect}
+      onKeyDown={onSelect ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      } : undefined}
     >
       <div className="pack-option-visual">
         {option.kind === 'tile' ? (
@@ -94,12 +125,21 @@ function OptionCard({
         )}
       </div>
       {edition !== 'base' && <span className="edition-badge">{edition}</span>}
-      {blockKey ? (
-        <span className="pack-option-action pack-block">{t(blockKey)}</span>
-      ) : (
-        <button className="btn exchange sm pack-option-action" onClick={onPick}>
-          {label}
-        </button>
+      {actionVisible && (
+        blockKey ? (
+          <span className="pack-option-action pack-block">{t(blockKey)}</span>
+        ) : (
+          <button
+            className="btn exchange sm pack-option-action"
+            disabled={actionDisabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAction();
+            }}
+          >
+            {label}
+          </button>
+        )
       )}
     </TiltCard>
   );
@@ -112,7 +152,6 @@ function OptionCard({
       rarity={tip.rarity}
       classification={tip.classification}
       sub={tip.sub}
-      down
     >
       {card}
     </Tooltip>
@@ -146,6 +185,8 @@ export function PackOpening({ g }: { g: UseGame }) {
   // so its lift + pulse + outline is SEEN before the pick applies and the fan re-arcs
   // (or the overlay closes on the last pick) — selecting used to do nothing visible.
   const [picking, setPicking] = useState<string | null>(null);
+  const [selectedFable, setSelectedFable] = useState<string | null>(null);
+  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [closing, setClosing] = useState(false);
   // Transition completion only STARTS the sequence. Keep its end timer in a
   // separate effect: when this effect sets `started`, React reruns it, and a
@@ -165,18 +206,20 @@ export function PackOpening({ g }: { g: UseGame }) {
   if (!pack) return null;
 
   const PICK_BEAT = motionOff() ? 0 : 320;
-  const doPick = (i: number, key: string) => {
+  const doPick = (key: string, resolvePick: () => void) => {
     if (picking) return; // one selection resolving at a time
     audio.play('packPick'); // confirm SFX on selection (A-4 / C)
     setPicking(key);
     window.setTimeout(() => {
       if (pack.picksLeft <= 1) {
         setClosing(true);
-        window.setTimeout(() => g.pickPackOption(i), 360);
+        window.setTimeout(resolvePick, 360);
       } else {
-        g.pickPackOption(i);
+        resolvePick();
       }
       setPicking(null);
+      setSelectedFable(null);
+      setSelectedCandidates([]);
     }, PICK_BEAT);
   };
   const close = () => {
@@ -226,6 +269,27 @@ export function PackOpening({ g }: { g: UseGame }) {
   // Old resting saves may contain a pre-candidate pack snapshot. Treat it as an
   // empty candidate field instead of crashing during resume.
   const candidateTiles = pack.candidateTiles ?? [];
+  const optionKey = (option: PackOption, index: number): string =>
+    option.kind === 'tile' ? `t:${option.tile.id}` : `${option.kind}:${option.id}:${index}`;
+  const selectedFableIndex = pack.offer.options.findIndex(
+    (option, index) => optionKey(option, index) === selectedFable,
+  );
+  const selectedFableOption =
+    selectedFableIndex >= 0 ? pack.offer.options[selectedFableIndex] : undefined;
+  const selectedTargetId =
+    selectedFableOption?.kind === 'consumable' &&
+    isFableId(selectedFableOption.id) &&
+    fableTargetsTiles(selectedFableOption.id)
+      ? selectedFableOption.id
+      : null;
+  const candidateMax = selectedTargetId ? fablePickCount(selectedTargetId).max : 0;
+  const toggleCandidate = (tileId: string) => {
+    if (!selectedTargetId || picking) return;
+    setSelectedCandidates((current) => {
+      if (current.includes(tileId)) return current.filter((id) => id !== tileId);
+      return current.length < candidateMax ? [...current, tileId] : current;
+    });
+  };
 
   return (
     <div
@@ -264,7 +328,13 @@ export function PackOpening({ g }: { g: UseGame }) {
                   className="pack-candidate-tile"
                   style={{ ['--candidate-i' as string]: i }}
                 >
-                  <TileView tile={tile} tooltip={tileTooltip(tile, t)} />
+                  <TileView
+                    tile={tile}
+                    selected={selectedCandidates.includes(tile.id)}
+                    disabled={!selectedTargetId}
+                    {...(selectedTargetId ? { onSelect: toggleCandidate } : {})}
+                    tooltip={tileTooltip(tile, t)}
+                  />
                 </div>
               ))}
             </div>
@@ -276,7 +346,10 @@ export function PackOpening({ g }: { g: UseGame }) {
           {pack.offer.options.map((o, i) => {
             // A pick is blocked when the matching slot is full (item 5: consumables
             // now block too, not just jokers) — the engine no-ops such a pick anyway.
-            const takesConsumableSlot = o.kind === 'consumable' || o.kind === 'punctuation';
+            const fableId = o.kind === 'consumable' && isFableId(o.id) ? o.id : null;
+            const fable = fableId !== null;
+            const blindOnlyFable = fableId !== null && isBlindOnlyConsumable(fableId);
+            const takesConsumableSlot = o.kind === 'punctuation';
             const blockKey =
               o.kind === 'joker' && !canAddJoker(g.state.run, o.edition)
                 ? 'pack.jokersFull'
@@ -286,7 +359,12 @@ export function PackOpening({ g }: { g: UseGame }) {
                   : undefined;
             const N = pack.offer.options.length;
             const mid = (N - 1) / 2;
-            const key = o.kind === 'tile' ? `t:${o.tile.id}` : `${o.kind}:${o.id}:${i}`;
+            const key = optionKey(o, i);
+            const selected = fable && selectedFable === key;
+            const actionVisible = !fable || selected;
+            const actionDisabled =
+              fable &&
+              !canUseFableFromPack(fableId, g.state.run, g.state.blind, selectedCandidates);
             const fanStyle = {
               ['--fan-rot' as string]: `${(i - mid) * 7}deg`,
               ['--fan-y' as string]: `${Math.abs(i - mid) ** 1.4 * 7}px`,
@@ -296,11 +374,31 @@ export function PackOpening({ g }: { g: UseGame }) {
                 <OptionCard
                   option={o}
                   name={optionName(o)}
-                  label={t('pack.pick')}
+                  label={
+                    fable
+                      ? t(blindOnlyFable ? 'pack.select' : 'consumable.useAction')
+                      : t('pack.pick')
+                  }
                   blockKey={blockKey}
                   tip={optionTip(o)}
+                  selected={selected}
+                  actionVisible={actionVisible}
+                  actionDisabled={actionDisabled}
                   picked={picking === key}
-                  onPick={() => doPick(i, key)}
+                  onSelect={fable ? () => {
+                    if (picking) return;
+                    setSelectedFable(selected ? null : key);
+                    setSelectedCandidates([]);
+                    audio.play('buttonPress');
+                  } : undefined}
+                  onAction={() =>
+                    doPick(
+                      key,
+                      fable
+                        ? () => g.usePackFable(i, selectedCandidates)
+                        : () => g.pickPackOption(i),
+                    )
+                  }
                 />
               </div>
             );

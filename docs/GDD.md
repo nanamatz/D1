@@ -472,6 +472,13 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 |---|---|---|
 | Memoirs · 회고록 (`memoirs`) | Any word already played **this ante** (Draft + Revision + earlier Deadline phases) scores 0 | Punishes narrow vocab; rewards run-long breadth |
 
+**Debuff readability (changed 2026-07-29).** A word that an active boss will
+reduce to 0 remains playable, but the staged tiles receive a red **Not Allowed**
+tag before submission. Playing it shows the same warning and keeps the submitted
+word in the sentence tray with a disabled/desaturated treatment. This applies
+uniformly to Forbidden Paper, Memoirs, Burnt Paper, and White Paper; the boss
+data predicate is the source of truth for both scoring and preview UI.
+
 **Phase attack**
 
 | Boss | Effect | Targets / counters |
@@ -527,9 +534,9 @@ Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **
 
 **Offer interaction (changed 2026-07-27).** Shop stalls are image-first: every product reserves the same proportion-preserving `144×185px` transparent stage, while the product art, price, and action form one aspect-ratio-aware foreground layer above the shop layout. Tall pack art uses 88% of the stage height and a 12px upward offset so its full animation remains within the pack stall. Voucher and pack background panels retain a `273px` minimum height, 5px taller than the preceding layout. The price tag sits 23px above the image's top edge and moves with all idle/hover/selection motion. Selecting an offer raises that foreground and animates an absolutely attached action below the image — **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs — without reflowing the stall layout. Product animation is never clipped. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
 
-**Persistent framing (changed 2026-07-28).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted.
+**Persistent framing (changed 2026-07-28).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted. Because the sidebar and settlement provider stay mounted, shop entry also consumes the previous blind's UI-only settle log/id and finalized sentence fields before the first shop frame; the zero reset is immediate and must never replay the prior score animation.
 
-**Full consumable slots (changed 2026-07-28).** A full held-consumable zone disables only **Buy** for a consumable offer. **Use now** remains available when the player can afford the card because it resolves immediately and never occupies a resting slot.
+**Full consumable slots and shop Fables (changed 2026-07-29).** A full held-consumable zone disables **Buy** for a consumable offer. **Use now** remains available for affordable non-tile consumables because it resolves immediately and never occupies a resting slot. A shop-offered Fable whose effect targets letter tiles is the exception: it shows **Buy only**, enters a held slot, and may be used only during a blind; it cannot use pouch tiles from the shop and has no Use-now fallback when slots are full. Blind-only Fables follow the same Buy-only presentation.
 
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
@@ -554,7 +561,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 |---|---|---|
 | 별자리 팩 / **Constellation Pack** | Constellation cards — held in the consumable zone, then used to **level up** their sentence pattern (§5.4). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles shown as the candidate field for tile-targeting Fable effects; Comic Book can add Gambler cards once that content pool lands | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Comic Book can add Gambler cards once that content pool lands | Arcana |
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3); roll pending the Gambler-card registry | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
@@ -587,12 +594,14 @@ progress remain hidden until the profile unlock is earned.
 | Receipt → Household Ledger | Interest cap $10 → $20 | Hit the interest cap 10 rounds consecutively |
 | Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls | Discover all 12 current bosses (temporary cap) |
 | Catalog → Coupon Book | Shop card slots 3 → 4 | Spend $2,500 in shops |
-| History Book → Old Book | −1 Ante and −1 hand/round → another −1 Ante and −1 discard/round | Reach Ante 12 |
+| History Book → Old Book | −1 Ante and −1 hand/round → another −1 Ante and −1 discard/round; each redemption preserves the already-scheduled blind kind/index | Reach Ante 12 |
 | Blank Paper → Kung Fu Manual | No effect → +1 Charm slot | Use Blank Paper 10 times |
 | B&W Photo → Yearbook | Constellation pack guarantees the most-played pattern's card → a held matching card grants ×1.5 sentence Mult | Use 100 Constellation cards |
 | Zero Score → Comic Book | +1 consumable slot → Gambler cards may appear in Fable packs | Use 50 Fable cards |
 
 All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vouchers`, outside `RunState`.
+
+**History Book timing (changed 2026-07-29).** Redeeming History Book immediately lowers the current Ante by 1 (Ante 1 may become Ante 0) and lowers hands per round by 1. It does not rewind the blind sequence: the Draft, Revision, or Deadline already scheduled after the shop remains scheduled at the same `blindIndex`, now using the lowered Ante's target. Old Book follows the same scheduled-blind rule for its additional Ante reduction.
 
 ---
 
@@ -600,13 +609,17 @@ All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vo
 
 Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Zero Score). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and packs.
 
+**Fable Pack resolution (changed 2026-07-28).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until the effect's required candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection. Using resolves the Fable immediately without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+
 **Held-slot presentation (changed 2026-07-27).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Idle/hover/focus/select motion applies to the image object itself, and clicking raises it above the shelf with Sell/Use actions attached beneath the image without reflowing the shelf.
 
 ### 10.1 Fable Cards (Tarot-equivalent), 18
 
-Targeted effects use the tiles currently staged on the board. A target-requiring
-card cannot be consumed until the exact valid target count is staged. Random
-creation respects the destination slot cap.
+Held targeted effects use the tiles currently staged on the board. A target-requiring
+held card cannot be consumed until the exact valid target count is staged. Inside a
+Fable Pack, the same effect instead targets the pack's ten seeded pouch candidates
+and cannot be used until its required selection count is valid. Random creation
+respects the destination slot cap.
 
 **Art rendering (changed 2026-07-26).** All 18 supplied pixel illustrations are
 high-detail, path-only SVG assets normalized to one `500×700` canvas (fixed 5:7
@@ -643,6 +656,12 @@ accessible label.
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
 One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing into the most-played patterns is the intended play.
+
+**Use sequence (changed 2026-07-29).** The used card shakes while the score
+panel presents the pattern's current Mult and Chips. The green `+Mult` increment
+merges first, then the green `+Chips` increment. The level label then transitions
+from the old level to the new one, the shake ends, and the card pixel-dissolves.
+All displayed values are derived from the same §5.2 balance rows used by scoring.
 
 Each of the 12 monochrome zodiac illustrations is traced into a 32-color,
 path-only SVG and stretched without cropping to the Fable card standard:
@@ -839,7 +858,7 @@ The game begins **desaturated and silent**; playing specific words permanently u
 | MUSIC | BGM bus enabled (wraps the feature-01 mixer's music bus) |
 | SOUND | SFX bus enabled (wraps the SFX bus) |
 | KOREAN | Korean-locale celebration entry (the language is separately selectable in Settings from the start — the gimmick is the reward, not the gate) |
-| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in Settings → Game once unlocked *and* art exists (registry `src/ui/mascots.ts`, resolver `mascotSrc`). **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
+| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
 
 **"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces, the blind badge, stage backdrops) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable. *(Revises the earlier "token-swap only, never a blanket filter" note: the guard is scoped to the all-locked state, so it neither kills unlocked colors nor fights the CRT.)*
 

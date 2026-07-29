@@ -62,7 +62,7 @@ legibility, explicitly. The trade-off is acceptable because the Collection (도�
 independently carries the same information (`materialdesc.*`, `fontdesc.*`,
 `bossdesc.*`, `voucherdesc.*`, `packdesc.*`), so nothing is permanently lost, and
 because selecting 이고지 is a deliberate opt-in the player can reverse in
-Settings → Game at any time.
+Collection → Mascots at any time.
 
 ## Part A — Character names (item 3)
 

@@ -46,6 +46,17 @@ export interface SettleView {
   activeTileId: string | null;
   /** tileId → chip value, accumulated as each tile scores (drives the +N tags) */
   tilePops: Record<string, number>;
+  /** contribution currently firing above its source letter tile. Unlike tilePops,
+   *  this preserves Mult, multiplicative, gold, and zero-delta retrigger beats. */
+  tileEffectPop: {
+    tileId: string;
+    chips: number;
+    mult: number;
+    gold: number;
+    multFactor?: number | undefined;
+    retrigger: boolean;
+    id: number;
+  } | null;
   /** joker currently wiggling */
   activeJokerId: string | null;
   /** the firing joker's contribution, for its popup */
@@ -64,6 +75,7 @@ const IDLE: SettleView = {
   mult: 0,
   activeTileId: null,
   tilePops: {},
+  tileEffectPop: null,
   activeJokerId: null,
   jokerPop: null,
   stamp: null,
@@ -77,7 +89,10 @@ export const useSettleView = (): SettleView => useContext(SettleCtx);
 // tile's pop *finishes* before the next beat fires — at 150ms the pops overlapped
 // three-deep and the whole tally read as one blur (playtest-06 item 1). Players
 // need to see each contribution land one at a time; game speed (1/2/4×) scales it.
-const BASE_STEP = 450;
+// Feedback 5: each contribution needs enough time to read and land before the
+// next tile/effect fires. 600ms at 1× keeps the sequence deliberate; game speed
+// still scales this single timing source to 2×/4×.
+const BASE_STEP = 600;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
 
@@ -239,6 +254,7 @@ export function SettleProvider({
             mult,
             activeTileId: null,
             tilePops: { ...pops },
+            tileEffectPop: null,
             activeJokerId: null,
             jokerPop: null,
             stamp: null,
@@ -246,7 +262,19 @@ export function SettleProvider({
           };
           if (e.kind === 'tile') {
             pops[e.tileId] = e.chips;
-            setView({ ...base, tilePops: { ...pops }, activeTileId: e.tileId });
+            setView({
+              ...base,
+              tilePops: { ...pops },
+              activeTileId: e.tileId,
+              tileEffectPop: {
+                tileId: e.tileId,
+                chips: e.chips,
+                mult: 0,
+                gold: 0,
+                retrigger: false,
+                id: i,
+              },
+            });
           } else if (e.kind === 'suit') {
             setView({ ...base, stamp: e.suit ? { kind: 'suit', label: e.suit } : null });
           } else if (e.kind === 'letterHand') {
@@ -263,18 +291,51 @@ export function SettleProvider({
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId,
               jokerPop: { jokerId: e.jokerId, chips: e.chipsDelta, mult: e.multDelta },
+              tileEffectPop: e.tileId
+                ? {
+                    tileId: e.tileId,
+                    chips: e.chipsDelta,
+                    mult: e.multDelta,
+                    gold: 0,
+                    retrigger: false,
+                    id: i,
+                  }
+                : null,
             });
           } else if (e.kind === 'boss') {
             setView({ ...base });
           } else if (e.kind === 'material') {
             // Materials pop on the tile itself, not as a stamp — the tile's own
             // ceramic/glass/stone face already carries the read (GDD §2.2).
-            setView({ ...base, activeTileId: e.tileId });
+            setView({
+              ...base,
+              activeTileId: e.tileId,
+              tileEffectPop: {
+                tileId: e.tileId,
+                chips: e.chipsDelta,
+                mult: e.multDelta,
+                gold: 0,
+                retrigger: false,
+                id: i,
+              },
+            });
           } else if (e.kind === 'font') {
             // Font beats land on the tile, like materials; a chipPlay delta
             // grows the tile's +N pop the way per-tile jokers do.
             if (e.chipsDelta !== 0) pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
-            setView({ ...base, tilePops: { ...pops }, activeTileId: e.tileId });
+            setView({
+              ...base,
+              tilePops: { ...pops },
+              activeTileId: e.tileId,
+              tileEffectPop: {
+                tileId: e.tileId,
+                chips: e.chipsDelta,
+                mult: e.multDelta,
+                gold: e.goldDelta,
+                retrigger: e.effect === 'retriggerPlay',
+                id: i,
+              },
+            });
           } else if (e.kind === 'edition') {
             if (e.tileId && e.chipsDelta !== 0) {
               pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
@@ -284,6 +345,17 @@ export function SettleProvider({
               tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId ?? null,
+              tileEffectPop: e.tileId
+                ? {
+                    tileId: e.tileId,
+                    chips: e.chipsDelta,
+                    mult: e.multDelta,
+                    gold: 0,
+                    multFactor: e.multFactor,
+                    retrigger: false,
+                    id: i,
+                  }
+                : null,
             });
           }
         }, i * step),

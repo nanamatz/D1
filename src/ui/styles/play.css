@@ -55,6 +55,30 @@
      as one clear work surface, rather than nesting a second full screen. */
   justify-content: flex-end;
 }
+.workspace-not-allowed {
+  position: absolute;
+  z-index: 58;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-family: 'Jersey 10', 'Noto Sans KR', sans-serif;
+  font-size: clamp(44px, 5vw, 76px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: workspace-not-allowed 1.7s ease both;
+}
+@keyframes workspace-not-allowed {
+  0% { opacity: 0; transform: translate(-50%, -12px) scale(.88); }
+  14%, 68% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -10px) scale(.96); }
+}
+.force-reduced-motion .workspace-not-allowed {
+  animation: workspace-not-allowed 1.7s linear both;
+}
 .blind-workspace {
   display: flex;
   flex: 1;
@@ -135,6 +159,9 @@
 .sidebar-shop .blind-badge {
   border-color: var(--gold);
   position: relative;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
   overflow: hidden;
   height: 248px;
   display: flex;
@@ -164,7 +191,7 @@
   border-width: 1px;
   opacity: .65;
 }
-.sidebar-shop .kind {
+.sidebar.sidebar-shop .blind-badge .kind {
   position: relative;
   z-index: 2;
   flex: 1;
@@ -219,24 +246,40 @@
 .sidebar-blindselect .blind-badge {
   border-color: var(--chips);
   min-height: 218px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  position: relative;
+  display: grid;
+  place-items: center;
   background:
     radial-gradient(circle at 50% 44%, rgba(64, 158, 255, .18), transparent 62%),
     var(--badge-bg);
 }
-.sidebar-blindselect .kind {
-  padding: 22px 18px 6px;
+.sidebar.sidebar-blindselect .blind-badge .kind {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 18px 24px;
+  display: grid;
+  place-items: center;
   background: transparent;
+}
+.sidebar-blindselect .bb-eff {
+  display: none;
+}
+.sidebar-blindselect .sidebar-mode-emblem {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
 }
 .blindselect-prompt {
   display: block;
-  max-width: 280px;
+  max-width: 300px;
   margin: auto;
   font-family: var(--ctl-font);
-  font-size: clamp(26px, 2.1vw, 38px);
-  line-height: 1.35;
+  font-size: clamp(34px, 2.8vw, 48px);
+  line-height: 1.18;
   text-wrap: balance;
 }
 .blindselect-caret {
@@ -292,6 +335,7 @@
   gap: 12px;
   flex-wrap: wrap;
   align-items: flex-start;
+  justify-content: center;
   margin-top: 8px;
 }
 /* item 2: pin every shop card to ONE width so for-sale items, the voucher, and
@@ -427,8 +471,9 @@
 .shop-offer-action {
   position: absolute;
   left: 50%;
-  bottom: -43px;
-  z-index: 9;
+  top: calc(100% + 8px);
+  bottom: auto;
+  z-index: 40;
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%) translateY(-9px) scale(0.9);
@@ -439,11 +484,35 @@
     transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
     visibility 0.22s;
 }
+.shop-offer-action-secondary {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  z-index: 40;
+  width: max-content;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translate(-10px, -50%) scale(.9);
+  transition:
+    opacity .16s ease,
+    transform .22s cubic-bezier(.34, 1.56, .64, 1),
+    visibility .22s;
+}
 .shop-offer.selected .shop-offer-action {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0) scale(1);
   visibility: visible;
+}
+.shop-offer.selected .shop-offer-action-secondary {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: translate(0, -50%) scale(1);
+}
+.shop-offer-action-secondary .btn {
+  min-width: 96px;
 }
 .shop-offer-action .btn {
   min-width: 82px;
@@ -621,6 +690,16 @@
   height: 64px;
   font-size: var(--ds-sm);
 }
+.pack-candidate-row .tile.locked {
+  opacity: .48;
+  cursor: default;
+}
+.pack-candidate-row .tile.sel {
+  opacity: 1;
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  transform: translateY(-5px);
+}
 @keyframes candidate-deal {
   from { opacity: 0; transform: translateX(-34px) rotate(-7deg) scale(.78); }
   to { opacity: 1; transform: translateX(0) rotate(0) scale(1); }
@@ -706,6 +785,11 @@
   background: transparent;
   box-shadow: none;
   overflow: visible;
+}
+.pack-option-card.selected {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  filter: drop-shadow(0 8px 0 rgba(5, 12, 14, .48));
 }
 .pack-option-visual {
   position: absolute;
@@ -793,7 +877,7 @@
 /* Deadline reveal: centred, non-blocking, and sequenced after the incoming board
    transition by BossIntro/useEntering. */
 .boss-intro {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 54;
   display: grid;
@@ -803,8 +887,9 @@
 }
 .boss-intro-card {
   width: min(520px, calc(100vw - 48px));
+  min-height: 264px;
   display: grid;
-  grid-template-columns: 132px 1fr;
+  grid-template-columns: 164px 1fr;
   align-items: center;
   gap: 20px;
   padding: 20px 24px;
@@ -827,8 +912,8 @@
   animation: boss-intro-out 0.42s ease-in both;
 }
 .boss-intro-art {
-  width: 132px;
-  height: 132px;
+  width: 164px;
+  height: 164px;
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 5px 0 rgba(0, 0, 0, 0.4));
@@ -1520,10 +1605,9 @@
 .desk-check-sign-zone {
   position: absolute;
   z-index: 3;
-  left: 42%;
-  top: 61%;
-  width: 49%;
-  height: 13%;
+  /* The whole cheque is writable. The stroke remains clipped to the cheque
+     object's own footprint, but no longer requires hunting for a tiny line. */
+  inset: 0;
   cursor: crosshair;
   touch-action: none;
   user-select: none;
@@ -2387,29 +2471,69 @@
   opacity: 0.75;
   border-style: dashed;
 }
-/* Per-tile +N score pop during settle (B step 2). */
-.tile-pop-wrap {
-  position: relative;
-  display: inline-flex;
+.word.boss-debuffed {
+  border-color: var(--mult);
+  border-style: dashed;
+  filter: grayscale(.9);
+  opacity: .48;
 }
-.tile-pop {
+.word.boss-debuffed .tile {
+  filter: grayscale(1) brightness(.7);
+}
+.word-not-allowed {
   position: absolute;
-  top: -14px;
+  inset: 50% auto auto 50%;
+  z-index: 8;
+  transform: translate(-50%, -50%) rotate(-4deg);
+  padding: 2px 8px;
+  border: 2px solid #fff;
+  background: var(--mult);
+  color: #fff;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-lg);
+  letter-spacing: .08em;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .5);
+}
+/* Every tile-specific settle beat is repeated at the source tile: base Chips plus
+   enhanced material/font/edition/Joker Chips, Mult, factor, gold, or retrigger. */
+.tile-effect-pop {
+  position: absolute;
+  top: -22px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--chips);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #10212a;
+  border: 2px solid var(--gold);
   color: #fff;
   font-weight: 800;
-  font-size: var(--fs-xs);
+  font-family: var(--ctl-font);
+  font-size: var(--fs-sm);
   border-radius: 6px;
-  padding: 0 5px;
+  padding: 1px 6px;
   white-space: nowrap;
   box-shadow: var(--shadow);
   pointer-events: none;
-  z-index: 4;
-}
-.tile-pop.live {
+  z-index: 18;
   animation: popRise 0.45s ease-out;
+}
+.tile:has(> .tile-effect-pop) {
+  overflow: visible;
+}
+.tile-effect-pop .chip {
+  color: var(--chips);
+}
+.tile-effect-pop .mult {
+  color: var(--mult);
+}
+.tile-effect-pop .gold {
+  color: var(--gold);
+}
+.tile-effect-pop .retrigger {
+  color: #fff;
+  font-size: 1.2em;
 }
 @keyframes popRise {
   0% { transform: translate(-50%, 6px) scale(0.7); opacity: 0; }
@@ -3188,6 +3312,31 @@
   box-shadow: var(--shadow), inset 0 0 0 100px rgba(245, 80, 78, 0.24);
   animation: none;
 }
+.tile.boss-invalid {
+  outline: 4px solid var(--mult);
+  outline-offset: 2px;
+  box-shadow: var(--shadow), inset 0 0 0 100px rgba(222, 48, 56, .28);
+}
+.boss-invalid-tag {
+  position: absolute;
+  z-index: 12;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% + 30px);
+  padding: 2px 6px;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  background: var(--mult);
+  color: #fff;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-xs);
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .48);
+}
 .discard-hint {
   font-size: var(--fs-xs);
   color: var(--ink-dim);
@@ -3283,6 +3432,17 @@
 .consumable-slot > .tt-anchor {
   width: 100%;
   height: 100%;
+}
+/* The second/right held card sits against the shelf boundary. Right-align its
+   downward tooltip so neither the main card nor its optional sub-card is clipped
+   by the board's right-side layer. */
+.consumable-slot:nth-child(n + 2) > .tt-anchor > .tt-card {
+  left: auto;
+  right: 0;
+  transform: translateY(-4px);
+}
+.consumable-slot:nth-child(n + 2) > .tt-anchor:hover > .tt-card {
+  transform: translateY(0);
 }
 /* item 7: Use / Sell buttons appear to the RIGHT of the clicked element. */
 .consumable-menu {

@@ -100,6 +100,8 @@ export interface WordSubmission {
   posUsed: POS | null;
   /** layer-1 settled score for this word (committed immediately, GDD §7.1) */
   settledScore: number;
+  /** Active boss accepted the play but debuffed it to 0. */
+  debuffed?: boolean;
 }
 
 // ---------- Sentence patterns (GDD §5) ----------

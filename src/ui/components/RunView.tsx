@@ -22,7 +22,6 @@ import { RunInfo } from './RunInfo';
 import { Options } from './Options';
 import { GuidedIntro } from './GuidedIntro';
 import { DeskObjects } from './DeskObjects';
-import { PouchSelectModal } from './PouchSelectModal';
 import { PackOpening } from './PackOpening';
 import { BossIntro } from './BossIntro';
 
@@ -34,6 +33,8 @@ interface Props {
   onNewRun: () => void;
 }
 
+const NOT_ALLOWED_NOTICE_MS = 1700;
+
 /** An active run: routes the in-run phases (spec §2.3–2.7). */
 export function RunView({ g, onExit, onNewRun }: Props) {
   const { settings } = useSettings();
@@ -43,6 +44,23 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [paused, setPaused] = useState(false);
   const [pouchOpen, setPouchOpen] = useState(false);
   const [introOpen, setIntroOpen] = useState(false);
+  const noticeSequence = useRef(0);
+  const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
+
+  // A boss-debuffed submission is allowed, but its warning is a transient
+  // workspace announcement rather than persistent game-state copy. The message
+  // object is recreated for every submission, so consecutive invalid plays
+  // restart both the animation and dismissal timer.
+  useEffect(() => {
+    if (g.state.message?.key !== 'boss.notAllowed') {
+      setNotAllowedNotice(null);
+      return;
+    }
+    noticeSequence.current += 1;
+    setNotAllowedNotice(noticeSequence.current);
+    const timer = window.setTimeout(() => setNotAllowedNotice(null), NOT_ALLOWED_NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [g.state.message]);
 
   // ESC in-round: close the Run Info window if it's open, otherwise toggle the
   // options/pause menu (playtest-06 #1, #2). Run Info takes priority so ESC peels
@@ -180,6 +198,16 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onReorderJoker={g.reorderJokers}
           />
           <section className="phase-workspace">
+            {notAllowedNotice !== null && (
+              <div
+                key={notAllowedNotice}
+                className="workspace-not-allowed"
+                role="status"
+                aria-live="assertive"
+              >
+                {t('boss.notAllowed')}
+              </div>
+            )}
             {boardVisible && (
               <div className="blind-workspace">
                 <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
@@ -198,6 +226,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             {phase === 'blindselect' && (
               <div className="phase-panel blindselect-phase-panel"><BlindSelect g={g} /></div>
             )}
+            {/* Deadline reveal is centred on the work surface, not the full frame:
+                the persistent sidebar is excluded from its positioning box. */}
+            {!ending && !settling && !introOpen && phase === 'playing' && blind.kind === 'boss' && (
+              <BossIntro blind={blind} />
+            )}
           </section>
         </main>
       </SettleProvider>
@@ -210,11 +243,6 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {!ending && !settling && showInfo && (
         <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />
       )}
-      {/* The reveal belongs to actual boss-blind entry, never blind selection.
-          A resumed playing save remounts RunView/BossIntro and shows it once. */}
-      {!ending && !settling && !introOpen && phase === 'playing' && blind.kind === 'boss' && (
-        <BossIntro blind={blind} />
-      )}
       {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
       </div>
       {/* Viewport-centred overlays live outside `.frame`: the persistent board
@@ -224,8 +252,6 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {/* D-3 · ambient desk objects in the viewport margins — cosmetic, only while
           actively playing (not during the guided intro or a pause menu). */}
       <DeskObjects active={phase === 'playing' && !introOpen && !paused} />
-      {/* feedback #4 · pouch-tile picker for a shop-used tile Fable. */}
-      {g.state.pouchSelect && <PouchSelectModal g={g} />}
       {(phase === 'playing' || phase === 'shop' || phase === 'blindselect') && paused && createPortal((
         <div className="overlay pause-overlay">
           <div className="overlay-card pause-modal">

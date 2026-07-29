@@ -61,24 +61,16 @@ export function SentenceTray({ blind, judgment, lexicon }: Props) {
             {settling && <WordStamp />}
           </div>
         ) : (
-          <div key={i} className={['word', suitClass(sub.suit)].join(' ')}>
+          <div
+            key={i}
+            className={['word', suitClass(sub.suit), sub.debuffed ? 'boss-debuffed' : '']
+              .filter(Boolean)
+              .join(' ')}
+          >
             <span className="suit-tag">{sub.suit ? t(`suittag.${sub.suit}`) : ''}</span>
-            {sub.tiles.map((tile) => {
-              const pop = settling ? settle.tilePops[tile.id] : undefined;
-              return (
-                <span key={tile.id} className="tile-pop-wrap">
-                  <TileView tile={tile} mini />
-                  {pop !== undefined && (
-                    <span
-                      className={['tile-pop', settle.activeTileId === tile.id ? 'live' : ''].filter(Boolean).join(' ')}
-                    >
-                      +{pop}
-                    </span>
-                  )}
-                </span>
-              );
-            })}
+            {sub.tiles.map((tile) => <TileView key={tile.id} tile={tile} mini />)}
             <span className="pos">{posLabel(sub, lexicon, t)}</span>
+            {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
             {settling && <WordStamp />}
           </div>
         );

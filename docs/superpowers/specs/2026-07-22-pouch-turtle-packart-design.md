@@ -48,8 +48,8 @@ the ALIEN/GHOST/DOG/CAT pattern. Name: **Turtle** / **느무보**.
   add row `{ id:'TURTLE', word:'TURTLE', effect:{ kind:'mascot', variant:'turtle' } }`.
 - `src/ui/mascots.ts`: add `'turtle'` to `WooDakSkin`; import the art; add
   `WOODAK_SKINS` row `{ id:'turtle', unlockId:'TURTLE', nameKey:'mascot.turtle', art: turtleUrl }`.
-  The Settings picker (`availableWooDakSkins`) and the 도감 (`mascotCollectionRows`)
-  pick it up automatically.
+  The Collection mascot picker (`mascotCollectionRows`) picks it up automatically;
+  `availableWooDakSkins` remains the availability helper.
 - i18n: `mascot.turtle` = `"Turtle"` (en) / `"느무보"` (ko).
 
 Gibberish never unlocks; valid words only (existing unlock rule, unchanged).

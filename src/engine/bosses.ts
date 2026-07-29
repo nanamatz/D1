@@ -47,6 +47,12 @@ export interface BossDef {
   setup?: (blind: BlindState) => BlindState;
   wordScoring?: (ctx: WordScoringContext, env: BossScoringEnv) => void;
   sentenceScoring?: (ctx: SentenceScoringContext) => void;
+  /** true → the submission is allowed but its word score is reduced to 0 */
+  debuffs?: (
+    submission: WordSubmission,
+    env: BossScoringEnv,
+    priorSequence: readonly WordSubmission[],
+  ) => boolean;
   /** true → the submission is illegal and cannot be played */
   blocks?: (word: string, lexicon: Lexicon) => boolean;
   /** true → the submission is allowed but scores 0 */
@@ -58,11 +64,6 @@ export interface BossDef {
   /** random hand tiles discarded after each play (Unopened Letter) */
   discardOnPlay?: number;
 }
-
-const zero = (ctx: WordScoringContext): void => {
-  ctx.chips = 0;
-  ctx.mult = 0;
-};
 
 const BOSSES: readonly BossDef[] = [
   // 1. Wanted (수배 전단): XL blind — target ×2.
@@ -107,10 +108,10 @@ const BOSSES: readonly BossDef[] = [
   // 7. Memoirs (회고록): any word already played THIS ante is debuffed (scores 0).
   {
     id: 'memoirs', nameEn: 'Memoirs', nameKo: '회고록', emoji: '📖',
-    wordScoring: (ctx, env) => {
-      if (ctx.submission.isGibberish) return; // gibberish is never a tracked word
+    debuffs: (submission, env) => {
+      if (submission.isGibberish) return false; // gibberish is never a tracked word
       const played = env.run.wordsThisAnte ?? [];
-      if (played.includes(ctx.submission.text.toLowerCase())) zero(ctx);
+      return played.includes(submission.text.toLowerCase());
     },
   },
   // 8. Budget Book (가계부): hand size −3.
@@ -126,18 +127,16 @@ const BOSSES: readonly BossDef[] = [
   // 10. Burnt Paper (그을린 종이): all verbs debuffed (score 0).
   {
     id: 'burntPaper', nameEn: 'Burnt Paper', nameKo: '그을린 종이', emoji: '🕯️',
-    wordScoring: (ctx, env) => {
-      if (ctx.submission.isGibberish) return;
-      const entry = env.lexicon.lookup(ctx.submission.text);
-      if (entry !== null && entry.pos.some(isVerb)) zero(ctx);
+    debuffs: (submission, env) => {
+      if (submission.isGibberish) return false;
+      const entry = env.lexicon.lookup(submission.text);
+      return entry !== null && entry.pos.some(isVerb);
     },
   },
   // 11. White Paper (백지): all vulgar words debuffed (score 0).
   {
     id: 'whitePaper', nameEn: 'White Paper', nameKo: '백지', emoji: '📄',
-    wordScoring: (ctx) => {
-      if (ctx.submission.suit === 'vulgar') zero(ctx);
-    },
+    debuffs: (submission) => submission.suit === 'vulgar',
   },
   // 12. Will (유서): base chips and mult halved.
   {

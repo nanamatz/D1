@@ -59,7 +59,10 @@ describe('slice5 bosses — setup / structural effects (GDD §8.3)', () => {
 describe('slice5 bosses — scoring effects', () => {
   it('White Paper (백지): vulgar words score 0', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'whitePaper'), r, 'damn').submission.settledScore).toBe(0);
+    const result = play(bossBlind(r, 'whitePaper'), r, 'damn');
+    expect(result.submission.settledScore).toBe(0);
+    expect(result.submission.debuffed).toBe(true);
+    expect(result.events.some((event) => event.kind === 'boss')).toBe(true);
   });
   it('Burnt Paper (그을린 종이): verb words score 0; nouns score normally', () => {
     const r = bossRun();
@@ -86,6 +89,7 @@ describe('slice5 bosses — void, economy, hand churn', () => {
     expect(first.submission.settledScore).toBeGreaterThan(0);
     const second = play(b, r, 'damn'); // vulgar ≠ standard → void
     expect(second.submission.settledScore).toBe(0);
+    expect(second.submission.debuffed).toBe(true);
   });
 
   it('Bond (채권): each submission drains $1 per tile played (CAT → −3)', () => {

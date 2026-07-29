@@ -1,7 +1,7 @@
 /**
  * WooDak (우땅) mascot skins (2026-07-21). The ally mascot can be re-skinned with an
- * unlocked character; the choice lives in Settings (`wj.settings.mascot`). Piyak (the
- * shop proprietor) is a fixed role and is never re-skinned.
+ * unlocked character; the choice is made in Collection → Mascots and persists as
+ * `wj.settings.mascot`. Piyak (the shop proprietor) is a fixed role and is never re-skinned.
  *
  * These skins ARE the chromatic-unlock `{ kind: 'mascot', variant }` rows (GDD §13:
  * ALIEN/GHOST/DOG plus TURTLE) — "data slots now, art later." A skin becomes selectable
@@ -48,7 +48,7 @@ function isUsable(def: WooDakSkinDef, active: Set<string>): boolean {
 
 /**
  * The skins a player may currently pick: the default plus every unlocked, art-backed
- * skin. Used by the Options picker (and to decide whether to show it at all).
+ * skin. Used by tests and any compact read-only availability surface.
  */
 export function availableWooDakSkins(active: Set<string>): WooDakSkinDef[] {
   return WOODAK_SKINS.filter((s) => isUsable(s, active));

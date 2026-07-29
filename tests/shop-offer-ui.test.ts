@@ -40,7 +40,7 @@ describe('image-first shop offers', () => {
     expect(css).toContain('top: -23px');
     expect(css).toContain('top: var(--shop-pack-y)');
     expect(css).toContain('height: 88%');
-    expect(css).toContain('bottom: -43px');
+    expect(css).toContain('top: calc(100% + 8px)');
     expect(css).toContain('overflow: visible');
     expect(css).toContain('background: transparent');
     expect(css).toContain('.shop-offer.selected .shop-offer-action');

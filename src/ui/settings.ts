@@ -24,7 +24,7 @@ export interface Settings {
   sfx: number;
   /** feature-02 C-4: presentation-unlock override (unlock all colors/audio now) */
   unlockAll: boolean;
-  /** 2026-07-21: chosen WooDak ally skin (default 'woodak'; unlocked skins only). */
+  /** Chosen in Collection → Mascots; persisted here with other profile presentation. */
   mascot: WooDakSkin;
 }
 

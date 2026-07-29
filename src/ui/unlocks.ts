@@ -115,7 +115,7 @@ export function applyPresentation(unlockAll: boolean): void {
         anyColor = anyColor || on;
       }
       // mascot skins have no DOM/class effect here — they are resolved at each render
-      // site by mascots.ts `mascotSrc` (Settings → Game picker), not by a root class.
+      // site by mascots.ts `mascotSrc` (Collection → Mascots picker), not by a root class.
     }
     // "Truly monochrome" guard: greyscale the whole board until ANY colour is
     // unlocked, so hard-coded fills the tokens don't reach are B&W too (C-3 revised).

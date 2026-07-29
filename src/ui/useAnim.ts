@@ -8,14 +8,18 @@ import { useEffect, useRef, useState } from 'react';
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** Ease a displayed number toward `value` whenever it changes (committed/projected roll). */
-export function useCountUp(value: number, duration = 420): number {
+/**
+ * Ease a displayed number toward `value` whenever it changes (committed/projected roll).
+ * `snap` is used when the surrounding surface changes meaning (blind → shop): the
+ * reset must land in the same frame instead of replaying the previous blind backwards.
+ */
+export function useCountUp(value: number, duration = 420, snap = false): number {
   const [display, setDisplay] = useState(value);
   const fromRef = useRef(value);
   const rafRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (reducedMotion() || fromRef.current === value) {
+    if (snap || reducedMotion() || fromRef.current === value) {
       fromRef.current = value;
       setDisplay(value);
       return;
@@ -34,9 +38,11 @@ export function useCountUp(value: number, duration = 420): number {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       fromRef.current = value;
     };
-  }, [value, duration]);
+  }, [value, duration, snap]);
 
-  return display;
+  // Effects run after render; returning the target directly while snapping also
+  // prevents a one-frame flash of the previous blind's score in the shop.
+  return snap ? value : display;
 }
 
 /**
@@ -60,4 +66,3 @@ export function useReveal(count: number, stepMs = 380): number {
   }, [count, stepMs]);
   return shown;
 }
-

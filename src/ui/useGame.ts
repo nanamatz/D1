@@ -46,13 +46,12 @@ import { patternLevelBus } from './patternLevel';
 import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
 import {
   canUseFable,
-  fablePickCount,
+  canUseFableFromPack,
   fableTargetsTiles,
   isBlindOnlyConsumable,
   isFableId,
   useFable,
   useFableOnPouch,
-  type FableId,
 } from '../engine/fables';
 import {
   bossRerollLimit,
@@ -171,12 +170,6 @@ export interface GameState {
    * flip it on and open the hard-lock on a non-rigged blind (that softlocks). Replay = new run.
    */
   showIntro: boolean;
-  /**
-   * feedback #4: a tile-targeting consumable used OUTSIDE a blind (the shop) is picking
-   * its pouch targets. Holds the fable + up to 10 tiles drawn at random from the pouch
-   * and the pick range; the PouchSelect modal renders it, confirm applies to run.bag.
-   */
-  pouchSelect: { fableId: FableId; tiles: Tile[]; min: number; max: number } | null;
   /** feedback #2: chromatic-unlock ids earned THIS run (RED, MUSIC, ALIEN, …). Game
    *  Over announces them via the mascot and shows a card for each. Reset per run. */
   runUnlocks: string[];
@@ -242,7 +235,6 @@ function bootstrap(seed: string = randomSeed()): GameState {
     sentenceBonus: null,
     runStarted: false,
     showIntro: tutorial,
-    pouchSelect: null,
     runUnlocks: [],
   };
 }
@@ -259,9 +251,6 @@ export interface UseGame {
   useConsumable: (id: import('../engine/types').ConsumableId) => void;
   /** feedback #3: buy a shop consumable and use it in one action. */
   buyAndUse: (index: number) => void;
-  /** feedback #4: confirm the pouch-tile selection for a shop-used tile Fable. */
-  confirmPouchSelect: (tileIds: string[]) => void;
-  cancelPouchSelect: () => void;
   canUseConsumable: (id: import('../engine/types').ConsumableId) => boolean;
   canMagnify: boolean;
   sellConsumable: (index: number) => void;
@@ -273,6 +262,8 @@ export interface UseGame {
   rerollBoss: () => void;
   buyPack: (index: number) => void;
   pickPackOption: (index: number) => void;
+  /** Resolve a selected Fable inside its pack, or hold it when blind-only. */
+  usePackFable: (index: number, tileIds: string[]) => void;
   closePack: () => void;
   playWord: () => void;
   discard: (ids: string[]) => void;
@@ -533,7 +524,24 @@ export function useGame(): UseGame {
   const confirmCashout = useCallback(() => {
     setState((prev) =>
       prev.phase === 'cashout' && prev.pendingRun
-        ? { ...prev, phase: 'shop', run: prev.pendingRun, pendingRun: null, cashout: null }
+        ? {
+            ...prev,
+            phase: 'shop',
+            run: prev.pendingRun,
+            pendingRun: null,
+            cashout: null,
+            // The persistent table keeps its sidebar mounted. Consume every
+            // presentation-only remnant before the shop's first frame so the
+            // previous settle cannot be replayed by that still-mounted subtree.
+            lastEvents: [],
+            settleId: 0,
+            committedBefore: 0,
+            lastPlayed: null,
+            pendingEnd: false,
+            settleComplete: true,
+            finalScore: null,
+            sentenceBonus: null,
+          }
         : prev,
     );
   }, []);
@@ -624,6 +632,9 @@ export function useGame(): UseGame {
       if (!prev.pack || prev.pack.picksLeft <= 0) return prev;
       const option = prev.pack.offer.options[optionIndex];
       if (!option) return prev;
+      // Fables have their own confirm flow: immediate Use, except blind-only
+      // cards which use Select and enter a held slot.
+      if (option.kind === 'consumable' && isFableId(option.id)) return prev;
       const run = applyPackPick(prev.run, option);
       // A-4 confirm SFX fires in PackOpening on selection (immediate feedback, feature-04
       // C) rather than here — blocked picks there never reach the pick action, so they
@@ -639,6 +650,66 @@ export function useGame(): UseGame {
           ? null
           : { ...prev.pack, offer: { ...prev.pack.offer, options }, picksLeft };
       return { ...prev, run, pack };
+    });
+  }, []);
+
+  const usePackFable = useCallback((optionIndex: number, tileIds: string[]) => {
+    setState((prev) => {
+      if (!prev.pack || prev.pack.picksLeft <= 0) return prev;
+      const option = prev.pack.offer.options[optionIndex];
+      if (!option || option.kind !== 'consumable' || !isFableId(option.id)) return prev;
+      const id = option.id;
+
+      const finish = (run: RunState, blind: BlindState, rngDelta: number): GameState => {
+        const options = prev.pack!.offer.options.filter((_, index) => index !== optionIndex);
+        const picksLeft = prev.pack!.picksLeft - 1;
+        const pack =
+          picksLeft <= 0 || options.length === 0
+            ? null
+            : { ...prev.pack!, offer: { ...prev.pack!.offer, options }, picksLeft };
+        return {
+          ...prev,
+          run,
+          blind,
+          pack,
+          rngCounter: prev.rngCounter + rngDelta,
+          message: null,
+        };
+      };
+
+      if (isBlindOnlyConsumable(id)) {
+        if (!canUseFableFromPack(id, prev.run, prev.blind, [])) return prev;
+        const run = applyPackPick(prev.run, option);
+        return finish(run, prev.blind, 0);
+      }
+
+      if (!canUseFableFromPack(id, prev.run, prev.blind, tileIds)) return prev;
+      const stagedRun = { ...prev.run, consumables: [...prev.run.consumables, id] };
+      let run: RunState;
+      let blind = prev.blind;
+      if (fableTargetsTiles(id)) {
+        const result = useFableOnPouch(id, stagedRun, tileIds);
+        if (!result.ok) return prev;
+        run = result.run;
+      } else {
+        const result = useFable(
+          id,
+          stagedRun,
+          prev.blind,
+          [],
+          makeRng(`${prev.seed}#${prev.rngCounter}`),
+        );
+        if (!result.ok) return prev;
+        run = result.run;
+        blind = result.blind;
+      }
+      audio.play('consumableUse');
+      recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+      recordVoucherProgress({
+        kind: 'editionedJokers',
+        count: run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
+      });
+      return finish(run, blind, 1);
     });
   }, []);
 
@@ -700,11 +771,12 @@ export function useGame(): UseGame {
   // GDD §2.4 revised 2026-07-28).
   const applyConsumable = useCallback(
     (prev: GameState, id: ConsumableId): GameState => {
-      // Consumables are usable on the board AND in the shop (feedback #3). Tile-targeting
-      // Fables in the shop are routed to the pouch picker before reaching here.
+      // Consumables are usable on the board AND in the shop (feedback #3), except
+      // tile-targeting and blind-only Fables, which must be held for a blind.
       if ((prev.phase !== 'playing' && prev.phase !== 'shop') || !prev.run.consumables.includes(id)) {
         return prev;
       }
+      if (prev.phase === 'shop' && (fableTargetsTiles(id) || isBlindOnlyConsumable(id))) return prev;
       if (isFableId(id)) {
         const result = useFable(
           id,
@@ -760,57 +832,29 @@ export function useGame(): UseGame {
     [lexicon],
   );
 
-  // Draw up to 10 random pouch tiles for a tile-targeting Fable used outside a blind
-  // (feedback #4) → the PouchSelect modal. Returns the new state (or prev if not owned).
-  const openPouchSelect = useCallback((prev: GameState, id: FableId): GameState => {
-    if (!prev.run.consumables.includes(id)) return prev;
-    const drawn = makeRng(`${prev.seed}#pouch${prev.rngCounter}`).shuffle(prev.run.bag).slice(0, 10);
-    if (drawn.length === 0) return { ...prev, message: { key: 'consumable.emptyPouch' } };
-    const { min, max } = fablePickCount(id);
-    return { ...prev, pouchSelect: { fableId: id, tiles: drawn, min, max }, rngCounter: prev.rngCounter + 1 };
-  }, []);
-
   const useConsumable = useCallback(
     (id: ConsumableId) =>
       setState((prev) => {
-        // In the shop, a tile-targeting Fable picks pouch tiles instead of hand tiles.
-        if (prev.phase === 'shop' && fableTargetsTiles(id) && prev.run.consumables.includes(id)) {
-          audio.play('buttonPress');
-          return openPouchSelect(prev, id as FableId);
-        }
         const pattern = CONSUMABLE_PATTERN[id];
         const from = pattern ? (prev.run.patternLevels[pattern] ?? 1) : 0;
         const next = applyConsumable(prev, id);
         // feedback #6: a Constellation card just leveled its pattern → fire the flourish.
         if (pattern && next !== prev && next.run.patternLevels[pattern] !== prev.run.patternLevels[pattern]) {
-          patternLevelBus.emit({ pattern, from, to: next.run.patternLevels[pattern] ?? from + 1 });
+          patternLevelBus.emit({
+            cardId: id as import('../engine/constellations').ConstellationId,
+            pattern,
+            from,
+            to: next.run.patternLevels[pattern] ?? from + 1,
+          });
         }
         return next;
       }),
-    [applyConsumable, openPouchSelect],
-  );
-
-  /** Confirm the pouch-tile selection (feedback #4) → apply the Fable to those pouch tiles. */
-  const confirmPouchSelect = useCallback((tileIds: string[]) => {
-    setState((prev) => {
-      const sel = prev.pouchSelect;
-      if (!sel || tileIds.length < sel.min || tileIds.length > sel.max) return prev;
-      const { ok, run } = useFableOnPouch(sel.fableId, prev.run, tileIds);
-      if (!ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
-      audio.play('consumableUse');
-      recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
-      return { ...prev, run, pouchSelect: null };
-    });
-  }, []);
-
-  const cancelPouchSelect = useCallback(
-    () => setState((prev) => (prev.pouchSelect ? { ...prev, pouchSelect: null } : prev)),
-    [],
+    [applyConsumable],
   );
 
   // feedback #3: "instant use" a shop consumable — buy AND use in one action, skipping
-  // the consumable-slot cap (it never rests in a slot). A tile-targeting Fable opens the
-  // pouch picker (feedback #4); others apply straight away.
+  // the consumable-slot cap (it never rests in a slot). Tile-targeting and blind-only
+  // Fables are intentionally excluded: they may only be bought and held for a blind.
   const buyAndUse = useCallback((index: number) => {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
@@ -818,6 +862,7 @@ export function useGame(): UseGame {
       if (!item || (item.kind !== 'consumable' && item.kind !== 'punctuation')) return prev;
       if (prev.run.gold < item.price) return prev;
       const id = item.id;
+      if (fableTargetsTiles(id) || isBlindOnlyConsumable(id)) return prev;
       const items = prev.shop.items.slice();
       items[index] = null;
       const paid: GameState = {
@@ -827,16 +872,20 @@ export function useGame(): UseGame {
         stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
       };
       audio.play('purchase');
-      if (fableTargetsTiles(id)) return openPouchSelect(paid, id as FableId);
       const pattern = CONSUMABLE_PATTERN[id];
       const from = pattern ? (paid.run.patternLevels[pattern] ?? 1) : 0;
       const next = applyConsumable(paid, id);
       if (pattern && next !== paid && next.run.patternLevels[pattern] !== paid.run.patternLevels[pattern]) {
-        patternLevelBus.emit({ pattern, from, to: next.run.patternLevels[pattern] ?? from + 1 });
+        patternLevelBus.emit({
+          cardId: id as import('../engine/constellations').ConstellationId,
+          pattern,
+          from,
+          to: next.run.patternLevels[pattern] ?? from + 1,
+        });
       }
       return next;
     });
-  }, [applyConsumable, openPouchSelect]);
+  }, [applyConsumable]);
 
   const playWord = useCallback(() => {
     setState((prev) => {
@@ -914,7 +963,7 @@ export function useGame(): UseGame {
         run: nextRun,
         blind,
         selected: [],
-        message: null,
+        message: submission.debuffed ? { key: 'boss.notAllowed' } : null,
         runUnlocks: unlockedId ? [...prev.runUnlocks, unlockedId] : prev.runUnlocks,
         lastEvents: events,
         settleId: prev.settleId + 1,
@@ -1108,19 +1157,15 @@ export function useGame(): UseGame {
     reorderStaged,
     useConsumable,
     buyAndUse,
-    confirmPouchSelect,
-    cancelPouchSelect,
     canUseConsumable: (id) => {
       // On the board: tile-targeting Fables need a valid hand selection; others are free.
       if (state.phase === 'playing' && !state.pendingEnd) {
         return !isFableId(id) || canUseFable(id, state.run, state.blind, state.selected);
       }
-      // In the shop (feedback #3): blind-only effects (hint) can't be used here;
-      // tile-targeting Fables open the pouch picker (need pouch tiles); non-tile Fables
-      // use their own precondition; Constellations always level.
+      // In the shop (feedback 5): tile-targeting and blind-only Fables must be held
+      // for a blind. Non-tile Fables use their own precondition; Constellations level.
       if (state.phase === 'shop') {
-        if (isBlindOnlyConsumable(id)) return false;
-        if (fableTargetsTiles(id)) return state.run.bag.length > 0;
+        if (isBlindOnlyConsumable(id) || fableTargetsTiles(id)) return false;
         if (!isFableId(id)) return true;
         return canUseFable(id, state.run, state.blind, []);
       }
@@ -1138,6 +1183,7 @@ export function useGame(): UseGame {
     rerollBoss,
     buyPack,
     pickPackOption,
+    usePackFable,
     closePack,
     playWord,
     discard,

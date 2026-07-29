@@ -5,6 +5,7 @@ import { faceClass, fontClass, inkClass, materialClass, materialGlyph, tileGlyph
 import { useI18n } from '../i18n';
 import { usePointerTilt } from '../hooks';
 import { richText } from '../richtext';
+import { useSettleView } from '../settle';
 
 interface Props {
   tile: Tile;
@@ -28,6 +29,8 @@ interface Props {
   /** Locked by the first-run lesson: dimmed and non-interactive (not the next YELLOW
    *  letter). Distinct from faceDown — the letter is still visible. */
   disabled?: boolean;
+  /** The currently staged word will be debuffed to zero by the active boss. */
+  invalid?: boolean;
   /** Disable local tilt when a parent surface owns the whole interaction layer. */
   tilt?: boolean;
   /** anchored hover tooltip for the tile (C-4): chip value, material, font */
@@ -51,10 +54,12 @@ function TileViewImpl({
   dropTarget = false,
   faceDown = false,
   disabled = false,
+  invalid = false,
   tilt = true,
   tooltip,
 }: Props) {
   const { t } = useI18n();
+  const settle = useSettleView();
   const interactive = !mini && !!onSelect && !disabled;
   const draggable = !mini && !!zone && !disabled;
   // Conditional-material corner glyph (B-1) — hidden face-down (identity hidden).
@@ -93,9 +98,14 @@ function TileViewImpl({
     `edition-${tile.edition ?? 'base'}`,
     faceDown && 'facedown',
     disabled && 'locked',
+    invalid && 'boss-invalid',
   ]
     .filter(Boolean)
     .join(' ');
+  const effectPop =
+    settle.active && settle.tileEffectPop?.tileId === tile.id
+      ? settle.tileEffectPop
+      : null;
 
   return (
     <div
@@ -155,6 +165,7 @@ function TileViewImpl({
               {matGlyph}
             </span>
           )}
+          {invalid && <span className="boss-invalid-tag">{t('boss.notAllowed')}</span>}
         </>
       )}
       {!faceDown && tooltip && tipPos &&
@@ -172,6 +183,18 @@ function TileViewImpl({
           document.body,
         )}
       <span className="tilt-sheen" aria-hidden />
+      {effectPop && (
+        <span key={effectPop.id} className="tile-effect-pop" aria-hidden>
+          {effectPop.chips !== 0 && <span className="chip">+{Math.round(effectPop.chips)}</span>}
+          {effectPop.multFactor !== undefined ? (
+            <span className="mult">×{effectPop.multFactor}</span>
+          ) : effectPop.mult !== 0 ? (
+            <span className="mult">+{Number.isInteger(effectPop.mult) ? effectPop.mult : effectPop.mult.toFixed(2)}×</span>
+          ) : null}
+          {effectPop.gold !== 0 && <span className="gold">+${effectPop.gold}</span>}
+          {effectPop.retrigger && <span className="retrigger">↻</span>}
+        </span>
+      )}
     </div>
   );
 }

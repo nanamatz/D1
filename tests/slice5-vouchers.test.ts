@@ -31,12 +31,13 @@ describe('two-tier vouchers — direct resource effects', () => {
     expect(run.jokerSlots).toBe(BALANCE.jokerSlots + 1);
   });
 
-  it('History/Old Book each lower ante and apply their penalties', () => {
+  it('History/Old Book each lower ante, preserve the scheduled blind, and apply their penalties', () => {
     let run: import('../src/engine/types').RunState = { ...newRun('v'), ante: 5, blindIndex: 2 };
     run = applyVoucher(run, 'historyBook');
+    expect(run.blindIndex).toBe(2);
     run = applyVoucher(run, 'oldBook');
     expect(run.ante).toBe(3);
-    expect(run.blindIndex).toBe(0); // each restarts the ante at its Draft (feedback)
+    expect(run.blindIndex).toBe(2); // the already-scheduled Deadline remains scheduled
     expect(run.handSize).toBe(BALANCE.handSize - 1); // History Book −1 hand (per its tooltip)
     expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind - 1);
   });

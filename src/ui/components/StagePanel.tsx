@@ -144,7 +144,9 @@ export function StagePanel({
 
   return (
     <div className="stage" ref={stageRef}>
-      {message && <div className="toast warn-toast">{t(message.key, message.params)}</div>}
+      {message && message.key !== 'boss.notAllowed' && (
+        <div className="toast warn-toast">{t(message.key, message.params)}</div>
+      )}
 
       <div className="staged" ref={stagedRef}>
         {staged.length === 0 && <span className="zone-hint">{t('stage.zoneEmpty')}</span>}
@@ -154,6 +156,7 @@ export function StagePanel({
             tile={tile}
             zone="staged"
             faceDown={faceDown(tile)}
+            invalid={!!preview?.debuffed}
             onSelect={selectTile}
             tooltip={tileTip(tile)}
           />

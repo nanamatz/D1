@@ -78,6 +78,8 @@ export interface StagePreview {
   letterHand: { id: LetterHandId; chips: number; mult: number } | null;
   /** true if the active boss forbids this word (The Noun Lock) */
   blocked: boolean;
+  /** true if the active boss accepts this word but reduces its score to 0 */
+  debuffed: boolean;
 }
 
 /** A translate fn (i18n `t`) — POS keys carry no params, so a key→string is enough. */
@@ -99,6 +101,10 @@ export function stagePreview(
   const blocked = blind.bossId
     ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
     : false;
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  const debuffed =
+    (boss?.debuffs?.(hypothetical, { run, blind, lexicon }, blind.sequence) ?? false) ||
+    (boss?.voids?.(hypothetical, blind.sequence) ?? false);
   const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, base.isGibberish);
   // Forecast the sentence bonus this play would add: finalize the whole sequence
@@ -119,6 +125,7 @@ export function stagePreview(
     sentenceBonus,
     letterHand: letterHand ? { id: letterHand.id, chips: letterHand.chips, mult: letterHand.mult } : null,
     blocked,
+    debuffed,
   };
 }
 
@@ -162,11 +169,11 @@ type TFull = (key: string, params?: Record<string, string | number>) => string;
 export function tileTooltip(tile: Tile, t: TFull): { title: string; body: string } {
   const lines: string[] = [t('tile.chips', { n: tileValue(tile) })];
   if (tile.material !== 'ceramic') {
-    lines.push(`${t(`material.${tile.material}`)} — ${t(`materialdesc.${tile.material}`)}`);
+    lines.push(`[a:${t(`material.${tile.material}`)}] — ${t(`materialdesc.${tile.material}`)}`);
   }
   if (tile.font !== 'medium') {
     // fonteffectdesc is keyed by EFFECT, resolved through the balance mapping.
-    lines.push(`${t(`font.${tile.font}`)} — ${t(fontDescKey(tile.font))}`);
+    lines.push(`[a:${t(`font.${tile.font}`)}] — ${t(fontDescKey(tile.font))}`);
   }
   const edition = tile.edition ?? 'base';
   if (edition !== 'base') {

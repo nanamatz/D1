@@ -20,7 +20,7 @@
  */
 import type { ReactNode } from 'react';
 
-const TAG = /\[([mcbnk]):([^\]]*)\]/g;
+const TAG = /\[([mcbnka]):([^\]]*)\]/g;
 
 const CLASS: Record<string, string> = {
   m: 'hl-mult',
@@ -28,6 +28,7 @@ const CLASS: Record<string, string> = {
   b: 'hl-blind',
   n: 'hl-count',
   k: 'hl-kind',
+  a: 'hl-axis',
 };
 
 /**

@@ -370,8 +370,26 @@ function scoreSubmission(
     }
   }
 
-  let total = ctx.chips * ctx.mult;
-  if (boss?.voids?.(submission, blind.sequence)) total = 0; // Forbidden Paper single-suit lock
+  const debuffed =
+    (boss?.debuffs?.(submission, { run, blind, lexicon }, blind.sequence) ?? false) ||
+    (boss?.voids?.(submission, blind.sequence) ?? false);
+  if (debuffed) {
+    const beforeChips = ctx.chips;
+    const beforeMult = ctx.mult;
+    ctx.chips = 0;
+    ctx.mult = 0;
+    submission.debuffed = true;
+    if (beforeChips !== 0 || beforeMult !== 0) {
+      events.push({
+        kind: 'boss',
+        bossId: blind.bossId!,
+        chipsDelta: -beforeChips,
+        multDelta: -beforeMult,
+      });
+    }
+  }
+
+  const total = ctx.chips * ctx.mult;
   submission.settledScore = total;
   events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
   return { submission, events, materialGold, destroyedTileIds, grownWoodTileIds };

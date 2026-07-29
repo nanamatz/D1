@@ -177,7 +177,7 @@ describe('Fable registry', () => {
     expect(result.blind.hand.filter((t) => ids.includes(t.id)).every((t) => t.material === 'polished')).toBe(true);
   });
 
-  it('applies a tile Fable to POUCH tiles by id (feedback #4 shop path)', () => {
+  it('applies a tile Fable to dealt POUCH candidates by id (Fable Pack path)', () => {
     const base = newRun('pouch');
     const run = { ...base, consumables: ['fable6' as const] }; // Polished ×2
     expect(fableTargetsTiles('fable6')).toBe(true);

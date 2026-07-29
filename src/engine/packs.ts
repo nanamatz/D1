@@ -3,8 +3,9 @@
  * enter the economy as a draft-flavored choice.
  * A pack slot is a { type, size }: size governs show/pick counts + price, type
  * governs the option pool. rollPack builds the offer; applyPackPick folds a pick
- * into the run. Punctuation applies IMMEDIATELY on pick (levels its pattern);
- * everything else lands in the bag / a joker or consumable slot.
+ * into the run. The UI controller resolves ordinary Fables immediately against
+ * their pack candidates; applyPackPick remains the low-level "take this object"
+ * fold used by tiles, jokers, Constellations, and blind-only Fables.
  */
 
 import { BALANCE } from './balance';

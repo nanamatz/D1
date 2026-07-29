@@ -1,10 +1,13 @@
 # WooDak mascot selector — design (2026-07-21)
 
+> **Superseded 2026-07-29:** selection moved from Options/Settings to
+> **Collection → Mascots**. Persistence and resolver architecture below remain valid.
+
 ## Goal
 
 Let players re-skin the **WooDak (우땅)** ally mascot with an unlocked character. First
-skin shipping: **누렁이 (DOG)**, using `docs/Arts/T_Dog.png`. Selection lives in
-Options → Settings. Piyak (shop proprietor) is unchanged.
+skin shipping: **누렁이 (DOG)**, using `docs/Arts/T_Dog.png`. Selection now lives in
+Collection → Mascots. Piyak (shop proprietor) is unchanged.
 
 Follows the chromatic-unlock system (GDD §13): the mascot skins are the existing
 `{ kind: 'mascot', variant }` unlock rows (ALIEN/GHOST/DOG/CAT), which were
@@ -52,14 +55,13 @@ components (CLAUDE.md guardrail).
   "reveal all presentation" override (C-4) also makes art skins selectable — consistent
   with how it reveals colours/audio.
 
-### 3. Options UI — Mascot row (Settings → Game tab)
+### 3. Collection UI — Mascot equip cards
 
-- A `MascotPicker` control rendered in the `game` tab, below Language.
-- Renders `availableWooDakSkins(activeUnlocks(settings.unlockAll))` as selectable
-  thumbnail buttons (art + localized name); the current `settings.mascot` is highlighted;
-  clicking calls `set('mascot', id)`.
-- **Hidden entirely while only the default is available** (no unlocked art skins), so it is
-  never a lonely one-option control; it appears once ≥1 skin is unlocked.
+- The Collection Mascots page renders every registry row. Locked skins remain
+  non-selectable silhouettes; unlocked art cards select `settings.mascot`.
+- The equipped card is highlighted with a gold outline and Selected label.
+- `activeUnlocks(settings.unlockAll)` grants selection access under the override
+  without changing real discovery progress.
 
 ### 4. Wiring
 
@@ -72,9 +74,9 @@ components (CLAUDE.md guardrail).
 ### 5. Assets · i18n · docs
 
 - Copy `docs/Arts/T_Dog.png` → `src/ui/assets/dog.png`.
-- i18n (en + ko): `settings.mascot`, `mascot.woodak`, `mascot.dog` (+ `mascot.alien` /
+- i18n (en + ko): `collection.mascot.*`, `mascot.woodak`, `mascot.dog` (+ `mascot.alien` /
   `mascot.ghost` / `mascot.cat` for the future rows).
-- Update GDD §13 mascot row ("data slots now, art later" → DOG art shipped + Options
+- Update GDD §13 mascot row ("data slots now, art later" → DOG art shipped + Collection
   selector) and the CLAUDE.md mascot note, in the same pass (principle 6).
 
 ## Out of scope (YAGNI)
@@ -87,5 +89,5 @@ components (CLAUDE.md guardrail).
 
 - Headless `mascots.ts` resolver unit: default fallback, dog selected-but-not-unlocked →
   fallback, dog selected + unlocked → dog art, unlockAll → dog available.
-- Visual: play DOG → Mascot row appears in Options → pick 누렁이 → WooDak surfaces
+- Visual: play DOG → select 누렁이 in Collection → Mascots → WooDak surfaces
   (run-end, tutorial) show the dog.

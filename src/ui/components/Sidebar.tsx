@@ -88,7 +88,10 @@ export function Sidebar({
     mode === 'blind'
       ? finalScore ?? (settleComplete ? blind.committedScore : committedBefore)
       : 0;
-  const round = useCountUp(roundTarget, BONUS_LAND_MS);
+  // Outside a blind the score readout is a fresh zero-state, not the tail of the
+  // previous blind. Snap the reset so entering the shop cannot replay the final
+  // score as a count-down/count-up animation.
+  const round = useCountUp(roundTarget, BONUS_LAND_MS, mode !== 'blind');
   // The sentence bonus as a forecast — "if the sentence ends like this: +N".
   const forecast = mode === 'blind' ? blind.projectedScore - blind.committedScore : 0;
   // Sentence-bonus beat (item 2): when the bonus lands, the scorebox fills to the

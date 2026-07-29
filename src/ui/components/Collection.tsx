@@ -29,6 +29,8 @@ import { GAMBLER_CARDS } from '../gamblerArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
 import { FamilyCardArt } from './FamilyCardArt';
 import { TiltCard } from './TiltCard';
+import { useSettings } from '../settings';
+import { audio } from '../audio';
 
 type Category =
   | 'words'
@@ -477,14 +479,14 @@ function BossesView() {
             const b = BOSS_REGISTRY.get(id)!;
             return (
               <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))} down>
-                <div className="coll-card boss-card">
+                <TiltCard idle className="coll-card boss-card">
                   {BOSS_ART[id] ? (
                     <img className="boss-card-art" src={BOSS_ART[id]} alt="" />
                   ) : (
                     <span className="cc-emoji">{b.emoji}</span>
                   )}
                   <span className="cc-name">{lang === 'ko' ? b.nameKo : b.nameEn}</span>
-                </div>
+                </TiltCard>
               </Tooltip>
             );
           })}
@@ -589,17 +591,43 @@ function PaletteView() {
 // ---------- Mascots (item 5.1) ----------
 function MascotsView() {
   const { t } = useI18n();
-  // Display only — the unlockAll override reveals but never "discovers" (matches Palette).
-  const rows = mascotCollectionRows(activeUnlocks(false));
+  const { settings, set } = useSettings();
+  // The override makes skins selectable but does not change discovery counts.
+  const rows = mascotCollectionRows(activeUnlocks(settings.unlockAll));
+  const selectedMascot = settings.mascot ?? 'woodak';
   return (
-    <div className="card-grid">
+    <div className="mascot-collection">
+      <p className="mascot-collection-help">{t('collection.mascot.choose')}</p>
+      <div className="card-grid">
       {rows.map((r) => {
         const reveal = r.unlocked && !!r.art; // full portrait + name
         const silhouette = !r.unlocked && !!r.art; // teased shape, hidden name
-        return (
-          <div
+        const selected = reveal && r.id === selectedMascot;
+        const choose = () => {
+          if (!reveal) return;
+          audio.play('buttonPress');
+          set('mascot', r.id);
+        };
+        const card = (
+          <TiltCard
             key={r.id}
-            className={['coll-card', 'mascot-card', r.unlocked ? '' : 'locked'].filter(Boolean).join(' ')}
+            idle
+            className={[
+              'coll-card',
+              'mascot-card',
+              r.unlocked ? '' : 'locked',
+              selected ? 'selected' : '',
+            ].filter(Boolean).join(' ')}
+            role={reveal ? 'button' : undefined}
+            tabIndex={reveal ? 0 : undefined}
+            aria-pressed={reveal ? selected : undefined}
+            onClick={reveal ? choose : undefined}
+            onKeyDown={reveal ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                choose();
+              }
+            } : undefined}
           >
             {r.art ? (
               <img
@@ -611,9 +639,25 @@ function MascotsView() {
               <span className="cc-emoji">❔</span>
             )}
             <span className="cc-name">{reveal ? t(r.nameKey) : '???'}</span>
-          </div>
+            {reveal && (
+              <span className={['mascot-equip', selected ? 'on' : ''].filter(Boolean).join(' ')}>
+                {t(selected ? 'collection.mascot.selected' : 'collection.mascot.select')}
+              </span>
+            )}
+          </TiltCard>
         );
+        return reveal ? (
+          <Tooltip
+            key={r.id}
+            title={t(r.nameKey)}
+            body={t('collection.mascot.tooltip')}
+            down
+          >
+            {card}
+          </Tooltip>
+        ) : card;
       })}
+      </div>
     </div>
   );
 }
