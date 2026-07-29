@@ -1766,13 +1766,14 @@ body.cb-safe .tile.hint {
   align-items: stretch;
   gap: 12px;
   width: 100%;
-  overflow-x: auto;
+  overflow: visible;
   padding: 8px 10px 18px;
 }
 .mascot-card-row > .tt-anchor,
 .mascot-card-row > .mascot-card {
-  flex: 0 1 150px;
-  min-width: 108px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 150px;
 }
 .mascot-card-row > .tt-anchor > .mascot-card {
   width: 100%;

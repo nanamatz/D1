@@ -680,10 +680,19 @@ export function useGame(): UseGame {
       const finish = (run: RunState, blind: BlindState, rngDelta: number): GameState => {
         const options = prev.pack!.offer.options.filter((_, index) => index !== optionIndex);
         const picksLeft = prev.pack!.picksLeft - 1;
+        const bagTiles = new Map(run.bag.map((tile) => [tile.id, tile]));
+        const candidateTiles = prev.pack!.candidateTiles
+          .map((tile) => bagTiles.get(tile.id))
+          .filter((tile): tile is Tile => tile !== undefined);
         const pack =
           picksLeft <= 0 || options.length === 0
             ? null
-            : { ...prev.pack!, offer: { ...prev.pack!.offer, options }, picksLeft };
+            : {
+                ...prev.pack!,
+                offer: { ...prev.pack!.offer, options },
+                picksLeft,
+                candidateTiles,
+              };
         return {
           ...prev,
           run,

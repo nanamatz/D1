@@ -96,6 +96,7 @@ function OptionCard({
       className={[
         'shopitem',
         'pack-option-card',
+        option.kind === 'tile' && 'tile-pack-option',
         `edition-${edition}`,
         blockKey && 'blocked',
         selected && 'selected',
@@ -255,10 +256,10 @@ export function PackOpening({
         ),
       });
       timer = window.setTimeout(() => {
+        event.resolve();
         setFableFx(null);
         setPicking(null);
         onSelectedCandidatesChange([]);
-        event.resolve();
       }, effectMs);
     });
     return () => {
@@ -312,7 +313,6 @@ export function PackOpening({
       ),
     });
     window.setTimeout(() => {
-      setFableFx(null);
       // Hold the completed result for half a second before the pack begins closing.
       window.setTimeout(() => {
         if (pack.picksLeft <= 1) {
@@ -320,6 +320,8 @@ export function PackOpening({
           window.setTimeout(resolvePick, 360);
         } else {
           resolvePick();
+          // The committed candidate state replaces the preview in this render.
+          setFableFx(null);
         }
         setPicking(null);
         setSelectedFable(null);

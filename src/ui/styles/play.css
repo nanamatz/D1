@@ -808,6 +808,9 @@
   box-shadow: none;
   overflow: visible;
 }
+.pack-option-card.tile-pack-option {
+  aspect-ratio: 1;
+}
 .pack-option-card.selected {
   outline: 3px solid var(--gold);
   outline-offset: 3px;

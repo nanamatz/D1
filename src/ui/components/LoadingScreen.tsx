@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { activeUnlocks } from '../unlocks';
 import { mascotSrc } from '../mascots';
+import pouchUrl from '../assets/pouch.png';
+import draftUrl from '../assets/bosses/T_Draft.png';
 
 /**
  * D-4 · loading screen (screens-spec §2.0). Shown once on app start, before the Main
@@ -11,15 +13,9 @@ import { mascotSrc } from '../mascots';
  * audio can't play before the first gesture (feature-01 B-3), so nothing sounds here.
  */
 
-// Every bundled image asset — enumerated at build time so new art is covered with no
-// list to maintain. `?url` yields the hashed URL; preloading warms the browser cache.
-const ASSET_URLS: string[] = Object.values(
-  import.meta.glob('../assets/**/*.{png,svg,webp}', {
-    eager: true,
-    query: '?url',
-    import: 'default',
-  }) as Record<string, string>,
-);
+// Only first-interaction art belongs on the critical path. Preloading the complete
+// gallery caused a cold deployment to download and decode tens of MB at once.
+const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, draftUrl];
 
 const COLOR_UNLOCKS = ['RED', 'YELLOW', 'GREEN', 'BLUE'];
 
