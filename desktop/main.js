@@ -9,9 +9,10 @@
  * the viewport against a 1440x912 design board, capped at 1. So this file only
  * chooses window sizes; it never touches layout.
  */
-import { app, BrowserWindow, Menu, globalShortcut, screen } from 'electron';
+import { app, BrowserWindow, Menu, globalShortcut, ipcMain, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createSaveStore } from './save-store.js';
 import { MIN_SIZE, loadState, restoreBounds, saveState } from './window-state.js';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -36,6 +37,7 @@ function createWindow() {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
+      preload: path.join(DIR, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -66,6 +68,21 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Player progress lives in <userData>/saves/, NOT the userData root, which is
+  // full of Chromium's own Cache/Local Storage/GPUCache directories. This folder
+  // is what Steam Cloud will point at.
+  const saves = createSaveStore(path.join(app.getPath('userData'), 'saves'));
+
+  // Registered before createWindow: the preload calls wj:load synchronously.
+  ipcMain.on('wj:load', (event) => {
+    event.returnValue = { snapshot: saves.snapshot(), fresh: saves.fresh };
+  });
+  ipcMain.on('wj:write', (_event, key, json) => saves.set(key, json));
+  ipcMain.on('wj:remove', (_event, key) => saves.remove(key));
+
+  // Writes are debounced; make sure the last action reaches disk.
+  app.on('before-quit', () => saves.flush());
+
   const win = createWindow();
 
   globalShortcut.register('F11', () => {
