@@ -165,14 +165,37 @@ deployment path keeps working.
 
 | Script | Behaviour |
 |---|---|
-| `build:desktop` | `vite build` → offline gate → `electron-builder --dir` |
+| `build:desktop` | `vite build` → offline gate → `electron-builder --dir` (output: `../D1-release/`) |
 | `desktop:run` | run electron against the existing `dist/`, no rebuild — fast loop for shell edits |
 | `deploy` (existing) | unchanged |
 
 **No installer target.** Steam copies a depot folder and runs the exe, so
-NSIS/MSI is unnecessary. The `--dir` output at `release/win-unpacked/` **is** the
-depot content. If non-Steam distribution is ever needed, adding a target is one
-line then; building it now adds verification burden for something unused.
+NSIS/MSI is unnecessary. The `--dir` output at `../D1-release/win-unpacked/`
+**is** the depot content. If non-Steam distribution is ever needed, adding a
+target is one line then; building it now adds verification burden for something
+unused.
+
+**The output directory sits outside the repository** (`../D1-release`, i.e.
+`GitHub/D1-release/`), which is a change from the original `release/` inside the
+repo. Packaging into the working tree fails on this machine: electron-builder
+renames `win-unpacked.tmp` to `win-unpacked` and Windows returns `EPERM`,
+reproducibly. It is not electron-builder — copying a 476MB Electron tree into
+the repo and renaming it by hand fails identically, while the same operation
+outside the repo succeeds, and it still fails with the agent sandbox disabled.
+Something watching the workspace holds file handles (24 VS Code processes are
+running and Defender real-time scanning is on); with thousands of files, one
+open handle is enough to block a directory rename. Moving the output out of the
+watched tree is the fix. `release/` remains in `.gitignore` as a guard in case a
+future build ever writes there.
+
+**`node_modules` is excluded from the package** (`"!node_modules/**/*"`).
+electron-builder bundles production dependencies by default, which added 55.9MB
+to the asar — 51.2MB of it `@fontsource` woff2 files that Vite had already
+bundled into `dist`, plus a duplicate copy of React. The main process imports
+only `electron`, Node builtins, and its own local files, and the renderer loads
+a fully bundled `dist`, so nothing is needed from `node_modules` at runtime.
+This is a packaging-config fix, not asset optimization (cell 5): it removes a
+duplicate rather than touching the game's art. Package size: 476MB → 419MB.
 
 **Interim icon.** No `.ico` exists in the repository. The final store icon is an
 art-direction decision, not a packaging task, so this spec ships an interim

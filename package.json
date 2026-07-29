@@ -12,7 +12,24 @@
     "sim:materials": "tsx src/sim/materials.ts",
     "normalize:packs": "node scripts/normalize-pack-art.mjs",
     "deploy": "npm run build && gh-pages -d dist",
-    "desktop:run": "electron ."
+    "desktop:run": "electron .",
+    "build:desktop": "npm run build && node scripts/check-offline.mjs && electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.kdg0711.playtheworld",
+    "productName": "Play the World",
+    "directories": { "output": "../D1-release" },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": "dir",
+      "icon": "desktop/icon.ico"
+    }
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

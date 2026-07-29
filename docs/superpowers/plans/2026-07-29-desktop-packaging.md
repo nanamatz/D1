@@ -911,7 +911,7 @@ git commit -m "feat(desktop): persist and validate window bounds across launches
 
 **Interfaces:**
 - Consumes: `desktop/main.js` (Task 4/5) as the packaged entry point; `scripts/check-offline.mjs` (Task 1) as the gate.
-- Produces: `release/win-unpacked/` — the Steam depot content.
+- Produces: `../D1-release/win-unpacked/` — the Steam depot content.
 
 **Why hand-roll the icon:** a `.ico` is an `ICONDIR` header plus per-size entries, and since Windows Vista each entry may hold raw PNG bytes. `pngjs` is already a devDependency, so no new dependency is needed. The source is `src/ui/assets/woodak.png` at 1024×1054 — **not square**, so it is padded with transparency to 1054×1054 before scaling. Downscaling uses box averaging rather than nearest-neighbour: at a >4× reduction nearest-neighbour drops most source pixels and produces a speckled icon.
 
@@ -1045,8 +1045,13 @@ In `package.json`, add a top-level `build` object:
 "build": {
   "appId": "com.kdg0711.playtheworld",
   "productName": "Play the World",
-  "directories": { "output": "release" },
-  "files": ["dist/**/*", "desktop/**/*", "package.json"],
+  "directories": { "output": "../D1-release" },
+  "files": [
+    "dist/**/*",
+    "desktop/**/*",
+    "package.json",
+    "!node_modules/**/*"
+  ],
   "asar": true,
   "win": {
     "target": "dir",
@@ -1055,7 +1060,12 @@ In `package.json`, add a top-level `build` object:
 }
 ```
 
-`"target": "dir"` produces `release/win-unpacked/` and no installer — Steam copies a depot folder and runs the exe, so NSIS/MSI would be built and verified for nothing.
+`"target": "dir"` produces `win-unpacked/` and no installer — Steam copies a depot folder and runs the exe, so NSIS/MSI would be built and verified for nothing.
+
+**Two settings differ from the original plan; both were forced by what execution found:**
+
+- **`directories.output` is `../D1-release`, outside the repository.** Packaging into the working tree fails reproducibly: `EPERM: rename 'release\win-unpacked.tmp' -> 'release\win-unpacked'`. It is not electron-builder — copying a 476MB Electron tree into the repo and renaming it by hand fails identically, the same operation outside the repo succeeds, and it still fails with the agent sandbox disabled. Something watching the workspace holds handles (24 VS Code processes running, Defender real-time on). `release/` stays in `.gitignore` as a guard.
+- **`!node_modules/**/*`.** electron-builder bundles production dependencies by default, adding 55.9MB to the asar — 51.2MB of `@fontsource` woff2 that Vite already bundled into `dist`, plus a duplicate React. The main process imports only `electron`, Node builtins, and its own files. Package size 476MB → 419MB.
 
 - [ ] **Step 4: Add the build script**
 
@@ -1075,10 +1085,10 @@ In `.gitignore`, under the `# --- Build output ---` section, add `release/` on t
 
 Run: `npm run build:desktop`
 
-Expected: the offline gate prints "Offline gate passed", electron-builder completes, and `release/win-unpacked/` exists containing `Play the World.exe`.
+Expected: the offline gate prints "Offline gate passed", electron-builder completes, and `../D1-release/win-unpacked/` exists containing `Play the World.exe`.
 
 ```bash
-ls release/win-unpacked/
+ls ../D1-release/win-unpacked/
 ```
 
 - [ ] **Step 7: Verify the gate actually blocks a regression**
@@ -1096,9 +1106,20 @@ Then revert the change (`git checkout index.html`) and re-run `npm run build:des
 
 - [ ] **Step 8: Run the packaged executable**
 
-Run: `"./release/win-unpacked/Play the World.exe"`
+Run: `"../D1-release/win-unpacked/Play the World.exe"`
 
 Expected: the game launches, no menu bar, correct icon in the taskbar, and **`Ctrl+Shift+I` does nothing** (`app.isPackaged` is true here, unlike under `desktop:run`).
+
+**Clear `ELECTRON_RUN_AS_NODE` first.** If that variable is set in the environment (it is, in the agent shell), Electron runs as plain Node, the app exits immediately with code 0, and no window ever appears — which looks exactly like a packaging failure but is not. In PowerShell: `Remove-Item Env:\ELECTRON_RUN_AS_NODE`.
+
+A quick non-visual confirmation that the window really opened and the page loaded — the title comes from `index.html`:
+
+```powershell
+Get-Process -Name "Play the World" | Where-Object { $_.MainWindowTitle } |
+  Select-Object -ExpandProperty MainWindowTitle
+```
+
+Expected: `Play the Wor!d`.
 
 - [ ] **Step 9: Commit**
 
@@ -1118,14 +1139,14 @@ The manual checklist is the real test for a shell, and the documentation rule is
 - Modify: `CLAUDE.md`
 
 **Interfaces:**
-- Consumes: `release/win-unpacked/` from Task 6.
+- Consumes: `../D1-release/win-unpacked/` from Task 6.
 - Produces: nothing consumed by later tasks — this is the final task.
 
 **Why both files:** `CLAUDE.md` is listed in `.gitignore` and is therefore absent from the shared repository. `AGENTS.md` is the tracked mirror. The rule must be in both or it is lost for everyone else.
 
 - [ ] **Step 1: Run the full manual verification checklist**
 
-Every item must pass. Run against the **packaged** executable at `release/win-unpacked/"Play the World.exe"`, not `desktop:run`.
+Every item must pass. Run against the **packaged** executable at `../D1-release/win-unpacked/Play the World.exe`, not `desktop:run`. Launch it from Explorer or a shell where `ELECTRON_RUN_AS_NODE` is not set.
 
 1. **Disable the network adapter**, launch, and play through a full blind clear. All four fonts render correctly (Jersey 10 on the numeric readouts is the most obvious tell) and Korean text has no tofu (▯) after switching to 한국어.
 2. Quit and relaunch. In-progress run, collection, unlocks, and settings all persist. Confirm `%APPDATA%/Play the World/Local Storage` exists.
