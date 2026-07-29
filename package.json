@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "main": "desktop/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -10,13 +11,16 @@
     "sim": "tsx src/sim/autoplay.ts",
     "sim:materials": "tsx src/sim/materials.ts",
     "normalize:packs": "node scripts/normalize-pack-art.mjs",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "desktop:run": "electron ."
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.0.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "gh-pages": "^6.3.0",
     "pngjs": "^7.0.0",
     "tsx": "^4.19.0",
