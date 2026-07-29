@@ -60,7 +60,12 @@ The gate that protects everything else. Built first and test-driven, because it 
 - Consumes: nothing.
 - Produces: `findViolations(fileName: string, content: string) => Violation[]` where `Violation = { file: string, kind: 'external-url' | 'absolute-path', snippet: string }`. Task 6 invokes this file as a CLI.
 
-**Critical detail — the SVG namespace allowlist.** `src/ui/assets/packs/*.svg` contain `xmlns="http://www.w3.org/2000/svg"`. That is an XML namespace identifier, not a network fetch, and it ends up inside the bundled output. Without an allowlist the gate produces a false positive on every build and becomes noise that gets disabled. Allowlist any URL beginning `http://www.w3.org/` or `https://www.w3.org/`.
+**Critical detail — the allowlist.** Two kinds of URL appear in the bundle but are never fetched, and both would otherwise fail every build until someone disables the gate:
+
+- `src/ui/assets/packs/*.svg` contain `xmlns="http://www.w3.org/2000/svg"` — an XML namespace identifier.
+- React's production bundle embeds `https://reactjs.org/docs/error-decoder.html?invariant=`, printed into an error message for a human to open. (Found while executing this task; the allowlist covers `react.dev` too, since React's docs moved there.)
+
+Keep the list narrow — every entry is a hole in the gate. Anchor each pattern at the start of the URL so a lookalike host (`https://cdn.reactjs.org.evil.com/`) still trips it.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -87,6 +92,16 @@ describe('findViolations', () => {
   it('ignores the SVG XML namespace, which is not a network fetch', () => {
     const js = 'const s=\'<svg xmlns="http://www.w3.org/2000/svg" width="10"></svg>\';';
     expect(findViolations('assets/index-abc.js', js)).toEqual([]);
+  });
+
+  it("ignores React's error-decoder link, which is printed, not fetched", () => {
+    const js = 'throw Error("...https://reactjs.org/docs/error-decoder.html?invariant="+e);';
+    expect(findViolations('assets/index-abc.js', js)).toEqual([]);
+  });
+
+  it('still flags a CDN host that merely looks documentation-ish', () => {
+    const js = 'const u="https://cdn.reactjs.org.evil.com/x.js";';
+    expect(findViolations('assets/index-abc.js', js)).toHaveLength(1);
   });
 
   it('flags an absolute asset path in HTML', () => {
@@ -146,8 +161,18 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-/** XML namespace identifiers, not network fetches. They appear in bundled SVGs. */
-const URL_ALLOWLIST = [/^https?:\/\/www\.w3\.org\//];
+/**
+ * URLs that appear in the bundle but are never fetched. Keep this list narrow —
+ * every entry is a hole in the gate.
+ *   - w3.org: XML namespace identifiers, from bundled SVGs.
+ *   - reactjs.org / react.dev: React's production error-decoder link. It is
+ *     printed into an error message for a human to open, never requested.
+ */
+const URL_ALLOWLIST = [
+  /^https?:\/\/www\.w3\.org\//,
+  /^https?:\/\/reactjs\.org\//,
+  /^https?:\/\/react\.dev\//,
+];
 
 const URL_RE = /https?:\/\/[^\s"'`)\\]+/g;
 /** Absolute src/href in markup. */
@@ -227,12 +252,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/desktop-offline-gate.test.mjs`
-Expected: PASS, 7 tests. The output must **not** contain "Offline gate passed" or a directory-scan error — either means the direct-invocation guard is wrong and `main()` ran on import.
+Expected: PASS, 9 tests. The output must **not** contain "Offline gate passed" or a directory-scan error — either means the direct-invocation guard is wrong and `main()` ran on import.
 
 - [ ] **Step 5: Confirm the gate is genuinely red on today's build**
 
 Run: `npm run build && node scripts/check-offline.mjs`
-Expected: FAIL, listing `fonts.googleapis.com` / `fonts.gstatic.com` and an absolute `/D1/` asset path. This proves the gate detects the two real defects Tasks 2 and 3 will fix. Record the violation count.
+Expected: FAIL (exit 1) with **9 violations** — three `external-url` for `fonts.googleapis.com` / `fonts.gstatic.com` in `index.html`, and six `absolute-path` for `/D1/` asset references in `index.html` and the CSS bundle. This proves the gate detects the two real defects Tasks 2 and 3 will fix.
+
+Note: when checking the exit code, do not pipe the command into `head` — `$?` would report the pipe's status, not the gate's.
 
 - [ ] **Step 6: Commit**
 
