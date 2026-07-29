@@ -59,8 +59,10 @@ rather than the full viewport centre. Blind cards use the broad lower work surfa
 play hands and ordinary pack choices sit lower; Fable packs use two tiers (ten
 candidate tiles above, Fable choices below) with pack information and Skip at the
 bottom. Fable cards have no resting button: selection reveals Use, or Select for a
-blind-only card; candidate tiles become interactive only for a selected targeting
-Fable. Overlays such as Fee Settlement and Options are the exception: they centre
+blind-only card. The ten pouch candidates are interactive as soon as a Fable Pack
+opens, so either a revealed targeting Fable or a compatible targeting Fable already
+held on the consumable shelf can use the same selection. Overlays such as Fee
+Settlement and Options are the exception: they centre
 on the physical viewport.
 
 ---
@@ -135,7 +137,7 @@ Font and edition sit *on top of* material, so a tile can show all three at once:
 
 Priority order — implement top-down, cut from the bottom if time-boxed:
 
-1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): staged tiles fly to the tray → chips box counts up per tile (tick per letter) → suit stamp slams onto the word frame → mult box multiplies → committed score rolls. Every tile-specific beat also fires at the source letter tile itself, whether that tile is now in the played-word tray or remains in hand: the tile flashes/bounces and a popup above it shows Chips, Mult, multiplicative factor, gold, or retrigger as applicable. Additive Mult popups use the red Mult colour and render `+N` only; they do not append a redundant `×`. Score-box-only feedback is insufficient. The readable base cadence is **600ms per scoring beat at 1×**, scaled by the game-speed setting; settle completion uses the same calculated duration.
+1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): whole-word stamps (suit/gibberish and the highest Letter Hand) → played letter tiles from first to last, with each tile's base score, material/font/edition, and tile-triggered Emoji effects kept together → the owned Emoji Tile list from first to last → tiles still held in the hand, frozen in their visible order at Play time → consumable hooks (reserved for future mechanics) → global/boss beats → committed score rolls. The currently evaluated tile lifts slightly; every score/effect beat makes it bounce. Every tile-specific beat also fires at the source letter tile itself, whether that tile is now in the played-word tray or remains in hand: the tile flashes/bounces and a popup above it shows Chips, Mult, multiplicative factor, gold, or retrigger as applicable. Additive Mult popups use the red Mult colour and render `+N` only; they do not append a redundant `×`. Score-box-only feedback is insufficient. The readable base cadence is **800ms per scoring beat at 1×**, scaled by the game-speed setting; settle completion uses the same calculated duration.
 2. **Projected update**: after settle, pattern chip re-evaluates with a soft flip; projected number rolls to new value; if ≥ target, the projected panel ignites (gold pulse) to signal the imminent **auto-settle** (a status cue, not a button — GDD §7.2).
 3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel. Fresh tiles fly from the live pouch position through `useFlip`; their wobble is suspended during that flight and starts from the flight's matching −1.2° landing angle, so entry never hands off through a visible extra hop. **Jokers & consumables share this wobble family (feature-02 D-4)**; the firing joker is excluded so its settle wiggle wins.
 4. **Card motion (changed 2026-07-27):** vouchers, packs, and every Fable, Constellation, and Gambler card idle with a slow 3px float plus ±0.45° sway. Pointer movement pauses the idle loop, lifts and scales the card, tilts it in 3D toward the cursor, and moves a radial sheen with the pointer; leaving eases flat and resumes the idle phase. Keyboard focus straightens, lifts, and adds a gold outline. Select = rise 10px + gold ring. Collection pack entries keep the grid image-only—no persistent pack-type, grade, or coming-soon label—but restore the shared type/description/grade tooltip on hover or keyboard focus.

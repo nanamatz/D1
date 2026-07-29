@@ -1,14 +1,17 @@
 /**
- * Tutorial Layer 2/3 foundation (work order A). Seen-flags live in localStorage
- * beside the word collection (wj.collection → wj.tutorial), the encounter
- * registry is a data table, and a tiny event bus lets any trigger site announce
- * an encounter without threading a callback through props — the same singleton
- * shape as src/ui/audio.ts.
+ * Tutorial Layer 2/3 foundation (work order A). Seen-flags persist beside the
+ * word collection (wj.collection → wj.tutorial) via storage.ts — both are save
+ * keys, so on desktop they live in the save files. The encounter registry is a
+ * data table, and a tiny event bus lets any trigger site announce an encounter
+ * without threading a callback through props — the same singleton shape as
+ * src/ui/audio.ts.
  *
  * Copy is NOT here: each encounter's title/body are i18n keys
  * `tutorial.<id>.title` / `.body`, shared verbatim by the popup and the Help
  * glossary (single source).
  */
+
+import { readValue, remove as removeKey, writeValue } from './storage';
 
 const KEY = 'wj.tutorial';
 
@@ -55,12 +58,7 @@ export const ENCOUNTERS: readonly Encounter[] = [
 type Flags = Record<string, number>;
 
 export function loadTutorial(): Flags {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Flags) : {};
-  } catch {
-    return {};
-  }
+  return readValue<Flags>(KEY) ?? {};
 }
 
 export function hasSeen(id: EncounterId): boolean {
@@ -71,11 +69,7 @@ export function markSeen(id: EncounterId, now: number = Date.now()): void {
   const flags = loadTutorial();
   if (flags[id] !== undefined) return;
   flags[id] = now;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(flags));
-  } catch {
-    /* ignore quota / privacy-mode errors */
-  }
+  writeValue(KEY, flags);
 }
 
 export function seenCount(): number {
@@ -83,11 +77,7 @@ export function seenCount(): number {
 }
 
 export function resetTutorial(): void {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
+  removeKey(KEY);
 }
 
 // ----- Guided first-run intro (A-1) — a separate one-shot flag -----
@@ -125,28 +115,17 @@ export const INTRO_STEPS: readonly IntroStep[] = [
   { key: 'submit', selector: '.play-btn', advance: 'played' },
 ];
 
+/** Stored as a bare number: valid JSON, so older String(Date.now()) values still read. */
 export function hasSeenIntro(): boolean {
-  try {
-    return localStorage.getItem(INTRO_KEY) !== null;
-  } catch {
-    return false;
-  }
+  return readValue<number>(INTRO_KEY) !== null;
 }
 
 export function markIntroSeen(): void {
-  try {
-    localStorage.setItem(INTRO_KEY, String(Date.now()));
-  } catch {
-    /* ignore quota / privacy-mode errors */
-  }
+  writeValue(INTRO_KEY, Date.now());
 }
 
 export function resetIntro(): void {
-  try {
-    localStorage.removeItem(INTRO_KEY);
-  } catch {
-    /* ignore */
-  }
+  removeKey(INTRO_KEY);
 }
 
 /** Event bus — decouples trigger sites from the popup host (audio-singleton shape). */

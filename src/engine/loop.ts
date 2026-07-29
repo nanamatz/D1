@@ -212,6 +212,7 @@ function scoreSubmission(
   run: RunState,
   blind: BlindState,
   rng: Rng,
+  heldOrder?: readonly string[],
 ): {
   submission: WordSubmission;
   events: ScoreEvent[];
@@ -318,7 +319,16 @@ function scoreSubmission(
   // Brass and friends read tiles REMAINING in hand — blind.hand still holds the
   // played tiles at this point, so exclude them explicitly.
   const playedIds = new Set(tiles.map((t) => t.id));
-  const held = blind.hand.filter((t) => !playedIds.has(t.id));
+  const heldUnordered = blind.hand.filter((t) => !playedIds.has(t.id));
+  const held =
+    heldOrder
+      ? [
+          ...heldOrder
+            .map((id) => heldUnordered.find((tile) => tile.id === id))
+            .filter((tile): tile is Tile => tile !== undefined),
+          ...heldUnordered.filter((tile) => !heldOrder.includes(tile.id)),
+        ]
+      : heldUnordered;
   for (const beat of applyHeldMaterials(ctx, held)) {
     events.push({ kind: 'material', ...beat });
   }
@@ -393,8 +403,48 @@ function scoreSubmission(
 
   const total = ctx.chips * ctx.mult;
   submission.settledScore = total;
-  events.push({ kind: 'settle', chips: ctx.chips, mult: ctx.mult, total });
-  return { submission, events, materialGold, destroyedTileIds, grownWoodTileIds };
+  // Presentation order is explicit and independent from the mutation order above:
+  // whole-word stamps -> each played tile and its own effects -> Emoji Tiles in
+  // shelf order -> held tiles in their frozen play-time order -> global/boss beats.
+  const wholeWordEvents = events.filter(
+    (event) => event.kind === 'suit' || event.kind === 'letterHand',
+  );
+  const playedTileEvents = events.filter(
+    (event) => 'tileId' in event && !!event.tileId && playedIds.has(event.tileId),
+  );
+  const emojiEvents = events.filter(
+    (event) =>
+      (event.kind === 'joker' || event.kind === 'edition') &&
+      'jokerId' in event &&
+      !!event.jokerId &&
+      !('tileId' in event && event.tileId),
+  );
+  const heldIds = new Set(held.map((tile) => tile.id));
+  const heldTileEvents = events.filter(
+    (event) => 'tileId' in event && !!event.tileId && heldIds.has(event.tileId),
+  );
+  const claimed = new Set<ScoreEvent>([
+    ...wholeWordEvents,
+    ...playedTileEvents,
+    ...emojiEvents,
+    ...heldTileEvents,
+  ]);
+  const globalEvents = events.filter((event) => !claimed.has(event));
+  const orderedEvents: ScoreEvent[] = [
+    ...wholeWordEvents,
+    ...playedTileEvents,
+    ...emojiEvents,
+    ...heldTileEvents,
+    ...globalEvents,
+    { kind: 'settle', chips: ctx.chips, mult: ctx.mult, total },
+  ];
+  return {
+    submission,
+    events: orderedEvents,
+    materialGold,
+    destroyedTileIds,
+    grownWoodTileIds,
+  };
 }
 
 /** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total.
@@ -437,6 +487,7 @@ export function submitWord(
   lexicon: Lexicon,
   tileIds: readonly string[],
   rng: Rng,
+  heldOrder?: readonly string[],
 ): SubmitResult {
   if (blind.phasesUsed >= blind.phasesTotal) {
     throw new Error('no phases remain in this blind');
@@ -455,6 +506,7 @@ export function submitWord(
     run,
     blind,
     rng,
+    heldOrder,
   );
   // Economy drains: −goldPerWord flat, −goldPerTile per tile played (Bond).
   const bossGoldDrain =

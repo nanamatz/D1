@@ -1,14 +1,18 @@
 /**
- * User settings (spec §2.11). Persisted to localStorage. A few are wired to real
- * effects (UI scale → root font-size, reduced-motion override → a body class,
- * color-blind hint palette → a body class); the rest are stored now and consumed
- * as their systems land (game speed by the settle timing, audio by a future
- * mixer). Kept out of the engine — pure presentation.
+ * User settings (spec §2.11). A machine-local preference, so it stays in
+ * localStorage on every platform — it is NOT a save key and never reaches the
+ * desktop save files (resolution and volume following a player to another PC is
+ * an annoyance, not a feature). A few are wired to real effects (UI scale → root
+ * font-size, reduced-motion override → a body class, color-blind hint palette →
+ * a body class); the rest are stored now and consumed as their systems land
+ * (game speed by the settle timing, audio by a future mixer). Kept out of the
+ * engine — pure presentation.
  */
 import { useEffect } from 'react';
 import { usePersistedState } from './hooks';
 import { audio } from './audio';
 import { applyPresentation } from './unlocks';
+import { readValue } from './storage';
 import type { WooDakSkin } from './mascots';
 
 export interface Settings {
@@ -54,14 +58,8 @@ export const SETTINGS_KEY = 'wj.settings';
  * always reflects the latest persisted value (settings write through on change).
  */
 export function readTips(): boolean {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return DEFAULT_SETTINGS.tips;
-    const parsed = JSON.parse(raw) as Partial<Settings>;
-    return parsed.tips ?? DEFAULT_SETTINGS.tips;
-  } catch {
-    return DEFAULT_SETTINGS.tips;
-  }
+  const parsed = readValue<Partial<Settings>>(SETTINGS_KEY);
+  return parsed?.tips ?? DEFAULT_SETTINGS.tips;
 }
 
 export function useSettings() {

@@ -10,7 +10,7 @@ import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
 import { jokerSlotLimit } from '../../engine/vouchers';
-import { isFableId, jokerSellGoldValue } from '../../engine/fables';
+import { fableTargetsTiles, isFableId, jokerSellGoldValue } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
@@ -37,6 +37,8 @@ interface Props {
   onSellJoker?: (index: number) => void;
   /** when set, the joker shelf supports drag-reorder (feature-02 D-1) */
   onReorderJoker?: (from: number, to: number) => void;
+  /** An open Fable pack supplies pouch targets, so targeted Fables wait for its FX. */
+  deferTargetFableUse?: boolean;
 }
 
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
@@ -47,6 +49,7 @@ export function JokerShelf({
   onSellConsumable,
   onSellJoker,
   onReorderJoker,
+  deferTargetFableUse = false,
 }: Props) {
   const { t, lang } = useI18n();
   const settle = useSettleView();
@@ -266,7 +269,13 @@ export function JokerShelf({
                     disabled={canUseConsumable ? !canUseConsumable(c) : false}
                     onClick={() => {
                       setMenuIdx(null);
-                      beginLeave('consumable', i, 'use', () => onUseConsumable(c));
+                      // Targeted Fables used against an open pack stay on the shelf
+                      // until the pack-owned transformation animation commits them.
+                      if (deferTargetFableUse && isFableId(c) && fableTargetsTiles(c)) {
+                        onUseConsumable(c);
+                      } else {
+                        beginLeave('consumable', i, 'use', () => onUseConsumable(c));
+                      }
                     }}
                   >
                     {t('consumable.useAction')}

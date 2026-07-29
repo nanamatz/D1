@@ -47,12 +47,14 @@ import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
 import {
   canUseFable,
   canUseFableFromPack,
+  canUseFableOnPouch,
   fableTargetsTiles,
   isBlindOnlyConsumable,
   isFableId,
   useFable,
   useFableOnPouch,
 } from '../engine/fables';
+import { packFableFxBus } from './packFableFx';
 import {
   bossRerollLimit,
   bossRerollPrice,
@@ -269,8 +271,10 @@ export interface UseGame {
   usePackFable: (index: number, tileIds: string[]) => void;
   /** Use a Constellation directly from its pack, without occupying a slot. */
   usePackConstellation: (index: number) => void;
+  /** Use an owned tile-targeting Fable on the open Fable pack's pouch candidates. */
+  useHeldPackFable: (id: import('../engine/fables').FableId, tileIds: string[]) => void;
   closePack: () => void;
-  playWord: () => void;
+  playWord: (heldOrder?: string[]) => void;
   discard: (ids: string[]) => void;
   selectBlind: () => void;
   confirmCashout: () => void;
@@ -285,6 +289,9 @@ export function useGame(): UseGame {
   const lexicon = useMemo(() => loadBrowserLexicon(), []);
   // Resume a saved run if there is one; otherwise the idle bootstrap run.
   const [state, setState] = useState<GameState>(() => loadRun() ?? bootstrap());
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const heldPackFablePending = useRef(false);
 
   // Persist the run so it survives a reload (the Continue tab resumes it).
   // Dedupe on the serialized bytes: most state churn (staging a tile, hovering)
@@ -757,6 +764,58 @@ export function useGame(): UseGame {
     });
   }, []);
 
+  const useHeldPackFable = useCallback(
+    (id: import('../engine/fables').FableId, tileIds: string[]) => {
+      const current = stateRef.current;
+      if (
+        heldPackFablePending.current ||
+        current.phase !== 'shop' ||
+        current.pack?.offer.type !== 'consumable' ||
+        !fableTargetsTiles(id) ||
+        !canUseFableOnPouch(id, current.run, tileIds)
+      ) {
+        return;
+      }
+      heldPackFablePending.current = true;
+      let resolved = false;
+      const accepted = packFableFxBus.emit({
+        id,
+        tileIds: tileIds.slice(),
+        resolve: () => {
+          if (resolved) return;
+          resolved = true;
+          setState((prev) => {
+            heldPackFablePending.current = false;
+            if (
+              prev.phase !== 'shop' ||
+              prev.pack?.offer.type !== 'consumable' ||
+              !canUseFableOnPouch(id, prev.run, tileIds)
+            ) {
+              return prev;
+            }
+            const result = useFableOnPouch(id, prev.run, tileIds);
+            if (!result.ok) return prev;
+            const bagById = new Map(result.run.bag.map((tile) => [tile.id, tile]));
+            const candidateTiles = prev.pack.candidateTiles
+              .map((tile) => bagById.get(tile.id))
+              .filter((tile): tile is Tile => tile !== undefined);
+            audio.play('consumableUse');
+            recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+            return {
+              ...prev,
+              run: result.run,
+              pack: { ...prev.pack, candidateTiles },
+              message: null,
+              rngCounter: prev.rngCounter + 1,
+            };
+          });
+        },
+      });
+      if (!accepted) heldPackFablePending.current = false;
+    },
+    [],
+  );
+
   const closePack = useCallback(() => setState((prev) => ({ ...prev, pack: null })), []);
 
   const toggleTile = useCallback((id: string) => {
@@ -932,7 +991,7 @@ export function useGame(): UseGame {
     });
   }, [applyConsumable]);
 
-  const playWord = useCallback(() => {
+  const playWord = useCallback((heldOrder?: string[]) => {
     setState((prev) => {
       if (prev.phase !== 'playing' || prev.selected.length === 0) return prev;
       if (prev.blind.phasesUsed >= prev.blind.phasesTotal) return prev;
@@ -944,6 +1003,7 @@ export function useGame(): UseGame {
           lexicon,
           prev.selected,
           makeRng(`${prev.seed}#${prev.rngCounter}`),
+          heldOrder,
         );
       } catch {
         // Boss legality (e.g. The Noun Lock) — surface, don't crash.
@@ -1240,6 +1300,7 @@ export function useGame(): UseGame {
     pickPackOption,
     usePackFable,
     usePackConstellation,
+    useHeldPackFable,
     closePack,
     playWord,
     discard,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
-import type { ConsumableId, JokerRarity } from '../../engine/types';
+import type { ConsumableId, JokerRarity, Tile } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
 import { NO_LETTER } from '../../engine/scoring';
 import { consumableDescKey, jokerDescKey, consumableAxisTip } from '../descriptions';
@@ -19,6 +19,7 @@ import {
   fableTargetsTiles,
   isBlindOnlyConsumable,
   isFableId,
+  previewFableTile,
 } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
@@ -26,6 +27,7 @@ import { ConstellationCardArt } from './ConstellationCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { useEntering } from './ScreenTransition';
+import { packFableFxBus } from '../packFableFx';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
@@ -60,6 +62,7 @@ function OptionCard({
   actionDisabled,
   picked,
   effecting,
+  hoverOnlyAction,
   onSelect,
   onAction,
 }: {
@@ -77,6 +80,8 @@ function OptionCard({
   picked?: boolean;
   /** Fable is casting onto its selected pouch tiles. */
   effecting?: boolean;
+  /** Tile/Charm pack actions appear only while the stable shell is hovered. */
+  hoverOnlyAction?: boolean;
   onSelect?: (() => void) | undefined;
   onAction: () => void;
 }) {
@@ -85,7 +90,7 @@ function OptionCard({
     option.kind === 'joker' ? option.edition
       : option.kind === 'tile' ? (option.tile.edition ?? 'base')
         : 'base';
-  const card = (
+  const cardFace = (
     <TiltCard
       idle
       className={[
@@ -130,6 +135,24 @@ function OptionCard({
         )}
       </div>
       {edition !== 'base' && <span className="edition-badge">{edition}</span>}
+    </TiltCard>
+  );
+  // The tooltip wraps the whole card, so it shows on hover even when the pick is
+  // blocked (item 4) — hover is CSS-driven and independent of the block state.
+  const card = tip ? (
+    <Tooltip
+      title={tip.title}
+      body={tip.body}
+      rarity={tip.rarity}
+      classification={tip.classification}
+      sub={tip.sub}
+    >
+      {cardFace}
+    </Tooltip>
+  ) : cardFace;
+  return (
+    <div className={['pack-option-shell', hoverOnlyAction && 'hover-action'].filter(Boolean).join(' ')}>
+      {card}
       {actionVisible && (
         blockKey ? (
           <span className="pack-option-action pack-block">{t(blockKey)}</span>
@@ -137,6 +160,7 @@ function OptionCard({
           <button
             className="btn exchange sm pack-option-action"
             disabled={actionDisabled}
+            onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
               onAction();
@@ -146,22 +170,7 @@ function OptionCard({
           </button>
         )
       )}
-    </TiltCard>
-  );
-  // The tooltip wraps the whole card, so it shows on hover even when the pick is
-  // blocked (item 4) — hover is CSS-driven and independent of the block state.
-  return tip ? (
-    <Tooltip
-      title={tip.title}
-      body={tip.body}
-      rarity={tip.rarity}
-      classification={tip.classification}
-      sub={tip.sub}
-    >
-      {card}
-    </Tooltip>
-  ) : (
-    card
+    </div>
   );
 }
 
@@ -177,7 +186,15 @@ function motionOff(): boolean {
 const BURST_MS = 900;
 
 /** Pack selection screen (GDD §9.3): pick up to `pick` of the shown options. */
-export function PackOpening({ g }: { g: UseGame }) {
+export function PackOpening({
+  g,
+  selectedCandidates,
+  onSelectedCandidatesChange,
+}: {
+  g: UseGame;
+  selectedCandidates: string[];
+  onSelectedCandidatesChange: (ids: string[]) => void;
+}) {
   const { t, lang } = useI18n();
   const pack = g.state.pack;
   const entering = useEntering();
@@ -191,11 +208,11 @@ export function PackOpening({ g }: { g: UseGame }) {
   // (or the overlay closes on the last pick) — selecting used to do nothing visible.
   const [picking, setPicking] = useState<string | null>(null);
   const [selectedFable, setSelectedFable] = useState<string | null>(null);
-  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [fableFx, setFableFx] = useState<{
     key: string;
     kind: 'material' | 'rankUp' | 'destroy' | 'other';
     tileIds: string[];
+    preview: Map<string, Tile>;
   } | null>(null);
   const [closing, setClosing] = useState(false);
   // Transition completion only STARTS the sequence. Keep its end timer in a
@@ -213,6 +230,43 @@ export function PackOpening({ g }: { g: UseGame }) {
     const id = setTimeout(() => setOpening(false), BURST_MS);
     return () => clearTimeout(id);
   }, [opening]);
+
+  useEffect(() => {
+    if (!pack || pack.offer.type !== 'consumable') return;
+    let timer: number | undefined;
+    const off = packFableFxBus.on((event) => {
+      const effectKind = FABLE_REGISTRY.get(event.id)?.effect.kind;
+      const kind =
+        effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
+          ? effectKind
+          : 'other';
+      const effectMs = motionOff() ? 120 : 900;
+      const key = `held:${event.id}`;
+      audio.play('packPick');
+      setPicking(key);
+      setFableFx({
+        key,
+        kind,
+        tileIds: event.tileIds,
+        preview: new Map(
+          (pack.candidateTiles ?? [])
+            .filter((tile) => event.tileIds.includes(tile.id))
+            .map((tile) => [tile.id, previewFableTile(event.id, tile)]),
+        ),
+      });
+      timer = window.setTimeout(() => {
+        setFableFx(null);
+        setPicking(null);
+        onSelectedCandidatesChange([]);
+        event.resolve();
+      }, effectMs);
+    });
+    return () => {
+      off();
+      if (timer) clearTimeout(timer);
+    };
+  }, [pack, onSelectedCandidatesChange]);
+
   if (!pack) return null;
 
   const PICK_BEAT = motionOff() ? 0 : 320;
@@ -229,7 +283,7 @@ export function PackOpening({ g }: { g: UseGame }) {
       }
       setPicking(null);
       setSelectedFable(null);
-      setSelectedCandidates([]);
+      onSelectedCandidatesChange([]);
     }, PICK_BEAT);
   };
   const doFableUse = (
@@ -247,7 +301,16 @@ export function PackOpening({ g }: { g: UseGame }) {
     const effectMs = motionOff() ? 120 : 900;
     audio.play('packPick');
     setPicking(key);
-    setFableFx({ key, kind, tileIds });
+    setFableFx({
+      key,
+      kind,
+      tileIds,
+      preview: new Map(
+        (pack.candidateTiles ?? [])
+          .filter((tile) => tileIds.includes(tile.id))
+          .map((tile) => [tile.id, previewFableTile(fableId, tile)]),
+      ),
+    });
     window.setTimeout(() => {
       setFableFx(null);
       // Hold the completed result for half a second before the pack begins closing.
@@ -260,7 +323,7 @@ export function PackOpening({ g }: { g: UseGame }) {
         }
         setPicking(null);
         setSelectedFable(null);
-        setSelectedCandidates([]);
+        onSelectedCandidatesChange([]);
       }, 500);
     }, effectMs);
   };
@@ -324,13 +387,17 @@ export function PackOpening({ g }: { g: UseGame }) {
     fableTargetsTiles(selectedFableOption.id)
       ? selectedFableOption.id
       : null;
-  const candidateMax = selectedTargetId ? fablePickCount(selectedTargetId).max : 0;
+  const candidatesActive = pack.offer.type === 'consumable';
+  const candidateMax = selectedTargetId
+    ? fablePickCount(selectedTargetId).max
+    : candidateTiles.length;
   const toggleCandidate = (tileId: string) => {
-    if (!selectedTargetId || picking) return;
-    setSelectedCandidates((current) => {
-      if (current.includes(tileId)) return current.filter((id) => id !== tileId);
-      return current.length < candidateMax ? [...current, tileId] : current;
-    });
+    if (!candidatesActive || picking) return;
+    if (selectedCandidates.includes(tileId)) {
+      onSelectedCandidatesChange(selectedCandidates.filter((id) => id !== tileId));
+    } else if (selectedCandidates.length < candidateMax) {
+      onSelectedCandidatesChange([...selectedCandidates, tileId]);
+    }
   };
 
   return (
@@ -364,28 +431,44 @@ export function PackOpening({ g }: { g: UseGame }) {
           <div className="pack-candidates">
             <div className="label">{t('pack.effectCandidates')}</div>
             <div className="pack-candidate-row">
-              {candidateTiles.map((tile, i) => (
-                <div
-                  key={tile.id}
-                  className={[
-                    'pack-candidate-tile',
-                    fableFx?.tileIds.includes(tile.id) && 'fable-effect-target',
-                    fableFx?.tileIds.includes(tile.id) && `fx-${fableFx.kind}`,
-                  ].filter(Boolean).join(' ')}
-                  style={{ ['--candidate-i' as string]: i }}
-                >
-                  <TileView
-                    tile={tile}
-                    selected={selectedCandidates.includes(tile.id)}
-                    disabled={!selectedTargetId}
-                    {...(selectedTargetId ? { onSelect: toggleCandidate } : {})}
-                    tooltip={tileTooltip(tile, t)}
-                  />
-                  {fableFx?.tileIds.includes(tile.id) && (
-                    <span className="fable-target-fx" aria-hidden />
-                  )}
-                </div>
-              ))}
+              {candidateTiles.map((tile, i) => {
+                const preview = fableFx?.preview.get(tile.id) ?? tile;
+                const changes = [
+                  preview.material !== tile.material ? t(`material.${preview.material}`) : null,
+                  preview.font !== tile.font ? t(`font.${preview.font}`) : null,
+                  (preview.edition ?? 'base') !== (tile.edition ?? 'base')
+                    ? t(`edition.${preview.edition ?? 'base'}`)
+                    : null,
+                  preview.letter !== tile.letter ? `${tile.letter ?? '?'} → ${preview.letter ?? '?'}` : null,
+                ].filter((value): value is string => value !== null);
+                return (
+                  <div
+                    key={tile.id}
+                    className={[
+                      'pack-candidate-tile',
+                      fableFx?.tileIds.includes(tile.id) && 'fable-effect-target',
+                      fableFx?.tileIds.includes(tile.id) && `fx-${fableFx.kind}`,
+                    ].filter(Boolean).join(' ')}
+                    style={{ ['--candidate-i' as string]: i }}
+                  >
+                    <TileView
+                      tile={preview}
+                      selected={selectedCandidates.includes(tile.id)}
+                      disabled={!candidatesActive}
+                      {...(candidatesActive ? { onSelect: toggleCandidate } : {})}
+                      tooltip={tileTooltip(preview, t)}
+                    />
+                    {fableFx?.tileIds.includes(tile.id) && (
+                      <>
+                        <span className="fable-target-fx" aria-hidden />
+                        {changes.length > 0 && (
+                          <span className="fable-axis-change" aria-hidden>{changes.join(' · ')}</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -438,10 +521,10 @@ export function PackOpening({ g }: { g: UseGame }) {
                   actionDisabled={actionDisabled}
                   picked={picking === key}
                   effecting={fableFx?.key === key}
+                  hoverOnlyAction={o.kind === 'tile' || o.kind === 'joker'}
                   onSelect={needsConfirmation ? () => {
                     if (picking) return;
                     setSelectedFable(selected ? null : key);
-                    setSelectedCandidates([]);
                     audio.play('buttonPress');
                   } : undefined}
                   onAction={() => {

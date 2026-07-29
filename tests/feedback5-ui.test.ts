@@ -34,8 +34,8 @@ describe('feedback 5 UI regressions', () => {
     );
   });
 
-  it('slows settlement to a readable 600ms base beat', () => {
-    expect(source('src/ui/settle.tsx')).toContain('const BASE_STEP = 600');
+  it('slows settlement to a readable 800ms base beat', () => {
+    expect(source('src/ui/settle.tsx')).toContain('const BASE_STEP = 800');
   });
 
   it('keeps non-current blind cards equal and reserves a taller current card', () => {

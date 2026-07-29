@@ -91,6 +91,7 @@ function TileViewImpl({
     draggable && 'draggable',
     dragging && 'dragging',
     dropTarget && 'drop-target',
+    settle.active && settle.activeTileId === tile.id && 'score-current',
     materialClass(tile.material),
     fontClass(tile.font),
     inkClass(tileValue(tile)),

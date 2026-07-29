@@ -14,6 +14,7 @@
  * Nothing here throws: localStorage can be unavailable (privacy mode) or full, and
  * a save is a convenience — never a reason to fail to boot.
  */
+import { readValue, remove, writeRaw } from './storage';
 import type { GameState } from './useGame';
 
 const KEY = 'wj.run';
@@ -58,43 +59,29 @@ export function serializeRun(state: GameState): string {
 }
 
 export function writeRun(json: string): void {
-  try {
-    localStorage.setItem(KEY, json);
-  } catch {
-    /* quota / privacy mode — the run just stays session-only */
-  }
+  writeRaw(KEY, json);
 }
 
 /** The saved run, or null if there is none, it's unreadable, or the schema moved. */
 export function loadRun(): GameState | null {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    const env = JSON.parse(raw) as Partial<Envelope> | null;
-    if (!env || env.version !== VERSION || !env.state) return null;
-    const s = env.state;
-    // Cheap shape check: a corrupt or half-written save must never boot the game
-    // into a broken state — fall back to a fresh bootstrap instead.
-    if (
-      typeof s.seed !== 'string' ||
-      typeof s.phase !== 'string' ||
-      !s.run ||
-      !s.blind ||
-      !Array.isArray(s.blind.hand) ||
-      !Array.isArray(s.run.jokers)
-    ) {
-      return null;
-    }
-    return s;
-  } catch {
+  const env = readValue<Partial<Envelope>>(KEY);
+  if (!env || env.version !== VERSION || !env.state) return null;
+  const s = env.state;
+  // Cheap shape check: a corrupt or half-written save must never boot the game
+  // into a broken state — fall back to a fresh bootstrap instead.
+  if (
+    typeof s.seed !== 'string' ||
+    typeof s.phase !== 'string' ||
+    !s.run ||
+    !s.blind ||
+    !Array.isArray(s.blind.hand) ||
+    !Array.isArray(s.run.jokers)
+  ) {
     return null;
   }
+  return s;
 }
 
 export function clearRun(): void {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
+  remove(KEY);
 }

@@ -90,9 +90,9 @@ export const useSettleView = (): SettleView => useContext(SettleCtx);
 // three-deep and the whole tally read as one blur (playtest-06 item 1). Players
 // need to see each contribution land one at a time; game speed (1/2/4×) scales it.
 // Feedback 5: each contribution needs enough time to read and land before the
-// next tile/effect fires. 600ms at 1× keeps the sequence deliberate; game speed
+// next tile/effect fires. 800ms at 1× keeps the sequence deliberate; game speed
 // still scales this single timing source to 2×/4×.
-const BASE_STEP = 600;
+const BASE_STEP = 800;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
 
@@ -222,10 +222,12 @@ export function SettleProvider({
           if (e.kind === 'tile') {
             audio.play('tilePop');
             audio.play('countTick', { step: tickStep++ });
+            triggerTile(e.tileId);
           } else if (e.kind === 'suit' || e.kind === 'letterHand' || e.kind === 'boss') {
             audio.play('stamp');
           } else if (e.kind === 'joker') {
             audio.play('jokerBlip');
+            if (e.tileId) triggerTile(e.tileId);
           } else if (e.kind === 'font') {
             audio.play('jokerBlip');
             triggerTile(e.tileId); // feedback #3: font trigger bounces its tile

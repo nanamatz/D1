@@ -609,7 +609,7 @@ All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vo
 
 Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Zero Score). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and packs.
 
-**Fable Pack resolution (changed 2026-07-29).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until the effect's required candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection. Enabled and disabled Use states occupy the same fixed position. Using plays the complete card-to-target application animation; only after that animation ends does the pack hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+**Fable Pack resolution (changed 2026-07-29).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until the effect's required candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection. The candidate field is selectable immediately when the pack opens. While it is open, a compatible tile-targeting Fable already held on the consumable shelf may also use those selected pouch candidates; this is the only shop-phase exception to the normal staged-hand targeting rule. Enabled and disabled Use states occupy the same fixed position. Using previews the resulting letter/material/font/edition on every target and plays the complete card-to-target application animation; only after that animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
 
 **Constellation Pack resolution (changed 2026-07-29).** A revealed Constellation follows the same select-then-confirm interaction, but its action is always named **Use**, never Select. Use immediately levels the mapped sentence pattern, plays the full Constellation level-up sequence, ignores held-consumable capacity, and does not place the card in a held slot.
 
@@ -617,10 +617,11 @@ Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
 
 ### 10.1 Fable Cards (Tarot-equivalent), 18
 
-Held targeted effects use the tiles currently staged on the board. A target-requiring
-held card cannot be consumed until the exact valid target count is staged. Inside a
-Fable Pack, the same effect instead targets the pack's ten seeded pouch candidates
-and cannot be used until its required selection count is valid. Random creation
+Held targeted effects normally use the tiles currently staged on the board. A
+target-requiring held card cannot be consumed until the exact valid target count is
+staged. While a Fable Pack is open, the same held effect instead may target the
+pack's immediately active ten seeded pouch candidates and cannot be used until its
+required selection count is valid. Random creation
 respects the destination slot cap.
 
 **Art rendering (changed 2026-07-26).** All 18 supplied pixel illustrations are

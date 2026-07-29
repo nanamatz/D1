@@ -53,7 +53,7 @@ describe('feedback 4 UI regressions', () => {
     const pack = source('src/ui/components/PackOpening.tsx');
     expect(pack).toContain('actionVisible={actionVisible}');
     expect(pack).toContain("blindOnlyFable ? 'pack.select' : 'consumable.useAction'");
-    expect(pack).toContain('setSelectedCandidates([])');
+    expect(pack).toContain('onSelectedCandidatesChange([])');
     expect(pack).toContain('canUseFableFromPack');
     expect(pack).not.toContain('instant/blind-only');
   });

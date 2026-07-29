@@ -12,6 +12,7 @@
  */
 import { activeUnlocks } from './unlocks';
 import { SETTINGS_KEY } from './settings';
+import { readValue } from './storage';
 import piyakUrl from './assets/piyak.png';
 import woodakUrl from './assets/woodak.png';
 import dogUrl from './assets/dog.png';
@@ -82,16 +83,11 @@ export function mascotCollectionRows(
   }));
 }
 
-/** Read the live selection + override straight from localStorage (mirrors readTips):
+/** Read the live selection + override straight from storage (mirrors readTips):
  *  the tutorial host is long-lived, so we never trust a stale React copy. */
 function readSelection(): { mascot: WooDakSkin; unlockAll: boolean } {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    const p = (raw ? JSON.parse(raw) : {}) as { mascot?: WooDakSkin; unlockAll?: boolean };
-    return { mascot: p.mascot ?? 'woodak', unlockAll: !!p.unlockAll };
-  } catch {
-    return { mascot: 'woodak', unlockAll: false };
-  }
+  const p = readValue<{ mascot?: WooDakSkin; unlockAll?: boolean }>(SETTINGS_KEY) ?? {};
+  return { mascot: p.mascot ?? 'woodak', unlockAll: !!p.unlockAll };
 }
 
 /**

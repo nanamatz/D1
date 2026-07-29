@@ -267,7 +267,8 @@ export function StagePanel({
           onClick={() => {
             captureBossDiscardOrigins();
             audio.play('submitThock');
-            g.playWord();
+            // Freeze held-tile scoring in the order currently shown to the player.
+            g.playWord(hand.map((tile) => tile.id));
           }}
           disabled={!g.canPlay || !!preview?.blocked || (lock && !lockComplete)}
         >

@@ -4,6 +4,8 @@
  * coupling.
  */
 
+import { readValue, writeValue } from './storage';
+
 const KEY = 'wj.lifetime';
 
 export interface Lifetime {
@@ -17,12 +19,8 @@ export interface Lifetime {
 const EMPTY: Lifetime = { runs: 0, highestAnte: 0, bestWordScore: 0, bestWord: '', mostGold: 0 };
 
 export function loadLifetime(): Lifetime {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...EMPTY, ...(JSON.parse(raw) as Partial<Lifetime>) } : { ...EMPTY };
-  } catch {
-    return { ...EMPTY };
-  }
+  const stored = readValue<Partial<Lifetime>>(KEY);
+  return stored ? { ...EMPTY, ...stored } : { ...EMPTY };
 }
 
 export interface RunResult {
@@ -41,9 +39,5 @@ export function recordRunEnd(r: RunResult): void {
     bestWord: (r.bestWord?.score ?? 0) > lt.bestWordScore ? (r.bestWord?.text ?? '') : lt.bestWord,
     mostGold: Math.max(lt.mostGold, r.gold),
   };
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    /* ignore quota / privacy-mode errors */
-  }
+  writeValue(KEY, next);
 }

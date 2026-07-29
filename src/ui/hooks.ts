@@ -7,6 +7,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from 'react';
+import { readValue, writeValue } from './storage';
 
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined'
@@ -15,25 +16,14 @@ const reducedMotion = (): boolean =>
     || document.body.classList.contains('force-reduced-motion')
   );
 
-/** useState mirrored to localStorage (P1-1 persists the sort choice). */
+/** useState mirrored to persistent storage (P1-1 persists the sort choice). */
 export function usePersistedState<T>(
   key: string,
   initial: T,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw !== null ? (JSON.parse(raw) as T) : initial;
-    } catch {
-      return initial;
-    }
-  });
+  const [value, setValue] = useState<T>(() => readValue<T>(key) ?? initial);
   useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      /* ignore quota / privacy-mode errors */
-    }
+    writeValue(key, value);
   }, [key, value]);
   return [value, setValue];
 }
@@ -161,6 +151,7 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
     let leaveTimer = 0;
     let nx = 0;
     let ny = 0;
+    let stableRect: DOMRect | null = null;
     const apply = () => {
       raf = 0;
       el.style.setProperty('--tilt-y', String(nx)); // horizontal cursor → rotateY
@@ -168,7 +159,11 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
     };
     const onMove = (e: PointerEvent) => {
       window.clearTimeout(leaveTimer); // cancel a pending flatten if we re-entered
-      const r = el.getBoundingClientRect();
+      // Do not re-measure a box while this hook is transforming it. Feeding the
+      // transformed rect back into the next tilt calculation made edge positions
+      // oscillate and could repeatedly trigger pointerleave/pointerenter.
+      const r = stableRect ?? el.getBoundingClientRect();
+      stableRect ??= r;
       nx = clamp(((e.clientX - r.left) / r.width) * 2 - 1, -1, 1);
       ny = clamp(((e.clientY - r.top) / r.height) * 2 - 1, -1, 1);
       el.classList.add('tilting');
@@ -176,6 +171,7 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
       if (!raf) raf = requestAnimationFrame(apply);
     };
     const onLeave = () => {
+      stableRect = null;
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
       // Ease everything back to flat (vars → 0) WHILE .tilting is still applied, so the
       // transform transitions instead of snapping; drop the class after the transition.
@@ -190,9 +186,15 @@ export function usePointerTilt(ref: RefObject<HTMLElement | null>, enabled = tru
         el.style.removeProperty('--tilt-k');
       }, 180);
     };
+    const onEnter = () => {
+      stableRect = el.getBoundingClientRect();
+      window.clearTimeout(leaveTimer);
+    };
+    el.addEventListener('pointerenter', onEnter);
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerleave', onLeave);
     return () => {
+      el.removeEventListener('pointerenter', onEnter);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
       if (raf) cancelAnimationFrame(raf);

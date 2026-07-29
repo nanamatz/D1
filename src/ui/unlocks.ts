@@ -3,14 +3,16 @@
  *
  * The game begins DESATURATED and SILENT; playing specific words permanently
  * unlocks presentation layers (a color group, an audio bus, a mascot skin, or a
- * celebratory locale entry). Persistent PER PROFILE (localStorage), data-driven:
- * adding a future unlock is adding a row to UNLOCKS — never a hard-coded word
- * check in a component (CLAUDE.md guardrail).
+ * celebratory locale entry). Persistent PER PROFILE (via storage.ts — a save key,
+ * so on desktop it lives in the save files), data-driven: adding a future unlock
+ * is adding a row to UNLOCKS — never a hard-coded word check in a component
+ * (CLAUDE.md guardrail).
  *
  * Valid words only unlock (gibberish never does — enforced by the caller).
  */
 
 import { audio } from './audio';
+import { readValue, remove as removeKey, writeValue } from './storage';
 
 export type UnlockGroup = 'red' | 'yellow' | 'green' | 'blue';
 
@@ -47,12 +49,7 @@ const KEY = 'wj.unlocks';
 
 /** The set of ids the player has actually PLAYED (celebrated + recorded). */
 export function loadPlayed(): Set<string> {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
+  return new Set(readValue<string[]>(KEY) ?? []);
 }
 
 export function isPlayed(id: string): boolean {
@@ -60,11 +57,7 @@ export function isPlayed(id: string): boolean {
 }
 
 function savePlayed(set: Set<string>): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify([...set]));
-  } catch {
-    /* ignore quota / privacy-mode errors */
-  }
+  writeValue(KEY, [...set]);
 }
 
 export function markPlayed(id: string): void {
@@ -79,11 +72,7 @@ export function playedCount(): number {
 }
 
 export function resetUnlocks(): void {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
+  removeKey(KEY);
 }
 
 /**

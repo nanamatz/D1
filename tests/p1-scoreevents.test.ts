@@ -40,10 +40,13 @@ describe('P1-3a — per-submission ScoreEvent log (settle choreography source)',
     ]);
   });
 
-  it('emits the suit multiplier event after the tiles', () => {
+  it('emits the whole-word suit stamp before the tile list', () => {
     const { events } = play(newRun('x'), 'cat');
     const suit = events.find((e) => e.kind === 'suit');
     expect(suit).toEqual({ kind: 'suit', suit: 'standard', mult: 1 });
+    expect(events.findIndex((e) => e.kind === 'suit')).toBeLessThan(
+      events.findIndex((e) => e.kind === 'tile'),
+    );
   });
 
   it('records per-tile jokers per consonant (with a tileId) and per-word jokers once', () => {
@@ -68,6 +71,45 @@ describe('P1-3a — per-submission ScoreEvent log (settle choreography source)',
     ]);
     // settle = (15 + 8) chips × (1 + 4) mult = 115 — total unchanged from the batch path
     expect(settled).toBe(115);
+  });
+
+  it('keeps played-tile effects together, then scores Emoji Tiles and held tiles in order', () => {
+    const run = equip('ordered', 'consonantBricklayer', 'jackOfAllTrades');
+    const blind = startBlind(run, makeRng(run.seed));
+    const played = tilesFor('cat');
+    const heldB = { ...tilesFor('b')[0]!, id: 'held-b', material: 'brass' as const };
+    const heldA = { ...tilesFor('a')[0]!, id: 'held-a', material: 'brass' as const };
+    const hand = [...played, heldB, heldA];
+    const result = submitWord(
+      { ...blind, hand },
+      run,
+      lex,
+      played.map((tile) => tile.id),
+      makeRng('ordered-events'),
+      ['held-a', 'held-b'],
+    );
+    const { events } = result;
+
+    const firstTile = events.findIndex((event) => event.kind === 'tile');
+    const firstTileJoker = events.findIndex(
+      (event) => event.kind === 'joker' && event.tileId === played[0]!.id,
+    );
+    const globalJoker = events.findIndex(
+      (event) => event.kind === 'joker' && !event.tileId,
+    );
+    const heldBeats = events.filter(
+      (event) => event.kind === 'material' && event.material === 'brass',
+    );
+
+    expect(events.findIndex((event) => event.kind === 'suit')).toBeLessThan(firstTile);
+    expect(firstTileJoker).toBeGreaterThan(firstTile);
+    expect(globalJoker).toBeGreaterThan(firstTileJoker);
+    expect(heldBeats.map((event) => event.kind === 'material' ? event.tileId : '')).toEqual([
+      'held-a',
+      'held-b',
+    ]);
+    expect(events.indexOf(heldBeats[0]!)).toBeGreaterThan(globalJoker);
+    expect(result.blind.hand.slice(0, 2).map((tile) => tile.id)).toEqual(['held-b', 'held-a']);
   });
 
   it('ends with a settle event carrying the final chips/mult/total', () => {

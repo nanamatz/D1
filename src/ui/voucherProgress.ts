@@ -3,6 +3,7 @@
  * headless engine; only aggregate counters/unlocked upgrade ids are persisted.
  */
 import type { VoucherId } from '../engine/types';
+import { readValue, writeValue } from './storage';
 
 const KEY = 'wj.vouchers';
 
@@ -92,20 +93,12 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
 ];
 
 export function loadVoucherProgress(): VoucherProgress {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...EMPTY, ...(JSON.parse(raw) as Partial<VoucherProgress>) } : { ...EMPTY };
-  } catch {
-    return { ...EMPTY };
-  }
+  const stored = readValue<Partial<VoucherProgress>>(KEY);
+  return stored ? { ...EMPTY, ...stored } : { ...EMPTY };
 }
 
 function store(p: VoucherProgress): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(p));
-  } catch {
-    /* profile persistence is best-effort */
-  }
+  writeValue(KEY, p);
 }
 
 export function unlockedVoucherSet(): Set<VoucherId> {

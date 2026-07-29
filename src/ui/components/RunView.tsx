@@ -24,6 +24,7 @@ import { GuidedIntro } from './GuidedIntro';
 import { DeskObjects } from './DeskObjects';
 import { PackOpening } from './PackOpening';
 import { BossIntro } from './BossIntro';
+import { canUseFableOnPouch, fableTargetsTiles, isFableId } from '../../engine/fables';
 
 interface Props {
   g: UseGame;
@@ -43,9 +44,15 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [showInfo, setShowInfo] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pouchOpen, setPouchOpen] = useState(false);
+  const [packCandidateIds, setPackCandidateIds] = useState<string[]>([]);
   const [introOpen, setIntroOpen] = useState(false);
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
+  const fablePackOpen = phase === 'shop' && g.state.pack?.offer.type === 'consumable';
+
+  useEffect(() => {
+    if (!g.state.pack) setPackCandidateIds([]);
+  }, [g.state.pack]);
 
   // A boss-debuffed submission is allowed, but its warning is a transient
   // workspace announcement rather than persistent game-state copy. The message
@@ -191,8 +198,18 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <main className="main">
           <JokerShelf
             run={run}
-            onUseConsumable={g.useConsumable}
-            canUseConsumable={g.canUseConsumable}
+            onUseConsumable={(id) => {
+              if (fablePackOpen && isFableId(id) && fableTargetsTiles(id)) {
+                g.useHeldPackFable(id, packCandidateIds);
+              } else {
+                g.useConsumable(id);
+              }
+            }}
+            canUseConsumable={(id) =>
+              fablePackOpen && isFableId(id) && fableTargetsTiles(id)
+                ? canUseFableOnPouch(id, run, packCandidateIds)
+                : g.canUseConsumable(id)}
+            deferTargetFableUse={fablePackOpen}
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}
@@ -220,7 +237,15 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             )}
             {phase === 'shop' && (
               g.state.pack
-                ? <div className="phase-panel pack-phase-panel"><PackOpening g={g} /></div>
+                ? (
+                    <div className="phase-panel pack-phase-panel">
+                      <PackOpening
+                        g={g}
+                        selectedCandidates={packCandidateIds}
+                        onSelectedCandidatesChange={setPackCandidateIds}
+                      />
+                    </div>
+                  )
                 : <div className="phase-panel shop-phase-panel"><Shop g={g} /></div>
             )}
             {phase === 'blindselect' && (

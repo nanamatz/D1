@@ -5,18 +5,15 @@
  * (도감) is a later milestone — this is just the tracking hook.
  */
 
+import { readValue, writeValue } from './storage';
+
 const KEY = 'wj.collection';
 
 /** word (lowercase) → first-played epoch ms. */
 export type Collection = Record<string, number>;
 
 export function loadCollection(): Collection {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Collection) : {};
-  } catch {
-    return {};
-  }
+  return readValue<Collection>(KEY) ?? {};
 }
 
 /**
@@ -29,11 +26,7 @@ export function recordWord(word: string, now: number = Date.now()): boolean {
   const collection = loadCollection();
   if (collection[w] !== undefined) return false;
   collection[w] = now;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(collection));
-  } catch {
-    /* ignore quota / privacy-mode errors */
-  }
+  writeValue(KEY, collection);
   return true;
 }
 
@@ -43,21 +36,14 @@ export function collectionSize(): number {
 
 const SEEN_KEY = 'wj.collectionSeen';
 
-/** Words collected since the collection was last viewed — drives the `!` badge (spec §0). */
+/** Words collected since the collection was last viewed — drives the `!` badge (spec §0).
+ *  Stored as a bare number: valid JSON, so the bytes match the older String(n) form. */
 export function unseenCount(): number {
-  try {
-    const seen = Number(localStorage.getItem(SEEN_KEY) ?? '0');
-    return Math.max(0, collectionSize() - (Number.isFinite(seen) ? seen : 0));
-  } catch {
-    return 0;
-  }
+  const seen = readValue<number>(SEEN_KEY) ?? 0;
+  return Math.max(0, collectionSize() - (Number.isFinite(seen) ? seen : 0));
 }
 
 /** Mark the collection as viewed (clears the badge). */
 export function markCollectionSeen(): void {
-  try {
-    localStorage.setItem(SEEN_KEY, String(collectionSize()));
-  } catch {
-    /* ignore quota / privacy-mode errors */
-  }
+  writeValue(SEEN_KEY, collectionSize());
 }

@@ -284,6 +284,22 @@ const toMaterial = (tile: Tile, material: TileMaterial): Tile => {
 const nextLetter = (letter: Letter): Letter =>
   String.fromCharCode(letter === 'Z' ? 65 : letter.charCodeAt(0) + 1) as Letter;
 
+/** Presentation preview for a tile-targeting Fable before the mutation commits. */
+export function previewFableTile(id: FableId, tile: Tile): Tile {
+  const effect = FABLE_REGISTRY.get(id)?.effect;
+  if (effect?.kind === 'material') return toMaterial(tile, effect.material);
+  if (effect?.kind === 'rankUp' && tile.letter !== null) {
+    return {
+      ...tile,
+      letter: nextLetter(tile.letter),
+      ...(tile.letterBeforeStone
+        ? { letterBeforeStone: nextLetter(tile.letterBeforeStone) }
+        : {}),
+    };
+  }
+  return tile;
+}
+
 const removeIds = (
   run: RunState,
   blind: BlindState,

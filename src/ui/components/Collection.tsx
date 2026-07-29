@@ -598,7 +598,7 @@ function MascotsView() {
   return (
     <div className="mascot-collection">
       <p className="mascot-collection-help">{t('collection.mascot.choose')}</p>
-      <div className="card-grid">
+      <div className="card-grid mascot-card-row">
       {rows.map((r) => {
         const reveal = r.unlocked && !!r.art; // full portrait + name
         const silhouette = !r.unlocked && !!r.art; // teased shape, hidden name
