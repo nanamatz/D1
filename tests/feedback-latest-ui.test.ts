@@ -1,0 +1,61 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+const source = (path: string) => readFileSync(path, 'utf8');
+
+describe('latest feedback regressions', () => {
+  const game = source('src/ui/useGame.ts');
+  const pack = source('src/ui/components/PackOpening.tsx');
+  const stage = source('src/ui/components/StagePanel.tsx');
+  const play = source('src/ui/styles/play.css');
+
+  it('syncs the fullscreen setting to the browser fullscreenchange event', () => {
+    const settings = source('src/ui/settings.ts');
+    expect(settings).toContain("document.addEventListener('fullscreenchange', syncFullscreen)");
+    expect(settings).toContain('document.fullscreenElement !== null');
+  });
+
+  it('animates the exact Unopened Letter discard result reported by the engine', () => {
+    expect(stage).toContain('g.state.bossDiscard');
+    expect(stage).toContain("className=\"boss-discard-ghost\"");
+    expect(play).toContain('@keyframes boss-letter-discard');
+  });
+
+  it('keeps enhanced Fable targets staged when they survive the effect', () => {
+    expect(game).toContain('selected: prev.selected.filter((tileId) =>');
+    expect(game).toContain('result.blind.hand.some((tile) => tile.id === tileId)');
+  });
+
+  it('uses Constellations directly from packs without checking held-slot capacity', () => {
+    expect(game).toContain('const usePackConstellation');
+    expect(game).toContain('if (option.kind === \'punctuation\') return prev');
+    expect(pack).toContain('g.usePackConstellation(i)');
+    expect(pack).not.toContain("takesConsumableSlot = o.kind === 'punctuation'");
+  });
+
+  it('shows Fable target application VFX and waits 0.5 seconds after completion', () => {
+    expect(pack).toContain('setFableFx({ key, kind, tileIds })');
+    expect(pack).toContain('window.setTimeout(() => {');
+    expect(pack).toContain('}, 500);');
+    expect(play).toContain('.fable-effect-target');
+  });
+
+  it('prevents phase transitions and five-card packs from creating scroll containers', () => {
+    expect(play).toMatch(/\.phase-blindselect \.blindselect-phase-panel\s*\{[^}]*overflow:\s*clip/s);
+    expect(play).toMatch(/\.phase-shop \.pack-phase-panel\s*\{[^}]*overflow:\s*visible/s);
+    expect(play).toMatch(/\.pack-fan\s*\{[^}]*grid-template-columns:\s*repeat\(var\(--pack-count,\s*5\)/s);
+  });
+
+  it('keeps the sale panel height after its items are exhausted', () => {
+    expect(play).toMatch(/\.shop-sale-region > \.panel\s*\{[^}]*min-height:\s*var\(--shop-lower-panel-h\)/s);
+  });
+
+  it('does not append a multiplication sign to additive Mult tile or joker popups', () => {
+    expect(source('src/ui/components/Tile.tsx')).toContain(
+      '<span className="mult">+{Number.isInteger(effectPop.mult)',
+    );
+    expect(source('src/ui/components/JokerShelf.tsx')).toContain(
+      "mult ? `+${fmtMult(mult)}` : ''",
+    );
+  });
+});

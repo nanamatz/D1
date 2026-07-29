@@ -37,8 +37,8 @@ describe('slice5 bosses — setup / structural effects (GDD §8.3)', () => {
     const wanted = startBlind(r, makeRng('w'), { kind: 'boss', bossId: 'wanted' }).target;
     expect(wanted).toBe(plain * 2);
   });
-  it('History Book (역사책): phases 4 → 2', () => {
-    expect(bossBlind(bossRun(), 'historyBook').phasesTotal).toBe(2);
+  it('History Book (역사책): reduces only this blind by 2 phases', () => {
+    expect(bossBlind(bossRun(), 'historyBook').phasesTotal).toBe(3);
   });
   it('Contract (계약서): start with 0 discards', () => {
     expect(bossBlind(bossRun(), 'contract').discardsLeft).toBe(0);
@@ -104,6 +104,9 @@ describe('slice5 bosses — void, economy, hand churn', () => {
     const res = submitWord(b, r, lex, ids, makeRng('t'));
     // 3 played + 4 dumped by Letter = 7 tiles have left play this blind
     expect(res.blind.discardedThisBlind.length).toBe(7);
+    expect(res.bossDiscardedTiles).toHaveLength(4);
+    expect(res.bossDiscardedTiles.every((tile) =>
+      res.blind.discardedThisBlind.some((discarded) => discarded.id === tile.id))).toBe(true);
     // dumped tiles are replaced, so hand size is preserved
     expect(res.blind.hand.length).toBe(b.hand.length);
   });

@@ -14,6 +14,7 @@ import { Tooltip, type TooltipClassification } from './Tooltip';
 import { canAddJoker } from '../../engine/vouchers';
 import {
   canUseFableFromPack,
+  FABLE_REGISTRY,
   fablePickCount,
   fableTargetsTiles,
   isBlindOnlyConsumable,
@@ -58,6 +59,7 @@ function OptionCard({
   actionVisible,
   actionDisabled,
   picked,
+  effecting,
   onSelect,
   onAction,
 }: {
@@ -73,6 +75,8 @@ function OptionCard({
   actionDisabled?: boolean;
   /** feature-04 C: this card is the one just chosen — lifts, pulses, gains an outline */
   picked?: boolean;
+  /** Fable is casting onto its selected pouch tiles. */
+  effecting?: boolean;
   onSelect?: (() => void) | undefined;
   onAction: () => void;
 }) {
@@ -91,6 +95,7 @@ function OptionCard({
         blockKey && 'blocked',
         selected && 'selected',
         picked && 'picked',
+        effecting && 'fable-effecting',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -187,6 +192,11 @@ export function PackOpening({ g }: { g: UseGame }) {
   const [picking, setPicking] = useState<string | null>(null);
   const [selectedFable, setSelectedFable] = useState<string | null>(null);
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+  const [fableFx, setFableFx] = useState<{
+    key: string;
+    kind: 'material' | 'rankUp' | 'destroy' | 'other';
+    tileIds: string[];
+  } | null>(null);
   const [closing, setClosing] = useState(false);
   // Transition completion only STARTS the sequence. Keep its end timer in a
   // separate effect: when this effect sets `started`, React reruns it, and a
@@ -222,8 +232,40 @@ export function PackOpening({ g }: { g: UseGame }) {
       setSelectedCandidates([]);
     }, PICK_BEAT);
   };
+  const doFableUse = (
+    key: string,
+    fableId: Extract<ConsumableId, `fable${number}`>,
+    tileIds: string[],
+    resolvePick: () => void,
+  ) => {
+    if (picking) return;
+    const effectKind = FABLE_REGISTRY.get(fableId)?.effect.kind;
+    const kind =
+      effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
+        ? effectKind
+        : 'other';
+    const effectMs = motionOff() ? 120 : 900;
+    audio.play('packPick');
+    setPicking(key);
+    setFableFx({ key, kind, tileIds });
+    window.setTimeout(() => {
+      setFableFx(null);
+      // Hold the completed result for half a second before the pack begins closing.
+      window.setTimeout(() => {
+        if (pack.picksLeft <= 1) {
+          setClosing(true);
+          window.setTimeout(resolvePick, 360);
+        } else {
+          resolvePick();
+        }
+        setPicking(null);
+        setSelectedFable(null);
+        setSelectedCandidates([]);
+      }, 500);
+    }, effectMs);
+  };
   const close = () => {
-    if (closing) return;
+    if (closing || picking) return;
     setClosing(true);
     window.setTimeout(g.closePack, 360);
   };
@@ -325,7 +367,11 @@ export function PackOpening({ g }: { g: UseGame }) {
               {candidateTiles.map((tile, i) => (
                 <div
                   key={tile.id}
-                  className="pack-candidate-tile"
+                  className={[
+                    'pack-candidate-tile',
+                    fableFx?.tileIds.includes(tile.id) && 'fable-effect-target',
+                    fableFx?.tileIds.includes(tile.id) && `fx-${fableFx.kind}`,
+                  ].filter(Boolean).join(' ')}
                   style={{ ['--candidate-i' as string]: i }}
                 >
                   <TileView
@@ -335,6 +381,9 @@ export function PackOpening({ g }: { g: UseGame }) {
                     {...(selectedTargetId ? { onSelect: toggleCandidate } : {})}
                     tooltip={tileTooltip(tile, t)}
                   />
+                  {fableFx?.tileIds.includes(tile.id) && (
+                    <span className="fable-target-fx" aria-hidden />
+                  )}
                 </div>
               ))}
             </div>
@@ -342,26 +391,27 @@ export function PackOpening({ g }: { g: UseGame }) {
         )}
         {/* Balatro fan: cards arc across the centre at full size (§2.6.1). Each card's
             rotation + arc-drop comes from its position; the middle sits highest. */}
-        <div className="pack-fan">
+        <div
+          className="pack-fan"
+          style={{ ['--pack-count' as string]: pack.offer.options.length }}
+        >
           {pack.offer.options.map((o, i) => {
-            // A pick is blocked when the matching slot is full (item 5: consumables
-            // now block too, not just jokers) — the engine no-ops such a pick anyway.
+            // Only Emoji Tiles remain slot-blocked inside a pack. Fables own their
+            // confirm flow, and Constellations use immediately without a held slot.
             const fableId = o.kind === 'consumable' && isFableId(o.id) ? o.id : null;
             const fable = fableId !== null;
+            const constellation = o.kind === 'punctuation' && isConstellationId(o.id);
+            const needsConfirmation = fable || constellation;
             const blindOnlyFable = fableId !== null && isBlindOnlyConsumable(fableId);
-            const takesConsumableSlot = o.kind === 'punctuation';
             const blockKey =
               o.kind === 'joker' && !canAddJoker(g.state.run, o.edition)
                 ? 'pack.jokersFull'
-                : takesConsumableSlot &&
-                    g.state.run.consumables.length >= g.state.run.consumableSlots
-                  ? 'pack.consumablesFull'
-                  : undefined;
+                : undefined;
             const N = pack.offer.options.length;
             const mid = (N - 1) / 2;
             const key = optionKey(o, i);
-            const selected = fable && selectedFable === key;
-            const actionVisible = !fable || selected;
+            const selected = needsConfirmation && selectedFable === key;
+            const actionVisible = !needsConfirmation || selected;
             const actionDisabled =
               fable &&
               !canUseFableFromPack(fableId, g.state.run, g.state.blind, selectedCandidates);
@@ -377,6 +427,8 @@ export function PackOpening({ g }: { g: UseGame }) {
                   label={
                     fable
                       ? t(blindOnlyFable ? 'pack.select' : 'consumable.useAction')
+                      : constellation
+                        ? t('consumable.useAction')
                       : t('pack.pick')
                   }
                   blockKey={blockKey}
@@ -385,20 +437,32 @@ export function PackOpening({ g }: { g: UseGame }) {
                   actionVisible={actionVisible}
                   actionDisabled={actionDisabled}
                   picked={picking === key}
-                  onSelect={fable ? () => {
+                  effecting={fableFx?.key === key}
+                  onSelect={needsConfirmation ? () => {
                     if (picking) return;
                     setSelectedFable(selected ? null : key);
                     setSelectedCandidates([]);
                     audio.play('buttonPress');
                   } : undefined}
-                  onAction={() =>
+                  onAction={() => {
+                    if (fable && fableId && !blindOnlyFable) {
+                      doFableUse(
+                        key,
+                        fableId,
+                        selectedCandidates,
+                        () => g.usePackFable(i, selectedCandidates),
+                      );
+                      return;
+                    }
                     doPick(
                       key,
                       fable
                         ? () => g.usePackFable(i, selectedCandidates)
-                        : () => g.pickPackOption(i),
-                    )
-                  }
+                        : constellation
+                          ? () => g.usePackConstellation(i)
+                          : () => g.pickPackOption(i),
+                    );
+                  }}
                 />
               </div>
             );
@@ -413,7 +477,7 @@ export function PackOpening({ g }: { g: UseGame }) {
         <div className="money">
           {t('pack.pickOf', { n: pack.picksLeft, m: pack.offer.options.length })}
         </div>
-        <button className="btn cash" onClick={close}>
+        <button className="btn cash" onClick={close} disabled={closing || !!picking}>
           {t('pack.skip')}
         </button>
       </div>

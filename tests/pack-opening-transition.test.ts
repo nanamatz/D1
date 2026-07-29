@@ -16,7 +16,7 @@ describe('pack-opening transition choreography', () => {
     expect(source).toContain("'pack-option-card'");
     expect(source).toContain('className="pack-option-visual"');
     expect(source).not.toContain('<span className="n">{name}</span>');
-    expect(css).toMatch(/\.pack-fan-card\s*\{[^}]*width:\s*168px/s);
-    expect(css).toMatch(/\.pack-option-card\s*\{[^}]*height:\s*238px/s);
+    expect(css).toMatch(/\.pack-fan\s*\{[^}]*grid-template-columns:\s*repeat\(var\(--pack-count,\s*5\),\s*minmax\(0,\s*168px\)\)/s);
+    expect(css).toMatch(/\.pack-option-card\s*\{[^}]*aspect-ratio:\s*5\s*\/\s*7/s);
   });
 });

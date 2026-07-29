@@ -225,7 +225,7 @@ export const BALANCE = {
     wantedTargetMult: 2, // Wanted: XL blind, target ×2 (수배 전단)
     letterDiscardOnPlay: 4, // Unopened Letter: discard up to 4 random hand tiles per play (미개봉 편지)
     bondGoldPerTile: 1, // Bond: −$1 per tile played (채권)
-    historyBookPhases: 2, // History Book: only 2 phases (역사책)
+    historyBookPhaseReduction: 2, // History Book: −2 phases in this boss blind (역사책)
     budgetBookHandDelta: -3, // Budget Book: hand size −3 (가계부)
     willScale: 0.5, // Will: base chips & mult ×0.5 (유서)
   },

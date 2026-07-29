@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { isVowel, type Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
 import { SORT_MODES, sortHand, tilesByIds, tileTooltip, nextLockLetter } from '../game';
@@ -32,6 +32,12 @@ export function StagePanel({
   // item 4 (discard half): short-lived fly-out ghosts for discarded tiles, captured
   // relative to `.stage` so they land correctly regardless of board scale/zoom.
   const [flying, setFlying] = useState<{ tile: Tile; x: number; y: number; w: number; h: number }[]>([]);
+  const [bossFlying, setBossFlying] = useState<
+    { tile: Tile; x: number; y: number; w: number; h: number }[]
+  >([]);
+  const bossOrigins = useRef(
+    new Map<string, { x: number; y: number; w: number; h: number }>(),
+  );
   const stageRef = useRef<HTMLDivElement>(null);
   const staged = tilesByIds(blind.hand, selected);
   // First-run lesson hard-lock: only the next YELLOW letter is clickable, and Play lights
@@ -67,6 +73,55 @@ export function StagePanel({
     onEnter: (i) => { window.setTimeout(() => audio.play('tileDeal'), i * 60); },
   });
   useFlip(stagedRef, staged.map((tl) => tl.id).join(','));
+
+  const captureBossDiscardOrigins = () => {
+    const stageRect = stageRef.current?.getBoundingClientRect();
+    if (!stageRect) return;
+    const origins = new Map<string, { x: number; y: number; w: number; h: number }>();
+    for (const row of [handRef.current, stagedRef.current]) {
+      row?.querySelectorAll<HTMLElement>('[data-tile-id]').forEach((el) => {
+        const id = el.dataset.tileId;
+        if (!id) return;
+        const r = el.getBoundingClientRect();
+        origins.set(id, {
+          x: r.left - stageRect.left,
+          y: r.top - stageRect.top,
+          w: r.width,
+          h: r.height,
+        });
+      });
+    }
+    bossOrigins.current = origins;
+  };
+
+  // Unopened Letter: the engine reports the exact seeded-random tiles it removed.
+  // Recreate them as presentation ghosts so the post-play hand can settle immediately
+  // while the discarded tiles are visibly pulled out and thrown away.
+  useEffect(() => {
+    const discard = g.state.bossDiscard;
+    if (!discard?.tiles.length) return;
+    const stageRect = stageRef.current?.getBoundingClientRect();
+    const handRect = handRef.current?.getBoundingClientRect();
+    if (!stageRect) return;
+    const fallbackW = handRef.current?.querySelector<HTMLElement>('[data-tile-id]')
+      ?.getBoundingClientRect().width ?? 68;
+    const fallbackY = handRect ? handRect.top - stageRect.top : stageRect.height * 0.6;
+    const ghosts = discard.tiles.slice(0, 4).map((tile, index, all) => {
+      const captured = bossOrigins.current.get(tile.id);
+      if (captured) return { tile, ...captured };
+      return {
+        tile,
+        x: stageRect.width / 2 + (index - (all.length - 1) / 2) * (fallbackW * 0.72) - fallbackW / 2,
+        y: fallbackY,
+        w: fallbackW,
+        h: fallbackW,
+      };
+    });
+    setBossFlying(ghosts);
+    audio.play('discardSwoosh');
+    const timer = window.setTimeout(() => setBossFlying([]), 920);
+    return () => window.clearTimeout(timer);
+  }, [g.state.bossDiscard?.id]);
 
   const handIds = new Set(hand.map((tl) => tl.id));
   const validMarks = discardMarks.filter((id) => handIds.has(id));
@@ -209,7 +264,11 @@ export function StagePanel({
       <div className="actions">
         <button
           className="btn blue play-btn"
-          onClick={() => { audio.play('submitThock'); g.playWord(); }}
+          onClick={() => {
+            captureBossDiscardOrigins();
+            audio.play('submitThock');
+            g.playWord();
+          }}
           disabled={!g.canPlay || !!preview?.blocked || (lock && !lockComplete)}
         >
           {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
@@ -245,6 +304,25 @@ export function StagePanel({
               key={`${f.tile.id}-${i}`}
               className="discard-ghost"
               style={{ left: f.x, top: f.y, width: f.w, height: f.h }}
+            >
+              <TileView tile={f.tile} />
+            </span>
+          ))}
+        </div>
+      )}
+      {bossFlying.length > 0 && (
+        <div className="boss-discard-ghosts" aria-hidden>
+          {bossFlying.map((f, i) => (
+            <span
+              key={`${f.tile.id}-${i}`}
+              className="boss-discard-ghost"
+              style={{
+                left: f.x,
+                top: f.y,
+                width: f.w,
+                height: f.h,
+                ['--boss-discard-i' as string]: i,
+              }}
             >
               <TileView tile={f.tile} />
             </span>

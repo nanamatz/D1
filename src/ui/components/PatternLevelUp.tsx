@@ -25,8 +25,16 @@ export function PatternLevelUp() {
 
   useEffect(() => {
     if (!evt) return;
+    const multSound = window.setTimeout(() => audio.play('countTick', { step: 0 }), 1480);
+    const chipSound = window.setTimeout(() => audio.play('countTick', { step: 1 }), 2150);
+    const levelSound = window.setTimeout(() => audio.play('countTick', { step: 2 }), 2350);
     const timer = setTimeout(() => setEvt(null), 3900);
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(multSound);
+      window.clearTimeout(chipSound);
+      window.clearTimeout(levelSound);
+      clearTimeout(timer);
+    };
   }, [evt]);
 
   if (!evt) return null;
@@ -49,18 +57,18 @@ export function PatternLevelUp() {
             <span className="plu-to">{t('sidebar.patternLevel', { n: evt.to })}</span>
           </div>
           <div className="plu-values">
-            <div className="plu-value mult">
-              <span className="plu-value-label">{t('patternLevel.mult')}</span>
-              <span className="plu-old">{fmt(before.mult)}</span>
-              <span className="plu-delta">+{fmt(after.mult - before.mult)}</span>
-              <span className="plu-new">{fmt(after.mult)}</span>
-            </div>
-            <span className="plu-times">×</span>
             <div className="plu-value chips">
               <span className="plu-value-label">{t('patternLevel.chips')}</span>
               <span className="plu-old">{fmt(before.chips)}</span>
               <span className="plu-delta">+{fmt(after.chips - before.chips)}</span>
               <span className="plu-new">{fmt(after.chips)}</span>
+            </div>
+            <span className="plu-times">×</span>
+            <div className="plu-value mult">
+              <span className="plu-value-label">{t('patternLevel.mult')}</span>
+              <span className="plu-old">{fmt(before.mult)}</span>
+              <span className="plu-delta">+{fmt(after.mult - before.mult)}</span>
+              <span className="plu-new">{fmt(after.mult)}</span>
             </div>
           </div>
         </div>

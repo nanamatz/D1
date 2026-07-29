@@ -1,4 +1,12 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from 'react';
 
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined'
@@ -8,7 +16,10 @@ const reducedMotion = (): boolean =>
   );
 
 /** useState mirrored to localStorage (P1-1 persists the sort choice). */
-export function usePersistedState<T>(key: string, initial: T): [T, (v: T) => void] {
+export function usePersistedState<T>(
+  key: string,
+  initial: T,
+): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     try {
       const raw = localStorage.getItem(key);

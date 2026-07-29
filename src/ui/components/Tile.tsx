@@ -189,7 +189,7 @@ function TileViewImpl({
           {effectPop.multFactor !== undefined ? (
             <span className="mult">×{effectPop.multFactor}</span>
           ) : effectPop.mult !== 0 ? (
-            <span className="mult">+{Number.isInteger(effectPop.mult) ? effectPop.mult : effectPop.mult.toFixed(2)}×</span>
+            <span className="mult">+{Number.isInteger(effectPop.mult) ? effectPop.mult : effectPop.mult.toFixed(2)}</span>
           ) : null}
           {effectPop.gold !== 0 && <span className="gold">+${effectPop.gold}</span>}
           {effectPop.retrigger && <span className="retrigger">↻</span>}

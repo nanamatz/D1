@@ -205,9 +205,11 @@ function SettingsView() {
               label={t('settings.fullscreen')}
               on={settings.fullscreen}
               onChange={(v) => {
-                set('fullscreen', v);
-                if (v) document.documentElement.requestFullscreen?.().catch(() => {});
-                else if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+                if (v) {
+                  document.documentElement.requestFullscreen?.().catch(() => set('fullscreen', false));
+                } else if (document.fullscreenElement) {
+                  document.exitFullscreen?.().catch(() => set('fullscreen', true));
+                }
               }}
             />
             <Slider

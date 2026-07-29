@@ -43,6 +43,7 @@ function atRest(state: GameState): GameState {
     hint: null,
     lastPlayed: null,
     lastEvents: [],
+    bossDiscard: null,
     settleId: 0,
     committedBefore: 0,
     settleComplete: true,

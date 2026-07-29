@@ -195,6 +195,8 @@ export interface SubmitResult {
   destroyedTileIds: string[];
   /** Wood tiles that scored this play and permanently gain +10 Chips. */
   grownWoodTileIds: string[];
+  /** Tiles pulled from the post-play hand by the active boss (Unopened Letter). */
+  bossDiscardedTiles: Tile[];
 }
 
 /**
@@ -483,9 +485,11 @@ export function submitWord(
 
   // Unopened Letter (미개봉 편지): after each play, discard up to N random hand tiles;
   // they exit play for the blind (§6.3) and are replaced from the remaining bag.
+  let bossDiscardedTiles: Tile[] = [];
   if (boss?.discardOnPlay && afterBlind.hand.length > 0) {
     const n = Math.min(boss.discardOnPlay, afterBlind.hand.length);
     const dumped = rng.shuffle(afterBlind.hand).slice(0, n);
+    bossDiscardedTiles = dumped;
     const dumpedIds = new Set(dumped.map((t) => t.id));
     const kept = afterBlind.hand.filter((t) => !dumpedIds.has(t.id));
     const refill = drawTiles(afterBlind.bag, dumped.length);
@@ -510,6 +514,7 @@ export function submitWord(
     goldDelta,
     destroyedTileIds,
     grownWoodTileIds,
+    bossDiscardedTiles,
     blind: { ...afterBlind, projectedScore },
   };
 }

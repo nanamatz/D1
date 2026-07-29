@@ -6,7 +6,7 @@ import { useI18n } from '../i18n';
 import { useEntering } from './ScreenTransition';
 
 const BOSS_ENTER_MS = 520;
-const BOSS_HOLD_MS = 500;
+const BOSS_HOLD_MS = 1000;
 const BOSS_EXIT_MS = 420;
 
 /** Brief, non-blocking Deadline reveal. Starts after the screen transition lands. */
@@ -19,7 +19,7 @@ export function BossIntro({ blind }: { blind: BlindState }) {
   useEffect(() => {
     if (!boss || entering || state !== 'waiting') return;
     setState('visible');
-    // Entrance lands, the completed card holds for 0.5s, then fades. `state`
+    // Entrance lands, the completed card holds for 1s, then fades. `state`
     // deliberately stays out of this effect's dependencies: including it made
     // the visible-state rerender clear both timers and strand the modal onscreen.
     const exitAt = BOSS_ENTER_MS + BOSS_HOLD_MS;

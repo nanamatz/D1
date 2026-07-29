@@ -9,8 +9,8 @@ describe('boss blind entry reveal', () => {
     expect(runView).toContain("phase === 'playing' && blind.kind === 'boss'");
   });
 
-  it('holds for 0.5 seconds after entry and then completes its fade', () => {
-    expect(intro).toContain('const BOSS_HOLD_MS = 500');
+  it('holds for 1 second after entry and then completes its fade', () => {
+    expect(intro).toContain('const BOSS_HOLD_MS = 1000');
     expect(intro).toContain('const exitAt = BOSS_ENTER_MS + BOSS_HOLD_MS');
     expect(intro).toContain("setState('exiting')");
     expect(intro).toContain("setState('done')");

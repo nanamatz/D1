@@ -97,12 +97,12 @@ const BOSSES: readonly BossDef[] = [
     id: 'bond', nameEn: 'Bond', nameKo: '채권', emoji: '💵',
     goldPerTile: BALANCE.boss.bondGoldPerTile,
   },
-  // 6. History Book (역사책): only 2 phases.
+  // 6. History Book (역사책): this boss blind gets 2 fewer phases.
   {
     id: 'historyBook', nameEn: 'History Book', nameKo: '역사책', emoji: '📚',
     setup: (blind) => ({
       ...blind,
-      phasesTotal: Math.max(1, BALANCE.boss.historyBookPhases),
+      phasesTotal: Math.max(1, blind.phasesTotal - BALANCE.boss.historyBookPhaseReduction),
     }),
   },
   // 7. Memoirs (회고록): any word already played THIS ante is debuffed (scores 0).

@@ -109,6 +109,8 @@ export interface GameState {
   message: MessageSpec | null;
   /** the most recent submission's settle log + a counter to retrigger replay */
   lastEvents: ScoreEvent[];
+  /** Transient Unopened Letter discard pull, rendered by StagePanel. */
+  bossDiscard: { id: number; tiles: Tile[] } | null;
   settleId: number;
   /** committed score BEFORE the in-flight settle — lets the round number climb
    *  from the old committed to the new one during the animation (playtest-04 A-1) */
@@ -219,6 +221,7 @@ function bootstrap(seed: string = randomSeed()): GameState {
     phase: 'blindselect',
     message: null,
     lastEvents: [],
+    bossDiscard: null,
     settleId: 0,
     committedBefore: 0,
     lastPlayed: null,
@@ -264,6 +267,8 @@ export interface UseGame {
   pickPackOption: (index: number) => void;
   /** Resolve a selected Fable inside its pack, or hold it when blind-only. */
   usePackFable: (index: number, tileIds: string[]) => void;
+  /** Use a Constellation directly from its pack, without occupying a slot. */
+  usePackConstellation: (index: number) => void;
   closePack: () => void;
   playWord: () => void;
   discard: (ids: string[]) => void;
@@ -508,6 +513,7 @@ export function useGame(): UseGame {
         // B-1: reset EVERY piece of per-blind UI state so the next blind's first
         // frame is clean (no stale tiles / settle / score remnants).
         lastEvents: [],
+        bossDiscard: null,
         settleId: 0,
         committedBefore: 0,
         lastPlayed: null,
@@ -534,6 +540,7 @@ export function useGame(): UseGame {
             // presentation-only remnant before the shop's first frame so the
             // previous settle cannot be replayed by that still-mounted subtree.
             lastEvents: [],
+            bossDiscard: null,
             settleId: 0,
             committedBefore: 0,
             lastPlayed: null,
@@ -635,6 +642,9 @@ export function useGame(): UseGame {
       // Fables have their own confirm flow: immediate Use, except blind-only
       // cards which use Select and enter a held slot.
       if (option.kind === 'consumable' && isFableId(option.id)) return prev;
+      // Constellations are also confirmed through a dedicated immediate-use path;
+      // they never enter the consumable shelf when opened from a pack.
+      if (option.kind === 'punctuation') return prev;
       const run = applyPackPick(prev.run, option);
       // A-4 confirm SFX fires in PackOpening on selection (immediate feedback, feature-04
       // C) rather than here — blocked picks there never reach the pick action, so they
@@ -710,6 +720,40 @@ export function useGame(): UseGame {
         count: run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
       });
       return finish(run, blind, 1);
+    });
+  }, []);
+
+  const usePackConstellation = useCallback((optionIndex: number) => {
+    setState((prev) => {
+      if (!prev.pack || prev.pack.picksLeft <= 0) return prev;
+      const option = prev.pack.offer.options[optionIndex];
+      if (!option || option.kind !== 'punctuation') return prev;
+      const pattern = CONSUMABLE_PATTERN[option.id];
+      if (!pattern) return prev;
+      const from = prev.run.patternLevels[pattern] ?? 1;
+      const options = prev.pack.offer.options.filter((_, index) => index !== optionIndex);
+      const picksLeft = prev.pack.picksLeft - 1;
+      const pack =
+        picksLeft <= 0 || options.length === 0
+          ? null
+          : { ...prev.pack, offer: { ...prev.pack.offer, options }, picksLeft };
+      const run: RunState = {
+        ...prev.run,
+        lastFableOrConstellation: option.id,
+        patternLevels: {
+          ...prev.run.patternLevels,
+          [pattern]: from + 1,
+        },
+      };
+      audio.play('consumableUse');
+      recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
+      patternLevelBus.emit({
+        cardId: option.id as import('../engine/constellations').ConstellationId,
+        pattern,
+        from,
+        to: from + 1,
+      });
+      return { ...prev, run, pack };
     });
   }, []);
 
@@ -799,7 +843,8 @@ export function useGame(): UseGame {
           ...prev,
           run: result.run,
           blind: result.blind,
-          selected: [],
+          selected: prev.selected.filter((tileId) =>
+            result.blind.hand.some((tile) => tile.id === tileId)),
           hint,
           message: null,
           rngCounter: prev.rngCounter + 1,
@@ -904,7 +949,14 @@ export function useGame(): UseGame {
         // Boss legality (e.g. The Noun Lock) — surface, don't crash.
         return { ...prev, message: { key: 'boss.blocked' } };
       }
-      const { events, submission, goldDelta, destroyedTileIds, grownWoodTileIds } = result;
+      const {
+        events,
+        submission,
+        goldDelta,
+        destroyedTileIds,
+        grownWoodTileIds,
+        bossDiscardedTiles,
+      } = result;
       // Glass shatter (A polish): a tile broke this play. Delayed so the shatter lands
       // during the settle, after the glass tile's own ring beat — not at submit.
       if (destroyedTileIds.length > 0) window.setTimeout(() => audio.play('matGlassBreak'), 450);
@@ -966,6 +1018,9 @@ export function useGame(): UseGame {
         message: submission.debuffed ? { key: 'boss.notAllowed' } : null,
         runUnlocks: unlockedId ? [...prev.runUnlocks, unlockedId] : prev.runUnlocks,
         lastEvents: events,
+        bossDiscard: bossDiscardedTiles.length > 0
+          ? { id: prev.settleId + 1, tiles: bossDiscardedTiles }
+          : null,
         settleId: prev.settleId + 1,
         // A new settle starts; the completion signal re-arms (05 A) so the clear
         // UI waits for THIS word's settle to land, not the previous one's.
@@ -1184,6 +1239,7 @@ export function useGame(): UseGame {
     buyPack,
     pickPackOption,
     usePackFable,
+    usePackConstellation,
     closePack,
     playWord,
     discard,

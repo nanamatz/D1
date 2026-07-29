@@ -67,6 +67,19 @@ export function readTips(): boolean {
 export function useSettings() {
   const [settings, setSettings] = usePersistedState<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
 
+  // Fullscreen can also end outside our toggle (most notably via Escape). Treat
+  // the browser event as authoritative so the persisted toggle returns to OFF.
+  useEffect(() => {
+    const syncFullscreen = () => {
+      const fullscreen = document.fullscreenElement !== null;
+      setSettings((current) =>
+        current.fullscreen === fullscreen ? current : { ...current, fullscreen });
+    };
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    syncFullscreen();
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  }, [setSettings]);
+
   // Apply the presentation-affecting settings to the document.
   useEffect(() => {
     const root = document.documentElement;

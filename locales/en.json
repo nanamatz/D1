@@ -176,7 +176,7 @@
   "bossdesc.ancientPaper": "Vowel tiles are dealt face-down",
   "bossdesc.forbiddenPaper": "Only one suit may be played this blind",
   "bossdesc.bond": "−$1 per phase played",
-  "bossdesc.historyBook": "Phases −2",
+  "bossdesc.historyBook": "−2 phases in this boss blind",
   "bossdesc.memoirs": "Words already played this ante are debuffed",
   "bossdesc.budgetBook": "Hand size −3",
   "bossdesc.contract": "Discards disabled",

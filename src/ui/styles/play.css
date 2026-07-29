@@ -94,6 +94,7 @@
   display: flex;
   align-items: flex-end;
   padding-top: 0;
+  overflow: clip;
 }
 .phase-blindselect .blindselect {
   width: min(100%, 900px);
@@ -103,10 +104,12 @@
   display: flex;
   align-items: flex-end;
   padding-top: 0;
+  overflow: visible;
 }
 .phase-shop .pack-opening {
-  width: min(100%, 960px);
+  width: min(100%, 1040px);
   margin-inline: auto;
+  overflow: visible;
 }
 .phase-panel {
   flex: 1;
@@ -306,6 +309,10 @@
   gap: 14px;
 }
 .shop-two > .panel {
+  min-height: var(--shop-lower-panel-h);
+  box-sizing: border-box;
+}
+.shop-sale-region > .panel {
   min-height: var(--shop-lower-panel-h);
   box-sizing: border-box;
 }
@@ -682,6 +689,7 @@
   min-height: 82px;
 }
 .pack-candidate-tile {
+  position: relative;
   animation: candidate-deal .36s cubic-bezier(.34, 1.56, .64, 1) both;
   animation-delay: calc(var(--candidate-i) * 45ms);
 }
@@ -755,16 +763,18 @@
    arc (rotation + drop) is per-card from its index; the transition eases the re-arc
    when a card is taken. */
 .pack-fan {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(var(--pack-count, 5), minmax(0, 168px));
   justify-content: center;
   align-items: flex-end;
-  gap: 10px;
-  padding: 34px 8px 56px;
+  gap: clamp(4px, 1vw, 10px);
+  padding: 34px 28px 56px;
   min-height: 286px;
+  overflow: visible;
 }
 .pack-fan-card {
-  flex: 0 0 168px;
-  width: 168px;
+  min-width: 0;
+  width: 100%;
   transform: rotate(var(--fan-rot, 0deg)) translateY(var(--fan-y, 0px));
   transform-origin: 50% 135%;
   transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
@@ -776,9 +786,10 @@
    consumes the full selection footprint; its name/effect live in the tooltip
    and the only persistent chrome is the action attached below the image. */
 .pack-option-card {
-  width: 168px;
-  height: 238px;
-  min-width: 168px;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  aspect-ratio: 5 / 7;
   padding: 0;
   border: 0;
   border-radius: 10px;
@@ -860,6 +871,75 @@
   0% { transform: translateY(0) scale(1); }
   45% { transform: translateY(-16px) scale(1.09); }
   100% { transform: translateY(-9px) scale(1.05); }
+}
+.pack-fan-card .shopitem.fable-effecting {
+  z-index: 9;
+  outline: 4px solid #9cffb2;
+  outline-offset: 3px;
+  animation: fable-card-cast .9s cubic-bezier(.2, .78, .25, 1) both;
+}
+@keyframes fable-card-cast {
+  0% { transform: translateY(-9px) scale(1.05) rotate(0); filter: brightness(1); }
+  18% { transform: translateY(-18px) scale(1.09) rotate(-2deg); }
+  34% { transform: translateY(-18px) scale(1.09) rotate(2deg); }
+  50% { transform: translateY(-18px) scale(1.09) rotate(-1deg); }
+  72% { filter: brightness(1.6) drop-shadow(0 0 18px #9cffb2); }
+  100% { transform: translateY(-12px) scale(1.06); filter: brightness(1.12); }
+}
+.fable-target-fx {
+  position: absolute;
+  z-index: 6;
+  inset: -7px;
+  border: 3px solid #9cffb2;
+  border-radius: 10px;
+  pointer-events: none;
+  animation: fable-target-ring .9s ease-out both;
+}
+.fable-effect-target .tile {
+  animation: fable-target-pulse .9s cubic-bezier(.2, .8, .3, 1) both;
+}
+.fable-effect-target.fx-destroy .tile {
+  animation-name: fable-target-destroy;
+}
+.fable-effect-target.fx-rankUp .fable-target-fx::after {
+  content: '↑';
+}
+.fable-effect-target.fx-material .fable-target-fx::after {
+  content: '✦';
+}
+.fable-effect-target.fx-destroy .fable-target-fx::after {
+  content: '×';
+  color: #ff6464;
+}
+.fable-target-fx::after {
+  position: absolute;
+  left: 50%;
+  top: -28px;
+  transform: translateX(-50%);
+  color: #9cffb2;
+  font-family: 'Jersey 10', 'Noto Sans KR', sans-serif;
+  font-size: 36px;
+  text-shadow: 0 3px 0 #092514, 0 0 12px currentColor;
+}
+@keyframes fable-target-ring {
+  0% { opacity: 0; transform: scale(.72); }
+  28%, 72% { opacity: 1; transform: scale(1.08); box-shadow: 0 0 18px #9cffb2; }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+@keyframes fable-target-pulse {
+  0% { transform: translateY(-5px) scale(1); filter: brightness(1); }
+  42% { transform: translateY(-15px) scale(1.18); filter: brightness(1.8); }
+  100% { transform: translateY(-5px) scale(1); filter: brightness(1); }
+}
+@keyframes fable-target-destroy {
+  0% { transform: translateY(-5px) scale(1); opacity: 1; }
+  56% { transform: translateY(-10px) scale(1.13) rotate(-4deg); opacity: 1; }
+  100% { transform: translateY(20px) scale(.35) rotate(16deg); opacity: 0; }
+}
+.force-reduced-motion .pack-fan-card .shopitem.fable-effecting,
+.force-reduced-motion .fable-effect-target .tile,
+.force-reduced-motion .fable-target-fx {
+  animation-duration: .12s;
 }
 
 /* Newly acquired shelf objects arrive with one compact overshoot. The wrapper
@@ -3026,6 +3106,46 @@
     transform: translate(24px, 120px) scale(0.7) rotate(8deg);
     opacity: 0;
   }
+}
+.boss-discard-ghosts {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  overflow: visible;
+  pointer-events: none;
+}
+.boss-discard-ghost {
+  position: absolute;
+  animation: boss-letter-discard .78s cubic-bezier(.2, .82, .35, 1) both;
+  animation-delay: calc(var(--boss-discard-i, 0) * 70ms);
+  filter: drop-shadow(0 8px 5px rgba(0, 0, 0, .5));
+}
+.boss-discard-ghost > .tile {
+  width: 100%;
+  height: 100%;
+}
+@keyframes boss-letter-discard {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); }
+  30% {
+    opacity: 1;
+    transform: translate(0, -48px) rotate(-4deg) scale(1.16);
+    filter: drop-shadow(0 0 14px rgba(255, 230, 157, .86));
+  }
+  62% {
+    opacity: 1;
+    transform: translate(22px, -78px) rotate(7deg) scale(.96);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(70px, 160px) rotate(22deg) scale(.54);
+  }
+}
+.force-reduced-motion .boss-discard-ghost {
+  animation: boss-letter-discard-reduced .35s ease-out both;
+}
+@keyframes boss-letter-discard-reduced {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 .preview {
   background: #0f1b22;

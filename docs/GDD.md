@@ -483,7 +483,7 @@ data predicate is the source of truth for both scoring and preview UI.
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| History Book · 역사책 (`historyBook`) | Only 2 phases (base 5 → 2) | Pressure blind; counters Epic Poet, harmless to Rush |
+| History Book · 역사책 (`historyBook`) | This boss blind has **2 fewer phases** (base 5 → 3, minimum 1); other blinds are unchanged | Pressure blind; counters Epic Poet, harmless to Rush |
 
 **Loop-resource attacks**
 
@@ -536,7 +536,7 @@ Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **
 
 **Persistent framing (changed 2026-07-28).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted. Because the sidebar and settlement provider stay mounted, shop entry also consumes the previous blind's UI-only settle log/id and finalized sentence fields before the first shop frame; the zero reset is immediate and must never replay the prior score animation.
 
-**Full consumable slots and shop Fables (changed 2026-07-29).** A full held-consumable zone disables **Buy** for a consumable offer. **Use now** remains available for affordable non-tile consumables because it resolves immediately and never occupies a resting slot. A shop-offered Fable whose effect targets letter tiles is the exception: it shows **Buy only**, enters a held slot, and may be used only during a blind; it cannot use pouch tiles from the shop and has no Use-now fallback when slots are full. Blind-only Fables follow the same Buy-only presentation.
+**Full consumable slots and shop consumables (changed 2026-07-29).** A full held-consumable zone disables **Buy** for a consumable offer. An affordable shop Constellation still offers **Use now** even when the zone is full: it charges the same price, levels its pattern immediately, and never occupies a resting slot. A shop-offered Fable whose effect targets letter tiles is the exception: it shows **Buy only**, enters a held slot, and may be used only during a blind; it cannot use pouch tiles from the shop and has no Use-now fallback when slots are full. Blind-only Fables follow the same Buy-only presentation.
 
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
@@ -559,7 +559,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
-| 별자리 팩 / **Constellation Pack** | Constellation cards — held in the consumable zone, then used to **level up** their sentence pattern (§5.4). | Celestial |
+| 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity. | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
 | 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Comic Book can add Gambler cards once that content pool lands | Arcana |
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3); roll pending the Gambler-card registry | Spectral |
@@ -569,7 +569,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Appearance weights (placeholder → `balance.ts`).** Balatro's shape, mapped onto our five families. Type weights (`pack.typeWeights`): **Fable 4 · Constellation 4 · Tile 4 · Charm 2 · Ink 0.6** — the two consumable staples and tiles are the common backbone, Charm (emoji tiles) is deliberately scarcer because each pull is a build decision, and Ink is the rare thrill (Spectral's role). Size weights (`pack.sizeWeights`): **Normal 8 · Jumbo 3 · Mega 1**. The two axes roll independently, so a Mega Ink pack is the jackpot of the shop. All values are tuning starts for `src/sim`, not claims of balance.
 
-> **Impl note.** The **framework** ships four engine pack types × 3 sizes (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 12 zodiac pattern cards. Constellation cards enter the held consumable zone and level their mapped pattern when used. Fourteen Gambler-card illustrations are registered for the collection, but their effects and acquisition registry are still pending; the **Ink Pack** is the designed native source of those cards and Comic Book is the rule that will also allow them in Fable packs — both wait on the Gambler-card registry. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`, with `ink` to be added when the Gambler registry lands); display names are i18n-only.
+> **Impl note.** The **framework** ships four engine pack types × 3 sizes (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 12 zodiac pattern cards. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. Fourteen Gambler-card illustrations are registered for the collection, but their effects and acquisition registry are still pending; the **Ink Pack** is the designed native source of those cards and Comic Book is the rule that will also allow them in Fable packs — both wait on the Gambler-card registry. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile`, with `ink` to be added when the Gambler registry lands); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -609,7 +609,9 @@ All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vo
 
 Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Zero Score). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and packs.
 
-**Fable Pack resolution (changed 2026-07-28).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until the effect's required candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection. Using resolves the Fable immediately without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+**Fable Pack resolution (changed 2026-07-29).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until the effect's required candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection. Enabled and disabled Use states occupy the same fixed position. Using plays the complete card-to-target application animation; only after that animation ends does the pack hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+
+**Constellation Pack resolution (changed 2026-07-29).** A revealed Constellation follows the same select-then-confirm interaction, but its action is always named **Use**, never Select. Use immediately levels the mapped sentence pattern, plays the full Constellation level-up sequence, ignores held-consumable capacity, and does not place the card in a held slot.
 
 **Held-slot presentation (changed 2026-07-27).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Idle/hover/focus/select motion applies to the image object itself, and clicking raises it above the shelf with Sell/Use actions attached beneath the image without reflowing the shelf.
 
@@ -791,7 +793,7 @@ Scaling emoji tiles' counters are deliberately spread out so that "which scaling
 
 ### 11.7 Core Oppositions & Balance Pressure Points
 
-- **Rush ↔ Epic Poet.** At Rare, Rush Specialist (24) ↔ Epic Poet (25) oppose, and at Legendary, One Stroke (35) ↔ Infinite Narrative (34) form the finale of that opposition. This opposition is the game's spine, directly tied to the "early-end vs. phase-extension" tension in §7.2, and now checked from the boss side by History Book (§8.3), which cuts the phase budget both builds fight over to 2.
+- **Rush ↔ Epic Poet.** At Rare, Rush Specialist (24) ↔ Epic Poet (25) oppose, and at Legendary, One Stroke (35) ↔ Infinite Narrative (34) form the finale of that opposition. This opposition is the game's spine, directly tied to the "early-end vs. phase-extension" tension in §7.2, and now checked from the boss side by History Book (§8.3), which cuts that boss blind's phase budget by 2.
 - **Rush economy combo.** Loan Shark (28) + One Stroke (35) create an extreme rush-economy build. Very strong when it runs, so its ceiling needs checking.
 - **Epic Poet multiplicative stack.** 25, 26, 34 accumulate multiplication — the "no one ends early" problem meeting the projected-score preview erupts precisely here. Two structural brakes now exist: Infinite Narrative's built-in "halve target growth," and bag depletion (§6.6). Verify these two builds' ceilings first in playtesting.
 

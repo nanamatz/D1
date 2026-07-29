@@ -23,7 +23,7 @@ const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFi
 
 /** The firing joker's contribution popup during settle (B step 3). */
 function JokerPop({ chips, mult }: { chips: number; mult: number }) {
-  const parts = [chips ? `+${chips}` : '', mult ? `+${fmtMult(mult)}×` : ''].filter(Boolean);
+  const parts = [chips ? `+${chips}` : '', mult ? `+${fmtMult(mult)}` : ''].filter(Boolean);
   if (parts.length === 0) return null;
   return <span className="joker-pop">{parts.join(' ')}</span>;
 }
