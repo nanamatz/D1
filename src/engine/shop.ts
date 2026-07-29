@@ -18,6 +18,7 @@ import {
   canAddJoker,
   constellationShopWeight,
   discountedPrice,
+  emojiTileShopPrice,
   fableShopWeight,
   rerollDiscount,
   shopSellsTiles,
@@ -36,11 +37,14 @@ import type {
   VoucherId,
 } from './types';
 
-const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile'];
+const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'ink'];
 const PACK_SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 
-/** All items the shop could offer this run, minus jokers already owned. */
-function buildPool(run: RunState, rng: Rng): ShopItem[] {
+type ItemKind = ShopItem['kind'];
+type ItemPools = Record<ItemKind, ShopItem[]>;
+
+/** All items the shop could offer this run, grouped so pool size cannot skew type odds. */
+function buildPools(run: RunState, rng: Rng): ItemPools {
   // Rarity-weighted, no-duplicate joker candidates via the shared offer pool
   // (C-1/C-2). A bounded sample (slots + spare, capped by the pool) keeps the
   // joker : Fable : Constellation : tile type-mix balanced while respecting the
@@ -51,23 +55,19 @@ function buildPool(run: RunState, rng: Rng): ShopItem[] {
     kind: 'joker',
     id: j.id,
     edition: rollJokerEdition(run, rng),
-    price: discountedPrice(run, BALANCE.jokerPrice[j.rarity]),
+    price: emojiTileShopPrice(run, discountedPrice(run, BALANCE.jokerPrice[j.rarity])),
   }));
-  const consumables: ShopItem[] = Array.from({ length: fableShopWeight(run) }, () =>
-    STATIONERY_POOL.map((id) => ({
-      kind: 'consumable' as const,
-      id,
-      price: discountedPrice(run, BALANCE.consumablePrice),
-    })),
-  ).flat();
-  const punctuation: ShopItem[] = Array.from({ length: constellationShopWeight(run) }, () =>
-    PUNCTUATION_POOL.map((id) => ({
-      kind: 'punctuation' as const,
-      id,
-      pattern: CONSUMABLE_PATTERN[id]!,
-      price: discountedPrice(run, BALANCE.consumablePrice),
-    })),
-  ).flat();
+  const consumables: ShopItem[] = STATIONERY_POOL.map((id) => ({
+    kind: 'consumable',
+    id,
+    price: discountedPrice(run, BALANCE.consumablePrice),
+  }));
+  const punctuation: ShopItem[] = PUNCTUATION_POOL.map((id) => ({
+    kind: 'punctuation',
+    id,
+    pattern: CONSUMABLE_PATTERN[id]!,
+    price: discountedPrice(run, BALANCE.consumablePrice),
+  }));
   const tiles: ShopItem[] = shopSellsTiles(run)
     ? Array.from({ length: 4 }, (_, i) => ({
         kind: 'tile' as const,
@@ -75,21 +75,36 @@ function buildPool(run: RunState, rng: Rng): ShopItem[] {
         price: discountedPrice(run, BALANCE.tilePrice),
       }))
     : [];
-  return [...jokers, ...consumables, ...punctuation, ...tiles];
+  return { joker: jokers, tile: tiles, consumable: consumables, punctuation };
+}
+
+function kindWeight(run: RunState, kind: ItemKind): number {
+  const base = BALANCE.shop.itemWeights[kind];
+  if (kind === 'consumable') return base * fableShopWeight(run);
+  if (kind === 'punctuation') return base * constellationShopWeight(run);
+  return base;
+}
+
+function drawItem(run: RunState, pools: ItemPools, rng: Rng): ShopItem | null {
+  const kinds = (Object.keys(pools) as ItemKind[]).filter((kind) => pools[kind].length > 0);
+  let roll = rng.next() * kinds.reduce((sum, kind) => sum + kindWeight(run, kind), 0);
+  let kind = kinds.at(-1);
+  for (const candidate of kinds) {
+    roll -= kindWeight(run, candidate);
+    if (roll < 0) {
+      kind = candidate;
+      break;
+    }
+  }
+  if (!kind) return null;
+  const pool = pools[kind];
+  return pool.splice(rng.int(pool.length), 1)[0] ?? null;
 }
 
 function rollItems(run: RunState, rng: Rng): (ShopItem | null)[] {
-  const shuffled = rng.shuffle(buildPool(run, rng));
+  const pools = buildPools(run, rng);
   const items: (ShopItem | null)[] = [];
-  const shown = new Set<string>();
-  for (const item of shuffled) {
-    const key = item.kind === 'tile' ? `${item.kind}:${item.tile.id}` : `${item.kind}:${item.id}`;
-    if (shown.has(key)) continue;
-    shown.add(key);
-    items.push(item);
-    if (items.length === shopItemSlots(run)) break;
-  }
-  while (items.length < shopItemSlots(run)) items.push(null);
+  while (items.length < shopItemSlots(run)) items.push(drawItem(run, pools, rng));
   return items;
 }
 
@@ -106,11 +121,14 @@ export function rollExtraItem(
   const shown = new Set(existing.filter((it): it is ShopItem => !!it).map((it) =>
     it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`,
   ));
-  const pool = buildPool(run, rng).filter((it) => {
-    const key = it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`;
-    return !shown.has(key);
-  });
-  return pool.length ? rng.shuffle(pool)[0]! : null;
+  const pools = buildPools(run, rng);
+  for (const kind of Object.keys(pools) as ItemKind[]) {
+    pools[kind] = pools[kind].filter((it) => {
+      const key = it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`;
+      return !shown.has(key);
+    });
+  }
+  return drawItem(run, pools, rng);
 }
 
 /**

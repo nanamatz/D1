@@ -15,6 +15,30 @@ const dummyJokers = (n: number): OwnedJoker[] =>
   Array.from({ length: n }, (_, i) => ({ defId: `d${i}`, state: {} }));
 
 describe('slice5 shop — stock roll (GDD §9.2)', () => {
+  it('uses the 80:10:5:5 item-type weights', () => {
+    expect(BALANCE.shop.itemWeights).toEqual({
+      joker: 80,
+      tile: 10,
+      consumable: 5,
+      punctuation: 5,
+    });
+  });
+
+  it('rolls those weights when all four item types are unlocked', () => {
+    const counts = { joker: 0, tile: 0, consumable: 0, punctuation: 0 };
+    const unlocked = run({ vouchers: ['enKoDictionary'] });
+    for (let i = 0; i < 5_000; i++) {
+      for (const item of rollShopStock(unlocked, makeRng(`weights-${i}`)).items) {
+        if (item) counts[item.kind]++;
+      }
+    }
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    expect(counts.joker / total).toBeCloseTo(0.8, 1);
+    expect(counts.tile / total).toBeCloseTo(0.1, 1);
+    expect(counts.consumable / total).toBeCloseTo(0.05, 1);
+    expect(counts.punctuation / total).toBeCloseTo(0.05, 1);
+  });
+
   it('fills the item slots and is deterministic per seed', () => {
     const a = rollShopStock(run(), makeRng('x'));
     const b = rollShopStock(run(), makeRng('x'));
@@ -33,10 +57,10 @@ describe('slice5 shop — stock roll (GDD §9.2)', () => {
   });
 
   it('never offers a joker the player already owns', () => {
-    const owned = run({ jokers: [{ defId: 'grammarian', state: {} }] });
+    const owned = run({ jokers: [{ defId: 'hypocrite', state: {} }] });
     for (let i = 0; i < 8; i++) {
       const { items } = rollShopStock(owned, makeRng(`seed${i}`));
-      for (const it of items) if (it?.kind === 'joker') expect(it.id).not.toBe('grammarian');
+      for (const it of items) if (it?.kind === 'joker') expect(it.id).not.toBe('hypocrite');
     }
   });
 
@@ -77,7 +101,7 @@ describe('slice5 shop — pack art variant (cosmetic, seeded)', () => {
 
 describe('slice5 shop — buy', () => {
   const shop = shopWith([
-    { kind: 'joker', id: 'grammarian', price: 9 },
+    { kind: 'joker', id: 'hypocrite', price: 9 },
     { kind: 'consumable', id: 'magnifier', price: 3 },
   ]);
 
@@ -85,7 +109,7 @@ describe('slice5 shop — buy', () => {
     const res = buyItem(run({ gold: 20 }), shop, 0);
     expect(res.ok).toBe(true);
     expect(res.run.gold).toBe(11);
-    expect(res.run.jokers.map((j) => j.defId)).toContain('grammarian');
+    expect(res.run.jokers.map((j) => j.defId)).toContain('hypocrite');
     expect(res.shop.items[0]).toBeNull();
     expect(res.shop.items[1]).not.toBeNull(); // other slot untouched
   });
@@ -112,7 +136,7 @@ describe('slice5 shop — buy', () => {
   it('refuses a stale joker offer when that Emoji Tile is already owned', () => {
     const owned = run({
       gold: 99,
-      jokers: [{ defId: 'grammarian', edition: 'base', state: {} }],
+      jokers: [{ defId: 'hypocrite', edition: 'base', state: {} }],
     });
     const result = buyItem(owned, shop, 0);
     expect(result.ok).toBe(false);
@@ -127,7 +151,7 @@ describe('slice5 shop — buy', () => {
 
 describe('slice5 shop — sell & reroll', () => {
   it('sells a joker for half its price (GDD §9.1)', () => {
-    const r = run({ gold: 0, jokers: [{ defId: 'grammarian', state: {} }] });
+    const r = run({ gold: 0, jokers: [{ defId: 'hypocrite', state: {} }] });
     const res = sellJoker(r, 0);
     expect(res.ok).toBe(true);
     expect(res.run.gold).toBe(4); // rare 9 → floor(9·0.5)

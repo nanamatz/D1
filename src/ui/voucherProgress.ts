@@ -59,7 +59,7 @@ export type VoucherProgressEvent =
   | { kind: 'voucherBuy'; id: VoucherId; spent: number }
   | { kind: 'tilesPlayed'; count: number }
   | { kind: 'tilesDiscarded'; count: number }
-  | { kind: 'consumableUsed'; family: 'fable' | 'constellation' }
+  | { kind: 'consumableUsed'; family: 'fable' | 'constellation' | 'gambler' }
   | { kind: 'handSize'; size: number }
   | { kind: 'anteReached'; ante: number }
   | { kind: 'bossSeen'; id: string }
@@ -139,8 +139,10 @@ export function recordVoucherProgress(event: VoucherProgressEvent): VoucherProgr
       next.tilesDiscarded += event.count;
       break;
     case 'consumableUsed':
+      // Gambler cards are their own family: no voucher unlock counts them yet
+      // (Comic Book counts Fables, Yearbook counts Constellations — GDD §9.4).
       if (event.family === 'fable') next.fableUsed += 1;
-      else next.constellationUsed += 1;
+      else if (event.family === 'constellation') next.constellationUsed += 1;
       break;
     case 'handSize':
       next.lowestHandSize = Math.min(next.lowestHandSize, event.size);

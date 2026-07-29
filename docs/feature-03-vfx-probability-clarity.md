@@ -4,7 +4,7 @@ Confirmed batch from the 2026-07-27 design review. **The docs are already update
 
 Order: **A (bug — blocks trusting anything else) → B (clarity) → C (probability) → D (VFX/screens)**.
 
-Deliberately NOT in this order (design-side, deferred by decision): pouch/bag types, the stakes/Ink-colour ladder, acronyms in the lexicon, Gambler card effects, the Legendary acquisition route, and the duplicate-breaker item. Do not start these.
+Deliberately NOT in this implementation order (design-side, deferred by decision): pouch/bag types, the stakes/Ink-colour ladder, and acronyms in the lexicon. *(Changed 2026-07-29: Gambler design moved forward in GDD §10.3 — 12 effects are confirmed, Phoenix defines the Legendary route, and Boar defines the explicit clone exception — but their engine implementation remains out of this feature order.)*
 
 **Resolved since the review** — two former blockers are now decided: the **font↔effect mapping is confirmed** (GDD §2.3 table — Light Italic `goldPlay` / Bold `chipPlay` / Inline `discardGain` / Black `retriggerPlay`), and the **Ink Pack name is settled** (Forbidden Books stays deferred, §10.3).
 
@@ -60,4 +60,4 @@ Add a `src/sim/` scenario reporting, over many runs: rarity distribution of offe
 ---
 
 ## Docs sync (already applied — verify, don't redo)
-GDD **§2.4** (new: three-axis stacking + same-axis overwrite + Stone exception) · **§9.2** (rarity weights, Legendary exclusion, no-duplicate rule) · **§9.3** (type/size weights) · **§12** (new open items: duplicate-breaker item, Legendary route, acronyms) · UI_DESIGN **§3.1** (material legibility) and **§4.6–4.8** (tomato, burning boxes, side interactions) · screens-spec **§2.0** (loading screen) · AGENTS.md + CLAUDE.md (stacking/overwrite guardrail appended to the modifier-axes bullet).
+GDD **§2.4** (new: three-axis stacking + same-axis overwrite + Stone exception) · **§9.2** (rarity weights, Legendary exclusion, no-duplicate rule) · **§9.3** (type/size weights) · **§12** (open runtime work and acronyms) · UI_DESIGN **§3.1** (material legibility) and **§4.6–4.8** (tomato, burning boxes, side interactions) · screens-spec **§2.0** (loading screen) · AGENTS.md + CLAUDE.md (stacking/overwrite guardrail appended to the modifier-axes bullet).

@@ -9,6 +9,7 @@ import {
   consumableAxisTip,
   consumableTooltipBody,
   consumableTooltipExtra,
+  grownValue,
   jokerDescKey,
   voucherDescKey,
 } from '../descriptions';
@@ -37,6 +38,7 @@ import { FamilyCardArt } from './FamilyCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { TileView } from './Tile';
+import { jokerArt } from '../jokerArt';
 
 interface ShopOfferProps {
   label: string;
@@ -144,8 +146,8 @@ export function Shop({ g }: { g: UseGame }) {
     name: string;
     desc: string;
     art?: string | undefined;
+    jokerArt?: string | undefined;
     fableId?: FableId | undefined;
-    accent?: string | undefined;
     rarity?: JokerRarity | undefined;
     classification?: TooltipClassification | undefined;
     sub?: { title: string; body: string } | undefined;
@@ -157,8 +159,9 @@ export function Shop({ g }: { g: UseGame }) {
         emoji: def?.emoji ?? '🃏',
         name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
         desc: t(jokerDescKey(item.id)),
-        accent: def && def.rarity !== 'common' ? def.rarity : undefined,
+        extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
         rarity: def?.rarity,
+        jokerArt: jokerArt(item.id),
       };
     }
     if (item.kind === 'tile') {
@@ -262,12 +265,24 @@ export function Shop({ g }: { g: UseGame }) {
                       <div className="shop-tile-art">
                         <TileView tile={item.tile} tilt={false} />
                       </div>
+                    ) : item.kind === 'joker' ? (
+                      m.jokerArt
+                        ? (
+                            <img
+                              className={[
+                                'shop-joker-art',
+                                `edition-${edition}`,
+                              ].join(' ')}
+                              src={m.jokerArt}
+                              alt=""
+                            />
+                          )
+                        : null
                     ) : (
                       <div
                         className={[
                           'shopitem',
                           'shopitem-image-only',
-                          m.accent,
                           `edition-${edition}`,
                         ].filter(Boolean).join(' ')}
                       >

@@ -198,6 +198,8 @@ export interface SubmitResult {
   grownWoodTileIds: string[];
   /** Tiles pulled from the post-play hand by the active boss (Unopened Letter). */
   bossDiscardedTiles: Tile[];
+  /** cloned, state-updated owned Emoji Tiles */
+  jokers: RunState['jokers'];
 }
 
 /**
@@ -232,7 +234,14 @@ function scoreSubmission(
   };
   const events: ScoreEvent[] = [];
 
-  const ctx: WordScoringContext = { submission, chips: 0, mult: b.mult };
+  const ctx: WordScoringContext = {
+    submission,
+    chips: 0,
+    mult: b.mult,
+    scoringSuits: new Set(b.suit ? [b.suit] : []),
+    scoreBonus: 0,
+  };
+  defaultJokerBus.emit('wordRules', { run, blind, ctx }, run.jokers);
   let materialGold = 0;
   const destroyedTileIds: string[] = [];
   const grownWoodTileIds: string[] = [];
@@ -299,9 +308,8 @@ function scoreSubmission(
         });
       }
 
-      // Per-tile jokers (Vowel Praise, Consonant Bricklayer) fire AS this tile scores,
-      // one at a time, so each contribution interleaves with the tiles and its pop
-      // lands on the tile (item 3). Per-word jokers stay in the wordScoring pass below.
+      // Per-tile Emoji Tiles fire AS this tile scores, one at a time, so each
+      // contribution interleaves with tiles. Per-word hooks stay below.
       // Retriggers compose: jokers fire again on each repeated trigger too (GDD §2.3).
       for (const joker of run.jokers) {
         const beforeChips = ctx.chips;
@@ -352,11 +360,19 @@ function scoreSubmission(
   for (const joker of run.jokers) {
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
+    const beforeScore = ctx.scoreBonus ?? 0;
     defaultJokerBus.emit('wordScoring', { run, blind, ctx }, [joker]);
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
-    if (chipsDelta !== 0 || multDelta !== 0) {
-      events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta });
+    const scoreDelta = (ctx.scoreBonus ?? 0) - beforeScore;
+    if (chipsDelta !== 0 || multDelta !== 0 || scoreDelta !== 0) {
+      events.push({
+        kind: 'joker',
+        jokerId: joker.defId,
+        chipsDelta,
+        multDelta,
+        ...(scoreDelta !== 0 ? { scoreDelta } : {}),
+      });
     }
     const jokerEdition = joker.edition ?? 'base';
     const jokerEditionDelta = applyEdition(ctx, jokerEdition);
@@ -402,7 +418,7 @@ function scoreSubmission(
     }
   }
 
-  const total = ctx.chips * ctx.mult;
+  const total = ctx.chips * ctx.mult + (ctx.scoreBonus ?? 0);
   submission.settledScore = total;
   // Presentation order is explicit and independent from the mutation order above:
   // whole-word stamps -> each played tile and its own effects -> Emoji Tiles in
@@ -519,10 +535,14 @@ export function submitWord(
     throw new Error('boss: this word cannot be submitted');
   }
 
+  const scoringRun: RunState = {
+    ...run,
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
   const { submission, events, materialGold, destroyedTileIds, grownWoodTileIds } = scoreSubmission(
     used,
     lexicon,
-    run,
+    scoringRun,
     blind,
     rng,
     heldOrder,
@@ -540,8 +560,7 @@ export function submitWord(
   const need = Math.max(0, effectiveHandSize(run, blind) - keptHand.length);
   const { drawn, bag } = drawTiles(blind.bag, need);
 
-  // Build the post-phase blind first so layer-3 jokers (e.g. Rush Specialist)
-  // read the correct phases-remaining when projecting.
+  // Build the post-phase blind first so layer-3 hooks read phases remaining correctly.
   let afterBlind: BlindState = {
     ...blind,
     hand: [...keptHand, ...drawn],
@@ -577,7 +596,13 @@ export function submitWord(
   // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
   // sentence bonus is a projection, never accumulated per phase.
   const judgment = judgeSentence(sequence, lexicon);
-  const projectedScore = scoreSentence(committedScore, sequence, judgment, run, afterBlind).total;
+  const projectedScore = scoreSentence(
+    committedScore,
+    sequence,
+    judgment,
+    scoringRun,
+    afterBlind,
+  ).total;
 
   return {
     submission,
@@ -586,6 +611,7 @@ export function submitWord(
     destroyedTileIds,
     grownWoodTileIds,
     bossDiscardedTiles,
+    jokers: scoringRun.jokers,
     blind: { ...afterBlind, projectedScore },
   };
 }

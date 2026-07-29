@@ -102,7 +102,7 @@ GDD: new subsection (suggest §13 or under §1 as "Chromatic Unlocks") + §12 it
 - **D-3 Gibberish tutorial step** — restyle to the spotlight + speech-bubble grammar used by the other steps (consistency).
 - **D-4 Joker & consumable idle animations** — same wobble family as tiles (staggered slow sine, ±1–1.5°), respecting reduced motion.
 - **D-5 Tomato score icon (decision confirmed: icon only)** — replace the poker-chip icon beside score numbers (blind badge target, round score) with a **pixel tomato**; the term "Chips" and the blue chips box are unchanged. New tiny pixel asset; thematically: tomatoes thrown at bad manuscripts.
-- **D-6 Stage backgrounds** — per-stage backdrops in the publishing fiction: **초고/Draft** = writer's desk · **퇴고/Revision** = marked-up manuscript · **마감/Deadline** = the editor's red-pen office (tense variant). Pixel-art, sits under the CRT pass, desaturation-aware (C-3: background colors belong to unlock groups where applicable — GREEN gates them).
+- **D-6 Stage backgrounds — retired 2026-07-30.** The main `.frame` is transparent; Draft/Revision/Deadline no longer paint separate backdrops.
 - **D-7 Collection modal heights** — all categories use the Words modal's height (uniform).
 - **D-8 BGM** — no new work here: composed/wired in feature-01 B-2, then gated by C's MUSIC unlock (C-6 ordering).
 

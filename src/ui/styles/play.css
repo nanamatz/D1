@@ -11,31 +11,7 @@
   padding: var(--board-pad);
   min-height: 100vh;
   position: relative;
-  /* D-6: per-stage backdrop. Placeholder pixel-flavored gradients (under the CRT
-     pass) until the art pass supplies real backgrounds; GREEN unlock (C-3) will
-     later gate their color. --board-max centers the board over the tint. */
-  background-size: cover;
-  background-attachment: fixed;
-  transition: background 0.5s ease;
-}
-/* 초고 / Draft — writer's desk (warm paper/wood) */
-.frame.stage-draft {
-  background-image:
-    radial-gradient(120% 80% at 50% -10%, rgba(196, 164, 120, 0.16), transparent 60%),
-    linear-gradient(180deg, #21201c 0%, #191814 100%);
-}
-/* 퇴고 / Revision — marked-up manuscript (cool paper + red marks) */
-.frame.stage-revision {
-  background-image:
-    radial-gradient(120% 80% at 50% -10%, rgba(120, 150, 196, 0.16), transparent 60%),
-    repeating-linear-gradient(180deg, transparent 0 26px, rgba(245, 80, 78, 0.05) 26px 27px),
-    linear-gradient(180deg, #1c1e21 0%, #141518 100%);
-}
-/* 마감 / Deadline — the editor's red-pen office (tense red wash) */
-.frame.stage-deadline {
-  background-image:
-    radial-gradient(130% 90% at 50% -10%, rgba(245, 80, 78, 0.22), transparent 55%),
-    linear-gradient(180deg, #241618 0%, #180f11 100%);
+  background: none;
 }
 
 /* ---------- persistent Balatro table + movable phase panels ---------- */
@@ -122,8 +98,15 @@
    absolutely positioned tooltips count as descendants and were clipped at this
    boundary even though every sale card itself used overflow:visible. */
 .shop-phase-panel {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0;
   overflow: visible;
   z-index: 12;
+}
+.shop-phase-panel .shop2 {
+  width: min(100%, 930px);
+  margin-inline: auto;
 }
 .shop-phase-panel .shop2,
 .shop-phase-panel .shop-main,
@@ -356,6 +339,17 @@
   flex: 0 0 var(--shop-card-w);
   width: var(--shop-card-w);
 }
+/* Sale-pack art is 131px wide. Give each wrapped offer the same width so the
+   row's normal 12px gap remains visible instead of being consumed by overflow. */
+.shop-row:has(.pack-img) > .tt-anchor {
+  flex: 0 0 131px;
+  width: 131px;
+}
+/* The pack foreground is taller than its layout stage. Reserve its lower
+   overflow plus the Open button inside the panel so .persistent-run cannot clip it. */
+.shop-two > .panel:has(.pack-img) {
+  padding-bottom: 84px;
+}
 .shop-offer {
   position: relative;
   z-index: 1;
@@ -433,18 +427,19 @@
   outline-offset: 4px;
 }
 .shop-offer-visual:has(> .shop-offer-art > .voucher-card) {
-  height: auto;
-  aspect-ratio: 3 / 2;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
 }
 .shop-offer-visual:has(> .shop-offer-art .pack-img) {
-  top: var(--shop-pack-y);
-  width: auto;
-  height: 88%;
-  aspect-ratio: 61 / 100;
+  width: 131px;
+  height: 229px;
+  aspect-ratio: auto;
 }
 .shop-offer-visual:has(> .shop-offer-art .shop-consumable-art) {
-  width: auto;
-  aspect-ratio: 5 / 7;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
 }
 .shop-offer-visual:has(> .shop-offer-art > .shop-tile-art) {
   width: 85%;
@@ -475,10 +470,9 @@
   width: 100%;
   height: 100%;
 }
-/* A voucher occupies only the centre of the shared 185px offer stage. Anchor its
-   tooltip to the ticket's real top edge, not the taller generic sale slot. */
+/* Voucher now fills the same portrait stage as every other card. */
 .shop-row > .tt-anchor:has(.voucher-card) > .tt-card {
-  bottom: calc(50% + var(--voucher-h) / 2 + 6px);
+  bottom: calc(100% + 6px);
 }
 .shop-offer-card:hover .shop-offer-visual,
 .shop-offer-card:focus-visible .shop-offer-visual {
@@ -486,7 +480,7 @@
   filter: brightness(1.08);
 }
 .shop-offer.selected .shop-offer-visual {
-  translate: 0 -5px;
+  translate: 0 calc(-15px - var(--shop-action-h));
   outline: 3px solid var(--gold);
   filter: drop-shadow(0 7px 0 rgba(5, 12, 14, 0.46));
 }
@@ -567,12 +561,6 @@
   gap: 6px;
   min-width: 0;
 }
-.shopitem.uncommon {
-  border: 2px solid var(--chips);
-}
-.shopitem.rare {
-  border: 2px solid var(--mult);
-}
 .edition-foil {
   box-shadow: inset 0 0 0 2px #dcecff, 0 0 8px rgba(190, 225, 255, 0.75), var(--shadow);
 }
@@ -636,31 +624,59 @@
 }
 .shopitem.pack-jumbo .pack-size { color: var(--chips); }
 .shopitem.pack-mega .pack-size { color: var(--mult); }
-/* Card-pack pixel-art, in place of the old 📦 glyph. Fills the shopitem width and
-   keeps its own aspect (packArt.ts → PNG). */
+/* Sale pack art fills the exact shared card dimensions instead of appearing
+   narrower than adjacent offers. */
 .shopitem .pack-img {
   width: 100%;
   height: 100%;
   max-width: none;
-  object-fit: contain;
+  object-fit: fill;
   image-rendering: pixelated;
+  border-radius: 0;
+  transform: none;
   transform-origin: 50% 92%;
 }
 .shop-offer-art .shop-consumable-art {
   width: 100%;
   height: 100%;
+  border-radius: var(--r-md);
+}
+.shop-joker-art,
+.pack-joker-art {
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: var(--r-md);
 }
 .shop-offer-art .shopitem .e {
   font-size: 104px;
   line-height: 1;
 }
 .shopitem-image-only:has(.shop-consumable-art),
+.shopitem-image-only:has(.shop-joker-art) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+}
 .shopitem-image-only:has(.pack-img) {
   min-height: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
+  overflow: visible;
+}
+.shopitem.emoji-tile-image-only {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 @media (prefers-reduced-motion: reduce) {
   .shop-sign-word,
@@ -1170,7 +1186,7 @@
 }
 .btn.sm {
   font-size: var(--fs-md);
-  min-height: 44px;
+  min-height: var(--shop-action-h);
   padding: 9px 18px;
 }
 .reroll {
@@ -1218,8 +1234,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: rgba(9, 20, 17, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--rail-surface);
+  border: 1px solid var(--rail-edge);
   border-radius: 16px;
   padding: 12px;
 }
@@ -2291,58 +2307,43 @@
 }
 .shelf {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: flex-start;
-  gap: 16px;
+  gap: 10px;
 }
 .jokers,
 .consumables {
   display: flex;
-  gap: 10px;
+  gap: 0;
 }
-/* The group is a fixed 500px, but five 84px tiles with 10px gaps only need 460 of
-   the 474 inner box — flex packs them to the start, stranding 14px on the right.
-   Spread them instead so the row is flush with the padding on both sides. */
 .jokers {
   justify-content: space-between;
 }
-/* item 8 + fixed footprint: the row is pinned to the 2-slot width (two 84px
-   cards spaced by --consumable-gap, the room the Use/Sell menu needs) and never
-   grows — a +1-slot voucher (Zero Score) fits its third card inside the same
-   width by letting space-between collapse the gaps (~4px). At 3 slots the menu
-   may overlap the next card; that is accepted. */
+/* Wrappers shrink evenly when a fixed-width panel fills, so cards progressively
+   overlap without changing their 124×165 footprint. */
+.jokers .joker-slot:hover,
+.jokers .joker-slot:focus-within,
+.consumables .consumable-slot:hover,
+.consumables .consumable-slot:focus-within {
+  z-index: 2;
+}
 .consumables {
-  width: calc(2 * 84px + var(--consumable-gap));
-  gap: 0;
+  width: 100%;
   justify-content: space-between;
 }
-/* item 3: shelves reserve their full max-slot area via dashed empty placeholders. */
-.joker.empty {
-  border: 2px dashed var(--inset-edge);
-  background: rgba(0, 0, 0, 0.18);
-  box-shadow: none;
-  cursor: default;
-}
-.joker.empty:hover {
-  transform: none !important;
-}
-.consumable.empty {
-  border: 2px dashed #7c7360;
-  background: rgba(0, 0, 0, 0.14);
-  box-shadow: none;
-}
 .joker {
-  width: 84px;
-  height: 112px;
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
   border-radius: var(--r-md);
-  background: linear-gradient(180deg, #324454, #26343f);
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  box-shadow: var(--shadow);
-  border: 2px solid #4a6272;
+  gap: 0;
+  box-shadow: none;
+  border: 0;
+  padding: 0;
   cursor: pointer;
   transition: transform 0.15s;
 }
@@ -2361,20 +2362,17 @@
   line-height: 1.1;
   padding: 0 4px;
 }
-.joker.uncommon {
-  border-color: var(--chips);
-}
-.joker.rare {
-  border-color: var(--mult);
-}
-.joker.legendary {
-  border-color: var(--gold);
+.joker-art {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 /* Joker trigger animation (B step 3): wiggle + contribution popup. */
 .joker.firing {
   animation: jokerWiggle 0.32s ease-in-out;
-  border-color: var(--gold);
-  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 0 14px rgba(240, 178, 62, 0.7);
+  filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
 }
 @keyframes jokerWiggle {
   0%, 100% { transform: translateY(-4px) rotate(0deg); }
@@ -2402,6 +2400,9 @@
 }
 .joker-slot {
   position: relative;
+  flex: 0 1 var(--shop-card-w);
+  width: var(--shop-card-w);
+  min-width: 0;
 }
 /* feature-04 A-3 · object-action exit animations. Consumed = pop + dissolve; sold =
    slide away (+ the coin SFX/money watcher). The state change is delayed one beat so
@@ -2444,8 +2445,8 @@
 }
 .consumable {
   position: relative; /* sheen containment parity with .tile/.joker (Task 3) */
-  width: 84px;
-  height: 112px;
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
   border-radius: var(--r-md);
   background: #efe7d6;
   color: #2b2620;
@@ -2497,11 +2498,12 @@
 .consumable-object {
   position: relative;
   z-index: 2;
-  width: 84px;
-  height: 112px;
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
   display: grid;
   place-items: center;
   overflow: visible;
+  border-radius: var(--r-md);
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -2512,8 +2514,8 @@
 }
 .consumable-object-art {
   position: relative;
-  width: 80px;
-  height: 112px;
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
   display: grid;
   place-items: center;
   overflow: visible;
@@ -2527,6 +2529,7 @@
 .consumable-object-art .consumable-art {
   width: 100%;
   height: 100%;
+  border-radius: var(--r-md);
 }
 .consumable-object-art .e {
   font-size: var(--ds-md);
@@ -3639,12 +3642,14 @@
 /* C-4: consumable Use / Sell menu (never instant-use). */
 .consumable-slot {
   position: relative;
-  width: 84px;
-  height: 112px;
+  flex: 0 1 var(--shop-card-w);
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
+  min-width: 0;
   overflow: visible;
 }
 .consumable-slot > .tt-anchor {
-  width: 100%;
+  width: var(--shop-card-w);
   height: 100%;
 }
 /* The second/right held card sits against the shelf boundary. Right-align its
@@ -3750,24 +3755,30 @@
   flex-direction: column;
 }
 .jokers-col {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.consumables-col {
   flex: none;
 }
 /* Height is the joker tile plus padding (#1) — derived, not a hand-set number, so
    it stays correct if the tile resizes. Both boxes match because both tile types
    are the same height. */
 .shelf-group {
-  background: var(--inset);
-  border: 1px solid var(--inset-edge);
+  background: var(--rail-surface);
+  border: 1px solid var(--rail-edge);
   border-radius: var(--r-md);
+  height: 187px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
 }
 .jokers-group {
-  width: 500px;
+  width: 100%;
   flex: none;
 }
 .consumables-group {
+  width: 286px;
   align-items: flex-end;
 }
 /* The counts sit outside the group boxes now, so they state their own alignment
@@ -4133,6 +4144,11 @@
    only gain empty space, so the width follows the content rather than the modal. */
 .overlay-card.pause-modal:has(.collection) {
   max-width: min(1240px, 96vw);
+}
+.overlay-card.pause-modal:has(.detail-jokers) {
+  max-height: calc(100vh - 40px);
+  padding: 0;
+  overflow-y: clip;
 }
 .pause-modal .screen {
   min-height: 0;

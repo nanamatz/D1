@@ -5,7 +5,7 @@
 import { BALANCE } from './balance';
 import { CONSTELLATION_IDS } from './constellations';
 import { sellValue } from './economy';
-import { ALL_JOKERS, JOKER_REGISTRY } from './jokers';
+import { ALL_JOKERS, JOKER_REGISTRY, onTilesDestroyed } from './jokers';
 import type {
   BlindState,
   ConsumableId,
@@ -164,7 +164,8 @@ export function useFableOnPouch(
     );
   }
   if (effect.kind === 'destroy') {
-    return commit(run.bag.filter((t) => !ids.has(t.id)));
+    const result = commit(run.bag.filter((t) => !ids.has(t.id)));
+    return { ...result, run: onTilesDestroyed(result.run, ids.size) };
   }
   return { ok: false, run };
 }
@@ -251,7 +252,10 @@ export function canUseUnheldFable(id: FableId, run: RunState, blind: BlindState)
   return canUseFable(id, { ...run, consumables: [...run.consumables, id] }, blind, []);
 }
 
-const patchTiles = (
+/** Rewrite every copy of the given tile ids wherever they live — the run's
+ *  permanent pouch and every in-blind list. Shared with Gambler cards, which
+ *  target the same "active tile field" by id (GDD §10.3). */
+export const patchTiles = (
   run: RunState,
   blind: BlindState,
   ids: ReadonlySet<string>,
@@ -308,7 +312,8 @@ export function previewFableTile(id: FableId, tile: Tile): Tile {
   return tile;
 }
 
-const removeIds = (
+/** Twin of `patchTiles` for permanent removal. */
+export const removeIds = (
   run: RunState,
   blind: BlindState,
   ids: ReadonlySet<string>,
@@ -411,6 +416,7 @@ export function useFable(
     nextRun = { ...nextRun, gold: nextRun.gold + jokerSellGoldValue(nextRun) };
   } else if (effect.kind === 'destroy') {
     ({ run: nextRun, blind: nextBlind } = removeIds(nextRun, nextBlind, new Set(selectedIds)));
+    nextRun = onTilesDestroyed(nextRun, selectedIds.length);
   }
 
   return { ok: true, run: nextRun, blind: nextBlind, requestHint };

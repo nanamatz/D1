@@ -56,6 +56,15 @@ import {
   useFable,
   useFableOnPouch,
 } from '../engine/fables';
+import {
+  canUseGambler,
+  canUseUnheldGambler,
+  gamblerResolvesInstantly,
+  gamblerTargetsTiles,
+  isGamblerId,
+  useGambler,
+  type GamblerId,
+} from '../engine/gamblers';
 import { packFableFxBus } from './packFableFx';
 import {
   bossRerollLimit,
@@ -66,6 +75,7 @@ import {
   rerollDiscount,
   VOUCHER_REGISTRY,
 } from '../engine/vouchers';
+import { onBlindEnded, onConstellationUsed, onTilesDestroyed } from '../engine/jokers';
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -278,6 +288,8 @@ export interface UseGame {
   pickPackOption: (index: number) => void;
   /** Resolve a selected Fable inside its pack, or hold it when blind-only. */
   usePackFable: (index: number, tileIds: string[]) => void;
+  /** Resolve a Gambler card inside its pack against the pouch candidates (§10.3). */
+  usePackGambler: (index: number, tileIds: string[]) => void;
   /** Use a Constellation directly from its pack, without occupying a slot. */
   usePackConstellation: (index: number) => void;
   /** Use an owned tile-targeting Fable on the open Fable pack's pouch candidates. */
@@ -358,7 +370,12 @@ export function useGame(): UseGame {
             },
           }
         : runWithMaterialGold;
-      const outcome = resolveBlind(runWithPattern, s.blind, final.finalScore);
+      const runAfterJokers = onBlindEnded(
+        runWithPattern,
+        s.blind,
+        makeRng(`${s.seed}#joker-end-${s.run.ante}-${s.run.blindIndex}`),
+      );
+      const outcome = resolveBlind(runAfterJokers, s.blind, final.finalScore);
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
@@ -639,10 +656,12 @@ export function useGame(): UseGame {
         pack: {
           offer,
           picksLeft: offer.pick,
-          // Fable packs expose ten pouch tiles as the candidate field for
+          // Fable and Ink packs expose ten pouch tiles as the candidate field for
           // tile-targeting card effects. Other pack families need no candidates.
           candidateTiles:
-            slot.type === 'consumable' ? rng.shuffle(prev.run.bag).slice(0, 10) : [],
+            slot.type === 'consumable' || slot.type === 'ink'
+              ? rng.shuffle(prev.run.bag).slice(0, 10)
+              : [],
         },
         rngCounter: prev.rngCounter + 1,
         stats: { ...prev.stats, itemsBought: prev.stats.itemsBought + 1 },
@@ -658,6 +677,8 @@ export function useGame(): UseGame {
       // Fables have their own confirm flow: immediate Use, except blind-only
       // cards which use Select and enter a held slot.
       if (option.kind === 'consumable' && isFableId(option.id)) return prev;
+      // Gambler cards follow the same confirm-then-use flow (GDD §10.3).
+      if (option.kind === 'consumable' && isGamblerId(option.id)) return prev;
       // Constellations are also confirmed through a dedicated immediate-use path;
       // they never enter the consumable shelf when opened from a pack.
       if (option.kind === 'punctuation') return prev;
@@ -748,6 +769,67 @@ export function useGame(): UseGame {
     });
   }, []);
 
+  /**
+   * Resolve a Gambler card chosen inside an opened pack (GDD §10.3). The card is
+   * staged into the run for one call so the ordinary preconditions stay the single
+   * source of truth, then `useGambler` consumes it against the pack's seeded
+   * pouch-candidate field — the same discipline tile-targeting Fables follow.
+   */
+  const usePackGambler = useCallback((optionIndex: number, tileIds: string[]) => {
+    setState((prev) => {
+      if (!prev.pack || prev.pack.picksLeft <= 0) return prev;
+      const option = prev.pack.offer.options[optionIndex];
+      if (!option || option.kind !== 'consumable' || !isGamblerId(option.id)) return prev;
+      const id = option.id;
+      const field = prev.pack.candidateTiles;
+      const targets = gamblerTargetsTiles(id) ? tileIds : [];
+      if (!canUseUnheldGambler(id, prev.run, field, targets)) return prev;
+
+      const stagedRun = { ...prev.run, consumables: [...prev.run.consumables, id] };
+      const result = useGambler(
+        id,
+        stagedRun,
+        prev.blind,
+        field,
+        targets,
+        makeRng(`${prev.seed}#${prev.rngCounter}`),
+      );
+      if (!result.ok) return prev;
+
+      const options = prev.pack.offer.options.filter((_, index) => index !== optionIndex);
+      const picksLeft = prev.pack.picksLeft - 1;
+      // Destroyed/created tiles change the pouch; re-derive the candidate row from it
+      // so the remaining picks target what actually exists.
+      const bagById = new Map(result.run.bag.map((tile) => [tile.id, tile]));
+      const candidateTiles = field
+        .map((tile) => bagById.get(tile.id))
+        .filter((tile): tile is Tile => tile !== undefined);
+      const pack =
+        picksLeft <= 0 || options.length === 0
+          ? null
+          : {
+              ...prev.pack,
+              offer: { ...prev.pack.offer, options },
+              picksLeft,
+              candidateTiles,
+            };
+      audio.play('consumableUse');
+      recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+      recordVoucherProgress({
+        kind: 'editionedJokers',
+        count: result.run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
+      });
+      return {
+        ...prev,
+        run: result.run,
+        blind: result.blind,
+        pack,
+        rngCounter: prev.rngCounter + 1,
+        message: null,
+      };
+    });
+  }, []);
+
   const usePackConstellation = useCallback((optionIndex: number) => {
     setState((prev) => {
       if (!prev.pack || prev.pack.picksLeft <= 0) return prev;
@@ -762,14 +844,14 @@ export function useGame(): UseGame {
         picksLeft <= 0 || options.length === 0
           ? null
           : { ...prev.pack, offer: { ...prev.pack.offer, options }, picksLeft };
-      const run: RunState = {
+      const run = onConstellationUsed({
         ...prev.run,
         lastFableOrConstellation: option.id,
         patternLevels: {
           ...prev.run.patternLevels,
           [pattern]: from + 1,
         },
-      };
+      });
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
       patternLevelBus.emit({
@@ -898,6 +980,31 @@ export function useGame(): UseGame {
         return prev;
       }
       if (prev.phase === 'shop' && (fableTargetsTiles(id) || isBlindOnlyConsumable(id))) return prev;
+      // A tile-targeting Gambler needs an active field; in the shop there is none,
+      // so it must be held for a blind — the same rule tile-targeting Fables follow.
+      if (prev.phase === 'shop' && gamblerTargetsTiles(id)) return prev;
+      if (isGamblerId(id)) {
+        const result = useGambler(
+          id,
+          prev.run,
+          prev.blind,
+          prev.blind.hand,
+          prev.selected,
+          makeRng(`${prev.seed}#${prev.rngCounter}`),
+        );
+        if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
+        audio.play('consumableUse');
+        recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+        return {
+          ...prev,
+          run: result.run,
+          blind: result.blind,
+          selected: prev.selected.filter((tileId) =>
+            result.blind.hand.some((tile) => tile.id === tileId)),
+          message: null,
+          rngCounter: prev.rngCounter + 1,
+        };
+      }
       if (isFableId(id)) {
         const result = useFable(
           id,
@@ -936,7 +1043,7 @@ export function useGame(): UseGame {
         recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
         return {
           ...prev,
-          run: {
+          run: onConstellationUsed({
             ...prev.run,
             consumables,
             lastFableOrConstellation: id,
@@ -944,7 +1051,7 @@ export function useGame(): UseGame {
               ...prev.run.patternLevels,
               [pattern]: (prev.run.patternLevels[pattern] ?? 1) + 1,
             },
-          },
+          }),
         };
       }
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
@@ -1035,6 +1142,7 @@ export function useGame(): UseGame {
         destroyedTileIds,
         grownWoodTileIds,
         bossDiscardedTiles,
+        jokers,
       } = result;
       // Glass shatter (A polish): a tile broke this play. Delayed so the shatter lands
       // during the settle, after the glass tile's own ring beat — not at submit.
@@ -1072,8 +1180,9 @@ export function useGame(): UseGame {
       // explain Letter Hands the first time one actually scores. The event is
       // only present when a hand triggered (loop.ts), so its presence is the signal.
       if (events.some((e) => e.kind === 'letterHand')) tutorialBus.fire('firstLetterHand');
-      const nextRun: RunState = {
+      const nextRun = onTilesDestroyed({
         ...prev.run,
+        jokers,
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))
@@ -1083,7 +1192,7 @@ export function useGame(): UseGame {
         wordsThisAnte: submission.isGibberish
           ? prev.run.wordsThisAnte
           : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],
-      };
+      }, destroyedTileIds.length);
       const best = prev.stats.bestWord;
       const bestWord =
         !submission.isGibberish && (!best || submission.settledScore > best.score)
@@ -1325,6 +1434,7 @@ export function useGame(): UseGame {
     buyPack,
     pickPackOption,
     usePackFable,
+    usePackGambler,
     usePackConstellation,
     useHeldPackFable,
     closePack,

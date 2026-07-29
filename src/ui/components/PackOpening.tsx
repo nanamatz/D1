@@ -7,6 +7,7 @@ import {
   consumableAxisTip,
   consumableTooltipBody,
   consumableTooltipExtra,
+  grownValue,
   jokerDescKey,
 } from '../descriptions';
 import { useI18n } from '../i18n';
@@ -27,12 +28,20 @@ import {
   previewFableTile,
 } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
+import {
+  canUseUnheldGambler,
+  gamblerPickCount,
+  gamblerTargetsTiles,
+  isGamblerId,
+} from '../../engine/gamblers';
 import { FableCardArt } from './FableCardArt';
+import { GamblerCardArt } from './GamblerCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { useEntering } from './ScreenTransition';
 import { packFableFxBus } from '../packFableFx';
+import { jokerArt } from '../jokerArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
@@ -42,7 +51,6 @@ const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
 
 /** Emoji/glyph for a non-tile option. */
 function optionEmoji(option: PackOption): string {
-  if (option.kind === 'joker') return JOKER_REGISTRY.get(option.id)?.emoji ?? '🃏';
   if (option.kind === 'punctuation') return PUNCTUATION_EMOJI[option.id] ?? '✒️';
   if (option.kind === 'consumable') return CONSUMABLE_EMOJI[option.id] ?? '📄';
   return '📄'; // tile carries its own face; never reached here
@@ -102,6 +110,7 @@ function OptionCard({
       className={[
         'shopitem',
         'pack-option-card',
+        option.kind === 'joker' && 'emoji-tile-image-only',
         option.kind === 'tile' && 'tile-pack-option',
         `edition-${edition}`,
         blockKey && 'blocked',
@@ -125,6 +134,10 @@ function OptionCard({
       <div className="pack-option-visual">
         {option.kind === 'tile' ? (
           <TileView tile={option.tile} />
+        ) : option.kind === 'joker' ? (
+          jokerArt(option.id)
+            ? <img className="pack-joker-art" src={jokerArt(option.id)} alt="" />
+            : null
         ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
           <ConstellationCardArt
             id={option.id}
@@ -137,11 +150,19 @@ function OptionCard({
             className="shop-consumable-art"
             title={name}
           />
+        ) : option.kind === 'consumable' && isGamblerId(option.id) ? (
+          <GamblerCardArt
+            id={option.id}
+            className="shop-consumable-art"
+            title={name}
+          />
         ) : (
           <span className="e">{optionEmoji(option)}</span>
         )}
       </div>
-      {edition !== 'base' && <span className="edition-badge">{edition}</span>}
+      {edition !== 'base' && option.kind !== 'joker' && (
+        <span className="edition-badge">{edition}</span>
+      )}
     </TiltCard>
   );
   // The tooltip wraps the whole card, so it shows on hover even when the pick is
@@ -359,7 +380,12 @@ export function PackOpening({
     if (o.kind === 'tile') return tileTooltip(o.tile, t);
     if (o.kind === 'joker') {
       const def = JOKER_REGISTRY.get(o.id);
-      return { title: optionName(o), body: t(jokerDescKey(o.id)), rarity: def?.rarity };
+      return {
+        title: optionName(o),
+        body: t(jokerDescKey(o.id)),
+        extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
+        rarity: def?.rarity,
+      };
     }
     if (o.kind === 'punctuation') {
       return {
@@ -397,10 +423,19 @@ export function PackOpening({
     fableTargetsTiles(selectedFableOption.id)
       ? selectedFableOption.id
       : null;
-  const candidatesActive = pack.offer.type === 'consumable';
+  const selectedGamblerTargetId =
+    selectedFableOption?.kind === 'consumable' &&
+    isGamblerId(selectedFableOption.id) &&
+    gamblerTargetsTiles(selectedFableOption.id)
+      ? selectedFableOption.id
+      : null;
+  // Fable and Ink packs both deal a pouch-candidate field (GDD §10.3 target field).
+  const candidatesActive = pack.offer.type === 'consumable' || pack.offer.type === 'ink';
   const candidateMax = selectedTargetId
     ? fablePickCount(selectedTargetId).max
-    : candidateTiles.length;
+    : selectedGamblerTargetId
+      ? gamblerPickCount(selectedGamblerTargetId).max
+      : candidateTiles.length;
   const toggleCandidate = (tileId: string) => {
     if (!candidatesActive || picking) return;
     if (selectedCandidates.includes(tileId)) {
@@ -493,8 +528,9 @@ export function PackOpening({
             // confirm flow, and Constellations use immediately without a held slot.
             const fableId = o.kind === 'consumable' && isFableId(o.id) ? o.id : null;
             const fable = fableId !== null;
+            const gamblerId = o.kind === 'consumable' && isGamblerId(o.id) ? o.id : null;
             const constellation = o.kind === 'punctuation' && isConstellationId(o.id);
-            const needsConfirmation = fable || constellation;
+            const needsConfirmation = fable || gamblerId !== null || constellation;
             const blindOnlyFable = fableId !== null && isBlindOnlyConsumable(fableId);
             const blockKey =
               o.kind === 'joker' && !canAddJoker(g.state.run, o.id, o.edition)
@@ -505,9 +541,13 @@ export function PackOpening({
             const key = optionKey(o, i);
             const selected = needsConfirmation && selectedFable === key;
             const actionVisible = !needsConfirmation || selected;
+            const gamblerTargets =
+              gamblerId !== null && gamblerTargetsTiles(gamblerId) ? selectedCandidates : [];
             const actionDisabled =
-              fable &&
-              !canUseFableFromPack(fableId, g.state.run, g.state.blind, selectedCandidates);
+              (fable &&
+                !canUseFableFromPack(fableId, g.state.run, g.state.blind, selectedCandidates)) ||
+              (gamblerId !== null &&
+                !canUseUnheldGambler(gamblerId, g.state.run, candidateTiles, gamblerTargets));
             const fanStyle = {
               ['--fan-rot' as string]: `${(i - mid) * 7}deg`,
               ['--fan-y' as string]: `${Math.abs(i - mid) ** 1.4 * 7}px`,
@@ -520,7 +560,7 @@ export function PackOpening({
                   label={
                     fable
                       ? t(blindOnlyFable ? 'pack.select' : 'consumable.useAction')
-                      : constellation
+                      : gamblerId !== null || constellation
                         ? t('consumable.useAction')
                       : t('pack.pick')
                   }
@@ -551,6 +591,8 @@ export function PackOpening({
                       key,
                       fable
                         ? () => g.usePackFable(i, selectedCandidates)
+                        : gamblerId !== null
+                          ? () => g.usePackGambler(i, gamblerTargets)
                         : constellation
                           ? () => g.usePackConstellation(i)
                           : () => g.pickPackOption(i),

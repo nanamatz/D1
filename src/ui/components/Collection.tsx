@@ -14,8 +14,10 @@ import { mascotCollectionRows } from '../mascots';
 import {
   bossDescKey,
   consumableAxisTip,
+  consumableDescKey,
   consumableTooltipBody,
   fontDescKey,
+  grownValue,
   jokerDescKey,
 } from '../descriptions';
 import { useI18n } from '../i18n';
@@ -32,11 +34,13 @@ import { FableCardArt } from './FableCardArt';
 import { CONSTELLATION_DEFS } from '../../engine/constellations';
 import { voucherCollectionCopy } from '../voucherCollection';
 import { GAMBLER_CARDS } from '../gamblerArt';
+import { GAMBLER_IDS } from '../../engine/gamblers';
 import { ConstellationCardArt } from './ConstellationCardArt';
 import { FamilyCardArt } from './FamilyCardArt';
 import { TiltCard } from './TiltCard';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
+import { jokerArt } from '../jokerArt';
 
 type Category =
   | 'words'
@@ -100,6 +104,7 @@ const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
 // its Gambler registry lands, but it still counts as a family in the gallery.
 const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile', 'ink'] as const;
 const PAGE = 60;
+const JOKERS_PER_PAGE = 15;
 
 const sampleTile = (over: Partial<Tile>): Tile => {
   const material = over.material ?? 'ceramic';
@@ -328,26 +333,37 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
 // ---------- Jokers ----------
 function JokersView() {
   const { t, lang } = useI18n();
+  const [page, setPage] = useState(0);
+  const pages = Math.ceil(ALL_JOKERS.length / JOKERS_PER_PAGE);
+  const clamped = Math.min(page, pages - 1);
+  const visible = ALL_JOKERS.slice(
+    clamped * JOKERS_PER_PAGE,
+    (clamped + 1) * JOKERS_PER_PAGE,
+  );
+
   return (
-    <div className="card-grid">
-      {ALL_JOKERS.map((def) => {
-        const accent = def.rarity !== 'common' ? def.rarity : undefined;
-        return (
-          <Tooltip
-            key={def.id}
-            title={lang === 'ko' ? def.nameKo : def.nameEn}
-            body={t(jokerDescKey(def.id))}
-            rarity={def.rarity}
-            down
-          >
-            <div className={['coll-card', accent].filter(Boolean).join(' ')}>
-              <span className="cc-emoji">{def.emoji}</span>
-              <span className="cc-name">{lang === 'ko' ? def.nameKo : def.nameEn}</span>
-            </div>
-          </Tooltip>
-        );
-      })}
-    </div>
+    <>
+      <div className="card-grid joker-collection-grid">
+        {visible.map((def) => {
+          const art = jokerArt(def.id);
+          return (
+            <Tooltip
+              key={def.id}
+              title={lang === 'ko' ? def.nameKo : def.nameEn}
+              body={t(jokerDescKey(def.id))}
+              extra={grownValue(def, undefined, t)}
+              rarity={def.rarity}
+              down
+            >
+              <TiltCard idle className="emoji-tile-collection" tabIndex={0}>
+                {art && <img className="cc-joker-art" src={art} alt="" />}
+              </TiltCard>
+            </Tooltip>
+          );
+        })}
+      </div>
+      <Pager page={clamped} pages={pages} onPage={setPage} />
+    </>
   );
 }
 
@@ -749,11 +765,18 @@ function GamblerCardsView() {
       <div className="gambler-card-grid">
         {visible.map((card) => {
           const name = lang === 'ko' ? card.nameKo : card.nameEn;
+          // Rainman and Sake Cup have art but no engine definition — their effects
+          // stay pending in GDD §10.3, so they keep the placeholder line.
+          const implemented = (GAMBLER_IDS as readonly string[]).includes(card.id);
           return (
             <Tooltip
               key={card.id}
               title={name}
-              body={t('collection.gambler.effectPending')}
+              body={
+                implemented
+                  ? t(consumableDescKey(card.id))
+                  : t('collection.gambler.effectPending')
+              }
               classification="gambler"
               down
             >

@@ -57,7 +57,7 @@ export function Tooltip({
         <span className="tt-title">{title}</span>
         <span className="tt-desc">
           <span className="tt-body">{richText(body)}</span>
-          {extra && <span className="tt-extra">{extra}</span>}
+          {extra && <span className="tt-extra">{richText(extra)}</span>}
         </span>
         {rarity && <span className={['tt-rarity', rarity].join(' ')}>{t(`rarity.${rarity}`)}</span>}
         {grade && <span className={['tt-grade', grade].join(' ')}>{t(`pack.size.${grade}`)}</span>}

@@ -1,5 +1,6 @@
 import { isConstellationId } from '../engine/constellations';
 import { isFableId } from '../engine/fables';
+import { isGamblerId } from '../engine/gamblers';
 import type { ConsumableId } from '../engine/types';
 import type { TooltipClassification } from './components/Tooltip';
 
@@ -12,5 +13,6 @@ export function consumableClassification(
 ): TooltipClassification | undefined {
   if (isFableId(id)) return 'fable';
   if (isConstellationId(id)) return 'constellation';
+  if (isGamblerId(id)) return 'gambler';
   return undefined;
 }

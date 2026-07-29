@@ -112,9 +112,9 @@ Ripples:
 
 - `spell()` and `letterChips()` (`scoring.ts:18,25`) — null branches
 - `letterHands.ts` — Twin/Triplet/Palindrome/Straight all compare letters; a stone can join none of them
-- **`isVowel()` (`types.ts:32`)** — a stone is **neither vowel nor consonant**. If `VOWELS.has(null)`
-  returns false and callers infer "not vowel ⇒ consonant", `consonantBricklayer` (+4 chips/consonant)
-  silently pays out on stones. Both `vowelPraise` and `consonantBricklayer` must exclude null letters explicitly.
+- **`isVowel()` (`types.ts:32`)** — a stone is **neither vowel nor consonant**. Callers must not infer
+  "not vowel ⇒ consonant"; both predicates exclude null letters explicitly. The former proof Emoji Tiles
+  `vowelPraise` and `consonantBricklayer` were retired on 2026-07-29.
 - `Tile.tsx`, `BagView.tsx` — render a letterless tile
 
 Applying Stone via the Kiln consumable destroys that tile's letter permanently. That is intended and
@@ -176,7 +176,7 @@ New `tests/slice5-materials.test.ts`:
 - each of the 7 effects actually changes the score (the regression this whole spec exists to fix)
 - a ceramic-only word scores identically to today (no behavior drift)
 - a word containing stone is gibberish and gets no suit multiplier
-- stone counts as neither vowel nor consonant (asserted through `vowelPraise` + `consonantBricklayer`)
+- stone counts as neither vowel nor consonant (asserted directly through the letter predicates)
 - Glass destroy and Lead plate payout are **identical for identical seeds** (CLAUDE.md reproducibility)
 - Brass counts only hand-remaining tiles, never submitted ones
 - Ivory pays at blind end only

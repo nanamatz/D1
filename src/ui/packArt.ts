@@ -67,6 +67,11 @@ export const PACK_ART: Partial<Record<PackType, Record<PackSize, readonly string
     jumbo: [constellationClassic1, constellationClassic2],
     mega: [constellationPremium1, constellationPremium2],
   },
+  ink: {
+    normal: [inkBasic1, inkBasic2],
+    jumbo: [inkClassic1],
+    mega: [inkPremium1],
+  },
 };
 
 export function hasPackArt(type: PackType): boolean {
@@ -80,22 +85,14 @@ export function packArt(type: PackType, size: PackSize, variant: number): string
 }
 
 export type PackGalleryEntry = {
-  family: PackType | 'ink';
+  family: PackType;
   size: PackSize;
   src: string;
 };
 
 const SIZE_ORDER: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
-const INK_ART: Record<PackSize, readonly string[]> = {
-  normal: [inkBasic1, inkBasic2],
-  jumbo: [inkClassic1],
-  mega: [inkPremium1],
-};
 
-/**
- * Image-only Collection pages. Ink art is presentation-only until the Gambler
- * registry and its engine PackType are implemented.
- */
+/** Image-only Collection pages, one per pack family. */
 export function packGalleryPages(): PackGalleryEntry[][] {
   const pages: ReadonlyArray<{
     family: PackGalleryEntry['family'];
@@ -105,7 +102,7 @@ export function packGalleryPages(): PackGalleryEntry[][] {
     { family: 'joker', art: PACK_ART.joker! },
     { family: 'consumable', art: PACK_ART.consumable! },
     { family: 'pattern', art: PACK_ART.pattern! },
-    { family: 'ink', art: INK_ART },
+    { family: 'ink', art: PACK_ART.ink! },
   ];
 
   return pages.map(({ family, art }) =>

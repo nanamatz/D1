@@ -1,0 +1,7 @@
+== EXPORTS WITH ZERO USES OUTSIDE THEIR DECLARATION ==
+  Balance   [src/engine/balance.ts]
+  ConsumableFamily   [src/engine/types.ts]
+  PatternDef   [src/engine/types.ts]
+  UPGRADED_VOUCHER_IDS   [src/engine/vouchers.ts]
+  SORT_LABEL   [src/ui/game.ts]
+  SUIT_TAG   [src/ui/game.ts]

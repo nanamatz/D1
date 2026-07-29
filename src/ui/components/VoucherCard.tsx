@@ -10,10 +10,10 @@ interface VoucherCardProps {
 }
 
 /**
- * Shared CSS-rendered voucher ticket.
+ * Shared CSS-rendered portrait voucher card.
  *
- * Keep the ticket itself free of shop-only controls so every voucher appearance
- * uses the same silhouette, aspect ratio, and internal layout.
+ * Keep the card free of shop-only controls so every voucher appearance uses the
+ * same silhouette, size, and internal layout.
  */
 export function VoucherCard({
   emoji,

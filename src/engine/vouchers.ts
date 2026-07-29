@@ -189,7 +189,26 @@ export const constellationPassiveFactor = (run: RunState, pattern: PatternId | n
 };
 
 export const jokerSlotLimit = (run: RunState): number =>
-  run.jokerSlots + run.jokers.filter((j) => j.edition === 'negative').length;
+  run.jokerSlots +
+  run.jokers.filter((j) => j.edition === 'negative').length +
+  run.jokers.reduce(
+    (sum, joker) =>
+      sum +
+      (joker.defId === 'carteBlanche'
+        ? BALANCE.jokers.carteBlanche.slots
+        : joker.defId === 'bookOfMargins'
+          ? BALANCE.jokers.bookOfMargins.slots
+          : 0),
+    0,
+  );
+
+export const emojiTileShopPrice = (run: RunState, price: number): number =>
+  Math.max(
+    0,
+    price -
+      run.jokers.filter((joker) => joker.defId === 'carteBlanche').length *
+        BALANCE.jokers.carteBlanche.shopDiscount,
+  );
 
 /** Central duplicate rule. Future explicit duplicate-breakers relax only this gate. */
 export const canOwnJoker = (run: RunState, defId: string): boolean =>

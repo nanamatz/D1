@@ -58,4 +58,34 @@ describe('latest feedback regressions', () => {
       "mult ? `+${fmtMult(mult)}` : ''",
     );
   });
+
+  it('gives the Emoji Tile shelf remaining width with an exact 10px panel gap', () => {
+    const shelf = source('src/ui/components/JokerShelf.tsx');
+    expect(shelf).not.toContain('emojiPanelWidth');
+    expect(shelf).not.toContain('className="joker empty"');
+    expect(shelf).not.toContain('className="consumable empty"');
+    expect(play).toMatch(/\.joker\s*\{[^}]*width:\s*var\(--shop-card-w\);[^}]*height:\s*var\(--shop-card-h\);/s);
+    expect(play).toMatch(/\.shelf\s*\{[^}]*gap:\s*10px;/s);
+    expect(play).toMatch(/\.jokers-col\s*\{[^}]*flex:\s*1 1 auto;/s);
+    expect(play).toMatch(/\.jokers-group\s*\{[^}]*width:\s*100%;/s);
+    expect(play).toMatch(/\.consumables-group\s*\{[^}]*width:\s*286px;/s);
+    expect(play).toMatch(/\.joker-slot\s*\{[^}]*flex:\s*0 1 var\(--shop-card-w\)/s);
+  });
+
+  it('keeps the Emoji Tile and consumable slot panels the same height', () => {
+    expect(play).toMatch(/\.shelf-group\s*\{[^}]*height:\s*187px;/s);
+  });
+
+  it('shares the sidebar surface with both shelves and bottom-aligns the shop', () => {
+    expect(play).toMatch(/\.sidebar\s*\{[^}]*background:\s*var\(--rail-surface\)/s);
+    expect(play).toMatch(/\.shelf-group\s*\{[^}]*background:\s*var\(--rail-surface\)/s);
+    expect(play).toMatch(/\.shop-phase-panel\s*\{[^}]*align-items:\s*flex-end;[^}]*padding-bottom:\s*0;/s);
+  });
+
+  it('states the ×1 base in the scaling Emoji Tile current-value row', () => {
+    const ko = JSON.parse(source('locales/ko.json')) as Record<string, string>;
+    const en = JSON.parse(source('locales/en.json')) as Record<string, string>;
+    expect(ko['joker.currentMult']).toContain('×{value}');
+    expect(en['joker.currentMult']).toContain('×{value}');
+  });
 });

@@ -62,13 +62,20 @@ export function consumableAxisTip(
 /**
  * A scaling joker's live grown value as a display string, or null when the
  * joker has no visible per-instance state (spec §0 "currently ×N"). The
- * proof-set jokers are flat / run-counter based, so this is null today; a future
- * joker that writes numbers into owned.state surfaces a "currently …" line for
- * free.
+ * Scaling Emoji Tiles write their factor into owned.state.
  */
-export function grownValue(def: JokerDef, owned: OwnedJoker): string | null {
-  void def;
-  const entries = Object.entries(owned.state);
-  if (entries.length === 0) return null;
-  return entries.map(([k, v]) => `${k} ${v}`).join(' · ');
+export function grownValue(
+  def: JokerDef,
+  owned: OwnedJoker | undefined,
+  t: Translate,
+): string | null {
+  const display = def.growthDisplay;
+  if (!display) return null;
+  const value = owned?.state[display.stateKey] ?? display.initial;
+  const formatted = Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  const suffix =
+    display.kind === 'mult' ? 'Mult' : display.kind === 'multAdd' ? 'MultAdd' : 'Chips';
+  return t(`joker.current${suffix}`, { value: formatted });
 }

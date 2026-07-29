@@ -60,7 +60,7 @@ export interface SettleView {
   /** joker currently wiggling */
   activeJokerId: string | null;
   /** the firing joker's contribution, for its popup */
-  jokerPop: { jokerId: string; chips: number; mult: number } | null;
+  jokerPop: { jokerId: string; chips: number; mult: number; score: number } | null;
   /** a letter-hand / suit stamp landing this beat */
   stamp: { kind: 'letterHand' | 'suit'; label: string } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
@@ -292,7 +292,12 @@ export function SettleProvider({
               tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId,
-              jokerPop: { jokerId: e.jokerId, chips: e.chipsDelta, mult: e.multDelta },
+              jokerPop: {
+                jokerId: e.jokerId,
+                chips: e.chipsDelta,
+                mult: e.multDelta,
+                score: e.scoreDelta ?? 0,
+              },
               tileEffectPop: e.tileId
                 ? {
                     tileId: e.tileId,

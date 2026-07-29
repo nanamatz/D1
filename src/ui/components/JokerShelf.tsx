@@ -20,16 +20,23 @@ import { fableTargetsTiles, isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { FableCardArt } from './FableCardArt';
 import { ConstellationCardArt } from './ConstellationCardArt';
+import { GamblerCardArt } from './GamblerCardArt';
+import { isGamblerId } from '../../engine/gamblers';
 import { consumableClassification } from '../cardClassification';
 import { useShelfDrag } from '../drag';
+import { jokerArt } from '../jokerArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 
 /** The firing joker's contribution popup during settle (B step 3). */
-function JokerPop({ chips, mult }: { chips: number; mult: number }) {
-  const parts = [chips ? `+${chips}` : '', mult ? `+${fmtMult(mult)}` : ''].filter(Boolean);
+function JokerPop({ chips, mult, score = 0 }: { chips: number; mult: number; score?: number }) {
+  const parts = [
+    chips ? `+${chips}` : '',
+    mult ? `+${fmtMult(mult)}` : '',
+    score ? `+${score}` : '',
+  ].filter(Boolean);
   if (parts.length === 0) return null;
   return <span className="joker-pop">{parts.join(' ')}</span>;
 }
@@ -59,6 +66,7 @@ export function JokerShelf({
 }: Props) {
   const { t, lang } = useI18n();
   const settle = useSettleView();
+  const emojiSlotLimit = jokerSlotLimit(run);
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
   const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
   // A-3: pair every object action with a brief on-object animation before it resolves
@@ -118,11 +126,11 @@ export function JokerShelf({
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
-            const accent = def.rarity !== 'common' ? def.rarity : undefined;
+            const art = jokerArt(def.id);
             const firing = settle.active && settle.activeJokerId === def.id;
             const className = [
               'joker',
-              accent,
+              'emoji-tile-image-only',
               `edition-${owned.edition ?? 'base'}`,
               firing ? 'firing' : '',
             ].filter(Boolean).join(' ');
@@ -140,11 +148,12 @@ export function JokerShelf({
                 <Tooltip
                   title={name}
                   body={t(jokerDescKey(def.id))}
-                  extra={grownValue(def, owned)}
+                  extra={grownValue(def, owned, t)}
                   rarity={def.rarity}
                   down
                 >
                   <TiltCard
+                    idle
                     className={className}
                     tabIndex={0}
                     role={onSellJoker ? 'button' : undefined}
@@ -152,13 +161,13 @@ export function JokerShelf({
                     aria-expanded={onSellJoker ? jokerMenuIdx === i : undefined}
                     onClick={onSellJoker ? () => setJokerMenuIdx(jokerMenuIdx === i ? null : i) : undefined}
                   >
-                    <span className="e">{def.emoji}</span>
-                    <span className="n">{name}</span>
-                    {(owned.edition ?? 'base') !== 'base' && (
-                      <span className="edition-badge">{owned.edition}</span>
-                    )}
+                    {art && <img className="joker-art" src={art} alt="" />}
                     {firing && settle.jokerPop && (
-                      <JokerPop chips={settle.jokerPop.chips} mult={settle.jokerPop.mult} />
+                      <JokerPop
+                        chips={settle.jokerPop.chips}
+                        mult={settle.jokerPop.mult}
+                        score={settle.jokerPop.score}
+                      />
                     )}
                   </TiltCard>
                 </Tooltip>
@@ -181,13 +190,10 @@ export function JokerShelf({
               </div>
             );
           })}
-          {Array.from({ length: Math.max(0, jokerSlotLimit(run) - run.jokers.length) }, (_, i) => (
-            <div key={`empty-${i}`} className="joker empty" aria-hidden />
-          ))}
           </div>
         </div>
         <div className="shelf-count left">
-          {run.jokers.length}/{jokerSlotLimit(run)}
+          {run.jokers.length}/{emojiSlotLimit}
         </div>
       </div>
       <div className="shelf-col consumables-col">
@@ -244,6 +250,12 @@ export function JokerShelf({
                       className="consumable-art"
                       title={t(`consumable.${c}`)}
                     />
+                  ) : isGamblerId(c) ? (
+                    <GamblerCardArt
+                      id={c}
+                      className="consumable-art"
+                      title={t(`consumable.${c}`)}
+                    />
                   ) : (
                     <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
                   )}
@@ -288,9 +300,6 @@ export function JokerShelf({
               </div>
             )}
           </div>
-        ))}
-        {Array.from({ length: Math.max(0, run.consumableSlots - run.consumables.length) }, (_, i) => (
-          <div key={`empty-${i}`} className="consumable empty" aria-hidden />
         ))}
           </div>
         </div>

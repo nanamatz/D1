@@ -14,10 +14,12 @@ import rainman from '../../docs/Arts/Cards/Gambler/Vector/Rainman.svg';
 import sakeCup from '../../docs/Arts/Cards/Gambler/Vector/SakeCup.svg';
 
 /**
- * Presentation-only registry for the supplied Gambler card artwork.
+ * Art registry for the supplied Gambler card illustrations.
  *
- * Effects and acquisition stay out of this UI registry until the Ink-card design
- * is finalized. Adding those rules later belongs in the headless engine.
+ * This list is the COLLECTION gallery and holds all fourteen supplied cards,
+ * including Rainman and Sake Cup — whose effects are still pending, so they have
+ * no engine definition (`src/engine/gamblers.ts` ships the confirmed twelve).
+ * Effects and acquisition live in the engine; this file stays presentation-only.
  */
 export const GAMBLER_CARDS = [
   { id: 'barnSwallow', nameEn: 'Barn Swallow', nameKo: '제비', art: barnSwallow },
@@ -35,3 +37,10 @@ export const GAMBLER_CARDS = [
   { id: 'rainman', nameEn: 'Rainman', nameKo: '우중인', art: rainman },
   { id: 'sakeCup', nameEn: 'Sake Cup', nameKo: '사케 잔', art: sakeCup },
 ] as const;
+
+const ART: Readonly<Record<string, string>> = Object.fromEntries(
+  GAMBLER_CARDS.map((card) => [card.id, card.art]),
+);
+
+/** Illustration for a Gambler card id, or undefined for an unknown id. */
+export const gamblerArt = (id: string): string | undefined => ART[id];

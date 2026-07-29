@@ -35,7 +35,7 @@
    The basis stays content-derived, so a shrink-to-fit anchor (the shelves, the
    tiles) is unchanged; grow fills a stretched anchor, and shrink lets a long name
    wrap back down to the column instead of jutting out of it — `flex-shrink: 0`
-   here left "Consonant Bricklayer" 21px wider than its own grid cell.
+   here left long card names wider than their own grid cells.
    .tt-card is absolutely positioned, so it is not a flex item and not affected. */
 .tt-anchor > :not(.tt-card) {
   flex: 1 1 auto;
@@ -131,7 +131,8 @@
 .tt-extra {
   font-size: var(--fs-xs);
   font-weight: 700;
-  color: #8a6a1c;
+  color: #9b9b9b;
+  text-align: center;
 }
 /* feedback · the material/font sub-tooltip is a SEPARATE card 3px below the main one
    (not a section merged into it) — its own dark card, positioned just under the
@@ -1504,6 +1505,10 @@ body.cb-safe .tile.hint {
   width: 100%;
   padding-inline: calc((var(--tt-w) - var(--coll-card-min)) / 2);
 }
+.joker-collection-grid {
+  grid-template-columns: repeat(5, var(--shop-card-w));
+  justify-content: center;
+}
 .coll-card {
   display: flex;
   flex-direction: column;
@@ -1516,17 +1521,25 @@ body.cb-safe .tile.hint {
   box-shadow: var(--shadow);
   padding: 12px;
 }
-.coll-card.uncommon {
-  border-color: var(--chips);
-}
-.coll-card.rare {
-  border-color: var(--mult);
-}
-.coll-card.legendary {
-  border-color: var(--gold);
-}
 .cc-emoji {
   font-size: var(--ds-sm);
+}
+.cc-joker-art {
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
+  border-radius: var(--r-md);
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.emoji-tile-collection {
+  width: var(--shop-card-w);
+  height: var(--shop-card-h);
+  margin-inline: auto;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
 }
 /* Boss collection card: pixel-art emblem in place of the emoji glyph. */
 .boss-card-art {
@@ -1542,37 +1555,28 @@ body.cb-safe .tile.hint {
   text-align: center;
 }
 
-/* ---------- shared CSS voucher ticket ----------
-   The approved ticket reference defines the shape; the UI draws the ticket so
-   all 32 vouchers stay identical in size, ratio, frame, and typography. */
+/* ---------- shared portrait voucher card ---------- */
 .voucher-card {
   position: relative;
   isolation: isolate;
+  box-sizing: border-box;
   flex: 0 0 var(--voucher-w);
   width: var(--voucher-w);
   height: var(--voucher-h);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 13px 1fr 13px;
-  grid-template-rows: 1fr 22px;
+  grid-template-columns: 14px 1fr 14px;
+  grid-template-rows: 1fr 28px;
   align-items: center;
-  padding: 7px 8px 6px;
+  padding: 10px 7px 8px;
+  border: 3px solid #17140f;
+  border-radius: var(--r-md);
   color: #201b15;
-  background: #17140f;
-  clip-path: polygon(
-    8px 0, calc(100% - 8px) 0,
-    calc(100% - 8px) 3px, calc(100% - 3px) 3px,
-    calc(100% - 3px) 8px, 100% 8px,
-    100% 34%, calc(100% - 5px) 34%,
-    calc(100% - 5px) 66%, 100% 66%,
-    100% calc(100% - 8px), calc(100% - 3px) calc(100% - 8px),
-    calc(100% - 3px) calc(100% - 3px), calc(100% - 8px) calc(100% - 3px),
-    calc(100% - 8px) 100%, 8px 100%,
-    8px calc(100% - 3px), 3px calc(100% - 3px),
-    3px calc(100% - 8px), 0 calc(100% - 8px),
-    0 66%, 5px 66%, 5px 34%, 0 34%,
-    0 8px, 3px 8px, 3px 3px, 8px 3px
-  );
+  background:
+    linear-gradient(90deg, rgba(117, 80, 29, 0.10) 1px, transparent 1px) 0 0 / 11px 11px,
+    linear-gradient(rgba(117, 80, 29, 0.08) 1px, transparent 1px) 4px 4px / 13px 13px,
+    radial-gradient(circle at 50% 38%, #fff9e8 0 18%, transparent 52%),
+    #ead8ab;
   filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.42));
 }
 .voucher-card::before {
@@ -1580,23 +1584,9 @@ body.cb-safe .tile.hint {
   position: absolute;
   z-index: -1;
   inset: 3px;
-  background:
-    linear-gradient(90deg, rgba(117, 80, 29, 0.10) 1px, transparent 1px) 0 0 / 11px 11px,
-    linear-gradient(rgba(117, 80, 29, 0.08) 1px, transparent 1px) 4px 4px / 13px 13px,
-    radial-gradient(circle at 50% 42%, #fff9e8 0 24%, transparent 58%),
-    #ead8ab;
-  clip-path: polygon(
-    6px 0, calc(100% - 6px) 0,
-    calc(100% - 6px) 3px, 100% 3px,
-    100% 31%, calc(100% - 4px) 31%,
-    calc(100% - 4px) 69%, 100% 69%,
-    100% calc(100% - 3px), calc(100% - 6px) calc(100% - 3px),
-    calc(100% - 6px) 100%, 6px 100%,
-    6px calc(100% - 3px), 0 calc(100% - 3px),
-    0 69%, 4px 69%, 4px 31%, 0 31%,
-    0 3px, 6px 3px
-  );
-  box-shadow: inset 0 0 0 2px #fff5d7, inset 0 0 0 4px rgba(71, 52, 29, 0.24);
+  border: 2px solid #fff5d7;
+  border-radius: calc(var(--r-md) - 4px);
+  box-shadow: inset 0 0 0 2px rgba(71, 52, 29, 0.24);
 }
 .voucher-card__side {
   z-index: 1;
@@ -1621,7 +1611,7 @@ body.cb-safe .tile.hint {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
-  font-size: var(--ds-sm);
+  font-size: var(--ds-lg);
   line-height: 1;
   transform: translateY(1px);
   filter: drop-shadow(2px 2px 0 rgba(44, 30, 13, 0.3));
@@ -1631,8 +1621,8 @@ body.cb-safe .tile.hint {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(2px 2px 0 rgba(44, 30, 13, 0.32));
@@ -1643,7 +1633,7 @@ body.cb-safe .tile.hint {
   grid-row: 2;
   min-width: 0;
   width: 100%;
-  height: 19px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1705,9 +1695,11 @@ body.cb-safe .tile.hint {
   background: #27323b;
 }
 .voucher-pair .voucher-card.muted::before {
-  background:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px),
-    #35424d;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.025) 0 2px,
+    transparent 2px 5px
+  );
   box-shadow: inset 0 0 0 2px #657681, inset 0 0 0 4px rgba(10, 17, 22, 0.45);
 }
 .voucher-pair .voucher-card.muted .voucher-card__icon {
@@ -1831,7 +1823,7 @@ body.cb-safe .tile.hint {
   display: block;
   width: 81px;
   height: 132px;
-  border-radius: 8px;
+  border-radius: 0;
 }
 .pack-gallery-art {
   /* All pack SVGs share a 244×400 (0.61) path-only canvas. */
@@ -1840,6 +1832,7 @@ body.cb-safe .tile.hint {
   display: block;
   object-fit: contain;
   image-rendering: pixelated;
+  border-radius: 0;
 }
 /* Legacy shop-pack idle. Collection packs use the shared motion-card system. */
 @keyframes packIdle {

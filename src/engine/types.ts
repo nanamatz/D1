@@ -160,6 +160,11 @@ export interface WordScoringContext {
   submission: WordSubmission;
   chips: number;
   mult: number;
+  /** Virtual scoring suits supplied by rule-changing Emoji Tiles. The canonical
+   * submission suit stays untouched for bosses, Unison, and sentence history. */
+  scoringSuits?: Set<Suit>;
+  /** Flat committed-score replay, used by Rotary Press. */
+  scoreBonus?: number;
 }
 
 /**
@@ -174,7 +179,7 @@ export type ScoreEvent =
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; tileId?: string }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; scoreDelta?: number; tileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
 
@@ -282,7 +287,7 @@ export type ShopItem =
 /** Pack types (GDD §9.3). Publishing-world names live in i18n:
  *  pattern=Ink · joker=Charm · consumable=Consumable · tile=Tile.
  *  Code ids are semantic, not the display names. (Forbidden Stacks retired 2026-07-22.) */
-export type PackType = 'pattern' | 'joker' | 'consumable' | 'tile';
+export type PackType = 'pattern' | 'joker' | 'consumable' | 'tile' | 'ink';
 
 /** Pack sizes (GDD §9.3, feature-02 B): Normal 3/1 · Jumbo 5/1 · Mega 5/2. */
 export type PackSize = 'normal' | 'jumbo' | 'mega';
@@ -321,7 +326,7 @@ export interface OwnedJoker {
 
 // ---------- Consumables & vouchers (GDD §9–10) ----------
 
-export type ConsumableFamily = 'fable' | 'constellation' | 'ink';
+export type ConsumableFamily = 'fable' | 'constellation' | 'ink' | 'gambler';
 
 export type ConsumableId =
   // stationery
@@ -336,7 +341,12 @@ export type ConsumableId =
   // fable cards
   | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
   | 'fable7' | 'fable8' | 'fable9' | 'fable10' | 'fable11' | 'fable12'
-  | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18';
+  | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18'
+  // gambler cards (GDD §10.3). Rainman and Sake Cup stay out until their
+  // effects are designed — art-only ids never reach the engine.
+  | 'barnSwallow' | 'boar' | 'bridge' | 'bushWarbler' | 'butterflies'
+  | 'craneAndSun' | 'cuckoo' | 'curtain' | 'deer' | 'fullMoon'
+  | 'geese' | 'phoenix';
 
 export type VoucherId =
   | 'storyBook' | 'novel'

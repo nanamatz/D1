@@ -103,15 +103,11 @@ body{
 .main{display:flex;flex-direction:column;gap:14px}
 .shelf{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .jokers,.consumables{display:flex;gap:10px}
-/* Chunky squared joker cards; rarity = pixel frame color. */
-.joker{width:76px;height:96px;border-radius:0;background:#2B3B48;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  box-shadow:var(--shadow);border:2px solid #4A6272;cursor:pointer;transition:transform .1s steps(2)}
-.joker:hover{transform:translateY(-4px)}
-.joker .e{font-size:34px;image-rendering:pixelated}
-.joker .n{font-size:10px;font-weight:600;color:var(--ink-dim);text-align:center;line-height:1.1;padding:0 4px}
-.joker.uncommon{border-color:var(--chips)}
-.joker.rare{border-color:var(--mult)}
+/* Emoji Tile asset is the whole card: no wrapper or rarity frame. */
+.joker{width:124px;height:165px;border:0;background:transparent;padding:0;
+  cursor:pointer;transition:transform .12s}
+.joker:hover{transform:perspective(600px) rotateY(8deg) translateY(-6px) scale(1.04)}
+.joker img{display:block;width:124px;height:165px;object-fit:contain;image-rendering:pixelated}
 .consumable{width:60px;height:82px;border-radius:0;background:#EFE7D6;color:#2B2620;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow);
   border-top:2px solid #FFFBF0;border-bottom:2px solid #C4B79A}
@@ -268,9 +264,9 @@ body{
     <!-- joker shelf -->
     <div class="shelf">
       <div class="jokers">
-        <div class="joker" tabindex="0"><span class="e">🅰️</span><span class="n">Vowel Praise</span></div>
-        <div class="joker uncommon" tabindex="0"><span class="e">😎</span><span class="n">Hipster</span></div>
-        <div class="joker rare" tabindex="0"><span class="e">📜</span><span class="n">Grammarian</span></div>
+        <button class="joker" tabindex="0"><img src="../../src/ui/assets/jokers/dadaist.png" alt="Dadaist"></button>
+        <button class="joker" tabindex="0"><img src="../../src/ui/assets/jokers/rhyme-chain.png" alt="Rhyme Chain"></button>
+        <button class="joker" tabindex="0"><img src="../../src/ui/assets/jokers/stargazer.png" alt="Stargazer"></button>
       </div>
       <div class="consumables">
         <div class="consumable"><span class="e">📎</span><span class="n">Correction<br>Tape</span></div>

@@ -7,7 +7,7 @@
  * GDD section references are noted per block.
  */
 
-import type { FontEffectId, PackSize, PackType, TileFont } from './types';
+import type { FontEffectId, Letter, PackSize, PackType, TileFont } from './types';
 
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
@@ -150,7 +150,13 @@ export const BALANCE = {
   sellRatio: 0.5,
 
   // ----- Shop (GDD §9.2) -----
-  shop: { itemSlots: 2, packSlots: 2, rerollBase: 5, rerollIncrement: 1 },
+  shop: {
+    itemSlots: 2,
+    packSlots: 2,
+    rerollBase: 5,
+    rerollIncrement: 1,
+    itemWeights: { joker: 80, tile: 10, consumable: 5, punctuation: 5 },
+  },
   jokerPrice: { common: 5, uncommon: 7, rare: 9, legendary: 20 },
   jokerSlots: 5,
   consumablePrice: 3, // flat consumable price (placeholder, GDD §9.2)
@@ -179,10 +185,15 @@ export const BALANCE = {
     },
     // shop pack-slot roll weights (Mega/Jumbo rarer via sizeWeights below).
     // Display names (GDD §9.3): consumable=Fable, pattern=Constellation, tile=Tile,
-    // joker=Charm, ink=Ink. Ink stays UNROLLABLE until its Gambler registry lands —
-    // the weight lives here but `ink` is absent from shop.ts PACK_TYPES, so enabling
-    // it is a one-line flag flip (add 'ink' to PACK_TYPES), not a data change (C-3).
+    // joker=Charm, ink=Ink. Ink is the rare thrill (Spectral's role) and rolls
+    // now that the Gambler registry ships (src/engine/gamblers.ts).
     typeWeights: { consumable: 4, pattern: 4, tile: 4, joker: 2, ink: 0.6 } as Record<string, number>,
+    /** Comic Book only (GDD §9.3): per-choice chance a Fable Pack option becomes a
+     *  Gambler card, capped at one per pack. Without the voucher it is exactly 0. */
+    gamblerInFableChance: 0.05,
+    /** Deer's cross-family exception: chance one Constellation-Pack choice becomes
+     *  Deer, capped at one per pack (GDD §9.3, §10.3 #9). */
+    deerInConstellationChance: 0.01,
     sizeWeights: { normal: 8, jumbo: 3, mega: 1 } as Record<string, number>,
     // how many cosmetic art variants exist per (type, size) (== the art count in
     // packArt.ts); the seeded RNG picks one at stock time.
@@ -191,6 +202,7 @@ export const BALANCE = {
       joker: { normal: 2, jumbo: 1, mega: 1 },
       pattern: { normal: 4, jumbo: 2, mega: 2 },
       consumable: { normal: 4, jumbo: 2, mega: 2 },
+      ink: { normal: 2, jumbo: 1, mega: 1 },
     } as Record<PackType, Record<PackSize, number>>,
   },
   packEnhanceChance: { base: 0.15 }, // material/font pre-attach rate
@@ -203,17 +215,57 @@ export const BALANCE = {
     rarityWeights: { common: 70, uncommon: 25, rare: 5 } as Record<string, number>,
   },
 
-  // ----- Jokers (GDD §11) — per-joker knobs (proof set for slice ④) -----
+  // ----- Jokers (GDD §11) — per-joker knobs -----
   jokers: {
-    vowelPraise: { multPerVowel: 2 }, // #1
-    consonantBricklayer: { chipsPerConsonant: 4 }, // #2
-    jackOfAllTrades: { mult: 4 }, // #10
-    hipster: { mult: 7 }, // #12, layer 2 (Slang)
-    grammarian: { totalMult: 2 }, // #22, layer 3 (any pattern)
-    // #24, layer 3 — proportional to phases left at clear (playtest-04 C-1):
-    // ×(1 + multPerPhase × phasesLeft). More phases left → bigger bonus.
-    rushSpecialist: { multPerPhase: 0.5 },
     loanShark: { goldPerPhase: 1 }, // #28 (not yet implemented) — $ per phase left at clear
+    // Common (§11.2)
+    uppercasePremium: { chips: 3 },
+    lowercaseLover: { mult: 1 },
+    ceramicArtisan: { chips: 2 },
+    longWordFan: { minLength: 5, chips: 30 },
+    shortAndSharp: { maxLength: 3, mult: 8 },
+    alphabeticalOrder: { chips: 15 },
+    miser: { goldPer: 5, mult: 1 },
+    // Uncommon (§11.3)
+    literaryJudge: { chips: 50 },
+    rareEarth: { factor: 3 }, // ×Chips on Q·Z·X·J tiles
+    glasswork: { multPerGlass: 5, lostPerBlind: 1 },
+    voraciousReader: { chipsPerWord: 1 },
+    classicist: { multPerFormal: 1 },
+    streetCred: { chipsPerSlang: 8 },
+    comboArtist: { mult: 6 },
+    vowelMagnet: { factor: 1.5 },
+    equilibrist: { chips: 40, mult: 4 },
+    // Rare (§11.4)
+    carteBlanche: { slots: 1, shopDiscount: 2 },
+    hypocrite: { factor: 2 },
+    rhymeChain: { factorPerMatch: 1.5 },
+    outOfPrint: { chipsPerLetter: 25, multPerLetter: 3 },
+    stargazer: { factorPerCard: 0.15 },
+    fableHoard: { factorPerConsumable: 1.25 },
+    anonymous: { factor: 2.5 },
+    censorsBane: { factor: 2.5 },
+    dadaist: { factor: 2 },
+    interestGlutton: { multPerGold: 2 },
+    // Legendary (§11.5)
+    bookOfMargins: { slots: 3, factorPerEmptySlot: 2 },
+    tyrant: { vulgarFactor: 2 },
+    typeFoundry: { factorPerTile: 1.5 },
+    misbound: { destroyDenominator: 12, factorPerSurvival: 0.2 },
+  },
+  /** Q·Z·X·J — the Rare Earth (U3) letter set. */
+  rareLetters: ['Q', 'Z', 'X', 'J'] as readonly Letter[],
+
+  // ----- Gambler cards (GDD §10.3) — the Spectral analog -----
+  gambler: {
+    /** Bridge's floor. GDD §10.3 leaves the exact number a tuning decision; this
+     *  is the first pass and the card is unusable once the hand reaches it. */
+    bridgeHandSizeFloor: 5,
+    butterfliesDestroy: 5,
+    butterfliesGold: 20,
+    curtainCopies: 2,
+    fullMoonDestroy: 1,
+    fullMoonVowels: 3,
   },
 
   // ----- Consumables (GDD §10) -----

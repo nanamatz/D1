@@ -15,6 +15,7 @@ import type {
   BlindState, JokerRarity, OwnedJoker, RunState,
   SentenceScoringContext, Tile, WordScoringContext,
 } from './types';
+import type { Rng } from './rng';
 
 // ---------- Event payloads ----------
 
@@ -22,14 +23,17 @@ export interface EngineEvents {
   /** blind is being set up; jokers may mutate phase count, discard budget, target */
   blindStart: { run: RunState; blind: BlindState };
 
+  /** rule-changing pass before shelf-ordered scoring hooks. It may extend
+   *  ctx.scoringSuits, but never mutates submission.suit/POS. */
+  wordRules: { run: RunState; blind: BlindState; ctx: WordScoringContext };
+
   /** a word's chips/mult are being computed — THE main scoring hook.
    *  Mutate ctx.chips / ctx.mult. Runs before settlement (GDD §7.1 layer 1).
    *  Use this for per-WORD effects (a flat bonus, a suit-gated bonus). */
   wordScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext };
 
-  /** a SINGLE tile's chips have just been added — per-LETTER jokers (Vowel Praise,
-   *  Consonant Bricklayer) hook here so their contribution interleaves with the tile
-   *  scoring and animates on that tile (item 3). Mutate ctx.chips / ctx.mult. */
+  /** a SINGLE tile's chips have just been added. Per-letter Emoji Tiles hook here
+   *  so their contribution interleaves with tile scoring. */
   tileScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext; tile: Tile };
 
   /** word settled and appended to the sequence; counters have been updated */
@@ -42,8 +46,14 @@ export interface EngineEvents {
    *  Mutate ctx.sentenceChips / ctx.sentenceMult (the bonus = chips × mult). */
   sentenceScoring: { run: RunState; blind: BlindState; ctx: SentenceScoringContext };
 
+  /** a Constellation card was consumed */
+  constellationUsed: { run: RunState };
+
+  /** letter tiles left the permanent pouch */
+  tilesDestroyed: { run: RunState; count: number };
+
   /** blind ended. early=true when ended via the projected≥target trigger */
-  blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number };
+  blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number; rng: Rng };
 
   /** shop entered / left — for economy jokers */
   shopEnter: { run: RunState };
@@ -71,8 +81,20 @@ export interface JokerDef {
   layer: 1 | 2 | 3;
   price: number; // placeholder, see balance.ts
   scalingAxis?: keyof RunState['counters'];
+  /** Optional live-value row for scaling Emoji Tile tooltips.
+   *  `mult` = a ×factor, `multAdd` = an additive +Mult, `chips` = additive +Chips. */
+  growthDisplay?: {
+    kind: 'mult' | 'multAdd' | 'chips';
+    stateKey: string;
+    initial: number;
+  };
   hooks: JokerHooks;
 }
+
+export const hasScoringSuit = (
+  ctx: WordScoringContext,
+  suit: import('./types').Suit,
+): boolean => ctx.scoringSuits?.has(suit) ?? ctx.submission.suit === suit;
 
 // ---------- Event bus ----------
 
@@ -94,20 +116,3 @@ export class JokerBus {
     }
   }
 }
-
-// ---------- Example def (implementation reference) ----------
-//
-// #1 Vowel Praise (Common, layer 1): +2 Mult per vowel in the word.
-// Fires on gibberish too — layer 1 reads letters only (GDD §6.4).
-//
-// export const vowelPraise: JokerDef = {
-//   id: 'vowelPraise', gddNumber: 1,
-//   nameKo: '모음 예찬', nameEn: 'Vowel Praise', emoji: '🅰️',
-//   rarity: 'common', layer: 1, price: BALANCE.jokerPrice.common,
-//   hooks: {
-//     wordScoring: ({ ctx }) => {
-//       const vowels = ctx.submission.tiles.filter(t => isVowel(t.letter)).length;
-//       ctx.mult += BALANCE.jokers.vowelPraise.multPerVowel * vowels;
-//     },
-//   },
-// };

@@ -13,6 +13,7 @@ import { CONSTELLATION_IDS, CONSTELLATION_PATTERN } from './constellations';
 import { sampleJokerDefs } from './offers';
 import { rollJokerEdition, rollTileEdition } from './editions';
 import { FABLE_IDS } from './fables';
+import { GAMBLER_IDS } from './gamblers';
 import {
   canAddJoker,
   fablePacksContainInk,
@@ -42,6 +43,9 @@ export const CONSUMABLE_POOL = STATIONERY_POOL;
 
 /** Constellation-card pool. The legacy variable name is internal only. */
 export const PUNCTUATION_POOL = [...CONSTELLATION_IDS];
+
+/** Gambler-card pool — the Ink Pack's contents (GDD §9.3, §10.3). */
+export const GAMBLER_POOL: readonly ConsumableId[] = GAMBLER_IDS;
 
 const MATERIALS: readonly TileMaterial[] = [
   'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
@@ -117,15 +121,22 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'consumable': {
-      const pool = fablePacksContainInk(run)
-        ? [...STATIONERY_POOL, ...PUNCTUATION_POOL]
-        : STATIONERY_POOL;
-      options = drawConsumables(pool, show, rng, (id) => {
-        const pattern = CONSTELLATION_PATTERN[id];
-        return pattern
-          ? { kind: 'punctuation', id, pattern }
-          : { kind: 'consumable', id };
-      });
+      options = drawConsumables(STATIONERY_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
+      // Comic Book (GDD §9.3): each choice rolls to become a Gambler card, capped
+      // at one per pack. Without the voucher the chance is exactly 0 — the roll is
+      // skipped entirely so the seeded stream is unchanged for runs without it.
+      if (fablePacksContainInk(run)) {
+        for (let i = 0; i < options.length; i++) {
+          if (rng.next() < BALANCE.pack.gamblerInFableChance) {
+            options[i] = { kind: 'consumable', id: GAMBLER_IDS[rng.int(GAMBLER_IDS.length)]! };
+            break;
+          }
+        }
+      }
+      break;
+    }
+    case 'ink': {
+      options = drawConsumables(GAMBLER_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
       break;
     }
     case 'pattern': {
@@ -140,6 +151,11 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
         if (favorite && id && !options.some((o) => o.kind === 'punctuation' && o.pattern === favorite)) {
           options[options.length - 1] = { kind: 'punctuation', id, pattern: favorite };
         }
+      }
+      // Deer's cross-family exception (GDD §10.3 #9): one Constellation choice may
+      // very rarely be replaced, at most once per pack.
+      if (rng.next() < BALANCE.pack.deerInConstellationChance && options.length > 0) {
+        options[rng.int(options.length)] = { kind: 'consumable', id: 'deer' };
       }
       break;
     }

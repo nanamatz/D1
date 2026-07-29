@@ -24,9 +24,9 @@ function main(): void {
   const run = newRun('slice1-demo');
   // Slice ④: equip a proof-set of jokers spanning all three layers.
   run.jokers = [
-    { defId: 'consonantBricklayer', state: {} }, // layer 1
-    { defId: 'jackOfAllTrades', state: {} }, // layer 1
-    { defId: 'grammarian', state: {} }, // layer 3
+    { defId: 'dadaist', state: {} },
+    { defId: 'rhymeChain', state: {} },
+    { defId: 'hypocrite', state: {} },
   ];
   let blind: BlindState = startBlind(run, makeRng(run.seed)); // target from the ante curve
   const target = blind.target;

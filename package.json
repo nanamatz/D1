@@ -10,6 +10,7 @@
     "test": "vitest run",
     "sim": "tsx src/sim/autoplay.ts",
     "sim:materials": "tsx src/sim/materials.ts",
+    "sim:emoji-sample": "tsx src/sim/emoji-sample.ts",
     "normalize:packs": "node scripts/normalize-pack-art.mjs",
     "deploy": "npm run build && gh-pages -d dist",
     "desktop:run": "electron .",

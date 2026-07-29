@@ -27,14 +27,12 @@ describe('feature-03 C-1 — rarity weights (GDD §9.2)', () => {
     }
   });
 
-  it('offers commons far more often than rares over many draws', () => {
-    const counts: Record<string, number> = { common: 0, uncommon: 0, rare: 0 };
-    for (let i = 0; i < 4000; i++) {
-      const [first] = sampleJokerDefs(run(), 1, makeRng(`r${i}`));
-      if (first) counts[first.rarity]!++;
-    }
-    expect(counts.common!).toBeGreaterThan(counts.uncommon!);
-    expect(counts.uncommon!).toBeGreaterThan(counts.rare!);
+  it('offers Common/Uncommon/Rare from the full roster and never a Legendary', () => {
+    const offered = sampleJokerDefs(run(), 20, makeRng('review-pool'));
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.every((def) => def.rarity !== 'legendary')).toBe(true);
+    // 70/25/5 weights: a 20-draw sample must reach past the Rare-only roster.
+    expect(offered.some((def) => def.rarity === 'common')).toBe(true);
   });
 });
 

@@ -153,7 +153,7 @@ describe('Fable registry', () => {
     const edition = setup('fable15');
     const editioned = useFable(
       'fable15',
-      { ...edition.run, jokers: [{ defId: 'vowelPraise', edition: 'base', state: {} }] },
+      { ...edition.run, jokers: [{ defId: 'carteBlanche', edition: 'base', state: {} }] },
       edition.blind,
       [],
       zeroRng,
@@ -187,7 +187,7 @@ describe('Fable registry', () => {
       {
         ...run,
         gold: 3,
-        jokers: Array.from({ length: 10 }, () => ({ defId: 'vowelPraise', state: {} })),
+        jokers: Array.from({ length: 10 }, () => ({ defId: 'hypocrite', state: {} })),
       },
       blind,
       [],

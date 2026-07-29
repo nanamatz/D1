@@ -1,0 +1,278 @@
+/**
+ * Gambler cards (GDD §10.3) + the Ink Pack (§9.3) — the twelve confirmed effects,
+ * their acquisition routes, and the cross-family rolls.
+ */
+import { describe, expect, it } from 'vitest';
+import en from '../locales/en.json';
+import ko from '../locales/ko.json';
+import { BALANCE } from '../src/engine/balance';
+import {
+  GAMBLER_IDS,
+  canUseGambler,
+  gamblerTargetsTiles,
+  isGamblerId,
+  useGambler,
+} from '../src/engine/gamblers';
+import { LEGENDARY_JOKERS, RARE_JOKERS } from '../src/engine/jokers';
+import { startBlind } from '../src/engine/loop';
+import { rollPack } from '../src/engine/packs';
+import { makeRng, type Rng } from '../src/engine/rng';
+import { newRun } from '../src/engine/run';
+import type {
+  BlindState,
+  ConsumableId,
+  PackSlot,
+  PatternId,
+  RunState,
+  Tile,
+} from '../src/engine/types';
+
+const held = (run: RunState, id: ConsumableId): RunState => ({
+  ...run,
+  consumables: [...run.consumables, id],
+});
+
+const setup = (id: ConsumableId, over: Partial<RunState> = {}) => {
+  const base = { ...newRun('gambler'), ...over };
+  const run = held(base, id);
+  const blind: BlindState = startBlind(run, makeRng('gambler-blind'));
+  return { run, blind };
+};
+
+const rng = (seed = 'g') => makeRng(seed);
+
+/** Deterministic stub: `int` always returns 0 and `shuffle` keeps input order. */
+const firstRng: Rng = {
+  next: () => 0,
+  int: () => 0,
+  shuffle: <T,>(items: readonly T[]) => [...items],
+};
+
+describe('registry — GDD §10.3', () => {
+  it('ships the twelve confirmed cards and leaves Rainman / Sake Cup pending', () => {
+    expect(GAMBLER_IDS).toHaveLength(12);
+    expect(isGamblerId('rainman' as ConsumableId)).toBe(false);
+    expect(isGamblerId('sakeCup' as ConsumableId)).toBe(false);
+  });
+
+  it('names and describes every card in both locales', () => {
+    const enKeys: Record<string, string> = en;
+    const koKeys: Record<string, string> = ko;
+    for (const id of GAMBLER_IDS) {
+      expect(enKeys[`consumable.${id}`], id).toBeTruthy();
+      expect(koKeys[`consumable.${id}`], id).toBeTruthy();
+      expect(enKeys[`consumabledesc.${id}`], id).toBeTruthy();
+      expect(koKeys[`consumabledesc.${id}`], id).toBeTruthy();
+    }
+  });
+
+  it('asks for a target only on the font cards and Curtain', () => {
+    const targeting = GAMBLER_IDS.filter(gamblerTargetsTiles);
+    expect([...targeting].sort()).toEqual(
+      ['barnSwallow', 'bushWarbler', 'cuckoo', 'curtain', 'geese'],
+    );
+  });
+});
+
+describe('font cards — #1 / #4 / #7 / #11', () => {
+  it('moves only the font axis and consumes the card', () => {
+    const { run, blind } = setup('barnSwallow');
+    const target: Tile = { ...blind.hand[0]!, material: 'glass', edition: 'foil' };
+    const field = [target];
+    const seeded = {
+      ...run,
+      bag: run.bag.map((tile) => (tile.id === target.id ? target : tile)),
+    };
+    const result = useGambler('barnSwallow', seeded, blind, field, [target.id], rng());
+    expect(result.ok).toBe(true);
+    const after = result.run.bag.find((tile) => tile.id === target.id)!;
+    expect(after.font).toBe('black');
+    expect(after.material).toBe('glass');
+    expect(after.edition).toBe('foil');
+    expect(after.letter).toBe(target.letter);
+    expect(result.run.consumables).not.toContain('barnSwallow');
+  });
+
+  it('is unusable on a tile that already carries the font', () => {
+    const { run, blind } = setup('geese');
+    const target: Tile = { ...blind.hand[0]!, font: 'bold' };
+    expect(canUseGambler('geese', run, [target], [target.id])).toBe(false);
+  });
+});
+
+describe('#2 Boar — the unique-ownership exception', () => {
+  it('keeps one Emoji Tile plus a copy and destroys the rest', () => {
+    const { run, blind } = setup('boar', {
+      jokers: [
+        { defId: 'stargazer', edition: 'negative', state: { factor: 1.3 } },
+        { defId: 'hypocrite', edition: 'base', state: {} },
+        { defId: 'dadaist', edition: 'base', state: {} },
+      ],
+    });
+    const result = useGambler('boar', run, blind, [], [], firstRng);
+    expect(result.run.jokers).toHaveLength(2);
+    expect(result.run.jokers.every((joker) => joker.defId === 'stargazer')).toBe(true);
+    expect(result.run.jokers[0]?.edition).toBe('negative');
+    // A Negative original yields a Base copy; the grown state copies across.
+    expect(result.run.jokers[1]?.edition).toBe('base');
+    expect(result.run.jokers[1]?.state.factor).toBe(1.3);
+  });
+});
+
+describe('#3 Bridge — one letter, one less hand', () => {
+  it('unifies the field and permanently shrinks the hand', () => {
+    const { run, blind } = setup('bridge');
+    const field = blind.hand.slice(0, 3);
+    const result = useGambler('bridge', run, blind, field, [], rng('bridge'));
+    const letters = new Set(
+      result.run.bag
+        .filter((tile) => field.some((f) => f.id === tile.id))
+        .map((tile) => tile.letter),
+    );
+    expect(letters.size).toBe(1);
+    expect(result.run.handSize).toBe(run.handSize - 1);
+  });
+
+  it('is unusable once the hand reaches its floor', () => {
+    const { run, blind } = setup('bridge', { handSize: BALANCE.gambler.bridgeHandSizeFloor });
+    expect(canUseGambler('bridge', run, blind.hand, [])).toBe(false);
+  });
+});
+
+describe('#5 Butterflies / #10 Full Moon — destruction', () => {
+  it('Butterflies destroys 5 field tiles for $20 and needs 5 candidates', () => {
+    const { run, blind } = setup('butterflies');
+    const field = blind.hand.slice(0, 5);
+    const result = useGambler('butterflies', run, blind, field, [], firstRng);
+    expect(result.run.bag).toHaveLength(run.bag.length - 5);
+    expect(result.run.gold).toBe(run.gold + BALANCE.gambler.butterfliesGold);
+    expect(canUseGambler('butterflies', run, blind.hand.slice(0, 4), [])).toBe(false);
+  });
+
+  it('Butterflies feeds Type Foundry through the shared destruction event', () => {
+    const { run, blind } = setup('butterflies', {
+      jokers: [{ defId: 'typeFoundry', edition: 'base', state: {} }],
+    });
+    const result = useGambler('butterflies', run, blind, blind.hand.slice(0, 5), [], firstRng);
+    expect(result.run.jokers[0]?.state.factor).toBeCloseTo(
+      Math.pow(BALANCE.jokers.typeFoundry.factorPerTile, 5),
+    );
+  });
+
+  it('Full Moon trades one tile for three enhanced vowels, never Stone', () => {
+    const { run, blind } = setup('fullMoon');
+    const result = useGambler('fullMoon', run, blind, blind.hand.slice(0, 1), [], rng('moon'));
+    expect(result.run.bag).toHaveLength(run.bag.length - 1 + 3);
+    const born = result.run.bag.filter((tile) => tile.id.startsWith('gb'));
+    expect(born).toHaveLength(3);
+    for (const tile of born) {
+      expect(['A', 'E', 'I', 'O', 'U']).toContain(tile.letter);
+      expect(tile.material).not.toBe('ceramic');
+      expect(tile.material).not.toBe('stone');
+    }
+  });
+});
+
+describe('#6 Crane and Sun / #12 Phoenix — Emoji Tile creation', () => {
+  it('Crane and Sun creates an unowned Rare and zeroes gold', () => {
+    const { run, blind } = setup('craneAndSun', { gold: 40 });
+    const result = useGambler('craneAndSun', run, blind, [], [], rng('crane'));
+    expect(result.run.jokers).toHaveLength(1);
+    expect(RARE_JOKERS.some((def) => def.id === result.run.jokers[0]!.defId)).toBe(true);
+    expect(result.run.gold).toBe(0);
+  });
+
+  it('Phoenix is the normal-play Legendary route and never duplicates one', () => {
+    const { run, blind } = setup('phoenix');
+    const result = useGambler('phoenix', run, blind, [], [], rng('phoenix'));
+    expect(LEGENDARY_JOKERS.some((def) => def.id === result.run.jokers[0]!.defId)).toBe(true);
+
+    const allOwned = held(
+      {
+        ...newRun('gambler'),
+        jokerSlots: 20,
+        jokers: LEGENDARY_JOKERS.map((def) => ({
+          defId: def.id,
+          edition: 'base' as const,
+          state: {},
+        })),
+      },
+      'phoenix',
+    );
+    expect(canUseGambler('phoenix', allOwned, [], [])).toBe(false);
+  });
+});
+
+describe('#8 Curtain / #9 Deer', () => {
+  it('Curtain adds two complete copies with fresh ids', () => {
+    const { run, blind } = setup('curtain');
+    const source: Tile = { ...blind.hand[0]!, material: 'wood', woodBonusChips: 45 };
+    const result = useGambler('curtain', run, blind, [source], [source.id], rng('curtain'));
+    const copies = result.run.bag.filter(
+      (tile) => tile.id !== source.id && tile.material === 'wood' && tile.woodBonusChips === 45,
+    );
+    expect(copies).toHaveLength(BALANCE.gambler.curtainCopies);
+    expect(new Set(copies.map((tile) => tile.id)).size).toBe(copies.length);
+  });
+
+  it('Deer raises all twelve pattern levels by one', () => {
+    const { run, blind } = setup('deer');
+    const result = useGambler('deer', run, blind, [], [], rng('deer'));
+    const patterns = Object.keys(run.patternLevels) as PatternId[];
+    expect(patterns).toHaveLength(12);
+    for (const pattern of patterns) {
+      expect(result.run.patternLevels[pattern]).toBe(run.patternLevels[pattern] + 1);
+    }
+  });
+});
+
+describe('acquisition — GDD §9.3', () => {
+  const slot = (type: PackSlot['type']): PackSlot => ({ type, size: 'jumbo', artVariant: 0 });
+
+  it('an Ink Pack deals only Gambler cards', () => {
+    const offer = rollPack(slot('ink'), newRun('ink'), makeRng('ink-pack'));
+    expect(offer.options.length).toBeGreaterThan(0);
+    for (const option of offer.options) {
+      expect(option.kind).toBe('consumable');
+      expect(isGamblerId((option as { id: ConsumableId }).id)).toBe(true);
+    }
+  });
+
+  it('a Fable Pack holds no Gambler card without Comic Book', () => {
+    const run = newRun('fable-pack');
+    for (let i = 0; i < 40; i++) {
+      const offer = rollPack(slot('consumable'), run, makeRng(`fable-${i}`));
+      for (const option of offer.options) {
+        expect(isGamblerId((option as { id: ConsumableId }).id)).toBe(false);
+      }
+    }
+  });
+
+  it('Comic Book lets at most one Fable choice become a Gambler card', () => {
+    const run: RunState = { ...newRun('comic'), vouchers: ['comicBook'] };
+    let seen = 0;
+    for (let i = 0; i < 200; i++) {
+      const offer = rollPack(slot('consumable'), run, makeRng(`comic-${i}`));
+      const gamblers = offer.options.filter((option) =>
+        isGamblerId((option as { id: ConsumableId }).id),
+      );
+      expect(gamblers.length).toBeLessThanOrEqual(1);
+      seen += gamblers.length;
+    }
+    expect(seen).toBeGreaterThan(0); // ~5% per choice over 200 packs
+  });
+
+  it('Deer may replace at most one Constellation choice', () => {
+    const run = newRun('deer-pack');
+    let seen = 0;
+    for (let i = 0; i < 400; i++) {
+      const offer = rollPack(slot('pattern'), run, makeRng(`deer-${i}`));
+      const deer = offer.options.filter(
+        (option) => (option as { id: ConsumableId }).id === 'deer',
+      );
+      expect(deer.length).toBeLessThanOrEqual(1);
+      seen += deer.length;
+    }
+    expect(seen).toBeGreaterThan(0); // ~1% per pack over 400 packs
+  });
+});

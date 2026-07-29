@@ -8,7 +8,9 @@
  *   - onHeldDuringScoring → per tile REMAINING in hand, during word scoring
  *   - onHeldAtBlindEnd    → per tile remaining in hand at blind end
  *
- * Numbers live in BALANCE.materials. Ceramic is the base and registers nothing.
+ * Numbers live in BALANCE.materials. `ceramic` is the base and registers nothing.
+ * Display names are i18n-only (`material.*` in locales) — a MaterialDef carries no
+ * name, so there is exactly one place a material can be renamed.
  */
 
 import { BALANCE } from './balance';
@@ -27,8 +29,6 @@ export interface MaterialSideEffects {
 
 export interface MaterialDef {
   id: TileMaterial;
-  nameKo: string;
-  nameEn: string;
   onTileScored?(ctx: WordScoringContext, tile: Tile, rng: Rng): MaterialSideEffects | void;
   onHeldDuringScoring?(ctx: WordScoringContext, tile: Tile): void;
   onHeldAtBlindEnd?(tile: Tile): MaterialSideEffects | void;
@@ -36,8 +36,6 @@ export interface MaterialDef {
 
 const porcelain: MaterialDef = {
   id: 'porcelain',
-  nameKo: '도자기',
-  nameEn: 'Ceramic',
   onTileScored: (ctx) => {
     ctx.chips += BALANCE.materials.porcelain.chips;
   },
@@ -45,8 +43,6 @@ const porcelain: MaterialDef = {
 
 const polished: MaterialDef = {
   id: 'polished',
-  nameKo: '연마',
-  nameEn: 'Polished',
   onTileScored: (ctx) => {
     ctx.mult += BALANCE.materials.polished.mult;
   },
@@ -54,8 +50,6 @@ const polished: MaterialDef = {
 
 const wood: MaterialDef = {
   id: 'wood',
-  nameKo: '목재',
-  nameEn: 'Wood',
   onTileScored: (ctx, tile) => {
     ctx.chips += tile.woodBonusChips ?? BALANCE.materials.wood.baseChips;
     return { growWood: true };
@@ -64,8 +58,6 @@ const wood: MaterialDef = {
 
 const stone: MaterialDef = {
   id: 'stone',
-  nameKo: '석재',
-  nameEn: 'Stone',
   // The letterless-ness lives in the Tile itself (letter: null), which forces the
   // word to gibberish via the lexicon. Here Stone only pays its chips.
   onTileScored: (ctx) => {
@@ -75,8 +67,6 @@ const stone: MaterialDef = {
 
 const leadPlate: MaterialDef = {
   id: 'leadPlate',
-  nameKo: '연판',
-  nameEn: 'Lead plate',
   // A worn stereotype plate prints unevenly — same plate, uneven pulls.
   // The two rolls are INDEPENDENT (Balatro Lucky): one tile can hit both.
   onTileScored: (ctx, _tile, rng) => {
@@ -88,8 +78,6 @@ const leadPlate: MaterialDef = {
 
 const glass: MaterialDef = {
   id: 'glass',
-  nameKo: '유리',
-  nameEn: 'Glass',
   // The ×2 ALWAYS lands on the word that breaks it — the destroy roll is reported
   // as a side effect and applied by the caller after the word settles (GDD §2.2).
   onTileScored: (ctx, _tile, rng) => {
@@ -101,8 +89,6 @@ const glass: MaterialDef = {
 
 const brass: MaterialDef = {
   id: 'brass',
-  nameKo: '황동',
-  nameEn: 'Brass',
   // Type metal that stays in the case: pays while it is NOT played.
   onHeldDuringScoring: (ctx) => {
     ctx.mult *= BALANCE.materials.brass.multFactor;
@@ -111,8 +97,6 @@ const brass: MaterialDef = {
 
 const ivory: MaterialDef = {
   id: 'ivory',
-  nameKo: '상아',
-  nameEn: 'Ivory',
   onHeldAtBlindEnd: () => ({ goldDelta: BALANCE.materials.ivory.gold }),
 };
 
