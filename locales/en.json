@@ -307,7 +307,7 @@
   "consumabledesc.fable13": "Enhance 1 selected tile into a Wood tile.",
   "consumabledesc.fable14": "Create 1 random Charm card if a Charm slot is available.",
   "consumabledesc.fable15": "A 1 in 4 chance to give a random uneditioned Charm Foil, Holographic, or Polychrome.",
-  "consumabledesc.fable16": "Advance the letters of 2 selected tiles by one alphabet rank. Z wraps to A.",
+  "consumabledesc.fable16": "Advance the letters of 2 selected tiles by one alphabet rank.",
   "consumabledesc.fable17": "Gain the total sell value of all current Charms, up to $50.",
   "consumabledesc.fable18": "Destroy up to 2 selected tiles, removing them from the pouch for this run.",
   "jokerdesc.vowelPraise": "[m:+2 Mult] for each vowel in the word",
