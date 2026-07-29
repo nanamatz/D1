@@ -96,6 +96,16 @@ describe('slice5 shop — buy', () => {
     expect(buyItem(full, shop, 0).ok).toBe(false);
   });
 
+  it('refuses a stale joker offer when that Emoji Tile is already owned', () => {
+    const owned = run({
+      gold: 99,
+      jokers: [{ defId: 'grammarian', edition: 'base', state: {} }],
+    });
+    const result = buyItem(owned, shop, 0);
+    expect(result.ok).toBe(false);
+    expect(result.run).toBe(owned);
+  });
+
   it('refuses a consumable when consumable slots are full', () => {
     const full = run({ gold: 99, consumables: ['magnifier', 'magnifier'] }); // slots = 2
     expect(buyItem(full, shop, 1).ok).toBe(false);

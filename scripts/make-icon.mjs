@@ -1,23 +1,23 @@
 /**
- * Generate desktop/icon.ico from a source PNG.
- *
- * INTERIM ICON. The final store icon is an art-direction decision, not a
- * packaging task — see docs/superpowers/specs/2026-07-29-desktop-packaging-design.md.
+ * Generate the app icon and the web favicon from one source PNG.
  *
  * A .ico is an ICONDIR header plus one ICONDIRENTRY per size; since Vista each
  * entry may carry raw PNG bytes, so pngjs (already a devDependency) is enough.
+ * The same file serves both targets — browsers read .ico favicons fine, and its
+ * 256px entry covers high-DPI tabs.
  *
  * Usage: node scripts/make-icon.mjs
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { PNG } from 'pngjs';
 
-const SOURCE = 'src/ui/assets/woodak.png';
-const OUTPUT = 'desktop/icon.ico';
+const SOURCE = 'docs/Arts/Icons/AppIcon.png';
+const OUTPUTS = ['desktop/icon.ico', 'public/favicon.ico'];
 /** electron-builder requires a 256px entry; the smaller ones are for the taskbar and Explorer. */
 const SIZES = [16, 32, 48, 256];
 
-/** Pad to a centred square with transparency — the source is 1024x1054. */
+/** Pad to a centred square with transparency. */
 function toSquare(src) {
   const side = Math.max(src.width, src.height);
   if (side === src.width && side === src.height) return src;
@@ -101,5 +101,9 @@ function buildIco(pngBuffers) {
 
 const source = toSquare(PNG.sync.read(readFileSync(SOURCE)));
 const images = SIZES.map((size) => ({ size, data: PNG.sync.write(resize(source, size)) }));
-writeFileSync(OUTPUT, buildIco(images));
-console.log(`Wrote ${OUTPUT} (${SIZES.join(', ')}px) from ${SOURCE}`);
+const ico = buildIco(images);
+for (const output of OUTPUTS) {
+  mkdirSync(dirname(output), { recursive: true });
+  writeFileSync(output, ico);
+}
+console.log(`Wrote ${OUTPUTS.join(', ')} (${SIZES.join(', ')}px) from ${SOURCE}`);

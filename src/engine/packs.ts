@@ -151,7 +151,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
 export function applyPackPick(run: RunState, option: PackOption): RunState {
   switch (option.kind) {
     case 'joker':
-      if (!canAddJoker(run, option.edition)) return run;
+      if (!canAddJoker(run, option.id, option.edition)) return run;
       return {
         ...run,
         jokers: [...run.jokers, { defId: option.id, edition: option.edition, state: {} }],

@@ -70,31 +70,24 @@ function ShopOffer({
       <TiltCard
         idle
         className="shop-offer-card"
-        role="button"
-        tabIndex={0}
-        aria-label={`${label} · $${price}`}
-        aria-pressed={selected}
-        onClick={onSelect}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect();
-          }
-        }}
       >
         <div className="shop-offer-visual">
+          <button
+            type="button"
+            className="shop-offer-select"
+            aria-label={`${label} · $${price}`}
+            aria-pressed={selected}
+            onClick={onSelect}
+          />
           <div className="shop-offer-art">{children}</div>
           <span className="shop-offer-price" aria-label={`$${price}`}>${price}</span>
           <div className="shop-offer-action" aria-hidden={!selected}>
             <button
+              type="button"
               className={['btn', actionClassName, 'sm'].join(' ')}
               disabled={disabled}
               tabIndex={selected ? 0 : -1}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAction();
-              }}
+              onClick={onAction}
             >
               {actionLabel}
             </button>
@@ -102,14 +95,11 @@ function ShopOffer({
           {action2Label && onAction2 && (
             <div className="shop-offer-action-secondary" aria-hidden={!selected}>
               <button
+                type="button"
                 className={['btn', action2ClassName ?? 'green', 'sm'].join(' ')}
                 disabled={action2Disabled}
                 tabIndex={selected ? 0 : -1}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAction2();
-                }}
+                onClick={onAction2}
               >
                 {action2Label}
               </button>
@@ -189,7 +179,7 @@ export function Shop({ g }: { g: UseGame }) {
   const affordable = (item: ShopItem): boolean => {
     if (run.gold < item.price) return false;
     return item.kind === 'joker'
-      ? canAddJoker(run, item.edition ?? 'base')
+      ? canAddJoker(run, item.id, item.edition ?? 'base')
       : item.kind === 'tile' || run.consumables.length < run.consumableSlots;
   };
 

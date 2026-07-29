@@ -15,7 +15,7 @@ import type {
   Tile,
   TileMaterial,
 } from './types';
-import { canAddJoker } from './vouchers';
+import { canAddJoker, canOwnJoker } from './vouchers';
 import type { Rng } from './rng';
 
 export type FableId =
@@ -218,7 +218,9 @@ export function canUseFable(
     // slot for the created card and the action must remain disabled.
     return run.consumables.length <= run.consumableSlots;
   }
-  if (effect.kind === 'createJoker') return canAddJoker(run, 'base');
+  if (effect.kind === 'createJoker') {
+    return ALL_JOKERS.some((def) => canAddJoker(run, def.id));
+  }
   if (effect.kind === 'editionJoker') {
     return run.jokers.some((joker) => (joker.edition ?? 'base') === 'base');
   }
@@ -375,7 +377,8 @@ export function useFable(
   } else if (effect.kind === 'doubleGold') {
     nextRun = { ...nextRun, gold: nextRun.gold + Math.min(nextRun.gold, 20) };
   } else if (effect.kind === 'createJoker') {
-    const def = ALL_JOKERS[rng.int(ALL_JOKERS.length)]!;
+    const available = ALL_JOKERS.filter((def) => canOwnJoker(nextRun, def.id));
+    const def = available[rng.int(available.length)]!;
     nextRun = {
       ...nextRun,
       jokers: [...nextRun.jokers, { defId: def.id, edition: 'base', state: {} }],

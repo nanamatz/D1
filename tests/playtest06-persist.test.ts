@@ -47,6 +47,19 @@ const dirty = (): GameState =>
     committedBefore: 80,
     settleComplete: false,
     finalScore: 175,
+    sentenceBonus: {
+      chips: 90,
+      mult: 3,
+      pattern: 'transitive',
+      level: 1,
+      modifierCount: 0,
+      modifierChips: 0,
+      unisonSuit: 'standard',
+      unisonChips: 50,
+      unisonMult: 1,
+      effectChips: 0,
+      effectMult: 1,
+    },
     pendingEnd: true,
   }) as unknown as GameState;
 
@@ -60,6 +73,7 @@ describe('run persistence', () => {
     expect(saved.committedBefore).toBe(0);
     expect(saved.selected).toEqual([]);
     expect(saved.finalScore).toBeNull();
+    expect(saved.sentenceBonus).toBeNull();
     expect(saved.hint).toBeNull();
     expect(saved.message).toBeNull();
     expect(saved.lastPlayed).toBeNull();

@@ -100,5 +100,14 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     expect(result.sentenceMult).toBe(3);
     expect(result.bonus).toBe(270);
     expect(result.finalScore).toBe(327); // committed 57 + bonus 270
+    expect(result.breakdown).toEqual({
+      modifierCount: 0,
+      modifierChips: 0,
+      unisonSuit: 'standard',
+      unisonChips: 50,
+      unisonMult: 1,
+      effectChips: 0,
+      effectMult: 1,
+    });
   });
 });

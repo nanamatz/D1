@@ -15,7 +15,8 @@ describe('image-first shop offers', () => {
   it('keeps one selected offer and exposes keyboard selection state', () => {
     expect(shop).toContain('const [selectedOffer, setSelectedOffer]');
     expect(shop).toContain('aria-pressed={selected}');
-    expect(shop).toContain("e.key === 'Enter' || e.key === ' '");
+    expect(shop).toContain('className="shop-offer-select"');
+    expect(shop).toContain('type="button"');
   });
 
   it('uses contextual actions for stock, vouchers, and packs', () => {

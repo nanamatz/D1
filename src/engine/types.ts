@@ -190,6 +190,18 @@ export interface SentenceScoringContext {
   sentenceMult: number;
 }
 
+/** Player-facing sources folded into the finalized sentence bonus. */
+export interface SentenceBonusBreakdown {
+  modifierCount: number;
+  modifierChips: number;
+  unisonSuit: Suit | null;
+  unisonChips: number;
+  unisonMult: number;
+  /** Post-pattern effects from Emoji Tiles, vouchers, or bosses. */
+  effectChips: number;
+  effectMult: number;
+}
+
 // ---------- Blind / Ante / Run state (GDD §8) ----------
 
 export type BlindKind = 'small' | 'big' | 'boss';

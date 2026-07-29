@@ -85,7 +85,9 @@ export function BlindSelect({ g }: { g: UseGame }) {
                   {t(`blindselect.${status}`)}
                 </div>
               )}
-              {kind === 'boss' && bossRerollLimit(run) > run.bossRerollsUsed && (
+              {kind === 'boss' &&
+                status === 'current' &&
+                bossRerollLimit(run) > run.bossRerollsUsed && (
                 <button
                   className="btn green sm"
                   disabled={run.gold < bossRerollPrice()}

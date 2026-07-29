@@ -174,7 +174,7 @@ export function buyItem(run: RunState, shop: ShopState, index: number): BuyResul
 
   let nextRun: RunState;
   if (item.kind === 'joker') {
-    if (!canAddJoker(run, item.edition ?? 'base')) return fail;
+    if (!canAddJoker(run, item.id, item.edition ?? 'base')) return fail;
     nextRun = {
       ...run,
       gold: run.gold - item.price,

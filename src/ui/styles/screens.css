@@ -3078,7 +3078,7 @@ body.cb-safe .tile.hint {
   place-items: center;
   pointer-events: none;
   background: rgba(3, 9, 13, .46);
-  animation: plu-overlay 3.9s ease forwards;
+  animation: plu-overlay 3.5s ease forwards;
 }
 .plu-stage {
   display: grid;
@@ -3090,20 +3090,20 @@ body.cb-safe .tile.hint {
   background: var(--panel);
   border: 3px solid var(--panel-edge);
   box-shadow: 0 12px 0 rgba(0, 0, 0, .45), 0 0 32px rgba(55, 171, 220, .28);
-  animation: plu-stage-in .32s cubic-bezier(.34, 1.56, .64, 1) both;
+  animation: plu-stage-in .28s cubic-bezier(.34, 1.56, .64, 1) both;
 }
 .plu-source {
   position: relative;
   width: 180px;
   aspect-ratio: 5 / 7;
-  animation: plu-shake 2.9s linear both;
+  animation: plu-shake 2.54s linear both;
 }
 .plu-source-art {
   width: 100%;
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .42));
-  animation: plu-card-vanish .7s steps(8, end) 2.9s both;
+  animation: plu-card-vanish .61s steps(8, end) 2.54s both;
 }
 .plu-dissolve {
   position: absolute;
@@ -3112,7 +3112,7 @@ body.cb-safe .tile.hint {
   background:
     radial-gradient(circle, var(--gold) 0 2px, transparent 3px) 8% 15% / 19px 23px,
     radial-gradient(circle, var(--chips) 0 2px, transparent 3px) 62% 40% / 23px 17px;
-  animation: plu-particles .75s steps(6, end) 2.82s both;
+  animation: plu-particles .66s steps(6, end) 2.47s both;
 }
 .plu-score {
   min-width: 0;
@@ -3123,7 +3123,7 @@ body.cb-safe .tile.hint {
   color: var(--ink);
   text-align: center;
   opacity: 0;
-  animation: plu-copy-in .22s ease .28s forwards;
+  animation: plu-copy-in .19s ease .25s forwards;
 }
 .plu-levels {
   display: flex;
@@ -3137,17 +3137,17 @@ body.cb-safe .tile.hint {
 }
 .plu-from {
   color: var(--ink);
-  animation: plu-level-old 3.1s ease both;
+  animation: plu-level-old 2.71s ease both;
 }
 .plu-arrow {
   color: var(--ink-dim);
   opacity: 0;
-  animation: plu-level-new .25s ease 2.35s forwards;
+  animation: plu-level-new .22s ease 2.06s forwards;
 }
 .plu-to {
   color: var(--gold);
   opacity: 0;
-  animation: plu-level-new .42s cubic-bezier(.34, 1.8, .5, 1) 2.35s forwards;
+  animation: plu-level-new .37s cubic-bezier(.34, 1.8, .5, 1) 2.06s forwards;
 }
 .plu-values {
   display: grid;
@@ -3172,7 +3172,7 @@ body.cb-safe .tile.hint {
   font-size: var(--ds-xl);
   box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .2), 0 6px 0 rgba(0, 0, 0, .38);
   opacity: 0;
-  animation: plu-copy-in .24s ease .4s forwards;
+  animation: plu-copy-in .21s ease .35s forwards;
 }
 .plu-value.mult { background: var(--mult); }
 .plu-value.chips { background: var(--chips); }
@@ -3209,15 +3209,15 @@ body.cb-safe .tile.hint {
   text-shadow: 0 3px 0 #15371d, 0 0 8px rgba(101, 240, 140, .55);
 }
 .plu-value.mult .plu-delta {
-  animation: plu-delta-in .5s ease .75s both, plu-delta-merge .42s ease 1.2s forwards;
+  animation: plu-delta-in .44s ease .66s both, plu-delta-merge .37s ease 1.05s forwards;
 }
-.plu-value.mult .plu-old { animation: plu-old-out .2s ease 1.48s forwards; }
-.plu-value.mult .plu-new { animation: plu-new-in .35s ease 1.48s forwards; }
+.plu-value.mult .plu-old { animation: plu-old-out .18s ease 1.3s forwards; }
+.plu-value.mult .plu-new { animation: plu-new-in .31s ease 1.3s forwards; }
 .plu-value.chips .plu-delta {
-  animation: plu-delta-in .5s ease 1.42s both, plu-delta-merge .42s ease 1.87s forwards;
+  animation: plu-delta-in .44s ease 1.24s both, plu-delta-merge .37s ease 1.64s forwards;
 }
-.plu-value.chips .plu-old { animation: plu-old-out .2s ease 2.15s forwards; }
-.plu-value.chips .plu-new { animation: plu-new-in .35s ease 2.15s forwards; }
+.plu-value.chips .plu-old { animation: plu-old-out .18s ease 1.88s forwards; }
+.plu-value.chips .plu-new { animation: plu-new-in .31s ease 1.88s forwards; }
 @keyframes plu-stage-in {
   from { opacity: 0; transform: scale(.82) translateY(18px); }
   to { opacity: 1; transform: none; }
@@ -3263,7 +3263,7 @@ body.cb-safe .tile.hint {
   100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pattern-levelup { animation: plu-overlay 3.9s linear forwards; }
+  .pattern-levelup { animation: plu-overlay 3.5s linear forwards; }
   .plu-stage,
   .plu-source,
   .plu-source-art,

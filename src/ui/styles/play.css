@@ -385,6 +385,7 @@
   font-size: var(--fs-2xl);
   line-height: 1;
   text-align: center;
+  pointer-events: none;
 }
 .shop-offer-card {
   position: relative;
@@ -416,6 +417,18 @@
     translate 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
     filter 0.18s ease,
     outline-color 0.18s ease;
+}
+.shop-offer-select {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.shop-offer-select:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 4px;
 }
 .shop-offer-visual:has(> .shop-offer-art > .voucher-card) {
   height: auto;
@@ -1155,7 +1168,8 @@
 }
 .btn.sm {
   font-size: var(--fs-md);
-  padding: 6px 14px;
+  min-height: 44px;
+  padding: 9px 18px;
 }
 .reroll {
   align-self: center;
@@ -3703,7 +3717,7 @@
 /* Colours swapped: Use is now the red, Sell the green. Heights are set from the
    ~26px natural button (padding + line + border): Sell 2×, Use 1.5×. */
 .consumable-menu.bare button.use {
-  height: 40px;
+  height: 44px;
   background: var(--mult);
 }
 .consumable-menu.bare button.use:hover {
@@ -3917,6 +3931,31 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Sentence landing keeps the gold pattern stamp separate, then names every
+   non-pattern contributor in its own colour-coded pill. */
+.bonus-parts {
+  width: 100%;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  animation: stampIn .25s cubic-bezier(.2, 1.4, .4, 1);
+}
+.bonus-part {
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  font-size: var(--fs-2xs);
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: nowrap;
+  background: rgba(5, 14, 20, .88);
+}
+.bonus-part.modifier { color: var(--chips); }
+.bonus-part.unison { color: var(--gold); }
+.bonus-part.effect { color: #d7a8ff; }
 .sb-status.warn {
   color: var(--gold);
 }

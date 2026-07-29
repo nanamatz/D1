@@ -10,6 +10,7 @@ import { ALL_JOKERS } from './jokers';
 import type { JokerDef } from './events';
 import type { Rng } from './rng';
 import type { JokerRarity, RunState } from './types';
+import { canOwnJoker } from './vouchers';
 
 /** Offer weight for a joker by its rarity. 0 = never offered (Legendary, until §12
  *  gives it a route — an absent rarity key resolves to 0 here). */
@@ -21,13 +22,11 @@ export function jokerRarityWeight(def: JokerDef): number {
  * The shared no-duplicate filter (C-2): jokers the run does NOT already own and
  * whose rarity is offerable (weight > 0, so Legendary is out). Selling a joker
  * removes it from run.jokers, so it returns to this pool automatically — no extra
- * bookkeeping. The `owned` exclusion is the ONE place a future duplicate-breaker
- * item (Showman-equivalent, §9.2 explicit-effect exception / §12 open) would relax;
- * gate it here and both the shop and Charm Packs inherit it.
+ * bookkeeping. `canOwnJoker` is the one gate a future explicit duplicate-breaker
+ * effect will relax; offers and final acquisition checks both inherit it.
  */
 export function availableJokerDefs(run: RunState): JokerDef[] {
-  const owned = new Set(run.jokers.map((j) => j.defId));
-  return ALL_JOKERS.filter((j) => !owned.has(j.id) && jokerRarityWeight(j) > 0);
+  return ALL_JOKERS.filter((j) => canOwnJoker(run, j.id) && jokerRarityWeight(j) > 0);
 }
 
 /**

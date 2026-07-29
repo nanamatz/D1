@@ -6,6 +6,8 @@ import { useI18n } from '../i18n';
 import { patternLevelBus, type PatternLevelEvent } from '../patternLevel';
 import { ConstellationCardArt } from './ConstellationCardArt';
 
+const PATTERN_LEVEL_DURATION_MS = 3500;
+
 /**
  * Full Constellation use sequence: the source card shakes while the old pattern
  * Mult/Chips appear, green deltas land in order, the level flips, then the card
@@ -25,10 +27,10 @@ export function PatternLevelUp() {
 
   useEffect(() => {
     if (!evt) return;
-    const multSound = window.setTimeout(() => audio.play('countTick', { step: 0 }), 1480);
-    const chipSound = window.setTimeout(() => audio.play('countTick', { step: 1 }), 2150);
-    const levelSound = window.setTimeout(() => audio.play('countTick', { step: 2 }), 2350);
-    const timer = setTimeout(() => setEvt(null), 3900);
+    const multSound = window.setTimeout(() => audio.play('countTick', { step: 0 }), 1300);
+    const chipSound = window.setTimeout(() => audio.play('countTick', { step: 1 }), 1880);
+    const levelSound = window.setTimeout(() => audio.play('countTick', { step: 2 }), 2060);
+    const timer = setTimeout(() => setEvt(null), PATTERN_LEVEL_DURATION_MS);
     return () => {
       window.clearTimeout(multSound);
       window.clearTimeout(chipSound);

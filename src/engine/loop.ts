@@ -33,6 +33,7 @@ import type {
   Letter,
   RunState,
   ScoreEvent,
+  SentenceBonusBreakdown,
   SentenceJudgment,
   SentenceScoringContext,
   Tile,
@@ -455,7 +456,12 @@ function scoreSentence(
   judgment: SentenceJudgment,
   run: RunState,
   blind: BlindState,
-): { total: number; sentenceChips: number; sentenceMult: number } {
+): {
+  total: number;
+  sentenceChips: number;
+  sentenceMult: number;
+  breakdown: SentenceBonusBreakdown;
+} {
   const base = finalizeScore(committed, judgment, run.patternLevels);
   const ctx: SentenceScoringContext = {
     sequence: sequence.slice(),
@@ -469,10 +475,23 @@ function scoreSentence(
   ctx.sentenceMult *= constellationPassiveFactor(run, ctx.match?.pattern ?? null);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
+  const unison = judgment.unison
+    ? BALANCE.unison[judgment.unison.suit] as { chips?: number; mult?: number }
+    : null;
   return {
     total: ctx.totalBefore + ctx.sentenceChips * ctx.sentenceMult,
     sentenceChips: ctx.sentenceChips,
     sentenceMult: ctx.sentenceMult,
+    breakdown: {
+      modifierCount: judgment.match?.absorbedModifiers ?? 0,
+      modifierChips:
+        (judgment.match?.absorbedModifiers ?? 0) * BALANCE.modifierAbsorption.chips,
+      unisonSuit: judgment.unison?.suit ?? null,
+      unisonChips: unison?.chips ?? 0,
+      unisonMult: unison?.mult ?? 1,
+      effectChips: ctx.sentenceChips - base.sentenceChips,
+      effectMult: ctx.sentenceMult / base.sentenceMult,
+    },
   };
 }
 
@@ -581,6 +600,8 @@ export interface EndBlindResult {
   sentenceMult: number;
   /** the bonus itself: sentenceChips × sentenceMult */
   bonus: number;
+  /** visual source rows for modifiers, Unison, and post-pattern effects */
+  breakdown: SentenceBonusBreakdown;
   /** unused phases → gold on ending (economy lands in slice ⑤) */
   phasesLeft: number;
   /** gold from materials held in hand at blind end (Ivory). The CALLER applies it —
@@ -603,6 +624,7 @@ export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): En
     sentenceChips: scored.sentenceChips,
     sentenceMult: scored.sentenceMult,
     bonus: scored.sentenceChips * scored.sentenceMult,
+    breakdown: scored.breakdown,
     phasesLeft: blind.phasesTotal - blind.phasesUsed,
     materialGold: collectBlindEndMaterials(blind.hand),
   };

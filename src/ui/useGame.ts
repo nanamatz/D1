@@ -20,6 +20,7 @@ import type {
   PatternId,
   RunState,
   ScoreEvent,
+  SentenceBonusBreakdown,
   ShopState,
   Tile,
 } from '../engine/types';
@@ -159,7 +160,7 @@ export interface GameState {
   /** The finalized sentence-bonus breakdown, non-null only while it lands on the
    *  round number (item 2). Drives the scorebox fill (chips → mult) in the Sidebar;
    *  null at every other time (mirrors `finalScore`). */
-  sentenceBonus: { chips: number; mult: number; pattern: PatternId | null; level: number | null } | null;
+  sentenceBonus: SentenceBonusDisplay | null;
   /**
    * The player actually started this run (vs. the idle run `bootstrap` always
    * builds so the board has something to render). Gates the New Run screen's
@@ -177,6 +178,13 @@ export interface GameState {
   /** feedback #2: chromatic-unlock ids earned THIS run (RED, MUSIC, ALIEN, …). Game
    *  Over announces them via the mascot and shows a card for each. Reset per run. */
   runUnlocks: string[];
+}
+
+export interface SentenceBonusDisplay extends SentenceBonusBreakdown {
+  chips: number;
+  mult: number;
+  pattern: PatternId | null;
+  level: number | null;
 }
 
 const randomSeed = (): string => Math.random().toString(36).slice(2);
@@ -1144,7 +1152,13 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (!prev.pendingEnd || prev.sentenceBonus !== null || prev.finalScore !== null) return prev;
       const sentenceBonus = hasBonus
-        ? { chips: end.sentenceChips, mult: end.sentenceMult, pattern, level }
+        ? {
+            chips: end.sentenceChips,
+            mult: end.sentenceMult,
+            pattern,
+            level,
+            ...end.breakdown,
+          }
         : null;
       // Reduced motion OR no bonus → land immediately (finalScore set now).
       const finalScore = reduce || !hasBonus ? end.finalScore : null;
@@ -1230,6 +1244,7 @@ export function useGame(): UseGame {
   const rerollBoss = useCallback(() => {
     setState((prev) => {
       if (prev.phase !== 'blindselect') return prev;
+      if (prev.run.blindIndex !== 2) return prev;
       if (prev.run.gold < bossRerollPrice()) return prev;
       if (prev.run.bossRerollsUsed >= bossRerollLimit(prev.run)) return prev;
       const rng = makeRng(`${prev.seed}#boss-reroll-${prev.rngCounter}`);

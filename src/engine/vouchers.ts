@@ -191,7 +191,16 @@ export const constellationPassiveFactor = (run: RunState, pattern: PatternId | n
 export const jokerSlotLimit = (run: RunState): number =>
   run.jokerSlots + run.jokers.filter((j) => j.edition === 'negative').length;
 
-export const canAddJoker = (run: RunState, edition: JokerEdition = 'base'): boolean =>
+/** Central duplicate rule. Future explicit duplicate-breakers relax only this gate. */
+export const canOwnJoker = (run: RunState, defId: string): boolean =>
+  !run.jokers.some((joker) => joker.defId === defId);
+
+export const canAddJoker = (
+  run: RunState,
+  defId: string,
+  edition: JokerEdition = 'base',
+): boolean =>
+  canOwnJoker(run, defId) &&
   run.jokers.length < jokerSlotLimit(run) + (edition === 'negative' ? 1 : 0);
 
 export const PATTERN_CONSUMABLE: Record<PatternId, import('./types').ConsumableId> =

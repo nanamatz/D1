@@ -57,4 +57,14 @@ describe('feedback 4 UI regressions', () => {
     expect(pack).toContain('canUseFableFromPack');
     expect(pack).not.toContain('instant/blind-only');
   });
+
+  it('keeps enlarged action hit targets and the current Constellation timing', () => {
+    const level = source('src/ui/components/PatternLevelUp.tsx');
+    const play = source('src/ui/styles/play.css');
+    const screens = source('src/ui/styles/screens.css');
+    expect(level).toContain('const PATTERN_LEVEL_DURATION_MS = 3500');
+    expect(screens).toMatch(/\.pattern-levelup\s*\{[^}]*animation:\s*plu-overlay 3\.5s/s);
+    expect(play).toMatch(/\.btn\.sm\s*\{[^}]*min-height:\s*44px/s);
+    expect(play).toMatch(/\.consumable-menu\.bare button\.use\s*\{[^}]*height:\s*44px/s);
+  });
 });

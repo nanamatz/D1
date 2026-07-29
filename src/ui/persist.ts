@@ -49,6 +49,7 @@ function atRest(state: GameState): GameState {
     committedBefore: 0,
     settleComplete: true,
     finalScore: null,
+    sentenceBonus: null,
   };
 }
 
@@ -79,7 +80,9 @@ export function loadRun(): GameState | null {
   ) {
     return null;
   }
-  return s;
+  // `sentenceBonus` is presentation-only. Older v4 snapshots could accidentally
+  // retain it mid-landing; clearing it also prevents loading the pre-breakdown shape.
+  return { ...s, sentenceBonus: null };
 }
 
 export function clearRun(): void {

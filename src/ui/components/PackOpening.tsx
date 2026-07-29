@@ -489,7 +489,7 @@ export function PackOpening({
             const needsConfirmation = fable || constellation;
             const blindOnlyFable = fableId !== null && isBlindOnlyConsumable(fableId);
             const blockKey =
-              o.kind === 'joker' && !canAddJoker(g.state.run, o.edition)
+              o.kind === 'joker' && !canAddJoker(g.state.run, o.id, o.edition)
                 ? 'pack.jokersFull'
                 : undefined;
             const N = pack.offer.options.length;

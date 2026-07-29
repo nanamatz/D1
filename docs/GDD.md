@@ -268,6 +268,12 @@ sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
               × (patternMult × unisonMult)
 ```
 
+At finalization the gold pattern/level stamp remains the primary beat. Every
+non-pattern contributor is displayed separately beside it: absorbed modifiers
+use a Chips-coloured tag, Unison uses a gold tag, and post-pattern Emoji Tile,
+voucher, or boss adjustments use an effect-coloured tag. They must never be
+folded invisibly into the pattern label.
+
 | # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|
 | 1 | Outcry | Interjection alone | SHH / WOW | 1 | 10 × 1 | +10, +0.5 |
@@ -548,8 +554,14 @@ Balatro-mirrored: **Item slots ×2** (emoji tiles/consumables appear mixed) + **
 
 **Emoji tile appearance rates by rarity (placeholder → `balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution, adopted as the tuning start point: **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs** — it needs a dedicated route (Balatro gates its Legendary jokers behind The Soul spectral card), which for us is open design space: a Gambler card, a Legendary-only pack, or a boss reward. Until that route exists, Legendary tiles are unobtainable in normal play — flagged in §12.
 
-**No duplicate Emoji Tiles (rule).** The shop and packs **never offer an Emoji Tile the player already owns** — the offer pool excludes owned tiles, exactly as Balatro excludes owned jokers. Two consequences worth stating: the pool shrinks as a run goes long (intended — late shops concentrate on what you lack), and selling a tile returns it to the pool.
-**Exception — only an explicit effect may break this.** A consumable or Emoji Tile whose text says so (Balatro's Showman) re-enables duplicates while owned/active. No such item exists yet; one is required for this rule to have a designed escape hatch (§12).
+**No duplicate Emoji Tiles (rule, expanded 2026-07-29).** A run cannot acquire
+an Emoji Tile it already owns. This applies to shop stock and purchase, Charm
+Pack offers and picks, Fable-created random tiles, and every other random or
+direct acquisition path. The pool shrinks as a run goes long (intended), and
+selling a tile returns it to the pool.
+**Exception — only an explicit effect may break this.** A future Gambler card or
+Emoji Tile whose text explicitly allows cloning may bypass the shared ownership
+gate. No such effect exists yet.
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
@@ -592,7 +604,7 @@ progress remain hidden until the profile unlock is earned.
 | Four-cut Photo → Picture Diary | Hand size +1 → another +1 | Reduce hand size to 8 |
 | EN-KO Dictionary → Encyclopedia | Shop may sell plain tiles → shop tiles may carry material/font/edition | Buy 20 shop tiles |
 | Receipt → Household Ledger | Interest cap $10 → $20 | Hit the interest cap 10 rounds consecutively |
-| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls | Discover all 12 current bosses (temporary cap) |
+| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls; the control is available only on Blind Select when the current blind is the Deadline, never while it is merely upcoming | Discover all 12 current bosses (temporary cap) |
 | Catalog → Coupon Book | Shop card slots 3 → 4 | Spend $2,500 in shops |
 | History Book → Old Book | −1 Ante and −1 hand/round → another −1 Ante and −1 discard/round; each redemption preserves the already-scheduled blind kind/index | Reach Ante 12 |
 | Blank Paper → Kung Fu Manual | No effect → +1 Charm slot | Use Blank Paper 10 times |
@@ -664,6 +676,8 @@ One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Usi
 panel presents the pattern's current Mult and Chips. The green `+Mult` increment
 merges first, then the green `+Chips` increment. The level label then transitions
 from the old level to the new one, the shake ends, and the card pixel-dissolves.
+The full presentation lasts **3.5 seconds** (changed 2026-07-29: 500ms faster
+than the prior 4.0-second timing).
 All displayed values are derived from the same §5.2 balance rows used by scoring.
 
 Each of the 12 monochrome zodiac illustrations is traced into a 32-color,
@@ -826,7 +840,7 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles/Char
 - **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, uppercase, slang-friendly…). Untouched.
 - **Stakes (difficulty) & unlock structure.** Replayability layer. Untouched.
 - **Dadaist emoji tile.** Candidate; confirm inclusion with gibberish-archetype balancing (§11.5).
-- **Duplicate-breaker item (Showman-equivalent).** §9.2 forbids duplicate Emoji Tile offers and reserves an explicit-effect exception, but no such item exists. Needs designing as either a Fable card or an Emoji Tile.
+- **Duplicate-breaker item (Showman-equivalent).** §9.2 forbids duplicate Emoji Tile acquisition and reserves an explicit-effect exception, but no such item exists. It will be designed as a Gambler card and/or Emoji Tile.
 - **Legendary acquisition route.** §9.2 excludes Legendary from shop/Charm-Pack rolls (Balatro gates its Legendaries behind The Soul). Our route is undecided — candidates: a Gambler card, a Legendary-only pack, or a finisher-boss reward. Until decided, the 5 Legendary tiles are unreachable in normal play.
 - **Acronyms in the lexicon.** Adding MVP/VIP-class abbreviations is requested. Open sub-decision: treat them as ordinary case-insensitive words, or make them **uppercase-only plays** with a bonus (which would create a new strategic axis and connect to the deferred uppercase-bag idea). They are absent from ENABLE-class lists, so either way they need a separate curated list feeding §3.2's pipeline.
 - **Gambler card effects (14).** Artwork and the Collection category exist; effect design is **deliberately deferred** (§10.3). Until it lands the Ink Pack cannot roll, so the whole Ink line stays Collection-only. This is now the single biggest piece of locked-but-authored content.

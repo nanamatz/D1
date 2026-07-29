@@ -64,6 +64,16 @@ describe('slice5 packs — apply a pick', () => {
     expect(r.jokers.length).toBe(1);
   });
 
+  it('a stale joker pick cannot duplicate an owned Emoji Tile', () => {
+    const owned = run({ jokers: [{ defId: 'grammarian', edition: 'base', state: {} }] });
+    const result = applyPackPick(owned, {
+      kind: 'joker',
+      id: 'grammarian',
+      edition: 'base',
+    });
+    expect(result).toBe(owned);
+  });
+
   it('a tile pick is added to the bag', () => {
     const offer = rollPack(slot('tile'), run(), makeRng('l'));
     const before = run().bag.length;

@@ -38,7 +38,7 @@ describe('feedback 2 UI regressions', () => {
     expect(pack).toContain('fable-axis-change');
     expect(tile).toContain("'score-current'");
     expect(tile).toContain('tile-effect-pop');
-    expect(settle).toContain('const BASE_STEP = 800');
+    expect(settle).toContain('const BASE_STEP = 600');
     expect(settle).toContain('if (e.tileId) triggerTile(e.tileId)');
   });
 

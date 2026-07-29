@@ -5,7 +5,7 @@ import { clearReward } from '../../engine/economy';
 import type { StagePreview } from '../game';
 import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
-import { BONUS_LAND_MS } from '../useGame';
+import { BONUS_LAND_MS, type SentenceBonusDisplay } from '../useGame';
 import { useI18n } from '../i18n';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
@@ -21,7 +21,7 @@ interface Props {
   /** blind-end final score — non-null while the sentence bonus lands (06 #1) */
   finalScore: number | null;
   /** finalized sentence-bonus breakdown while it lands (item 2), else null */
-  sentenceBonus: { chips: number; mult: number; pattern: string | null; level: number | null } | null;
+  sentenceBonus: SentenceBonusDisplay | null;
   /** the staged-word preview — its status shows above the 0×0 box (E-9) */
   preview: StagePreview | null;
   onOpenInfo: () => void;
@@ -30,6 +30,8 @@ interface Props {
 }
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
+const fmtSigned = (value: number): string =>
+  `${value >= 0 ? '+' : ''}${Number.isInteger(value) ? value : value.toFixed(2)}`;
 
 /** Selected-tile status text, in Balatro's hand-name position (E-9). */
 function StatusLine({ preview }: { preview: StagePreview | null }) {
@@ -254,7 +256,40 @@ export function Sidebar({
       </div>
 
       <div className="panel score-panel">
+        {bonusActive ? (
+          <div className="bonus-parts" aria-label={t('sidebar.bonusBreakdown')}>
+            {sentenceBonus!.modifierChips !== 0 && (
+              <span className="bonus-part modifier">
+                {t('sidebar.bonusModifier', {
+                  count: sentenceBonus!.modifierCount,
+                  chips: fmtSigned(sentenceBonus!.modifierChips),
+                })}
+              </span>
+            )}
+            {sentenceBonus!.unisonChips !== 0 && (
+              <span className="bonus-part unison">
+                {t('sidebar.bonusUnisonChips', { chips: fmtSigned(sentenceBonus!.unisonChips) })}
+              </span>
+            )}
+            {sentenceBonus!.unisonMult !== 1 && (
+              <span className="bonus-part unison">
+                {t('sidebar.bonusUnisonMult', { mult: fmtMult(sentenceBonus!.unisonMult) })}
+              </span>
+            )}
+            {Math.abs(sentenceBonus!.effectChips) > 0.001 && (
+              <span className="bonus-part effect">
+                {t('sidebar.bonusEffectChips', { chips: fmtSigned(sentenceBonus!.effectChips) })}
+              </span>
+            )}
+            {Math.abs(sentenceBonus!.effectMult - 1) > 0.001 && (
+              <span className="bonus-part effect">
+                {t('sidebar.bonusEffectMult', { mult: fmtMult(sentenceBonus!.effectMult) })}
+              </span>
+            )}
+          </div>
+        ) : (
           <StatusLine preview={mode === 'blind' ? preview : null} />
+        )}
         <div
           className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing', burning && 'burning']
             .filter(Boolean)

@@ -13,6 +13,7 @@ import { applyTileMaterial } from '../src/engine/materials';
 import { startBlind } from '../src/engine/loop';
 import { makeRng, type Rng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
+import { ALL_JOKERS } from '../src/engine/jokers';
 import type { BlindState, RunState, Tile } from '../src/engine/types';
 
 const zeroRng: Rng = {
@@ -145,6 +146,25 @@ describe('Fable registry', () => {
       zeroRng,
     );
     expect(editioned.run.jokers[0]?.edition).toBe('foil');
+  });
+
+  it('creates only an unowned random Charm and disables itself when none remain', () => {
+    const create = setup('fable14');
+    const owned = {
+      ...create.run,
+      jokerSlots: ALL_JOKERS.length + 1,
+      jokers: [{ defId: ALL_JOKERS[0]!.id, edition: 'base' as const, state: {} }],
+    };
+    const result = useFable('fable14', owned, create.blind, [], zeroRng);
+    const ids = result.run.jokers.map((joker) => joker.defId);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    const exhausted = {
+      ...create.run,
+      jokerSlots: ALL_JOKERS.length + 1,
+      jokers: ALL_JOKERS.map((def) => ({ defId: def.id, edition: 'base' as const, state: {} })),
+    };
+    expect(canUseFable('fable14', exhausted, create.blind, [])).toBe(false);
   });
 
   it('grants total Charm sell value with a $50 cap', () => {
