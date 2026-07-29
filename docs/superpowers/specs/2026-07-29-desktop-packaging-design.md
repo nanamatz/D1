@@ -1,0 +1,238 @@
+# Desktop Packaging — Design (2026-07-29)
+
+Package the web build as an installable Windows desktop application, as the first
+step toward a Steam release.
+
+## Scope
+
+Steam release decomposes into five independent cells:
+
+1. **Desktop shell packaging** — this spec
+2. File-based saves (prerequisite for Steam Cloud)
+3. Steamworks integration (achievements, cloud, overlay)
+4. Build/submit pipeline (code signing, `steamcmd` upload, branches)
+5. Asset optimization (63MB `dist`, pack/boss PNGs at 1.6–1.9MB each)
+
+Cell 1 is the prerequisite for all the others and is the only one in scope here.
+Cells 2–5 each get their own spec → plan → implementation cycle.
+
+**In scope:** Electron shell, offline-proofing, window/resolution policy, build
+scripts, an offline build gate, a documented rule that keeps the desktop build
+working as the game changes.
+
+**Out of scope:** installers (Steam ships depot folders, not installers), any
+Steamworks API, save-format changes, asset optimization, final store icon art,
+platforms other than Windows.
+
+## Decisions
+
+**Target: Windows only.** macOS/Linux are not built or verified. Nothing in the
+design forecloses adding them later, but no effort is spent enabling them now.
+
+**Shell: Electron, unpacked-directory output.** Chosen over Tauri because the
+destination is Steam:
+
+- Bundle size (Electron ~150MB vs Tauri ~10MB) is irrelevant on Steam, where
+  `dist` is already 63MB and games routinely ship in gigabytes.
+- Electron has **zero runtime dependencies**. Tauri on Windows requires the
+  WebView2 runtime — preinstalled on Windows 11 but not guaranteed, and avoiding
+  that means either bundling a fixed-version WebView2 (~180MB, erasing the size
+  advantage) or running a bootstrapper via a Steam installscript.
+- Electron bundles Chromium, so rendering matches the development browser
+  exactly. This game leans on a CRT post-effect, CSS `zoom` scaling, and
+  `filter: grayscale(1)` for the monochrome start — all rendering-sensitive.
+- Cell 3's path (`steamworks.js`) is best-trodden on Electron, and the Node
+  context it provides also makes cell 2's file saves straightforward.
+
+Neutralino and NW.js were rejected: thin Steam track record, unclear Steamworks
+path.
+
+**App name: `Play the World`, fixed via `app.setName()`.** Electron stores
+localStorage under `%APPDATA%/<appName>/`, so renaming the app later orphans
+every player's save. This is pinned now and must not change. The display title
+stays "Play the Wor!d" — it comes from `index.html`'s `<title>` and is
+independent of the storage name (`!` is awkward in a filesystem path).
+
+## Architecture
+
+```
+desktop/
+  main.js           main process — window creation, load, lifecycle
+  window-state.js   persist/restore window bounds and fullscreen
+  icon.ico          interim app icon
+```
+
+`desktop/` sits at the repository root, outside `src/`, and **imports no game
+code**. Dependency direction is one-way: `desktop/ → dist/`. This mirrors
+architecture principle 1 (the engine is headless; the UI is the only browser
+layer) and keeps Node types out of the browser build's tsconfig.
+
+`main.js` does exactly one thing: open a window and load `dist/index.html`. No
+game rules, no UI policy.
+
+**Load method:** `file://` directly against `dist/index.html`. With a relative
+`base` and no runtime `fetch`, there is no CORS surface, so a custom `app://`
+protocol would be complexity without benefit.
+
+**Security posture:** `contextIsolation: true`, `nodeIntegration: false`,
+`sandbox: true`.
+
+**No preload script.** The renderer needs zero Node APIs in this scope — saves
+remain in localStorage. Adding a preload bridge with nothing to bridge only
+opens an unnecessary surface. Cell 2 adds it when file saves need it.
+
+**No application menu** (`Menu.setApplicationMenu(null)`), otherwise a
+File/Edit/View menu appears and exposes Ctrl+R and DevTools to players.
+Explicitly registered keys instead:
+
+- `F11` — toggle fullscreen
+- `Ctrl+Shift+I` — DevTools, **development builds only**
+
+## Offline-proofing
+
+Runtime network dependencies were audited. Only one exists.
+
+**Already safe:**
+
+- The dictionary is bundled at build time — `src/ui/lexicon.browser.ts` imports
+  `data/dictionary.txt?raw` and `data/lexicon.json`. No runtime fetch.
+- Audio is Web Audio synthesis. No audio asset files.
+- `.env` contains no `VITE_`-prefixed variables, so no secret reaches the client
+  bundle.
+
+**Problem 1 — Google Fonts CDN.** `index.html` loads Baloo 2, Jersey 10, Jost,
+and Noto Sans KR from `fonts.googleapis.com`. Offline, all four fall back and
+the pixel-art UI breaks. `LoadingScreen.tsx`'s `document.fonts.ready` resolves
+even when loading fails, so the game does not hang — it breaks silently, which
+is worse.
+
+**Fix:** self-host all four via npm and delete the `<link>` and `<preconnect>`
+tags. All four are SIL OFL and redistributable. Prefer `@fontsource/*`
+packages; for any family without one (Jersey 10 is the likely gap), vendor the
+woff2 files and declare `@font-face` directly.
+
+This applies to the **web build too** — one unconditional change, no branching.
+Removing the CDN also benefits the web build (shorter load, no external
+dependency), so there is no reason to make it desktop-only.
+
+Noto Sans KR at two weights (~4–5MB) dominates the added size. **No glyph
+subsetting** — against a 63MB `dist` the saving is negligible, while a Korean
+glyph missing from a subset renders as tofu (▯).
+
+**Problem 2 — `base: '/D1/'`.** `vite.config.ts` sets an absolute base for
+gh-pages, which cannot resolve under `file://`.
+
+**Fix:** `base: './'`, unconditionally. This is a single-screen SPA with no
+router, so relative asset paths resolve correctly in all three environments:
+under the gh-pages `/D1/` subpath, under itch.io's subpath, and under `file://`.
+The existing comment above that line already reads *"Relative asset paths so the
+build runs from any subpath"* — the comment is right and the value drifted from
+it.
+
+## Window and resolution policy
+
+The existing fit-scale system in `src/ui/styles/tokens.css` already scales the
+board against both axes. **No CSS changes.** The shell only chooses window
+sizes.
+
+- **Default size:** 1600×1000 content. The board's design size is 1440×912 and
+  `--fit-scale` is `min(1, …)`, so at this window size it reads exactly 1.0 and
+  pixel art renders unscaled with headroom to spare. If `screen.workAreaSize` is
+  smaller, open scaled down to fit — the window must never open off-screen on a
+  1366×768 laptop.
+- **Minimum size:** 960×600, where `--fit-scale` bottoms out at ≈0.66. Below
+  that the pixel font stops being legible. The floor prevents "I shrank it and
+  can't read anything" reports.
+- **No aspect-ratio lock.** Free resize plus fit-scale already works, and
+  locking would fight the user's window management. Leftover space is filled by
+  the background outside the board.
+- **Fullscreen:** starts windowed; `F11` toggles. Ordinary fullscreen, not
+  exclusive, so alt-tab is instant.
+- **Window state** (`window-state.js`): size, position, maximized, and
+  fullscreen persist to JSON under `%APPDATA%` and restore on next launch. On
+  restore, **validate the saved position against currently connected displays**
+  and fall back to the default position if it lies outside them — otherwise
+  unplugging a monitor opens the window where nobody can see it.
+- **No white flash:** create with `show: false`, display on `ready-to-show`, and
+  set `backgroundColor` to the game's dark background.
+- **DPI:** at 150% Windows scaling, `100vw` is still in CSS pixels, so fit-scale
+  works unchanged. No special handling — but it is on the verification list.
+
+## Build pipeline
+
+Three script changes; the existing `deploy` script is untouched and the web
+deployment path keeps working.
+
+| Script | Behaviour |
+|---|---|
+| `build:desktop` | `vite build` → offline gate → `electron-builder --dir` |
+| `desktop:run` | run electron against the existing `dist/`, no rebuild — fast loop for shell edits |
+| `deploy` (existing) | unchanged |
+
+**No installer target.** Steam copies a depot folder and runs the exe, so
+NSIS/MSI is unnecessary. The `--dir` output at `release/win-unpacked/` **is** the
+depot content. If non-Steam distribution is ever needed, adding a target is one
+line then; building it now adds verification burden for something unused.
+
+**Interim icon.** No `.ico` exists in the repository. The final store icon is an
+art-direction decision, not a packaging task, so this spec ships an interim
+`.ico` generated from `src/ui/assets/woodak.png` (multi-resolution: 16/32/48/256)
+and declares the final icon out of scope.
+
+## Keeping the desktop build current
+
+Routine game changes require nothing but `npm run build:desktop` and a
+re-upload. The shell reads `dist/` and imports no game code, so new jokers, UI
+work, and balance changes are invisible to it.
+
+Three kinds of change can silently break it, all of which work fine in the
+browser and fail only on desktop:
+
+1. **A new CDN dependency** — a font, script, or remote image.
+2. **Runtime `fetch()` for data** — fails under `file://`.
+3. **Reverting `base` to an absolute path** — plausible while fixing a web
+   deployment issue.
+
+**Build gate — `scripts/check-offline.mjs`**, run by `build:desktop`, fails the
+build on violation. It scans **all of `dist/` (HTML, CSS, and JS bundles)**, not
+just `index.html`, because a CDN URL can hide inside a stylesheet or a bundled
+component. It asserts:
+
+- no external `http(s)://` URLs in build output
+- no asset paths beginning with `/`
+
+This catches causes 1 and 3 automatically.
+
+**Documentation rule** for cause 2, which static scanning cannot catch without
+heavy false positives: record in `AGENTS.md` that runtime network and `fetch`
+dependencies must not be added and that data is bundled at build time. Note that
+`CLAUDE.md` is listed in `.gitignore` and therefore absent from the shared
+repository — `AGENTS.md` is the tracked mirror, so the rule goes there and is
+reflected in the local `CLAUDE.md` in the same pass.
+
+## Verification
+
+**Automated:** the offline gate above. The Electron main process is **not**
+unit-tested — fixture cost for a main-process harness exceeds the value for a
+file this small and this static.
+
+**Manual checklist. All items must pass before this work is considered done:**
+
+1. **Disable the network adapter**, launch, and play through a blind clear —
+   all four fonts render correctly.
+2. Quit and relaunch — in-progress run, collection, unlocks, and settings all
+   persist (confirm the `%APPDATA%/Play the World/` storage path).
+3. Resize the window — the board scales without scrollbars and stops at the
+   960×600 floor.
+4. Layout is correct on a display at 150% Windows scaling.
+5. Maximize on a secondary monitor, disconnect it, relaunch — the window appears
+   on the primary display.
+6. `F11` toggles fullscreen; no menu bar; Ctrl+R and DevTools do nothing in a
+   production build.
+
+## Known risk, accepted
+
+`dist` is 63MB, dominated by pack and boss PNGs at 1.6–1.9MB each. With Electron
+bundled, the installed footprint lands in the low hundreds of megabytes. This is
+unremarkable for Steam and is explicitly not addressed here — asset optimization
+is cell 5.
