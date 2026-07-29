@@ -875,6 +875,11 @@ app.on('window-all-closed', () => app.quit());
 
 - [ ] **Step 6: Verify persistence manually**
 
+Note: the state file is written from the window's `close` event, which a
+`SIGTERM`/force-kill does **not** fire. Verify by closing the window normally
+(the X button or Alt+F4); killing the process from a terminal will make it look
+broken when it is not.
+
 Run: `npm run desktop:run`
 1. Resize the window to something distinctive and move it, then quit.
 2. Relaunch. Expected: same size and position.

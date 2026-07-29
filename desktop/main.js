@@ -12,26 +12,23 @@
 import { app, BrowserWindow, Menu, globalShortcut, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { MIN_SIZE, loadState, restoreBounds, saveState } from './window-state.js';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 
 /** localStorage lives in %APPDATA%/<appName>/. Renaming this orphans every save. */
 app.setName('Play the World');
 
-/** Design board is 1440x912; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
-const DEFAULT_SIZE = { width: 1600, height: 1000 };
-/** Below this --fit-scale bottoms out near 0.66 and the pixel font stops being legible. */
-const MIN_SIZE = { width: 960, height: 600 };
-
 /** Matches the game's dark background so no white flash shows before first paint. */
 const BACKGROUND = '#141018';
 
 function createWindow() {
-  const { workAreaSize } = screen.getPrimaryDisplay();
+  const stateFile = path.join(app.getPath('userData'), 'window-state.json');
+  const saved = loadState(stateFile);
+  const bounds = restoreBounds(saved, screen.getAllDisplays(), screen.getPrimaryDisplay().workArea);
 
   const win = new BrowserWindow({
-    width: Math.min(DEFAULT_SIZE.width, workAreaSize.width),
-    height: Math.min(DEFAULT_SIZE.height, workAreaSize.height),
+    ...bounds,
     minWidth: MIN_SIZE.width,
     minHeight: MIN_SIZE.height,
     useContentSize: true,
@@ -47,6 +44,20 @@ function createWindow() {
 
   // Without this a File/Edit/View menu appears and hands players Ctrl+R and DevTools.
   Menu.setApplicationMenu(null);
+
+  if (saved?.maximized) win.maximize();
+  if (saved?.fullScreen) win.setFullScreen(true);
+
+  // Persist on close rather than on every resize: getNormalBounds() returns the
+  // restored (un-maximized) bounds, so a maximized window still remembers its
+  // real size for when it is restored.
+  win.on('close', () => {
+    saveState(stateFile, {
+      ...win.getNormalBounds(),
+      maximized: win.isMaximized(),
+      fullScreen: win.isFullScreen(),
+    });
+  });
 
   win.once('ready-to-show', () => win.show());
   win.loadFile(path.join(DIR, '..', 'dist', 'index.html'));
