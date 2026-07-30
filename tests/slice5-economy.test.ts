@@ -10,20 +10,25 @@ import { BALANCE } from '../src/engine/balance';
 
 describe('slice5 economy — blind target curve (GDD §8.2)', () => {
   it('ante 1: small ×1, big ×1.5, boss ×2', () => {
-    expect(blindTarget(1, 'small')).toBe(100);
-    expect(blindTarget(1, 'big')).toBe(150);
-    expect(blindTarget(1, 'boss')).toBe(200);
+    // anteBaseTargets re-tuned 2026-07-30 (src/sim/length-mult.ts): [0]=300.
+    // 300 × 1.0 = 300, 300 × 1.5 = 450, 300 × 2.0 = 600.
+    expect(blindTarget(1, 'small')).toBe(300);
+    expect(blindTarget(1, 'big')).toBe(450);
+    expect(blindTarget(1, 'boss')).toBe(600);
   });
 
   it('reads the per-ante base from the curve table', () => {
-    expect(blindTarget(2, 'small')).toBe(300);
-    expect(blindTarget(2, 'big')).toBe(450);
-    expect(blindTarget(8, 'boss')).toBe(70000); // 35000 × 2
+    // anteBaseTargets[1]=900: 900 × 1.0 = 900, 900 × 1.5 = 1350.
+    // anteBaseTargets[7]=105000: 105000 × 2.0 = 210000.
+    expect(blindTarget(2, 'small')).toBe(900);
+    expect(blindTarget(2, 'big')).toBe(1350);
+    expect(blindTarget(8, 'boss')).toBe(210000); // 105000 × 2
   });
 
   it('extrapolates the final growth ratio into endless antes', () => {
-    // ratio 35000/20000 = 1.75 → ante 9 base = 61250
-    expect(blindTarget(9, 'small')).toBe(61250);
+    // ratio anteBaseTargets[7]/anteBaseTargets[6] = 105000/60000 = 1.75
+    // → ante 9 base = 105000 × 1.75 = 183750
+    expect(blindTarget(9, 'small')).toBe(183750);
   });
 });
 

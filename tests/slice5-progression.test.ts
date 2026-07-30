@@ -31,16 +31,17 @@ describe('slice5 progression — blind order within an ante (GDD §8.1)', () => 
 
   it('currentTarget reflects the run ante and blind index', () => {
     const run: RunState = { ...newRun('t'), ante: 2, blindIndex: 1 };
-    expect(currentTarget(run)).toBe(blindTarget(2, 'big')); // 450
+    expect(currentTarget(run)).toBe(blindTarget(2, 'big')); // 900 × 1.5 = 1350
   });
 });
 
 describe('slice5 progression — startBlind reads the curve (GDD §8.2)', () => {
-  it('a fresh run opens on the Small blind at ante-1 target 100', () => {
+  it('a fresh run opens on the Small blind at ante-1 target 300', () => {
+    // anteBaseTargets[0]=300 (re-tuned 2026-07-30) × blindTargetMult.small=1.0 = 300.
     const run = newRun('curve');
     const blind = startBlind(run, makeRng('curve'));
     expect(blind.kind).toBe('small');
-    expect(blind.target).toBe(100);
+    expect(blind.target).toBe(300);
   });
 
   it('still honors an explicit target override', () => {

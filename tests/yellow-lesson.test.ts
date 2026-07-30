@@ -4,6 +4,9 @@ import { makeRng } from '../src/engine/rng';
 import { startBlind } from '../src/engine/loop';
 import { nextLockLetter } from '../src/ui/game';
 import type { Letter } from '../src/engine/types';
+import { scoreWord } from '../src/engine/scoring';
+import { makeLexicon } from '../src/engine/lexicon';
+import { blindTarget } from '../src/engine/economy';
 
 const YELLOW = 'YELLOW'.split('') as Letter[];
 
@@ -50,5 +53,24 @@ describe('first-run lesson — lock helper (nextLockLetter)', () => {
   it('is case-insensitive and tolerates nulls (stone tiles)', () => {
     expect(nextLockLetter([], 'yellow')).toBe('Y');
     expect(nextLockLetter([null], 'YELLOW')).toBe('E'); // length-based, always a prefix under lock
+  });
+});
+
+describe('the guided intro survives the target curve (GDD §13, 2026-07-30)', () => {
+  it('a single YELLOW cannot clear the ante-1 small blind', () => {
+    // The intro rigs the opening hand to Y-E-L-L-O-W and relies on that word
+    // ENDING THE LESSON without clearing the blind. YELLOW = 36 chips, standard
+    // ×1.0, length 6 => 36 × 7.0 = 252, so ante-1 small must stay above it.
+    const lex = makeLexicon(['yellow'], {});
+    let idc = 0;
+    const tiles = [...'YELLOW'].map((ch) => ({
+      id: `y${idc++}`,
+      letter: ch as Letter,
+      material: 'ceramic' as const,
+      font: 'medium' as const,
+    }));
+    const score = scoreWord(tiles, lex).settledScore;
+    expect(score).toBe(252);
+    expect(score).toBeLessThan(blindTarget(1, 'small'));
   });
 });

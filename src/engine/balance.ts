@@ -142,11 +142,13 @@ export const BALANCE = {
 
   // ----- Blinds & antes (GDD §8.2) -----
   blindTargetMult: { small: 1.0, big: 1.5, boss: 2.0 },
-  // placeholder curve, antes 1..8. Feel pass 2026-07-21: left UNCHANGED after the
-  // letterChips ×3 scaling — src/sim/feel-chip-scale.ts (200 seeds/ante, greedy
-  // best-word) shows ante 1 clearing 77.5% (not near-100%-with-phases-to-spare)
-  // and antes 2-4 falling off sharply, so the curve is not trivialized.
-  anteBaseTargets: [100, 300, 800, 2000, 5000, 11000, 20000, 35000],
+  // placeholder curve, antes 1..8. Re-tuned 2026-07-30 for the word-length Mult
+  // bonus (§3.1): a 3-6 letter word's effective mult rose ~3x, so the curve scaled
+  // ×3 to hold the shape src/sim/feel-chip-scale.ts recorded (ante 1 ~77.5% clear,
+  // antes 2-4 falling off sharply). Ante-1 small must also stay above a single
+  // YELLOW (252) so the guided intro's first word does not clear the blind (§13).
+  // Verified with src/sim/length-mult.ts.
+  anteBaseTargets: [300, 900, 2400, 6000, 15000, 33000, 60000, 105000],
   runAntes: 8,
 
   // ----- Economy (GDD §9.1) -----
