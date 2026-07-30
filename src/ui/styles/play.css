@@ -2408,12 +2408,23 @@
   line-height: 1.1;
   padding: 0 4px;
 }
+/* Emoji Tile art reveals its colours channel-by-channel with the palette
+   (2026-07-30). The matrix is rewritten by applyPresentation; with nothing
+   unlocked it equals grayscale(1), so this composes cleanly with world-mono. */
 .joker-art {
   width: 100%;
   height: 100%;
   border-radius: inherit;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
+}
+/* The filter host carries no layout — it exists only to hold the <filter>. */
+.unlock-chroma-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 /* Joker trigger animation (B step 3): wiggle + contribution popup. */
 .joker.firing {

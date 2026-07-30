@@ -142,6 +142,18 @@ export function App() {
           <PatternLevelUp />
         </>
       )}
+      {/* Emoji Tile art chroma gate — applyPresentation (unlocks.ts) rewrites the
+          matrix from the active colour unlocks. Always mounted; a filter needs no
+          visible geometry. colorInterpolationFilters MUST be sRGB — the linearRGB
+          default would shift the greys away from grayscale(1). */}
+      <svg className="unlock-chroma-defs" aria-hidden="true">
+        <filter id="unlock-chroma" colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"
+          />
+        </filter>
+      </svg>
       <CrtOverlay />
     </>
   );

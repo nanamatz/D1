@@ -8,6 +8,7 @@ import {
   resetUnlocks,
   activeUnlocks,
   checkWordPlayed,
+  chromaMatrix,
 } from '../src/ui/unlocks';
 
 // jsdom is not configured project-wide; provide a minimal localStorage shim
@@ -74,5 +75,37 @@ describe('chromatic unlocks — activeUnlocks + override', () => {
     markPlayed('GREEN');
     expect(activeUnlocks(false)).toEqual(new Set(['GREEN']));
     expect(activeUnlocks(true).size).toBe(UNLOCKS.length);
+  });
+});
+
+describe('chromaMatrix — Emoji Tile art chroma gate (2026-07-30)', () => {
+  const LUM = '0.2126 0.7152 0.0722';
+
+  it('no colour unlocked → exactly grayscale(1)', () => {
+    expect(chromaMatrix(new Set())).toBe(
+      `${LUM} 0 0 ${LUM} 0 0 ${LUM} 0 0 0 0 0 1 0`,
+    );
+  });
+
+  it('all four colours → the identity matrix (no filtering)', () => {
+    expect(chromaMatrix(new Set(['RED', 'YELLOW', 'GREEN', 'BLUE']))).toBe(
+      '1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0',
+    );
+  });
+
+  it('RED opens the red channel only; green and blue stay on luminance', () => {
+    expect(chromaMatrix(new Set(['RED']))).toBe(
+      `1 0 0 0 0 ${LUM} 0 0 ${LUM} 0 0 0 0 0 1 0`,
+    );
+  });
+
+  it('YELLOW opens red AND green — the union of its channels', () => {
+    expect(chromaMatrix(new Set(['YELLOW']))).toBe(
+      `1 0 0 0 0 0 1 0 0 0 ${LUM} 0 0 0 0 0 1 0`,
+    );
+  });
+
+  it('ignores non-colour unlocks', () => {
+    expect(chromaMatrix(new Set(['MUSIC', 'SOUND', 'DOG']))).toBe(chromaMatrix(new Set()));
   });
 });

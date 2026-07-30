@@ -84,6 +84,37 @@ export function activeUnlocks(unlockAll: boolean): Set<string> {
   return loadPlayed();
 }
 
+/** Rec. 709 luminance row — the value a locked (desaturated) channel takes. */
+const LUM = [0.2126, 0.7152, 0.0722] as const;
+
+/** RGB channels each colour group restores. YELLOW is red+green (2026-07-30). */
+const CHROMA_CHANNELS: Record<UnlockGroup, readonly number[]> = {
+  red: [0],
+  yellow: [0, 1],
+  green: [1],
+  blue: [2],
+};
+
+/**
+ * The `feColorMatrix values` for `#unlock-chroma`, the Emoji Tile art chroma gate.
+ * Each output channel is either its own value (its group is unlocked) or the
+ * luminance (locked): `out_c = lum + k_c × (c − lum)`. So no unlocks is exactly
+ * `grayscale(1)`, all four is the identity, and a locked hue lands on the same
+ * grey full greyscale would give it — never black. 20 numbers: 3 colour rows of
+ * `r g b a offset`, then the untouched alpha row.
+ */
+export function chromaMatrix(active: ReadonlySet<string>): string {
+  const gates = [0, 0, 0];
+  for (const u of UNLOCKS) {
+    if (u.effect.kind !== 'color' || !active.has(u.id)) continue;
+    for (const c of CHROMA_CHANNELS[u.effect.group]) gates[c] = 1;
+  }
+  const rows = gates.map((k, c) =>
+    [0, 1, 2].map((i) => (1 - k) * LUM[i]! + (i === c ? k : 0)).join(' '),
+  );
+  return `${rows.map((row) => `${row} 0 0`).join(' ')} 0 0 0 1 0`;
+}
+
 /**
  * Apply the presentation state to the DOM + audio buses. Idempotent — call on
  * mount and whenever the played set / override changes. Color groups toggle a
@@ -107,6 +138,10 @@ export function applyPresentation(unlockAll: boolean): void {
     // "Truly monochrome" guard: greyscale the whole board until ANY colour is
     // unlocked, so hard-coded fills the tokens don't reach are B&W too (C-3 revised).
     root.classList.toggle('world-mono', !anyColor);
+    // Emoji Tile art chroma gate (2026-07-30): the palette reveals progressively,
+    // so the art must too — one filter, driven by the same active set.
+    const chroma = document.querySelector('#unlock-chroma feColorMatrix');
+    if (chroma) chroma.setAttribute('values', chromaMatrix(active));
   }
   audio.setBusEnabled('sfx', active.has('SOUND'));
   audio.setBusEnabled('music', active.has('MUSIC'));
