@@ -1089,7 +1089,7 @@ The game begins **desaturated and silent**; playing specific words permanently u
 
 **System shape.** One data-driven registry (`src/ui/unlocks.ts`): `word → { effect }`. A word-played check fires on each valid submission; on the first-ever play of a listed word it records the unlock and fires a **celebration reveal** (the color washes in / audio fades up). Adding a future unlock = adding a registry row — **never a hard-coded word check in a component**.
 
-**Initial table (C-2).**
+**Initial table (C-2).** **Language is not a palette unlock (changed 2026-07-30).** Korean was a celebration entry for something the player already had — the language selector was never gated — so the row was removed along with the `locale` effect kind. The Palette now has three sections: 색상 / 음향 / 캐릭터.
 
 | Word | Unlocks |
 |---|---|
@@ -1099,7 +1099,6 @@ The game begins **desaturated and silent**; playing specific words permanently u
 | BLUE | blue token group — `--chips`, blue buttons |
 | MUSIC | BGM bus enabled (wraps the feature-01 mixer's music bus) |
 | SOUND | SFX bus enabled (wraps the SFX bus) |
-| KOREAN | Korean-locale celebration entry (the language is separately selectable in Settings from the start — the gimmick is the reward, not the gate) |
 | ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
 
 **"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces and the blind badge) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The main `.frame` itself is transparent as of 2026-07-30; the former per-stage backdrops are retired. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable.

@@ -92,8 +92,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
               <div key={u.id} className={['go-unlock-card', `unlock-${u.effect.kind}`].join(' ')}>
                 <div className={['go-unlock-swatch', u.effect.kind === 'color' ? `sw-${u.effect.group}` : ''].filter(Boolean).join(' ')}>
                   {u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? '♪' : '🔊')
-                    : u.effect.kind === 'mascot' ? '★'
-                    : u.effect.kind === 'locale' ? '가' : ''}
+                    : u.effect.kind === 'mascot' ? '★' : ''}
                 </div>
                 <span className="go-unlock-word">{u.word}</span>
               </div>

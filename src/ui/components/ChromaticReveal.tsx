@@ -15,7 +15,6 @@ function bodyKey(def: UnlockDef): string {
   switch (def.effect.kind) {
     case 'color': return `unlock.body.${def.effect.group}`;
     case 'audio': return def.effect.bus === 'music' ? 'unlock.body.music' : 'unlock.body.sound';
-    case 'locale': return 'unlock.body.korean';
     // A mascot with art is a real, selectable ally; art-less variants stay "coming soon".
     case 'mascot': return mascotVariantArt(def.effect.variant) ? 'unlock.body.mascotReady' : 'unlock.body.mascot';
   }

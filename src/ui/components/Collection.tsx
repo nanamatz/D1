@@ -646,14 +646,13 @@ function PacksView() {
 }
 
 // ---------- Palette (chromatic unlocks, feature-02 C-5) ----------
-// Split by effect kind into four sections — 색상 / 음향 / 캐릭터 / 언어. The
+// Split by effect kind into three sections — 색상 / 음향 / 캐릭터. The
 // section is derived from `effect.kind`; adding a future unlock kind = adding a
 // row here, never a hard-coded word check (CLAUDE.md palette guardrail).
 const PALETTE_SECTIONS: { key: string; kind: UnlockEffect['kind'] }[] = [
   { key: 'color', kind: 'color' },
   { key: 'audio', kind: 'audio' },
   { key: 'mascot', kind: 'mascot' },
-  { key: 'locale', kind: 'locale' },
 ];
 
 function PaletteView() {
@@ -667,7 +666,6 @@ function PaletteView() {
     const descKey =
       u.effect.kind === 'color' ? `unlock.body.${u.effect.group}`
       : u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? 'unlock.body.music' : 'unlock.body.sound')
-      : u.effect.kind === 'locale' ? 'unlock.body.korean'
       : 'unlock.body.mascot';
     return (
       <Tooltip
