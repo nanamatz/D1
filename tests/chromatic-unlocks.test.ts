@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   UNLOCKS,
@@ -107,5 +109,34 @@ describe('chromaMatrix — Emoji Tile art chroma gate (2026-07-30)', () => {
 
   it('ignores non-colour unlocks', () => {
     expect(chromaMatrix(new Set(['MUSIC', 'SOUND', 'DOG']))).toBe(chromaMatrix(new Set()));
+  });
+});
+
+describe('unlock-chroma filter — every Emoji Tile art surface, not just the owned shelf (2026-07-30 fix)', () => {
+  const play = readFileSync(
+    fileURLToPath(new URL('../src/ui/styles/play.css', import.meta.url)),
+    'utf8',
+  );
+  const screens = readFileSync(
+    fileURLToPath(new URL('../src/ui/styles/screens.css', import.meta.url)),
+    'utf8',
+  );
+
+  /** The declaration block for the rule whose selector list contains `selector`. */
+  const ruleFor = (css: string, selector: string): string => {
+    const start = css.indexOf(selector);
+    expect(start, `selector ${selector} not found`).toBeGreaterThanOrEqual(0);
+    const open = css.indexOf('{', start);
+    const close = css.indexOf('}', open);
+    return css.slice(open, close);
+  };
+
+  it.each([
+    ['.joker-art', () => play],
+    ['.shop-joker-art', () => play],
+    ['.pack-joker-art', () => play],
+    ['.cc-joker-art', () => screens],
+  ])('%s carries the chroma-gate filter', (selector, css) => {
+    expect(ruleFor(css(), selector)).toContain('filter: url(#unlock-chroma);');
   });
 });

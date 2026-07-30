@@ -1673,6 +1673,7 @@ body.cb-safe .tile.hint {
   border-radius: var(--r-md);
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 .emoji-tile-collection {
   width: var(--shop-card-w);

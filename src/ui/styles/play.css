@@ -708,6 +708,7 @@
   object-fit: contain;
   image-rendering: pixelated;
   border-radius: var(--r-md);
+  filter: url(#unlock-chroma);
 }
 .shop-offer-art .shopitem .e {
   font-size: 104px;
