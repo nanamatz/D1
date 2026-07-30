@@ -566,17 +566,72 @@
   gap: 6px;
   min-width: 0;
 }
-.edition-foil {
+.edition-gray {
   box-shadow: inset 0 0 0 2px #dcecff, 0 0 8px rgba(190, 225, 255, 0.75), var(--shadow);
 }
-.edition-holographic {
+.edition-violet {
   background-image: linear-gradient(135deg, rgba(89, 221, 255, 0.28), rgba(255, 99, 215, 0.3), rgba(255, 231, 95, 0.28));
 }
-.edition-polychrome {
+.edition-rainbow {
   background-image: linear-gradient(120deg, rgba(255, 64, 96, 0.32), rgba(255, 225, 66, 0.26), rgba(75, 224, 160, 0.28), rgba(93, 135, 255, 0.34));
 }
-.edition-negative {
+.edition-white {
   filter: invert(0.88) hue-rotate(180deg);
+}
+/* Emoji Tile editions use one image-only language: background colour, never
+   badges or symbol prefixes. The tint overlays the opaque pixel-art master. */
+.emoji-tile-image-only {
+  position: relative;
+  isolation: isolate;
+  background-image: none;
+  box-shadow: none;
+  filter: none;
+}
+.emoji-tile-image-only:is(
+  .edition-gray,
+  .edition-violet,
+  .edition-rainbow,
+  .edition-white
+)::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.emoji-tile-image-only.edition-gray::after {
+  background: #74747a; /* ash gray */
+  mix-blend-mode: color;
+  opacity: .82;
+}
+.emoji-tile-image-only.edition-violet::after {
+  background: #75657f; /* ash violet */
+  mix-blend-mode: color;
+  opacity: .82;
+}
+.emoji-tile-image-only.edition-rainbow::after {
+  background: linear-gradient(
+    120deg,
+    #ff405f,
+    #ffe142,
+    #4be0a0,
+    #5d87ff,
+    #d65dff,
+    #ff405f
+  );
+  background-size: 300% 100%;
+  mix-blend-mode: color;
+  opacity: .9;
+  animation: emojiEditionRainbow 3s linear infinite;
+}
+.emoji-tile-image-only.edition-white::after {
+  background: #fff;
+  mix-blend-mode: screen;
+  opacity: .86;
+}
+@keyframes emojiEditionRainbow {
+  to { background-position: 300% 0; }
 }
 .edition-badge {
   position: absolute;
@@ -684,6 +739,9 @@
   padding: 0;
 }
 @media (prefers-reduced-motion: reduce) {
+  .emoji-tile-image-only.edition-rainbow::after {
+    animation: none;
+  }
   .shop-sign-word,
   .shop-sign-lights i,
   .blindselect-caret {
@@ -694,6 +752,9 @@
   .shop-offer-action {
     transition: none;
   }
+}
+.force-reduced-motion .emoji-tile-image-only.edition-rainbow::after {
+  animation: none;
 }
 /* The larger pack art shown in the pack-opening header. */
 .pack-open-art {
@@ -2160,6 +2221,8 @@
   box-shadow: var(--shadow);
   animation: stampIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
   z-index: 6;
+  display: inline-flex;
+  align-items: center;
 }
 /* Level sub-badge inside the sentence-pattern stamp (2026-07-22 landing beat). */
 .bonus-lvl {
@@ -2762,6 +2825,9 @@
   border-color: var(--gold);
 }
 .pattern-chip .p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 700;
   font-size: var(--fs-md);
 }

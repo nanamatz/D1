@@ -182,12 +182,12 @@ export const constellationPassiveFactor = (run: RunState, pattern: PatternId | n
   const cardId = PATTERN_CONSUMABLE[pattern];
   if (!cardId) return 1;
   const copies = run.consumables.filter((id) => id === cardId).length;
-  return Math.pow(BALANCE.edition.polychromeFactor, copies);
+  return Math.pow(BALANCE.edition.rainbowFactor, copies);
 };
 
 export const jokerSlotLimit = (run: RunState): number =>
   run.jokerSlots +
-  run.jokers.filter((j) => j.edition === 'negative').length +
+  run.jokers.filter((j) => j.edition === 'white').length +
   run.jokers.reduce(
     (sum, joker) =>
       sum +
@@ -218,7 +218,7 @@ export const canAddJoker = (
   edition: JokerEdition = 'base',
 ): boolean =>
   canOwnJoker(run, defId) &&
-  run.jokers.length < jokerSlotLimit(run) + (edition === 'negative' ? 1 : 0);
+  run.jokers.length < jokerSlotLimit(run) + (edition === 'white' ? 1 : 0);
 
 export const PATTERN_CONSUMABLE: Record<PatternId, import('./types').ConsumableId> =
   PATTERN_CONSTELLATION;

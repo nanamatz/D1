@@ -10,10 +10,9 @@ import {
   consumableTooltipBody,
   consumableTooltipExtra,
   grownValue,
-  jokerDescKey,
+  jokerTooltipBody,
   voucherDescKey,
 } from '../descriptions';
-import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
 import type { UseGame } from '../useGame';
@@ -55,6 +54,7 @@ interface ShopOfferProps {
   action2Disabled?: boolean | undefined;
   onAction2?: (() => void) | undefined;
   children: ReactNode;
+  artClassName?: string | undefined;
 }
 
 /** Image-first sale slot. Selecting the art reveals its contextual action below. */
@@ -72,6 +72,7 @@ function ShopOffer({
   action2Disabled,
   onAction2,
   children,
+  artClassName,
 }: ShopOfferProps) {
   return (
     <div className={['shop-offer', selected ? 'selected' : ''].filter(Boolean).join(' ')}>
@@ -87,7 +88,9 @@ function ShopOffer({
             aria-pressed={selected}
             onClick={onSelect}
           />
-          <div className="shop-offer-art">{children}</div>
+          <div className={['shop-offer-art', artClassName].filter(Boolean).join(' ')}>
+            {children}
+          </div>
           <span className="shop-offer-price" aria-label={`$${price}`}>${price}</span>
           <div className="shop-offer-action" aria-hidden={!selected}>
             <button
@@ -158,7 +161,7 @@ export function Shop({ g }: { g: UseGame }) {
       return {
         emoji: def?.emoji ?? '🃏',
         name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
-        desc: t(jokerDescKey(item.id)),
+        desc: jokerTooltipBody(item.id, item.edition ?? 'base', t),
         extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
         rarity: def?.rarity,
         jokerArt: jokerArt(item.id),
@@ -197,10 +200,7 @@ export function Shop({ g }: { g: UseGame }) {
       <aside className="shop-rail">
         <button
           className="btn play next-blind"
-          onClick={() => {
-            audio.play('buttonPress');
-            leavePanel(g.leaveShop);
-          }}
+          onClick={() => leavePanel(g.leaveShop)}
         >
           {t('shop.next')}
         </button>
@@ -249,6 +249,9 @@ export function Shop({ g }: { g: UseGame }) {
                     disabled={!affordable(item)}
                     onSelect={() => toggleOffer(offerKey)}
                     onAction={() => g.buy(i)}
+                    artClassName={item.kind === 'joker'
+                      ? `emoji-tile-image-only edition-${edition}`
+                      : undefined}
                     {...((item.kind === 'consumable' || item.kind === 'punctuation') &&
                     !isBlindOnlyConsumable(item.id) &&
                     !fableTargetsTiles(item.id)
@@ -269,10 +272,7 @@ export function Shop({ g }: { g: UseGame }) {
                       m.jokerArt
                         ? (
                             <img
-                              className={[
-                                'shop-joker-art',
-                                `edition-${edition}`,
-                              ].join(' ')}
+                              className="shop-joker-art"
                               src={m.jokerArt}
                               alt=""
                             />

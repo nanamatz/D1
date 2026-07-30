@@ -77,7 +77,7 @@ describe('registry — GDD §10.3', () => {
 describe('font cards — #1 / #4 / #7 / #11', () => {
   it('moves only the font axis and consumes the card', () => {
     const { run, blind } = setup('barnSwallow');
-    const target: Tile = { ...blind.hand[0]!, material: 'glass', edition: 'foil' };
+    const target: Tile = { ...blind.hand[0]!, material: 'glass', edition: 'gray' };
     const field = [target];
     const seeded = {
       ...run,
@@ -88,7 +88,7 @@ describe('font cards — #1 / #4 / #7 / #11', () => {
     const after = result.run.bag.find((tile) => tile.id === target.id)!;
     expect(after.font).toBe('black');
     expect(after.material).toBe('glass');
-    expect(after.edition).toBe('foil');
+    expect(after.edition).toBe('gray');
     expect(after.letter).toBe(target.letter);
     expect(result.run.consumables).not.toContain('barnSwallow');
   });
@@ -104,7 +104,7 @@ describe('#2 Boar — the unique-ownership exception', () => {
   it('keeps one Emoji Tile plus a copy and destroys the rest', () => {
     const { run, blind } = setup('boar', {
       jokers: [
-        { defId: 'stargazer', edition: 'negative', state: { factor: 1.3 } },
+        { defId: 'stargazer', edition: 'white', state: { factor: 1.3 } },
         { defId: 'hypocrite', edition: 'base', state: {} },
         { defId: 'dadaist', edition: 'base', state: {} },
       ],
@@ -112,8 +112,8 @@ describe('#2 Boar — the unique-ownership exception', () => {
     const result = useGambler('boar', run, blind, [], [], firstRng);
     expect(result.run.jokers).toHaveLength(2);
     expect(result.run.jokers.every((joker) => joker.defId === 'stargazer')).toBe(true);
-    expect(result.run.jokers[0]?.edition).toBe('negative');
-    // A Negative original yields a Base copy; the grown state copies across.
+    expect(result.run.jokers[0]?.edition).toBe('white');
+    // A White original yields a Base copy; the grown state copies across.
     expect(result.run.jokers[1]?.edition).toBe('base');
     expect(result.run.jokers[1]?.state.factor).toBe(1.3);
   });

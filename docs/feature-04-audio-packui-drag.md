@@ -2,7 +2,7 @@
 
 Playtest batch, 2026-07-27. **Docs already updated** (screens-spec §0 tooltip rule, §2.6.1 pack opening, build-notes sequencing rule; UI_DESIGN §4.10 drag physics; AGENTS+CLAUDE guardrails) — implement against them.
 
-**Read this first:** five of these items (A, and parts of B/C) are *the same problem* — **feature-01 B (audio) has not shipped**. Individually they read as "add a sound here"; together they say the game is silent. Do feature-01 B as the vehicle and treat section A below as its expanded SFX manifest, rather than bolting sounds on one call site at a time.
+**Status note (updated 2026-07-30):** feature-01 B and the four synthesized BGM contexts have shipped. Section A remains the coverage manifest; button activation is now delegated at the UI root and screen/sub-screen/phase destinations share the transition cue instead of adding generic press sounds call site by call site.
 
 Order: **A (audio, unblocks the most complaints) → B (tooltip + reaction coverage, cheap and broad) → C (pack opening) → D (drag physics, largest single job)**.
 
@@ -46,7 +46,7 @@ Now a standing rule (screens-spec §0, mirrored into AGENTS/CLAUDE) — this tas
 - **Audit every surface** that renders an object and wire the shared tooltip + cursor reaction: play screen, shelves, shop slots, **opened-pack contents (the known gap)**, Collection grids, pouch modal, run-info.
 - Letter-tile tooltips spell out **material, font, and edition separately** (three axes, GDD §2.4) with each effect's text.
 - **Fix the Light Italic tooltip (playtest 13):** the cause is almost certainly the tooltip inheriting the tile's font style. Tooltip text uses the standard UI face at full contrast regardless of subject. Verify against every font and every dark material, in both the monochrome start state and full colour.
-- Acceptance: no surface renders an interactive object without hover feedback and a tooltip; a Light Italic Lead-plate Foil tile reads clearly in one hover.
+- Acceptance: no surface renders an interactive object without hover feedback and a tooltip; a Light Italic Lead-plate Gray tile reads clearly in one hover.
 
 ## C. Pack opening overlay (playtest 8) — screens-spec §2.6.1
 

@@ -37,6 +37,12 @@ Settle sequence (priority): tile pop per-scoring-beat · **chip count-up tick wi
 Interaction: tile pickup/place/select · drag snap · discard swoosh · submit thock · button press · screen-transition whoosh (sync with the right-to-left slide).
 Shop: purchase cha-ching · sell · reroll · pack open · voucher redeem · **cat meow on shop enter** (mascot beat).
 
+**Coverage rule (added 2026-07-30).** One delegated listener covers every
+enabled native/ARIA button (pointer and keyboard activation), so new UI controls
+inherit the press sound automatically. Shell screens, Collection/Options
+sub-screens, and in-run phase panels fire the transition whoosh on destination
+change. Both remain silent until the `SOUND` palette unlock enables the SFX bus.
+
 ### B-2. Phase 2 BGM
 Menu / play / Stationery Shop / **Deadline (boss) variation** — boss blind swaps to a tenser variant of the play track (Balatro-style). Loop-safe files.
 

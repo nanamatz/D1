@@ -111,6 +111,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     }
   }, [run.gold]);
 
+  // Screen/panel navigation always has an audible transition, then the destination
+  // may layer its own semantic sting (shop mascot, clear, or game over).
+  const previousPhase = useRef(phase);
+  useEffect(() => {
+    if (previousPhase.current !== phase) audio.play('transitionWhoosh');
+    previousPhase.current = phase;
+  }, [phase]);
+
   // Mascot beat on shop enter + blind-resolution stings (B-1 settle-set:
   // clearFanfare / failSting), keyed purely on phase transitions.
   useEffect(() => {

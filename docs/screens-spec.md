@@ -137,7 +137,7 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 
 | Category | Contents | Notes |
 |---|---|---|
-| **Words** | discovered words as tile-styled entries, `N/total`, filter by suit & length, paginated | our unique category; data already tracked |
+| **Words** | profile challenge strip (longest word · toughest base-letter-Chip build · register coverage · discoveries), then tabs: **Words** = tile-styled entries with search/suit filter and pagination; **Register Scores** = the live Standard/Formal/Slang/Vulgar multipliers and risk/reward copy | records derive from the existing word collection; “toughest” = highest base letter-Chip sum, with length as the tie-break; no new save key |
 | Jokers | all Emoji Tiles, rarity-ordered, paginated **5×3 grid (15 per page)** | image-only `124×165px` runtime frame, exactly matching the in-run card size (84×112 pixel masters scale with nearest-neighbour rendering); its detail modal removes the redundant outer padding and never shows an internal scrollbar; no wrapper or rarity border; shared idle float and cursor tilt/sheen; tooltip shows name, rarity, and full effect |
 
 All 116 Emoji Tile images use the shared `jokerArt` resolver on every rendered
@@ -171,7 +171,7 @@ Tabs — trimmed for a web game:
 - **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle · **"don't show tips" toggle** (kills the first-encounter tutorial popups, feature-01 A-2).
 - **Graphics**: **CRT effect on/off · CRT intensity slider · CRT bloom on/off** (the pixel-art/CRT finish is now core identity — the reference build exposed exactly these; see UI_DESIGN §"Surface language") · pixel-perfect/integer-scale toggle.
 - **Video**: fullscreen toggle · UI scale slider · **"reveal all presentation" toggle** (chromatic-unlock override, feature-02 C-4 — unlocks every color/audio now; the first real play of a word still fires its celebration + Palette record once). The fullscreen toggle mirrors the browser's actual `fullscreenElement`; when ESC exits fullscreen externally, the toggle immediately synchronizes to Off. (No monitor select/VSync — web.)
-- **Audio**: master / music / SFX sliders with value badges — these drive the **live Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). **Phase 1 ships SFX** (chiptune, fully synthesized — no asset files; the facade is the swap seam, see `assets/AUDIO_LICENSES.md`); the context unlocks on the first user gesture (autoplay policy) and settle-sequence SFX scale with the game-speed setting. **BGM is Phase 2 (still pending)** — the `music` slider is wired to the mixer bus but has no track to attenuate yet.
+- **Audio**: master / music / SFX sliders with value badges drive the **live Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). SFX and four loop-safe synthesized BGM contexts (menu/play/shop/Deadline) are shipped; no remote audio assets are required. The context unlocks on the first user gesture (autoplay policy), settle-sequence SFX scale with game speed, and the `MUSIC`/`SOUND` Palette entries gate their respective buses.
 
 ### 2.12 Statistics
 Left column: Best word score · Highest ante/blind reached · Most played pattern · Most gold held · Wins/streak.
@@ -180,7 +180,7 @@ Sub-screen **Word/Joker stats** (reference: per-card bar chart): per-joker "blin
 
 ## 3. Build notes
 
-- All new screens are pure UI over existing engine state; no new game rules are introduced by this spec. Anything not in the engine yet (profiles, challenges, audio) ships as stubs behind the flagged placeholders.
+- All new screens are pure UI over existing engine state; no new game rules are introduced by this spec. Anything not in the engine yet (profiles, formal challenges) ships as stubs behind the flagged placeholders.
 - **Persistent in-run table (changed 2026-07-28).** `ScreenTransition` is retired from blind↔shop↔pack↔blind-select changes and remains available only for shell navigation such as menu↔run.
   - **Panel direction:** phase panels enter from below and leave toward the bottom. Use Ease-Out Back for entry and a short ease-in for exit.
   - **Performance:** CSS transforms on the panel wrapper; never per-frame React re-renders. Action resolution waits for the exit beat so an unmount cannot cut it off.

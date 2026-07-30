@@ -110,7 +110,7 @@ classification, and three independent modifier axes.
 - **Intrinsic classification — Vowel / Consonant**
 - **Modifier axis A — Material:** the enhancement slot
 - **Modifier axis B — Font:** the seal-effect slot
-- **Modifier axis C — Edition:** base / Foil / Holographic / Polychrome
+- **Modifier axis C — Edition:** base / Gray / Violet / Rainbow
 
 > **Decision — uppercase only (changed 2026-07-30).** Letter case is not a tile
 > axis. Every letter is stored and displayed as A–Z; all lowercase-tile planning
@@ -222,7 +222,7 @@ Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightIta
 
 ### 2.4 Enhancement Stacking & Replacement
 
-A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Bold / Foil tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
+A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Bold / Gray tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
 
 **Same-axis replacement is destructive (rule).** Applying an enhancement to a tile that already carries one **on the same axis** overwrites it; the previous one is discarded, not stored or refunded. Re-applying Polished to a Ceramic tile leaves a Polished tile, not both. Cross-axis application never conflicts (a Fable that sets material leaves font and edition untouched). **The overwrite applies immediately, with no confirmation prompt** (revised 2026-07-28: the earlier warn-before-overwrite modal was removed — players learn the rule by doing, and the modal only added friction).
 
@@ -246,6 +246,13 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 > **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in *how easy they are to make* (Standard common → Vulgar rare). Treating this asymmetry as a resource rather than a defect, harder-to-make suits get higher base multipliers, embedding a risk-reward curve into the suit structure itself. On top of that, "suit-pushing emoji tiles" (layer 2) recreate Balatro-style build bias.
 
 > **Balance warning — keep the multiplier curve gentler than the rarity.** If Slang/Vulgar appear *too* rarely while only their multipliers are high, players will treat them as "suits I can't make anyway" and ignore them. Keep the multiplier gentler than the data rarity to hold the line at "hard but worth attempting." Vulgar has extremely few words, so design it not as a main build but as a "jackpot that explodes when conditions align," balanced by an adversarial relationship with censor-type bosses.
+
+**Collection surfacing (added 2026-07-30).** Collection → Words has a separate
+Register Scores tab that exposes these four live `balance.ts` multipliers and
+their risk/reward roles. The Words tab also shows profile-derived challenge
+records: longest discovered word, highest base letter-Chip sum ("toughest
+build," length breaks ties), register coverage, and total discoveries. These
+records are derived from `wj.collection`; they add no save keys or game rules.
 
 ### 3.2 Register Data Acquisition Pipeline
 
@@ -353,6 +360,13 @@ Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional 
 ### 5.4 Constellation Mapping (level-up consumables)
 
 Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises that pattern's base by its `+Chips, +Mult` per-level values (the §5.2 right column) — the old multiplier-only vs flat-only split is gone.
+
+**Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
+engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
+♌, Chant ♒, Simple ♈, Descriptive ♉, Transitive ♊, Ditransitive ♋, Compound
+♍, Object Complement ♏, Interrogative ♐, Negative ♑, Complex ♓. Pattern
+status, preview, Run Info, settlement, run summary, and Constellation tooltips
+all show this same mark, so the mapping is readable before effect prose.
 
 | Constellation | Levels up | Per level (placeholder) |
 |---|---|---|
@@ -619,7 +633,7 @@ while owned, duplicate offers and acquisitions are allowed, but slot limits
 still apply.
 **Exception — only an explicit effect may break this.** Boar (§10.3) is the
 designed exception: it creates a copy of one random owned Emoji Tile and destroys
-the others. Its copy may duplicate the selected definition; Negative itself is not
+the others. Its copy may duplicate the selected definition; White itself is not
 copied. Until the Gambler registry is implemented, no runtime path bypasses the
 shared ownership gate.
 
@@ -665,7 +679,7 @@ progress remain hidden until the profile unlock is earned.
 | Story Book → Novel | Fable shop weight ×2 → ×4 | Buy 50 Fable cards from shops |
 | Bible → The Law | Constellation shop weight ×2 → ×4 | Buy 50 Constellation cards from shops |
 | Fashion Book → Fashion Magazine | Reroll −$2 → an additional −$2 | 100 shop rerolls |
-| Flyer → Wanted Poster | Foil/Holo/Poly rate ×2 → ×4 on letter tiles and Emoji Tiles | Own 5 editioned Emoji Tiles at once |
+| Flyer → Wanted Poster | Gray/Violet/Rainbow rate ×2 → ×4 on letter tiles and Emoji Tiles | Own 5 editioned Emoji Tiles at once |
 | Newspaper → Papyrus | Shop cards/packs 25% off → 50% off | Use 10 vouchers in one run |
 | Memo → Notebook | +1 phase per round → another +1 | Play 5,000 tiles |
 | Poetry Book → Sheet Music | +1 discard per round → another +1 | Discard 5,000 tiles |
@@ -731,7 +745,7 @@ accessible label.
 | 12 | Belling the Cat | Turn 1 selected tile into Brass |
 | 13 | The Wolf and the Crane | Turn 1 selected tile into Wood |
 | 14 | Heungbu and Nolbu | Create 1 random Emoji Tile if an Emoji Tile slot is available |
-| 15 | The Cowherd and the Weaver Girl | 1/4 chance to give one random uneditioned Emoji Tile Foil, Holographic, or Polychrome; unusable if none is eligible |
+| 15 | The Cowherd and the Weaver Girl | 1/4 chance to give one random uneditioned Emoji Tile Gray, Violet, or Rainbow; unusable if none is eligible |
 | 16 | The Rabbit and the Turtle | Raise 2 selected tile letters by one alphabet rank; Z wraps to A |
 | 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Emoji Tiles, capped at +$50; its tooltip shows the live capped payout from the currently owned Emoji Tiles |
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
@@ -800,7 +814,7 @@ receive new ids and enter the run's pouch permanently.
 | # | Gambler card | Effect |
 |---:|---|---|
 | 1 | Barn Swallow / 제비 | Change one selected letter tile's font to **Black**. Preserve material and edition. |
-| 2 | Boar / 멧돼지 | Seed-select one owned Emoji Tile, keep the original, create one complete copy, then destroy every other owned Emoji Tile. Foil/Holographic/Polychrome copy; a Negative original produces a Base copy. This is the explicit exception to unique Emoji Tile ownership. |
+| 2 | Boar / 멧돼지 | Seed-select one owned Emoji Tile, keep the original, create one complete copy, then destroy every other owned Emoji Tile. Gray/Violet/Rainbow copy; a White original produces a Base copy. This is the explicit exception to unique Emoji Tile ownership. |
 | 3 | Bridge / 다리 | Permanently change every tile in the active tile field to one seeded random shared letter A–Z, then permanently reduce hand size by 1. Preserve all modifier axes; for Stone, change the hidden letter. Hand-size floor: **5** (`BALANCE.gambler.bridgeHandSizeFloor`, first-pass tuning value — the card is unusable at the floor). |
 | 4 | Bush Warbler / 휘파람새 | Change one selected letter tile's font to **Light Italic**. Preserve material and edition. |
 | 5 | Butterflies / 나비 | Permanently destroy 5 seeded-random tiles in the active tile field and gain $20. Unusable with fewer than 5 candidates. |
@@ -1005,17 +1019,19 @@ Common/Uncommon additions may expand the table after their review.
 ### 11.8 Editions (implemented)
 
 Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each carry a dedicated edition field. `TileEdition` and `JokerEdition` are separate type unions; neither replaces a letter tile's material/font, and Emoji Tiles still never receive letter material/font modifiers.
+Changed 2026-07-30: the canonical edition vocabulary and serialized ids are now Gray, Violet, Rainbow, and White everywhere.
 
-| Edition | Effect (placeholder) |
-|---|---|
-| Base | no edition |
-| Foil | +50 Chips |
-| Holographic | +10 Mult |
-| Polychrome | ×1.5 Mult |
-| Negative | occupies no joker slot → **+1 owned-joker slot** |
+| Edition | Effect | Emoji Tile display |
+|---|---|---|
+| Base | no edition | original background |
+| Gray | +50 Chips | ash-gray background |
+| Violet | +10 Mult | ash-violet background |
+| Rainbow | ×1.5 Mult | animated rainbow background |
+| White | occupies no joker slot → **+1 owned-joker slot** | white background |
 
-- **Slot cap.** The owned-emoji-tile cap is `RunState.jokerSlots` (base 5). Kung Fu Manual raises it by 1; each Negative Emoji Tile raises effective capacity by 1.
-- **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Foil/Holo/Poly odds.
+- **Slot cap.** The owned-emoji-tile cap is `RunState.jokerSlots` (base 5). Kung Fu Manual raises it by 1; each White Emoji Tile raises effective capacity by 1.
+- **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Gray/Violet/Rainbow odds.
+- **Emoji Tile presentation (changed 2026-07-30):** background colour is the canonical edition indicator. The rejected alternative (`@`, `#`, `*`, `~`) is not rendered; it would violate the image-only Emoji Tile rule. Tooltips always name the edition and spell out its effect.
 
 ---
 
@@ -1048,10 +1064,7 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each
   Cup wait on the selected Emoji Tile roster (§10.3). The engine registry, Ink
   Pack roll, Comic-Book Fable mixing, Deer Constellation mixing, target
   interaction, and persistence remain unimplemented.
-- **Tutorial system.** Layered (first-run guided intro → first-encounter one-time popups → Help/Glossary screen), hosted by **우땅 (WooDak)** per §1's mascot roles; Piyak keeps shop greetings. Work order: `docs/feature-01-tutorial-sound-fontseals.md`.
-- **Audio.** Chiptune/8-bit, SFX-first (settle-sequence sounds with pitch-escalating chip ticks before any BGM); real mixer replaces the Settings stub. Same work order.
 - **Stakes = matcher-leniency knobs (reframed, playtest-01).** True grammar checking stays out (§4.1 level 3); instead, future stake levels modulate knobs that already exist — modifier absorption on/off, hole forgiveness, unison strictness.
-- **Word collection (도감) UI.** First-play-per-word tracking ships now (localStorage; gibberish excluded); the collection screen itself is a later milestone (playtest-01 P2-2).
 - **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch classification → baked table; one-word = one-suit/POS resolution rule (§3.2, §4.2).
 - **Finisher boss count.** 2 concepts exist; decide whether the pool needs more for endless-mode variety.
 - **Emoji tiles keyed to letter hands (§5.5).** Letter Hands ship without emoji-tile support; a family of emoji tiles that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open emoji-tile material.
@@ -1091,7 +1104,12 @@ The game begins **desaturated and silent**; playing specific words permanently u
 
 **"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces and the blind badge) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The main `.frame` itself is transparent as of 2026-07-30; the former per-stage backdrops are retired. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable.
 
-**Audio gating (C-6).** MUSIC/SOUND gate the real mixer's buses — **default off** (the game starts silent) until the word is played or the override is on. Requires feature-01 B (audio) shipped; color groups are independent.
+**Audio gating (C-6).** MUSIC/SOUND gate the shipped real mixer's buses — **default off** (the game starts silent) until the word is played or the override is on. Color groups are independent.
+
+All enabled native buttons and ARIA button controls play the shared button-press
+SFX through one delegated UI listener. Shell navigation, Collection/Options
+sub-screens, and in-run phase panels play the transition whoosh on destination
+change. Both paths still pass through the SOUND-gated SFX bus.
 
 **Escape hatch (C-4).** Settings → Video: a **"reveal all presentation"** override (unlock everything now) — buried but present, for accessibility/streamers/impatient players. The gimmick stays the **celebratory path**: even with the override on, the first real play of a word still fires the celebration + collection record once.
 

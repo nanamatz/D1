@@ -8,7 +8,7 @@ import {
   consumableTooltipBody,
   consumableTooltipExtra,
   grownValue,
-  jokerDescKey,
+  jokerTooltipBody,
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
@@ -156,7 +156,7 @@ export function JokerShelf({
               >
                 <Tooltip
                   title={name}
-                  body={t(jokerDescKey(def.id))}
+                  body={jokerTooltipBody(def.id, owned.edition ?? 'base', t)}
                   extra={grownValue(def, owned, t)}
                   rarity={def.rarity}
                   down

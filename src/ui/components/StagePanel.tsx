@@ -13,6 +13,7 @@ import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { audio } from '../audio';
+import { patternSymbol } from '../patternSymbols';
 import { TileView } from './Tile';
 import { useEntering } from './ScreenTransition';
 import { useStageDrag, type StageDragCallbacks } from '../drag';
@@ -231,6 +232,11 @@ export function StagePanel({
           {preview.pos && <span className="sp-pos">{preview.pos}</span>}
           {preview.sentenceBonus > 0 && (
             <span className="sp-forecast">
+              {preview.completes && (
+                <span className="pattern-symbol" aria-hidden>
+                  {patternSymbol(preview.completes.pattern)}
+                </span>
+              )}
               {preview.completes ? t(`pattern.${preview.completes.pattern}`) : t('stage.bonus')}
               <span className="sp-bonus">+{Math.round(preview.sentenceBonus)}</span>
             </span>

@@ -156,7 +156,7 @@ type TFull = (key: string, params?: Record<string, string | number>) => string;
  * enhancement axes SEPARATELY, each with its own effect text: material, font, and
  * edition — only the ones a tile actually carries. One builder so every surface
  * (hand, tray, pouch, shop, opened packs, collection) shows the identical read, and
- * a Light-Italic Lead-plate Foil tile is legible in a single hover. Newline-joined;
+ * a Light-Italic Lead-plate Gray tile is legible in a single hover. Newline-joined;
  * `.tt-body` is `white-space: pre-line`, so each axis lands on its own line.
  */
 export function tileTooltip(tile: Tile, t: TFull): { title: string; body: string } {

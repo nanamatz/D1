@@ -5,11 +5,12 @@
  */
 import { describe, it, expect } from 'vitest';
 import { tileTooltip } from '../src/ui/game';
+import { jokerTooltipBody } from '../src/ui/descriptions';
 import type { Tile } from '../src/engine/types';
 
 // key-echo translator: returns the key itself (params ignored) so assertions can
 // check precisely which locale keys the tooltip composes.
-const t = (key: string) => key;
+const t = (key: string | string[]) => Array.isArray(key) ? key[0]! : key;
 
 const tile = (over: Partial<Tile> = {}): Tile => ({
   id: 't', letter: 'C', material: 'ceramic', font: 'medium', edition: 'base', ...over,
@@ -24,9 +25,9 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
     expect(body).not.toContain('edition.');
   });
 
-  it('acceptance: a Light-Italic Lead-plate Foil tile reads all three in one hover', () => {
+  it('acceptance: a Light-Italic Lead-plate Gray tile reads all three in one hover', () => {
     const { title, body } = tileTooltip(
-      tile({ material: 'leadPlate', font: 'lightItalic', edition: 'foil' }),
+      tile({ material: 'leadPlate', font: 'lightItalic', edition: 'gray' }),
       t,
     );
     expect(title).toBe('C');
@@ -39,11 +40,18 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
     expect(body).toContain('font.lightItalic');
     expect(body).toContain('fonteffectdesc.goldPlay');
     // edition axis: name + effect
-    expect(body).toContain('edition.foil');
-    expect(body).toContain('editiondesc.foil');
+    expect(body).toContain('edition.gray');
+    expect(body).toContain('editiondesc.gray');
   });
 
   it('a Stone tile (no glyph) titles by its material name', () => {
     expect(tileTooltip(tile({ material: 'stone', letter: null }), t).title).toBe('material.stone');
+  });
+
+  it('an Emoji Tile tooltip names its edition and effect', () => {
+    const body = jokerTooltipBody('stargazer', 'white', t);
+    expect(body).toContain('jokerdesc.stargazer');
+    expect(body).toContain('edition.white');
+    expect(body).toContain('editiondesc.white');
   });
 });

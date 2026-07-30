@@ -400,7 +400,7 @@ export function useFable(
       .filter(({ joker }) => (joker.edition ?? 'base') === 'base');
     if (rng.next() < 0.25) {
       const target = eligible[rng.int(eligible.length)]!;
-      const editions: readonly JokerEdition[] = ['foil', 'holographic', 'polychrome'];
+      const editions: readonly JokerEdition[] = ['gray', 'violet', 'rainbow'];
       const jokers = nextRun.jokers.slice();
       jokers[target.index] = { ...target.joker, edition: editions[rng.int(editions.length)]! };
       nextRun = { ...nextRun, jokers };

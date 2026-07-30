@@ -168,7 +168,9 @@ Nine materials (GDD §2.2) cannot be separated by face tint alone at 64px — es
 
 **③ Ink contrast is per-material.** `--tile-ink` gets a light variant for dark faces (Lead plate, Stone, and any future dark material); the letter and chip value switch to it automatically. Never let a dark face keep the default dark ink — this is an accessibility floor, not a preference.
 
-Font and edition sit *on top of* material, so a tile can show all three at once: read font from the glyph's weight/style, edition from its overlay (foil sheen / holo shimmer / polychrome cycle), material from face + glyph. Keep the three visual languages non-overlapping.
+Font and edition sit *on top of* material, so a tile can show all three at once: read font from the glyph's weight/style, edition from its overlay (gray sheen / violet shimmer / rainbow cycle), material from face + glyph. Keep the three visual languages non-overlapping.
+
+**Emoji Tile editions (changed 2026-07-30)** use background colour, not persistent special-character badges: Gray = ash gray, Violet = ash violet, Rainbow = animated rainbow, White = white. The treatment overlays the existing Pac-Man-style pixel-art master without adding labels, borders, or scenery. Every Emoji Tile tooltip names the edition and its effect.
 
 ## 4. Juice spec (motion)
 
@@ -210,6 +212,19 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
 Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle disable wobble/shake, shared card idle, cursor tilt, and sheen (including joker/consumable idle) and reduce settle to fades · keyboard focus visible on tiles, cards, and buttons (gold outline) · all color-coded info (suits, chips/mult) doubled with a text label — never color alone.
 
 **Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (`src/ui/assets/tomato.png`, from `docs/T_Tomato.png`; tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. The tomato is greyscaled until **RED** unlocks (it belongs to the red group). *D-6 retired 2026-07-30:* the main `.frame` is transparent; Draft/Revision/Deadline no longer paint per-stage backdrops. *D-7 (changed 2026-07-29):* Collection uses a centred framed modal. Its root menu is an asymmetric two-column stack whose category-button thickness is proportional to a normalized estimate of that category's visible row footprint; both columns use the same total weight so equal weights stay physically equal. Fable, Constellation, and Gambler Cards form one inset three-button family block and use distinct purple/cyan/green buttons. All three families use high-detail, path-only, 32-color SVG illustrations normalized without cropping to the Fable standard: a `500×700` 5:7 output canvas with a `250×350` logical pixel grid. They share the same framed SVG component in the 5-column, 10-per-page Collection galleries and in shop, pack, and held-card surfaces. Fable retains its original English title plates, while localized names remain available in tooltips and accessible labels. Twelve Gambler effects are now designed and two remain pending, but their engine registry, Ink Pack acquisition, and runtime tooltips remain intentionally unimplemented. Detail modals have no shared fixed minimum height and instead size to their actual grid rows. The orange Back bar spans the modal footer; mobile collapses the menu to one column. Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
+
+*D-7a Words reference + records (added 2026-07-30):* Collection → Words begins
+with a compact four-card challenge strip: longest discovered word, highest base
+letter-Chip sum ("toughest build," length breaks ties), register coverage, and
+total discoveries. Beneath it, **Words** and **Register Scores** tabs separate
+the searchable word gallery from the live ×1/×1.5/×2/×3 register reference.
+
+*D-7b pattern pictograms (added 2026-07-30):* the zodiac mark already engraved
+at the top of each Constellation card becomes the shared pictogram for its
+mapped sentence pattern. The same bordered mark precedes the pattern name in
+the sentence tray, staged forecast, Run Info, sentence-bonus stamp,
+Constellation-use sequence, and run summary; Constellation tooltips repeat the
+mark and mapped pattern.
 
 *D-8 mascot equip (changed 2026-07-29):* skin selection lives in **Collection →
 Mascots**, not Settings. Unlocked portrait cards are keyboard/cursor selectable;

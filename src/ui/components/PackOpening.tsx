@@ -8,7 +8,7 @@ import {
   consumableTooltipBody,
   consumableTooltipExtra,
   grownValue,
-  jokerDescKey,
+  jokerTooltipBody,
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
@@ -365,7 +365,7 @@ export function PackOpening({
   };
 
   // Hover tooltip for every revealed option (feature-04 B — opened-pack contents were
-  // the known gap). Tiles get the shared 3-axis tooltip too, so a Foil Lead-plate tile
+  // the known gap). Tiles get the shared 3-axis tooltip too, so a Gray Lead-plate tile
   // in a pack reads the same as one in hand.
   const optionTip = (o: PackOption): Tip | undefined => {
     if (o.kind === 'tile') return tileTooltip(o.tile, t);
@@ -373,7 +373,7 @@ export function PackOpening({
       const def = JOKER_REGISTRY.get(o.id);
       return {
         title: optionName(o),
-        body: t(jokerDescKey(o.id)),
+        body: jokerTooltipBody(o.id, o.edition, t),
         extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
         rarity: def?.rarity,
       };
@@ -566,7 +566,6 @@ export function PackOpening({
                   onSelect={needsConfirmation ? () => {
                     if (picking) return;
                     setSelectedFable(selected ? null : key);
-                    audio.play('buttonPress');
                   } : undefined}
                   onAction={() => {
                     if (fable && fableId && !blindOnlyFable) {

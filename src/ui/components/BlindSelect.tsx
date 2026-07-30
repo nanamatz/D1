@@ -3,7 +3,6 @@ import { kindForIndex } from '../../engine/progression';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
 import { bossDescKey } from '../descriptions';
-import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { bossRerollLimit, bossRerollPrice } from '../../engine/vouchers';
@@ -72,7 +71,6 @@ export function BlindSelect({ g }: { g: UseGame }) {
                   className="btn play bs-select"
                   onClick={() => {
                     if (leaving) return;
-                    audio.play('buttonPress');
                     setLeaving(true);
                     window.setTimeout(g.selectBlind, 360);
                   }}

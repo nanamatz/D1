@@ -5,10 +5,17 @@
  */
 import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';
-import type { ConsumableId, OwnedJoker, RunState, TileFont } from '../engine/types';
+import type {
+  ConsumableId,
+  JokerEdition,
+  OwnedJoker,
+  RunState,
+  TileFont,
+} from '../engine/types';
 import { FABLE_REGISTRY, isFableId, jokerSellGoldValue } from '../engine/fables';
 import { CONSTELLATION_PATTERN } from '../engine/constellations';
 import type { TParams } from './i18n';
+import { patternSymbol } from './patternSymbols';
 
 type Translate = (key: string | string[], params?: TParams) => string;
 
@@ -17,11 +24,25 @@ export const voucherDescKey = (id: string): string => `voucherdesc.${id}`;
 export const consumableDescKey = (id: string): string => `consumabledesc.${id}`;
 export const bossDescKey = (id: string): string => `bossdesc.${id}`;
 
+/** Emoji Tile effect plus its edition effect, shared by every rendered surface. */
+export function jokerTooltipBody(
+  id: string,
+  edition: JokerEdition,
+  t: Translate,
+): string {
+  const body = t(jokerDescKey(id));
+  return edition === 'base'
+    ? body
+    : `${body}\n${t(`edition.${edition}`)} — ${t(`editiondesc.${edition}`)}`;
+}
+
 /** Canonical consumable body used by shop, shelf, opened packs, and Collection. */
 export function consumableTooltipBody(id: ConsumableId, t: Translate): string {
   const pattern = CONSTELLATION_PATTERN[id];
   return pattern
-    ? t('pack.constellationLevels', { pattern: t(`pattern.${pattern}`) })
+    ? t('pack.constellationLevels', {
+        pattern: `${patternSymbol(pattern)} ${t(`pattern.${pattern}`)}`,
+      })
     : t(consumableDescKey(id));
 }
 

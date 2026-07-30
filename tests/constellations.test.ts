@@ -11,6 +11,7 @@ import {
 } from '../src/engine/constellations';
 import { CONSTELLATION_ART } from '../src/ui/constellationArt';
 import { CardArt } from '../src/ui/components/CardArt';
+import { PATTERN_SYMBOLS } from '../src/ui/patternSymbols';
 
 describe('Constellation cards', () => {
   it('maps all 12 zodiac cards one-to-one to the 12 sentence patterns', () => {
@@ -20,6 +21,13 @@ describe('Constellation cards', () => {
       expect(CONSTELLATION_PATTERN[def.id]).toBe(def.pattern);
       expect(PATTERN_CONSTELLATION[def.pattern]).toBe(def.id);
     }
+  });
+
+  it('reuses every card zodiac mark as one unique sentence-pattern symbol', () => {
+    expect(Object.keys(PATTERN_SYMBOLS)).toHaveLength(12);
+    expect(new Set(Object.values(PATTERN_SYMBOLS)).size).toBe(12);
+    expect(PATTERN_SYMBOLS.outcry).toBe('♎');
+    expect(PATTERN_SYMBOLS.complex).toBe('♓');
   });
 
   it('maps every card to a Fable-sized path-only SVG asset', () => {

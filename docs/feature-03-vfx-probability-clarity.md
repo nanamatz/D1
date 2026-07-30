@@ -19,7 +19,7 @@ Reported: enhancement effects appear to do nothing in play. **Diagnose before fi
 3. **Acquisition path blocked** — effects work, but enhanced tiles never reach the player (pack rolls not attaching material/font/edition, or attaching only `base`).
 4. **Display-only** — effects fire but nothing shows them, so they read as broken.
 
-**Deliverable:** a short written diagnosis per axis (material / font / edition) naming which of 1–4 applies, then the fix. Add a test per axis that asserts an enhanced tile actually changes the scored total (e.g. a Ceramic tile adds its chips; a `chipPlay` font adds its chips; a Foil edition adds its chips) — this class of bug must not be able to return silently.
+**Deliverable:** a short written diagnosis per axis (material / font / edition) naming which of 1–4 applies, then the fix. Add a test per axis that asserts an enhanced tile actually changes the scored total (e.g. a Ceramic tile adds its chips; a `chipPlay` font adds its chips; a Gray edition adds its chips) — this class of bug must not be able to return silently.
 
 **Note:** GDD §2.4 now states the three axes stack simultaneously. Verify a tile carrying material + font + edition pays all three.
 

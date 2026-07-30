@@ -202,4 +202,4 @@ a short tooltip key if we add one).
 - **B3** quit button, **B4** shop/blind options menu — already satisfied; no work.
 - Shop-card parallax — the hook is built reusable, but wiring shop cards is left for
   later (YAGNI here).
-- No holographic/foil edition shine beyond the optional subtle sheen in A6.
+- No Violet/Gray edition shine beyond the optional subtle sheen in A6.

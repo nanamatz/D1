@@ -11,6 +11,7 @@ import { useI18n } from '../i18n';
 import { Tooltip } from './Tooltip';
 import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
+import { patternSymbol } from '../patternSymbols';
 
 interface Props {
   run: RunState;
@@ -75,6 +76,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 return (
                   <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
                     <div className="ri-pat">
+                      <span className="pattern-symbol" aria-hidden>{patternSymbol(p)}</span>
                       <span className="pn">{t(`pattern.${p}`)}</span>
                       <span className="pl">Lv {run.patternLevels[p]}</span>
                       <span className="pcm">

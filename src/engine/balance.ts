@@ -173,7 +173,7 @@ export const BALANCE = {
     bossRerollPrice: 10,
     editionChance: 0.08,
   },
-  edition: { foilChips: 50, holographicMult: 10, polychromeFactor: 1.5 },
+  edition: { grayChips: 50, violetMult: 10, rainbowFactor: 1.5 },
 
   // ----- Packs (GDD §9.3) — 4 types × 3 sizes -----
   pack: {

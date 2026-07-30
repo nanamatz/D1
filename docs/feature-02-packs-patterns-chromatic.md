@@ -90,7 +90,7 @@ Not a screen-wide filter: **token-group swapping.** Palette tokens are grouped b
 - WooDak's tip pool gains occasional unlock hints; the first-run tutorial includes one WooDak line framing the desaturated world ("이 세계는 아직 다 쓰이지 않았어~우땅") so it never reads as a rendering bug.
 
 ### C-6. Ordering dependency
-Requires feature-01 B (audio) shipped first — MUSIC/SOUND gate the real mixer's buses (default off until unlocked or overridden). Color groups can ship independently of audio.
+Feature-01 B is shipped: MUSIC/SOUND gate the real mixer's buses (default off until unlocked or overridden). Color groups remain independent of audio.
 
 ### C-7. Docs sync
 GDD: new subsection (suggest §13 or under §1 as "Chromatic Unlocks") + §12 item closed/updated; screens-spec: Palette collection category + Settings override toggle; UI_DESIGN: token-group table annotated with unlock groups; CLAUDE.md: add "presentation unlock flags live beside collection/tutorial flags; unlock registry is data-driven — never hard-code a word check in components."
@@ -109,4 +109,4 @@ GDD: new subsection (suggest §13 or under §1 as "Chromatic Unlocks") + §12 it
 ---
 
 ## Suggested order
-**A** (engine restructure — unblocks Run Info + forecast correctness) → **B** (packs — small, shop-complete) → **D** (batch) → **C** (chromatic — largest new system, needs feature-01 B first for the audio half; color half can start anytime).
+**Historical build order:** **A** (engine restructure) → **B** (packs) → **D** (batch) → **C** (chromatic). Feature-01 B now supplies C's shipped audio half.

@@ -20,7 +20,7 @@ export type TileMaterial =
 export type TileFont = 'medium' | 'lightItalic' | 'bold' | 'inline' | 'black';
 
 /** Balatro-style visual/scoring edition, separate from material and font. */
-export type TileEdition = 'base' | 'foil' | 'holographic' | 'polychrome';
+export type TileEdition = 'base' | 'gray' | 'violet' | 'rainbow';
 
 /** Font seal effects (GDD §2.3) — the edition layer's Balatro-seal port. */
 export type FontEffectId = 'goldPlay' | 'chipPlay' | 'retriggerPlay' | 'discardGain';
@@ -311,7 +311,7 @@ export interface ShopState {
 // ---------- Jokers (GDD §11) ----------
 
 export type JokerRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
-export type JokerEdition = 'base' | 'foil' | 'holographic' | 'polychrome' | 'negative';
+export type JokerEdition = 'base' | 'gray' | 'violet' | 'rainbow' | 'white';
 
 export interface OwnedJoker {
   defId: string;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Lexicon } from '../../engine/lexicon';
 import { collectionSize } from '../collection';
 import { loadLifetime } from '../lifetime';
@@ -30,6 +30,12 @@ interface Props {
 export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
   const { t } = useI18n();
   const [view, setView] = useState<View>('root');
+  const previousView = useRef<View>(view);
+
+  useEffect(() => {
+    if (previousView.current !== view) audio.play('transitionWhoosh');
+    previousView.current = view;
+  }, [view]);
 
   if (view === 'root') {
     return (

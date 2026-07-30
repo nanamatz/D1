@@ -57,6 +57,36 @@ export function App() {
     audio.playMusic(track);
   }, [track]);
 
+  // One delegated listener covers every native and ARIA button, including future
+  // screens. audio.play() still respects the SOUND palette unlock and SFX slider.
+  useEffect(() => {
+    const enabledControl = (target: EventTarget | null): Element | null => {
+      if (!(target instanceof Element)) return null;
+      const control = target.closest(
+        'button, [role="button"], input[type="checkbox"], input[type="radio"]',
+      );
+      return control?.matches(':disabled, [aria-disabled="true"]') ? null : control;
+    };
+    const click = (event: MouseEvent) => {
+      if (enabledControl(event.target)) audio.play('buttonPress');
+    };
+    const key = (event: KeyboardEvent) => {
+      if (
+        !event.repeat &&
+        (event.key === 'Enter' || event.key === ' ') &&
+        enabledControl(event.target)?.matches('[role="button"]:not(button)')
+      ) {
+        audio.play('buttonPress');
+      }
+    };
+    document.addEventListener('click', click, true);
+    document.addEventListener('keydown', key, true);
+    return () => {
+      document.removeEventListener('click', click, true);
+      document.removeEventListener('keydown', key, true);
+    };
+  }, []);
+
   const view = () => {
     switch (screen) {
       case 'newrun':

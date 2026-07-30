@@ -3,6 +3,7 @@ import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART } from '../bossArt';
 import type { PatternId } from '../../engine/types';
 import { useI18n } from '../i18n';
+import { patternSymbol } from '../patternSymbols';
 import type { UseGame } from '../useGame';
 import { WooDakMascot } from './WooDakMascot';
 import { UNLOCKS } from '../unlocks';
@@ -117,7 +118,12 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
         <div className="go-stat wide">
           <span className="k">{t('gameover.topPattern')}</span>
           <span className="v">
-            {top ? `${t(`pattern.${top.id}`)} (${top.n})` : '—'}
+            {top ? (
+              <>
+                <span className="pattern-symbol" aria-hidden>{patternSymbol(top.id)}</span>
+                {t(`pattern.${top.id}`)} ({top.n})
+              </>
+            ) : '—'}
           </span>
         </div>
         <div className="go-stat">

@@ -157,7 +157,7 @@ describe('Fable registry', () => {
       [],
       zeroRng,
     );
-    expect(editioned.run.jokers[0]?.edition).toBe('foil');
+    expect(editioned.run.jokers[0]?.edition).toBe('gray');
   });
 
   it('creates only an unowned Charm by default; Copy Editor reopens duplicates', () => {

@@ -3,6 +3,7 @@ import type { Lexicon } from '../../engine/lexicon';
 import { posLabel, suitClass } from '../game';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
+import { patternSymbol } from '../patternSymbols';
 import { TileView } from './Tile';
 
 function PatternChip({ judgment }: { judgment: SentenceJudgment }) {
@@ -19,7 +20,10 @@ function PatternChip({ judgment }: { judgment: SentenceJudgment }) {
       : t('tray.noPattern');
   return (
     <div className={['pattern-chip', m ? 'hit' : ''].filter(Boolean).join(' ')}>
-      <div className="p">{p}</div>
+      <div className="p">
+        {m && <span className="pattern-symbol" aria-hidden>{patternSymbol(m.pattern)}</span>}
+        {p}
+      </div>
       <div className="s">{s}</div>
     </div>
   );

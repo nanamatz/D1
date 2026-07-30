@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ALL_JOKERS } from '../../engine/jokers';
 import { VOUCHER_REGISTRY, ALL_VOUCHER_IDS, BASE_VOUCHER_IDS } from '../../engine/vouchers';
 import { BOSS_REGISTRY, CORE_BOSS_IDS } from '../../engine/bosses';
@@ -7,7 +7,13 @@ import { blindTarget } from '../../engine/economy';
 import { BALANCE } from '../../engine/balance';
 import type { Lexicon } from '../../engine/lexicon';
 import type { Suit, TileFont, TileMaterial, Tile, VoucherId } from '../../engine/types';
-import { loadCollection, collectionSize, markCollectionSeen, unseenCount } from '../collection';
+import {
+  collectionHighlights,
+  loadCollection,
+  collectionSize,
+  markCollectionSeen,
+  unseenCount,
+} from '../collection';
 import { UNLOCKS, loadPlayed, playedCount, activeUnlocks } from '../unlocks';
 import type { UnlockDef, UnlockEffect } from '../unlocks';
 import { mascotCollectionRows } from '../mascots';
@@ -37,8 +43,8 @@ import { GAMBLER_IDS } from '../../engine/gamblers';
 import { CardArt, type CardFamily } from './CardArt';
 import { TiltCard } from './TiltCard';
 import { useSettings } from '../settings';
-import { audio } from '../audio';
 import { jokerArt } from '../jokerArt';
+import { audio } from '../audio';
 
 type Category =
   | 'words'
@@ -133,6 +139,12 @@ interface Props {
 export function Collection({ lexicon, onBack }: Props) {
   const { t } = useI18n();
   const [cat, setCat] = useState<Category | null>(null);
+  const previousCategory = useRef<Category | null>(cat);
+
+  useEffect(() => {
+    if (previousCategory.current !== cat) audio.play('transitionWhoosh');
+    previousCategory.current = cat;
+  }, [cat]);
 
   // Viewing the collection clears the "new discoveries" badge (spec §0).
   useEffect(() => {
@@ -263,16 +275,18 @@ function usePaged<T>(items: readonly T[], perPage: number) {
 // ---------- Words ----------
 function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const { t } = useI18n();
+  const [tab, setTab] = useState<'words' | 'registers'>('words');
   const [suit, setSuit] = useState<Suit | 'all'>('all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
+  const collected = useMemo(() => loadCollection(), []);
+  const records = useMemo(() => collectionHighlights(collected), [collected]);
 
   // Item 1: list the WHOLE dictionary, not just what's been played — words never
   // played render `locked` (dimmed) so the collection reads as something to fill in.
   // Built once per lexicon (~30k entries): plain `<` beats localeCompare at this
   // size, and the collection is read once rather than per word.
   const all = useMemo(() => {
-    const collected = loadCollection();
     return [...lexicon.words()]
       .sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))
       .map((w) => ({
@@ -280,7 +294,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
         suit: lexicon.lookup(w)?.suit ?? 'standard',
         found: collected[w] !== undefined,
       }));
-  }, [lexicon]);
+  }, [lexicon, collected]);
 
   // Search + suit filter. With the whole dictionary listed, search is the only
   // practical way to reach a specific word (~500 pages otherwise).
@@ -294,53 +308,122 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const clamped = Math.min(page, pages - 1);
   const slice = words.slice(clamped * PAGE, clamped * PAGE + PAGE);
   const suits: (Suit | 'all')[] = ['all', 'standard', 'formal', 'slang', 'vulgar'];
+  const registerSuits: Suit[] = ['standard', 'formal', 'slang', 'vulgar'];
+  const foundBySuit = useMemo(() => Object.fromEntries(
+    registerSuits.map((id) => [id, all.filter((word) => word.found && word.suit === id).length]),
+  ) as Record<Suit, number>, [all]);
+  const suitsFound = registerSuits.filter((id) => foundBySuit[id] > 0).length;
+  const recordWord = (record: { word: string } | null) =>
+    record ? record.word.toUpperCase() : t('collection.record.none');
 
   return (
     <>
-      <div className="coll-search">
-        <input
-          type="search"
-          className="coll-search-input"
-          placeholder={t('collection.search')}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(0);
-          }}
-        />
-        <span className="coll-search-count">{t('collection.found', { n: words.length })}</span>
+      <div className="word-records" aria-label={t('collection.records.title')}>
+        <div className="word-record">
+          <span>{t('collection.record.longest')}</span>
+          <strong>{recordWord(records.longest)}</strong>
+          <small>
+            {records.longest
+              ? t('collection.record.letters', { n: records.longest.value })
+              : t('collection.record.start')}
+          </small>
+        </div>
+        <div className="word-record">
+          <span>{t('collection.record.toughest')}</span>
+          <strong>{recordWord(records.toughest)}</strong>
+          <small>
+            {records.toughest
+              ? t('collection.record.baseChips', { n: records.toughest.value })
+              : t('collection.record.start')}
+          </small>
+        </div>
+        <div className="word-record">
+          <span>{t('collection.record.registers')}</span>
+          <strong>{suitsFound}/4</strong>
+          <small>{t('collection.record.registerGoal')}</small>
+        </div>
+        <div className="word-record">
+          <span>{t('collection.record.discovered')}</span>
+          <strong>{Object.keys(collected).length}</strong>
+          <small>{t('collection.record.keepGoing')}</small>
+        </div>
       </div>
-      <div className="coll-filters">
-        {suits.map((s) => (
+      <p className="word-record-rule">{t('collection.record.toughestRule')}</p>
+      <div className="word-tabs" role="tablist">
+        {(['words', 'registers'] as const).map((id) => (
           <button
-            key={s}
-            className={['filter-pill', s !== 'all' ? s : '', s === suit ? 'on' : ''].filter(Boolean).join(' ')}
-            onClick={() => {
-              setSuit(s);
-              setPage(0);
-            }}
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            className={['word-tab', tab === id ? 'on' : ''].filter(Boolean).join(' ')}
+            onClick={() => setTab(id)}
           >
-            {s === 'all' ? t('collection.all') : t(`suit.${s}`)}
+            {t(`collection.words.tab.${id}`)}
           </button>
         ))}
       </div>
-      {words.length === 0 ? (
-        <p className="coll-empty">
-          {query.trim() ? t('collection.noMatch', { q: query.trim() }) : t('collection.noWords')}
-        </p>
-      ) : (
-        <div className="word-grid">
-          {slice.map((e) => (
-            <span
-              key={e.w}
-              className={['word-chip', e.suit, !e.found && 'locked'].filter(Boolean).join(' ')}
-            >
-              {e.w}
-            </span>
-          ))}
+      {tab === 'registers' ? (
+        <div className="register-score-view">
+          <p>{t('collection.register.intro')}</p>
+          <div className="register-score-grid">
+            {registerSuits.map((id) => (
+              <div key={id} className={['register-score-card', id].join(' ')}>
+                <span className="register-name">{t(`suit.${id}`)}</span>
+                <strong>×{BALANCE.suitMult[id]}</strong>
+                <span>{t(`collection.register.body.${id}`)}</span>
+                <small>{t('collection.register.found', { n: foundBySuit[id] })}</small>
+              </div>
+            ))}
+          </div>
         </div>
+      ) : (
+        <>
+          <div className="coll-search">
+            <input
+              type="search"
+              className="coll-search-input"
+              placeholder={t('collection.search')}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(0);
+              }}
+            />
+            <span className="coll-search-count">{t('collection.found', { n: words.length })}</span>
+          </div>
+          <div className="coll-filters">
+            {suits.map((s) => (
+              <button
+                key={s}
+                className={['filter-pill', s !== 'all' ? s : '', s === suit ? 'on' : ''].filter(Boolean).join(' ')}
+                onClick={() => {
+                  setSuit(s);
+                  setPage(0);
+                }}
+              >
+                {s === 'all' ? t('collection.all') : t(`suit.${s}`)}
+              </button>
+            ))}
+          </div>
+          {words.length === 0 ? (
+            <p className="coll-empty">
+              {query.trim() ? t('collection.noMatch', { q: query.trim() }) : t('collection.noWords')}
+            </p>
+          ) : (
+            <div className="word-grid">
+              {slice.map((e) => (
+                <span
+                  key={e.w}
+                  className={['word-chip', e.suit, !e.found && 'locked'].filter(Boolean).join(' ')}
+                >
+                  {e.w}
+                </span>
+              ))}
+            </div>
+          )}
+          <Pager page={clamped} pages={pages} onPage={setPage} />
+        </>
       )}
-      <Pager page={clamped} pages={pages} onPage={setPage} />
     </>
   );
 }
@@ -632,7 +715,6 @@ function MascotsView() {
         const selected = reveal && r.id === selectedMascot;
         const choose = () => {
           if (!reveal) return;
-          audio.play('buttonPress');
           set('mascot', r.id);
         };
         const card = (

@@ -687,7 +687,7 @@ In `docs/GDD.md`:
 - Line 574: `## 11. Jokers (Emoji Tiles)` → `## 11. Emoji Tiles`
 - Line 670: `### 11.8 Joker Editions (planned — not yet in the engine)` → `### 11.8 Emoji Tile Editions (planned — not yet in the engine)`
 - In §11's opening paragraph, replace the display noun: "Jokers are represented as emoji tiles, acquired by…" → "**Emoji tiles** are acquired by shop purchase/draw (§9). Unlike Balatro's jokers, which mostly play in the single layer of "score calculation," emoji tiles play across **3 layers**…"
-- In §11 prose (the shelf-order paragraph, §11.1 table intro, §11.7 notes, §11.8 body), replace the display noun "joker(s)" with "emoji tile(s)". **Keep** every reference to the engine types verbatim: `JokerDef`, `JokerEdition`, `OwnedJoker`, `RunState.jokerSlots`, `BALANCE.jokerSlots`, `src/engine/jokers/`, and the §11.8 "Negative … +1 owned-joker slot" wording where it names the field.
+- In §11 prose (the shelf-order paragraph, §11.1 table intro, §11.7 notes, §11.8 body), replace the display noun "joker(s)" with "emoji tile(s)". **Keep** every reference to the engine types verbatim: `JokerDef`, `JokerEdition`, `OwnedJoker`, `RunState.jokerSlots`, `BALANCE.jokerSlots`, `src/engine/jokers/`, and the §11.8 "White … +1 owned-joker slot" wording where it names the field.
 - Add one line under the §11 heading recording the decision:
 
 ```markdown

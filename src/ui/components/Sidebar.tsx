@@ -9,6 +9,7 @@ import { BONUS_LAND_MS, type SentenceBonusDisplay } from '../useGame';
 import { useI18n } from '../i18n';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
+import { patternSymbol } from '../patternSymbols';
 
 interface Props {
   run: RunState;
@@ -316,6 +317,11 @@ export function Sidebar({
           </span>
           {bonusActive && (
             <span className="bonus-stamp">
+              {sentenceBonus!.pattern && (
+                <span className="pattern-symbol" aria-hidden>
+                  {patternSymbol(sentenceBonus!.pattern)}
+                </span>
+              )}
               {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
               {sentenceBonus!.level != null && (
                 <span className="bonus-lvl">{t('sidebar.patternLevel', { n: sentenceBonus!.level })}</span>

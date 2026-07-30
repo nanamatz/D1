@@ -215,8 +215,8 @@ export function useGambler(
       const edition = kept.edition ?? 'base';
       const copy = {
         ...kept,
-        // Foil/Holographic/Polychrome copy; a Negative original yields a Base copy.
-        edition: edition === 'negative' ? ('base' as const) : edition,
+        // Gray/Violet/Rainbow copy; a White original yields a Base copy.
+        edition: edition === 'white' ? ('base' as const) : edition,
         state: { ...kept.state },
       };
       nextRun = { ...nextRun, jokers: [kept, copy] };

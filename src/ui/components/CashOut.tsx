@@ -73,7 +73,7 @@ export function CashOut({ g }: { g: UseGame }) {
 
         <button
           className="btn cash big"
-          onClick={() => { audio.play('buttonPress'); g.confirmCashout(); }}
+          onClick={g.confirmCashout}
           autoFocus
         >
           {t('cashout.confirm')}

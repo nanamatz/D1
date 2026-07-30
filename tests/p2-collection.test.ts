@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { collectionSize, loadCollection, recordWord } from '../src/ui/collection';
+import {
+  collectionHighlights,
+  collectionSize,
+  loadCollection,
+  recordWord,
+} from '../src/ui/collection';
 
 class MemStorage {
   private store = new Map<string, string>();
@@ -56,5 +61,11 @@ describe('P2-2 — word collection tracking', () => {
   it('ignores blank input', () => {
     expect(recordWord('   ')).toBe(false);
     expect(collectionSize()).toBe(0);
+  });
+
+  it('derives longest and highest-base-Chip challenge records', () => {
+    const highlights = collectionHighlights({ alphabet: 1, quiz: 2, pizza: 3 });
+    expect(highlights.longest).toEqual({ word: 'alphabet', value: 8 });
+    expect(highlights.toughest).toEqual({ word: 'pizza', value: 75 });
   });
 });
