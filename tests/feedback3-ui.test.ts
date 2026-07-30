@@ -7,8 +7,11 @@ describe('feedback 3 UI regressions', () => {
   it('commits transformed Fable candidates before removing their preview', () => {
     const game = source('src/ui/useGame.ts');
     const pack = source('src/ui/components/PackOpening.tsx');
-    expect(game).toContain('const bagTiles = new Map(run.bag.map');
-    expect(game).toContain('candidateTiles,');
+    // The candidate row is re-derived from the COMMITTED run (by tile id, so a
+    // destroyed candidate drops out and a patched one shows its new face) before
+    // the preview is cleared. `syncCandidates` is that step, shared by every path.
+    expect(game).toContain('function syncCandidates(');
+    expect(game).toContain('candidateTiles: syncCandidates(');
     expect(pack).toMatch(/resolvePick\(\);\s*\/\/ The committed candidate state[\s\S]*setFableFx\(null\)/);
   });
 

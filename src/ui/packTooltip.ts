@@ -24,10 +24,8 @@ export interface PackTooltipContent {
   grade: PackSize;
 }
 
-export type PackTooltipType = PackType;
-
 export function packTooltip(
-  type: PackTooltipType,
+  type: PackType,
   size: PackSize,
   t: (key: string, params?: TParams) => string,
 ): PackTooltipContent {

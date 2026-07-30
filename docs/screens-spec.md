@@ -140,7 +140,7 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 | **Words** | discovered words as tile-styled entries, `N/total`, filter by suit & length, paginated | our unique category; data already tracked |
 | Jokers | all Emoji Tiles, rarity-ordered, paginated **5×3 grid (15 per page)** | image-only `124×165px` runtime frame, exactly matching the in-run card size (84×112 pixel masters scale with nearest-neighbour rendering); its detail modal removes the redundant outer padding and never shows an internal scrollbar; no wrapper or rarity border; shared idle float and cursor tilt/sheen; tooltip shows name, rarity, and full effect |
 
-All 30 Emoji Tile images use the shared `jokerArt` resolver on every rendered
+All 116 Emoji Tile images use the shared `jokerArt` resolver on every rendered
 surface.
 | Materials | 9 tile faces (base + 8 enhanced, including Wood) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
 | Fonts | 5 (Futura variants) | rendered as the same letter in each style; shows each font's seal effect from `balance.ts` `fontEffects` (GDD §2.3); maps the reference's "editions" screen |

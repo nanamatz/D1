@@ -4,7 +4,7 @@ import { patternChipsMult } from '../../engine/patterns';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { patternLevelBus, type PatternLevelEvent } from '../patternLevel';
-import { ConstellationCardArt } from './ConstellationCardArt';
+import { CardArt } from './CardArt';
 
 const PATTERN_LEVEL_DURATION_MS = 3500;
 
@@ -48,7 +48,7 @@ export function PatternLevelUp() {
     <div className="pattern-levelup" key={evt.id} aria-live="polite">
       <div className="plu-stage">
         <div className="plu-source">
-          <ConstellationCardArt id={evt.cardId} className="plu-source-art" />
+          <CardArt family="constellation" id={evt.cardId} className="plu-source-art" />
           <span className="plu-dissolve" aria-hidden />
         </div>
         <div className="plu-score">

@@ -117,14 +117,6 @@ export type PatternId =
   | 'negative'
   | 'complex';
 
-export interface PatternDef {
-  id: PatternId;
-  /** 1 (weakest) .. 8 (strongest) — "highest single pattern only" rule (GDD §5.1 rule 2) */
-  rank: number;
-  /** current level, raised by Constellation cards (GDD §5.4). Starts at 1. */
-  level: number;
-}
-
 export interface PatternMatch {
   pattern: PatternId;
   rank: number;
@@ -157,6 +149,14 @@ export interface WordScoringContext {
   submission: WordSubmission;
   chips: number;
   mult: number;
+  /** Gold awarded by per-word Emoji Tile hooks. Applied by the caller after scoring. */
+  goldDelta?: number;
+  /** Lexicon POS tags for the current valid word; empty for gibberish. */
+  posTags?: readonly POS[];
+  /** Virtual vowels supplied by rule-changing Emoji Tiles. */
+  scoringVowels?: Set<Letter>;
+  /** Extra full-tile triggers requested by Emoji Tiles, keyed by tile id. */
+  tileRetriggers?: Map<string, string[]>;
   /** Virtual scoring suits supplied by rule-changing Emoji Tiles. The canonical
    * submission suit stays untouched for bosses, Unison, and sentence history. */
   scoringSuits?: Set<Suit>;
@@ -176,7 +176,7 @@ export type ScoreEvent =
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; scoreDelta?: number; tileId?: string }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; scoreDelta?: number; goldDelta?: number; tileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
 
@@ -323,15 +323,11 @@ export interface OwnedJoker {
 
 // ---------- Consumables & vouchers (GDD §9–10) ----------
 
-export type ConsumableFamily = 'fable' | 'constellation' | 'ink' | 'gambler';
-
+/** Every id the engine can resolve. `src/engine/consumables.ts` keeps the runtime
+ *  list in step; a retired id is deleted from BOTH and filtered out of old saves. */
 export type ConsumableId =
   // stationery
-  | 'kiln' | 'fountainPen' | 'shift' | 'eraser' | 'correctionTape'
-  | 'carvingKnife' | 'photocopier' | 'piggyBank' | 'magnifier'
-  // retired punctuation ids retained for compatibility with old serialized/dev data
-  | 'ellipsis' | 'exclamation' | 'doubleExclamation' | 'period'
-  | 'colon' | 'semicolon' | 'dash' | 'comma'
+  | 'magnifier'
   // constellation cards (1:1 with the 12 sentence patterns)
   | 'libra' | 'leo' | 'aquarius' | 'aries' | 'taurus' | 'gemini'
   | 'cancer' | 'virgo' | 'scorpio' | 'sagittarius' | 'capricorn' | 'pisces'

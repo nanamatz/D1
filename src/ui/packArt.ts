@@ -41,7 +41,7 @@ import inkBasic2 from './assets/packs/T_BasicInkPack2.svg';
 import inkClassic1 from './assets/packs/T_ClassicInkPack1.svg';
 import inkPremium1 from './assets/packs/T_PremiumInkPack1.svg';
 
-export const PACK_ART: Partial<Record<PackType, Record<PackSize, readonly string[]>>> = {
+export const PACK_ART: Record<PackType, Record<PackSize, readonly string[]>> = {
   tile: {
     normal: [tileBasic1, tileBasic2, tileBasic3, tileBasic4],
     jumbo: [tileClassic1, tileClassic2],
@@ -74,13 +74,9 @@ export const PACK_ART: Partial<Record<PackType, Record<PackSize, readonly string
   },
 };
 
-export function hasPackArt(type: PackType): boolean {
-  return PACK_ART[type] !== undefined;
-}
-
 export function packArt(type: PackType, size: PackSize, variant: number): string | null {
-  const variants = PACK_ART[type]?.[size];
-  if (!variants || variants.length === 0) return null;
+  const variants = PACK_ART[type][size];
+  if (variants.length === 0) return null;
   return variants[((variant % variants.length) + variants.length) % variants.length]!;
 }
 
@@ -98,11 +94,11 @@ export function packGalleryPages(): PackGalleryEntry[][] {
     family: PackGalleryEntry['family'];
     art: Record<PackSize, readonly string[]>;
   }> = [
-    { family: 'tile', art: PACK_ART.tile! },
-    { family: 'joker', art: PACK_ART.joker! },
-    { family: 'consumable', art: PACK_ART.consumable! },
-    { family: 'pattern', art: PACK_ART.pattern! },
-    { family: 'ink', art: PACK_ART.ink! },
+    { family: 'tile', art: PACK_ART.tile },
+    { family: 'joker', art: PACK_ART.joker },
+    { family: 'consumable', art: PACK_ART.consumable },
+    { family: 'pattern', art: PACK_ART.pattern },
+    { family: 'ink', art: PACK_ART.ink },
   ];
 
   return pages.map(({ family, art }) =>

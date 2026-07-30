@@ -1,12 +1,13 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
-import { PACK_ART, packArt, hasPackArt, packGalleryPages } from '../src/ui/packArt';
+import { PACK_ART, packArt, packGalleryPages } from '../src/ui/packArt';
 import { BALANCE } from '../src/engine/balance';
 import type { PackSize, PackType } from '../src/engine/types';
 
 const SIZES: PackSize[] = ['normal', 'jumbo', 'mega'];
-const ART_TYPES: PackType[] = ['tile', 'joker', 'consumable', 'pattern'];
+// Every pack family now ships art, so this IS the PackType list.
+const ART_TYPES: PackType[] = ['tile', 'joker', 'consumable', 'pattern', 'ink'];
 
 describe('packArt — (type, size) → art mapping', () => {
   it('the art count per (type, size) matches BALANCE.pack.artVariants', () => {
@@ -37,8 +38,10 @@ describe('packArt — (type, size) → art mapping', () => {
     }
   });
 
-  it('the art-backed types report hasPackArt true', () => {
-    for (const type of ART_TYPES) expect(hasPackArt(type)).toBe(true);
+  it('every pack family has at least one art variant per size', () => {
+    for (const type of ART_TYPES) {
+      for (const size of SIZES) expect(PACK_ART[type][size].length).toBeGreaterThan(0);
+    }
   });
 
   it('ships all 32 runtime artworks as Star-Pack-sized path-only SVGs', () => {

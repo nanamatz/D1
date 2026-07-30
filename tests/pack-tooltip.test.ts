@@ -3,11 +3,11 @@ import { isValidElement } from 'react';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { BALANCE } from '../src/engine/balance';
-import { packTooltip, type PackTooltipType } from '../src/ui/packTooltip';
+import { packTooltip } from '../src/ui/packTooltip';
 import { richText } from '../src/ui/richtext';
-import type { PackSize } from '../src/engine/types';
+import type { PackSize, PackType } from '../src/engine/types';
 
-const TYPES: readonly PackTooltipType[] = ['pattern', 'joker', 'consumable', 'tile', 'ink'];
+const TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'ink'];
 const SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 const LOCALES = { en: en as Record<string, string>, ko: ko as Record<string, string> };
 

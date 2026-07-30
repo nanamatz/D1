@@ -40,6 +40,7 @@ import type {
   WordScoringContext,
   WordSubmission,
 } from './types';
+import { VOWELS } from './types';
 
 export interface StartBlindOptions {
   kind?: BlindKind;
@@ -129,6 +130,10 @@ function takeFromHand(hand: readonly Tile[], ids: readonly string[]): Tile[] {
 
 export interface DiscardResult {
   blind: BlindState;
+  /** cloned, state-updated owned Emoji Tiles */
+  jokers: RunState['jokers'];
+  /** gold awarded by discard hooks */
+  goldDelta: number;
   /** consumables gained from discardGain-font tiles (already slot-checked);
    *  the CALLER appends them to run.consumables (same division as goldDelta) */
   gained: ConsumableId[];
@@ -170,15 +175,28 @@ export function discardTiles(
   const need = Math.max(0, effectiveHandSize(run, blind) - keptHand.length);
   const { drawn, bag } = drawTiles(blind.bag, need);
   const { gained, slotsBlocked } = rollDiscardGains(run, removed, rng);
+  const scoringRun: RunState = {
+    ...run,
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
+  const nextBlind: BlindState = {
+    ...blind,
+    hand: [...keptHand, ...drawn],
+    bag,
+    discardedThisBlind: [...blind.discardedThisBlind, ...removed],
+    discardsLeft: blind.discardsLeft - 1,
+  };
+  const goldBefore = scoringRun.gold;
+  defaultJokerBus.emit(
+    'discardUsed',
+    { run: scoringRun, blind: nextBlind, tiles: removed, gained: gained.length, slotsBlocked },
+    scoringRun.jokers,
+  );
 
   return {
-    blind: {
-      ...blind,
-      hand: [...keptHand, ...drawn],
-      bag,
-      discardedThisBlind: [...blind.discardedThisBlind, ...removed],
-      discardsLeft: blind.discardsLeft - 1,
-    },
+    blind: nextBlind,
+    jokers: scoringRun.jokers,
+    goldDelta: scoringRun.gold - goldBefore,
     gained,
     slotsBlocked,
   };
@@ -223,7 +241,9 @@ function scoreSubmission(
   destroyedTileIds: string[];
   grownWoodTileIds: string[];
 } {
-  const b = baseScore(tiles, lexicon);
+  const prepared = { run, blind, tiles, spellingTiles: tiles.slice() };
+  defaultJokerBus.emit('wordPrepare', prepared, run.jokers);
+  const b = baseScore(prepared.spellingTiles, lexicon);
   const submission: WordSubmission = {
     tiles: tiles.slice(),
     text: b.text,
@@ -238,6 +258,10 @@ function scoreSubmission(
     submission,
     chips: 0,
     mult: b.mult,
+    goldDelta: 0,
+    posTags: b.isGibberish ? [] : (lexicon.lookup(b.text)?.pos ?? []),
+    scoringVowels: new Set(VOWELS),
+    tileRetriggers: new Map(),
     scoringSuits: new Set(b.suit ? [b.suit] : []),
     scoreBonus: 0,
   };
@@ -248,15 +272,28 @@ function scoreSubmission(
   for (const t of tiles) {
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     const fontEffect = fontEffectOf(t.font);
-    const triggers =
-      1 + (fontEffect === 'retriggerPlay' ? BALANCE.fontEffectValues.retriggerPlay.extraTriggers : 0);
+    const fontRetriggers =
+      fontEffect === 'retriggerPlay' ? BALANCE.fontEffectValues.retriggerPlay.extraTriggers : 0;
+    const baseTriggers = 1 + fontRetriggers;
 
-    for (let trig = 0; trig < triggers; trig++) {
+    for (
+      let trig = 0;
+      trig < baseTriggers + (ctx.tileRetriggers?.get(t.id)?.length ?? 0);
+      trig++
+    ) {
       // The retrigger beat announces the repeat BEFORE the repeated tile beat.
-      if (trig > 0) {
+      if (trig > 0 && trig <= fontRetriggers) {
         events.push({
           kind: 'font', font: t.font, effect: 'retriggerPlay', tileId: t.id,
           chipsDelta: 0, multDelta: 0, goldDelta: 0,
+        });
+      } else if (trig > fontRetriggers) {
+        events.push({
+          kind: 'joker',
+          jokerId: ctx.tileRetriggers?.get(t.id)?.[trig - fontRetriggers - 1]!,
+          tileId: t.id,
+          chipsDelta: 0,
+          multDelta: 0,
         });
       }
 
@@ -277,7 +314,31 @@ function scoreSubmission(
       const mat = applyTileMaterial(ctx, t, rng);
       if (mat) {
         materialGold += mat.side.goldDelta ?? 0;
-        if (mat.side.destroy && !destroyedTileIds.includes(t.id)) destroyedTileIds.push(t.id);
+        if (mat.side.destroy && !destroyedTileIds.includes(t.id)) {
+          const destroying = {
+            run,
+            blind,
+            ctx,
+            tile: t,
+            cause: 'glass' as const,
+            cancelled: false,
+          };
+          for (const joker of run.jokers) {
+            const beforeChips = ctx.chips;
+            const beforeMult = ctx.mult;
+            defaultJokerBus.emit('tileDestroying', destroying, [joker]);
+            if (ctx.chips !== beforeChips || ctx.mult !== beforeMult) {
+              events.push({
+                kind: 'joker',
+                jokerId: joker.defId,
+                tileId: t.id,
+                chipsDelta: ctx.chips - beforeChips,
+                multDelta: ctx.mult - beforeMult,
+              });
+            }
+          }
+          if (!destroying.cancelled) destroyedTileIds.push(t.id);
+        }
         if (mat.side.growWood && !grownWoodTileIds.includes(t.id)) grownWoodTileIds.push(t.id);
         if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
           events.push({
@@ -288,6 +349,35 @@ function scoreSubmission(
             multDelta: mat.multDelta,
           });
         }
+        defaultJokerBus.emit('materialScored', {
+          run,
+          blind,
+          ctx,
+          tile: t,
+          triggerIndex: trig,
+          chipsDelta: mat.chipsDelta,
+          multDelta: mat.multDelta,
+          goldDelta: mat.side.goldDelta ?? 0,
+          grewWood: mat.side.growWood ?? false,
+        }, run.jokers);
+        if ((mat.side.goldDelta ?? 0) > 0) {
+          for (const joker of run.jokers) {
+            const beforeChips = ctx.chips;
+            const beforeMult = ctx.mult;
+            defaultJokerBus.emit('tileGold', {
+              run, blind, ctx, tile: t, gold: mat.side.goldDelta!,
+            }, [joker]);
+            if (ctx.chips !== beforeChips || ctx.mult !== beforeMult) {
+              events.push({
+                kind: 'joker',
+                jokerId: joker.defId,
+                tileId: t.id,
+                chipsDelta: ctx.chips - beforeChips,
+                multDelta: ctx.mult - beforeMult,
+              });
+            }
+          }
+        }
       }
 
       // Font play effects fire per trigger, tile-level — so they fire on
@@ -295,6 +385,20 @@ function scoreSubmission(
       if (fontEffect === 'goldPlay') {
         const gold = BALANCE.fontEffectValues.goldPlay.gold;
         materialGold += gold;
+        for (const joker of run.jokers) {
+          const beforeChips = ctx.chips;
+          const beforeMult = ctx.mult;
+          defaultJokerBus.emit('tileGold', { run, blind, ctx, tile: t, gold }, [joker]);
+          if (ctx.chips !== beforeChips || ctx.mult !== beforeMult) {
+            events.push({
+              kind: 'joker',
+              jokerId: joker.defId,
+              tileId: t.id,
+              chipsDelta: ctx.chips - beforeChips,
+              multDelta: ctx.mult - beforeMult,
+            });
+          }
+        }
         events.push({
           kind: 'font', font: t.font, effect: 'goldPlay', tileId: t.id,
           chipsDelta: 0, multDelta: 0, goldDelta: gold,
@@ -314,11 +418,20 @@ function scoreSubmission(
       for (const joker of run.jokers) {
         const beforeChips = ctx.chips;
         const beforeMult = ctx.mult;
+        const beforeGold = ctx.goldDelta ?? 0;
         defaultJokerBus.emit('tileScoring', { run, blind, ctx, tile: t }, [joker]);
         const chipsDelta = ctx.chips - beforeChips;
         const multDelta = ctx.mult - beforeMult;
-        if (chipsDelta !== 0 || multDelta !== 0) {
-          events.push({ kind: 'joker', jokerId: joker.defId, chipsDelta, multDelta, tileId: t.id });
+        const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
+        if (chipsDelta !== 0 || multDelta !== 0 || goldDelta !== 0) {
+          events.push({
+            kind: 'joker',
+            jokerId: joker.defId,
+            chipsDelta,
+            multDelta,
+            tileId: t.id,
+            ...(goldDelta !== 0 ? { goldDelta } : {}),
+          });
         }
       }
     }
@@ -361,17 +474,20 @@ function scoreSubmission(
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
     const beforeScore = ctx.scoreBonus ?? 0;
+    const beforeGold = ctx.goldDelta ?? 0;
     defaultJokerBus.emit('wordScoring', { run, blind, ctx }, [joker]);
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     const scoreDelta = (ctx.scoreBonus ?? 0) - beforeScore;
-    if (chipsDelta !== 0 || multDelta !== 0 || scoreDelta !== 0) {
+    const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
+    if (chipsDelta !== 0 || multDelta !== 0 || scoreDelta !== 0 || goldDelta !== 0) {
       events.push({
         kind: 'joker',
         jokerId: joker.defId,
         chipsDelta,
         multDelta,
         ...(scoreDelta !== 0 ? { scoreDelta } : {}),
+        ...(goldDelta !== 0 ? { goldDelta } : {}),
       });
     }
     const jokerEdition = joker.edition ?? 'base';
@@ -402,6 +518,24 @@ function scoreSubmission(
   const debuffed =
     (boss?.debuffs?.(submission, { run, blind, lexicon }, blind.sequence) ?? false) ||
     (boss?.voids?.(submission, blind.sequence) ?? false);
+  for (const joker of run.jokers) {
+    const beforeChips = ctx.chips;
+    const beforeMult = ctx.mult;
+    const beforeGold = ctx.goldDelta ?? 0;
+    defaultJokerBus.emit('wordChecked', { run, blind, ctx, debuffed }, [joker]);
+    const chipsDelta = ctx.chips - beforeChips;
+    const multDelta = ctx.mult - beforeMult;
+    const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
+    if (chipsDelta !== 0 || multDelta !== 0 || goldDelta !== 0) {
+      events.push({
+        kind: 'joker',
+        jokerId: joker.defId,
+        chipsDelta,
+        multDelta,
+        ...(goldDelta !== 0 ? { goldDelta } : {}),
+      });
+    }
+  }
   if (debuffed) {
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
@@ -458,7 +592,7 @@ function scoreSubmission(
   return {
     submission,
     events: orderedEvents,
-    materialGold,
+    materialGold: materialGold + (ctx.goldDelta ?? 0),
     destroyedTileIds,
     grownWoodTileIds,
   };
@@ -472,6 +606,7 @@ function scoreSentence(
   judgment: SentenceJudgment,
   run: RunState,
   blind: BlindState,
+  lexicon: Lexicon,
 ): {
   total: number;
   sentenceChips: number;
@@ -487,7 +622,11 @@ function scoreSentence(
     sentenceChips: base.sentenceChips,
     sentenceMult: base.sentenceMult,
   };
-  defaultJokerBus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
+  defaultJokerBus.emit(
+    'sentenceScoring',
+    { run, blind, ctx, lookup: (word) => lexicon.lookup(word) },
+    run.jokers,
+  );
   ctx.sentenceMult *= constellationPassiveFactor(run, ctx.match?.pattern ?? null);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
@@ -602,6 +741,7 @@ export function submitWord(
     judgment,
     scoringRun,
     afterBlind,
+    lexicon,
   ).total;
 
   return {
@@ -611,7 +751,7 @@ export function submitWord(
     destroyedTileIds,
     grownWoodTileIds,
     bossDiscardedTiles,
-    jokers: scoringRun.jokers,
+    jokers: scoringRun.jokers.filter((joker) => joker.state.destroyed !== 1),
     blind: { ...afterBlind, projectedScore },
   };
 }
@@ -643,7 +783,7 @@ export interface EndBlindResult {
  */
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
   const judgment = judgeSentence(blind.sequence, lexicon);
-  const scored = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind);
+  const scored = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind, lexicon);
   return {
     judgment,
     finalScore: scored.total,

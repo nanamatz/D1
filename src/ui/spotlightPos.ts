@@ -9,6 +9,8 @@
  * the top of the screen, stranding the button (shop-tutorial "stuck" bug).
  */
 
+import { clamp } from './math';
+
 export interface Rect {
   top: number;
   left: number;
@@ -24,8 +26,6 @@ export interface BubblePos {
   top: number;
 }
 
-const clamp = (v: number, lo: number, hi: number): number =>
-  Math.max(lo, Math.min(v, Math.max(lo, hi)));
 
 /**
  * Where to put the bubble's top-left, in viewport coords.

@@ -12,7 +12,7 @@
  */
 
 import type {
-  BlindState, JokerRarity, OwnedJoker, RunState,
+  BlindState, JokerRarity, Letter, LexiconEntry, OwnedJoker, RunState,
   SentenceScoringContext, Tile, WordScoringContext,
 } from './types';
 import type { Rng } from './rng';
@@ -23,6 +23,9 @@ export interface EngineEvents {
   /** blind is being set up; jokers may mutate phase count, discard budget, target */
   blindStart: { run: RunState; blind: BlindState };
 
+  /** mutable spelling projection before lexicon lookup; scoring still uses every submitted tile */
+  wordPrepare: { run: RunState; blind: BlindState; tiles: readonly Tile[]; spellingTiles: Tile[] };
+
   /** rule-changing pass before shelf-ordered scoring hooks. It may extend
    *  ctx.scoringSuits, but never mutates submission.suit/POS. */
   wordRules: { run: RunState; blind: BlindState; ctx: WordScoringContext };
@@ -32,25 +35,79 @@ export interface EngineEvents {
    *  Use this for per-WORD effects (a flat bonus, a suit-gated bonus). */
   wordScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext };
 
+  /** boss legality/debuff checks have resolved, but a debuff has not zeroed the word yet */
+  wordChecked: {
+    run: RunState;
+    blind: BlindState;
+    ctx: WordScoringContext;
+    debuffed: boolean;
+  };
+
   /** a SINGLE tile's chips have just been added. Per-letter Emoji Tiles hook here
    *  so their contribution interleaves with tile scoring. */
   tileScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext; tile: Tile };
+
+  /** a material resolved for one tile trigger */
+  materialScored: {
+    run: RunState;
+    blind: BlindState;
+    ctx: WordScoringContext;
+    tile: Tile;
+    triggerIndex: number;
+    chipsDelta: number;
+    multDelta: number;
+    goldDelta: number;
+    grewWood: boolean;
+  };
+
+  /** a permanent tile destruction is about to be committed; hooks may cancel it */
+  tileDestroying: {
+    run: RunState;
+    blind: BlindState;
+    ctx: WordScoringContext;
+    tile: Tile;
+    cause: 'glass' | 'joker';
+    cancelled: boolean;
+  };
+
+  /** a played letter tile produced gold through its material or font */
+  tileGold: {
+    run: RunState;
+    blind: BlindState;
+    ctx: WordScoringContext;
+    tile: Tile;
+    gold: number;
+  };
 
   /** word settled and appended to the sequence; counters have been updated */
   wordScored: { run: RunState; blind: BlindState; index: number };
 
   /** a discard was spent */
-  discardUsed: { run: RunState; blind: BlindState; tiles: Tile[] };
+  discardUsed: {
+    run: RunState;
+    blind: BlindState;
+    tiles: Tile[];
+    gained: number;
+    slotsBlocked: number;
+  };
 
   /** sentence bonus is being finalized at blind end (GDD §7.4).
    *  Mutate ctx.sentenceChips / ctx.sentenceMult (the bonus = chips × mult). */
-  sentenceScoring: { run: RunState; blind: BlindState; ctx: SentenceScoringContext };
+  sentenceScoring: {
+    run: RunState;
+    blind: BlindState;
+    ctx: SentenceScoringContext;
+    lookup?: (word: string) => LexiconEntry | null;
+  };
 
   /** a Constellation card was consumed */
   constellationUsed: { run: RunState };
 
   /** letter tiles left the permanent pouch */
   tilesDestroyed: { run: RunState; count: number };
+
+  /** letter tiles entered the permanent pouch */
+  tilesCreated: { run: RunState; count: number };
 
   /** blind ended. early=true when ended via the projected≥target trigger */
   blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number; rng: Rng };
@@ -64,6 +121,7 @@ export type EngineEventName = keyof EngineEvents;
 export type JokerHandler<E extends EngineEventName> = (
   payload: EngineEvents[E],
   self: OwnedJoker,
+  env: { index: number; lookup: (id: string) => JokerDef | undefined },
 ) => void;
 
 export type JokerHooks = { [E in EngineEventName]?: JokerHandler<E> };
@@ -96,6 +154,19 @@ export const hasScoringSuit = (
   suit: import('./types').Suit,
 ): boolean => ctx.scoringSuits?.has(suit) ?? ctx.submission.suit === suit;
 
+export const isScoringVowel = (ctx: WordScoringContext, letter: Letter | null): boolean =>
+  letter !== null && (ctx.scoringVowels?.has(letter) ?? false);
+
+export const addTileRetrigger = (
+  ctx: WordScoringContext,
+  tileId: string,
+  jokerId: string,
+): void => {
+  const sources = ctx.tileRetriggers?.get(tileId) ?? [];
+  sources.push(jokerId);
+  ctx.tileRetriggers?.set(tileId, sources);
+};
+
 // ---------- Event bus ----------
 
 export class JokerBus {
@@ -109,10 +180,11 @@ export class JokerBus {
     payload: EngineEvents[E],
     owned: OwnedJoker[],
   ): void {
-    for (const joker of owned) {
+    for (let index = 0; index < owned.length; index++) {
+      const joker = owned[index]!;
       const def = this.defs.get(joker.defId);
       const handler = def?.hooks[event];
-      if (handler) handler(payload, joker);
+      if (handler) handler(payload, joker, { index, lookup: (id) => this.defs.get(id) });
     }
   }
 }

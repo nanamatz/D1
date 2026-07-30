@@ -16,8 +16,8 @@
  * Pointer capture keeps a fast drag from dropping the card.
  */
 import { useEffect, useRef, type RefObject } from 'react';
+import { clamp } from './math';
 
-const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
 /** Drop the per-tile pointer-parallax state so it can't fight the drag/drop transform. */
 function clearTilt(node: HTMLElement): void {

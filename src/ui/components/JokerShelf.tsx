@@ -18,24 +18,33 @@ import { TiltCard } from './TiltCard';
 import { jokerSlotLimit } from '../../engine/vouchers';
 import { fableTargetsTiles, isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
-import { FableCardArt } from './FableCardArt';
-import { ConstellationCardArt } from './ConstellationCardArt';
-import { GamblerCardArt } from './GamblerCardArt';
 import { isGamblerId } from '../../engine/gamblers';
 import { consumableClassification } from '../cardClassification';
 import { useShelfDrag } from '../drag';
 import { jokerArt } from '../jokerArt';
+import { CardArt } from './CardArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 
 /** The firing joker's contribution popup during settle (B step 3). */
-function JokerPop({ chips, mult, score = 0 }: { chips: number; mult: number; score?: number }) {
+function JokerPop({
+  chips,
+  mult,
+  score = 0,
+  gold = 0,
+}: {
+  chips: number;
+  mult: number;
+  score?: number;
+  gold?: number;
+}) {
   const parts = [
     chips ? `+${chips}` : '',
     mult ? `+${fmtMult(mult)}` : '',
     score ? `+${score}` : '',
+    gold ? `+$${gold}` : '',
   ].filter(Boolean);
   if (parts.length === 0) return null;
   return <span className="joker-pop">{parts.join(' ')}</span>;
@@ -167,6 +176,7 @@ export function JokerShelf({
                         chips={settle.jokerPop.chips}
                         mult={settle.jokerPop.mult}
                         score={settle.jokerPop.score}
+                        gold={settle.jokerPop.gold}
                       />
                     )}
                   </TiltCard>
@@ -239,19 +249,19 @@ export function JokerShelf({
               >
                 <div className="consumable-object-art">
                   {isFableId(c) ? (
-                    <FableCardArt
+                    <CardArt family="fable"
                       id={c}
                       className="consumable-art"
                       title={t(`consumable.${c}`)}
                     />
                   ) : isConstellationId(c) ? (
-                    <ConstellationCardArt
+                    <CardArt family="constellation"
                       id={c}
                       className="consumable-art"
                       title={t(`consumable.${c}`)}
                     />
                   ) : isGamblerId(c) ? (
-                    <GamblerCardArt
+                    <CardArt family="gambler"
                       id={c}
                       className="consumable-art"
                       title={t(`consumable.${c}`)}

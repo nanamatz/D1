@@ -103,7 +103,7 @@ Sidebar (top→bottom): blind badge (kind + boss name when boss) with target sco
 |---|---|
 | `Tile` | 64px (integer-scaled) pixel-art letter tile: face, uppercase A–Z letter, chip value bottom-right. Carries up to **three stacked axes** (GDD §2.4): material + font + edition. See the material legibility rules below. Selected = raised + gold pixel outline. |
 | `SentenceTray` | see §2. Includes `HoleSlot` (gibberish) and `PatternChip`. |
-| `JokerCard` | **Fixed 124×165px near-3:4 image-only runtime contract**, shared with the resized shop offer and held-consumable footprints. Existing 84×112 pixel masters scale with `object-fit: contain` and `image-rendering: pixelated`; the visible image is the whole card, with no wrapper panel, persistent label, edition badge, or rarity-colored frame. Art uses early-arcade simplicity—one large symbol, large square pixels, flat 3–5-color shapes, solid background, no scenery, texture, lighting, or small decoration. Reuse the same source on shelf, shop, opened-pack, and Collection surfaces. Idle float, cursor tilt, and sheen apply directly to the image; name, effect, and rarity stay in the tooltip. |
+| `JokerCard` | **Fixed 124×165px near-3:4 image-only runtime contract**, shared with the resized shop offer and held-consumable footprints. Existing 84×112 pixel masters scale with `object-fit: contain` and `image-rendering: pixelated`; those 30 masters in `src/ui/assets/jokers/` are the canonical references for every new entry. Match their roster-wide **Pac-Man-style early maze-arcade** system: deep navy playfield, white/red/yellow/cyan-led 3–5-color palette, one large blocky silhouette, hard un-antialiased pixel edges, and the same sprite scale/line weight. No painterly object icon, gradient, shadow, scenery, texture, lighting, or small decoration. This means the visual grammar only—never copy Pac-Man characters, ghosts, maze layouts, or other original assets. Reuse the same source on shelf, shop, opened-pack, and Collection surfaces. Idle float, cursor tilt, and sheen apply directly to the image; name, effect, and rarity stay in the tooltip. |
 
 The held-consumable panel keeps its 286px width. The Emoji Tile panel fills all
 remaining shelf width with an exact 10px gap between panels. Empty-slot
@@ -125,9 +125,13 @@ All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
 through a `document.body` portal above the CRT and every product panel, so their
 layout is never clipped or covered by the hovered surface.
 
-**Emoji Tile art (completed 2026-07-30).** All 30 roster entries use 84×112
-native pixel masters under `src/ui/assets/jokers/` and scale into the shared
-124×165 runtime frame.
+**Emoji Tile art (direction corrected 2026-07-30).** The original 30 assets and
+every promoted roster asset must be brought into the Pac-Man-style maze-arcade
+system above. Generic painterly pixel icons are not acceptable. Masters live
+under `src/ui/assets/jokers/` and scale into the shared 124×165 runtime frame.
+The ten reviewed 3×3 source sheets for the promoted 86 are retained under
+`docs/Arts/emoji-bank-pacman-sheets/`; each runtime master maps to exactly one
+named cell rather than being inferred from one oversized contact sheet.
 `src/ui/jokerArt.ts` is the single resolver
 used by shelf, shop, opened-pack, and Collection surfaces. All assets use the
 image-only early-arcade style. Collection presents them at the same 124×165

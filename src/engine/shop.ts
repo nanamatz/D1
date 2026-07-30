@@ -9,7 +9,7 @@ import { JOKER_REGISTRY } from './jokers';
 import { sampleJokerDefs } from './offers';
 import { rerollCost, sellValue } from './economy';
 import { rollJokerEdition } from './editions';
-import { PUNCTUATION_POOL, rollTile, STATIONERY_POOL } from './packs';
+import { CONSTELLATION_POOL, rollTile, FABLE_POOL } from './packs';
 import {
   CONSUMABLE_PATTERN,
   VOUCHER_REGISTRY,
@@ -57,12 +57,12 @@ function buildPools(run: RunState, rng: Rng): ItemPools {
     edition: rollJokerEdition(run, rng),
     price: emojiTileShopPrice(run, discountedPrice(run, BALANCE.jokerPrice[j.rarity])),
   }));
-  const consumables: ShopItem[] = STATIONERY_POOL.map((id) => ({
+  const consumables: ShopItem[] = FABLE_POOL.map((id) => ({
     kind: 'consumable',
     id,
     price: discountedPrice(run, BALANCE.consumablePrice),
   }));
-  const punctuation: ShopItem[] = PUNCTUATION_POOL.map((id) => ({
+  const punctuation: ShopItem[] = CONSTELLATION_POOL.map((id) => ({
     kind: 'punctuation',
     id,
     pattern: CONSUMABLE_PATTERN[id]!,

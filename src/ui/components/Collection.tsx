@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { ALL_JOKERS, JOKER_REGISTRY } from '../../engine/jokers';
+import { ALL_JOKERS } from '../../engine/jokers';
 import { VOUCHER_REGISTRY, ALL_VOUCHER_IDS, BASE_VOUCHER_IDS } from '../../engine/vouchers';
 import { BOSS_REGISTRY, CORE_BOSS_IDS } from '../../engine/bosses';
 import { BOSS_ART, BLIND_ART } from '../bossArt';
@@ -30,13 +30,11 @@ import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
 import { loadVoucherProgress } from '../voucherProgress';
 import { FABLE_DEFS } from '../../engine/fables';
-import { FableCardArt } from './FableCardArt';
 import { CONSTELLATION_DEFS } from '../../engine/constellations';
 import { voucherCollectionCopy } from '../voucherCollection';
 import { GAMBLER_CARDS } from '../gamblerArt';
 import { GAMBLER_IDS } from '../../engine/gamblers';
-import { ConstellationCardArt } from './ConstellationCardArt';
-import { FamilyCardArt } from './FamilyCardArt';
+import { CardArt, type CardFamily } from './CardArt';
 import { TiltCard } from './TiltCard';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
@@ -105,6 +103,8 @@ const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
 const PACK_TYPES = ['pattern', 'joker', 'consumable', 'tile', 'ink'] as const;
 const PAGE = 60;
 const JOKERS_PER_PAGE = 15;
+const CARDS_PER_PAGE = 10;
+const VOUCHER_PAIRS_PER_PAGE = 4;
 
 const sampleTile = (over: Partial<Tile>): Tile => {
   const material = over.material ?? 'ceramic';
@@ -244,6 +244,22 @@ export function Collection({ lexicon, onBack }: Props) {
   );
 }
 
+/**
+ * Paging state for a Collection grid. Owns the clamp so a filter that shrinks
+ * the list can never leave the view on a page that no longer exists.
+ */
+function usePaged<T>(items: readonly T[], perPage: number) {
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil(items.length / perPage));
+  const clamped = Math.min(page, pages - 1);
+  return {
+    page: clamped,
+    pages,
+    visible: items.slice(clamped * perPage, (clamped + 1) * perPage),
+    setPage,
+  };
+}
+
 // ---------- Words ----------
 function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const { t } = useI18n();
@@ -332,13 +348,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
 // ---------- Jokers ----------
 function JokersView() {
   const { t, lang } = useI18n();
-  const [page, setPage] = useState(0);
-  const pages = Math.ceil(ALL_JOKERS.length / JOKERS_PER_PAGE);
-  const clamped = Math.min(page, pages - 1);
-  const visible = ALL_JOKERS.slice(
-    clamped * JOKERS_PER_PAGE,
-    (clamped + 1) * JOKERS_PER_PAGE,
-  );
+  const { page, pages, visible, setPage } = usePaged(ALL_JOKERS, JOKERS_PER_PAGE);
 
   return (
     <>
@@ -361,7 +371,7 @@ function JokersView() {
           );
         })}
       </div>
-      <Pager page={clamped} pages={pages} onPage={setPage} />
+      <Pager page={page} pages={pages} onPage={setPage} />
     </>
   );
 }
@@ -401,7 +411,6 @@ function FontsView() {
 // ---------- Vouchers ----------
 function VouchersView() {
   const { t, lang } = useI18n();
-  const [page, setPage] = useState(0);
   const progress = loadVoucherProgress();
   const unlocked = new Set(progress.unlocked);
   const pairs = BASE_VOUCHER_IDS.map((baseId) => {
@@ -410,10 +419,7 @@ function VouchersView() {
       .find((v) => v.baseId === baseId);
     return { baseId, upgradeId: upgrade?.id ?? null };
   });
-  const pairsPerPage = 4;
-  const pages = Math.ceil(pairs.length / pairsPerPage);
-  const clamped = Math.min(page, pages - 1);
-  const visible = pairs.slice(clamped * pairsPerPage, (clamped + 1) * pairsPerPage);
+  const { page: clamped, pages, visible, setPage } = usePaged(pairs, VOUCHER_PAIRS_PER_PAGE);
 
   const ticket = (id: VoucherId, locked: boolean, down: boolean) => {
     const v = VOUCHER_REGISTRY.get(id)!;
@@ -696,98 +702,87 @@ function BagsView() {
 }
 
 // ---------- Card families ----------
-function FablesView() {
-  const { t } = useI18n();
-  const [page, setPage] = useState(0);
-  const perPage = 10;
-  const pages = Math.ceil(FABLE_DEFS.length / perPage);
-  const visible = FABLE_DEFS.slice(page * perPage, (page + 1) * perPage);
+/**
+ * The three consumable-card pages are one grid. A family only supplies its rows
+ * and its tooltip copy; paging, the card frame, and the art surface live here.
+ */
+function CardFamilyView<T extends { id: string }>({
+  family,
+  items,
+  name,
+  body,
+  sub,
+}: {
+  family: CardFamily;
+  items: readonly T[];
+  name: (item: T) => string;
+  body: (item: T) => string;
+  sub?: (item: T) => { title: string; body: string } | undefined;
+}) {
+  const { page, pages, visible, setPage } = usePaged(items, CARDS_PER_PAGE);
   return (
-    <div className="fable-collection">
-      <div className="fable-card-grid">
-        {visible.map((def) => (
+    <div className={`${family}-collection`}>
+      <div className={`${family}-card-grid`}>
+        {visible.map((item) => (
           <Tooltip
-            key={def.id}
-            title={t(`consumable.${def.id}`)}
-            body={consumableTooltipBody(def.id, t)}
-            classification="fable"
-            sub={consumableAxisTip(def.id, t) ?? undefined}
+            key={item.id}
+            title={name(item)}
+            body={body(item)}
+            classification={family}
+            sub={sub?.(item)}
             down
           >
-            <TiltCard idle className="fable-card">
-              <FableCardArt id={def.id} title={t(`consumable.${def.id}`)} />
+            <TiltCard idle className={`${family}-card`}>
+              <CardArt family={family} id={item.id} title={name(item)} />
             </TiltCard>
           </Tooltip>
         ))}
       </div>
       <Pager page={page} pages={pages} onPage={setPage} />
     </div>
+  );
+}
+
+function FablesView() {
+  const { t } = useI18n();
+  return (
+    <CardFamilyView
+      family="fable"
+      items={FABLE_DEFS}
+      name={(def) => t(`consumable.${def.id}`)}
+      body={(def) => consumableTooltipBody(def.id, t)}
+      sub={(def) => consumableAxisTip(def.id, t) ?? undefined}
+    />
   );
 }
 
 function ConstellationsView() {
   const { t } = useI18n();
-  const [page, setPage] = useState(0);
-  const perPage = 10;
-  const pages = Math.ceil(CONSTELLATION_DEFS.length / perPage);
-  const visible = CONSTELLATION_DEFS.slice(page * perPage, (page + 1) * perPage);
   return (
-    <div className="constellation-collection">
-      <div className="constellation-card-grid">
-        {visible.map((def) => (
-          <Tooltip
-            key={def.id}
-            title={t(`consumable.${def.id}`)}
-            body={consumableTooltipBody(def.id, t)}
-            classification="constellation"
-            down
-          >
-            <TiltCard idle className="constellation-card">
-              <ConstellationCardArt id={def.id} title={t(`consumable.${def.id}`)} />
-            </TiltCard>
-          </Tooltip>
-        ))}
-      </div>
-      <Pager page={page} pages={pages} onPage={setPage} />
-    </div>
+    <CardFamilyView
+      family="constellation"
+      items={CONSTELLATION_DEFS}
+      name={(def) => t(`consumable.${def.id}`)}
+      body={(def) => consumableTooltipBody(def.id, t)}
+    />
   );
 }
 
 function GamblerCardsView() {
   const { t, lang } = useI18n();
-  const [page, setPage] = useState(0);
-  const perPage = 10;
-  const pages = Math.ceil(GAMBLER_CARDS.length / perPage);
-  const visible = GAMBLER_CARDS.slice(page * perPage, (page + 1) * perPage);
   return (
-    <div className="gambler-collection">
-      <div className="gambler-card-grid">
-        {visible.map((card) => {
-          const name = lang === 'ko' ? card.nameKo : card.nameEn;
-          // Rainman and Sake Cup have art but no engine definition — their effects
-          // stay pending in GDD §10.3, so they keep the placeholder line.
-          const implemented = (GAMBLER_IDS as readonly string[]).includes(card.id);
-          return (
-            <Tooltip
-              key={card.id}
-              title={name}
-              body={
-                implemented
-                  ? t(consumableDescKey(card.id))
-                  : t('collection.gambler.effectPending')
-              }
-              classification="gambler"
-              down
-            >
-              <TiltCard idle className="gambler-card">
-                <FamilyCardArt src={card.art} title={name} />
-              </TiltCard>
-            </Tooltip>
-          );
-        })}
-      </div>
-      <Pager page={page} pages={pages} onPage={setPage} />
-    </div>
+    <CardFamilyView
+      family="gambler"
+      items={GAMBLER_CARDS}
+      name={(card) => (lang === 'ko' ? card.nameKo : card.nameEn)}
+      // Rainman and Sake Cup have art but no engine definition — their effects
+      // stay pending in GDD §10.3, so they keep the placeholder line.
+      body={(card) =>
+        (GAMBLER_IDS as readonly string[]).includes(card.id)
+          ? t(consumableDescKey(card.id))
+          : t('collection.gambler.effectPending')
+      }
+    />
   );
 }
 

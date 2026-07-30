@@ -33,12 +33,12 @@ import {
 } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { constellationArt } from '../constellationArt';
-import { FableCardArt } from './FableCardArt';
 import { FamilyCardArt } from './FamilyCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { TileView } from './Tile';
 import { jokerArt } from '../jokerArt';
+import { CardArt } from './CardArt';
 
 interface ShopOfferProps {
   label: string;
@@ -287,7 +287,7 @@ export function Shop({ g }: { g: UseGame }) {
                         ].filter(Boolean).join(' ')}
                       >
                         {m.fableId ? (
-                          <FableCardArt
+                          <CardArt family="fable"
                             id={m.fableId}
                             className="shop-consumable-art"
                             title={m.name}

@@ -50,13 +50,6 @@ const PATTERN_LABEL: Record<PatternId, string> = {
 };
 export const patternLabel = (id: PatternId): string => PATTERN_LABEL[id];
 
-export const SUIT_TAG: Record<Suit, string> = {
-  standard: 'STD',
-  formal: 'FRM',
-  slang: 'SLG',
-  vulgar: 'VLG',
-};
-
 /** css class suffix for a suit (word frame / tile). */
 export const suitClass = (suit: Suit | null): string => (suit ? suit : 'standard');
 
@@ -248,13 +241,6 @@ export const faceClass = (t: Tile): string => {
 export type SortMode = 'vowel' | 'value' | 'alpha' | 'manual';
 // 'value' (score-order) sort removed per playtest-04 item 4.
 export const SORT_MODES: readonly SortMode[] = ['vowel', 'alpha'];
-export const SORT_LABEL: Record<SortMode, string> = {
-  vowel: 'Vowel/Cons',
-  value: 'Value',
-  alpha: 'A–Z',
-  manual: 'Manual',
-};
-
 const alpha = (a: Tile, b: Tile): number =>
   (a.letter ?? '￿').localeCompare(b.letter ?? '￿');
 const COMPARATORS: Record<Exclude<SortMode, 'manual'>, (a: Tile, b: Tile) => number> = {

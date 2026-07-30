@@ -7,6 +7,7 @@ import coffeeCup from '../assets/desk-coffee-cup.png';
 import coffeePot from '../assets/desk-coffee-pot.png';
 import callBell from '../assets/desk-call-bell.png';
 import blankCheck from '../assets/desk-blank-check.png';
+import { clamp } from '../math';
 
 /**
  * D-3 ambient side interactions (UI_DESIGN §4.8). Persistent cup/bell fixtures
@@ -183,8 +184,8 @@ export function DeskObjects({ active }: { active: boolean }) {
     return {
       // Two-unit quantisation keeps the hand-drawn stroke consistent with the
       // surrounding pixel art instead of producing a perfectly smooth vector.
-      x: Math.round(Math.max(0, Math.min(SIGNATURE_VIEWBOX_WIDTH, x)) / 2) * 2,
-      y: Math.round(Math.max(0, Math.min(SIGNATURE_VIEWBOX_HEIGHT, y)) / 2) * 2,
+      x: Math.round(clamp(x, 0, SIGNATURE_VIEWBOX_WIDTH) / 2) * 2,
+      y: Math.round(clamp(y, 0, SIGNATURE_VIEWBOX_HEIGHT) / 2) * 2,
     };
   };
 

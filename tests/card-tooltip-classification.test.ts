@@ -37,9 +37,11 @@ describe('card tooltip classification badges', () => {
   it('covers Collection, shop, held cards, pack choices, and Run Info', () => {
     const collection = source('../src/ui/components/Collection.tsx');
     expect(collection).toContain("classification={locked ? undefined : 'voucher'}");
-    expect(collection).toContain('classification="fable"');
-    expect(collection).toContain('classification="constellation"');
-    expect(collection).toContain('classification="gambler"');
+    // The three card families share one paged grid, so the badge is the family itself.
+    expect(collection).toContain('classification={family}');
+    for (const family of ['fable', 'constellation', 'gambler']) {
+      expect(collection).toContain(`family="${family}"`);
+    }
 
     expect(source('../src/ui/components/Shop.tsx')).toContain(
       'classification={m.classification}',

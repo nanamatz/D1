@@ -40,15 +40,18 @@ export function availableJokerDefs(run: RunState): JokerDef[] {
  * "nothing new" effect, C-4).
  */
 export function sampleJokerDefs(run: RunState, count: number, rng: Rng): JokerDef[] {
-  const remaining = availableJokerDefs(run);
+  // Grouped ONCE, then drained. A Map keeps first-seen rarity order, which is what
+  // the weighted walk below indexes into — so this draws the same sequence from the
+  // same seed as regrouping per pick did, without the per-pick rebuild.
+  const byRarity = new Map<JokerRarity, JokerDef[]>();
+  for (const def of availableJokerDefs(run)) {
+    const group = byRarity.get(def.rarity);
+    if (group) group.push(def);
+    else byRarity.set(def.rarity, [def]);
+  }
+
   const picked: JokerDef[] = [];
-  while (picked.length < count && remaining.length > 0) {
-    const byRarity = new Map<JokerRarity, JokerDef[]>();
-    for (const j of remaining) {
-      const group = byRarity.get(j.rarity);
-      if (group) group.push(j);
-      else byRarity.set(j.rarity, [j]);
-    }
+  while (picked.length < count && byRarity.size > 0) {
     const rarities = [...byRarity.keys()];
     const total = rarities.reduce((s, r) => s + (BALANCE.emoji.rarityWeights[r] ?? 0), 0);
     let x = rng.next() * total;
@@ -61,9 +64,9 @@ export function sampleJokerDefs(run: RunState, count: number, rng: Rng): JokerDe
       }
     }
     const group = byRarity.get(chosen)!;
-    const j = group[rng.int(group.length)]!;
-    picked.push(j);
-    remaining.splice(remaining.indexOf(j), 1);
+    picked.push(group.splice(rng.int(group.length), 1)[0]!);
+    // A drained rarity leaves the pool entirely, so it stops taking weight.
+    if (group.length === 0) byRarity.delete(chosen);
   }
   return picked;
 }

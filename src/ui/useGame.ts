@@ -59,7 +59,6 @@ import {
 import {
   canUseGambler,
   canUseUnheldGambler,
-  gamblerResolvesInstantly,
   gamblerTargetsTiles,
   isGamblerId,
   useGambler,
@@ -213,6 +212,41 @@ export const BONUS_LAND_MS = 700;
 // the intermediate Settle-button screen; this is the pacing beat that replaced it).
 const VERDICT_BEAT_MS = 500;
 const VERDICT_BEAT_REDUCED_MS = 200;
+
+/** The open-pack slice of GameState. */
+type OpenPack = NonNullable<GameState['pack']>;
+
+/**
+ * Take one option out of an open pack: drop it, spend a pick, and close the pack
+ * once nothing is left to take. Shared by every pack path (pick / Fable / Gambler
+ * / Constellation) so "when does the pack close" is decided in one place.
+ */
+function consumePackOption(pack: OpenPack, optionIndex: number): OpenPack | null {
+  const options = pack.offer.options.filter((_, index) => index !== optionIndex);
+  const picksLeft = pack.picksLeft - 1;
+  if (picksLeft <= 0 || options.length === 0) return null;
+  return { ...pack, offer: { ...pack.offer, options }, picksLeft };
+}
+
+/**
+ * Re-derive the pouch-candidate row from the run after a card edited tiles. A
+ * destroyed candidate disappears; a patched one shows its new face. Matching by
+ * id is what keeps the row honest — the card may have replaced the tile object.
+ */
+function syncCandidates(candidates: readonly Tile[], run: RunState): Tile[] {
+  const byId = new Map(run.bag.map((tile) => [tile.id, tile]));
+  return candidates
+    .map((tile) => byId.get(tile.id))
+    .filter((tile): tile is Tile => tile !== undefined);
+}
+
+/** Flyer/Wanted Poster progress reads the owned editioned-tile count (§9.4). */
+function recordEditionedJokers(run: RunState): void {
+  recordVoucherProgress({
+    kind: 'editionedJokers',
+    count: run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
+  });
+}
 
 function bootstrap(seed: string = randomSeed()): GameState {
   // runs start empty — jokers/consumables are acquired in the shop (was: 3 demo jokers + a magnifier)
@@ -486,10 +520,7 @@ export function useGame(): UseGame {
           spent: item.price,
         });
       } else recordVoucherProgress({ kind: 'shopBuy', item: 'other', spent: item.price });
-      recordVoucherProgress({
-        kind: 'editionedJokers',
-        count: res.run.jokers.filter((j) => (j.edition ?? 'base') !== 'base').length,
-      });
+      recordEditionedJokers(res.run);
       audio.play('purchase');
       return {
         ...prev,
@@ -686,17 +717,8 @@ export function useGame(): UseGame {
       // A-4 confirm SFX fires in PackOpening on selection (immediate feedback, feature-04
       // C) rather than here — blocked picks there never reach the pick action, so they
       // stay silent without a run-identity check.
-      recordVoucherProgress({
-        kind: 'editionedJokers',
-        count: run.jokers.filter((j) => (j.edition ?? 'base') !== 'base').length,
-      });
-      const options = prev.pack.offer.options.filter((_, i) => i !== optionIndex);
-      const picksLeft = prev.pack.picksLeft - 1;
-      const pack =
-        picksLeft <= 0 || options.length === 0
-          ? null
-          : { ...prev.pack, offer: { ...prev.pack.offer, options }, picksLeft };
-      return { ...prev, run, pack };
+      recordEditionedJokers(run);
+      return { ...prev, run, pack: consumePackOption(prev.pack, optionIndex) };
     });
   }, []);
 
@@ -708,21 +730,10 @@ export function useGame(): UseGame {
       const id = option.id;
 
       const finish = (run: RunState, blind: BlindState, rngDelta: number): GameState => {
-        const options = prev.pack!.offer.options.filter((_, index) => index !== optionIndex);
-        const picksLeft = prev.pack!.picksLeft - 1;
-        const bagTiles = new Map(run.bag.map((tile) => [tile.id, tile]));
-        const candidateTiles = prev.pack!.candidateTiles
-          .map((tile) => bagTiles.get(tile.id))
-          .filter((tile): tile is Tile => tile !== undefined);
-        const pack =
-          picksLeft <= 0 || options.length === 0
-            ? null
-            : {
-                ...prev.pack!,
-                offer: { ...prev.pack!.offer, options },
-                picksLeft,
-                candidateTiles,
-              };
+        const remaining = consumePackOption(prev.pack!, optionIndex);
+        const pack = remaining
+          ? { ...remaining, candidateTiles: syncCandidates(remaining.candidateTiles, run) }
+          : null;
         return {
           ...prev,
           run,
@@ -761,10 +772,7 @@ export function useGame(): UseGame {
       }
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
-      recordVoucherProgress({
-        kind: 'editionedJokers',
-        count: run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
-      });
+      recordEditionedJokers(run);
       return finish(run, blind, 1);
     });
   }, []);
@@ -796,29 +804,15 @@ export function useGame(): UseGame {
       );
       if (!result.ok) return prev;
 
-      const options = prev.pack.offer.options.filter((_, index) => index !== optionIndex);
-      const picksLeft = prev.pack.picksLeft - 1;
       // Destroyed/created tiles change the pouch; re-derive the candidate row from it
       // so the remaining picks target what actually exists.
-      const bagById = new Map(result.run.bag.map((tile) => [tile.id, tile]));
-      const candidateTiles = field
-        .map((tile) => bagById.get(tile.id))
-        .filter((tile): tile is Tile => tile !== undefined);
-      const pack =
-        picksLeft <= 0 || options.length === 0
-          ? null
-          : {
-              ...prev.pack,
-              offer: { ...prev.pack.offer, options },
-              picksLeft,
-              candidateTiles,
-            };
+      const remaining = consumePackOption(prev.pack, optionIndex);
+      const pack = remaining
+        ? { ...remaining, candidateTiles: syncCandidates(field, result.run) }
+        : null;
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
-      recordVoucherProgress({
-        kind: 'editionedJokers',
-        count: result.run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
-      });
+      recordEditionedJokers(result.run);
       return {
         ...prev,
         run: result.run,
@@ -838,12 +832,7 @@ export function useGame(): UseGame {
       const pattern = CONSUMABLE_PATTERN[option.id];
       if (!pattern) return prev;
       const from = prev.run.patternLevels[pattern] ?? 1;
-      const options = prev.pack.offer.options.filter((_, index) => index !== optionIndex);
-      const picksLeft = prev.pack.picksLeft - 1;
-      const pack =
-        picksLeft <= 0 || options.length === 0
-          ? null
-          : { ...prev.pack, offer: { ...prev.pack.offer, options }, picksLeft };
+      const pack = consumePackOption(prev.pack, optionIndex);
       const run = onConstellationUsed({
         ...prev.run,
         lastFableOrConstellation: option.id,
@@ -895,10 +884,7 @@ export function useGame(): UseGame {
             }
             const result = useFableOnPouch(id, prev.run, tileIds);
             if (!result.ok) return prev;
-            const bagById = new Map(result.run.bag.map((tile) => [tile.id, tile]));
-            const candidateTiles = prev.pack.candidateTiles
-              .map((tile) => bagById.get(tile.id))
-              .filter((tile): tile is Tile => tile !== undefined);
+            const candidateTiles = syncCandidates(prev.pack.candidateTiles, result.run);
             audio.play('consumableUse');
             recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
             return {
@@ -1020,10 +1006,7 @@ export function useGame(): UseGame {
         if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
         audio.play('consumableUse'); // A-3: object actions are audible
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
-        recordVoucherProgress({
-          kind: 'editionedJokers',
-          count: result.run.jokers.filter((joker) => (joker.edition ?? 'base') !== 'base').length,
-        });
+        recordEditionedJokers(result.run);
         const hint = result.requestHint
           ? findSpellableWords(result.blind.hand, lexicon, 3)
           : prev.hint;
@@ -1323,7 +1306,7 @@ export function useGame(): UseGame {
       const staged = new Set(prev.selected);
       const valid = ids.filter((id) => !staged.has(id) && prev.blind.hand.some((t) => t.id === id));
       if (valid.length === 0) return prev; // no per-use tile cap (D-4)
-      const { blind, gained, slotsBlocked } = discardTiles(
+      const { blind, jokers, goldDelta, gained, slotsBlocked } = discardTiles(
         prev.blind,
         prev.run,
         valid,
@@ -1333,9 +1316,14 @@ export function useGame(): UseGame {
       return {
         ...prev,
         blind,
-        run: gained.length
-          ? { ...prev.run, consumables: [...prev.run.consumables, ...gained] }
-          : prev.run,
+        run: {
+          ...prev.run,
+          jokers,
+          gold: prev.run.gold + goldDelta,
+          consumables: gained.length
+            ? [...prev.run.consumables, ...gained]
+            : prev.run.consumables,
+        },
         message: slotsBlocked > 0 ? { key: 'font.slotsFull' } : null,
         hint: null,
         rngCounter: prev.rngCounter + 1,

@@ -15,6 +15,7 @@
  * a save is a convenience — never a reason to fail to boot.
  */
 import { readValue, remove, writeRaw } from './storage';
+import { isKnownConsumableId } from '../engine/consumables';
 import { JOKER_REGISTRY } from '../engine/jokers';
 import type { GameState } from './useGame';
 
@@ -83,11 +84,14 @@ export function loadRun(): GameState | null {
   }
   // `sentenceBonus` is presentation-only. Older v4 snapshots could accidentally
   // retain it mid-landing; clearing it also prevents loading the pre-breakdown shape.
+  // Drop anything the current build cannot resolve. Retiring a card or an Emoji
+  // Tile is then a data change, not a save-version bump that discards the run.
   return {
     ...s,
     run: {
       ...s.run,
       jokers: s.run.jokers.filter((joker) => JOKER_REGISTRY.has(joker.defId)),
+      consumables: (s.run.consumables ?? []).filter(isKnownConsumableId),
     },
     sentenceBonus: null,
   };

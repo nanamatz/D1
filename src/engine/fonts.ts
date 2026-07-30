@@ -9,7 +9,7 @@
  */
 
 import { BALANCE } from './balance';
-import { CONSUMABLE_POOL } from './packs';
+import { FABLE_POOL } from './packs';
 import type { Rng } from './rng';
 import type { ConsumableId, FontEffectId, RunState, Tile, TileFont } from './types';
 
@@ -46,7 +46,7 @@ export function rollDiscardGains(
       slotsBlocked++;
       continue;
     }
-    gained.push(CONSUMABLE_POOL[rng.int(CONSUMABLE_POOL.length)]!);
+    gained.push(FABLE_POOL[rng.int(FABLE_POOL.length)]!);
   }
   return { gained, slotsBlocked };
 }

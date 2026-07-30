@@ -705,15 +705,6 @@
 
 /* ---- Shared pack-opening sequence (shake -> burst -> cards fly in) ---- */
 .pack-opening { position: relative; }
-.pack-frame {
-  overflow: hidden;
-}
-.pack-frame .pack-opening {
-  width: 100%;
-  height: 100%;
-  padding: 18px;
-  box-sizing: border-box;
-}
 .pack-candidates {
   padding: 4px 8px 14px;
 }
@@ -1244,11 +1235,6 @@
   border-radius: 16px;
   padding: 12px;
 }
-.langbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: -4px;
-}
 .langbtn {
   font-size: var(--fs-sm);
   border-radius: var(--r-sm);
@@ -1420,16 +1406,6 @@
   animation: none;
 }
 /* Placeholder chip token — CSS-drawn, no asset yet. */
-.chip-icon {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, #ffffff 0 40%, transparent 41%),
-    repeating-conic-gradient(#ffffff 0 12deg, #cfdce4 12deg 24deg);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
-}
 .bs-reward {
   display: flex;
   align-items: baseline;
@@ -3276,15 +3252,6 @@
   color: var(--gold);
   font-weight: 700;
 }
-.letterhand-tag {
-  color: #15242c;
-  background: var(--gold);
-  border-radius: 6px;
-  padding: 1px 8px;
-  font-weight: 800;
-  font-size: var(--fs-sm);
-  letter-spacing: 0.02em;
-}
 /* A-3: non-standard suit is celebrated in the staged preview (louder than Standard). */
 .suit-badge {
   color: var(--ink-dim);
@@ -4089,51 +4056,10 @@
 }
 /* Floating options button for the Shop / Blind Select screens, which have no
    Sidebar gear. Sits above the screen content, below the .overlay (z 50/60). */
-.options-fab {
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  z-index: 40;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: 1px solid var(--inset-edge);
-  border-radius: 10px;
-  background: var(--inset);
-  color: var(--ink);
-  font-weight: 700;
-  font-size: var(--fs-md);
-  cursor: pointer;
-}
-.options-fab:hover {
-  background: var(--panel);
-}
 /* Two classes, not one: `.overlay-card` (screens.css) also sets max-width, at the
    same specificity, and screens.css loads AFTER play.css — so a lone `.pause-modal`
    loses and the modal silently stayed at the 640px default. The other modals
    (.overlay-card.cashout / .gameover / .runinfo) are all written this way. */
-/* B-3 · same-axis overwrite confirm (GDD §2.4). A compact centred dialog over the
-   board — reuses the base .overlay / .overlay-card, just narrower with a button row. */
-.overlay-card.overwrite-modal {
-  max-width: 420px;
-  text-align: center;
-}
-.overwrite-title {
-  font-size: var(--fs-2xl);
-  margin: 0 0 10px;
-}
-.overwrite-msg {
-  font-size: var(--fs-md);
-  line-height: 1.5;
-  margin: 0 0 18px;
-  color: var(--ink);
-}
-.overwrite-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
 .overlay-card.pause-modal {
   max-width: 920px;
   max-height: 86vh;
@@ -4272,11 +4198,6 @@
 .pouch-slot.picked .tile {
   outline: 3px solid var(--gold);
   outline-offset: 3px;
-}
-.pouch-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
 }
 /* While the effect applies, dim the unchosen tiles so the flash on the chosen ones reads. */
 .pouch-screen.applying .pouch-slot:not(.picked) {

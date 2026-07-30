@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { FABLE_IDS } from '../src/engine/fables';
 import { FABLE_ART } from '../src/ui/fableArt';
-import { FableCardArt } from '../src/ui/components/FableCardArt';
+import { CardArt } from '../src/ui/components/CardArt';
 
 describe('Fable card art', () => {
   it('maps all 18 cards to normalized path-only SVG assets', () => {
@@ -27,7 +27,7 @@ describe('Fable card art', () => {
 
   it('renders every illustration through the same 5:7 SVG card geometry', () => {
     for (const id of FABLE_IDS) {
-      const markup = renderToStaticMarkup(createElement(FableCardArt, { id }));
+      const markup = renderToStaticMarkup(createElement(CardArt, { family: 'fable', id }));
       expect(markup).toContain('<svg');
       expect(markup).toContain('viewBox="0 0 500 700"');
       expect(markup).toContain('<image');
@@ -36,7 +36,8 @@ describe('Fable card art', () => {
   });
 
   it('keeps the traced source title without adding a title overlay', () => {
-    const markup = renderToStaticMarkup(createElement(FableCardArt, {
+    const markup = renderToStaticMarkup(createElement(CardArt, {
+      family: 'fable' as const,
       id: 'fable10',
       title: 'The Town Mouse and the Country Mouse',
     }));

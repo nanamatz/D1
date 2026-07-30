@@ -10,7 +10,7 @@ import {
   PATTERN_CONSTELLATION,
 } from '../src/engine/constellations';
 import { CONSTELLATION_ART } from '../src/ui/constellationArt';
-import { ConstellationCardArt } from '../src/ui/components/ConstellationCardArt';
+import { CardArt } from '../src/ui/components/CardArt';
 
 describe('Constellation cards', () => {
   it('maps all 12 zodiac cards one-to-one to the 12 sentence patterns', () => {
@@ -43,7 +43,8 @@ describe('Constellation cards', () => {
   });
 
   it('renders through the shared 5:7 SVG card geometry', () => {
-    const markup = renderToStaticMarkup(createElement(ConstellationCardArt, {
+    const markup = renderToStaticMarkup(createElement(CardArt, {
+      family: 'constellation' as const,
       id: 'libra',
       title: 'Libra',
     }));

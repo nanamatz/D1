@@ -8,6 +8,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { readValue, writeValue } from './storage';
+import { clamp } from './math';
 
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined'
@@ -135,7 +136,6 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
   }, [key, ref]);
 }
 
-const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
 /**
  * Balatro-style pointer parallax. While the cursor is over `ref`'s element, adds

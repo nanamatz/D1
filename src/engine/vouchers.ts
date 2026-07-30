@@ -74,9 +74,6 @@ export const VOUCHER_REGISTRY: ReadonlyMap<VoucherId, VoucherDef> =
 export const ALL_VOUCHER_IDS: readonly VoucherId[] = VOUCHERS.map((v) => v.id);
 export const BASE_VOUCHER_IDS: readonly VoucherId[] =
   VOUCHERS.filter((v) => v.tier === 'base').map((v) => v.id);
-export const UPGRADED_VOUCHER_IDS: readonly VoucherId[] =
-  VOUCHERS.filter((v) => v.tier === 'upgrade').map((v) => v.id);
-
 export const hasVoucher = (run: RunState, id: VoucherId): boolean => run.vouchers.includes(id);
 
 /** Base vouchers are always eligible. An upgrade also needs its profile unlock
@@ -212,6 +209,7 @@ export const emojiTileShopPrice = (run: RunState, price: number): number =>
 
 /** Central duplicate rule. Future explicit duplicate-breakers relax only this gate. */
 export const canOwnJoker = (run: RunState, defId: string): boolean =>
+  run.jokers.some((joker) => joker.defId === 'copyEditor') ||
   !run.jokers.some((joker) => joker.defId === defId);
 
 export const canAddJoker = (

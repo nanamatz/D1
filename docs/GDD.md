@@ -607,14 +607,16 @@ individual unlock conditions. Only an **unseeded** run advances or earns those
 unlocks. A locked non-Legendary tile is excluded from shop stock, Charm Packs,
 Fable creation, Crane-and-Sun random creation, and every future non-Legendary
 acquisition route. Legendary has no unlock gate: Phoenix always draws from all
-five unowned Legendary definitions. Common/Uncommon starter membership remains
-under review in `docs/EMOJI_TILE_IDEA_BANK.md`.
+five unowned Legendary definitions. The 116-tile roster is fixed; starter
+membership and persistent achievement tracking remain pending.
 
 **No duplicate Emoji Tiles (rule, expanded 2026-07-29).** A run cannot acquire
 an Emoji Tile it already owns. This applies to shop stock and purchase, Charm
 Pack offers and picks, Fable-created random tiles, and every other random or
 direct acquisition path. The pool shrinks as a run goes long (intended), and
-selling a tile returns it to the pool.
+selling a tile returns it to the pool. **Copy Editor is the explicit exception:**
+while owned, duplicate offers and acquisitions are allowed, but slot limits
+still apply.
 **Exception — only an explicit effect may break this.** Boar (§10.3) is the
 designed exception: it creates a copy of one random owned Emoji Tile and destroys
 the others. Its copy may duplicate the selected definition; Negative itself is not
@@ -836,18 +838,16 @@ until it is moved into §11.
 > The engine identifier stays `joker` (`JokerDef`, `src/engine/jokers/`,
 > `BALANCE.jokerSlots`) — display terms never rename engine identifiers.
 
-**Roster status (updated 2026-07-30).** The tables below contain **30 authored
-definitions**: Common 5 + Uncommon 9 + confirmed Rare 11 + confirmed Legendary
-5. Common 32 and Uncommon 34 are under review in
-`docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md`; 101
-deduplicated alternatives live in `docs/EMOJI_TILE_IDEA_BANK.md`. Rare and
-Legendary alternatives in the idea bank are archival replacement options, not
-members of the active roster.
+**Roster status (updated 2026-07-30).** The active roster contains **116 authored
+definitions**: Common 24 + Uncommon 42 + Rare 45 + Legendary 5. This promotes
+the idea bank's 19 Common, 33 Uncommon, and 34 Rare alternatives without
+replacing the earlier 30 entries. The separate 97-tile redesign in
+`docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md` remains
+postponed and is not an implementation source.
 
-**Implementation status (roster complete, 2026-07-30).** All 30 authored
-definitions ship as data + event hooks — Common 5 (C6–C10), Uncommon 9
-(U1/U3–U10), Rare 11 (R1–R11) and Legendary 5 (L1–L5) — one file each under
-`src/engine/jokers/`. **Art is complete:** all 30 definitions have 84×112 pixel
+**Implementation status (roster complete, 2026-07-30).** All 116 definitions
+ship as data + event hooks, one file each under `src/engine/jokers/`.
+**Art is complete:** all 116 definitions have 84×112 pixel
 masters registered through the shared resolver. The shared 124×165 runtime
 frame is wired to the owned shelf, shop,
 opened Charm Pack, held-consumable shelf, and Collection.
@@ -867,12 +867,10 @@ from the word's own suit multiplier to `suitMult.vulgar × 2`, which keeps it
 independent of shelf order; `submission.suit` stays canonical for bosses,
 Unison, and sentence history.
 
-**Unlock model (confirmed 2026-07-29; implementation pending).** Common,
-Uncommon, and Rare use per-profile achievements; progress and completion count
-only in unseeded runs, and locked tiles never appear (§9.2). Legendary has no
-unlock gate and is discovered through Phoenix. Unlock state is profile data
-outside `RunState`; the Common/Uncommon starter roster is fixed when those two
-rarities finish review.
+**Unlock model (design retained; implementation pending).** The achievement
+conditions listed in the idea bank remain future profile progression. Until
+that system lands, all Common/Uncommon/Rare entries participate in their normal
+offer pools; Legendary has no normal offer weight and is acquired through Phoenix.
 
 **Emoji tiles** are acquired by shop purchase/draw (§9). Unlike Balatro's jokers, which mostly play in the single layer of "score calculation," emoji tiles play across **3 layers**: **(1) Letter/Tile  (2) Suit (register)  (3) Sentence/Phase**.
 
@@ -889,10 +887,17 @@ Fable/Constellation/Gambler canvas or the `244×400` Pack canvas. Shelf, shop,
 opened-pack, and Collection surfaces reuse the same source art with
 aspect-ratio-preserving scaling. The image asset is the entire visible card:
 no wrapper panel, persistent name, edition label, or rarity-colored border.
-Names, effects, and rarity live in the tooltip. Art uses a deliberately simple
-early-arcade pixel language: one large symbol, large square pixels, flat
-3–5-color shapes, solid background, no scenery, texture, lighting, or tiny
-decoration. Every surface applies the shared idle motion and cursor-following
+Names, effects, and rarity live in the tooltip. Art uses one unified
+**Pac-Man-style early maze-arcade** pixel language. The existing 30 masters in
+`src/ui/assets/jokers/` are the canonical references: deep navy playfield,
+white/red/yellow/cyan-led 3–5-color palette, one large blocky silhouette, hard
+un-antialiased pixel edges, and a shared sprite scale/line weight. Do not use
+painterly object icons, gradients, shadows, scenery, texture, lighting, or tiny decoration.
+“Pac-Man-style” describes the common maze-arcade grammar and palette only; never
+copy Pac-Man characters, ghosts, maze layouts, or other original assets.
+(Changed 2026-07-30: made the previously implicit roster-wide art direction explicit
+after a generic pixel-icon interpretation drifted from the intended look.)
+Every surface applies the shared idle motion and cursor-following
 tilt/sheen directly to that image.
 
 ### 11.1 Roles by Rarity
@@ -904,7 +909,11 @@ tilt/sheen directly to that image.
 | Rare | Multiplication (×Mult) appears + full scaling — acceleration engine | 2–3 |
 | Legendary | Rule-breaking — redefines the run (5 total) | 3 |
 
-### 11.2 Common — active 5 (32 under review)
+The compact tables below retain the original 30 entries. The promoted 86 rows
+in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 are equally normative and complete
+the active 116-entry roster.
+
+### 11.2 Common — active 24
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
@@ -914,7 +923,7 @@ tilt/sheen directly to that image.
 | C9 | Alphabetical Order | +15 Mult if the word contains consecutive letters | 1 | — |
 | C10 | Miser | +1 Mult per 5 gold held | 1 | — |
 
-### 11.3 Uncommon — active 9 (34 under review)
+### 11.3 Uncommon — active 42
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
@@ -928,7 +937,7 @@ tilt/sheen directly to that image.
 | U9 | Vowel Magnet | ×1.5 Mult if word has more vowels than consonants | 1 | — |
 | U10 | Equilibrist | +40 Chips & +4 Mult if vowel and consonant counts are equal | 1 | — |
 
-### 11.4 Rare — confirmed 11
+### 11.4 Rare — active 45
 
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
@@ -1046,18 +1055,13 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each
 - **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch classification → baked table; one-word = one-suit/POS resolution rule (§3.2, §4.2).
 - **Finisher boss count.** 2 concepts exist; decide whether the pool needs more for endless-mode variety.
 - **Emoji tiles keyed to letter hands (§5.5).** Letter Hands ship without emoji-tile support; a family of emoji tiles that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open emoji-tile material.
-- **Common/Uncommon roster selection.** Rare 11 and Legendary 5 are confirmed.
-  Common 32 and Uncommon 35 remain a review baseline, with 19 and 33 additional
-  deduplicated candidates respectively. Rare 34 and Legendary 15 alternatives
-  remain archival. See `docs/EMOJI_TILE_IDEA_BANK.md`.
-- **Emoji Tile engine migration.** The ten-tile Rare/Legendary review sample is
-  implemented. After sample approval and Common/Uncommon selection, implement
-  the remaining roster with the same data + event-hook path. The former six-tile
-  proof set is permanently retired and has no compatibility registry.
+- **Emoji Tile balance verification.** The 116-tile active roster is implemented.
+  Run 8-Ante and endless simulations over the promoted Common 19, Uncommon 33,
+  and Rare 34 effects; the separate 97-tile redesign remains postponed.
 - **Emoji Tile profile unlock implementation.** The unseeded-only unlock rule and
   locked-pool exclusion are confirmed (§9.2, §11), but the final starter subset,
   achievements, profile storage schema, Collection disclosure, and offer filters
-  wait on the roster selection. Adding a persistence key requires matching
+  build on the now-fixed 116-tile roster. Adding a persistence key requires matching
   updates in `src/ui/storage.ts` and `desktop/save-store.js`.
 - **Letter-hand leveling (if ever).** Constellation cards level sentence patterns only; whether letter hands should ever be levelable (and by what consumable) is deferred.
 - **Ink colors = stakes (playtest-03 A).** The deferred difficulty/stake ladder is re-skinned as **Ink** (검정 → 빨강 …); red ink = the editor's pen. Reframed as matcher-leniency knobs (per playtest-01), not true grammar checking.

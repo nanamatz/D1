@@ -36,13 +36,11 @@ import type {
   TileMaterial,
 } from './types';
 
-/** Fable-card pool (legacy export name retained for existing semantic call sites). */
-export const STATIONERY_POOL: readonly ConsumableId[] = FABLE_IDS;
-/** Back-compat alias — some call sites still import CONSUMABLE_POOL (discardGain). */
-export const CONSUMABLE_POOL = STATIONERY_POOL;
+/** Fable-card pool — a Fable Pack's contents and the discardGain font-seal reward. */
+export const FABLE_POOL: readonly ConsumableId[] = FABLE_IDS;
 
-/** Constellation-card pool. The legacy variable name is internal only. */
-export const PUNCTUATION_POOL = [...CONSTELLATION_IDS];
+/** Constellation-card pool — a Constellation Pack's contents. */
+export const CONSTELLATION_POOL: readonly ConsumableId[] = CONSTELLATION_IDS;
 
 /** Gambler-card pool — the Ink Pack's contents (GDD §9.3, §10.3). */
 export const GAMBLER_POOL: readonly ConsumableId[] = GAMBLER_IDS;
@@ -120,7 +118,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'consumable': {
-      options = drawConsumables(STATIONERY_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
+      options = drawConsumables(FABLE_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
       // Comic Book (GDD §9.3): each choice rolls to become a Gambler card, capped
       // at one per pack. Without the voucher the chance is exactly 0 — the roll is
       // skipped entirely so the seeded stream is unchanged for runs without it.
@@ -139,7 +137,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'pattern': {
-      options = drawConsumables(PUNCTUATION_POOL, show, rng, (id) => ({
+      options = drawConsumables(CONSTELLATION_POOL, show, rng, (id) => ({
         kind: 'punctuation',
         id,
         pattern: CONSTELLATION_PATTERN[id]!,

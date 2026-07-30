@@ -33,7 +33,7 @@ describe('latest feedback UI regressions', () => {
     expect(component).toContain('patternChipsMult(evt.pattern, evt.from)');
     expect(component).toContain('after.mult - before.mult');
     expect(component).toContain('after.chips - before.chips');
-    expect(component).toContain('ConstellationCardArt');
+    expect(component).toContain("<CardArt family=\"constellation\"");
     expect(screens).toContain('@keyframes plu-shake');
     expect(screens).toContain('@keyframes plu-card-vanish');
   });

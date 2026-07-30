@@ -12,6 +12,8 @@
  * no-op — never a throw, never a buffer.
  */
 
+import { clamp } from './math';
+
 export type SfxName =
   | 'tilePop' | 'countTick' | 'jokerBlip' | 'stamp' | 'multFill' | 'totalRoll'
   | 'clearFanfare' | 'failSting'
@@ -122,7 +124,6 @@ export const MATERIAL_SFX: Record<string, SfxName> = {
   wood: 'matWood',
 };
 
-const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
 // ---------------------------------------------------------------------------
 // BGM (work order B phase 2) — a tiny looping chiptune SEQUENCER, same synth-only

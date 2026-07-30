@@ -34,27 +34,18 @@ import {
   gamblerTargetsTiles,
   isGamblerId,
 } from '../../engine/gamblers';
-import { FableCardArt } from './FableCardArt';
-import { GamblerCardArt } from './GamblerCardArt';
-import { ConstellationCardArt } from './ConstellationCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { useEntering } from './ScreenTransition';
 import { packFableFxBus } from '../packFableFx';
 import { jokerArt } from '../jokerArt';
+import { CardArt } from './CardArt';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
-const PUNCTUATION_EMOJI: Partial<Record<ConsumableId, string>> = {
-  ellipsis: '…', exclamation: '❗', doubleExclamation: '‼️', period: '。',
-  colon: '：', semicolon: '；', dash: '—', comma: '，',
-};
 
-/** Emoji/glyph for a non-tile option. */
-function optionEmoji(option: PackOption): string {
-  if (option.kind === 'punctuation') return PUNCTUATION_EMOJI[option.id] ?? '✒️';
-  if (option.kind === 'consumable') return CONSUMABLE_EMOJI[option.id] ?? '📄';
-  return '📄'; // tile carries its own face; never reached here
-}
+/** Glyph fallback for an option with no card art — only the stationery items. */
+const optionEmoji = (option: PackOption): string =>
+  option.kind === 'consumable' ? (CONSUMABLE_EMOJI[option.id] ?? '📄') : '📄';
 
 interface Tip {
   title: string;
@@ -139,19 +130,19 @@ function OptionCard({
             ? <img className="pack-joker-art" src={jokerArt(option.id)} alt="" />
             : null
         ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
-          <ConstellationCardArt
+          <CardArt family="constellation"
             id={option.id}
             className="shop-consumable-art"
             title={name}
           />
         ) : option.kind === 'consumable' && isFableId(option.id) ? (
-          <FableCardArt
+          <CardArt family="fable"
             id={option.id}
             className="shop-consumable-art"
             title={name}
           />
         ) : option.kind === 'consumable' && isGamblerId(option.id) ? (
-          <GamblerCardArt
+          <CardArt family="gambler"
             id={option.id}
             className="shop-consumable-art"
             title={name}

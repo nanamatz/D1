@@ -13,7 +13,7 @@
  */
 import { BALANCE } from './balance';
 import { patchTiles, removeIds } from './fables';
-import { LEGENDARY_JOKERS, RARE_JOKERS, onTilesDestroyed } from './jokers';
+import { LEGENDARY_JOKERS, RARE_JOKERS, onTilesCreated, onTilesDestroyed } from './jokers';
 import type { Rng } from './rng';
 import type {
   BlindState,
@@ -111,10 +111,6 @@ export function gamblerTargetsTiles(id: ConsumableId): boolean {
 export function gamblerPickCount(id: GamblerId): { min: number; max: number } {
   return gamblerTargetsTiles(id) ? { min: 1, max: 1 } : { min: 0, max: 0 };
 }
-
-/** Deer resolves the moment it is chosen and never occupies a held slot — the
- *  same rule Constellation cards follow inside their pack (GDD §10.3 #9). */
-export const gamblerResolvesInstantly = (id: GamblerId): boolean => id === 'deer';
 
 const fieldTiles = (field: readonly Tile[], ids: readonly string[]): Tile[] => {
   const wanted = new Set(ids);
@@ -268,7 +264,10 @@ export function useGambler(
         font: 'medium',
         edition: 'base',
       }));
-      nextRun = onTilesDestroyed({ ...nextRun, bag: [...nextRun.bag, ...born] }, doomed.length);
+      nextRun = onTilesCreated(
+        onTilesDestroyed({ ...nextRun, bag: [...nextRun.bag, ...born] }, doomed.length),
+        born.length,
+      );
       break;
     }
     case 'createJoker': {

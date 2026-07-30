@@ -1188,12 +1188,6 @@ body.cb-safe .tile.hint {
   height: 96px;
 }
 /* Tile-pack art in the 도감 Packs grid (only the tile/Type pack has art). */
-.cc-pack-art {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
 .select-desc {
   font-size: var(--fs-md);
   color: var(--ink-dim);
@@ -2005,17 +1999,6 @@ body.cb-safe .tile.hint {
   font-style: italic;
   text-align: center;
 }
-.card-family-gallery {
-  width: min(900px, 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 12px;
-  background: rgba(6, 15, 18, 0.38);
-  border-radius: 14px;
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.2);
-}
 .fable-collection {
   width: min(920px, 100%);
   display: flex;
@@ -2093,49 +2076,6 @@ body.cb-safe .tile.hint {
   display: block;
   object-fit: contain;
   image-rendering: pixelated;
-}
-.card-family-placeholder-grid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(82px, 1fr));
-  gap: 16px;
-}
-.card-family-slot {
-  position: relative;
-  aspect-ratio: 5 / 7;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 3px solid var(--panel-edge);
-  border-radius: 9px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%),
-    repeating-linear-gradient(45deg, var(--menu-btn-bg) 0 8px, var(--panel) 8px 16px);
-  box-shadow:
-    inset 0 0 0 3px rgba(0, 0, 0, 0.3),
-    var(--shadow-sm);
-}
-.card-family-slot::after {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  border: 2px solid currentColor;
-  opacity: 0.32;
-}
-.card-family-slot span {
-  z-index: 1;
-  font-family: 'Jersey 10';
-  font-size: clamp(36px, 5vw, 64px);
-  color: var(--ink-dim);
-}
-.card-family-gallery.fableCards .card-family-slot {
-  color: #d782d5;
-}
-.card-family-gallery.constellationCards .card-family-slot {
-  color: var(--chips);
-}
-.card-family-gallery.inkCards .card-family-slot {
-  color: #7188ff;
 }
 @media (max-width: 720px) {
   .fable-card-grid {
@@ -2369,13 +2309,6 @@ body.cb-safe .tile.hint {
   cursor: pointer;
   font-size: var(--fs-lg);
 }
-.bag-toggle {
-  display: flex;
-  gap: 4px;
-  background: #0f1b22;
-  border-radius: 10px;
-  padding: 3px;
-}
 /* ===== playtest-03 E-1/E-2: pouch widget + bottom drawer ===== */
 /* The dock is what's pinned to the corner; the widget box and its count stack
    inside it, so the count reads under the box like the shelf counts do. The
@@ -2537,82 +2470,10 @@ body.cb-safe .tile.hint {
   }
 }
 
-/* legacy bag popover (superseded by the pouch drawer) */
-.bag-widget-wrap {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 45;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-.bag-widget {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--panel);
-  border-top: 1px solid var(--panel-edge);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  padding: 8px 14px;
-  cursor: pointer;
-  color: var(--ink);
-}
-.bag-widget.pinned {
-  outline: 2px solid var(--gold);
-}
-.bw-stack {
-  position: relative;
-  width: 26px;
-  height: 32px;
-}
-.bw-stack span {
-  position: absolute;
-  width: 22px;
-  height: 28px;
-  border-radius: 5px;
-  background: radial-gradient(120% 120% at 25% 18%, #fffdf6, var(--tile-face) 60%, #e2d8c4);
-  border: 1px solid #c9bfa8;
-}
-.bw-stack span:nth-child(1) {
-  left: 0;
-  top: 4px;
-  transform: rotate(-8deg);
-}
-.bw-stack span:nth-child(2) {
-  left: 3px;
-  top: 2px;
-  transform: rotate(4deg);
-}
-.bw-stack span:nth-child(3) {
-  left: 6px;
-  top: 0;
-}
-.bw-count {
-  font-family: 'Jersey 10';
-  font-size: var(--fs-2xl);
-  color: var(--gold);
-}
-.bag-popover {
-  width: min(460px, 92vw);
-  max-height: 70vh;
-  overflow: auto;
-}
-
-.bag-body {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 14px;
-}
 @media (max-width: 560px) {
   .bag-body {
     grid-template-columns: 1fr;
   }
-}
-.bag-totals {
-  align-self: start;
 }
 .bt-row {
   display: flex;
@@ -2633,32 +2494,8 @@ body.cb-safe .tile.hint {
   color: var(--ink-dim);
   font-style: italic;
 }
-.bag-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-  gap: 8px;
-}
-.bag-col {
-  background: var(--inset);
-  border: 1px solid var(--inset-edge);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 0;
-}
 .bag-col.empty {
   opacity: 0.4;
-}
-.bg-letter {
-  font-family: 'Jost';
-  font-weight: 700;
-  font-size: var(--fs-2xl);
-}
-.bg-count {
-  font-family: 'Jersey 10';
-  font-size: var(--fs-lg);
-  color: var(--gold);
 }
 /* Item 2 (playtest-06): Run Info reads at a glance — larger type and roomier
    rows, and ONE PATTERN PER LINE. It was a 120px auto-fill grid, so patterns
