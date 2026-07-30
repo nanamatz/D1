@@ -1,34 +1,55 @@
 /**
- * Word collection tracking (playtest-01 P2-2). Records the first time each word
- * is played, in localStorage, accumulating across sessions. Gibberish is
- * excluded by the caller (it has no dictionary word). The collection *screen*
- * (도감) is a later milestone — this is just the tracking hook.
+ * Profile-scoped word collection and lifetime play stats. Gibberish is excluded
+ * by the caller because it has no dictionary entry.
  */
 
-import { BALANCE } from '../engine/balance';
 import { readValue, writeValue } from './storage';
 
 const KEY = 'wj.collection';
 
-/** word (lowercase) → first-played epoch ms. */
-export type Collection = Record<string, number>;
+export interface WordCollectionEntry {
+  firstPlayedAt: number;
+  plays: number;
+  bestScore: number;
+}
+
+/** word (lowercase) → lifetime profile stats. */
+export type Collection = Record<string, WordCollectionEntry>;
 
 export function loadCollection(): Collection {
-  return readValue<Collection>(KEY) ?? {};
+  const stored = readValue<Record<string, unknown>>(KEY);
+  if (!stored || typeof stored !== 'object') return {};
+
+  const collection: Collection = {};
+  for (const [word, value] of Object.entries(stored)) {
+    const entry = normalizeEntry(value);
+    if (entry) collection[word] = entry;
+  }
+  return collection;
 }
 
 /**
- * Record a played word if new. Returns true if it was newly collected, false if
- * already present. Case-insensitive.
+ * Record a valid word play. Returns true only when it is newly discovered.
+ * Score is the settled individual-word score; sentence bonuses are separate.
  */
-export function recordWord(word: string, now: number = Date.now()): boolean {
+export function recordWord(word: string, score = 0, now: number = Date.now()): boolean {
   const w = word.trim().toLowerCase();
   if (!w) return false;
   const collection = loadCollection();
-  if (collection[w] !== undefined) return false;
-  collection[w] = now;
+  const previous = collection[w];
+  collection[w] = previous
+    ? {
+        ...previous,
+        plays: previous.plays + 1,
+        bestScore: Math.max(previous.bestScore, normalizedScore(score)),
+      }
+    : {
+        firstPlayedAt: now,
+        plays: 1,
+        bestScore: normalizedScore(score),
+      };
   writeValue(KEY, collection);
-  return true;
+  return previous === undefined;
 }
 
 export function collectionSize(): number {
@@ -41,42 +62,65 @@ export interface CollectionHighlight {
 }
 
 export interface CollectionHighlights {
+  highestScore: CollectionHighlight | null;
   longest: CollectionHighlight | null;
-  toughest: CollectionHighlight | null;
+  mostPlayed: CollectionHighlight | null;
 }
 
-/**
- * Derived Collection records: "toughest" means the highest base letter-Chip
- * sum, with length as the tie-break. No new profile data needs to be persisted.
- */
 export function collectionHighlights(collection: Collection = loadCollection()): CollectionHighlights {
+  let highestScore: CollectionHighlight | null = null;
   let longest: CollectionHighlight | null = null;
-  let toughest: CollectionHighlight | null = null;
-  for (const word of Object.keys(collection)) {
-    const chips = wordChips(word);
+  let mostPlayed: CollectionHighlight | null = null;
+  for (const [word, entry] of Object.entries(collection)) {
+    if (
+      !highestScore ||
+      entry.bestScore > highestScore.value ||
+      (entry.bestScore === highestScore.value && word.length > highestScore.word.length)
+    ) {
+      highestScore = { word, value: entry.bestScore };
+    }
     if (
       !longest ||
       word.length > longest.value ||
-      (word.length === longest.value && chips > wordChips(longest.word))
+      (word.length === longest.value && entry.bestScore > collection[longest.word]!.bestScore)
     ) {
       longest = { word, value: word.length };
     }
     if (
-      !toughest ||
-      chips > toughest.value ||
-      (chips === toughest.value && word.length > toughest.word.length)
+      !mostPlayed ||
+      entry.plays > mostPlayed.value ||
+      (entry.plays === mostPlayed.value &&
+        entry.bestScore > collection[mostPlayed.word]!.bestScore)
     ) {
-      toughest = { word, value: chips };
+      mostPlayed = { word, value: entry.plays };
     }
   }
-  return { longest, toughest };
+  return { highestScore, longest, mostPlayed };
 }
 
-function wordChips(word: string): number {
-  return [...word.toUpperCase()].reduce(
-    (sum, letter) => sum + (BALANCE.letterChips[letter] ?? 0),
-    0,
-  );
+function normalizeEntry(value: unknown): WordCollectionEntry | null {
+  // Pre-stat schema: the value was the first-played timestamp.
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return { firstPlayedAt: value, plays: 1, bestScore: 0 };
+  }
+  if (!value || typeof value !== 'object') return null;
+
+  const raw = value as Partial<WordCollectionEntry>;
+  return {
+    firstPlayedAt:
+      typeof raw.firstPlayedAt === 'number' && Number.isFinite(raw.firstPlayedAt)
+        ? raw.firstPlayedAt
+        : 0,
+    plays:
+      typeof raw.plays === 'number' && Number.isFinite(raw.plays)
+        ? Math.max(1, Math.floor(raw.plays))
+        : 1,
+    bestScore: normalizedScore(raw.bestScore ?? 0),
+  };
+}
+
+function normalizedScore(score: number): number {
+  return Number.isFinite(score) ? Math.max(0, Math.round(score)) : 0;
 }
 
 const SEEN_KEY = 'wj.collectionSeen';

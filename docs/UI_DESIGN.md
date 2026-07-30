@@ -214,10 +214,10 @@ Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle di
 **Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (`src/ui/assets/tomato.png`, from `docs/T_Tomato.png`; tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. The tomato is greyscaled until **RED** unlocks (it belongs to the red group). *D-6 retired 2026-07-30:* the main `.frame` is transparent; Draft/Revision/Deadline no longer paint per-stage backdrops. *D-7 (changed 2026-07-29):* Collection uses a centred framed modal. Its root menu is an asymmetric two-column stack whose category-button thickness is proportional to a normalized estimate of that category's visible row footprint; both columns use the same total weight so equal weights stay physically equal. Fable, Constellation, and Gambler Cards form one inset three-button family block and use distinct purple/cyan/green buttons. All three families use high-detail, path-only, 32-color SVG illustrations normalized without cropping to the Fable standard: a `500×700` 5:7 output canvas with a `250×350` logical pixel grid. They share the same framed SVG component in the 5-column, 10-per-page Collection galleries and in shop, pack, and held-card surfaces. Fable retains its original English title plates, while localized names remain available in tooltips and accessible labels. Twelve Gambler effects are now designed and two remain pending, but their engine registry, Ink Pack acquisition, and runtime tooltips remain intentionally unimplemented. Detail modals have no shared fixed minimum height and instead size to their actual grid rows. The orange Back bar spans the modal footer; mobile collapses the menu to one column. Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
 
 *D-7a Words reference + records (added 2026-07-30):* Collection → Words begins
-with a compact four-card challenge strip: longest discovered word, highest base
-letter-Chip sum ("toughest build," length breaks ties), register coverage, and
-total discoveries. Beneath it, **Words** and **Register Scores** tabs separate
-the searchable word gallery from the live ×1/×1.5/×2/×3 register reference.
+with a compact four-card challenge strip: highest-scoring word (best settled
+individual-word score), longest discovered word, most-played word, and total
+discoveries. Beneath it, **Words** and **Register Scores** tabs separate the
+searchable word gallery from the live ×1/×1.5/×2/×3 register reference.
 
 *D-7b pattern pictograms (added 2026-07-30):* the zodiac mark already engraved
 at the top of each Constellation card becomes the shared pictogram for its

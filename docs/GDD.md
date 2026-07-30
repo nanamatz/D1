@@ -252,9 +252,11 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 **Collection surfacing (added 2026-07-30).** Collection → Words has a separate
 Register Scores tab that exposes these four live `balance.ts` multipliers and
 their risk/reward roles. The Words tab also shows profile-derived challenge
-records: longest discovered word, highest base letter-Chip sum ("toughest
-build," length breaks ties), register coverage, and total discoveries. These
-records are derived from `wj.collection`; they add no save keys or game rules.
+records: highest-scoring word (best settled individual-word score, excluding
+sentence bonuses), longest discovered word, most-played word, and total
+discoveries. `wj.collection` stores each word's first-play time, play count,
+and best score without adding a save key; legacy timestamp-only entries migrate
+as one play with no historical score.
 
 ### 3.2 Register Data Acquisition Pipeline
 

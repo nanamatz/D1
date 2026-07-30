@@ -129,7 +129,7 @@ export interface GameState {
    *  from the old committed to the new one during the animation (playtest-04 A-1) */
   committedBefore: number;
   /** last played word (for collection tracking); null on a fresh blind */
-  lastPlayed: { text: string; isGibberish: boolean } | null;
+  lastPlayed: { text: string; isGibberish: boolean; score: number } | null;
   /** Magnifier result: up to 3 spellable words to highlight, or null */
   hint: HintWord[] | null;
   /** shop stock while phase === 'shop', else null */
@@ -376,7 +376,7 @@ export function useGame(): UseGame {
   // A globally-new word also bumps this run's discovery count (Game Over §2.7).
   useEffect(() => {
     const lp = state.lastPlayed;
-    if (lp && !lp.isGibberish && recordWord(lp.text)) {
+    if (lp && !lp.isGibberish && recordWord(lp.text, lp.score)) {
       setState((prev) => ({
         ...prev,
         stats: { ...prev.stats, discoveries: prev.stats.discoveries + 1 },
@@ -1205,7 +1205,11 @@ export function useGame(): UseGame {
         // committed BEFORE this word, so the round number climbs to the new
         // committed during the settle rather than snapping (A-1).
         committedBefore: prev.blind.committedScore,
-        lastPlayed: { text: submission.text, isGibberish: submission.isGibberish },
+        lastPlayed: {
+          text: submission.text,
+          isGibberish: submission.isGibberish,
+          score: Math.round(submission.settledScore),
+        },
         hint: null,
         stats: { ...prev.stats, wordsPlayed: prev.stats.wordsPlayed + 1, bestWord },
         rngCounter: prev.rngCounter + 1,

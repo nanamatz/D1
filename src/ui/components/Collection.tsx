@@ -312,16 +312,24 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const foundBySuit = useMemo(() => Object.fromEntries(
     registerSuits.map((id) => [id, all.filter((word) => word.found && word.suit === id).length]),
   ) as Record<Suit, number>, [all]);
-  const suitsFound = registerSuits.filter((id) => foundBySuit[id] > 0).length;
-  const recordWord = (record: { word: string } | null) =>
+  const recordName = (record: { word: string } | null) =>
     record ? record.word.toUpperCase() : t('collection.record.none');
 
   return (
     <>
       <div className="word-records" aria-label={t('collection.records.title')}>
         <div className="word-record">
+          <span>{t('collection.record.highestScore')}</span>
+          <strong>{recordName(records.highestScore)}</strong>
+          <small>
+            {records.highestScore
+              ? t('collection.record.score', { n: records.highestScore.value })
+              : t('collection.record.start')}
+          </small>
+        </div>
+        <div className="word-record">
           <span>{t('collection.record.longest')}</span>
-          <strong>{recordWord(records.longest)}</strong>
+          <strong>{recordName(records.longest)}</strong>
           <small>
             {records.longest
               ? t('collection.record.letters', { n: records.longest.value })
@@ -329,18 +337,13 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
           </small>
         </div>
         <div className="word-record">
-          <span>{t('collection.record.toughest')}</span>
-          <strong>{recordWord(records.toughest)}</strong>
+          <span>{t('collection.record.mostPlayed')}</span>
+          <strong>{recordName(records.mostPlayed)}</strong>
           <small>
-            {records.toughest
-              ? t('collection.record.baseChips', { n: records.toughest.value })
+            {records.mostPlayed
+              ? t('collection.record.plays', { n: records.mostPlayed.value })
               : t('collection.record.start')}
           </small>
-        </div>
-        <div className="word-record">
-          <span>{t('collection.record.registers')}</span>
-          <strong>{suitsFound}/4</strong>
-          <small>{t('collection.record.registerGoal')}</small>
         </div>
         <div className="word-record">
           <span>{t('collection.record.discovered')}</span>
@@ -348,7 +351,6 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
           <small>{t('collection.record.keepGoing')}</small>
         </div>
       </div>
-      <p className="word-record-rule">{t('collection.record.toughestRule')}</p>
       <div className="word-tabs" role="tablist">
         {(['words', 'registers'] as const).map((id) => (
           <button

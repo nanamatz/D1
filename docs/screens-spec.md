@@ -137,7 +137,7 @@ One screen, two framings on `gameover.won`: **loss** — red "Game Over", defeat
 
 | Category | Contents | Notes |
 |---|---|---|
-| **Words** | profile challenge strip (longest word · toughest base-letter-Chip build · register coverage · discoveries), then tabs: **Words** = tile-styled entries with search/suit filter and pagination; **Register Scores** = the live Standard/Formal/Slang/Vulgar multipliers and risk/reward copy | records derive from the existing word collection; “toughest” = highest base letter-Chip sum, with length as the tie-break; no new save key |
+| **Words** | profile challenge strip (highest-scoring word · longest word · most-played word · discoveries), then tabs: **Words** = tile-styled entries with search/suit filter and pagination; **Register Scores** = the live Standard/Formal/Slang/Vulgar multipliers and risk/reward copy | highest score uses the best settled individual-word score (not a sentence bonus); the existing `wj.collection` key now stores play count and best score, while timestamp-only entries are read backward-compatibly |
 | Jokers | all Emoji Tiles, rarity-ordered, paginated **5×3 grid (15 per page)** | image-only `124×165px` runtime frame, exactly matching the in-run card size (84×112 pixel masters scale with nearest-neighbour rendering); its detail modal removes the redundant outer padding and never shows an internal scrollbar; no wrapper or rarity border; shared idle float and cursor tilt/sheen; tooltip shows name, rarity, and full effect |
 
 All 116 Emoji Tile images use the shared `jokerArt` resolver on every rendered

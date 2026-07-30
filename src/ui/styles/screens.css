@@ -1502,12 +1502,6 @@ body.cb-safe .tile.hint {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.word-record-rule {
-  margin: -8px 0 0;
-  color: var(--ink-dim);
-  font-size: var(--fs-xs);
-  text-align: center;
-}
 .word-tabs {
   display: flex;
   width: min(520px, 100%);
