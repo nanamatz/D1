@@ -103,9 +103,14 @@ export function scoreWord(tiles: readonly Tile[], lexicon: Lexicon): WordSubmiss
   const ctx: WordScoringContext = {
     submission,
     chips: b.chips,
-    mult: b.mult + wordLengthMult(tiles.length, b.isGibberish),
+    mult: b.mult,
   };
   for (const t of tiles) applyTileMaterial(ctx, t, rng);
+  // Length lands AFTER materials, matching loop.ts::scoreSubmission (lines ~453-457):
+  // multiplicative materials (Glass) scale the suit mult only; length stacks on top
+  // of that. Do not move this back above the material loop — Glass ×2 must apply to
+  // suitMult alone, not suitMult+length, or scoreWord and submitWord will disagree.
+  ctx.mult += wordLengthMult(tiles.length, b.isGibberish);
   submission.settledScore = ctx.chips * ctx.mult;
   return submission;
 }

@@ -3,6 +3,9 @@ import { BALANCE } from '../src/engine/balance';
 import { scoreWord, wordLengthMult } from '../src/engine/scoring';
 import { makeLexicon } from '../src/engine/lexicon';
 import { accumulate } from '../src/ui/settle';
+import { newRun } from '../src/engine/run';
+import { startBlind, submitWord } from '../src/engine/loop';
+import { makeRng } from '../src/engine/rng';
 import type { Letter, ScoreEvent, Tile } from '../src/engine/types';
 
 let idc = 0;
@@ -63,5 +66,34 @@ describe('the length beat lands in the settle timeline', () => {
   it('does not touch chips', () => {
     const e: ScoreEvent = { kind: 'wordLength', letters: 3, multDelta: 3 };
     expect(accumulate(15, 1, e).chips).toBe(15);
+  });
+});
+
+/**
+ * Regression pin for the Glass-ordering bug (task-6 fix): scoreWord (the pure
+ * reference path) and submitWord (the live loop.ts pipeline) must apply the
+ * length bonus in the same position relative to the per-tile material loop —
+ * otherwise a MULTIPLICATIVE material (Glass) makes the two pipelines score
+ * the same word differently. Both now apply materials first, then add length
+ * (see scoring.ts::scoreWord's comment). An additive material (porcelain,
+ * polished) would not have caught this, because addition commutes; only a
+ * multiplicative one exposes the ordering.
+ */
+describe('scoreWord/submitWord parity on a multiplicative material (Glass)', () => {
+  it('a word carrying a Glass tile settles identically through both pipelines', () => {
+    const t = tiles('cat');
+    t[0]!.material = 'glass';
+
+    const reference = scoreWord(t, lex).settledScore;
+
+    const run = newRun('wl-parity');
+    const blind = { ...startBlind(run, makeRng('wl-parity')), hand: t };
+    const live = submitWord(blind, run, lex, t.map((x) => x.id), makeRng('wl-parity-roll'))
+      .submission.settledScore;
+
+    // CAT = 15 chips; glass doubles the suit mult only: (1.0 × 2) + length 3 = 5.0
+    // => 15 × 5.0 = 75
+    expect(reference).toBe(75);
+    expect(live).toBe(reference);
   });
 });
