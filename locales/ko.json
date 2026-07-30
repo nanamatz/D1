@@ -62,6 +62,7 @@
   "letterhand.palindrome": "회문",
   "letterhand.vowelFlush": "모음 플러시",
   "letterhand.straight": "스트레이트",
+  "settle.wordLength": "{n}글자",
   "stage.suitMult": "{suit} ×{mult}",
   "stage.sort": "정렬",
   "stage.zoneEmpty": "타일을 여기로 드래그하거나 클릭해 단어를 만드세요",

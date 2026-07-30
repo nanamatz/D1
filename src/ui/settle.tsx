@@ -61,8 +61,8 @@ export interface SettleView {
   activeJokerId: string | null;
   /** the firing joker's contribution, for its popup */
   jokerPop: { jokerId: string; chips: number; mult: number; score: number; gold: number } | null;
-  /** a letter-hand / suit stamp landing this beat */
-  stamp: { kind: 'letterHand' | 'suit'; label: string } | null;
+  /** a letter-hand / suit / word-length stamp landing this beat */
+  stamp: { kind: 'letterHand' | 'suit' | 'wordLength'; label: string } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
    *  (item 6). `id` is the beat index so each pop re-mounts and replays its rise.
    *  `multOp` is 'add' for the additive settle beats; reserved 'mul' would render ×. */
@@ -100,8 +100,8 @@ const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
  * Pure fold of one ScoreEvent into the running chips/mult tally — the single
  * accumulation rule shared by the reduced-motion and animated timelines below.
  *
- * All delta-emitting events (`letterHand`, `joker`, `boss`, `material`) ADD to
- * mult, never overwrite. `suit` also ADDS (not `mult = e.mult`): the engine's
+ * All delta-emitting events (`letterHand`, `wordLength`, `joker`, `boss`,
+ * `material`) ADD to mult, never overwrite. `suit` also ADDS (not `mult = e.mult`): the engine's
  * `ctx.mult` *starts at* the suit multiplier (loop.ts) and every material's
  * `multDelta` is captured as a delta around that already-suit-inclusive value,
  * so the UI's suit-starts-at-0 tally must add the suit event's `mult` rather
@@ -121,6 +121,9 @@ export function accumulate(
   }
   if (e.kind === 'suit') {
     return { chips, mult: mult + e.mult };
+  }
+  if (e.kind === 'wordLength') {
+    return { chips, mult: mult + e.multDelta };
   }
   if (
     e.kind === 'letterHand' ||
@@ -223,7 +226,12 @@ export function SettleProvider({
             audio.play('tilePop');
             audio.play('countTick', { step: tickStep++ });
             triggerTile(e.tileId);
-          } else if (e.kind === 'suit' || e.kind === 'letterHand' || e.kind === 'boss') {
+          } else if (
+            e.kind === 'suit' ||
+            e.kind === 'wordLength' ||
+            e.kind === 'letterHand' ||
+            e.kind === 'boss'
+          ) {
             audio.play('stamp');
           } else if (e.kind === 'joker') {
             audio.play('jokerBlip');
@@ -281,6 +289,8 @@ export function SettleProvider({
             setView({ ...base, stamp: e.suit ? { kind: 'suit', label: e.suit } : null });
           } else if (e.kind === 'letterHand') {
             setView({ ...base, stamp: { kind: 'letterHand', label: e.hand } });
+          } else if (e.kind === 'wordLength') {
+            setView({ ...base, stamp: { kind: 'wordLength', label: String(e.letters) } });
           } else if (e.kind === 'joker') {
             // Per-tile jokers (item 3) carry a tileId — pop on that tile as well as
             // wiggling the joker, and grow the tile's +N when they add chips.

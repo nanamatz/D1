@@ -43,7 +43,9 @@ function WordStamp() {
   const label =
     settle.stamp.kind === 'letterHand'
       ? t(`letterhand.${settle.stamp.label}`)
-      : t(`suit.${settle.stamp.label}`);
+      : settle.stamp.kind === 'wordLength'
+        ? t('settle.wordLength', { n: settle.stamp.label })
+        : t(`suit.${settle.stamp.label}`);
   return <span className={['word-stamp', settle.stamp.kind].join(' ')}>{label}</span>;
 }
 
