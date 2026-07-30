@@ -35,7 +35,7 @@ interface Props {
   lexicon: Lexicon;
 }
 
-/** The letter-hand / suit stamp that lands on the just-scored word (B step 4). */
+/** The letter-hand / suit / word-length stamp that lands on the just-scored word (B step 4). */
 function WordStamp() {
   const { t } = useI18n();
   const settle = useSettleView();
@@ -44,7 +44,7 @@ function WordStamp() {
     settle.stamp.kind === 'letterHand'
       ? t(`letterhand.${settle.stamp.label}`)
       : settle.stamp.kind === 'wordLength'
-        ? t('settle.wordLength', { n: settle.stamp.label })
+        ? t(settle.stamp.label === '1' ? 'settle.wordLength.one' : 'settle.wordLength', { n: settle.stamp.label })
         : t(`suit.${settle.stamp.label}`);
   return <span className={['word-stamp', settle.stamp.kind].join(' ')}>{label}</span>;
 }

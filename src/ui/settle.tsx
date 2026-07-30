@@ -101,15 +101,16 @@ const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
  * accumulation rule shared by the reduced-motion and animated timelines below.
  *
  * All delta-emitting events (`letterHand`, `wordLength`, `joker`, `boss`,
- * `material`) ADD to mult, never overwrite. `suit` also ADDS (not `mult = e.mult`): the engine's
- * `ctx.mult` *starts at* the suit multiplier (loop.ts) and every material's
- * `multDelta` is captured as a delta around that already-suit-inclusive value,
- * so the UI's suit-starts-at-0 tally must add the suit event's `mult` rather
- * than assign it. Overwriting was harmless only while `suit` was always the
- * last mult-bearing event in the log; three materials (polished/glass/
- * leadPlate) mutate `ctx.mult` in the per-tile loop that runs BEFORE `suit` is
- * pushed, so their `material` events now precede `suit` and an overwrite wipes
- * their contribution. Addition is order-independent and correct either way.
+ * `material`) ADD to mult, never overwrite. `suit` also ADDS (not
+ * `mult = e.mult`): the engine's `ctx.mult` *starts at* the suit multiplier
+ * (loop.ts) and every material's `multDelta` is captured as a delta around
+ * that already-suit-inclusive value, so the UI's suit-starts-at-0 tally must
+ * add the suit event's `mult` rather than assign it. Overwriting was
+ * harmless only while `suit` was always the last mult-bearing event in the
+ * log; three materials (polished/glass/leadPlate) mutate `ctx.mult` in the
+ * per-tile loop that runs BEFORE `suit` is pushed, so their `material`
+ * events now precede `suit` and an overwrite wipes their contribution.
+ * Addition is order-independent and correct either way.
  */
 export function accumulate(
   chips: number,

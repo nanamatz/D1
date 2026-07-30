@@ -1054,6 +1054,11 @@ export function useGame(): UseGame {
         const pattern = CONSUMABLE_PATTERN[id];
         const from = pattern ? (prev.run.patternLevels[pattern] ?? 1) : 0;
         const next = applyConsumable(prev, id);
+        // A tile-destroying consumable (fable18, Butterflies) can empty the hand with a
+        // dry pouch — the same unplayable board playWord and discard already guard.
+        // `phase === 'playing'` is load-bearing: applyConsumable also runs in the shop,
+        // where prev.blind is a stale leftover that would read as exhausted.
+        const stalled = next.phase === 'playing' && !next.pendingEnd && blindExhausted(next.blind);
         // feedback #6: a Constellation card just leveled its pattern → fire the flourish.
         if (pattern && next !== prev && next.run.patternLevels[pattern] !== prev.run.patternLevels[pattern]) {
           patternLevelBus.emit({
@@ -1063,7 +1068,7 @@ export function useGame(): UseGame {
             to: next.run.patternLevels[pattern] ?? from + 1,
           });
         }
-        return next;
+        return stalled ? { ...next, pendingEnd: true } : next;
       }),
     [applyConsumable],
   );

@@ -2766,7 +2766,7 @@
   40% { transform: translate(-50%, -2px) scale(1.1); opacity: 1; }
   100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
 }
-/* Letter-hand / suit stamp landing on the just-scored word (B step 4). */
+/* Letter-hand / suit / word-length stamp landing on the just-scored word (B step 4). */
 .word-stamp {
   position: absolute;
   top: -16px;

@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { blindExhausted } from '../src/engine/loop';
 import { resolveBlind } from '../src/engine/progression';
 import { newRun } from '../src/engine/run';
-import type { BlindState, Letter, Tile } from '../src/engine/types';
+import { useFable } from '../src/engine/fables';
+import { makeRng } from '../src/engine/rng';
+import type { BlindState, ConsumableId, Letter, Tile } from '../src/engine/types';
 
 let idc = 0;
 const tile = (letter: Letter): Tile => ({
@@ -58,5 +60,21 @@ describe('useGame wires the predicate at BOTH call sites', () => {
     // The discard reducer must set pendingEnd, not return a stuck board.
     const discard = game.slice(game.indexOf('const discard = useCallback'));
     expect(discard.slice(0, 2000)).toContain('blindExhausted');
+  });
+
+  it('uses it in the consumable path — a destroying Fable/Gambler with a dry pouch', () => {
+    const useConsumable = game.slice(game.indexOf('const useConsumable = useCallback'));
+    expect(useConsumable.slice(0, 1500)).toContain('blindExhausted');
+  });
+});
+
+describe('a tile-destroying Fable can empty the hand with a dry pouch (Important 1)', () => {
+  it('fable18 (destroy up to 2) leaves an exhausted blind when it eats the whole hand', () => {
+    const run = { ...newRun('exhaustion-fable18'), consumables: ['fable18'] as ConsumableId[] };
+    const hand = [tile('A'), tile('B')];
+    const blind = { ...blindWith(hand, []), discardedThisBlind: [] } as BlindState;
+    const result = useFable('fable18', run, blind, hand.map((t) => t.id), makeRng('t'));
+    expect(result.ok).toBe(true);
+    expect(blindExhausted(result.blind)).toBe(true);
   });
 });
