@@ -448,6 +448,8 @@ The removed minimum-word-length floor stays removed globally. (It was once slate
 
 If the bag empties mid-blind, **no refill**; play continues on the remaining hand. Normally irrelevant (68 tiles), but any future phase-extension build remains physically capped by its available tile supply.
 
+**Exhaustion resolves the blind (2026-07-30).** If the hand *and* the pouch are both empty, the board cannot be played further, so the blind resolves immediately through the normal settlement path — the sentence bonus is finalized and, if the total still misses the target, the run ends. Reachable two ways: playing the last tiles, or discarding the whole hand with a dry pouch (§6.3 — discarded tiles do not come back mid-blind). One predicate, `blindExhausted`, serves both call sites; it does **not** short-circuit to Game Over, so the deciding sentence bonus is still seen landing (§7.2).
+
 ---
 
 ## 7. Scoring Pipeline

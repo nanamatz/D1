@@ -116,6 +116,16 @@ export function canEndEarly(blind: BlindState): boolean {
   return blind.projectedScore >= blind.target;
 }
 
+/**
+ * No tiles in hand and none left to draw: the board cannot be played further, so
+ * the blind must resolve (GDD §6.3 — discarded tiles exit play for the blind;
+ * §6.6 — the pouch never refills mid-blind). Both conditions are required: a boss
+ * `handSizeDelta` can empty the hand for a moment while the pouch still holds tiles.
+ */
+export function blindExhausted(blind: BlindState): boolean {
+  return blind.hand.length === 0 && blind.bag.length === 0;
+}
+
 /** Pick tiles from hand by id, preserving the given order; throws on any miss. */
 function takeFromHand(hand: readonly Tile[], ids: readonly string[]): Tile[] {
   const byId = new Map(hand.map((t) => [t.id, t]));

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { newRun } from '../engine/run';
 import { makeRng } from '../engine/rng';
-import { startBlind, submitWord, discardTiles, endBlind } from '../engine/loop';
+import { startBlind, submitWord, discardTiles, endBlind, blindExhausted } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import { drawBoss } from '../engine/bosses';
 import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from './tutorial';
@@ -1216,8 +1216,12 @@ export function useGame(): UseGame {
       // way the board stays visible so the full settle + sentence-finalize plays
       // before Fee Settlement; a timer runs finalize.
       const phasesOut = blind.phasesUsed >= blind.phasesTotal;
+      // No tiles left to play and none to draw — the board is unplayable, so it
+      // resolves here instead of stalling. Below target this is a loss; the normal
+      // finalize path decides, so the sentence bonus still gets its chance.
+      const dryOut = blindExhausted(blind);
       const autoSettle = !blind.earlyEndDisabled && blind.projectedScore >= blind.target;
-      return phasesOut || autoSettle ? { ...next, pendingEnd: true } : next;
+      return phasesOut || dryOut || autoSettle ? { ...next, pendingEnd: true } : next;
     });
   }, [lexicon]);
 
@@ -1313,7 +1317,7 @@ export function useGame(): UseGame {
         makeRng(`${prev.seed}#${prev.rngCounter}`),
       );
       recordVoucherProgress({ kind: 'tilesDiscarded', count: valid.length });
-      return {
+      const nextState: GameState = {
         ...prev,
         blind,
         run: {
@@ -1329,6 +1333,10 @@ export function useGame(): UseGame {
         rngCounter: prev.rngCounter + 1,
         stats: { ...prev.stats, tilesDiscarded: prev.stats.tilesDiscarded + valid.length },
       };
+      // Discarding the last tiles with a dry pouch leaves an unplayable board — the
+      // same resolution the play path takes. No new settle runs, so `settleComplete`
+      // is already true and the BUILD effect picks it up on the next render.
+      return blindExhausted(blind) ? { ...nextState, pendingEnd: true } : nextState;
     });
   }, []);
 
