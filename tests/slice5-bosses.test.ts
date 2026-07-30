@@ -68,9 +68,11 @@ describe('slice5 bosses — scoring effects', () => {
     expect(play(bossBlind(r, 'burntPaper'), r, 'run').submission.settledScore).toBe(0);
     expect(play(bossBlind(r, 'burntPaper'), r, 'cat').submission.settledScore).toBeGreaterThan(0);
   });
-  it('Will (유서): base chips & mult halved (CAT 15×1 → 7.5×0.5 = 3.75)', () => {
+  it('Will (유서): base chips & mult halved (CAT 15 chips × (1.0 + length 3) = 4.0 mult → halved 7.5 × 2.0 = 15)', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'will'), r, 'cat').submission.settledScore).toBe(3.75);
+    // CAT = 15 chips; standard ×1.0 + length 3 => mult 4.0 before Will halves both:
+    // chips 15 → 7.5, mult 4.0 → 2.0, total 7.5 × 2.0 = 15
+    expect(play(bossBlind(r, 'will'), r, 'cat').submission.settledScore).toBe(15);
   });
   it('Memoirs (회고록): a word already played this ante scores 0; a fresh one scores', () => {
     const r = { ...bossRun(), wordsThisAnte: ['cat'] };

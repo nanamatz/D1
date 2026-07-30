@@ -36,19 +36,23 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
   it('a bare verb no longer projects a sentence bonus (imperative needs an object)', () => {
     const { run, blind } = freshBlind();
     const { blind: after, submission } = play(blind, run, 'run'); // RUN = R+U+N = 3+3+3 = 9 chips
-    expect(submission.settledScore).toBe(9);
-    expect(after.committedScore).toBe(9); // layer 1 unchanged
-    expect(after.projectedScore).toBe(9); // no imperative → projected mirrors committed
+    // standard ×1.0 + length 3 => 9 × 4.0 = 36
+    expect(submission.settledScore).toBe(36);
+    expect(after.committedScore).toBe(36); // layer 1 unchanged
+    expect(after.projectedScore).toBe(36); // no imperative → projected mirrors committed
   });
 
   it('verb + noun projects the Imperative bonus over committed', () => {
     const { run } = freshBlind();
     let b = startBlind(run, makeRng('s3'), { target: 1000 });
-    ({ blind: b } = play(b, run, 'eats')); // 12 chips
-    ({ blind: b } = play(b, run, 'fish')); // 30 chips → EATS FISH = Imperative
-    // committed = 42; both standard → Unison standard (+50 chips); Imperative 15×2.
-    expect(b.committedScore).toBe(42);
-    expect(b.projectedScore).toBe(172); // 42 + (15 + 50) × 2 = 42 + 130
+    ({ blind: b } = play(b, run, 'eats')); // EATS = E3+A3+T3+S3 = 12 chips, length 4
+    ({ blind: b } = play(b, run, 'fish')); // FISH = F12+I3+S3+H12 = 30 chips, length 4 → EATS FISH = Imperative
+    // EATS settled = 12 × (1.0 + 4) = 60; FISH settled = 30 × (1.0 + 4) = 150
+    // committed = 60 + 150 = 210. Sentence bonus is unaffected by word length
+    // (pattern/unison values are fixed in BALANCE, not derived from letter chips):
+    // both standard → Unison standard (+50 chips); Imperative base 15 chips × mult 2.
+    expect(b.committedScore).toBe(210);
+    expect(b.projectedScore).toBe(340); // 210 + (15 + 50) × 2 = 210 + 130
   });
 
   it('builds a Transitive sentence across phases and multiplies the total', () => {
@@ -57,10 +61,13 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     ({ blind: b } = play(b, run, 'cat'));
     ({ blind: b } = play(b, run, 'eats'));
     ({ blind: b } = play(b, run, 'fish'));
-    // committed = CAT 15 + EATS 12 + FISH 30 = 57. All standard suit → Unison
-    // standard (+50 chips) folds in: 57 + (40 + 50) × Transitive-mult 3 = 327.
-    expect(b.committedScore).toBe(57);
-    expect(b.projectedScore).toBe(327);
+    // CAT = 15 chips, length 3, standard: 15 × (1.0 + 3) = 60
+    // EATS = 12 chips, length 4, standard: 12 × (1.0 + 4) = 60
+    // FISH = 30 chips, length 4, standard: 30 × (1.0 + 4) = 150
+    // committed = 60 + 60 + 150 = 270. Sentence bonus is unaffected by word length:
+    // all standard → Unison standard (+50 chips) folds in: (40 + 50) × Transitive-mult 3 = 270.
+    expect(b.committedScore).toBe(270);
+    expect(b.projectedScore).toBe(540); // 270 + 270
   });
 
   it('a gibberish hole collapses the sentence bonus — projected falls back to committed', () => {
@@ -83,7 +90,9 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     const result = endBlind(b, run, lex);
     expect(result.judgment.match?.pattern).toBe('transitive');
     expect(result.judgment.unison?.suit).toBe('standard');
-    expect(result.finalScore).toBe(327); // 57 + (40 + 50 unison) × 3 transitive
+    // committed 270 (CAT 60 + EATS 60 + FISH 150, see above) + bonus 270
+    // (40 + 50 unison) × 3 transitive = 540
+    expect(result.finalScore).toBe(540);
     expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 5 - 3 = 2
   });
 
@@ -98,7 +107,7 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     expect(result.sentenceChips).toBe(90);
     expect(result.sentenceMult).toBe(3);
     expect(result.bonus).toBe(270);
-    expect(result.finalScore).toBe(327); // committed 57 + bonus 270
+    expect(result.finalScore).toBe(540); // committed 270 (CAT 60 + EATS 60 + FISH 150) + bonus 270
     expect(result.breakdown).toEqual({
       modifierCount: 0,
       modifierChips: 0,

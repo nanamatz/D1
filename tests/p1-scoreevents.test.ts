@@ -43,8 +43,9 @@ describe('per-submission ScoreEvent log', () => {
   });
 
   it('ends with the settled total', () => {
+    // CAT = 15 chips; standard ×1.0 + length 3 => mult 4.0, total 15 × 4.0 = 60
     expect(play('cat').events.at(-1))
-      .toEqual({ kind: 'settle', chips: 15, mult: 1, total: 15 });
+      .toEqual({ kind: 'settle', chips: 15, mult: 4, total: 60 });
   });
 
   it('omits Emoji Tile events when none are owned', () => {

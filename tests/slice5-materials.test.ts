@@ -63,33 +63,38 @@ describe('slice5 — letterString (review finding 1)', () => {
 
 describe('slice5 — static per-tile material effects (GDD §2.2)', () => {
   it('porcelain adds +30 chips per tile', () => {
-    // CAT = 15 chips; one porcelain C = +30 → 45 × 1.0 standard
+    // scoreWord (the pure reference path) sets mult = suitMult + length BEFORE
+    // materials apply, so length folds in first: mult = 1.0 + 3 = 4.0.
+    // CAT = 15 chips; one porcelain C = +30 → 45 chips × 4.0 = 180
     const t = tiles('cat');
     t[0]!.material = 'porcelain';
-    expect(scoreWord(t, lex).settledScore).toBe(45);
+    expect(scoreWord(t, lex).settledScore).toBe(180);
   });
 
   it('porcelain stacks per tile', () => {
     const t = tiles('cat');
     t[0]!.material = 'porcelain';
     t[1]!.material = 'porcelain';
-    expect(scoreWord(t, lex).settledScore).toBe(75); // 15 + 60
+    // chips = 15 + 30 + 30 = 75; mult = 1.0 + 3 = 4.0 => 75 × 4.0 = 300
+    expect(scoreWord(t, lex).settledScore).toBe(300);
   });
 
   it('polished adds +4 mult per tile', () => {
-    // CAT = 15 chips, standard mult 1.0 + 4 = 5.0 → 75
+    // CAT = 15 chips, mult = standard 1.0 + length 3 + polished 4 = 8.0 → 15 × 8.0 = 120
     const t = tiles('cat');
     t[0]!.material = 'polished';
-    expect(scoreWord(t, lex).settledScore).toBe(75);
+    expect(scoreWord(t, lex).settledScore).toBe(120);
   });
 
   it('stone adds +50 chips and forces gibberish', () => {
     // '_' builds a stone tile: 0 letter chips + 50 material = 50 × 1.0 gibberish
+    // (gibberish excludes the length mult — unchanged)
     expect(scoreWord(tiles('_'), lex).settledScore).toBe(50);
   });
 
   it('ceramic changes nothing', () => {
-    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(15);
+    // CAT = 15 chips; standard ×1.0 + length 3 => 15 × 4.0 = 60
+    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(60);
   });
 });
 
@@ -148,17 +153,19 @@ describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
 
 describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
   it('doubles the mult on the word it is played in', () => {
-    // CAT = 15 chips × (1.0 standard × 2) = 30
+    // scoreWord sets mult = suitMult + length before materials apply, so glass
+    // doubles that whole sum: mult = (1.0 + 3) × 2 = 8.0 → 15 chips × 8.0 = 120
     const t = tiles('cat');
     t[0]!.material = 'glass';
-    expect(scoreWord(t, lex).settledScore).toBe(30);
+    expect(scoreWord(t, lex).settledScore).toBe(120);
   });
 
   it('two glass tiles compound the factor', () => {
     const t = tiles('cat');
     t[0]!.material = 'glass';
     t[1]!.material = 'glass';
-    expect(scoreWord(t, lex).settledScore).toBe(60); // 15 × 1.0 × 2 × 2
+    // mult = (1.0 + 3) × 2 × 2 = 16.0 → 15 × 16.0 = 240
+    expect(scoreWord(t, lex).settledScore).toBe(240);
   });
 
   it('reports destroyed tiles and is seed-reproducible', () => {

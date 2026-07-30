@@ -19,8 +19,8 @@ const lex = makeLexicon(['cat', 'run'], {
 
 describe('slice1 scoring — letter chips (GDD §2.1, §7.1 layer 1)', () => {
   it('sums Scrabble letter chips for a valid word', () => {
-    // CAT = C(9)+A(3)+T(3) = 15
-    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(15);
+    // CAT = C(9)+A(3)+T(3) = 15 chips; standard ×1.0 + length 3 => 15 × 4.0 = 60
+    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(60);
   });
 
   it('marks a valid word as non-gibberish and carries its register suit', () => {
@@ -30,8 +30,8 @@ describe('slice1 scoring — letter chips (GDD §2.1, §7.1 layer 1)', () => {
   });
 
   it('applies the register suit multiplier in layer 1 (slice ②, GDD §3.1)', () => {
-    // RUN = R(3)+U(3)+N(3) = 9 chips; slang ×2.0 = 18
-    expect(scoreWord(tiles('run'), lex).settledScore).toBe(18);
+    // RUN = R(3)+U(3)+N(3) = 9 chips; slang ×2.0 + length 3 => 9 × 5.0 = 45
+    expect(scoreWord(tiles('run'), lex).settledScore).toBe(45);
   });
 
   it('leaves POS unresolved in slice ① (resolved by pattern matching, slice ③)', () => {

@@ -21,28 +21,30 @@ const lex = makeLexicon(['cat'], {
 
 describe('slice2 — suit multiplier in layer 1 (GDD §3.1, §7.1)', () => {
   it('standard ×1.0 leaves chips unchanged', () => {
-    // CAT = 15 chips, standard ×1.0
-    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(15);
+    // CAT = 15 chips, standard ×1.0 + length 3 => 15 × 4.0 = 60
+    expect(scoreWord(tiles('cat'), lex).settledScore).toBe(60);
   });
 
   it('slang ×2.0', () => {
-    // RUN = 9 chips × 2.0 = 18
-    expect(scoreWord(tiles('run'), lex).settledScore).toBe(18);
+    // RUN = 9 chips, slang ×2.0 + length 3 => 9 × 5.0 = 45
+    expect(scoreWord(tiles('run'), lex).settledScore).toBe(45);
   });
 
   it('formal ×1.5', () => {
-    // GENTLEMAN = G6 E3 N3 T3 L3 E3 M9 A3 N3 = 36 chips × 1.5 = 54
-    expect(scoreWord(tiles('gentleman'), lex).settledScore).toBe(54);
+    // GENTLEMAN = G6 E3 N3 T3 L3 E3 M9 A3 N3 = 36 chips; length 9;
+    // formal ×1.5 + 9 = 10.5 => 36 × 10.5 = 378
+    expect(scoreWord(tiles('gentleman'), lex).settledScore).toBe(378);
   });
 
   it('vulgar ×3.0', () => {
-    // DAMN = D6 A3 M9 N3 = 21 chips × 3.0 = 63
-    expect(scoreWord(tiles('damn'), lex).settledScore).toBe(63);
+    // DAMN = D6 A3 M9 N3 = 21 chips; length 4; vulgar ×3.0 + 4 = 7.0 => 21 × 7 = 147
+    expect(scoreWord(tiles('damn'), lex).settledScore).toBe(147);
   });
 
   it('uses the exact BALANCE.suitMult knobs (no hard-coded multipliers)', () => {
     const run = scoreWord(tiles('run'), lex);
-    expect(run.settledScore).toBe(9 * BALANCE.suitMult.slang);
+    // 9 chips × (slang mult + length 3)
+    expect(run.settledScore).toBe(9 * (BALANCE.suitMult.slang + 3));
   });
 
   it('gibberish bypasses the suit multiplier — chips ×1.0 only (GDD §6.4)', () => {
