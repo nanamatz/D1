@@ -32,12 +32,6 @@ const reduced = (): boolean =>
   (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
     document.body.classList.contains('force-reduced-motion'));
 
-/** Live values the controller reads at drop time (kept fresh via a ref). */
-export interface StageDragState {
-  handIds: string[];
-  stagedIds: string[];
-}
-
 export interface StageDragCallbacks {
   /** hand→staged (stage a tile) */
   stage: (id: string) => void;
@@ -47,8 +41,6 @@ export interface StageDragCallbacks {
   reorderHand: (fromId: string, toId: string | null) => void;
   /** reorder within the staged row */
   reorderStaged: (fromId: string, toId: string | null) => void;
-  /** a manual hand reorder happened — drop any active auto-sort */
-  onManualReorder: () => void;
   /** small sounds; the controller fires grab/drop, callers keep their own */
   playGrab?: () => void;
   playDrop?: () => void;
@@ -68,7 +60,6 @@ export function useStageDrag(
   handRef: RefObject<HTMLElement | null>,
   stagedRef: RefObject<HTMLElement | null>,
   enabled: boolean,
-  stateRef: RefObject<StageDragState>,
   cb: StageDragCallbacks,
 ): void {
   // Keep the latest callbacks without re-attaching listeners every render.
@@ -219,7 +210,6 @@ export function useStageDrag(
       if (!el) return;
       const dropZone = zoneAtY(lastY);
       const id = el.dataset.tileId!;
-      const s = stateRef.current;
       clearNeighbours();
       // Commit the reorder/stage change to React (the single state update).
       if (dropZone === 'staged') {
@@ -227,13 +217,9 @@ export function useStageDrag(
         else if (insertBefore !== id) cbRef.current.reorderStaged(id, insertBefore);
       } else {
         if (zone === 'staged') cbRef.current.unstage(id);
-        else if (insertBefore !== id) {
-          cbRef.current.onManualReorder();
-          cbRef.current.reorderHand(id, insertBefore);
-        }
+        else if (insertBefore !== id) cbRef.current.reorderHand(id, insertBefore);
       }
       cbRef.current.playDrop?.();
-      void s;
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -287,7 +273,7 @@ export function useStageDrag(
     };
     // cb is read through cbRef so it is intentionally not a dependency (re-attaching
     // the pointer listeners every render would drop an in-flight drag).
-  }, [stageRef, handRef, stagedRef, enabled, stateRef]);
+  }, [stageRef, handRef, stagedRef, enabled]);
 }
 
 export interface ShelfDragCallbacks {

@@ -272,13 +272,18 @@ export function sortHand(tiles: readonly Tile[], mode: SortMode): Tile[] {
     .map((x) => x.t);
 }
 
-/** Move `fromId` to `toId`'s position within an id list (drag-reorder helper). */
-export function reorderIds(ids: readonly string[], fromId: string, toId: string): string[] {
+/** Move `fromId` immediately before `beforeId`; null appends it. */
+export function reorderIds(
+  ids: readonly string[],
+  fromId: string,
+  beforeId: string | null,
+): string[] {
   const from = ids.indexOf(fromId);
-  const to = ids.indexOf(toId);
-  if (from < 0 || to < 0 || from === to) return ids.slice();
+  if (from < 0 || fromId === beforeId) return ids.slice();
   const next = ids.slice();
   const [moved] = next.splice(from, 1);
+  const to = beforeId === null ? next.length : next.indexOf(beforeId);
+  if (to < 0) return ids.slice();
   next.splice(to, 0, moved!);
   return next;
 }

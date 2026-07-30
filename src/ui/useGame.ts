@@ -269,9 +269,9 @@ export interface UseGame {
   canPlay: boolean;
   canDiscard: boolean;
   toggleTile: (id: string) => void;
-  reorderHand: (fromId: string, toId: string) => void;
+  reorderHand: (orderedIds: string[]) => void;
   reorderJokers: (from: number, to: number) => void;
-  reorderStaged: (fromId: string, toId: string) => void;
+  reorderStaged: (fromId: string, beforeId: string | null) => void;
   useConsumable: (id: import('../engine/types').ConsumableId) => void;
   /** feedback #3: buy a shop consumable and use it in one action. */
   buyAndUse: (index: number) => void;
@@ -931,25 +931,29 @@ export function useGame(): UseGame {
     });
   }, []);
 
-  const reorderHand = useCallback((fromId: string, toId: string) => {
+  const reorderHand = useCallback((orderedIds: string[]) => {
     setState((prev) => {
       if (prev.phase !== 'playing') return prev;
-      const ids = reorderIds(
-        prev.blind.hand.map((t) => t.id),
-        fromId,
-        toId,
-      );
+      const staged = new Set(prev.selected);
+      const visible = prev.blind.hand.filter((tile) => !staged.has(tile.id));
+      if (
+        orderedIds.length !== visible.length ||
+        orderedIds.some((id) => !visible.some((tile) => tile.id === id))
+      ) return prev;
       const byId = new Map(prev.blind.hand.map((t) => [t.id, t]));
-      const hand = ids.map((id) => byId.get(id)!);
+      let index = 0;
+      const hand = prev.blind.hand.map((tile) =>
+        staged.has(tile.id) ? tile : byId.get(orderedIds[index++]!)!,
+      );
       return { ...prev, blind: { ...prev.blind, hand } };
     });
   }, []);
 
-  const reorderStaged = useCallback((fromId: string, toId: string) => {
+  const reorderStaged = useCallback((fromId: string, beforeId: string | null) => {
     setState((prev) =>
       prev.phase !== 'playing'
         ? prev
-        : { ...prev, selected: reorderIds(prev.selected, fromId, toId) },
+        : { ...prev, selected: reorderIds(prev.selected, fromId, beforeId) },
     );
   }, []);
 

@@ -26,6 +26,13 @@ describe('feature-04 D — drag physics wiring', () => {
     expect(stage).not.toContain('onStageDrop');
   });
 
+  it('does not enable manual sort when a hand drop keeps the same order', () => {
+    const stage = read('../src/ui/components/StagePanel.tsx');
+    const noOpGuard = stage.indexOf('if (next.every((id, index) => id === ids[index])) return;');
+    expect(noOpGuard).toBeGreaterThan(-1);
+    expect(stage.indexOf("setSortMode('manual');")).toBeGreaterThan(noOpGuard);
+  });
+
   it('the Emoji-Tile shelf uses the spring controller, not native DnD', () => {
     const shelf = read('../src/ui/components/JokerShelf.tsx');
     expect(shelf).toContain('useShelfDrag(');

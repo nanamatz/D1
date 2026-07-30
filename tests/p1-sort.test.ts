@@ -40,12 +40,17 @@ describe('P1-1 — hand sort modes', () => {
 });
 
 describe('P1-2 — reorderIds (drag-reorder)', () => {
-  it('moves an id to the target position', () => {
-    expect(reorderIds(['a', 'b', 'c', 'd'], 'a', 'c')).toEqual(['b', 'c', 'a', 'd']);
+  it('moves an id immediately before the target', () => {
+    expect(reorderIds(['a', 'b', 'c', 'd'], 'a', 'c')).toEqual(['b', 'a', 'c', 'd']);
   });
 
   it('moves backward too', () => {
     expect(reorderIds(['a', 'b', 'c', 'd'], 'd', 'b')).toEqual(['a', 'd', 'b', 'c']);
+  });
+
+  it('appends on a null target and keeps a same-slot drop stable', () => {
+    expect(reorderIds(['a', 'b', 'c', 'd'], 'b', null)).toEqual(['a', 'c', 'd', 'b']);
+    expect(reorderIds(['a', 'b', 'c', 'd'], 'b', 'c')).toEqual(['a', 'b', 'c', 'd']);
   });
 
   it('is a no-op for unknown or identical ids (returns a copy)', () => {

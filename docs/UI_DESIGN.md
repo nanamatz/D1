@@ -200,6 +200,7 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
     - **Neighbours yield smoothly.** Cards displaced by the insertion gap move on their own springs with a small per-card stagger, so the hand ripples instead of reflowing in one frame.
     - **Cursor proximity.** Un-dragged hand cards tilt/lift slightly toward a nearby cursor, so the hand responds before anything is even picked up.
     - **Implementation:** GPU-composited `transform` only, driven by one rAF spring loop or a spring library — **never per-frame React re-renders of the hand** (the existing rule for transitions applies here with more force, since many cards animate at once). Pointer capture so a fast drag can't lose the card.
+    - **Click stability (feedback2, 2026-07-30):** a click or a drag released into the tile's original insertion slot is a complete no-op for hand order and must not switch an active auto-sort to manual. Only a drop that actually changes the displayed order enables manual ordering; that displayed order becomes the persisted hand order.
     - Reduced motion: keep instant, un-tweened positioning; drop tilt, overshoot, and proximity response.
 
 Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle disable wobble/shake, shared card idle, cursor tilt, and sheen (including joker/consumable idle) and reduce settle to fades · keyboard focus visible on tiles, cards, and buttons (gold outline) · all color-coded info (suits, chips/mult) doubled with a text label — never color alone.

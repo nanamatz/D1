@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { isVowel, type Tile } from '../../engine/types';
 import type { SortMode, StagePreview } from '../game';
-import { SORT_MODES, sortHand, tilesByIds, tileTooltip, nextLockLetter } from '../game';
+import {
+  SORT_MODES,
+  nextLockLetter,
+  reorderIds,
+  sortHand,
+  tileTooltip,
+  tilesByIds,
+} from '../game';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { audio } from '../audio';
 import { TileView } from './Tile';
 import { useEntering } from './ScreenTransition';
-import { useStageDrag, type StageDragCallbacks, type StageDragState } from '../drag';
+import { useStageDrag, type StageDragCallbacks } from '../drag';
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
@@ -152,25 +159,24 @@ export function StagePanel({
   // ----- drag & drop (feature-04 D): spring-physics pointer drag, hand ↔ tray both
   //       ways, replacing native HTML5 DnD (which can't spring-follow or rotate). The
   //       controller owns pointer motion via a rAF loop + GPU transforms; React state
-  //       changes only on drop. `stateRef` carries the live ids for future use. -----
-  const stateRef = useRef<StageDragState>({ handIds: [], stagedIds: [] });
-  stateRef.current = { handIds: hand.map((tl) => tl.id), stagedIds: staged.map((tl) => tl.id) };
+  //       changes only on drop. -----
   const dragCb: StageDragCallbacks = {
     stage: (id) => { audio.play('tilePlace'); g.toggleTile(id); },
     unstage: (id) => { audio.play('tilePick'); g.toggleTile(id); },
     reorderHand: (fromId, toId) => {
-      const to = toId ?? hand[hand.length - 1]?.id ?? null;
-      if (to && to !== fromId) g.reorderHand(fromId, to);
+      const ids = hand.map((tile) => tile.id);
+      const next = reorderIds(ids, fromId, toId);
+      if (next.every((id, index) => id === ids[index])) return;
+      setSortMode('manual');
+      g.reorderHand(next);
     },
     reorderStaged: (fromId, toId) => {
-      const to = toId ?? staged[staged.length - 1]?.id ?? null;
-      if (to && to !== fromId) g.reorderStaged(fromId, to);
+      g.reorderStaged(fromId, toId);
     },
-    onManualReorder: () => setSortMode('manual'),
     playGrab: () => audio.play('tilePick'),
     playDrop: () => audio.play('dragSnap'),
   };
-  useStageDrag(stageRef, handRef, stagedRef, !lock, stateRef, dragCb);
+  useStageDrag(stageRef, handRef, stagedRef, !lock, dragCb);
 
   const doDiscard = () => {
     audio.play('discardSwoosh');
