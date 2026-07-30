@@ -24,7 +24,6 @@ const wordTiles = (
   [...word.toUpperCase()].map((ch, i) => ({
     id: `f3-${idc++}`,
     letter: ch as Letter,
-    case: 'upper' as const,
     material: (enh[i]?.material ?? 'ceramic') as TileMaterial,
     font: (enh[i]?.font ?? 'medium') as TileFont,
     edition: (enh[i]?.edition ?? 'base') as TileEdition,

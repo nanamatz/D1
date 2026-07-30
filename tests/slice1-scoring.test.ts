@@ -4,10 +4,9 @@ import { makeLexicon } from '../src/engine/lexicon';
 import type { Letter, Tile } from '../src/engine/types';
 
 let idc = 0;
-const tile = (letter: Letter, c: 'upper' | 'lower' = 'upper'): Tile => ({
+const tile = (letter: Letter): Tile => ({
   id: `x${idc++}`,
   letter,
-  case: c,
   material: 'ceramic',
   font: 'medium',
 });
@@ -39,9 +38,8 @@ describe('slice1 scoring — letter chips (GDD §2.1, §7.1 layer 1)', () => {
     expect(scoreWord(tiles('run'), lex).posUsed).toBeNull();
   });
 
-  it('preserves the spelled text with original tile casing', () => {
-    const s = scoreWord([tile('C', 'lower'), tile('A', 'lower'), tile('T', 'lower')], lex);
-    expect(s.text).toBe('cat');
+  it('stores and displays played words in uppercase', () => {
+    expect(scoreWord([tile('C'), tile('A'), tile('T')], lex).text).toBe('CAT');
   });
 });
 

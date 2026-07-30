@@ -357,10 +357,16 @@
   height: calc(var(--shop-card-h) + 13px);
   padding-top: 13px;
   overflow: visible;
+  transition: translate 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .shop-row > .tt-anchor:has(.shop-offer.selected),
 .shop-offer.selected {
   z-index: 24;
+}
+.shop-offer.selected {
+  /* Move the interaction owner with every visible child. Moving only the inner
+     visual left TiltCard's hover/hit geometry at the old position. */
+  translate: 0 calc(-15px - var(--shop-action-h));
 }
 .shop-offer-price {
   position: absolute;
@@ -480,7 +486,6 @@
   filter: brightness(1.08);
 }
 .shop-offer.selected .shop-offer-visual {
-  translate: 0 calc(-15px - var(--shop-action-h));
   outline: 3px solid var(--gold);
   filter: drop-shadow(0 7px 0 rgba(5, 12, 14, 0.46));
 }
@@ -2317,7 +2322,9 @@
   gap: 0;
 }
 .jokers {
-  justify-content: space-between;
+  width: 100%;
+  justify-content: center;
+  gap: 12px;
 }
 /* Wrappers shrink evenly when a fixed-width panel fills, so cards progressively
    overlap without changing their 124×165 footprint. */
@@ -3612,7 +3619,7 @@
   opacity: 1;
   pointer-events: none;
   transform: translate(-50%, -100%);
-  z-index: 60;
+  z-index: var(--z-tooltip);
   font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
   font-style: normal;
   font-weight: 500;

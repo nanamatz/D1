@@ -70,6 +70,19 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.jokers-group\s*\{[^}]*width:\s*100%;/s);
     expect(play).toMatch(/\.consumables-group\s*\{[^}]*width:\s*286px;/s);
     expect(play).toMatch(/\.joker-slot\s*\{[^}]*flex:\s*0 1 var\(--shop-card-w\)/s);
+    expect(play).toMatch(/\.jokers\s*\{[^}]*justify-content:\s*center;[^}]*gap:\s*12px;/s);
+  });
+
+  it('portals enlarged shared tooltips above every product panel', () => {
+    const tooltip = source('src/ui/components/Tooltip.tsx');
+    const screens = source('src/ui/styles/screens.css');
+    const tokens = source('src/ui/styles/tokens.css');
+    expect(tooltip).toContain('createPortal(card, document.body)');
+    expect(tooltip).toContain('requestAnimationFrame(track)');
+    expect(tokens).toContain('--tt-w: 280px');
+    expect(tokens).toContain('--z-tooltip: 10000');
+    expect(screens).toMatch(/\.tt-card\.tt-portal\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*var\(--z-tooltip\)/s);
+    expect(screens).toMatch(/\.tt-body\s*\{[^}]*font-size:\s*var\(--fs-lg\)/s);
   });
 
   it('keeps the Emoji Tile and consumable slot panels the same height', () => {

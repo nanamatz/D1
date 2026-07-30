@@ -20,14 +20,9 @@ import type { Suit, Tile, WordScoringContext, WordSubmission } from './types';
  *  word containing one always fails lookup → gibberish (GDD §2.2, §6.4). */
 export const NO_LETTER = '□';
 
-/** Spell the tiles as displayed, honoring each tile's case. */
+/** Spell the tiles as displayed. Letter tiles are uppercase-only. */
 export function spell(tiles: readonly Tile[]): string {
-  return tiles
-    .map((t) => {
-      if (t.letter === null) return NO_LETTER;
-      return t.case === 'lower' ? t.letter.toLowerCase() : t.letter;
-    })
-    .join('');
+  return tiles.map((t) => t.letter ?? NO_LETTER).join('');
 }
 
 /**
@@ -36,10 +31,9 @@ export function spell(tiles: readonly Tile[]): string {
  * Letterless (Stone) tiles render as `NO_LETTER` so a stone never silently
  * vanishes from the string (which would corrupt straight/flush detection).
  *
- * Differs from `spell()`: `spell()` honors each tile's upper/lower `case` for
- * lexicon lookup and display; `Letter` is always stored canonically uppercase
- * (see `types.ts`), and `letterString` returns that canonical form as-is — it
- * exists for letter-hand *structure* matching, not for display or lookup.
+ * Kept separate from `spell()` because it is the explicit structural input for
+ * letter-hand matching, even though both currently return the same uppercase
+ * string.
  */
 export function letterString(tiles: readonly Tile[]): string {
   return tiles.map((t) => t.letter ?? NO_LETTER).join('');

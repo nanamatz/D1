@@ -74,7 +74,7 @@ describe('image-first shop offers', () => {
     expect(css).toContain('background: transparent');
     expect(css).toContain('.shop-offer.selected .shop-offer-action');
     expect(css).toMatch(
-      /\.shop-offer\.selected \.shop-offer-visual\s*\{[^}]*translate:\s*0 calc\(-15px - var\(--shop-action-h\)\);/s,
+      /\.shop-offer\.selected\s*\{[^}]*translate:\s*0 calc\(-15px - var\(--shop-action-h\)\);/s,
     );
     expect(tokens).toContain('--shop-action-h: 44px');
   });

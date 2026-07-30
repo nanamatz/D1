@@ -264,7 +264,6 @@ export function useGambler(
       const born = Array.from({ length: BALANCE.gambler.fullMoonVowels }, (_, i): Tile => ({
         id: newTileId(rng, i),
         letter: VOWEL_LETTERS[rng.int(VOWEL_LETTERS.length)]!,
-        case: 'upper',
         material: VOWEL_MATERIALS[rng.int(VOWEL_MATERIALS.length)]!,
         font: 'medium',
         edition: 'base',

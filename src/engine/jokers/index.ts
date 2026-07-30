@@ -1,12 +1,10 @@
 /**
  * Joker registry (GDD §11). One joker per file, grouped by rarity here.
- * The full authored roster: Common 7 + Uncommon 9 + Rare 11 + Legendary 5.
+ * The full authored roster: Common 5 + Uncommon 9 + Rare 11 + Legendary 5.
  */
 
 import { JokerBus, type JokerDef } from '../events';
 // Common (§11.2)
-import { uppercasePremium } from './uppercasePremium';
-import { lowercaseLover } from './lowercaseLover';
 import { ceramicArtisan } from './ceramicArtisan';
 import { longWordFan } from './longWordFan';
 import { shortAndSharp } from './shortAndSharp';
@@ -44,8 +42,6 @@ import type { BlindState, RunState } from '../types';
 import type { Rng } from '../rng';
 
 export const COMMON_JOKERS: readonly JokerDef[] = [
-  uppercasePremium,
-  lowercaseLover,
   ceramicArtisan,
   longWordFan,
   shortAndSharp,

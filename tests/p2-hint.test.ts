@@ -8,7 +8,6 @@ const hand = (word: string): Tile[] =>
   [...word.toUpperCase()].map((c) => ({
     id: `h${idc++}`,
     letter: c as Letter,
-    case: 'upper',
     material: 'ceramic',
     font: 'medium',
   }));

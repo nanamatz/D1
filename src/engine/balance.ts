@@ -219,12 +219,10 @@ export const BALANCE = {
   jokers: {
     loanShark: { goldPerPhase: 1 }, // #28 (not yet implemented) — $ per phase left at clear
     // Common (§11.2)
-    uppercasePremium: { chips: 3 },
-    lowercaseLover: { mult: 1 },
-    ceramicArtisan: { chips: 2 },
+    ceramicArtisan: { chips: 5 },
     longWordFan: { minLength: 5, chips: 30 },
     shortAndSharp: { maxLength: 3, mult: 8 },
-    alphabeticalOrder: { chips: 15 },
+    alphabeticalOrder: { mult: 15 },
     miser: { goldPer: 5, mult: 1 },
     // Uncommon (§11.3)
     literaryJudge: { chips: 50 },

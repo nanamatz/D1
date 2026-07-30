@@ -23,7 +23,6 @@ export function buildBag(): Tile[] {
       bag.push({
         id: `t${n++}-${letter}`,
         letter: letter as Letter,
-        case: 'upper',
         material: 'ceramic',
         font: 'medium',
         edition: 'base',

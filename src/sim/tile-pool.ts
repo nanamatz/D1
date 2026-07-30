@@ -59,7 +59,7 @@ function buildBag(c: Comp): Tile[] {
   let id = 0;
   for (const [letter, count] of Object.entries(c)) {
     for (let i = 0; i < count; i++) {
-      tiles.push({ id: `t${id++}`, letter: letter as Letter, case: 'upper', material: 'ceramic', font: 'medium' });
+      tiles.push({ id: `t${id++}`, letter: letter as Letter, material: 'ceramic', font: 'medium' });
     }
   }
   return tiles;

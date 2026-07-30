@@ -10,7 +10,6 @@ let id = 0;
 const tilesFor = (word: string): Tile[] => [...word.toUpperCase()].map((letter) => ({
   id: `event-${id++}`,
   letter: letter as Letter,
-  case: 'upper',
   material: 'ceramic',
   font: 'medium',
 }));

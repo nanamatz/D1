@@ -27,7 +27,7 @@ const dirty = (): GameState =>
   ({
     seed: 'seed-1',
     rngCounter: 3,
-    run: { ante: 2, blindIndex: 1, gold: 7, jokers: [{ defId: 'j1', state: {} }] },
+    run: { ante: 2, blindIndex: 1, gold: 7, jokers: [{ defId: 'ceramicArtisan', state: {} }] },
     blind: { kind: 'big', hand: [{ id: 't1' }], committedScore: 120 },
     phase: 'playing',
     stats: { wordsPlayed: 4 },
@@ -94,7 +94,7 @@ describe('run persistence', () => {
     expect(back!.rngCounter).toBe(3);
     expect(back!.run.gold).toBe(7);
     expect(back!.run.ante).toBe(2);
-    expect(back!.run.jokers).toEqual([{ defId: 'j1', state: {} }]);
+    expect(back!.run.jokers).toEqual([{ defId: 'ceramicArtisan', state: {} }]);
     expect(back!.blind.committedScore).toBe(120);
     expect(back!.stats.wordsPlayed).toBe(4);
     expect(back!.runStarted).toBe(true);
@@ -102,6 +102,13 @@ describe('run persistence', () => {
 
   it('returns null when there is no save', () => {
     expect(loadRun()).toBeNull();
+  });
+
+  it('drops retired Emoji Tiles from an older resting save', () => {
+    const env = JSON.parse(serializeRun(dirty()));
+    env.state.run.jokers.push({ defId: 'uppercasePremium', state: {} });
+    writeRun(JSON.stringify(env));
+    expect(loadRun()!.run.jokers).toEqual([{ defId: 'ceramicArtisan', state: {} }]);
   });
 
   it('discards a save from a different schema version rather than half-loading it', () => {

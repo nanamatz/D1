@@ -5,7 +5,6 @@ import type { Letter, Tile } from '../src/engine/types';
 const tile = (letter: Letter): Tile => ({
   id: 'x',
   letter,
-  case: 'upper',
   material: 'ceramic',
   font: 'medium',
 });

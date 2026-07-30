@@ -12,7 +12,7 @@ import type { Tile } from '../src/engine/types';
 const t = (key: string) => key;
 
 const tile = (over: Partial<Tile> = {}): Tile => ({
-  id: 't', letter: 'C', case: 'upper', material: 'ceramic', font: 'medium', edition: 'base', ...over,
+  id: 't', letter: 'C', material: 'ceramic', font: 'medium', edition: 'base', ...over,
 });
 
 describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {

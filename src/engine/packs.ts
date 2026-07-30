@@ -85,7 +85,6 @@ export function rollTile(run: RunState, rng: Rng, index: number, enhance = true)
     id: `pk${rng.int(1_000_000)}-${index}`,
     // Stone carries no letter — the invariant that forces gibberish (GDD §2.2)
     letter: material === 'stone' ? null : letter,
-    case: 'upper',
     material,
     font,
     edition: enhance ? rollTileEdition(run, rng) : 'base',

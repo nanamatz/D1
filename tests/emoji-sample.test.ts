@@ -42,7 +42,6 @@ const submission = (
   tiles: [...text.toUpperCase()].map((letter) => ({
     id: `sample-${tileId++}`,
     letter: letter as Letter,
-    case: 'upper',
     material: 'ceramic',
     font: 'medium',
   } satisfies Tile)),

@@ -74,7 +74,6 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
   const tile = (letter: Letter): Tile => ({
     id: `lh${idc++}`,
     letter,
-    case: 'upper',
     material: 'ceramic',
     font: 'medium',
   });

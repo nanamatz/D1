@@ -1,7 +1,7 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
-/** C9 (GDD §11.2) — +Chips when two adjacent played tiles are consecutive letters
+/** C9 (GDD §11.2) — +Mult when two adjacent played tiles are consecutive letters
  *  (AB, CD…). A letterless Stone tile (letter null) never forms a pair (§2.2). */
 export const alphabeticalOrder: JokerDef = {
   id: 'alphabeticalOrder',
@@ -20,7 +20,7 @@ export const alphabeticalOrder: JokerDef = {
         const b = tiles[i]!.letter;
         if (a === null || b === null) continue;
         if (b.charCodeAt(0) - a.charCodeAt(0) === 1) {
-          ctx.chips += BALANCE.jokers.alphabeticalOrder.chips;
+          ctx.mult += BALANCE.jokers.alphabeticalOrder.mult;
           return;
         }
       }

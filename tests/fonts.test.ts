@@ -9,7 +9,7 @@ import { accumulate } from '../src/ui/settle';
 import type { FontEffectId, Letter, Tile, TileFont } from '../src/engine/types';
 
 const tile = (font: TileFont, id = `t-${font}`): Tile => ({
-  id, letter: 'A', case: 'upper', material: 'ceramic', font,
+  id, letter: 'A', material: 'ceramic', font,
 });
 
 describe('font effect resolution (GDD §2.3)', () => {
@@ -64,7 +64,7 @@ const fontFor = (effect: FontEffectId): TileFont =>
 let wc = 0;
 const wordTiles = (word: string, fonts: Partial<Record<number, TileFont>> = {}): Tile[] =>
   [...word.toUpperCase()].map((ch, i) => ({
-    id: `w${wc++}-${i}`, letter: ch as Letter, case: 'upper',
+    id: `w${wc++}-${i}`, letter: ch as Letter,
     material: 'ceramic', font: fonts[i] ?? 'medium',
   }));
 

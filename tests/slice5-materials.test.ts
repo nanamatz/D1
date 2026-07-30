@@ -13,7 +13,6 @@ const tiles = (word: string, material: TileMaterial = 'ceramic'): Tile[] =>
   [...word.toUpperCase()].map((ch) => ({
     id: `m${idc++}`,
     letter: ch === '_' ? null : (ch as Letter),
-    case: 'upper' as const,
     material: ch === '_' ? ('stone' as TileMaterial) : material,
     font: 'medium' as const,
   }));

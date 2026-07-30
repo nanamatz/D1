@@ -51,7 +51,7 @@ describe('feedback 5 UI regressions', () => {
   });
 
   it('emphasizes the secondary tooltip subject and uses positive slot copy', () => {
-    expect(screens).toMatch(/\.tt-sub-title\s*\{[^}]*font-size:\s*var\(--fs-md\)[^}]*color:\s*var\(--gold\)/s);
+    expect(screens).toMatch(/\.tt-sub-title\s*\{[^}]*font-size:\s*var\(--fs-lg\)[^}]*color:\s*var\(--gold\)/s);
     expect(source('locales/ko.json')).toContain('소모품 슬롯이 비어있는 경우');
     expect(source('locales/en.json')).toContain('when a consumable slot is empty');
   });

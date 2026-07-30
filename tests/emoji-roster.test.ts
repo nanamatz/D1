@@ -1,5 +1,5 @@
 /**
- * GDD §11 — the full authored Emoji Tile roster (Common 7 / Uncommon 9 /
+ * GDD §11 — the full authored Emoji Tile roster (Common 5 / Uncommon 9 /
  * Rare 11 / Legendary 5) as data + event hooks. Art assets are deliberately not
  * covered here: they land separately (§11 art canvas note).
  */
@@ -37,7 +37,6 @@ let tileId = 0;
 interface WordOpts {
   suit?: Suit | null;
   gibberish?: boolean;
-  lower?: boolean;
   material?: TileMaterial;
 }
 
@@ -50,7 +49,6 @@ const submission = (text: string, opts: WordOpts = {}): WordSubmission => ({
   tiles: [...text.toUpperCase()].map((letter) => ({
     id: `roster-${tileId++}`,
     letter: letter as Letter,
-    case: opts.lower ? 'lower' : 'upper',
     material: opts.material ?? 'ceramic',
     font: 'medium',
   } satisfies Tile)),
@@ -94,8 +92,8 @@ const fixedRng = (value: number): Rng => ({
 });
 
 describe('GDD §11 roster shape', () => {
-  it('registers Common 7 / Uncommon 9 / Rare 11 / Legendary 5', () => {
-    expect(COMMON_JOKERS).toHaveLength(7);
+  it('registers Common 5 / Uncommon 9 / Rare 11 / Legendary 5', () => {
+    expect(COMMON_JOKERS).toHaveLength(5);
     expect(UNCOMMON_JOKERS).toHaveLength(9);
     expect(RARE_JOKERS).toHaveLength(11);
     expect(LEGENDARY_JOKERS).toHaveLength(5);
@@ -115,18 +113,9 @@ describe('GDD §11 roster shape', () => {
 });
 
 describe('Common — §11.2', () => {
-  it('Uppercase Premium / Lowercase Lover read each tile s case', () => {
-    const upper = runWith('uppercasePremium');
-    expect(play(upper, blindFor(upper), submission('cat')).chips).toBe(9);
-    expect(play(upper, blindFor(upper), submission('cat', { lower: true })).chips).toBe(0);
-
-    const lower = runWith('lowercaseLover');
-    expect(play(lower, blindFor(lower), submission('cat', { lower: true })).mult).toBe(4);
-  });
-
   it('Ceramic Artisan pays only on un-enhanced base tiles', () => {
     const run = runWith('ceramicArtisan');
-    expect(play(run, blindFor(run), submission('cat')).chips).toBe(6);
+    expect(play(run, blindFor(run), submission('cat')).chips).toBe(15);
     expect(play(run, blindFor(run), submission('cat', { material: 'glass' })).chips).toBe(0);
   });
 
@@ -140,10 +129,10 @@ describe('Common — §11.2', () => {
     expect(play(short, blindFor(short), submission('paper')).mult).toBe(1);
   });
 
-  it('Alphabetical Order pays once for a consecutive pair', () => {
+  it('Alphabetical Order pays Mult once for a consecutive pair', () => {
     const run = runWith('alphabeticalOrder');
-    expect(play(run, blindFor(run), submission('abcd')).chips).toBe(15);
-    expect(play(run, blindFor(run), submission('dog')).chips).toBe(0);
+    expect(play(run, blindFor(run), submission('abcd')).mult).toBe(16);
+    expect(play(run, blindFor(run), submission('dog')).mult).toBe(1);
   });
 
   it('Miser scales with gold held', () => {

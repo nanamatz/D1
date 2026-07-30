@@ -32,7 +32,6 @@ function bagOf(material: TileMaterial): Tile[] {
     Array.from({ length: count }, () => ({
       id: `s${i++}`,
       letter: material === 'stone' ? null : (letter as Tile['letter']),
-      case: 'upper' as const,
       material,
       font: 'medium' as const,
     })),

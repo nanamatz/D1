@@ -225,12 +225,8 @@ export function fontClass(font: Tile['font']): string {
   }
 }
 
-/** Literal display glyph for a tile (case shown as authored: h vs H).
- *  A Stone tile has no letter and renders blank — the .stone material class carries its look. */
-export const tileGlyph = (t: Tile): string => {
-  if (t.letter === null) return '';
-  return t.case === 'lower' ? t.letter.toLowerCase() : t.letter;
-};
+/** Uppercase display glyph. A Stone tile is blank; its material carries the look. */
+export const tileGlyph = (t: Tile): string => t.letter ?? '';
 
 /** Letter-ink tier by chip value (P2-3): 1 default · 2–3 · 4–5 · 8–10 gilded. */
 export function inkClass(value: number): string {

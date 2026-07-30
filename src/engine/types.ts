@@ -6,12 +6,10 @@
 
 // ---------- Tiles (GDD §2) ----------
 
-/** Canonical letter, always stored uppercase. Case is a separate axis. */
+/** Canonical letter, always stored and displayed uppercase. */
 export type Letter =
   | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M'
   | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z';
-
-export type LetterCase = 'upper' | 'lower';
 
 /** Enhancement layer (GDD §2.2). 'ceramic' is the unenhanced base. */
 export type TileMaterial =
@@ -32,7 +30,6 @@ export interface Tile {
   /** null ⟺ material 'stone' — a letterless tile (GDD §2.2). Any word containing
    *  one fails the lexicon lookup and resolves as gibberish (§6.4). */
   letter: Letter | null;
-  case: LetterCase;
   material: TileMaterial;
   font: TileFont;
   /** Missing only on legacy saves/test fixtures; engine treats it as `base`. */

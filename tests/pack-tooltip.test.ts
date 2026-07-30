@@ -89,6 +89,13 @@ describe('richText — pack highlight tags', () => {
     expect(classes).toEqual(['hl-mult', 'hl-chips', 'hl-blind']);
   });
 
+  it('renders money and passive-property tags instead of leaking markup', () => {
+    const classes = richText('[$:$5] [p:+1 Emoji Tile slot]')
+      .filter(isValidElement)
+      .map((node) => (node.props as { className: string }).className);
+    expect(classes).toEqual(['hl-money', 'hl-property']);
+  });
+
   it('leaves untagged prose untouched', () => {
     expect(richText('plain copy')).toEqual(['plain copy']);
   });

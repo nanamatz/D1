@@ -144,7 +144,7 @@ CSS class, and the `classification` prop.
 - **Verify:** `npx vitest run && npx vite build`, then open Collection and page every tab.
 
 ### R-09 `shrink:` one tile factory for the whole test suite
-Fourteen test files hand-roll `{ id, letter, case: 'upper', material: 'ceramic', font: 'medium' }`.
+Test files hand-roll `{ id, letter, material: 'ceramic', font: 'medium' }`.
 Three files additionally re-declare `submission()`, `runWith()`, `ctxFor()`, and
 `fixedRng()` with small differences.
 

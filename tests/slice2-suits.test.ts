@@ -9,7 +9,6 @@ const tiles = (word: string): Tile[] =>
   [...word.toUpperCase()].map((ch) => ({
     id: `s${idc++}`,
     letter: ch as Letter,
-    case: 'upper',
     material: 'ceramic',
     font: 'medium',
   }));

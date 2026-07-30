@@ -20,7 +20,7 @@ Version 0.2 — systems expansion
 - Changed 2026-07-29: Emoji Tiles now have profile unlocks. A starter subset is available immediately; every other tile needs its own condition completed in an unseeded run, and locked tiles are absent from every acquisition pool (§9.2, §11).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
   Legendary roster by Book of Margins, Tyrant, Type Foundry, Tower of Babel, and
-  Misbound. Common 35 and Uncommon 35 remain a review baseline with additional
+  Misbound. Common 32 and Uncommon 35 remain a review baseline with additional
   deduplicated candidates in `docs/EMOJI_TILE_IDEA_BANK.md` (§11).
 - Changed 2026-07-29: Emoji Tile art uses the shared **124×165px (near-3:4)**
   runtime card footprint. Existing 84×112 pixel masters scale into it with
@@ -103,16 +103,26 @@ The fiction: **you are a writer**. Poker/Balatro structure terms are re-skinned 
 
 ## 2. Tile System
 
-A tile is the smallest unit of the game. Each tile is one alphabet letter (the sole exception being Stone, which has none — §2.2) and carries two **intrinsic attribute axes** plus two **modifier layers**.
+A tile is the smallest unit of the game. Each tile is one **uppercase** alphabet
+letter (the sole exception being Stone, which has none — §2.2), one intrinsic
+classification, and three independent modifier axes.
 
-- **Intrinsic axis 1 — Uppercase / Lowercase**
-- **Intrinsic axis 2 — Vowel / Consonant**
-- **Modifier layer A — Material:** the enhancement slot
-- **Modifier layer B — Font:** the edition/seal slot
+- **Intrinsic classification — Vowel / Consonant**
+- **Modifier axis A — Material:** the enhancement slot
+- **Modifier axis B — Font:** the seal-effect slot
+- **Modifier axis C — Edition:** base / Foil / Holographic / Polychrome
 
-> **Design note — axis and layer independence.** Just as Balatro stacks an enhancement (e.g. Glass) and an edition (Foil/Holo) on a single card, this game can assign [1 material × 1 font] to a single tile simultaneously. The 8×5 = 40 combinations are the core engine of build variety.
+> **Decision — uppercase only (changed 2026-07-30).** Letter case is not a tile
+> axis. Every letter is stored and displayed as A–Z; all lowercase-tile planning
+> and case-dependent Emoji Tiles are retired.
 
-> **Design note — two layers, not three.** Balatro has *three* modifier concepts: enhancement, edition (Foil/Holo/Poly), and seal (Red/Blue/Gold/Purple). We fold edition and seal together into the font layer (§2.3), so Balatro concepts do not map one-to-one and must be assigned a home deliberately. Standing assignment: **retrigger is a seal, and therefore belongs to fonts, never to materials** — this is why Lead plate takes the probabilistic role rather than the reprint-the-tile role its name would suggest (§2.2).
+> **Design note — axis independence.** A tile can carry one material, one font,
+> and one edition simultaneously. The 9×5×4 combinations are the core engine of
+> build variety.
+
+> **Design note — retrigger stays on fonts.** Fonts retain the seal-effect roles
+> (§2.3), so retrigger belongs to fonts, never to materials. Tile editions remain
+> a separate visual/scoring axis (§2.4, §11.8).
 
 **Tile permanence.** Tiles are permanent assets, like Balatro's deck cards. Tiles submitted during a blind are consumed for that blind and return to the bag when the blind ends. The bag is sculpted across a run via packs (add) and consumables (remove/transform) — see §9–10.
 
@@ -826,18 +836,18 @@ until it is moved into §11.
 > The engine identifier stays `joker` (`JokerDef`, `src/engine/jokers/`,
 > `BALANCE.jokerSlots`) — display terms never rename engine identifiers.
 
-**Roster status (updated 2026-07-29).** The tables below contain **32 authored
-definitions**: Common 7 + Uncommon 9 + confirmed Rare 11 + confirmed Legendary
+**Roster status (updated 2026-07-30).** The tables below contain **30 authored
+definitions**: Common 5 + Uncommon 9 + confirmed Rare 11 + confirmed Legendary
 5. Common 32 and Uncommon 34 are under review in
 `docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md`; 101
 deduplicated alternatives live in `docs/EMOJI_TILE_IDEA_BANK.md`. Rare and
 Legendary alternatives in the idea bank are archival replacement options, not
 members of the active roster.
 
-**Implementation status (roster complete, 2026-07-30).** All 32 authored
-definitions ship as data + event hooks — Common 7 (C4–C10), Uncommon 9
+**Implementation status (roster complete, 2026-07-30).** All 30 authored
+definitions ship as data + event hooks — Common 5 (C6–C10), Uncommon 9
 (U1/U3–U10), Rare 11 (R1–R11) and Legendary 5 (L1–L5) — one file each under
-`src/engine/jokers/`. **Art is complete:** all 32 definitions have 84×112 pixel
+`src/engine/jokers/`. **Art is complete:** all 30 definitions have 84×112 pixel
 masters registered through the shared resolver. The shared 124×165 runtime
 frame is wired to the owned shelf, shop,
 opened Charm Pack, held-consumable shelf, and Collection.
@@ -894,16 +904,14 @@ tilt/sheen directly to that image.
 | Rare | Multiplication (×Mult) appears + full scaling — acceleration engine | 2–3 |
 | Legendary | Rule-breaking — redefines the run (5 total) | 3 |
 
-### 11.2 Common — active 7 (32 under review)
+### 11.2 Common — active 5 (32 under review)
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
-| C4 | Uppercase Premium | +3 Chips per uppercase tile | 1 | — |
-| C5 | Lowercase Lover | +1 Mult per lowercase tile | 1 | — |
-| C6 | Ceramic Artisan | +2 Chips per unenhanced base Ceramic tile | 1 | — |
+| C6 | Ceramic Artisan | +5 Chips per unenhanced base Ceramic tile | 1 | — |
 | C7 | Long-Word Fan | +30 Chips if word is 5+ letters | 1 | — |
 | C8 | Short & Sharp | +8 Mult if word is 3 letters or fewer | 1 | — |
-| C9 | Alphabetical Order | +15 Chips if the word contains consecutive letters (ab, cd…) | 1 | — |
+| C9 | Alphabetical Order | +15 Mult if the word contains consecutive letters | 1 | — |
 | C10 | Miser | +1 Mult per 5 gold held | 1 | — |
 
 ### 11.3 Uncommon — active 9 (34 under review)
@@ -1010,7 +1018,7 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each
 
 - **Value balancing across the board.** All numbers remain placeholders (emoji tiles, patterns, unison, vouchers, prices, target-score curve). Playtest-driven.
 - **Blind skip & tags.** Adoption itself deferred. Revisit trigger: unrecoverable early runs in playtests (§8.2).
-- **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, uppercase, slang-friendly…). Untouched.
+- **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, rare-letter-heavy, slang-friendly…). Untouched.
 - **Stakes (difficulty) & stake-ladder unlock structure.** Replayability layer.
   Untouched; this is separate from the confirmed per-Emoji-Tile profile unlocks
   in §11.
@@ -1022,7 +1030,10 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each
   while §9.2 still excludes Legendary from shop/Charm-Pack rolls. The 5
   Legendary tiles remain unreachable only until the Gambler engine registry is
   implemented.
-- **Acronyms in the lexicon.** Adding MVP/VIP-class abbreviations is requested. Open sub-decision: treat them as ordinary case-insensitive words, or make them **uppercase-only plays** with a bonus (which would create a new strategic axis and connect to the deferred uppercase-bag idea). They are absent from ENABLE-class lists, so either way they need a separate curated list feeding §3.2's pipeline.
+- **Acronyms in the lexicon.** Adding MVP/VIP-class abbreviations is requested.
+  Tiles are uppercase-only, so acronyms use the ordinary validity/scoring path.
+  They are absent from ENABLE-class lists and need a separate curated list
+  feeding §3.2's pipeline.
 - **Gambler card implementation + final 2 effects.** All 14 artworks and the
   Collection category exist; 12 effects are confirmed, while Rainman and Sake
   Cup wait on the selected Emoji Tile roster (§10.3). The engine registry, Ink
@@ -1036,7 +1047,7 @@ Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each
 - **Finisher boss count.** 2 concepts exist; decide whether the pool needs more for endless-mode variety.
 - **Emoji tiles keyed to letter hands (§5.5).** Letter Hands ship without emoji-tile support; a family of emoji tiles that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open emoji-tile material.
 - **Common/Uncommon roster selection.** Rare 11 and Legendary 5 are confirmed.
-  Common 35 and Uncommon 35 remain a review baseline, with 19 and 33 additional
+  Common 32 and Uncommon 35 remain a review baseline, with 19 and 33 additional
   deduplicated candidates respectively. Rare 34 and Legendary 15 alternatives
   remain archival. See `docs/EMOJI_TILE_IDEA_BANK.md`.
 - **Emoji Tile engine migration.** The ten-tile Rare/Legendary review sample is

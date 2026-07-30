@@ -101,15 +101,16 @@ Sidebar (top→bottom): blind badge (kind + boss name when boss) with target sco
 
 | Component | Notes |
 |---|---|
-| `Tile` | 64px (integer-scaled) pixel-art letter tile: face, letter (case shown literally: h vs H), chip value bottom-right. Carries up to **three stacked axes** (GDD §2.4): material + font + edition. See the material legibility rules below. Selected = raised + gold pixel outline. |
+| `Tile` | 64px (integer-scaled) pixel-art letter tile: face, uppercase A–Z letter, chip value bottom-right. Carries up to **three stacked axes** (GDD §2.4): material + font + edition. See the material legibility rules below. Selected = raised + gold pixel outline. |
 | `SentenceTray` | see §2. Includes `HoleSlot` (gibberish) and `PatternChip`. |
 | `JokerCard` | **Fixed 124×165px near-3:4 image-only runtime contract**, shared with the resized shop offer and held-consumable footprints. Existing 84×112 pixel masters scale with `object-fit: contain` and `image-rendering: pixelated`; the visible image is the whole card, with no wrapper panel, persistent label, edition badge, or rarity-colored frame. Art uses early-arcade simplicity—one large symbol, large square pixels, flat 3–5-color shapes, solid background, no scenery, texture, lighting, or small decoration. Reuse the same source on shelf, shop, opened-pack, and Collection surfaces. Idle float, cursor tilt, and sheen apply directly to the image; name, effect, and rarity stay in the tooltip. |
 
 The held-consumable panel keeps its 286px width. The Emoji Tile panel fills all
 remaining shelf width with an exact 10px gap between panels. Empty-slot
-placeholders are not rendered. Actual 124×165 cards never resize: their layout
-wrappers shrink evenly only when available width is insufficient, producing
-progressive overlap. Hover, focus, and drag lift the active card above its
+placeholders are not rendered. Owned Emoji Tiles use a fixed 12px inter-slot gap
+and the whole live group is centred. Actual 124×165 cards never resize: their
+layout wrappers shrink evenly only when available width is insufficient,
+producing progressive overlap. Hover, focus, and drag lift the active card above its
 neighbours. Both panels share the same fixed 187px outer height and reuse the
 sidebar's dark translucent `--rail-surface` background and edge.
 
@@ -119,7 +120,12 @@ the live value, including before the first trigger: `(현재 ×1 배수)` for
 multiplicative growth or `(현재 +0 칩)` for additive Chips growth. The numeric
 value uses the matching Mult/Chips highlight colour.
 
-**Emoji Tile art (completed 2026-07-30).** All 32 roster entries use 84×112
+All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
+13px live-value row, and a 280px maximum card width. Shared tooltips are rendered
+through a `document.body` portal above the CRT and every product panel, so their
+layout is never clipped or covered by the hovered surface.
+
+**Emoji Tile art (completed 2026-07-30).** All 30 roster entries use 84×112
 native pixel masters under `src/ui/assets/jokers/` and scale into the shared
 124×165 runtime frame.
 `src/ui/jokerArt.ts` is the single resolver
@@ -128,7 +134,7 @@ image-only early-arcade style. Collection presents them at the same 124×165
 runtime size in a paginated 5×3 grid (15 per page), fitted without an internal
 scrollbar.
 | `VoucherCard` | **One shared vertical rounded card** in the shop, Collection, and Run Info (`124×165px` at the base UI scale, changed 2026-07-30). The centered icon uses the matching PNG from `docs/Arts/Voucher/` for each of the 32 vouchers (including `StoryBook.png`); warm paper/dither, heavy pixel frame, vertical VOUCHER marks, and a black inset nameplate remain. Price and purchase controls sit outside the card. Every voucher uses the shared card idle float and cursor-following 3D tilt/sheen. **Collection layout (`docs/reference.png`, changed 2026-07-27):** four base→upgrade pairs per page in a 2×2 pair grid, four pages total. Locked upgrades render as muted `?` cards named **Undiscovered / 발견되지 않음**. Their tooltip contains only “Redeem this voucher in an unseeded run to discover what it does.” / “시드되지 않은 런에서 이 바우처를 교환하여 기능을 알아보세요.” The real name, effect, unlock condition, and progress are not exposed until unlocked. |
-| `ShopOffer` | **Image-first sale slot (pack rollback 2026-07-30).** Emoji Tiles, consumables, and vertical vouchers use the shared rounded `124×165px` stage. Sale packs use the requested older `131×229px` foreground with square corners; their row slots are also 131px wide so the normal 12px inter-item gap remains visible. The pack panel reserves 84px below its layout row so the attached Open button stays inside the persistent run layer instead of being clipped at the bottom. Collection packs remain `81×132px` with square corners. Price and contextual action live in one moving foreground layer: selection raises the product, price tag, and attached action together by the 15px base lift plus the 44px action-button height, 59px total. The voucher/pack background panels keep a `273px` minimum height. Product motion remains unclipped. The selection hit area extends below the art by more than the combined hover lift. The price badge sits 23px above the image and the selected **Buy / 구매**, **Redeem / 교환**, or **Open / 열기** button attaches beneath it; **Use now / 즉시 사용** appears vertically centred 12px outside the right edge. Names and classifications remain available through the shared tooltip. |
+| `ShopOffer` | **Image-first sale slot (pack rollback 2026-07-30).** Emoji Tiles, consumables, and vertical vouchers use the shared rounded `124×165px` stage. Sale packs use the requested older `131×229px` foreground with square corners; their row slots are also 131px wide so the normal 12px inter-item gap remains visible. The pack panel reserves 84px below its layout row so the attached Open button stays inside the persistent run layer instead of being clipped at the bottom. Collection packs remain `81×132px` with square corners. Price and contextual action live in one moving interaction layer: selection raises the product, price tag, attached action, and their hit-test owner together by the 15px base lift plus the 44px action-button height, 59px total. The voucher/pack background panels keep a `273px` minimum height. Product motion remains unclipped. The price badge sits 23px above the image and the selected **Buy / 구매**, **Redeem / 교환**, or **Open / 열기** button attaches beneath it; **Use now / 즉시 사용** appears vertically centred 12px outside the right edge. Names and classifications remain available through the shared tooltip. |
 | `HeldConsumable` | **Object-layer shelf rendering (resized 2026-07-29).** The `124×165px` held slot matches the shop offer and Emoji Tile footprint and is only a transparent layout reservation. Supplied 5:7 Fable/Constellation art fits directly inside that foreground object without distortion—no beige wrapper card, inset image box, persistent name, crop, rectangular sheen, or empty-slot placeholder. The foreground itself owns idle motion, cursor tilt, keyboard focus, click selection, and the shared tooltip. Shop, shelf, opened-pack, and Collection copies resolve through the same consumable-tooltip helpers, including referenced material sub-tooltips and any run-dependent live value wherever a run is available; intentionally hidden locked Collection entries remain the exception. Opening it raises the object above the shelf and attaches the Sell/Use action layer absolutely beneath the image instead of reflowing or sitting beside the shelf. |
 | `ScoreBox` | blue chips box × red mult box, Jersey 10 numerals, count-up animation on settle. |
 | `Button` | **Play word = blue, Discard = red** (Balatro convention, playtest-02 C-5), gold variant (Cash out / early end). Depress on press. |

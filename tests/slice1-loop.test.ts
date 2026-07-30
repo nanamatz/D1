@@ -14,7 +14,6 @@ let idc = 0;
 const tile = (letter: Letter): Tile => ({
   id: `h${idc++}`,
   letter,
-  case: 'upper',
   material: 'ceramic',
   font: 'medium',
 });

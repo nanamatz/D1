@@ -101,7 +101,8 @@
      the height grows instead. */
   --tt-bg: #3a444c;
   --tt-r: 10px;
-  --tt-w: 220px;
+  --tt-w: 280px;
+  --z-tooltip: 10000;
   /* The Collection's card columns. Named because the card grid has to reserve room
      for a tooltip wider than one card (see .card-grid) and the two numbers must not
      drift apart. */

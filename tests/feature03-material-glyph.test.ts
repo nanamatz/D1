@@ -10,7 +10,6 @@ import type { Tile, TileMaterial } from '../src/engine/types';
 const tile = (material: TileMaterial, extra: Partial<Tile> = {}): Tile => ({
   id: 't',
   letter: 'A',
-  case: 'upper',
   material,
   font: 'medium',
   ...extra,

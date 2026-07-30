@@ -9,6 +9,7 @@
  *   [n:…]  a count ("5")      → orange text   (pack copy: "up to 5 … choose 2")
  *   [k:…]  a card-kind noun   → red text      (pack copy: "Punctuation", "Charm")
  *
+ * `$` marks money in gold and `p` marks passive/property copy in green.
  * n/k recolour inline text rather than drawing a filled chip: a pack description is
  * prose about how many cards of what kind, not a Chips/Mult value readout.
  *
@@ -20,7 +21,7 @@
  */
 import type { ReactNode } from 'react';
 
-const TAG = /\[([mcbnka]):([^\]]*)\]/g;
+const TAG = /\[([mcbnka$p]):([^\]]*)\]/g;
 
 const CLASS: Record<string, string> = {
   m: 'hl-mult',
@@ -29,6 +30,8 @@ const CLASS: Record<string, string> = {
   n: 'hl-count',
   k: 'hl-kind',
   a: 'hl-axis',
+  $: 'hl-money',
+  p: 'hl-property',
 };
 
 /**

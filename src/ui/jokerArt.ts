@@ -14,7 +14,6 @@ import hypocrite from './assets/jokers/hypocrite.png';
 import interestGlutton from './assets/jokers/interest-glutton.png';
 import literaryJudge from './assets/jokers/literary-judge.png';
 import longWordFan from './assets/jokers/long-word-fan.png';
-import lowercaseLover from './assets/jokers/lowercase-lover.png';
 import misbound from './assets/jokers/misbound.png';
 import miser from './assets/jokers/miser.png';
 import outOfPrint from './assets/jokers/out-of-print.png';
@@ -27,7 +26,6 @@ import streetCred from './assets/jokers/street-cred.png';
 import towerOfBabel from './assets/jokers/tower-of-babel.png';
 import typeFoundry from './assets/jokers/type-foundry.png';
 import tyrant from './assets/jokers/tyrant.png';
-import uppercasePremium from './assets/jokers/uppercase-premium.png';
 import voraciousReader from './assets/jokers/voracious-reader.png';
 import vowelMagnet from './assets/jokers/vowel-magnet.png';
 
@@ -48,7 +46,6 @@ const ART: Readonly<Record<string, string>> = {
   interestGlutton,
   literaryJudge,
   longWordFan,
-  lowercaseLover,
   misbound,
   miser,
   outOfPrint,
@@ -61,7 +58,6 @@ const ART: Readonly<Record<string, string>> = {
   towerOfBabel,
   typeFoundry,
   tyrant,
-  uppercasePremium,
   voraciousReader,
   vowelMagnet,
 };

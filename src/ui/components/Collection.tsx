@@ -113,7 +113,6 @@ const sampleTile = (over: Partial<Tile>): Tile => {
   return {
     id: `s-${material}-${over.font ?? 'medium'}`,
     letter: material === 'stone' ? null : 'A',
-    case: 'upper',
     material,
     font: 'medium',
     ...over,

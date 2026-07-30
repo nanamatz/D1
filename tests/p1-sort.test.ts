@@ -6,7 +6,6 @@ let idc = 0;
 const t = (letter: Letter): Tile => ({
   id: `s${idc++}`,
   letter,
-  case: 'upper',
   material: 'ceramic',
   font: 'medium',
 });

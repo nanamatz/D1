@@ -66,7 +66,6 @@ describe('Fable registry', () => {
     const tile: Tile = {
       id: 'wood',
       letter: 'A',
-      case: 'upper',
       material: 'wood',
       font: 'medium',
       woodBonusChips: BALANCE.materials.wood.baseChips,
