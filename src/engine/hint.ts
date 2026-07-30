@@ -7,13 +7,14 @@
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
+import { wordLengthMult } from './scoring';
 import type { Letter, Tile } from './types';
 
 export interface HintWord {
   word: string;
   /** hand tile ids that spell it (one valid assignment) */
   tileIds: string[];
-  /** base score (letter chips × suit multiplier, no jokers) — for ranking */
+  /** base score (letter chips × (suit multiplier + length bonus), no jokers) — for ranking */
   score: number;
 }
 
@@ -71,7 +72,9 @@ export function findSpellableWords(
     }
     if (!ok) continue;
     const entry = lexicon.lookup(word);
-    const mult = entry ? BALANCE.suitMult[entry.suit] : 1;
+    // Only real dictionary words reach here (they came from lexicon.words()), so
+    // the length bonus always applies — same rule as the live pipeline (GDD §3.1).
+    const mult = (entry ? BALANCE.suitMult[entry.suit] : 1) + wordLengthMult(word.length, false);
     candidates.push({ word, score: letterChips(word) * mult });
   }
 

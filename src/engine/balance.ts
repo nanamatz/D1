@@ -40,6 +40,13 @@ export const BALANCE = {
   // ----- Suit base multipliers (GDD §3.1) -----
   suitMult: { standard: 1.0, formal: 1.5, slang: 2.0, vulgar: 3.0 },
 
+  // ----- Word length (GDD §3.1, 2026-07-30) — length ADDS to Mult, it does not
+  //       multiply the suit multiplier: `chips × (suitMult + length × multPerLetter)`.
+  //       Additive keeps the suit multiplier weighty instead of swamped. Valid words
+  //       only (§6.4). The Longword letter hand (§5.5) is the Chips side of the same
+  //       idea, so the two are not duplicates. Sim: src/sim/length-mult.ts. -----
+  wordLength: { multPerLetter: 1 },
+
   // ----- Gibberish (GDD §6.4, decision b-2) -----
   gibberish: { mult: 1.0 }, // letter chips × 1.0; no suit, no POS, leaves a hole
 

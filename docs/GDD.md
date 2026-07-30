@@ -247,6 +247,8 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 
 > **Balance warning — keep the multiplier curve gentler than the rarity.** If Slang/Vulgar appear *too* rarely while only their multipliers are high, players will treat them as "suits I can't make anyway" and ignore them. Keep the multiplier gentler than the data rarity to hold the line at "hard but worth attempting." Vulgar has extremely few words, so design it not as a main build but as a "jackpot that explodes when conditions align," balanced by an adversarial relationship with censor-type bosses.
 
+**Word length adds to Mult (2026-07-30).** A valid word's score is `letter chips × (suit multiplier + length × BALANCE.wordLength.multPerLetter)`, with `multPerLetter` = 1 — a 5-letter Standard word settles at `chips × 6.0`. Length is **added** to the suit multiplier, not multiplied by it, so the register asymmetry above keeps its weight instead of being swamped by a linear length term. Gibberish is excluded (§6.4): it stays at `chips × 1.0`, so dumping eight random tiles never competes with spelling. Sim: `src/sim/length-mult.ts`.
+
 **Collection surfacing (added 2026-07-30).** Collection → Words has a separate
 Register Scores tab that exposes these four live `balance.ts` multipliers and
 their risk/reward roles. The Words tab also shows profile-derived challenge
@@ -387,7 +389,7 @@ all show this same mark, so the mapping is readable before effect prose.
 
 Sentence patterns are the *run-level* payoff (evaluated across the whole sequence at blind end). **Letter Hands** supply the *word-level* dopamine — a per-word "hand type" (Balatro's poker hands, transposed to letter structure) evaluated at submission.
 
-- **Scoring placement.** The matched hand's `+Chips` / `+Mult` fold into the word's scoring context **before the suit multiplier settles** (inside `WordScoringContext`, layer 1). Values are placeholders in `balance.ts`.
+- **Scoring placement.** The matched hand's `+Chips` / `+Mult` fold into the word's scoring context **before the suit multiplier settles** (inside `WordScoringContext`, layer 1). Values are placeholders in `balance.ts`. The length multiplier (§3.1) folds in just before this, on the Mult side; Longword is the Chips side of the same idea, so the two stack rather than duplicating.
 - **Highest single hand only** (consistent with the sentence-pattern rule, §5.1 rule 2).
 - **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); Twin, Triplet, Longword and Palindrome are valid-words-only. See §6.4.
 

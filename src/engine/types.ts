@@ -175,6 +175,7 @@ export type ScoreEvent =
   | { kind: 'font'; font: TileFont; effect: FontEffectId; tileId: string; chipsDelta: number; multDelta: number; goldDelta: number }
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
+  | { kind: 'wordLength'; letters: number; multDelta: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; scoreDelta?: number; goldDelta?: number; tileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }

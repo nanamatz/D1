@@ -47,6 +47,17 @@ export function letterChips(tiles: readonly Tile[]): number {
   return sum;
 }
 
+/**
+ * The Mult a word's length adds (GDD §3.1). Takes a letter COUNT, not tiles, so
+ * the hint solver — which ranks word strings with no tiles in hand — shares the
+ * one rule. Gibberish is excluded (§6.4): it pays chips × 1.0 with no multipliers,
+ * which also handles letterless Stone tiles, since a word holding one always fails
+ * lookup and is therefore gibberish.
+ */
+export function wordLengthMult(letterCount: number, isGibberish: boolean): number {
+  return isGibberish ? 0 : letterCount * BALANCE.wordLength.multPerLetter;
+}
+
 export interface BaseScore {
   text: string;
   isGibberish: boolean;
@@ -89,7 +100,11 @@ export function scoreWord(tiles: readonly Tile[], lexicon: Lexicon): WordSubmiss
   // Reference path: no jokers, no bosses. Materials still apply — they are part of
   // the tile, not a modifier layered on top. Fixed seed keeps this pure/testable.
   const rng = makeRng('scoreWord');
-  const ctx: WordScoringContext = { submission, chips: b.chips, mult: b.mult };
+  const ctx: WordScoringContext = {
+    submission,
+    chips: b.chips,
+    mult: b.mult + wordLengthMult(tiles.length, b.isGibberish),
+  };
   for (const t of tiles) applyTileMaterial(ctx, t, rng);
   submission.settledScore = ctx.chips * ctx.mult;
   return submission;

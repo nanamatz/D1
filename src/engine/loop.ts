@@ -15,7 +15,7 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { baseScore, spell, letterString } from './scoring';
+import { baseScore, spell, letterString, wordLengthMult } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { applyEdition } from './editions';
 import { finalizeScore, judgeSentence } from './patterns';
@@ -448,6 +448,14 @@ function scoreSubmission(
   }
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
 
+  // Word length adds Mult (GDD §3.1) — a whole-word stamp landing right after the
+  // suit, so the letter hand below stacks on top of it. Valid words only (§6.4).
+  const lengthMult = wordLengthMult(tiles.length, submission.isGibberish);
+  if (lengthMult !== 0) {
+    ctx.mult += lengthMult;
+    events.push({ kind: 'wordLength', letters: tiles.length, multDelta: lengthMult });
+  }
+
   // Brass and friends read tiles REMAINING in hand — blind.hand still holds the
   // played tiles at this point, so exclude them explicitly.
   const playedIds = new Set(tiles.map((t) => t.id));
@@ -568,7 +576,7 @@ function scoreSubmission(
   // whole-word stamps -> each played tile and its own effects -> Emoji Tiles in
   // shelf order -> held tiles in their frozen play-time order -> global/boss beats.
   const wholeWordEvents = events.filter(
-    (event) => event.kind === 'suit' || event.kind === 'letterHand',
+    (event) => event.kind === 'suit' || event.kind === 'wordLength' || event.kind === 'letterHand',
   );
   const playedTileEvents = events.filter(
     (event) => 'tileId' in event && !!event.tileId && playedIds.has(event.tileId),
