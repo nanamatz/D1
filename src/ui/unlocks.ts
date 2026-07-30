@@ -2,8 +2,8 @@
  * Chromatic unlocks (feature-02 C) — "writing the world into color."
  *
  * The game begins DESATURATED and SILENT; playing specific words permanently
- * unlocks presentation layers (a color group, an audio bus, a mascot skin, or a
- * celebratory locale entry). Persistent PER PROFILE (via storage.ts — a save key,
+ * unlocks presentation layers (a color group, an audio bus, or a mascot skin).
+ * Persistent PER PROFILE (via storage.ts — a save key,
  * so on desktop it lives in the save files), data-driven: adding a future unlock
  * is adding a row to UNLOCKS — never a hard-coded word check in a component
  * (CLAUDE.md guardrail).
