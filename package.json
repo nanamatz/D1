@@ -6,7 +6,7 @@
   "main": "desktop/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && node scripts/check-engine-cycles.mjs && vite build",
+    "build": "tsc --noEmit && node scripts/check-engine-cycles.mjs && vite build",
     "check:cycles": "node scripts/check-engine-cycles.mjs",
     "test": "vitest run",
     "sim": "tsx src/sim/autoplay.ts",

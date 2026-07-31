@@ -1,8 +1,10 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type Dispatch,
   type RefObject,
   type SetStateAction,
@@ -11,15 +13,75 @@ import { readValue, writeValue } from './storage';
 import { clamp } from './math';
 import { motionOff as reducedMotion } from './motion';
 
-/** useState mirrored to persistent storage (P1-1 persists the sort choice). */
+/**
+ * State mirrored to persistent storage, SHARED by every hook instance on the
+ * same key.
+ *
+ * This used to be a plain per-instance `useState` + a write-on-change effect.
+ * That is a data-loss bug as soon as two components read the same key, which
+ * `wj.settings` does from four places (App, Options, RunView, Collection):
+ *
+ *   1. App mounts and caches `{ master: 80, ... }`.
+ *   2. Options (its own instance) sets `master: 0` and persists it.
+ *   3. Anything nudges App's instance — leaving fullscreen with Escape does,
+ *      via `useSettings`' `fullscreenchange` listener.
+ *   4. App writes `{ ...itsStaleCopy, fullscreen }`, and `master` is 80 again.
+ *
+ * One module-level cache per key plus `useSyncExternalStore` (React built-in —
+ * no store library) makes every instance read the same value and re-render
+ * together, so step 3 can no longer resurrect step 1's snapshot. Writes now
+ * happen in the setter rather than in an effect, so mounting a second reader
+ * never re-persists anything by itself.
+ */
+interface Cell {
+  value: unknown;
+  listeners: Set<() => void>;
+}
+const cells = new Map<string, Cell>();
+
+function cell<T>(key: string, initial: T): Cell {
+  let existing = cells.get(key);
+  if (!existing) {
+    existing = { value: readValue<T>(key) ?? initial, listeners: new Set() };
+    cells.set(key, existing);
+  }
+  return existing;
+}
+
+/** Test-only: drop the shared cache so a test can start from clean storage. */
+export function resetPersistedState(): void {
+  cells.clear();
+}
+
 export function usePersistedState<T>(
   key: string,
   initial: T,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => readValue<T>(key) ?? initial);
-  useEffect(() => {
-    writeValue(key, value);
-  }, [key, value]);
+  const store = cell(key, initial);
+  // getSnapshot must return a STABLE reference between changes, which is why the
+  // value lives in the cell rather than being re-read from storage each call.
+  const value = useSyncExternalStore(
+    useCallback((onChange: () => void) => {
+      store.listeners.add(onChange);
+      return () => void store.listeners.delete(onChange);
+    }, [store]),
+    () => store.value as T,
+    () => store.value as T,
+  );
+
+  const setValue = useCallback<Dispatch<SetStateAction<T>>>(
+    (update) => {
+      const current = store.value as T;
+      const next =
+        typeof update === 'function' ? (update as (prev: T) => T)(current) : update;
+      if (Object.is(next, current)) return;
+      store.value = next;
+      writeValue(key, next);
+      for (const listener of store.listeners) listener();
+    },
+    [key, store],
+  );
+
   return [value, setValue];
 }
 

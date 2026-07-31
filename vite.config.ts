@@ -9,4 +9,13 @@ export default defineConfig({
   // subpath. Never make this absolute — it breaks the desktop build silently.
   base: './',
   plugins: [react()],
+  test: {
+    // Vitest 4 no longer excludes `dist` by default. `tsc -b` used to emit
+    // compiled copies of every test into it (same `outDir` as the Vite bundle),
+    // and the suite then ran each test TWICE — once from source, once from a
+    // stale build — producing failures that vanished after `rm -rf dist`.
+    // `npm run build` now typechecks with `--noEmit` so nothing lands there,
+    // and this keeps a stray build from ever re-creating the phantom run.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**'],
+  },
 });

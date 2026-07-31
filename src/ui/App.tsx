@@ -22,17 +22,11 @@ export function App() {
   // D-4: preload assets behind a loading screen before the Main Menu. Falls through
   // immediately when everything is cached (LoadingScreen reports real progress).
   const [loading, setLoading] = useState(true);
-  // `usePersistedState` is a plain per-instance useState with no cross-instance
-  // sync, so this App-level instance is frozen at page-load values and its
-  // effect fires once at mount — it does NOT stay "live" across screens.
-  // The real value of mounting `useSettings` here (not only inside
-  // Options/RunView) is that mount-time effect: it applies the persisted
-  // volume values (e.g. a saved master:0) to the audio mixer singleton at
-  // startup, on the menu screen, before Options or RunView ever mount —
-  // closing the gap where saved silence wouldn't apply until Options was
-  // opened. `audio.setVolumes` is last-writer-wins with no render loop, so
-  // whichever instance (this one, or Options/RunView's own) last called it
-  // wins; this one just guarantees an early call happens.
+  // Mounted here so the persisted volumes (e.g. a saved master:0) reach the audio
+  // mixer at startup on the menu screen, before Options or RunView ever mount.
+  // `usePersistedState` is now backed by one shared store per key, so this
+  // instance stays live with Options' and RunView's rather than freezing at
+  // page-load values — which is what used to let it write a stale snapshot back.
   useSettings();
   const [screen, setScreen] = useState<Screen>('menu');
   // `useGame` lives here, so leaving the run view (Options → Main Menu) keeps the
