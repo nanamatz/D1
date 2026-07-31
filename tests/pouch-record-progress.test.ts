@@ -41,6 +41,7 @@ describe('pouch and Record profile progress', () => {
     });
     expect(loadLifetime().pouchWins).toEqual(['yellow']);
     expect(loadLifetime().recordWins).toEqual(['whiteLp']);
+    expect(loadLifetime().wins).toBe(2);
   });
 
   it('does not grant unlock progress for losses or custom-seed wins', () => {
@@ -64,12 +65,14 @@ describe('pouch and Record profile progress', () => {
     });
     expect(loadLifetime().pouchWins).toEqual([]);
     expect(loadLifetime().recordWins).toEqual([]);
+    expect(loadLifetime().wins).toBe(1);
   });
 
   it('loads legacy lifetime data with empty progress arrays', () => {
     localStorage.setItem('wj.lifetime', JSON.stringify({ runs: 4, mostGold: 12 }));
     expect(loadLifetime()).toMatchObject({
       runs: 4,
+      wins: 0,
       mostGold: 12,
       pouchWins: [],
       recordWins: [],

@@ -3,7 +3,13 @@
  * by the caller because it has no dictionary entry.
  */
 
-import { readValue, writeValue } from './storage';
+import {
+  activeProfile,
+  readProfileValue,
+  readValue,
+  writeValue,
+  type ProfileSlot,
+} from './storage';
 
 const KEY = 'wj.collection';
 
@@ -16,8 +22,8 @@ export interface WordCollectionEntry {
 /** word (lowercase) → lifetime profile stats. */
 export type Collection = Record<string, WordCollectionEntry>;
 
-export function loadCollection(): Collection {
-  const stored = readValue<Record<string, unknown>>(KEY);
+export function loadCollection(slot: ProfileSlot = activeProfile()): Collection {
+  const stored = readProfileValue<Record<string, unknown>>(KEY, slot);
   if (!stored || typeof stored !== 'object') return {};
 
   const collection: Collection = {};
@@ -52,8 +58,8 @@ export function recordWord(word: string, score = 0, now: number = Date.now()): b
   return previous === undefined;
 }
 
-export function collectionSize(): number {
-  return Object.keys(loadCollection()).length;
+export function collectionSize(slot: ProfileSlot = activeProfile()): number {
+  return Object.keys(loadCollection(slot)).length;
 }
 
 export interface CollectionHighlight {

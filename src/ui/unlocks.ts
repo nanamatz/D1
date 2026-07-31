@@ -12,7 +12,13 @@
  */
 
 import { audio } from './audio';
-import { readValue, remove as removeKey, writeValue } from './storage';
+import {
+  activeProfile,
+  readProfileValue,
+  remove as removeKey,
+  writeValue,
+  type ProfileSlot,
+} from './storage';
 
 export type UnlockGroup = 'red' | 'yellow' | 'green' | 'blue';
 
@@ -46,8 +52,8 @@ const BY_WORD = new Map(UNLOCKS.map((u) => [u.word, u]));
 const KEY = 'wj.unlocks';
 
 /** The set of ids the player has actually PLAYED (celebrated + recorded). */
-export function loadPlayed(): Set<string> {
-  return new Set(readValue<string[]>(KEY) ?? []);
+export function loadPlayed(slot: ProfileSlot = activeProfile()): Set<string> {
+  return new Set(readProfileValue<string[]>(KEY, slot) ?? []);
 }
 
 export function isPlayed(id: string): boolean {
@@ -65,22 +71,16 @@ export function markPlayed(id: string): void {
   savePlayed(set);
 }
 
-export function playedCount(): number {
-  return loadPlayed().size;
+export function playedCount(slot: ProfileSlot = activeProfile()): number {
+  return loadPlayed(slot).size;
 }
 
 export function resetUnlocks(): void {
   removeKey(KEY);
 }
 
-/**
- * The set of unlock ids whose EFFECT is currently active = played, OR everything
- * when the Settings "unlock all" override is on (C-4). The override lights the
- * presentation but does NOT count as discovered — the collection record only
- * fires on the real first play (checkWordPlayed).
- */
-export function activeUnlocks(unlockAll: boolean): Set<string> {
-  if (unlockAll) return new Set(UNLOCKS.map((u) => u.id));
+/** The active profile's actually discovered unlock ids. */
+export function activeUnlocks(): Set<string> {
   return loadPlayed();
 }
 
@@ -117,12 +117,12 @@ export function chromaMatrix(active: ReadonlySet<string>): string {
 
 /**
  * Apply the presentation state to the DOM + audio buses. Idempotent — call on
- * mount and whenever the played set / override changes. Color groups toggle a
+ * mount and whenever the played set changes. Color groups toggle a
  * `unlock-<group>` class on <html> (tokens.css swaps the desaturated defaults
  * for the true values); audio buses gate SFX/music (C-6).
  */
-export function applyPresentation(unlockAll: boolean): void {
-  const active = activeUnlocks(unlockAll);
+export function applyPresentation(): void {
+  const active = activeUnlocks();
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
     let anyColor = false;

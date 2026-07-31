@@ -15,7 +15,7 @@
 
 /**
  * Player progress. These move to files on desktop and sync via Steam Cloud.
- * Everything else (wj.settings, wj.lang, wj.sortMode) is a machine-local
+ * Everything else (wj.profile, wj.settings, wj.lang, wj.sortMode) is a machine-local
  * preference and stays in localStorage everywhere — resolution and volume
  * following a player to another PC is an annoyance, not a feature.
  *
@@ -32,6 +32,17 @@ export const SAVE_KEYS: ReadonlySet<string> = new Set([
   'wj.tutorial',
   'wj.tutorialIntro',
 ]);
+
+export const PROFILE_SLOTS = [1, 2, 3] as const;
+export type ProfileSlot = (typeof PROFILE_SLOTS)[number];
+
+const PROFILE_KEY = 'wj.profile';
+const PROFILE_ENVELOPE_VERSION = 1;
+
+interface ProfileEnvelope {
+  __wjProfileSlots: typeof PROFILE_ENVELOPE_VERSION;
+  slots: Partial<Record<`${ProfileSlot}`, unknown>>;
+}
 
 /** What `desktop/preload.cjs` exposes on `window.wj`. */
 export interface StorageBridge {
@@ -92,7 +103,74 @@ export function resetStorageCache(): void {
   cache = null;
 }
 
-function readRaw(key: string): string | null {
+/** The selected slot is a machine-local preference; the slot contents are saves. */
+export function activeProfile(): ProfileSlot {
+  try {
+    const slot = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? '1');
+    return PROFILE_SLOTS.includes(slot as ProfileSlot) ? slot as ProfileSlot : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function selectProfile(slot: ProfileSlot): void {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(slot));
+  } catch {
+    /* ignore */
+  }
+}
+
+function profileEnvelope(raw: string | null): ProfileEnvelope | null {
+  if (raw === null) return null;
+  try {
+    const value = JSON.parse(raw) as Partial<ProfileEnvelope>;
+    return value?.__wjProfileSlots === PROFILE_ENVELOPE_VERSION
+      && value.slots
+      && typeof value.slots === 'object'
+      ? value as ProfileEnvelope
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function readProfileRaw(raw: string | null, slot: ProfileSlot): string | null {
+  const envelope = profileEnvelope(raw);
+  if (envelope) {
+    const value = envelope.slots[String(slot) as `${ProfileSlot}`];
+    return value === undefined ? null : JSON.stringify(value);
+  }
+  // Every pre-profile save becomes P1 without a migration or copy.
+  return slot === 1 ? raw : null;
+}
+
+function writeProfileRaw(raw: string | null, slot: ProfileSlot, json: string): string {
+  const envelope = profileEnvelope(raw);
+  // Keep the old flat format for P1-only saves. It remains human-readable and
+  // avoids rewriting every existing profile merely because this build booted.
+  if (!envelope && slot === 1) return json;
+
+  const slots = { ...(envelope?.slots ?? {}) };
+  if (!envelope && raw !== null) {
+    try {
+      slots['1'] = JSON.parse(raw);
+    } catch {
+      /* an unreadable legacy value was already unusable */
+    }
+  }
+  try {
+    slots[String(slot) as `${ProfileSlot}`] = JSON.parse(json);
+  } catch {
+    return raw ?? json;
+  }
+  return JSON.stringify({
+    __wjProfileSlots: PROFILE_ENVELOPE_VERSION,
+    slots,
+  } satisfies ProfileEnvelope);
+}
+
+function readPhysicalRaw(key: string): string | null {
   const bridge = getBridge();
   if (bridge && SAVE_KEYS.has(key)) return getCache(bridge).get(key) ?? null;
   try {
@@ -102,9 +180,7 @@ function readRaw(key: string): string | null {
   }
 }
 
-/** Store an already-serialized value. Only `persist.ts` needs this — it holds
- *  the string already, for its dedupe check. */
-export function writeRaw(key: string, json: string): void {
+function writePhysicalRaw(key: string, json: string): void {
   const bridge = getBridge();
   if (bridge && SAVE_KEYS.has(key)) {
     getCache(bridge).set(key, json);
@@ -116,6 +192,47 @@ export function writeRaw(key: string, json: string): void {
   } catch {
     /* quota / privacy mode — the value just stays session-only */
   }
+}
+
+function removePhysical(key: string): void {
+  const bridge = getBridge();
+  if (bridge && SAVE_KEYS.has(key)) {
+    getCache(bridge).delete(key);
+    bridge.remove(key);
+    return;
+  }
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readRaw(key: string): string | null {
+  const raw = readPhysicalRaw(key);
+  return SAVE_KEYS.has(key) ? readProfileRaw(raw, activeProfile()) : raw;
+}
+
+/** Read one progress value from an explicit slot without changing the active
+ * profile. Profile-management screens use this to inspect inactive slots. */
+export function readProfileValue<T>(key: string, slot: ProfileSlot): T | null {
+  if (!SAVE_KEYS.has(key)) return null;
+  const raw = readProfileRaw(readPhysicalRaw(key), slot);
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+/** Store an already-serialized value. Only `persist.ts` needs this — it holds
+ *  the string already, for its dedupe check. */
+export function writeRaw(key: string, json: string): void {
+  const next = SAVE_KEYS.has(key)
+    ? writeProfileRaw(readPhysicalRaw(key), activeProfile(), json)
+    : json;
+  writePhysicalRaw(key, next);
 }
 
 export function readValue<T>(key: string): T | null {
@@ -139,16 +256,61 @@ export function writeValue(key: string, value: unknown): void {
   writeRaw(key, json);
 }
 
-export function remove(key: string): void {
-  const bridge = getBridge();
-  if (bridge && SAVE_KEYS.has(key)) {
-    getCache(bridge).delete(key);
-    bridge.remove(key);
+/** Write one progress value to an explicit slot without changing the active
+ * profile. Preference keys are intentionally rejected: they are device-local. */
+export function writeProfileValue(key: string, slot: ProfileSlot, value: unknown): void {
+  if (!SAVE_KEYS.has(key)) return;
+  let json: string | undefined;
+  try {
+    json = JSON.stringify(value);
+  } catch {
     return;
   }
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    /* ignore */
+  if (json === undefined) return;
+  writePhysicalRaw(key, writeProfileRaw(readPhysicalRaw(key), slot, json));
+}
+
+function removeProfileValue(key: string, slot: ProfileSlot): void {
+  const raw = readPhysicalRaw(key);
+  const envelope = profileEnvelope(raw);
+  if (!envelope) {
+    if (slot === 1) removePhysical(key);
+    return;
   }
+
+  const slots = { ...envelope.slots };
+  delete slots[String(slot) as `${ProfileSlot}`];
+  if (Object.keys(slots).length === 0) removePhysical(key);
+  else {
+    writePhysicalRaw(key, JSON.stringify({
+      __wjProfileSlots: PROFILE_ENVELOPE_VERSION,
+      slots,
+    } satisfies ProfileEnvelope));
+  }
+}
+
+export function remove(key: string): void {
+  if (!SAVE_KEYS.has(key)) {
+    removePhysical(key);
+    return;
+  }
+  removeProfileValue(key, activeProfile());
+}
+
+/** Whether this slot contains any persisted progress. This recognizes profiles
+ * created by builds that predate explicit profile metadata. */
+export function profileHasData(slot: ProfileSlot): boolean {
+  for (const key of SAVE_KEYS) {
+    if (readProfileRaw(readPhysicalRaw(key), slot) !== null) return true;
+  }
+  return false;
+}
+
+/** Delete every progress key belonging to exactly one slot. */
+export function resetProfile(slot: ProfileSlot): void {
+  for (const key of SAVE_KEYS) removeProfileValue(key, slot);
+}
+
+export function resetActiveProfile(): void {
+  resetProfile(activeProfile());
 }

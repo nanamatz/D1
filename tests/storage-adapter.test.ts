@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   SAVE_KEYS,
+  activeProfile,
   readValue,
   remove,
+  resetActiveProfile,
   resetStorageCache,
+  selectProfile,
   writeRaw,
   writeValue,
   type StorageBridge,
@@ -55,6 +58,28 @@ describe('web backend (no bridge)', () => {
   it('sends a preference key to localStorage', () => {
     writeValue('wj.lang', 'ko');
     expect(readValue<string>('wj.lang')).toBe('ko');
+  });
+
+  it('isolates the three profile slots while keeping legacy data in P1', () => {
+    writeValue('wj.lifetime', { runs: 1 });
+    selectProfile(2);
+    expect(activeProfile()).toBe(2);
+    expect(readValue('wj.lifetime')).toBeNull();
+    writeValue('wj.lifetime', { runs: 2 });
+    selectProfile(1);
+    expect(readValue('wj.lifetime')).toEqual({ runs: 1 });
+    selectProfile(2);
+    expect(readValue('wj.lifetime')).toEqual({ runs: 2 });
+  });
+
+  it('resets only the active profile', () => {
+    writeValue('wj.lifetime', { runs: 1 });
+    selectProfile(3);
+    writeValue('wj.lifetime', { runs: 3 });
+    resetActiveProfile();
+    expect(readValue('wj.lifetime')).toBeNull();
+    selectProfile(1);
+    expect(readValue('wj.lifetime')).toEqual({ runs: 1 });
   });
 });
 

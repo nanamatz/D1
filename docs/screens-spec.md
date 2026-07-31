@@ -57,7 +57,9 @@ Shown once on app start, before the Main Menu. The build now carries real weight
 - **Audio caveat:** decoding may begin here, but playback still cannot start until the first user gesture (feature-01 B-3), so the loading screen stays silent by design.
 
 ### 2.1 Main Menu
-Title treatment (our own logotype), buttons: **Play · Options · Collection · Quit**. Quit shows on all builds: it attempts `window.close()` (works in a desktop shell / script-opened window) and always swaps the menu for a full-screen farewell ("Thanks for playing!"), so a normal browser tab that can't self-close still ends cleanly (2026-07-22). Profile chip bottom-left **[PLACEHOLDER: single profile "P1"]**, language toggle bottom-right (ko/en — i18n already shipped). Collection button badges a `!` when new words/jokers were discovered last run.
+Title treatment (our own logotype), buttons: **Play · Options · Collection · Quit**. Quit shows on all builds: it attempts `window.close()` (works in a desktop shell / script-opened window) and always swaps the menu for a full-screen farewell ("Thanks for playing!"), so a normal browser tab that can't self-close still ends cleanly (2026-07-22). The four buttons keep this vertical order inside one dark CRT panel, with individual block shadows and fixed semantic colors: Play blue, Options orange, Collection green, Quit red. The bottom-left profile control is a compact dark card with a `Profile` header and inset active-profile-name button; the bottom-right language control mirrors that card and displays the currently selected language (`한국어` or `English`) without an icon. Collection badges a `!` when new words/jokers were discovered last run. (Main-menu visual refresh: 2026-07-31.)
+
+**Profiles (changed 2026-07-31).** The profile button opens a three-slot screen matching the reference layout. P1 exists on first boot with the editable default name `P1`; P2/P3 begin empty. Selecting an empty slot does not activate it: the screen shows a name field, Empty panel, Create Profile, disabled Delete Profile, and Back. Creating with a blank name uses `P2`/`P3`; every created profile can be renamed later. A created slot shows overall progress, four progress rows (word Collection, presentation, Starting Pouches, Record wins), lifetime wins, profile reset, Reveal All, and Back. The eight progress save keys and profile metadata are isolated per slot while language, settings, and sort order remain machine-wide. Existing flat saves are P1. Reset requires an in-UI destructive confirmation; resetting P2/P3 returns that slot to empty. On the first Reveal All press, no effect is applied and a persistent per-profile warning explains the consequence. A later press fills every implemented locked/undiscovered registry in that profile and disables its Challenges; no other profile is changed. The compact applied marker makes all dictionary entries read as discovered without creating fake per-word play counts or scores.
 
 ### 2.2 New Run
 Top tabs: **New Run · Continue · Challenges**. **Continue resumes the saved run**
@@ -252,7 +254,7 @@ the zoomed board root so fullscreen/UI scaling cannot pull it toward the top.
 Tabs — trimmed for a web game:
 - **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle · **"don't show tips" toggle** (kills the first-encounter tutorial popups, feature-01 A-2).
 - **Graphics**: **CRT effect on/off · CRT intensity slider · CRT bloom on/off** (the pixel-art/CRT finish is now core identity — the reference build exposed exactly these; see UI_DESIGN §"Surface language") · pixel-perfect/integer-scale toggle.
-- **Video**: fullscreen toggle · UI scale slider · **"reveal all presentation" toggle** (chromatic-unlock override, feature-02 C-4 — unlocks every color/audio now; the first real play of a word still fires its celebration + Palette record once). The fullscreen toggle mirrors the browser's actual `fullscreenElement`; when ESC exits fullscreen externally, the toggle immediately synchronizes to Off. (No monitor select/VSync — web.)
+- **Video**: fullscreen toggle · UI scale slider. The fullscreen toggle mirrors the browser's actual `fullscreenElement`; when ESC exits fullscreen externally, the toggle immediately synchronizes to Off. (No monitor select/VSync — web.) Reveal All belongs exclusively to the selected profile screen (§2.1).
 - **Audio**: master / music / SFX sliders with value badges drive the **live Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). SFX and four loop-safe synthesized BGM contexts (menu/play/shop/Deadline) are shipped; no remote audio assets are required. The context unlocks on the first user gesture (autoplay policy), settle-sequence SFX scale with game speed, and the `MUSIC`/`SOUND` Palette entries gate their respective buses.
 
 ### 2.12 Statistics
@@ -266,8 +268,8 @@ Sub-screen **Word/Joker stats** (reference: per-card bar chart): per-joker "blin
 
 - All screens are pure UI over headless engine state. Starting-Pouch/Record rules
   come from GDD §12 and engine definitions; New Run, tooltips, settlement, and
-  Collection only present their resolved values. Anything not in the engine yet
-  (profiles, formal challenges) ships as stubs behind flagged placeholders.
+  Collection only present their resolved values. Formal challenges remain a
+  flagged placeholder.
 - **Persistent in-run table (changed 2026-07-28).** `ScreenTransition` is retired from blind↔shop↔pack↔blind-select changes and remains available only for shell navigation such as menu↔run.
   - **Panel direction:** phase panels enter from below and leave toward the bottom. Use Ease-Out Back for entry and a short ease-in for exit.
   - **Performance:** CSS transforms on the panel wrapper; never per-frame React re-renders. Action resolution waits for the exit beat so an unmount cannot cut it off.

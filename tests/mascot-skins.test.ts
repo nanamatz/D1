@@ -81,8 +81,9 @@ describe('mascotSrc — reads live selection from storage', () => {
     expect(mascotSrc('woodak')).toBe(dogUrl);
   });
 
-  it('the unlock-all override makes art skins selectable', () => {
-    setSettings({ mascot: 'dog', unlockAll: true });
+  it('profile unlock progress makes art skins selectable', () => {
+    setSettings({ mascot: 'dog' });
+    markPlayed('DOG');
     expect(mascotSrc('woodak')).toBe(dogUrl);
   });
 

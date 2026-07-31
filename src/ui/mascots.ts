@@ -5,8 +5,8 @@
  *
  * These skins ARE the chromatic-unlock `{ kind: 'mascot', variant }` rows (GDD §13:
  * ALIEN/GHOST/DOG plus TURTLE) — "data slots now, art later." A skin becomes selectable
- * once it has art AND the player has unlocked it (played its word, or the C-4 override is
- * on). All current variants (ALIEN/GHOST/DOG/TURTLE) have art. Data-driven: adding a skin
+ * once it has art AND the active profile has unlocked it. All current variants
+ * (ALIEN/GHOST/DOG/TURTLE) have art. Data-driven: adding a skin
  * = fill in its `art` field — never a hard-coded word check in a component (CLAUDE.md
  * guardrail).
  */
@@ -71,7 +71,7 @@ export function mascotVariantArt(variant: string): string | null {
 
 /** Rows for the 도감 Mascots category (item 5.1): every skin, flagged unlocked (the
  *  default is always unlocked). Locked-but-art-backed rows render as silhouettes; the
- *  override is NOT passed here (display-only, mirrors the Palette view's rule). */
+ *  active profile's stored unlock set is the single source of truth. */
 export function mascotCollectionRows(
   active: Set<string>,
 ): { id: WooDakSkin; nameKey: string; art: string | null; unlocked: boolean }[] {
@@ -83,11 +83,11 @@ export function mascotCollectionRows(
   }));
 }
 
-/** Read the live selection + override straight from storage (mirrors readTips):
+/** Read the live selection straight from storage (mirrors readTips):
  *  the tutorial host is long-lived, so we never trust a stale React copy. */
-function readSelection(): { mascot: WooDakSkin; unlockAll: boolean } {
-  const p = readValue<{ mascot?: WooDakSkin; unlockAll?: boolean }>(SETTINGS_KEY) ?? {};
-  return { mascot: p.mascot ?? 'woodak', unlockAll: !!p.unlockAll };
+function readSelection(): WooDakSkin {
+  const p = readValue<{ mascot?: WooDakSkin }>(SETTINGS_KEY) ?? {};
+  return p.mascot ?? 'woodak';
 }
 
 /**
@@ -97,8 +97,7 @@ function readSelection(): { mascot: WooDakSkin; unlockAll: boolean } {
  */
 export function mascotSrc(role: 'piyak' | 'woodak'): string {
   if (role === 'piyak') return piyakUrl;
-  const { mascot, unlockAll } = readSelection();
-  return woodakArt(mascot, activeUnlocks(unlockAll));
+  return woodakArt(readSelection(), activeUnlocks());
 }
 
 /**
@@ -132,6 +131,5 @@ export function voiceChain(
  * NEVER write a `voice.*` key literal at a call site — go through here.
  */
 export function voicedKeys(line: string, role: 'woodak' | 'piyak' = 'woodak'): string[] {
-  const { mascot, unlockAll } = readSelection();
-  return voiceChain(line, role, mascot, activeUnlocks(unlockAll));
+  return voiceChain(line, role, readSelection(), activeUnlocks());
 }

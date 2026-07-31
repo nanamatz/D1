@@ -72,11 +72,10 @@ describe('chromatic unlocks — checkWordPlayed', () => {
   });
 });
 
-describe('chromatic unlocks — activeUnlocks + override', () => {
-  it('active = played set normally; the unlock-all override lights everything', () => {
+describe('chromatic unlocks — activeUnlocks', () => {
+  it('uses only the active profile played set', () => {
     markPlayed('GREEN');
-    expect(activeUnlocks(false)).toEqual(new Set(['GREEN']));
-    expect(activeUnlocks(true).size).toBe(UNLOCKS.length);
+    expect(activeUnlocks()).toEqual(new Set(['GREEN']));
   });
 });
 

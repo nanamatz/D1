@@ -95,6 +95,12 @@ A key in `SAVE_KEYS` goes to files on desktop; everything else goes to
 `localStorage` everywhere. Keeping the policy in one auditable list forces a
 decision when a new key is added.
 
+**Three profile slots (changed 2026-07-31).** The public key list stays the same,
+but `storage.ts` multiplexes each progress value through a small versioned
+three-slot envelope. The active slot (`wj.profile`) is a machine-local preference.
+An older flat value is read as P1 and remains flat until another slot needs the
+same key, so existing browser and desktop saves require no one-off migration.
+
 Backend selection is the presence of `window.wj`. **The web build sends both
 groups to `localStorage`, so its behaviour is byte-for-byte what it is today** —
 one code path, no branching by build target. The engine knows none of this;

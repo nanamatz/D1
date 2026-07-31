@@ -2,9 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
 import { RECORD_IDS, isRecordUnlocked } from '../../engine/records';
 import type { BlindKind, PouchId, RecordId } from '../../engine/types';
-import { collectionSize } from '../collection';
 import { useI18n } from '../i18n';
 import { loadLifetime } from '../lifetime';
+import { pouchUnlockWordCount } from '../profile';
 import { pouchArt } from '../pouchArt';
 import { recordArt } from '../recordArt';
 import { richText } from '../richtext';
@@ -201,7 +201,7 @@ function NewRunBody({
   const progress = useMemo(() => {
     const lifetime = loadLifetime();
     return {
-      discoveredWords: collectionSize(),
+      discoveredWords: pouchUnlockWordCount(),
       pouchWins: new Set(lifetime.pouchWins),
       recordWins: new Set(lifetime.recordWins),
     };

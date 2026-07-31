@@ -34,7 +34,7 @@ function preloadImage(url: string): Promise<void> {
 export function LoadingScreen({ onDone }: { onDone: () => void }) {
   const [pct, setPct] = useState(0);
   // Fresh profile (no colour word played) → greyscale, matching the monochrome start.
-  const mono = ![...activeUnlocks(false)].some((id) => COLOR_UNLOCKS.includes(id));
+  const mono = ![...activeUnlocks()].some((id) => COLOR_UNLOCKS.includes(id));
 
   useEffect(() => {
     let live = true;

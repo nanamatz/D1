@@ -272,8 +272,9 @@ mark and mapped pattern.
 Mascots**, not Settings. Unlocked portrait cards are keyboard/cursor selectable;
 the equipped card carries a gold outline and Selected badge. Discovered
 tooltip-wrapped cards and undiscovered raw cards share the same 150px basis
-width. Locked silhouettes remain visible but non-interactive. The `unlockAll` accessibility override makes
-art-backed skins selectable without marking them discovered.
+width. Locked silhouettes remain visible but non-interactive. Profile Reveal All
+writes the selected profile's actual mascot unlock ids, so those art-backed skins
+become discovered and selectable without affecting another profile.
 
 ---
 

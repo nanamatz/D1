@@ -13,8 +13,9 @@ import { ChromaticReveal } from './components/ChromaticReveal';
 import { CrtOverlay } from './components/CrtOverlay';
 import { LoadingScreen } from './components/LoadingScreen';
 import { PatternLevelUp } from './components/PatternLevelUp';
+import { Profile } from './components/Profile';
 
-type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options';
+type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile';
 
 export function App() {
   const g = useGame();
@@ -118,6 +119,8 @@ export function App() {
         return <Collection lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
       case 'options':
         return <Options lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
+      case 'profile':
+        return <Profile lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
       case 'menu':
       default:
         return (
@@ -125,6 +128,7 @@ export function App() {
             onPlay={() => setScreen('newrun')}
             onCollection={() => setScreen('collection')}
             onOptions={() => setScreen('options')}
+            onProfile={() => setScreen('profile')}
           />
         );
     }

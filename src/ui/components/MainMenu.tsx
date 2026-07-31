@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { unseenCount } from '../collection';
 import { useI18n } from '../i18n';
+import { loadLifetime } from '../lifetime';
+import { activeProfile } from '../storage';
 
 interface Props {
   onPlay: () => void;
   onCollection: () => void;
   onOptions: () => void;
+  onProfile: () => void;
 }
 
 /** Main Menu (spec §2.1). Our own logotype. */
-export function MainMenu({ onPlay, onCollection, onOptions }: Props) {
+export function MainMenu({ onPlay, onCollection, onOptions, onProfile }: Props) {
   const { t, lang, setLang } = useI18n();
   const unseen = unseenCount();
+  const slot = activeProfile();
+  const profileName = loadLifetime(slot).profileName || `P${slot}`;
   const [quit, setQuit] = useState(false);
 
   // Quit: try to close the window (works in a script-opened window or a desktop
@@ -48,37 +53,49 @@ export function MainMenu({ onPlay, onCollection, onOptions }: Props) {
 
       <div className="menu-buttons">
         <button
-          className="btn play big"
+          className="btn play big menu-play"
           onClick={onPlay}
           autoFocus
         >
           {t('menu.play')}
         </button>
         <button
-          className="btn exchange"
+          className="btn menu-options"
           onClick={onOptions}
         >
           {t('menu.options')}
         </button>
         <button
-          className="btn exchange badge-host"
+          className="btn menu-collection badge-host"
           onClick={onCollection}
         >
           {t('menu.collection')}
           {unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
         </button>
-        <button className="btn exchange" onClick={onQuit}>
+        <button className="btn menu-quit" onClick={onQuit}>
           {t('menu.quit')}
         </button>
       </div>
 
       <div className="menu-foot">
-        <span className="profile-chip" title={t('menu.profileHint')}>
-          👤 P1
-        </span>
-        <button className="langbtn" onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}>
-          {t('lang.toggle')}
-        </button>
+        <div className="menu-mini-card profile">
+          <span className="menu-mini-label">{t('menu.profile')}</span>
+          <button
+            className="btn menu-mini-button"
+            title={`${t('menu.profileHint')}: ${profileName}`}
+            onClick={onProfile}
+          >
+            {profileName}
+          </button>
+        </div>
+        <div className="menu-mini-card language">
+          <button
+            className="btn menu-mini-button"
+            onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}
+          >
+            <span>{lang === 'ko' ? '한국어' : 'English'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,13 @@
  * coupling.
  */
 
-import { readValue, writeValue } from './storage';
+import {
+  activeProfile,
+  profileHasData,
+  readProfileValue,
+  writeProfileValue,
+  type ProfileSlot,
+} from './storage';
 import { POUCH_IDS } from '../engine/pouches';
 import { RECORD_IDS } from '../engine/records';
 import type { PouchId, RecordId } from '../engine/types';
@@ -12,7 +18,13 @@ import type { PouchId, RecordId } from '../engine/types';
 const KEY = 'wj.lifetime';
 
 export interface Lifetime {
+  profileCreated: boolean;
+  profileName: string;
+  unlockAllWarned: boolean;
+  unlockAllApplied: boolean;
+  challengesDisabled: boolean;
   runs: number;
+  wins: number;
   highestAnte: number;
   highestEndlessAnte: number;
   bestEndlessScore: number;
@@ -23,8 +35,14 @@ export interface Lifetime {
   recordWins: RecordId[];
 }
 
-const EMPTY: Lifetime = {
+const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
+  profileCreated: slot === 1,
+  profileName: slot === 1 ? 'P1' : '',
+  unlockAllWarned: false,
+  unlockAllApplied: false,
+  challengesDisabled: false,
   runs: 0,
+  wins: 0,
   highestAnte: 0,
   highestEndlessAnte: 0,
   bestEndlessScore: 0,
@@ -33,14 +51,29 @@ const EMPTY: Lifetime = {
   mostGold: 0,
   pouchWins: [],
   recordWins: [],
-};
+});
 
-export function loadLifetime(): Lifetime {
-  const stored = readValue<Partial<Lifetime>>(KEY);
-  if (!stored) return { ...EMPTY };
+export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
+  const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
+  const empty = emptyLifetime(slot);
+  if (!stored) {
+    const profileCreated = slot === 1 || profileHasData(slot);
+    return {
+      ...empty,
+      profileCreated,
+      profileName: profileCreated ? `P${slot}` : '',
+    };
+  }
+  const profileCreated = stored.profileCreated ?? true;
+  const storedName = typeof stored.profileName === 'string' ? stored.profileName.trim() : '';
   return {
-    ...EMPTY,
+    ...empty,
     ...stored,
+    profileCreated,
+    profileName: profileCreated ? storedName || `P${slot}` : '',
+    unlockAllWarned: stored.unlockAllWarned === true,
+    unlockAllApplied: stored.unlockAllApplied === true,
+    challengesDisabled: stored.challengesDisabled === true,
     pouchWins: Array.isArray(stored.pouchWins)
       ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId))
       : [],
@@ -48,6 +81,10 @@ export function loadLifetime(): Lifetime {
       ? stored.recordWins.filter((id): id is RecordId => RECORD_IDS.includes(id as RecordId))
       : [],
   };
+}
+
+export function writeLifetime(lifetime: Lifetime, slot: ProfileSlot = activeProfile()): void {
+  writeProfileValue(KEY, slot, lifetime);
 }
 
 export interface RunResult {
@@ -70,23 +107,23 @@ export function recordRunEnd(r: RunResult): void {
     if (r.recordId) recordWins.add(r.recordId);
   }
   const next: Lifetime = {
+    ...lt,
     runs: lt.runs + 1,
+    wins: lt.wins + (r.won ? 1 : 0),
     highestAnte: Math.max(lt.highestAnte, r.ante),
-    highestEndlessAnte: lt.highestEndlessAnte,
-    bestEndlessScore: lt.bestEndlessScore,
     bestWordScore: Math.max(lt.bestWordScore, r.bestWord?.score ?? 0),
     bestWord: (r.bestWord?.score ?? 0) > lt.bestWordScore ? (r.bestWord?.text ?? '') : lt.bestWord,
     mostGold: Math.max(lt.mostGold, r.gold),
     pouchWins: [...pouchWins],
     recordWins: [...recordWins],
   };
-  writeValue(KEY, next);
+  writeLifetime(next);
 }
 
 /** Endless is a benchmark attached to an already-recorded win, not a second run. */
 export function recordEndlessEnd(r: { ante: number; bestScore: number }): void {
   const lt = loadLifetime();
-  writeValue(KEY, {
+  writeLifetime({
     ...lt,
     highestEndlessAnte: Math.max(lt.highestEndlessAnte, r.ante),
     bestEndlessScore: Math.max(lt.bestEndlessScore, r.bestScore),

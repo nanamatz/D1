@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n';
-import { useSettings } from '../settings';
 import { audio } from '../audio';
 import { applyPresentation, unlockBus, type UnlockDef } from '../unlocks';
 import { mascotVariantArt } from '../mascots';
@@ -33,19 +32,18 @@ function washGroup(def: UnlockDef): string | null {
  */
 export function ChromaticReveal() {
   const { t } = useI18n();
-  const { settings } = useSettings();
   const [queue, setQueue] = useState<UnlockDef[]>([]);
 
   useEffect(() => {
     return unlockBus.subscribe((def) => {
       // Activate the newly-played layer immediately (token swap / bus enable),
       // then reveal it. `applyPresentation` reads the freshly-persisted played set.
-      applyPresentation(settings.unlockAll);
+      applyPresentation();
       // If this unlock turned on audio, a fanfare now "fades up" the new bus.
       if (def.effect.kind === 'audio' || audio.isBusEnabled('sfx')) audio.play('clearFanfare');
       setQueue((q) => [...q, def]);
     });
-  }, [settings.unlockAll]);
+  }, []);
 
   const active = queue[0] ?? null;
 

@@ -19,7 +19,6 @@ import type {
 import {
   collectionHighlights,
   loadCollection,
-  collectionSize,
   markCollectionSeen,
   unseenCount,
 } from '../collection';
@@ -40,6 +39,7 @@ import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { pouchArt } from '../pouchArt';
 import { loadLifetime } from '../lifetime';
+import { pouchUnlockWordCount, profileCollectionSize } from '../profile';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
 import { VoucherCard } from './VoucherCard';
@@ -115,7 +115,7 @@ const VOUCHER_PAIRS_PER_PAGE = 4;
 function runUnlockProgress() {
   const lifetime = loadLifetime();
   return {
-    discoveredWords: collectionSize(),
+    discoveredWords: pouchUnlockWordCount(),
     pouchWins: new Set(lifetime.pouchWins),
     recordWins: new Set(lifetime.recordWins),
   };
@@ -164,7 +164,7 @@ export function Collection({ lexicon, onBack }: Props) {
     () => {
       const progress = runUnlockProgress();
       return {
-      words: { have: collectionSize(), total: lexicon.size },
+      words: { have: profileCollectionSize(lexicon.size), total: lexicon.size },
       jokers: { have: ALL_JOKERS.length, total: ALL_JOKERS.length },
       enhancedTiles: {
         have: MATERIALS.length + FONTS.length,
@@ -185,8 +185,8 @@ export function Collection({ lexicon, onBack }: Props) {
       packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
       palette: { have: playedCount(), total: UNLOCKS.length },
       mascots: {
-        have: mascotCollectionRows(activeUnlocks(false)).filter((r) => r.unlocked && r.art).length,
-        total: mascotCollectionRows(activeUnlocks(false)).length,
+        have: mascotCollectionRows(activeUnlocks()).filter((r) => r.unlocked && r.art).length,
+        total: mascotCollectionRows(activeUnlocks()).length,
       },
       pouches: {
         have: POUCH_IDS.filter((id) => isPouchUnlocked(id, progress)).length,
@@ -296,6 +296,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const collected = useMemo(() => loadCollection(), []);
+  const allWordsUnlocked = loadLifetime().unlockAllApplied;
   const records = useMemo(() => collectionHighlights(collected), [collected]);
 
   // Item 1: list the WHOLE dictionary, not just what's been played — words never
@@ -308,9 +309,9 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
       .map((w) => ({
         w,
         suit: lexicon.lookup(w)?.suit ?? 'standard',
-        found: collected[w] !== undefined,
+        found: allWordsUnlocked || collected[w] !== undefined,
       }));
-  }, [lexicon, collected]);
+  }, [lexicon, collected, allWordsUnlocked]);
 
   // Search + suit filter. With the whole dictionary listed, search is the only
   // practical way to reach a specific word (~500 pages otherwise).
@@ -363,7 +364,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
         </div>
         <div className="word-record">
           <span>{t('collection.record.discovered')}</span>
-          <strong>{Object.keys(collected).length}</strong>
+          <strong>{profileCollectionSize(lexicon.size)}</strong>
           <small>{t('collection.record.keepGoing')}</small>
         </div>
       </div>
@@ -757,8 +758,7 @@ function PaletteView() {
 function MascotsView() {
   const { t } = useI18n();
   const { settings, set } = useSettings();
-  // The override makes skins selectable but does not change discovery counts.
-  const rows = mascotCollectionRows(activeUnlocks(settings.unlockAll));
+  const rows = mascotCollectionRows(activeUnlocks());
   const selectedMascot = settings.mascot ?? 'woodak';
   return (
     <div className="mascot-collection">

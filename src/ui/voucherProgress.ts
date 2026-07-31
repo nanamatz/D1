@@ -4,7 +4,12 @@
  */
 import type { VoucherId } from '../engine/types';
 import { CORE_BOSS_IDS } from '../engine/bosses';
-import { readValue, writeValue } from './storage';
+import {
+  activeProfile,
+  readProfileValue,
+  writeValue,
+  type ProfileSlot,
+} from './storage';
 
 const KEY = 'wj.vouchers';
 
@@ -96,8 +101,8 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
   { id: 'comicBook', conditionEn: 'Use 50 Fable cards', conditionKo: '우화 카드 50장 사용', met: (p) => p.fableUsed >= 50 },
 ];
 
-export function loadVoucherProgress(): VoucherProgress {
-  const stored = readValue<Partial<VoucherProgress>>(KEY);
+export function loadVoucherProgress(slot: ProfileSlot = activeProfile()): VoucherProgress {
+  const stored = readProfileValue<Partial<VoucherProgress>>(KEY, slot);
   return stored ? { ...EMPTY, ...stored } : { ...EMPTY };
 }
 

@@ -20,7 +20,7 @@ describe('latest feedback UI regressions', () => {
     expect(options).not.toContain("set('mascot'");
     expect(collection).toContain("set('mascot', r.id)");
     expect(collection).toContain("selected ? 'collection.mascot.selected' : 'collection.mascot.select'");
-    expect(collection).toContain("activeUnlocks(settings.unlockAll)");
+    expect(collection).toContain("activeUnlocks()");
     expect(screens).toContain('.coll-card.mascot-card.selected');
   });
 
