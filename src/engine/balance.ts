@@ -255,7 +255,6 @@ export const BALANCE = {
 
   // ----- Jokers (GDD §11) — per-joker knobs -----
   jokers: {
-    loanShark: { goldPerPhase: 1 }, // #28 (not yet implemented) — $ per phase left at clear
     // Common (§11.2)
     ceramicArtisan: { chips: 5 },
     longWordFan: { minLength: 5, chips: 30 },

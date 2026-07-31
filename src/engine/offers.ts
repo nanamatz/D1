@@ -22,8 +22,8 @@ export function jokerRarityWeight(def: JokerDef): number {
  * The shared no-duplicate filter (C-2): jokers the run does NOT already own and
  * whose rarity is offerable (weight > 0, so Legendary is out). Selling a joker
  * removes it from run.jokers, so it returns to this pool automatically — no extra
- * bookkeeping. `canOwnJoker` is the one gate a future explicit duplicate-breaker
- * effect will relax; offers and final acquisition checks both inherit it.
+ * bookkeeping. Copy Editor explicitly relaxes `canOwnJoker`; offers and final
+ * acquisition checks both inherit that exception.
  */
 export function availableJokerDefs(run: RunState): JokerDef[] {
   return ALL_JOKERS.filter((j) => canOwnJoker(run, j.id) && jokerRarityWeight(j) > 0);

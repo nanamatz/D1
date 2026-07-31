@@ -3,6 +3,7 @@ import {
   loadVoucherProgress,
   recordVoucherProgress,
   unlockedVoucherSet,
+  VOUCHER_UNLOCK_RULES,
 } from '../src/ui/voucherProgress';
 import { CORE_BOSS_IDS } from '../src/engine/bosses';
 
@@ -40,6 +41,21 @@ describe('voucher profile unlock progress', () => {
     recordVoucherProgress({ kind: 'newRun', handSize: 11 });
     expect(loadVoucherProgress().currentRunVoucherUses).toBe(0);
     expect(loadVoucherProgress().maxRunVoucherUses).toBe(10);
+  });
+
+  it('round-trips an unmeasured hand size without unlocking Picture Diary', () => {
+    const rule = VOUCHER_UNLOCK_RULES.find(({ id }) => id === 'pictureDiary')!;
+    const empty = loadVoucherProgress();
+    expect(empty.lowestHandSize).toBeNull();
+    expect(rule.met(empty)).toBe(false);
+
+    localStorage.setItem('wj.vouchers', JSON.stringify(empty));
+    const roundTripped = loadVoucherProgress();
+    expect(roundTripped.lowestHandSize).toBeNull();
+    expect(rule.met(roundTripped)).toBe(false);
+
+    recordVoucherProgress({ kind: 'handSize', size: 8 });
+    expect(unlockedVoucherSet()).toContain('pictureDiary');
   });
 
   it('requires ten consecutive maximum-interest rounds', () => {

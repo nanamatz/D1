@@ -30,7 +30,8 @@ export interface VoucherProgress {
   interestStreak: number;
   maxInterestStreak: number;
   bossesSeen: string[];
-  lowestHandSize: number;
+  /** null until a hand size has been observed; serializes without ambiguity. */
+  lowestHandSize: number | null;
   currentRunVoucherUses: number;
   maxRunVoucherUses: number;
   maxEditionedJokersOwned: number;
@@ -53,7 +54,7 @@ const EMPTY: VoucherProgress = {
   interestStreak: 0,
   maxInterestStreak: 0,
   bossesSeen: [],
-  lowestHandSize: Number.POSITIVE_INFINITY,
+  lowestHandSize: null,
   currentRunVoucherUses: 0,
   maxRunVoucherUses: 0,
   maxEditionedJokersOwned: 0,
@@ -90,7 +91,7 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
   { id: 'papyrus', conditionEn: 'Use 10 vouchers in one run', conditionKo: '한 번의 런에서 바우처 10장 사용', met: (p) => p.maxRunVoucherUses >= 10 },
   { id: 'notebook', conditionEn: 'Play 5,000 tiles', conditionKo: '타일 5,000장 플레이', met: (p) => p.tilesPlayed >= 5000 },
   { id: 'sheetMusic', conditionEn: 'Discard 5,000 tiles', conditionKo: '카드 5,000장 버리기', met: (p) => p.tilesDiscarded >= 5000 },
-  { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '손패 크기를 8장으로 감소', met: (p) => p.lowestHandSize <= 8 },
+  { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '손패 크기를 8장으로 감소', met: (p) => p.lowestHandSize !== null && p.lowestHandSize <= 8 },
   { id: 'encyclopedia', conditionEn: 'Buy 20 tiles from the shop', conditionKo: '상점에서 타일 20장 구매', met: (p) => p.tilesBought >= 20 },
   { id: 'householdLedger', conditionEn: 'Reach maximum interest for 10 consecutive rounds', conditionKo: '10라운드 연속 최대 이자 획득', met: (p) => p.maxInterestStreak >= 10 },
   { id: 'portrait', conditionEn: 'Discover all 12 regular boss blinds', conditionKo: '일반 보스 블라인드 12종 발견', met: (p) => CORE_BOSS_IDS.every((id) => p.bossesSeen.includes(id)) },
@@ -103,7 +104,15 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
 
 export function loadVoucherProgress(slot: ProfileSlot = activeProfile()): VoucherProgress {
   const stored = readProfileValue<Partial<VoucherProgress>>(KEY, slot);
-  return stored ? { ...EMPTY, ...stored } : { ...EMPTY };
+  if (!stored) return { ...EMPTY };
+  return {
+    ...EMPTY,
+    ...stored,
+    lowestHandSize:
+      typeof stored.lowestHandSize === 'number' && Number.isFinite(stored.lowestHandSize)
+        ? stored.lowestHandSize
+        : null,
+  };
 }
 
 function store(p: VoucherProgress): void {
@@ -120,7 +129,7 @@ export function recordVoucherProgress(event: VoucherProgressEvent): VoucherProgr
   switch (event.kind) {
     case 'newRun':
       next.currentRunVoucherUses = 0;
-      next.lowestHandSize = Math.min(next.lowestHandSize, event.handSize);
+      next.lowestHandSize = Math.min(next.lowestHandSize ?? event.handSize, event.handSize);
       break;
     case 'shopBuy':
       next.goldSpent += event.spent;
@@ -154,7 +163,7 @@ export function recordVoucherProgress(event: VoucherProgressEvent): VoucherProgr
       else if (event.family === 'constellation') next.constellationUsed += 1;
       break;
     case 'handSize':
-      next.lowestHandSize = Math.min(next.lowestHandSize, event.size);
+      next.lowestHandSize = Math.min(next.lowestHandSize ?? event.size, event.size);
       break;
     case 'anteReached':
       next.highestAnte = Math.max(next.highestAnte, event.ante);

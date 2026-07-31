@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { JokerRarity, PackSize } from '../../engine/types';
 import { useI18n } from '../i18n';
@@ -23,7 +31,12 @@ interface Props {
   /** feedback #5: a second, boxed tooltip beneath the main one — used when a consumable
    *  references a material/font, to explain that axis inline. */
   sub?: { title: string; body: string } | undefined;
-  children: ReactNode;
+  /** Compact letter-tile shape. */
+  compact?: boolean;
+  /** Use an existing DOM node without adding a layout wrapper. */
+  anchorRef?: RefObject<HTMLElement | null>;
+  disabled?: boolean;
+  children?: ReactNode;
 }
 
 interface SupplementProps {
@@ -75,27 +88,78 @@ export function Tooltip({
   classification,
   down,
   sub,
+  compact,
+  anchorRef: externalAnchorRef,
+  disabled = false,
   children,
 }: Props) {
   const { t } = useI18n();
   const anchorRef = useRef<HTMLSpanElement>(null);
-  const [open, setOpen] = useState(false);
+  const cardRef = useRef<HTMLSpanElement>(null);
+  const tooltipId = useId();
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const open = !disabled && (hovered || focused) && position !== null;
+
+  const anchor = () => externalAnchorRef?.current ?? anchorRef.current;
+  const target = () => {
+    const node = anchor();
+    return externalAnchorRef ? node : node?.firstElementChild ?? node;
+  };
+  const locate = () => {
+    const rect = target()?.getBoundingClientRect();
+    if (!rect) return null;
+    return {
+      x: rect.left + rect.width / 2,
+      y: down ? rect.bottom : rect.top,
+    };
+  };
+
+  useEffect(() => {
+    const node = anchor();
+    if (!node || disabled) return;
+    const showHover = () => {
+      setPosition(locate());
+      setHovered(true);
+    };
+    const hideHover = () => setHovered(false);
+    const showFocus = (event: FocusEvent) => {
+      const focusTarget = event.target;
+      if (!(focusTarget instanceof Element) || !focusTarget.matches(':focus-visible')) return;
+      setPosition(locate());
+      setFocused(true);
+    };
+    const hideFocus = (event: FocusEvent) => {
+      if (!node.contains(event.relatedTarget as Node | null)) setFocused(false);
+    };
+    const press = () => {
+      setHovered(false);
+      setFocused(false);
+    };
+    node.addEventListener('pointerenter', showHover);
+    node.addEventListener('pointerleave', hideHover);
+    node.addEventListener('pointerdown', press);
+    node.addEventListener('focusin', showFocus);
+    node.addEventListener('focusout', hideFocus);
+    return () => {
+      node.removeEventListener('pointerenter', showHover);
+      node.removeEventListener('pointerleave', hideHover);
+      node.removeEventListener('pointerdown', press);
+      node.removeEventListener('focusin', showFocus);
+      node.removeEventListener('focusout', hideFocus);
+    };
+  }, [disabled, down, externalAnchorRef]);
 
   useEffect(() => {
     if (!open) return;
     let frame = 0;
     const track = () => {
-      const anchor = anchorRef.current;
-      const target = anchor?.firstElementChild ?? anchor;
-      const rect = target?.getBoundingClientRect();
-      if (rect) {
-        const next = {
-          x: rect.left + rect.width / 2,
-          y: down ? rect.bottom : rect.top,
-        };
-        setPosition((current) =>
-          current?.x === next.x && current.y === next.y ? current : next);
+      const next = locate();
+      const card = cardRef.current;
+      if (next && card) {
+        card.style.setProperty('--tt-x', `${next.x}px`);
+        card.style.setProperty('--tt-y', `${next.y}px`);
       }
       frame = requestAnimationFrame(track);
     };
@@ -103,13 +167,31 @@ export function Tooltip({
     return () => cancelAnimationFrame(frame);
   }, [down, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const node = target();
+    if (!node) return;
+    const previous = node.getAttribute('aria-describedby');
+    node.setAttribute(
+      'aria-describedby',
+      [previous, tooltipId].filter(Boolean).join(' '),
+    );
+    return () => {
+      if (previous === null) node.removeAttribute('aria-describedby');
+      else node.setAttribute('aria-describedby', previous);
+    };
+  }, [externalAnchorRef, open, tooltipId]);
+
   const card = position && (
     <span
+      ref={cardRef}
+      id={tooltipId}
       className={[
         'tt-card',
         'tt-portal',
         down ? 'down' : '',
         grade ? 'pack' : '',
+        compact ? 'tile-tt' : '',
       ].filter(Boolean).join(' ')}
       role="tooltip"
       style={{
@@ -133,18 +215,19 @@ export function Tooltip({
     </span>
   );
 
+  const portal = open && card && typeof document !== 'undefined'
+    ? createPortal(card, document.body)
+    : null;
+
+  if (externalAnchorRef) return portal;
+
   return (
     <span
       ref={anchorRef}
       className="tt-anchor"
-      onPointerEnter={() => setOpen(true)}
-      onPointerLeave={() => {
-        setOpen(false);
-        setPosition(null);
-      }}
     >
       {children}
-      {open && card && typeof document !== 'undefined' && createPortal(card, document.body)}
+      {portal}
     </span>
   );
 }

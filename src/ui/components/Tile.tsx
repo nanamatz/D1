@@ -1,5 +1,4 @@
-import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { createPortal } from 'react-dom';
+import { Fragment, memo, useEffect, useRef, useState } from 'react';
 import type { Tile } from '../../engine/types';
 import {
   changedTileAxes,
@@ -14,9 +13,8 @@ import {
 } from '../game';
 import { useI18n } from '../i18n';
 import { usePointerTilt } from '../hooks';
-import { richText } from '../richtext';
 import { useSettleView } from '../settle';
-import { TooltipSupplement } from './Tooltip';
+import { Tooltip } from './Tooltip';
 
 interface Props {
   tile: Tile;
@@ -110,17 +108,6 @@ function TileViewImpl({
     const timer = window.setTimeout(() => setEnhancementFx([]), 1100);
     return () => window.clearTimeout(timer);
   }, [tile.id, tile.material, tile.font, tile.edition]);
-  // feedback #1: the tooltip must never warp. Rendered in a body PORTAL positioned at
-  // the tile's rect, so it escapes the tile's tilt/drag 3D transform (a descendant
-  // would inherit it and skew). Shown on hover; hidden the moment a drag press starts.
-  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
-  const showTip = () => {
-    if (faceDown || !tooltip) return;
-    const r = rootRef.current?.getBoundingClientRect();
-    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
-  };
-  const hideTip = () => setTipPos(null);
-  useEffect(() => hideTip, []); // clear if the tile unmounts while hovered
   // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
   // to its material name so a screen reader announces "Stone tile, 0 chips"
   // instead of the identity-less " tile, 0 chips" (M-4).
@@ -154,7 +141,8 @@ function TileViewImpl({
       : null;
 
   return (
-    <div
+    <Fragment>
+      <div
       ref={rootRef}
       className={className}
       data-flip-id={tile.id}
@@ -175,9 +163,6 @@ function TileViewImpl({
           : undefined
       }
       draggable={false}
-      onPointerEnter={showTip}
-      onPointerLeave={hideTip}
-      onPointerDown={hideTip}
       onClick={interactive ? () => onSelect!(tile.id) : undefined}
       onContextMenu={
         onMark
@@ -228,21 +213,6 @@ function TileViewImpl({
           ))}
         </>
       )}
-      {!faceDown && tooltip && tipPos &&
-        createPortal(
-          <span
-            className="tt-card tile-tt-portal"
-            role="tooltip"
-            style={{ left: `${tipPos.x}px`, top: `${tipPos.y}px` } as CSSProperties}
-          >
-            <span className="tt-title">{tooltip.title}</span>
-            <span className="tt-desc">
-              <span className="tt-body">{richText(tooltip.body)}</span>
-            </span>
-            <TooltipSupplement body={tooltip.body} />
-          </span>,
-          document.body,
-        )}
       <span className="tilt-sheen" aria-hidden />
       {effectPop && (
         <span key={effectPop.id} className="tile-effect-pop" aria-hidden>
@@ -256,7 +226,16 @@ function TileViewImpl({
           {effectPop.retrigger && <span className="retrigger">↻</span>}
         </span>
       )}
-    </div>
+      </div>
+      {!faceDown && tooltip && (
+        <Tooltip
+          anchorRef={rootRef}
+          title={tooltip.title}
+          body={tooltip.body}
+          compact
+        />
+      )}
+    </Fragment>
   );
 }
 

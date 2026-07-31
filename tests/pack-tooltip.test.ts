@@ -136,6 +136,7 @@ describe('effect-description markup', () => {
     const tile = readFileSync('src/ui/components/Tile.tsx', 'utf8');
     expect(tooltip).toContain("body.includes('[g:')");
     expect(tooltip).toContain("t('tooltip.gibberish.body')");
-    expect(tile).toContain('<TooltipSupplement body={tooltip.body} />');
+    expect(tile).toContain('<Tooltip');
+    expect(tile).toContain('compact');
   });
 });

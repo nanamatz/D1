@@ -38,6 +38,7 @@ const NOT_ALLOWED_NOTICE_MS = 1700;
 
 /** An active run: routes the in-run phases (spec §2.3–2.7). */
 export function RunView({ g, onExit, onNewRun }: Props) {
+  const lexicon = g.getLexicon();
   const { settings } = useSettings();
   const { t } = useI18n();
   const { blind, run, selected, phase } = g.state;
@@ -146,7 +147,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   // in hand, a pattern or Unison lighting up in the tray, owning the Magnifier).
   // The bus no-ops on already-seen/tips-off, so re-firing when a condition stays
   // true is harmless; we fire the moment each condition first becomes true.
-  const judgment = judgeSentence(blind.sequence, g.lexicon);
+  const judgment = judgeSentence(blind.sequence, lexicon);
   const hasMaterialTile = blind.hand.some((t) => t.material !== 'ceramic');
   const hasFontTile = blind.hand.some((t) => t.font !== 'medium');
   const hasPattern = judgment.match !== null;
@@ -167,7 +168,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const settling = phase === 'cashout';
   const boardKey = `${run.ante}-${run.blindIndex}`;
   const preview =
-    phase === 'playing' ? stagePreview(blind, run, g.lexicon, selected, t) : null;
+    phase === 'playing' ? stagePreview(blind, run, lexicon, selected, t) : null;
   const sidebarMode =
     phase === 'shop' ? 'shop' : phase === 'blindselect' ? 'blindselect' : 'blind';
   const boardVisible = phase === 'playing' || settling || ending;
@@ -189,6 +190,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         events={g.state.lastEvents}
         settleId={g.state.settleId}
         speed={settings.gameSpeed}
+        screenShake={settings.screenshake}
         onComplete={g.markSettleComplete}
       >
         <Sidebar
@@ -236,7 +238,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             )}
             {boardVisible && (
               <div className="blind-workspace">
-                <SentenceTray blind={blind} judgment={judgment} lexicon={g.lexicon} />
+                <SentenceTray blind={blind} judgment={judgment} lexicon={lexicon} />
                 <StagePanel
                   g={g}
                   preview={preview}
@@ -290,7 +292,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <div className="overlay pause-overlay">
           <div className="overlay-card pause-modal">
             <Options
-              lexicon={g.lexicon}
+              lexicon={lexicon}
               onBack={() => setPaused(false)}
               onNewRun={onNewRun}
               onMainMenu={onExit}

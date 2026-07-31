@@ -73,12 +73,9 @@
   display: none;
   transition: opacity 0.12s ease, transform 0.12s ease, display 0.12s allow-discrete;
 }
-/* item 6: tooltip shows ONLY on hover — no focus-within, so a click (which
-   focuses the tab-able card) never makes it persist after the cursor leaves.
-   The tile's tooltip is not wrapped in a .tt-anchor, so it rides along here. */
-.tt-anchor:hover .tt-card,
-.tile:hover .tile-tt,
-.tile:focus-visible .tile-tt {
+/* Non-portalled fallback. Runtime tooltips also open from keyboard focus and are
+   portalled by Tooltip.tsx; pointer-click focus is deliberately ignored there. */
+.tt-anchor:hover .tt-card {
   display: flex;
   opacity: 1;
   transform: translateX(-50%) translateY(0);
@@ -86,9 +83,7 @@
 /* Entry values for the fade — without these the card would pop in at full opacity,
    because a box coming out of `display: none` has no previous style to animate from. */
 @starting-style {
-  .tt-anchor:hover .tt-card,
-  .tile:hover .tile-tt,
-  .tile:focus-visible .tile-tt {
+  .tt-anchor:hover .tt-card {
     opacity: 0;
     transform: translateX(-50%) translateY(4px);
   }
@@ -3186,6 +3181,8 @@ body.cb-safe .tile.hint {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 0;
+  background: none;
   border-radius: 12px;
   padding: 6px 12px;
   cursor: pointer;

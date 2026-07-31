@@ -3910,45 +3910,13 @@
   font-size: var(--fs-lg);
 }
 
-/* C-4: tile hover tooltip (reuses the shared .tt-card look, anchored to the tile).
-   Its reveal lives with the other tooltips in screens.css — that rule has to sit
-   next to the shared @starting-style block to stay in sync with it. */
-/* feedback #1 · the tile tooltip is portalled to <body> and positioned fixed at the
-   tile, so it never inherits the tile's tilt/drag 3D transform (no warp) — and, being
-   outside .tile, never inherits the tile's font either (Light Italic / Inline stay
-   normal, full contrast). Overrides the base .tt-card (which is display:none). */
-.tt-card.tile-tt-portal {
-  position: fixed;
-  bottom: auto;
-  display: flex;
-  opacity: 1;
-  pointer-events: none;
-  transform: translate(-50%, -100%);
-  z-index: var(--z-tooltip);
-  font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
-  font-style: normal;
-  font-weight: 500;
-  -webkit-text-stroke: 0;
-  /* feedback: the tile tooltip's copy is centre-aligned (title + every line). */
+/* Letter tiles use the shared body portal with a compact card shape. */
+.tt-card.tt-portal.tile-tt {
   text-align: center;
 }
-.tile-tt-portal .tt-desc,
-.tile-tt-portal .tt-body {
+.tile-tt .tt-desc,
+.tile-tt .tt-body {
   text-align: center;
-}
-.tile .tile-tt {
-  cursor: default;
-  /* feature-04 B (playtest 13): the tooltip DESCRIBES the tile — it must never
-     inherit the tile's own font styling. Light Italic must not italicise it, Inline
-     must not outline it (color:transparent + text-stroke), Bold/Black must not
-     embolden it. Reset to the standard UI face at full contrast; .tt-title/.tt-body/
-     .hl-* still set their own colour and weight on top. */
-  font-family: 'Baloo 2', 'Noto Sans KR', sans-serif;
-  font-style: normal;
-  font-weight: 500;
-  letter-spacing: normal;
-  -webkit-text-stroke: 0;
-  color: var(--ink);
 }
 
 /* C-4: consumable Use / Sell menu (never instant-use). */
@@ -4565,4 +4533,15 @@
 @media (prefers-reduced-motion: reduce) {
   .pouch-slot.applied,
   .pouch-slot.destroying { animation: none; }
+}
+/* Settings → Screenshake. `translate` preserves the frame's existing transform/
+   zoom layout; 0 makes every keyframe stationary, 100 reaches ±3px. */
+.frame.settle-shake {
+  animation: settle-screen-shake 160ms steps(2, end);
+}
+@keyframes settle-screen-shake {
+  0%, 100% { translate: 0 0; }
+  25% { translate: calc(-3px * var(--screen-shake, .5)) calc(2px * var(--screen-shake, .5)); }
+  50% { translate: calc(3px * var(--screen-shake, .5)) calc(-2px * var(--screen-shake, .5)); }
+  75% { translate: calc(-2px * var(--screen-shake, .5)) calc(-1px * var(--screen-shake, .5)); }
 }

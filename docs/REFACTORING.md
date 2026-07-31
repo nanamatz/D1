@@ -378,9 +378,7 @@ than a new abstraction.
 Roughly **-450 lines** and **-23 locale rows**, no dependency change. Verified at
 each step with `npx tsc --noEmit`, `npx vitest run`, and `npx vite build`.
 
-> **Note on the suite.** Three tests fail at the time of writing — `emoji-roster`
-> (roster count, and a missing `jokerdesc` row) and `emoji-sample` (missing art).
-> All three come from the in-flight Common Emoji Tile expansion (19 untracked
-> joker files), not from this refactor: with those files stashed the suite is
-> green. The one `tsc` error, in `tests/emoji-sample.test.ts`, is from the same
-> work — the `sentenceScoring` payload gained a required `lookup`.
+> **Verification refresh (2026-07-31).** The roster expansion and the former
+> import-order failure are resolved. The current verification result belongs in
+> `docs/CODEBASE_AUDIT_VERIFICATION_2026-07-31.md`; this file remains a
+> historical refactoring ledger, not a live test dashboard.

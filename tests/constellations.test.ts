@@ -30,7 +30,7 @@ describe('Constellation cards', () => {
     expect(PATTERN_SYMBOLS.complex).toBe('♓');
   });
 
-  it('maps every card to a Fable-sized path-only SVG asset', () => {
+  it('keeps path-only SVG masters and maps every runtime PNG derivative', () => {
     expect(Object.keys(CONSTELLATION_ART)).toEqual([...CONSTELLATION_IDS]);
     const filenames = [
       'Libra', 'Leo', 'Aquarius', 'Aries', 'Taurus', 'Gemini',
@@ -48,6 +48,7 @@ describe('Constellation cards', () => {
       expect(svg).toContain('<path ');
       expect(svg).not.toMatch(/<image|data:image|\.png/);
     }
+    expect(Object.values(CONSTELLATION_ART).every((art) => art.endsWith('-preview.png'))).toBe(true);
   });
 
   it('renders through the shared 5:7 SVG card geometry', () => {

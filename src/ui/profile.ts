@@ -98,7 +98,7 @@ export function unlockAllProfile(slot: ProfileSlot, lexicon: Lexicon): UnlockAll
   const { lowestHandSize, ...voucherProgress } = loadVoucherProgress(slot);
   writeProfileValue('wj.vouchers', slot, {
     ...voucherProgress,
-    ...(Number.isFinite(lowestHandSize) ? { lowestHandSize } : {}),
+    ...(lowestHandSize !== null ? { lowestHandSize } : {}),
     unlocked: VOUCHER_UNLOCK_RULES.map((rule) => rule.id),
   });
 

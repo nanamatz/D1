@@ -7,10 +7,10 @@ import { GAMBLER_CARDS } from '../src/ui/gamblerArt';
 import { FamilyCardArt } from '../src/ui/components/FamilyCardArt';
 
 describe('Gambler card artwork registry', () => {
-  it('registers the 14 supplied cards exactly once as Fable-sized path-only SVGs', () => {
+  it('registers 14 runtime PNG derivatives backed by path-only SVG masters', () => {
     expect(GAMBLER_CARDS).toHaveLength(14);
     expect(new Set(GAMBLER_CARDS.map((card) => card.id)).size).toBe(14);
-    expect(GAMBLER_CARDS.every((card) => card.art.endsWith('.svg'))).toBe(true);
+    expect(GAMBLER_CARDS.every((card) => card.art.endsWith('-preview.png'))).toBe(true);
 
     const filenames = [
       'BarnSwallow', 'Boar', 'Bridge', 'BushWarbler', 'Butterflies',

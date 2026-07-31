@@ -8,7 +8,7 @@ import { FABLE_ART } from '../src/ui/fableArt';
 import { CardArt } from '../src/ui/components/CardArt';
 
 describe('Fable card art', () => {
-  it('maps all 18 cards to normalized path-only SVG assets', () => {
+  it('keeps normalized SVG masters and maps all 18 runtime PNG derivatives', () => {
     expect(Object.keys(FABLE_ART)).toEqual([...FABLE_IDS]);
     for (let number = 1; number <= FABLE_IDS.length; number += 1) {
       const source = fileURLToPath(
@@ -21,7 +21,7 @@ describe('Fable card art', () => {
       expect(svg).toContain('stretch fit');
       expect(svg).toContain('<path ');
       expect(svg).not.toMatch(/<image|data:image|\.png/);
-      expect(FABLE_ART[`fable${number}` as keyof typeof FABLE_ART]).toBeTruthy();
+      expect(FABLE_ART[`fable${number}` as keyof typeof FABLE_ART]).toMatch(/-preview\.png$/);
     }
   });
 

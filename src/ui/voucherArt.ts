@@ -1,17 +1,17 @@
 import type { VoucherId } from '../engine/types';
 
 import storyBook from '../../docs/Arts/Voucher/StoryBook.png';
-import novel from '../../docs/Arts/Voucher/Novel.png';
+import novel from './assets/vouchers/Novel.png';
 import bible from '../../docs/Arts/Voucher/Bible.png';
 import theLaw from '../../docs/Arts/Voucher/TheLaw.png';
-import fashionBook from '../../docs/Arts/Voucher/FashionBook.png';
-import fashionMagazine from '../../docs/Arts/Voucher/FashionMagazine.png';
-import flyer from '../../docs/Arts/Voucher/Flyer.png';
-import wantedPoster from '../../docs/Arts/Voucher/WantedPoster.png';
-import newspaper from '../../docs/Arts/Voucher/NewsPaper.png';
+import fashionBook from './assets/vouchers/FashionBook.png';
+import fashionMagazine from './assets/vouchers/FashionMagazine.png';
+import flyer from './assets/vouchers/Flyer.png';
+import wantedPoster from './assets/vouchers/WantedPoster.png';
+import newspaper from './assets/vouchers/NewsPaper.png';
 import papyrus from '../../docs/Arts/Voucher/Papyrus.png';
-import memo from '../../docs/Arts/Voucher/Memo.png';
-import notebook from '../../docs/Arts/Voucher/Notebook.png';
+import memo from './assets/vouchers/Memo.png';
+import notebook from './assets/vouchers/Notebook.png';
 import poetryBook from '../../docs/Arts/Voucher/PoetryBook.png';
 import sheetMusic from '../../docs/Arts/Voucher/SheetMusic.png';
 import fourCutPhoto from '../../docs/Arts/Voucher/fourcutphoto.png';
@@ -22,16 +22,16 @@ import receipt from '../../docs/Arts/Voucher/Recipt.png';
 import householdLedger from '../../docs/Arts/Voucher/HouseHoldLedger.png';
 import sketchBook from '../../docs/Arts/Voucher/SketchBook.png';
 import portrait from '../../docs/Arts/Voucher/portrait.png';
-import catalog from '../../docs/Arts/Voucher/Catalog.png';
+import catalog from './assets/vouchers/Catalog.png';
 import couponBook from '../../docs/Arts/Voucher/CouponBook.png';
-import historyBook from '../../docs/Arts/Voucher/HistoryBook.png';
-import oldBook from '../../docs/Arts/Voucher/OldBook.png';
-import blankPaper from '../../docs/Arts/Voucher/BlankPaper.png';
-import kungfuManual from '../../docs/Arts/Voucher/KungfuManual.png';
-import bwPhoto from '../../docs/Arts/Voucher/BWPhoto.png';
-import yearBook from '../../docs/Arts/Voucher/YearBook.png';
-import zeroScore from '../../docs/Arts/Voucher/ZeroScore.png';
-import comicBook from '../../docs/Arts/Voucher/ComicBook.png';
+import historyBook from './assets/vouchers/HistoryBook.png';
+import oldBook from './assets/vouchers/OldBook.png';
+import blankPaper from './assets/vouchers/BlankPaper.png';
+import kungfuManual from './assets/vouchers/KungfuManual.png';
+import bwPhoto from './assets/vouchers/BWPhoto.png';
+import yearBook from './assets/vouchers/YearBook.png';
+import zeroScore from './assets/vouchers/ZeroScore.png';
+import comicBook from './assets/vouchers/ComicBook.png';
 
 export const VOUCHER_ART: Readonly<Record<VoucherId, string>> = {
   storyBook,

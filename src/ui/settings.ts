@@ -8,12 +8,12 @@
  * (game speed by the settle timing, audio by a future mixer). Kept out of the
  * engine — pure presentation.
  */
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePersistedState } from './hooks';
 import { audio } from './audio';
 import { applyPresentation } from './unlocks';
 import { readValue } from './storage';
-import type { WooDakSkin } from './mascots';
+import { isWooDakSkin, type WooDakSkin } from './mascotIds';
 
 export interface Settings {
   gameSpeed: 1 | 2 | 4;
@@ -48,27 +48,74 @@ export const DEFAULT_SETTINGS: Settings = {
 export const SETTINGS_KEY = 'wj.settings';
 
 /**
- * Read the CURRENT tips setting straight from localStorage — not from a React
- * `useSettings()` copy. `usePersistedState` is a per-instance `useState` with no
- * cross-instance sync, so a component mounted once (the TutorialHost) would freeze
- * its `settings.tips` at mount and never see a live toggle from Options. This
- * always reflects the latest persisted value (settings write through on change).
+ * Read the CURRENT tips setting straight from storage rather than from a React
+ * `useSettings()` copy: the TutorialHost mounts once and must see a live toggle
+ * from Options even mid-run, without being re-rendered for it.
  */
 export function readTips(): boolean {
-  const parsed = readValue<Partial<Settings>>(SETTINGS_KEY);
-  return parsed?.tips ?? DEFAULT_SETTINGS.tips;
+  return normalizeSettings(readValue<unknown>(SETTINGS_KEY)).tips;
+}
+
+const SPEEDS: readonly Settings['gameSpeed'][] = [1, 2, 4];
+
+/**
+ * Merge a stored value onto the defaults and range-check every field.
+ *
+ * A save written by an older build holds only the keys that existed then, and
+ * `usePersistedState` hands back whatever it read. A missing `uiScale` became
+ * `String(undefined / 100)` → `--ui-scale: NaN`, and a missing volume reached
+ * `audio.setVolumes` where `clamp(undefined, 0, 100)` is `NaN` — silent audio and
+ * a collapsed layout from a save that merely predates a field. Normalizing on
+ * read means adding a setting can never do that again.
+ */
+export function normalizeSettings(stored: unknown): Settings {
+  const parsed = stored && typeof stored === 'object'
+    ? stored as Partial<Settings>
+    : {};
+  const merged = { ...DEFAULT_SETTINGS, ...parsed };
+  const num = (value: unknown, fallback: number, lo: number, hi: number): number =>
+    typeof value === 'number' && Number.isFinite(value)
+      ? Math.min(hi, Math.max(lo, value))
+      : fallback;
+  const bool = (value: unknown, fallback: boolean): boolean =>
+    typeof value === 'boolean' ? value : fallback;
+  return {
+    ...merged,
+    gameSpeed: SPEEDS.includes(merged.gameSpeed) ? merged.gameSpeed : DEFAULT_SETTINGS.gameSpeed,
+    screenshake: num(merged.screenshake, DEFAULT_SETTINGS.screenshake, 0, 100),
+    uiScale: num(merged.uiScale, DEFAULT_SETTINGS.uiScale, 80, 120),
+    master: num(merged.master, DEFAULT_SETTINGS.master, 0, 100),
+    music: num(merged.music, DEFAULT_SETTINGS.music, 0, 100),
+    sfx: num(merged.sfx, DEFAULT_SETTINGS.sfx, 0, 100),
+    reducedMotion: bool(merged.reducedMotion, DEFAULT_SETTINGS.reducedMotion),
+    colorBlind: bool(merged.colorBlind, DEFAULT_SETTINGS.colorBlind),
+    tips: bool(merged.tips, DEFAULT_SETTINGS.tips),
+    fullscreen: bool(merged.fullscreen, DEFAULT_SETTINGS.fullscreen),
+    mascot: isWooDakSkin(merged.mascot) ? merged.mascot : DEFAULT_SETTINGS.mascot,
+  };
 }
 
 export function useSettings() {
-  const [settings, setSettings] = usePersistedState<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
+  const [stored, setSettings] = usePersistedState<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
+  // Normalized on every read, so a legacy partial object can never reach the DOM
+  // or the audio mixer. `usePersistedState` is now shared across instances, so
+  // this is the same object for App, Options, RunView and Collection.
+  const settings = useMemo(() => normalizeSettings(stored), [stored]);
 
   // Fullscreen can also end outside our toggle (most notably via Escape). Treat
   // the browser event as authoritative so the persisted toggle returns to OFF.
   useEffect(() => {
     const syncFullscreen = () => {
       const fullscreen = document.fullscreenElement !== null;
-      setSettings((current) =>
-        current.fullscreen === fullscreen ? current : { ...current, fullscreen });
+      // Normalize inside the updater, never from a captured `settings`: this
+      // listener outlives many renders, and writing a stale snapshot back is
+      // exactly how Options' volume change used to get reverted.
+      setSettings((current) => {
+        const normalized = normalizeSettings(current);
+        return normalized.fullscreen === fullscreen
+          ? current
+          : { ...normalized, fullscreen };
+      });
     };
     document.addEventListener('fullscreenchange', syncFullscreen);
     syncFullscreen();
@@ -79,6 +126,7 @@ export function useSettings() {
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--ui-scale', String(settings.uiScale / 100));
+    root.style.setProperty('--screen-shake', String(settings.screenshake / 100));
     document.body.classList.toggle('force-reduced-motion', settings.reducedMotion);
     document.body.classList.toggle('cb-safe', settings.colorBlind);
     // Mixer: push the persisted slider values into the audio facade (work order B).
@@ -86,12 +134,14 @@ export function useSettings() {
     // Chromatic unlocks are profile progress; never read a device-wide override.
     applyPresentation();
   }, [
-    settings.uiScale, settings.reducedMotion, settings.colorBlind,
+    settings.uiScale, settings.screenshake, settings.reducedMotion, settings.colorBlind,
     settings.master, settings.music, settings.sfx,
   ]);
 
+  // Built from the NORMALIZED value, so writing one field also repairs a legacy
+  // partial object instead of persisting the hole again.
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
-    setSettings({ ...settings, [key]: value });
+    setSettings((current) => normalizeSettings({ ...current, [key]: value }));
 
   return { settings, set };
 }

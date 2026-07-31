@@ -3,7 +3,7 @@ import { fableArt } from '../fableArt';
 import { gamblerArt } from '../gamblerArt';
 import { FamilyCardArt } from './FamilyCardArt';
 
-/** The three consumable card families that share the 5:7 SVG canvas (GDD §10). */
+/** The three consumable card families that share the framed 5:7 canvas (GDD §10). */
 export type CardFamily = 'fable' | 'constellation' | 'gambler';
 
 const ART: Record<CardFamily, (id: string) => string | undefined> = {

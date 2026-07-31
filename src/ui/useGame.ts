@@ -3,7 +3,7 @@
  * the headless engine. Randomness is reproducible: a fresh seeded RNG per
  * random op, keyed `seed#counter`, so no stateful RNG ref is needed.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { newRun } from '../engine/run';
 import { makeRng } from '../engine/rng';
 import { startBlind, submitWord, discardTiles, endBlind, blindExhausted } from '../engine/loop';
@@ -45,7 +45,7 @@ import { rerollCost, sellValue } from '../engine/economy';
 import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
 import { BALANCE } from '../engine/balance';
 import { findSpellableWords, type HintWord } from '../engine/hint';
-import { loadBrowserLexicon } from './lexicon.browser';
+import type { Lexicon } from '../engine/lexicon';
 import { recordWord } from './collection';
 import { recordEndlessEnd, recordRunEnd } from './lifetime';
 import { clearRun, loadRun, serializeRun, writeRun } from './persist';
@@ -334,7 +334,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
 
 export interface UseGame {
   state: GameState;
-  lexicon: ReturnType<typeof loadBrowserLexicon>;
+  getLexicon: () => Lexicon;
   canPlay: boolean;
   canDiscard: boolean;
   toggleTile: (id: string) => void;
@@ -377,8 +377,7 @@ export interface UseGame {
   startRun: (options: RunStartOptions) => void;
 }
 
-export function useGame(): UseGame {
-  const lexicon = useMemo(() => loadBrowserLexicon(), []);
+export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGame {
   // Resume a saved run if there is one; otherwise the idle bootstrap run.
   const [state, setState] = useState<GameState>(() => loadRun() ?? bootstrap());
   const stateRef = useRef(state);
@@ -449,7 +448,7 @@ export function useGame(): UseGame {
   /** Judge & resolve the current blind, then route to Cash Out or Game Over. */
   const finalize = useCallback(
     (s: GameState): GameState => {
-      const final = endBlind(s.blind, s.run, lexicon);
+      const final = endBlind(s.blind, s.run, getLexicon());
       const runWithMaterialGold: RunState = {
         ...s.run,
         gold: s.run.gold + final.materialGold,
@@ -605,7 +604,7 @@ export function useGame(): UseGame {
         rngCounter: s.rngCounter + 1,
       };
     },
-    [lexicon],
+    [getLexicon],
   );
 
   const buy = useCallback((index: number) => {
@@ -1149,7 +1148,7 @@ export function useGame(): UseGame {
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
         recordEditionedJokers(result.run);
         const hint = result.requestHint
-          ? findSpellableWords(blind.hand, lexicon, 3)
+          ? findSpellableWords(blind.hand, getLexicon(), 3)
           : prev.hint;
         const next = {
           ...prev,
@@ -1185,10 +1184,10 @@ export function useGame(): UseGame {
         };
       }
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
-      const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, lexicon, 3) : prev.hint;
+      const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, getLexicon(), 3) : prev.hint;
       return { ...prev, run: { ...prev.run, consumables }, hint };
     },
-    [lexicon],
+    [getLexicon],
   );
 
   const useConsumable = useCallback(
@@ -1261,7 +1260,7 @@ export function useGame(): UseGame {
         result = submitWord(
           prev.blind,
           prev.run,
-          lexicon,
+          getLexicon(),
           prev.selected,
           makeRng(`${prev.seed}#${prev.rngCounter}`),
           heldOrder,
@@ -1375,7 +1374,7 @@ export function useGame(): UseGame {
       const autoSettle = !blind.earlyEndDisabled && blind.projectedScore >= blind.target;
       return phasesOut || dryOut || autoSettle ? { ...next, pendingEnd: true } : next;
     });
-  }, [lexicon]);
+  }, [getLexicon]);
 
   // Resolve the blind (→ Fee Settlement on a win, → Game Over on a loss) ONLY
   // after the settle-complete signal fires — never on the raw final score, which
@@ -1397,9 +1396,9 @@ export function useGame(): UseGame {
   // Reduced motion collapses build+land: set finalScore now too. A zero bonus
   // (no pattern, no unison) skips the build entirely — just set finalScore.
   useEffect(() => {
-    if (!state.pendingEnd || !state.settleComplete) return;
+    if (!lexiconReady || !state.pendingEnd || !state.settleComplete) return;
     if (state.sentenceBonus !== null || state.finalScore !== null) return;
-    const end = endBlind(state.blind, state.run, lexicon);
+    const end = endBlind(state.blind, state.run, getLexicon());
     const pattern = end.judgment.match?.pattern ?? null;
     const level = pattern ? (state.run.patternLevels[pattern] ?? 1) : null;
     const hasBonus = end.bonus > 0;
@@ -1419,14 +1418,14 @@ export function useGame(): UseGame {
       const finalScore = reduce || !hasBonus ? end.finalScore : null;
       return { ...prev, sentenceBonus, finalScore };
     });
-  }, [state.pendingEnd, state.settleComplete, state.sentenceBonus, state.finalScore, state.blind, state.run, lexicon]);
+  }, [lexiconReady, state.pendingEnd, state.settleComplete, state.sentenceBonus, state.finalScore, state.blind, state.run, getLexicon]);
 
   // LAND — after the box has filled (BONUS_LAND_MS), publish finalScore so the
   // round number rolls committed → finalized. Only runs for a real bonus in full
   // motion (build set sentenceBonus, left finalScore null).
   useEffect(() => {
-    if (!state.pendingEnd || state.sentenceBonus === null || state.finalScore !== null) return;
-    const end = endBlind(state.blind, state.run, lexicon);
+    if (!lexiconReady || !state.pendingEnd || state.sentenceBonus === null || state.finalScore !== null) return;
+    const end = endBlind(state.blind, state.run, getLexicon());
     const id = setTimeout(
       () =>
         setState((prev) =>
@@ -1437,7 +1436,7 @@ export function useGame(): UseGame {
       BONUS_LAND_MS,
     );
     return () => clearTimeout(id);
-  }, [state.pendingEnd, state.sentenceBonus, state.finalScore, state.blind, state.run, lexicon]);
+  }, [lexiconReady, state.pendingEnd, state.sentenceBonus, state.finalScore, state.blind, state.run, getLexicon]);
 
   // RESOLVE — the round number is fully updated (settle beats + bonus). Hold a short
   // beat so the cleared score is seen, then auto-resolve to Fee Settlement / Game Over
@@ -1544,7 +1543,7 @@ export function useGame(): UseGame {
 
   return {
     state,
-    lexicon,
+    getLexicon,
     canPlay:
       state.phase === 'playing' &&
       !state.pendingEnd &&

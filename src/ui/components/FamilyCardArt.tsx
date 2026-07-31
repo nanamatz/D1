@@ -7,10 +7,10 @@ interface Props {
 }
 
 /**
- * Shared 500×700 (5:7) SVG surface for Fable, Constellation, and Gambler cards.
+ * Shared 500×700 (5:7) surface for Fable, Constellation, and Gambler cards.
  *
- * Every source illustration is normalized to this same canvas before import, so
- * the shared frame can use one geometry everywhere the card appears.
+ * Authoring masters stay path-only SVGs. Runtime imports use their pixel-identical
+ * PNG derivatives so the gallery does not parse hundreds of thousands of paths.
  */
 export function FamilyCardArt({ src, className, title }: Props) {
   const clipId = `family-card-clip-${useId().replace(/:/g, '')}`;

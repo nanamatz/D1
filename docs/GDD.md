@@ -719,8 +719,8 @@ still apply.
 **Exception — only an explicit effect may break this.** Boar (§10.3) is the
 designed exception: it creates a copy of one random owned Emoji Tile and destroys
 the others. Its copy may duplicate the selected definition; White itself is not
-copied. Until the Gambler registry is implemented, no runtime path bypasses the
-shared ownership gate.
+copied. The implemented Gambler registry performs this one-shot exception
+directly; every ordinary acquisition path still uses the shared ownership gate.
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
@@ -806,16 +806,17 @@ target the pack's immediately active ten seeded pouch candidates under the same
 range. Random creation
 respects the destination slot cap.
 
-**Art rendering (changed 2026-07-26).** All 18 supplied pixel illustrations are
-high-detail, path-only SVG assets normalized to one `500×700` canvas (fixed 5:7
+**Art rendering (changed 2026-07-31).** All 18 supplied pixel illustrations keep
+high-detail, path-only SVG masters normalized to one `500×700` canvas (fixed 5:7
 ratio, 32-color palette, `250×350` logical pixel grid). Every source illustration
 is stretched to the full common image bounds established by The North Wind and
 the Sun, so all 18 cards have identical visible width and height with no cropping
-or unequal internal margins. No SVG embeds a raster image. Collection, shop, pack
-opening, and the held-card shelf all reuse the shared framed component. The
-original English title plate remains part of each traced illustration; the
-localized card name is also available through the surrounding tooltip and
-accessible label.
+or unequal internal margins. No SVG master embeds a raster image. Collection,
+shop, pack opening, and the held-card shelf reuse pixel-identical `500×700` PNG
+runtime derivatives inside the shared framed component; this avoids parsing the
+masters' dense path data without changing their pixels. The original English
+title plate remains part of each traced illustration; the localized card name is
+also available through the surrounding tooltip and accessible label.
 
 | # | Fable | Effect |
 |---:|---|---|
@@ -850,12 +851,12 @@ The full presentation lasts **3.5 seconds** (changed 2026-07-29: 500ms faster
 than the prior 4.0-second timing).
 All displayed values are derived from the same §5.2 balance rows used by scoring.
 
-Each of the 12 monochrome zodiac illustrations is traced into a 32-color,
-path-only SVG and stretched without cropping to the Fable card standard:
-`500×700` output, fixed 5:7 ratio, and a `250×350` logical pixel grid (changed
-2026-07-27). Collection, shop, pack, and held-card surfaces all use the same
-shared SVG frame component as Fable and Gambler cards. The correctly
-spelled `Aquarius.svg` / `aquarius` mapping is retained.
+Each of the 12 monochrome zodiac illustrations keeps a 32-color, path-only SVG
+master stretched without cropping to the Fable card standard: `500×700` output,
+fixed 5:7 ratio, and a `250×350` logical pixel grid. Collection, shop, pack, and
+held-card surfaces use its pixel-identical PNG runtime derivative in the same
+shared SVG frame component as Fable and Gambler cards (changed 2026-07-31).
+The correctly spelled `Aquarius.svg` / `aquarius` mapping is retained.
 
 ### 10.3 Gambler Cards — 12 implemented, 2 pending
 
@@ -866,10 +867,11 @@ from the family to its pack. Fourteen supplied illustrations are registered in
 the UI-only gallery: Barn Swallow, Boar, Bridge, Bush Warbler, Butterflies,
 Crane and Sun, Cuckoo, Curtain, Deer, Full Moon, Geese, Phoenix, Rainman, and
 Sake Cup (a hwatu/화투 motif set — hence the gambler framing). Each source PNG
-is traced into the same 32-color, path-only SVG standard as Fable and
+is traced into the same 32-color, path-only SVG master standard as Fable and
 Constellation cards: `500×700`, fixed 5:7 ratio, and a `250×350` logical pixel
-grid. All three families use the same shared SVG frame. Twelve effects were
-confirmed on 2026-07-29 and **ship as of 2026-07-30** in `src/engine/gamblers.ts`
+grid. Runtime uses the trace's pixel-identical PNG derivative inside the shared
+SVG frame (changed 2026-07-31). Twelve effects were confirmed on 2026-07-29 and
+**ship as of 2026-07-30** in `src/engine/gamblers.ts`
 with every acquisition route wired (§9.3). Rainman and Sake Cup stay deliberately
 pending until the Emoji Tile roster is selected: they have art in the UI-only
 gallery but **no engine id**, so they can never be drawn. The former Forbidden Books/Spectral placeholder
@@ -1332,8 +1334,6 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   playtest tuning without changing §12's confirmed identities.
 - **Blind skip & tags.** Adoption itself remains deferred. Revisit trigger:
   unrecoverable early runs in playtests (§8.2).
-- **Duplicate-offer item (Showman-equivalent).** Boar supplies a one-shot cloning
-  exception (§10.3), but does not allow duplicate shop/pack offers.
 - **Acronyms in the lexicon.** MVP/VIP-class abbreviations need a separate curated
   list feeding §3.2; uppercase tiles already support them mechanically.
 - **Final two Gambler effects.** Rainman and Sake Cup retain art but no engine id

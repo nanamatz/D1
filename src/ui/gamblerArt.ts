@@ -1,17 +1,17 @@
-import barnSwallow from '../../docs/Arts/Cards/Gambler/Vector/BarnSwallow.svg';
-import boar from '../../docs/Arts/Cards/Gambler/Vector/Boar.svg';
-import bridge from '../../docs/Arts/Cards/Gambler/Vector/Bridge.svg';
-import bushWarbler from '../../docs/Arts/Cards/Gambler/Vector/BushWarbler.svg';
-import butterflies from '../../docs/Arts/Cards/Gambler/Vector/Butterflies.svg';
-import craneAndSun from '../../docs/Arts/Cards/Gambler/Vector/CraneAndSun.svg';
-import cuckoo from '../../docs/Arts/Cards/Gambler/Vector/Cuckoo.svg';
-import curtain from '../../docs/Arts/Cards/Gambler/Vector/Curtain.svg';
-import deer from '../../docs/Arts/Cards/Gambler/Vector/Deer.svg';
-import fullMoon from '../../docs/Arts/Cards/Gambler/Vector/FullMoon.svg';
-import geese from '../../docs/Arts/Cards/Gambler/Vector/Geese.svg';
-import phoenix from '../../docs/Arts/Cards/Gambler/Vector/Phoenix.svg';
-import rainman from '../../docs/Arts/Cards/Gambler/Vector/Rainman.svg';
-import sakeCup from '../../docs/Arts/Cards/Gambler/Vector/SakeCup.svg';
+import barnSwallow from '../../docs/Arts/Cards/Gambler/Vector/BarnSwallow-preview.png';
+import boar from '../../docs/Arts/Cards/Gambler/Vector/Boar-preview.png';
+import bridge from '../../docs/Arts/Cards/Gambler/Vector/Bridge-preview.png';
+import bushWarbler from '../../docs/Arts/Cards/Gambler/Vector/BushWarbler-preview.png';
+import butterflies from '../../docs/Arts/Cards/Gambler/Vector/Butterflies-preview.png';
+import craneAndSun from '../../docs/Arts/Cards/Gambler/Vector/CraneAndSun-preview.png';
+import cuckoo from '../../docs/Arts/Cards/Gambler/Vector/Cuckoo-preview.png';
+import curtain from '../../docs/Arts/Cards/Gambler/Vector/Curtain-preview.png';
+import deer from '../../docs/Arts/Cards/Gambler/Vector/Deer-preview.png';
+import fullMoon from '../../docs/Arts/Cards/Gambler/Vector/FullMoon-preview.png';
+import geese from '../../docs/Arts/Cards/Gambler/Vector/Geese-preview.png';
+import phoenix from '../../docs/Arts/Cards/Gambler/Vector/Phoenix-preview.png';
+import rainman from '../../docs/Arts/Cards/Gambler/Vector/Rainman-preview.png';
+import sakeCup from '../../docs/Arts/Cards/Gambler/Vector/SakeCup-preview.png';
 
 /**
  * Art registry for the supplied Gambler card illustrations.

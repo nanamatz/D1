@@ -36,6 +36,18 @@ function triggerTile(tileId: string): void {
   window.setTimeout(() => el.classList.remove('mat-flash', 'trig-bounce'), 560);
 }
 
+/** Restart the board-level score impact. Amplitude comes from the Settings
+ * slider's `--screen-shake` variable; reduced motion never reaches this path. */
+function triggerScreenShake(): void {
+  if (typeof document === 'undefined') return;
+  const frame = document.querySelector<HTMLElement>('.frame');
+  if (!frame) return;
+  frame.classList.remove('settle-shake');
+  void frame.offsetWidth;
+  frame.classList.add('settle-shake');
+  frame.addEventListener('animationend', () => frame.classList.remove('settle-shake'), { once: true });
+}
+
 export interface SettleView {
   active: boolean;
   chips: number;
@@ -165,12 +177,14 @@ export function SettleProvider({
   events,
   settleId,
   speed,
+  screenShake,
   onComplete,
   children,
 }: {
   events: readonly ScoreEvent[];
   settleId: number;
   speed: number;
+  screenShake: number;
   onComplete?: () => void;
   children: ReactNode;
 }) {
@@ -259,6 +273,7 @@ export function SettleProvider({
             chips !== prevChips || mult !== prevMult
               ? { chips: chips - prevChips, mult: mult - prevMult, multOp: 'add' as const, id: i }
               : null;
+          if (scorePop && screenShake > 0) triggerScreenShake();
           const base: SettleView = {
             active: true,
             chips,
@@ -394,7 +409,7 @@ export function SettleProvider({
     );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settleId, speed]);
+  }, [settleId, speed, screenShake]);
 
   return <SettleCtx.Provider value={view}>{children}</SettleCtx.Provider>;
 }

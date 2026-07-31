@@ -1,24 +1,60 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useGame } from './useGame';
 import { useSettings } from './settings';
 import { audio, type MusicTrack } from './audio';
 import { MainMenu } from './components/MainMenu';
-import { NewRun } from './components/NewRun';
-import { RunView } from './components/RunView';
-import { Collection } from './components/Collection';
-import { Options } from './components/Options';
 import { ScreenTransition } from './components/ScreenTransition';
 import { TutorialHost } from './components/TutorialPopup';
 import { ChromaticReveal } from './components/ChromaticReveal';
 import { CrtOverlay } from './components/CrtOverlay';
 import { LoadingScreen } from './components/LoadingScreen';
 import { PatternLevelUp } from './components/PatternLevelUp';
-import { Profile } from './components/Profile';
+import type { Lexicon } from '../engine/lexicon';
+
+const NewRun = lazy(() =>
+  import('./components/NewRun').then(({ NewRun: component }) => ({ default: component })),
+);
+const RunView = lazy(() =>
+  import('./components/RunView').then(({ RunView: component }) => ({ default: component })),
+);
+const Collection = lazy(() =>
+  import('./components/Collection').then(({ Collection: component }) => ({ default: component })),
+);
+const Options = lazy(() =>
+  import('./components/Options').then(({ Options: component }) => ({ default: component })),
+);
+const Profile = lazy(() =>
+  import('./components/Profile').then(({ Profile: component }) => ({ default: component })),
+);
 
 type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile';
 
 export function App() {
-  const g = useGame();
+  const lexiconRef = useRef<Lexicon | null>(null);
+  const lexiconPromiseRef = useRef<Promise<Lexicon> | null>(null);
+  const [lexiconReady, setLexiconReady] = useState(false);
+  const getLexicon = useCallback((): Lexicon => {
+    if (!lexiconRef.current) throw new Error('Lexicon requested before loading');
+    return lexiconRef.current;
+  }, []);
+  const ensureLexicon = useCallback((): Promise<Lexicon> => {
+    if (lexiconRef.current) return Promise.resolve(lexiconRef.current);
+    if (!lexiconPromiseRef.current) {
+      lexiconPromiseRef.current = import('./lexicon.browser')
+        .then(({ loadBrowserLexicon }) => {
+          const lexicon = loadBrowserLexicon();
+          lexiconRef.current = lexicon;
+          setLexiconReady(true);
+          return lexicon;
+        })
+        .catch((error: unknown) => {
+          lexiconPromiseRef.current = null;
+          throw error;
+        });
+    }
+    return lexiconPromiseRef.current;
+  }, []);
+  const g = useGame(getLexicon, lexiconReady);
   // D-4: preload assets behind a loading screen before the Main Menu. Falls through
   // immediately when everything is cached (LoadingScreen reports real progress).
   const [loading, setLoading] = useState(true);
@@ -29,6 +65,14 @@ export function App() {
   // page-load values — which is what used to let it write a stale snapshot back.
   useSettings();
   const [screen, setScreen] = useState<Screen>('menu');
+  const openScreen = useCallback(
+    (next: Exclude<Screen, 'menu'>) => {
+      void ensureLexicon()
+        .then(() => setScreen(next))
+        .catch((error: unknown) => console.error('[lexicon] load failed', error));
+    },
+    [ensureLexicon],
+  );
   // `useGame` lives here, so leaving the run view (Options → Main Menu) keeps the
   // run intact, and it's persisted to localStorage so a reload keeps it too.
   // `runStarted` rides along in the save. A finished run is not resumable.
@@ -110,19 +154,19 @@ export function App() {
       case 'run':
         return <RunView g={g} onExit={() => setScreen('menu')} onNewRun={() => setScreen('newrun')} />;
       case 'collection':
-        return <Collection lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
+        return <Collection lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'options':
-        return <Options lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
+        return <Options lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'profile':
-        return <Profile lexicon={g.lexicon} onBack={() => setScreen('menu')} />;
+        return <Profile lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'menu':
       default:
         return (
           <MainMenu
-            onPlay={() => setScreen('newrun')}
-            onCollection={() => setScreen('collection')}
-            onOptions={() => setScreen('options')}
-            onProfile={() => setScreen('profile')}
+            onPlay={() => openScreen('newrun')}
+            onCollection={() => openScreen('collection')}
+            onOptions={() => openScreen('options')}
+            onProfile={() => openScreen('profile')}
           />
         );
     }
@@ -136,7 +180,9 @@ export function App() {
         <LoadingScreen onDone={() => setLoading(false)} />
       ) : (
         <>
-          <ScreenTransition screenKey={screen}>{view()}</ScreenTransition>
+          <ScreenTransition screenKey={screen}>
+            <Suspense fallback={null}>{view()}</Suspense>
+          </ScreenTransition>
           <TutorialHost />
           <ChromaticReveal />
           <PatternLevelUp />

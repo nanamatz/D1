@@ -19,8 +19,9 @@ import dogUrl from './assets/dog.png';
 import ghostUrl from './assets/ghost.png';
 import alienUrl from './assets/alien.png';
 import turtleUrl from './assets/turtle.png';
+import type { WooDakSkin } from './mascotIds';
 
-export type WooDakSkin = 'woodak' | 'alien' | 'ghost' | 'dog' | 'turtle';
+export type { WooDakSkin } from './mascotIds';
 
 export interface WooDakSkinDef {
   /** stable id; the non-default ids match an UNLOCKS mascot variant. */

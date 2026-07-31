@@ -7,6 +7,7 @@ import { tutorialBus } from '../tutorial';
 import { pouchArt } from '../pouchArt';
 import { richText } from '../richtext';
 import { TileView } from './Tile';
+import { Tooltip } from './Tooltip';
 
 interface Counts {
   perLetter: Record<string, number>;
@@ -150,14 +151,32 @@ export function BagWidget({
       {/* The count sits below the widget box rather than inside it — the same
           shape as the shelves (box + N/max beneath), playtest-06. Hovering
           either opens the modal, so the handlers live on the dock. */}
-      <div className="pouch-dock" onMouseEnter={enter} onMouseLeave={leave}>
-        <div
-          className={['pouch-widget', open ? 'open' : ''].filter(Boolean).join(' ')}
-          aria-label={t('bagview.title')}
-          aria-expanded={open}
+      <div
+        className="pouch-dock"
+        onMouseEnter={enter}
+        onMouseLeave={leave}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setOpen(false);
+        }}
+      >
+        <Tooltip
+          title={t(`pouch.${run.pouchId}.name`)}
+          body={t(`pouch.${run.pouchId}.desc`)}
+          disabled={open}
         >
-          <img className="pouch-art" src={pouchArt(run.pouchId)} alt="" aria-hidden />
-        </div>
+          <button
+            type="button"
+            className={['pouch-widget', open ? 'open' : ''].filter(Boolean).join(' ')}
+            aria-label={t('bagview.title')}
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            aria-controls="pouch-contents-dialog"
+            onClick={() => setOpen(true)}
+            onFocus={() => tutorialBus.fire('pouchHover')}
+          >
+            <img className="pouch-art" src={pouchArt(run.pouchId)} alt="" aria-hidden />
+          </button>
+        </Tooltip>
         <span className="pouch-count">
           {remaining}/{total}
         </span>
@@ -166,6 +185,7 @@ export function BagWidget({
       {open && (
         <div className="overlay pouch-overlay">
           <div
+            id="pouch-contents-dialog"
             className="overlay-card pouch-modal"
             role="dialog"
             aria-modal

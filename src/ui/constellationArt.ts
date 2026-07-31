@@ -1,16 +1,16 @@
 import type { ConstellationId } from '../engine/constellations';
-import aquarius from '../../docs/Arts/Cards/Constellation/Vector/Aquarius.svg';
-import aries from '../../docs/Arts/Cards/Constellation/Vector/Aries.svg';
-import cancer from '../../docs/Arts/Cards/Constellation/Vector/Cancer.svg';
-import capricorn from '../../docs/Arts/Cards/Constellation/Vector/Capricorn.svg';
-import gemini from '../../docs/Arts/Cards/Constellation/Vector/Gemini.svg';
-import leo from '../../docs/Arts/Cards/Constellation/Vector/Leo.svg';
-import libra from '../../docs/Arts/Cards/Constellation/Vector/Libra.svg';
-import pisces from '../../docs/Arts/Cards/Constellation/Vector/Pisces.svg';
-import sagittarius from '../../docs/Arts/Cards/Constellation/Vector/Sagittarius.svg';
-import scorpio from '../../docs/Arts/Cards/Constellation/Vector/Scorpio.svg';
-import taurus from '../../docs/Arts/Cards/Constellation/Vector/Taurus.svg';
-import virgo from '../../docs/Arts/Cards/Constellation/Vector/Virgo.svg';
+import aquarius from '../../docs/Arts/Cards/Constellation/Vector/Aquarius-preview.png';
+import aries from '../../docs/Arts/Cards/Constellation/Vector/Aries-preview.png';
+import cancer from '../../docs/Arts/Cards/Constellation/Vector/Cancer-preview.png';
+import capricorn from '../../docs/Arts/Cards/Constellation/Vector/Capricorn-preview.png';
+import gemini from '../../docs/Arts/Cards/Constellation/Vector/Gemini-preview.png';
+import leo from '../../docs/Arts/Cards/Constellation/Vector/Leo-preview.png';
+import libra from '../../docs/Arts/Cards/Constellation/Vector/Libra-preview.png';
+import pisces from '../../docs/Arts/Cards/Constellation/Vector/Pisces-preview.png';
+import sagittarius from '../../docs/Arts/Cards/Constellation/Vector/Sagittarius-preview.png';
+import scorpio from '../../docs/Arts/Cards/Constellation/Vector/Scorpio-preview.png';
+import taurus from '../../docs/Arts/Cards/Constellation/Vector/Taurus-preview.png';
+import virgo from '../../docs/Arts/Cards/Constellation/Vector/Virgo-preview.png';
 
 export const CONSTELLATION_ART: Record<ConstellationId, string> = {
   libra,
