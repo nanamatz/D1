@@ -972,9 +972,6 @@
   max-width: 168px;
   transform: translateX(-50%);
 }
-.btn.pack-option-action:active {
-  transform: translate(-50%, 2px);
-}
 .btn.pack-option-action:disabled {
   transform: translateX(-50%);
 }
@@ -989,10 +986,6 @@
   opacity: 1;
   pointer-events: auto;
   transform: translate(-50%, 0);
-}
-.pack-option-shell.hover-action:hover > .pack-option-action:active,
-.pack-option-shell.hover-action:focus-within > .pack-option-action:active {
-  transform: translate(-50%, 2px);
 }
 .pack-option-shell.hover-action:hover > .pack-option-action:disabled,
 .pack-option-shell.hover-action:focus-within > .pack-option-action:disabled {

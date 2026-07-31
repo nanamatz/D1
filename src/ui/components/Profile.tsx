@@ -7,6 +7,7 @@ import { useI18n } from '../i18n';
 import {
   PROFILE_NAME_MAX,
   createProfile,
+  isProfileWorldComplete,
   profileCollectionSize,
   renameProfile,
   unlockAllProfile,
@@ -42,28 +43,21 @@ export function Profile({ lexicon, onBack }: Props) {
   const [, refresh] = useState(0);
   const lifetime = loadLifetime(selectedSlot);
   const [nameDraft, setNameDraft] = useState(lifetime.profileName);
-  const [notice, setNotice] = useState<'unlock' | 'reset' | null>(null);
+  const [notice, setNotice] = useState<'unlock' | 'delete' | null>(null);
 
   useEffect(() => {
     setNameDraft(lifetime.profileName);
     setNotice(null);
   }, [selectedSlot, lifetime.profileName]);
 
-  const chooseSlot = (next: ProfileSlot) => {
-    if (!loadLifetime(next).profileCreated) {
-      setSelectedSlot(next);
-      return;
-    }
-    if (next === currentSlot) {
-      setSelectedSlot(next);
-      return;
-    }
-    selectProfile(next);
-    window.location.reload();
-  };
+  const chooseSlot = (next: ProfileSlot) => setSelectedSlot(next);
 
   const create = () => {
     createProfile(selectedSlot, nameDraft);
+    refresh((value) => value + 1);
+  };
+
+  const load = () => {
     selectProfile(selectedSlot);
     window.location.reload();
   };
@@ -83,15 +77,19 @@ export function Profile({ lexicon, onBack }: Props) {
     }
     if (result === 'unlocked') {
       setNotice(null);
-      applyPresentation();
+      if (selectedSlot === currentSlot) applyPresentation();
       refresh((value) => value + 1);
     }
   };
 
-  const reset = () => {
+  const deleteProfile = () => {
+    if (selectedSlot === currentSlot) return;
+    if (notice !== 'delete') {
+      setNotice('delete');
+      return;
+    }
     resetProfile(selectedSlot);
-    if (selectedSlot !== 1) selectProfile(1);
-    window.location.reload();
+    refresh((value) => value + 1);
   };
 
   const slotTabs = (
@@ -123,13 +121,13 @@ export function Profile({ lexicon, onBack }: Props) {
           onChange={(event) => setNameDraft(event.target.value)}
         />
 
-        <section className="panel profile-dashboard profile-empty-dashboard">
+        <section className="panel profile-dashboard">
           <div className="profile-empty-box">{t('profile.empty')}</div>
           <div className="profile-actions">
-            <button className="btn play" onClick={create}>
+            <button className="btn exchange profile-primary" onClick={create}>
               {t('profile.create')}
             </button>
-            <button className="btn exchange" disabled>
+            <button className="btn red profile-delete" disabled>
               {t('profile.delete')}
             </button>
           </div>
@@ -160,6 +158,7 @@ export function Profile({ lexicon, onBack }: Props) {
   ];
   const totalHave = rows.reduce((sum, row) => sum + row.have, 0);
   const totalItems = rows.reduce((sum, row) => sum + row.total, 0);
+  const worldComplete = isProfileWorldComplete(selectedSlot, lexicon);
 
   return (
     <div className="screen profile-screen">
@@ -203,19 +202,31 @@ export function Profile({ lexicon, onBack }: Props) {
           <p className="profile-wins">
             {t('profile.wins')}: <strong>{lifetime.wins}</strong>
           </p>
-          <button className="btn exchange" disabled>
-            {t('profile.current')}
-          </button>
-          <button className="btn red" onClick={() => setNotice('reset')}>
-            {t('profile.reset')}
-          </button>
+          {selectedSlot === currentSlot ? (
+            <button className="btn exchange profile-primary" disabled>
+              {t('profile.current')}
+            </button>
+          ) : (
+            <button className="btn exchange profile-primary" onClick={load}>
+              {t('profile.load')}
+            </button>
+          )}
           <button
-            className="btn exchange"
-            disabled={lifetime.unlockAllApplied}
-            onClick={revealAll}
+            className="btn red profile-delete"
+            disabled={selectedSlot === currentSlot}
+            onClick={deleteProfile}
           >
-            {lifetime.unlockAllApplied ? t('profile.unlockAllDone') : t('profile.unlockAll')}
+            {t('profile.delete')}
           </button>
+          {lifetime.unlockAllApplied ? (
+            <p className="profile-completion">{t('profile.challengesDisabled')}</p>
+          ) : worldComplete ? (
+            <p className="profile-completion">{t('profile.worldComplete')}</p>
+          ) : (
+            <button className="btn profile-unlock" onClick={revealAll}>
+              {t('profile.unlockAll')}
+            </button>
+          )}
         </div>
       </section>
 
@@ -224,16 +235,10 @@ export function Profile({ lexicon, onBack }: Props) {
           {t('profile.unlockWarning')}
         </p>
       )}
-      {notice === 'reset' && (
-        <div className="profile-reset-confirm" role="alert">
-          <p>{t('profile.resetWarning', { profile: lifetime.profileName })}</p>
-          <div>
-            <button className="btn red" onClick={reset}>{t('profile.confirmReset')}</button>
-            <button className="btn exchange" onClick={() => setNotice(null)}>
-              {t('profile.cancel')}
-            </button>
-          </div>
-        </div>
+      {notice === 'delete' && (
+        <p className="profile-warning" role="alert">
+          {t('profile.deleteWarning', { profile: lifetime.profileName })}
+        </p>
       )}
 
       <button className="btn back-bar" onClick={onBack}>

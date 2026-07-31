@@ -1394,5 +1394,11 @@ dictionary entry as discovered; it does not fabricate 30,000 play-count or score
 records.
 The operation is permanently isolated to the selected profile slot and never
 changes another slot.
+After the escape hatch is applied, its button is permanently replaced by
+**Challenges disabled / 도전과제 비활성화됨**. If the profile instead earns every
+currently implemented word, Palette/audio/mascot, Starting Pouch, Record, and
+upgraded-voucher unlock without using the escape hatch, the button is replaced
+by **Your world is complete / 당신의 세상이 완성됨**. The escape-hatch state takes
+precedence over natural-completion presentation.
 
 **Discoverability (C-5).** New Collection category **팔레트 (Palette)** — locked entries are grey silhouettes with a letter-count hint ("R _ _"), unlocked entries show the word in its group color. The first-run tutorial (2026-07-21) is a scripted, **hard-locked YELLOW lesson**: the opening hand is rigged to contain Y‑E‑L‑L‑O‑W. The target is **not** lowered — it stays the normal ante-1 value, so submitting YELLOW (252 under the §3.1 length bonus) ends the *lesson* but does **not** clear the blind; the board then unlocks and the player plays on to reach the target (the old `TUTORIAL_TARGET`=10 override was retired 2026-07-22). A WooDak coach-mark frames the grey world (so it never reads as a rendering bug), then the player builds and submits YELLOW — the yellow palette washes in ("Gold floods back in.") teaching word-building, submission, and the Palette by doing. `anteBaseTargets[0]` must stay above a single YELLOW score; `tests/yellow-lesson.test.ts` guards it. See `docs/superpowers/specs/2026-07-21-yellow-first-lesson-design.md`.

@@ -151,7 +151,6 @@
   --readout-size: var(--ds-2xl);
 
   --ctl-font: 'Baloo 2', 'Noto Sans KR';
-  --ctl-press: translateY(3px);
   --ctl-shadow-press: 0 2px 0 rgba(0, 0, 0, 0.35);
   --focus-ring: 2px solid var(--gold);
 }
@@ -319,6 +318,17 @@
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
+/* Native button feedback composes with component transforms, so centred shop
+   actions, cards, and icon buttons keep their own positioning and animation. */
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover {
+    scale: 1.025;
+  }
+}
+button:not(:disabled):active {
+  scale: 1;
+  translate: 0 3px;
+}
 .sidenav-btn,
 .tab,
 .car-arrow,
@@ -344,7 +354,6 @@
 .filter-pill:active,
 .langbtn:active,
 .consumable-menu button:active {
-  transform: var(--ctl-press);
   box-shadow: var(--ctl-shadow-press);
 }
 .btn:disabled,

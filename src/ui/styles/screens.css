@@ -1281,11 +1281,8 @@ body.cb-safe .tile.hint {
   grid-template-columns: minmax(0, 1.45fr) minmax(190px, .8fr);
   gap: 28px;
   width: min(720px, 94vw);
+  height: 280px;
   padding: 20px;
-}
-.profile-empty-dashboard {
-  grid-template-columns: minmax(0, 1.35fr) minmax(220px, .9fr);
-  min-height: 270px;
 }
 .profile-empty-box {
   display: grid;
@@ -1376,6 +1373,28 @@ body.cb-safe .tile.hint {
 .profile-actions .btn {
   width: 100%;
 }
+.profile-actions .profile-primary {
+  height: 42px;
+}
+.profile-actions .profile-delete {
+  width: 74%;
+  height: 34px;
+  padding: 8px 18px;
+  align-self: center;
+  font-size: var(--fs-md);
+}
+.profile-unlock {
+  background: #728887;
+  border-color: #607776;
+}
+.profile-completion {
+  margin: 2px 0 0;
+  color: var(--btn-green-hi);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 2px 0 #000;
+}
 .profile-wins {
   font-size: var(--fs-2xl);
   font-weight: 800;
@@ -1386,8 +1405,7 @@ body.cb-safe .tile.hint {
   font-family: 'Jersey 10';
   font-size: var(--ds-lg);
 }
-.profile-warning,
-.profile-reset-confirm {
+.profile-warning {
   width: min(720px, 94vw);
   padding: 12px 16px;
   color: #fff;
@@ -1399,19 +1417,11 @@ body.cb-safe .tile.hint {
   font-weight: 700;
   text-align: center;
 }
-.profile-reset-confirm > div {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-}
 @media (max-width: 600px) {
   .profile-dashboard {
     grid-template-columns: 1fr;
     gap: 16px;
-  }
-  .profile-empty-dashboard {
-    min-height: 0;
+    height: auto;
   }
   .profile-empty-box {
     min-height: 150px;

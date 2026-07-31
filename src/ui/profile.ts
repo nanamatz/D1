@@ -1,11 +1,11 @@
 import type { Lexicon } from '../engine/lexicon';
 import { BALANCE } from '../engine/balance';
-import { POUCH_IDS } from '../engine/pouches';
-import { RECORD_IDS } from '../engine/records';
-import { collectionSize } from './collection';
+import { POUCH_IDS, isPouchUnlocked } from '../engine/pouches';
+import { RECORD_IDS, isRecordUnlocked } from '../engine/records';
+import { collectionSize, loadCollection } from './collection';
 import { activeProfile, resetProfile, writeProfileValue, type ProfileSlot } from './storage';
 import { loadLifetime, writeLifetime } from './lifetime';
-import { UNLOCKS } from './unlocks';
+import { UNLOCKS, loadPlayed } from './unlocks';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from './voucherProgress';
 
 export const PROFILE_NAME_MAX = 18;
@@ -25,6 +25,30 @@ export function profileCollectionSize(
 export function pouchUnlockWordCount(slot: ProfileSlot = activeProfile()): number {
   if (!loadLifetime(slot).unlockAllApplied) return collectionSize(slot);
   return Math.max(...Object.values(BALANCE.pouches.unlockWords));
+}
+
+/** True only when every currently implemented gate was earned normally. */
+export function isProfileWorldComplete(slot: ProfileSlot, lexicon: Lexicon): boolean {
+  const lifetime = loadLifetime(slot);
+  if (!lifetime.profileCreated || lifetime.unlockAllApplied) return false;
+
+  const collection = loadCollection(slot);
+  const discoveredWords = Object.keys(collection).length;
+  if (discoveredWords < lexicon.size) return false;
+
+  const pouchProgress = {
+    discoveredWords,
+    pouchWins: new Set(lifetime.pouchWins),
+    recordWins: new Set(lifetime.recordWins),
+  };
+  const recordWins = new Set(lifetime.recordWins);
+  const played = loadPlayed(slot);
+  const vouchers = new Set(loadVoucherProgress(slot).unlocked);
+  return [...lexicon.words()].every((word) => collection[word] !== undefined)
+    && UNLOCKS.every((unlock) => played.has(unlock.id))
+    && POUCH_IDS.every((id) => isPouchUnlocked(id, pouchProgress))
+    && RECORD_IDS.every((id) => isRecordUnlocked(id, recordWins))
+    && VOUCHER_UNLOCK_RULES.every((rule) => vouchers.has(rule.id));
 }
 
 function normalizedName(slot: ProfileSlot, name: string): string {

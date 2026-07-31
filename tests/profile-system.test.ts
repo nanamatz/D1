@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { BALANCE } from '../src/engine/balance';
 import { makeLexicon } from '../src/engine/lexicon';
 import { POUCH_IDS } from '../src/engine/pouches';
 import { RECORD_IDS } from '../src/engine/records';
 import { collectionSize } from '../src/ui/collection';
-import { loadLifetime } from '../src/ui/lifetime';
+import { loadLifetime, writeLifetime } from '../src/ui/lifetime';
 import {
   createProfile,
+  isProfileWorldComplete,
   pouchUnlockWordCount,
   profileCollectionSize,
   renameProfile,
@@ -15,6 +17,7 @@ import {
   readProfileValue,
   resetProfile,
   resetStorageCache,
+  writeProfileValue,
 } from '../src/ui/storage';
 import { UNLOCKS, playedCount } from '../src/ui/unlocks';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from '../src/ui/voucherProgress';
@@ -116,5 +119,35 @@ describe('profile-scoped unlock all', () => {
       unlockAllApplied: false,
       challengesDisabled: false,
     });
+  });
+});
+
+describe('profile completion status', () => {
+  it('recognizes a naturally completed world without treating unlock-all as natural', () => {
+    const requiredWords = Math.max(...Object.values(BALANCE.pouches.unlockWords));
+    const completeLexicon = makeLexicon(
+      Array.from({ length: requiredWords }, (_, index) => `word${index}`),
+      {},
+    );
+    const collection = Object.fromEntries(
+      [...completeLexicon.words()].map((word) => [
+        word,
+        { firstPlayedAt: 1, plays: 1, bestScore: 1 },
+      ]),
+    );
+    writeProfileValue('wj.collection', 1, collection);
+    writeProfileValue('wj.unlocks', 1, UNLOCKS.map((unlock) => unlock.id));
+    writeProfileValue('wj.vouchers', 1, {
+      unlocked: VOUCHER_UNLOCK_RULES.map((rule) => rule.id),
+    });
+    writeLifetime({
+      ...loadLifetime(1),
+      pouchWins: [...POUCH_IDS],
+      recordWins: [...RECORD_IDS],
+    }, 1);
+
+    expect(isProfileWorldComplete(1, completeLexicon)).toBe(true);
+    writeLifetime({ ...loadLifetime(1), unlockAllApplied: true }, 1);
+    expect(isProfileWorldComplete(1, completeLexicon)).toBe(false);
   });
 });
