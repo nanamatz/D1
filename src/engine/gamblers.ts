@@ -12,6 +12,7 @@
  * an opened pack) and a seeded RNG.
  */
 import { BALANCE } from './balance';
+import { GAMBLER_IDS, isGamblerId, type GamblerId } from './gamblerIds';
 import { patchTiles, removeIds } from './fables';
 import { LEGENDARY_JOKERS, RARE_JOKERS, onTilesCreated, onTilesDestroyed } from './jokers';
 import type { Rng } from './rng';
@@ -28,19 +29,10 @@ import type {
 } from './types';
 import { canAddJoker, canOwnJoker } from './vouchers';
 
-export type GamblerId =
-  | 'barnSwallow' | 'boar' | 'bridge' | 'bushWarbler' | 'butterflies'
-  | 'craneAndSun' | 'cuckoo' | 'curtain' | 'deer' | 'fullMoon'
-  | 'geese' | 'phoenix';
-
-export const GAMBLER_IDS: readonly GamblerId[] = [
-  'barnSwallow', 'boar', 'bridge', 'bushWarbler', 'butterflies',
-  'craneAndSun', 'cuckoo', 'curtain', 'deer', 'fullMoon',
-  'geese', 'phoenix',
-];
-
-export const isGamblerId = (id: ConsumableId): id is GamblerId =>
-  (GAMBLER_IDS as readonly ConsumableId[]).includes(id);
+// The id space lives in a leaf module so `pouches.ts` can read it without
+// importing this file (and, through it, every joker) — see gamblerIds.ts.
+// Re-exported here so every existing call site keeps its import path.
+export { GAMBLER_IDS, isGamblerId, type GamblerId } from './gamblerIds';
 
 type GamblerEffect =
   /** #1/#4/#7/#11 — retype one selected tile; every other axis is preserved. */

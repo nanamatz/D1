@@ -9,13 +9,7 @@ import {
 } from 'react';
 import { readValue, writeValue } from './storage';
 import { clamp } from './math';
-
-const reducedMotion = (): boolean =>
-  typeof window !== 'undefined'
-  && (
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    || document.body.classList.contains('force-reduced-motion')
-  );
+import { motionOff as reducedMotion } from './motion';
 
 /** useState mirrored to persistent storage (P1-1 persists the sort choice). */
 export function usePersistedState<T>(

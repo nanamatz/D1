@@ -12,6 +12,7 @@ import {
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
+import { motionOff } from '../motion';
 import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
@@ -112,11 +113,7 @@ export function JokerShelf({
     mode: 'use' | 'sell',
     apply: () => void,
   ) => {
-    const reduce =
-      typeof window !== 'undefined' &&
-      (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
-        document.body.classList.contains('force-reduced-motion'));
-    if (reduce) { apply(); return; }
+    if (motionOff()) { apply(); return; }
     setLeaving({ zone, index, mode });
     window.setTimeout(() => { apply(); setLeaving(null); }, 260);
   };

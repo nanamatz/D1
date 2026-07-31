@@ -51,6 +51,7 @@ import { recordEndlessEnd, recordRunEnd } from './lifetime';
 import { clearRun, loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
+import { motionOff } from './motion';
 import { patternLevelBus } from './patternLevel';
 import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
 import {
@@ -1385,9 +1386,10 @@ export function useGame(): UseGame {
   // The bonus lands as a distinct climax in three beats (2026-07-22): BUILD fills
   // the scorebox to the bonus' chips × mult while the round HOLDS at committed;
   // LAND then rolls the round up; RESOLVE holds a verdict beat and auto-resolves.
-  const prefersReduce = () =>
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Both sources — the OS setting AND the in-game Options toggle. Reading only
+  // the media query here is what let the blind-end bonus keep animating with
+  // Reduced Motion on (2026-07-31 audit VFX-01 / I-2).
+  const prefersReduce = motionOff;
 
   // BUILD — the last word's settle has landed. Publish the sentence bonus so the
   // scorebox fills to its chips × mult, but HOLD the round number at committed

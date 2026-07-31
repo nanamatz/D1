@@ -6,7 +6,8 @@
   "main": "desktop/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && node scripts/check-engine-cycles.mjs && vite build",
+    "check:cycles": "node scripts/check-engine-cycles.mjs",
     "test": "vitest run",
     "sim": "tsx src/sim/autoplay.ts",
     "sim:feel-chip-scale": "tsx src/sim/feel-chip-scale.ts",

@@ -17,7 +17,7 @@
  */
 import { useEffect, useRef, type RefObject } from 'react';
 import { clamp } from './math';
-
+import { motionOff as reduced } from './motion';
 
 /** Drop the per-tile pointer-parallax state so it can't fight the drag/drop transform. */
 function clearTilt(node: HTMLElement): void {
@@ -26,11 +26,6 @@ function clearTilt(node: HTMLElement): void {
   node.style.removeProperty('--tilt-y');
   node.style.removeProperty('--tilt-k');
 }
-
-const reduced = (): boolean =>
-  typeof window !== 'undefined' &&
-  (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-    document.body.classList.contains('force-reduced-motion'));
 
 export interface StageDragCallbacks {
   /** hand→staged (stage a tile) */

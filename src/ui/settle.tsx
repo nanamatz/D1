@@ -18,9 +18,7 @@ import {
 } from 'react';
 import type { ScoreEvent } from '../engine/types';
 import { audio } from './audio';
-
-const reducedMotion = (): boolean =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { motionOff as reducedMotion } from './motion';
 
 /**
  * feedback: when a tile's MATERIAL / FONT / EDITION triggers during scoring, make the

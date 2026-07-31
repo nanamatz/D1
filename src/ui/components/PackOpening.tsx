@@ -12,6 +12,7 @@ import {
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
+import { motionOff } from '../motion';
 import { packArt } from '../packArt';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
@@ -197,14 +198,6 @@ function OptionCard({
   );
 }
 
-/** True when motion should be suppressed (OS setting or the app's reduced-motion toggle). */
-function motionOff(): boolean {
-  if (typeof window === 'undefined') return true;
-  return (
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-    document.body.classList.contains('force-reduced-motion')
-  );
-}
 
 const BURST_MS = 900;
 

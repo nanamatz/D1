@@ -13,6 +13,7 @@ import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { audio } from '../audio';
+import { motionOff } from '../motion';
 import { patternSymbol } from '../patternSymbols';
 import { TileView } from './Tile';
 import { useEntering } from './ScreenTransition';
@@ -190,11 +191,7 @@ export function StagePanel({
 
   const doDiscard = () => {
     audio.play('discardSwoosh');
-    const reduce =
-      typeof window !== 'undefined' &&
-      (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-        document.body.classList.contains('force-reduced-motion'));
-    if (!reduce) {
+    if (!motionOff()) {
       const stageRect = handRef.current?.closest('.stage')?.getBoundingClientRect();
       const ghosts = validMarks
         .map((id) => {

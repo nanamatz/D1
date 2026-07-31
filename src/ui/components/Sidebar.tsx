@@ -5,6 +5,7 @@ import { effectiveClearReward } from '../../engine/economy';
 import type { StagePreview } from '../game';
 import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
+import { motionOff } from '../motion';
 import { BONUS_LAND_MS, type SentenceBonusDisplay } from '../useGame';
 import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
@@ -143,7 +144,7 @@ export function Sidebar({
   // hop nor the per-beat bounce can replace the icon's panel-relative transform.
   const [hop, setHop] = useState(false);
   useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (motionOff()) return;
     let live = true;
     let clear: ReturnType<typeof setTimeout>;
     const schedule = (): ReturnType<typeof setTimeout> =>

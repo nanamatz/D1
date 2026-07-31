@@ -3,6 +3,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { audio } from '../audio';
 import type { SfxName } from '../audio';
+import { motionOff } from '../motion';
 import coffeeCup from '../assets/desk-coffee-cup.png';
 import coffeePot from '../assets/desk-coffee-pot.png';
 import callBell from '../assets/desk-call-bell.png';
@@ -41,10 +42,7 @@ interface SignaturePoint {
   y: number;
 }
 
-const reduced = (): boolean =>
-  typeof window !== 'undefined' &&
-  (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
-    document.body.classList.contains('force-reduced-motion'));
+const reduced = motionOff;
 
 export function DeskObjects({ active }: { active: boolean }) {
   const [cup, setCup] = useState<DeskObj | null>(null);

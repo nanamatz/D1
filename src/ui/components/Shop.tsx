@@ -4,6 +4,7 @@ import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
 import { canAddJoker, discountedPrice, rerollDiscount } from '../../engine/vouchers';
+import { motionOff } from '../motion';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
 import {
   consumableAxisTip,
@@ -204,14 +205,11 @@ export function Shop({ g }: { g: UseGame }) {
   const redeemVoucher = () => {
     if (redeemingVoucher || !voucher || run.gold < voucher.price) return;
     setRedeemingVoucher(true);
-    const motionOff =
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
-      document.body.classList.contains('force-reduced-motion');
     redeemTimer.current = window.setTimeout(() => {
       g.buyVoucher();
       setRedeemingVoucher(false);
       redeemTimer.current = null;
-    }, motionOff ? 0 : VOUCHER_REDEEM_MS);
+    }, motionOff() ? 0 : VOUCHER_REDEEM_MS);
   };
 
   return (

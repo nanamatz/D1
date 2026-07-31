@@ -4,9 +4,7 @@
  * All honor prefers-reduced-motion (instant, no motion).
  */
 import { useEffect, useRef, useState } from 'react';
-
-const reducedMotion = (): boolean =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { motionOff as reducedMotion } from './motion';
 
 /**
  * Ease a displayed number toward `value` whenever it changes (committed/projected roll).

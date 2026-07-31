@@ -1,5 +1,7 @@
 import { BALANCE } from './balance';
-import { GAMBLER_IDS } from './gamblers';
+// Leaf id module, NOT `./gamblers`: that file reaches the joker rosters and
+// importing it here closed a cycle back into `economy` (see gamblerIds.ts).
+import { GAMBLER_IDS } from './gamblerIds';
 import type { Rng } from './rng';
 import { applyVoucher } from './vouchers';
 import { isVowel } from './types';

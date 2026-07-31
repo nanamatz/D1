@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-const reducedMotion = (): boolean =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { motionOff as reducedMotion } from '../motion';
 
 /**
  * A gold readout ($N) that floats a delta pop whenever the amount changes (item 3),
