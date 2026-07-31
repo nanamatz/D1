@@ -112,9 +112,10 @@ export function RunInfo({ run, blind, onClose }: Props) {
                       <strong>{t(`letterhand.${hand.id}`)}</strong>
                       <span>{richText(t(`letterhand.${hand.id}.desc`))}</span>
                     </span>
-                    <span className="ri-hand-score">
-                      <b className="chips">+{bonus.chips} {t('patternLevel.chips')}</b>
-                      <b className="mult">+{bonus.mult} {t('patternLevel.mult')}</b>
+                    <span className="ri-hand-score pcm">
+                      <b className="chips">+{bonus.chips}</b>
+                      <span className="times">×</span>
+                      <b className="mult">+{bonus.mult}</b>
                     </span>
                   </div>
                 );
@@ -149,6 +150,11 @@ export function RunInfo({ run, blind, onClose }: Props) {
                         <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
                         <span className="be">{richText(t(bossDescKey(boss.id)))}</span>
                       </div>
+                    )}
+                    {status === 'skipped' && (
+                      <span className="bs-skipped-stamp" aria-hidden>
+                        {t('blindselect.skipped')}
+                      </span>
                     )}
                     <div className="bs-target">
                       <span className="label">{t('sidebar.target')}</span>

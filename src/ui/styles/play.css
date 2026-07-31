@@ -3051,6 +3051,8 @@
 }
 .tile.draggable {
   cursor: grab;
+  touch-action: none;
+  user-select: none;
 }
 .tile.draggable:active {
   cursor: grabbing;
@@ -3780,6 +3782,32 @@
   bottom: 4px;
   border-left: 3px dashed var(--gold);
   pointer-events: none;
+}
+.drag-origin {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 3px dashed color-mix(in srgb, var(--gold) 74%, var(--ink));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+  pointer-events: none;
+}
+.hand.drag-over,
+.staged.drag-over {
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 58%, transparent);
+  background: color-mix(in srgb, var(--gold) 7%, transparent);
+}
+.hand.drop-append::after,
+.staged.drop-append::after {
+  content: '';
+  align-self: stretch;
+  min-height: 52px;
+  border-left: 3px dashed var(--gold);
+  pointer-events: none;
+}
+.drag-active .tile:not(.grabbed) {
+  transition: transform 0.18s cubic-bezier(.2, .8, .3, 1.2);
 }
 .actions {
   display: flex;

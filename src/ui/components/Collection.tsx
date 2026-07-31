@@ -345,7 +345,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
 
   // Item 1: list the WHOLE dictionary, not just what's been played — words never
   // played render `locked` (dimmed) so the collection reads as something to fill in.
-  // Built once per lexicon (~30k entries): plain `<` beats localeCompare at this
+  // Built once per lexicon (~50k entries): plain `<` beats localeCompare at this
   // size, and the collection is read once rather than per word.
   const all = useMemo(() => {
     return [...lexicon.words()]
@@ -358,7 +358,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
   }, [lexicon, collected, allWordsUnlocked]);
 
   // Search + suit filter. With the whole dictionary listed, search is the only
-  // practical way to reach a specific word (~500 pages otherwise).
+  // practical way to reach a specific word (800+ pages otherwise).
   const words = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q && suit === 'all') return all;
@@ -425,6 +425,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
           </button>
         ))}
       </div>
+      <div className="word-tab-panel">
       {tab === 'registers' ? (
         <div className="register-score-view">
           <p>{t('collection.register.intro')}</p>
@@ -487,6 +488,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
           <Pager page={clamped} pages={pages} onPage={setPage} />
         </>
       )}
+      </div>
     </>
   );
 }

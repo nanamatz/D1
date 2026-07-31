@@ -220,7 +220,6 @@ export type SkipRewardId =
   | 'houseStyle'
   | 'extraPages'
   | 'copyPass'
-  | 'leadStory'
   | 'quotaRelief'
   | 'publicity'
   | 'coverQuote'

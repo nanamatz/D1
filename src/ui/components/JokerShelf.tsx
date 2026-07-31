@@ -54,6 +54,7 @@ function JokerPop({
 
 interface Props {
   run: RunState;
+  pouchRemaining: number;
   onUseConsumable?: (id: ConsumableId) => void;
   canUseConsumable?: (id: ConsumableId) => boolean;
   onSellConsumable?: (index: number) => void;
@@ -70,6 +71,7 @@ interface Props {
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
 export function JokerShelf({
   run,
+  pouchRemaining,
   onUseConsumable,
   canUseConsumable,
   onSellConsumable,
@@ -166,7 +168,7 @@ export function JokerShelf({
                     : tip.body}
                   {...(!jokersFaceDown
                     ? {
-                        extra: grownValue(def, owned, t),
+                        extra: grownValue(def, owned, t, pouchRemaining),
                         rarity: def.rarity,
                         tags: tip.tags,
                         sub: tip.sub,

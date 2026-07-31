@@ -181,7 +181,7 @@ export const BALANCE = {
   },
 
   // ----- Blind skip rewards (GDD §8.2) -----
-  // Twenty-seven equally likely publishing-world rewards. Draft and Revision may be
+  // Twenty-six equally likely publishing-world rewards. Draft and Revision may be
   // skipped; Deadline never may. Delayed blind bonuses carry across another
   // skip so the player always receives them on the next stage they actually play.
   skipRewards: {
@@ -189,7 +189,6 @@ export const BALANCE = {
     patternLevels: 1,
     phases: 1,
     discards: 1,
-    handSize: 2,
     targetMultiplier: 0.85,
     clearReward: 5,
     startingScore: 75,

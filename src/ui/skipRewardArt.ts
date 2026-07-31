@@ -3,7 +3,6 @@ import advancePayment from './assets/skip-rewards/advance-payment.png';
 import houseStyle from './assets/skip-rewards/house-style.png';
 import extraPages from './assets/skip-rewards/extra-pages.png';
 import copyPass from './assets/skip-rewards/copy-pass.png';
-import leadStory from './assets/skip-rewards/lead-story.png';
 import quotaRelief from './assets/skip-rewards/quota-relief.png';
 import publicity from './assets/skip-rewards/publicity.png';
 import coverQuote from './assets/skip-rewards/cover-quote.png';
@@ -33,7 +32,6 @@ export const SKIP_REWARD_ART: Record<SkipRewardId, string> = {
   houseStyle,
   extraPages,
   copyPass,
-  leadStory,
   quotaRelief,
   publicity,
   coverQuote,

@@ -171,8 +171,19 @@ export function StagePanel({
   //       controller owns pointer motion via a rAF loop + GPU transforms; React state
   //       changes only on drop. -----
   const dragCb: StageDragCallbacks = {
-    stage: (id) => { audio.play('tilePlace'); g.toggleTile(id); },
-    unstage: (id) => { audio.play('tilePick'); g.toggleTile(id); },
+    stage: (id, toId) => {
+      audio.play('tilePlace');
+      g.toggleTile(id);
+      if (toId) g.reorderStaged(id, toId);
+    },
+    unstage: (id, toId) => {
+      audio.play('tilePick');
+      const ids = [...hand.map((tile) => tile.id), id];
+      const next = reorderIds(ids, id, toId);
+      g.toggleTile(id);
+      setSortMode('manual');
+      g.reorderHand(next);
+    },
     reorderHand: (fromId, toId) => {
       const ids = hand.map((tile) => tile.id);
       const next = reorderIds(ids, fromId, toId);

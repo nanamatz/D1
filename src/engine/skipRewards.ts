@@ -23,7 +23,6 @@ export const SKIP_REWARD_IDS: readonly SkipRewardId[] = [
   'houseStyle',
   'extraPages',
   'copyPass',
-  'leadStory',
   'quotaRelief',
   'publicity',
   'coverQuote',
@@ -47,6 +46,45 @@ export const SKIP_REWARD_IDS: readonly SkipRewardId[] = [
   'jugglerTag',
   'economyTag',
 ];
+
+/** Rewards whose effect resolves as part of the skip itself, not at a later blind/shop event. */
+export const IMMEDIATE_SKIP_REWARD_IDS = [
+  'advancePayment',
+  'houseStyle',
+  'bossTag',
+  'tileTag',
+  'fableTag',
+  'constellationTag',
+  'charmTag',
+  'handyTag',
+  'garbageTag',
+  'inkTag',
+  'economyTag',
+] as const satisfies readonly SkipRewardId[];
+
+const IMMEDIATE_SKIP_REWARDS = new Set<SkipRewardId>(IMMEDIATE_SKIP_REWARD_IDS);
+
+export function isImmediateSkipReward(id: SkipRewardId): boolean {
+  return IMMEDIATE_SKIP_REWARDS.has(id);
+}
+
+/** Rewards that remain represented by their Tag until a shop actually consumes them. */
+export const NEXT_SHOP_SKIP_REWARD_IDS = [
+  'uncommonTag',
+  'rareTag',
+  'whiteTag',
+  'violetTag',
+  'rainbowTag',
+  'grayTag',
+  'voucherTag',
+  'couponTag',
+] as const satisfies readonly SkipRewardId[];
+
+const NEXT_SHOP_SKIP_REWARDS = new Set<SkipRewardId>(NEXT_SHOP_SKIP_REWARD_IDS);
+
+export function isNextShopSkipReward(id: SkipRewardId): boolean {
+  return NEXT_SHOP_SKIP_REWARDS.has(id);
+}
 
 export const EMPTY_NEXT_BLIND_BONUS: NextBlindBonus = {
   phases: 0,
@@ -145,9 +183,6 @@ export function skipCurrentBlind(run: RunState, rng: Rng): SkipRewardResult {
       break;
     case 'copyPass':
       next = withBlindBonus(next, { discards: BALANCE.skipRewards.discards });
-      break;
-    case 'leadStory':
-      next = withBlindBonus(next, { handSize: BALANCE.skipRewards.handSize });
       break;
     case 'quotaRelief':
       next = withBlindBonus(next, { targetMultiplier: BALANCE.skipRewards.targetMultiplier });

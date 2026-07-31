@@ -7,18 +7,62 @@ import { newRun } from '../src/engine/run';
 import type { RunState } from '../src/engine/types';
 import {
   consumeNextBlindBonus,
+  IMMEDIATE_SKIP_REWARD_IDS,
+  isImmediateSkipReward,
+  isNextShopSkipReward,
+  NEXT_SHOP_SKIP_REWARD_IDS,
   rollSkipOffers,
   SKIP_REWARD_IDS,
   skipCurrentBlind,
 } from '../src/engine/skipRewards';
 
 describe('blind skip rewards', () => {
-  it('rolls two reproducible offers from the twenty-seven-entry uniform pool', () => {
+  it('rolls two reproducible offers from the twenty-six-entry uniform pool', () => {
     const run = newRun('skip-roll');
-    expect(new Set(SKIP_REWARD_IDS).size).toBe(27);
+    expect(new Set(SKIP_REWARD_IDS).size).toBe(26);
+    expect(SKIP_REWARD_IDS).not.toContain('leadStory');
     expect(rollSkipOffers(run, makeRng('offers'))).toEqual(
       rollSkipOffers(run, makeRng('offers')),
     );
+  });
+
+  it('classifies skip-time rewards for the auto-redemption sequence', () => {
+    expect(IMMEDIATE_SKIP_REWARD_IDS).toEqual([
+      'advancePayment',
+      'houseStyle',
+      'bossTag',
+      'tileTag',
+      'fableTag',
+      'constellationTag',
+      'charmTag',
+      'handyTag',
+      'garbageTag',
+      'inkTag',
+      'economyTag',
+    ]);
+    for (const id of SKIP_REWARD_IDS) {
+      expect(isImmediateSkipReward(id), id).toBe(IMMEDIATE_SKIP_REWARD_IDS.includes(
+        id as (typeof IMMEDIATE_SKIP_REWARD_IDS)[number],
+      ));
+    }
+  });
+
+  it('classifies Tags that wait until a shop actually consumes them', () => {
+    expect(NEXT_SHOP_SKIP_REWARD_IDS).toEqual([
+      'uncommonTag',
+      'rareTag',
+      'whiteTag',
+      'violetTag',
+      'rainbowTag',
+      'grayTag',
+      'voucherTag',
+      'couponTag',
+    ]);
+    for (const id of SKIP_REWARD_IDS) {
+      expect(isNextShopSkipReward(id), id).toBe(NEXT_SHOP_SKIP_REWARD_IDS.includes(
+        id as (typeof NEXT_SHOP_SKIP_REWARD_IDS)[number],
+      ));
+    }
   });
 
   it('skips Draft without payout or shop and grants the disclosed reward', () => {

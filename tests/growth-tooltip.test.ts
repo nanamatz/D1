@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { stargazer } from '../src/engine/jokers/stargazer';
+import { pouchTag } from '../src/engine/jokers/pouchTag';
 import { rhymeChain } from '../src/engine/jokers/rhymeChain';
 import { grownValue } from '../src/ui/descriptions';
 import { resolve, type Lang } from '../src/ui/i18n';
@@ -29,5 +30,12 @@ describe('scaling Emoji Tile tooltip value', () => {
     };
     expect(grownValue(chipsGrowth, undefined, t('ko')))
       .toBe('(현재 [c:+0] 칩)');
+  });
+
+  it('shows Pouch Tag Chips from the live remaining-tile count', () => {
+    expect(grownValue(pouchTag, undefined, t('ko'), 17))
+      .toBe('(현재 [c:+12] 칩)');
+    expect(grownValue(pouchTag, undefined, t('en'), 4))
+      .toBe('(Currently [c:+0] Chips)');
   });
 });

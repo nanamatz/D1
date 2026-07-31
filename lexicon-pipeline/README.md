@@ -33,11 +33,11 @@ guessed POS / default-standard to real LLM tagging.
 
 1. Provide a curated word list (frequency-topped, one lowercase word per line) at `data/curated.txt`.
    - Source it from an open list (ENABLE etc.) intersected with a frequency list (SUBTLEX-US/COCA),
-     cut to the top ~20–30k. This same list is the game's validity `Set`, so the two stay in sync.
+     cut to ~50k. Use the game's validity list as this input so a completed full batch tags the same pool.
 2. `export ANTHROPIC_API_KEY=sk-ant-...`
 3. `node classify.mjs --words data/curated.txt --out data/lexicon.json --model claude-haiku-4-5-20251001`
    - Optional: `--limit 3000` (test on a slice), `--batch 100`.
-   - Cost estimate at Haiku 4.5 rates (~$1/$5 per MTok): roughly **$5–7 for 30k words** at
+   - Cost estimate at Haiku 4.5 rates (~$1/$5 per MTok): roughly **$8–12 for 50k words** at
      standard rates, or about half that using Anthropic's Batch API if you adapt the script
      to it. Sonnet-tier models cost several times more for the same job with no accuracy
      benefit for a tagging task like this — Haiku is the right tier here.
@@ -46,7 +46,7 @@ guessed POS / default-standard to real LLM tagging.
 
 ## Cost & tuning
 
-- ~20–30k words at batch 100 ≈ 200–300 API calls, temperature 0. Cheap; run once per word-list change.
+- ~50k words at batch 100 ≈ 500 API calls, temperature 0. Cheap; run once per word-list change.
 - The prompt tells the model Standard is the default and to only surface formal/slang/vulgar,
   which keeps it conservative and cheap. Seeds act as the ground-truth anchor.
 

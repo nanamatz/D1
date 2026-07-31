@@ -10,7 +10,7 @@ Version 0.2 — systems expansion
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
-- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 27 Editorial Perks now ship (§8.2, expanded 2026-07-31).
+- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 26 Editorial Perks now ship (§8.2, changed 2026-07-31; Lead Story retired).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
 - Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 artworks; 12 effects implemented 2026-07-30, 2 deliberately pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
@@ -286,7 +286,7 @@ A "clean English word set with register labels" does not exist. So this is a pro
 - **Separate validity (layer 1) from suit (layer 2).** Valid-word judgment is solved via an open word-list HashSet (ENABLE/TWL, etc.). Suit lookup is a separate table above it.
 - **Sources differ per suit.** Vulgar = public profanity filter lists (LDNOOBW, etc.; easy) · Formal = Academic Word List (AWL) seed + low-frequency/Latinate signals (medium) · Slang = Wiktionary usage-label parsing ((slang)/(informal), etc.; hard).
 - **Fill gaps with offline LLM batch.** Run the curated list through an LLM once during development to classify, cross-validating against the seed lists. Bake the result into a table rather than doing it at runtime.
-- **Do not use the entire dictionary.** Curate the top 10k–30k words by frequency. Words players recognize give higher satisfaction and keep the classification volume manageable (frequency: SUBTLEX-US, COCA, etc.).
+- **Do not use the entire dictionary.** Curate a 50k pool by frequency, including explicit tile-grammar exceptions. The 2026-08-01 expansion from 30k improves valid-word coverage while retaining a recognizable frequency cutoff (frequency: SUBTLEX-US, COCA, etc.).
 - **Inflected forms are IN; tag at the lemma (playtest-01 P0).** Plurals, past tense, -ing, and comparatives all validate (Scrabble convention — ENABLE already contains them; do not lemmatize them away). Suit + POS are tagged at the *lemma* and inherited by inflections via rule-based reduction (-s/-es/-ies/-ed/-ing/-er/-est) plus a small irregular table (ran→run, ate→eat…). Untagged words still default to Standard.
 
 > **Must-decide rule — "one word = one suit" resolution.** Register attaches to a *meaning*, not a word (e.g. "sick" = Standard "ill" + Slang "cool"). A game tile must have a single suit, so a resolution rule is needed. Recommended: "adopt the strongest register" (if any Slang/Vulgar sense exists, use that suit) — simple, clear, and reliably filters risky words.
@@ -425,7 +425,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +60 Chips, +4 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **In-game reference (added 2026-07-31).** Run Info → Letter Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility.
+- **In-game reference (changed 2026-08-01).** Run Info → Letter Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. Its bonuses use the same one-line coloured `Chips × Mult` axis readout as Sentence Patterns; the leading `+` remains because Letter Hands add to the word's axes rather than forming a self-contained product.
 - **Out of scope (for now):** leveling Letter Hands (Constellation Cards level
   sentence patterns only) and dedicated Emoji Tiles keyed to Letter Hands—see
   §12.4.
@@ -578,7 +578,7 @@ Phase/Discard rewards, interest, word/pattern and Emoji Tile growth triggers, Fe
 Settlement, and the following Stationery Shop visit. The Chapter and scheduled
 Deadline boss do not change.
 
-Each Chapter rolls one seeded offer for Draft and one for Revision. The 27
+Each Chapter rolls one seeded offer for Draft and one for Revision. The 26
 rewards below are independently and uniformly selected, so duplicates are valid.
 The complete reward—including House Style's exact pattern—is disclosed on Blind
 Select before the player chooses. There is no post-choice failure roll and no
@@ -590,7 +590,6 @@ Chapter gating in this first balance slice.
 | House Style · 편집 지침 | Raise the disclosed sentence pattern by **1 level** immediately |
 | Extra Pages · 증면 | The next blind actually played gets **+1 Phase** |
 | Copy Pass · 교정 패스 | The next blind actually played gets **+1 Discard** |
-| Lead Story · 표지 기사 | The next blind actually played draws **+2 opening tiles** |
 | Quota Relief · 할당량 완화 | The next blind actually played has a **15% lower target** |
 | Publicity Deal · 홍보 계약 | Add **$5** to the next successfully collected blind-clear reward |
 | Cover Quote · 추천사 | The next blind actually played starts with **75 committed score** |
@@ -617,13 +616,25 @@ Chapter gating in this first balance slice.
 Next-blind effects stack and survive another skip; they are consumed only when
 the player selects Play. Publicity, Investment, and next-shop effects persist
 until their named successful resolution. An edition tag waits through a stock
-roll with no base-edition Emoji Tile and may resolve on a reroll. Free pack tags
-open **before** the next blind is constructed, so every pouch mutation is present
-when that blind draws. `src/engine/skipRewards.ts` is the headless source of truth,
+roll with no base-edition Emoji Tile and may resolve on a reroll. Shop-facing Tag
+icons remain visible through the played blind and Fee Settlement. They burst away
+on the Shop screen only when `applyPendingShopTags` returns them in `appliedTags`;
+an unresolved Tag stays visible and may redeem on a later reroll/shop. Rewards classified
+by `isImmediateSkipReward` are first presented as an acquired Tag, then auto-activate
+and burst away; only after that sequence completes does the existing skip-reward
+path mutate the run. Free-pack Tags enter the ordinary Pack Opening flow after the
+burst and still resolve **before** the next blind is constructed, so every pouch
+mutation is present when that blind draws. Reduced motion commits without the beat.
+`src/engine/skipRewards.ts` is the headless source of truth,
 all values live in `BALANCE.skipRewards`, and `RunState.skipOffers` persists the
 Chapter's disclosed offers for seeded reproducibility. *(Changed 2026-07-31:
-feedback expanded the original eight-entry publishing pool to 27 and added its
-Collection reference.)* The tuning target remains a 20–35% skip rate.
+feedback expanded the original eight-entry publishing pool, then retired Lead
+Story / 표지 기사 to leave 26 entries, and added its Collection reference.)* The
+uninterrupted chain of next-blind selected offers feeding the next actually played blind is
+derived from `skippedThisChapter`: up to two Tag icons wait at the lower-right
+table edge, then flash `Tag Applied` and burst away as Play enters that blind.
+They do not reappear on later screens; the source card's Tag remains non-interactive.
+The tuning target remains a 20–35% skip rate.
 
 ### 8.3 Boss Pool — Design Principles & 12 Bosses
 
@@ -1063,6 +1074,11 @@ after a generic pixel-icon interpretation drifted from the intended look.)
 Every surface applies the shared idle motion and cursor-following
 tilt/sheen directly to that image.
 
+**Pouch Tag live disclosure (changed 2026-07-31).** Its tooltip appends the
+current payout as `(Currently +N Chips)` / `(현재 +N 칩)`. The value uses the
+same scoring helper as its hook: `blind.bag` during active/prepared blinds and
+the complete permanent `run.bag` in the Shop.
+
 ### 11.1 Roles by Rarity
 
 | Rarity | Role | Main layer |
@@ -1392,7 +1408,7 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 - **Value balancing across the board.** Emoji Tiles, patterns, Unison, vouchers,
   prices, target curves, Pouch effects, and Record penalties need simulation and
   playtest tuning without changing §12's confirmed identities.
-- **Blind skip & Editorial Perk balance.** The 27-entry uniform pool
+- **Blind skip & Editorial Perk balance.** The 26-entry uniform pool
   ships without timing gates. Measure the §8.2 target skip rate (20–35%) before
   adding early-Chapter exclusions, a chaining reward, or skip-synergy Emoji Tiles.
 - **Acronyms in the lexicon.** MVP/VIP-class abbreviations need a separate curated
@@ -1412,8 +1428,9 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   only; whether Letter Hands should ever level remains deferred.
 - **Touch long-press marking (playtest-03 F).** Right-click discard marking still
   needs a touch equivalent.
-- **Suit dataset batch (playtest-03 F).** The real 20–30k classification stays an
-  offline task; the baked loader format remains stable.
+- **Suit dataset batch (playtest-03 F).** The validity pool is 50k; suit/POS
+  classification beyond the existing tagged subset stays an offline task, and the
+  baked loader format remains stable.
 
 ---
 
@@ -1451,7 +1468,7 @@ that the selected profile saw the warning. A later press fills that profile's
 word Collection, Palette/audio/mascot registry, Starting Pouch wins, Record wins,
 and upgraded-voucher registry, and marks Challenges disabled for that profile.
 The word Collection uses the per-profile applied marker to present every
-dictionary entry as discovered; it does not fabricate 30,000 play-count or score
+dictionary entry as discovered; it does not fabricate 50,000 play-count or score
 records.
 The operation is permanently isolated to the selected profile slot and never
 changes another slot.

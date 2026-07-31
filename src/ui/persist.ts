@@ -25,7 +25,7 @@ const KEY = 'wj.run';
  * Bump whenever GameState's shape changes. Mismatched saves are DISCARDED, not
  * migrated — a stale save that half-fits is worse than a fresh run.
  */
-const VERSION = 9;
+const VERSION = 10;
 
 interface Envelope {
   version: number;
@@ -44,6 +44,7 @@ function atRest(state: GameState): GameState {
     selected: state.blind.forcedTileId ? [state.blind.forcedTileId] : [],
     message: null,
     hint: null,
+    shopTagRedemptions: [],
     lastPlayed: null,
     lastEvents: [],
     bossDiscard: null,
@@ -88,6 +89,7 @@ export function loadRun(): GameState | null {
   // Tile is then a data change, not a save-version bump that discards the run.
   return {
     ...s,
+    shopTagRedemptions: s.shopTagRedemptions ?? [],
     run: {
       ...s.run,
       jokers: s.run.jokers.filter((joker) => JOKER_REGISTRY.has(joker.defId)),

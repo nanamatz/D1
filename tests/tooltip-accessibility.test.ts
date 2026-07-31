@@ -47,7 +47,7 @@ describe('shared tooltip accessibility', () => {
     expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*right:\s*calc\(100% \+ 4px\)/s);
     expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*width:\s*64%/s);
     expect(css).toMatch(/\.tt-enhancement-tag[\s\S]*width:\s*var\(--tt-tag-w\)/);
-    expect(tokens).toContain('--tt-min-w: 210px');
+    expect(tokens).toContain('--tt-min-w: 150px');
     expect(tokens).toContain('--tt-w: 280px');
     expect(tokens).toContain('--tt-tag-w: 72%');
     expect(tokens).toContain("--tt-copy-font: 'Jost', 'Noto Sans KR', sans-serif");

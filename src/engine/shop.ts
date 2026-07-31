@@ -222,6 +222,8 @@ export function rollShopStock(run: RunState, rng: Rng): ShopState {
 export interface PreparedShop {
   run: RunState;
   shop: ShopState;
+  /** Pending Tags whose effects actually resolved against this stock. */
+  appliedTags: SkipRewardId[];
 }
 
 /** Apply every pending shop tag that can resolve against this stock. */
@@ -232,7 +234,7 @@ export function applyPendingShopTags(
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
 ): PreparedShop {
   const tags = run.pendingShopTags ?? [];
-  if (tags.length === 0) return { run, shop };
+  if (tags.length === 0) return { run, shop, appliedTags: [] };
 
   let items = shop.items.slice();
   let packs = shop.packs.slice();
@@ -302,6 +304,7 @@ export function applyPendingShopTags(
       pendingShopTags: tags.filter((_, index) => !consumed.has(index)),
     },
     shop: { ...shop, items, packs, bonusVoucher },
+    appliedTags: tags.filter((_, index) => consumed.has(index)),
   };
 }
 
@@ -318,6 +321,8 @@ export interface BuyResult {
   run: RunState;
   shop: ShopState;
   ok: boolean;
+  /** Present on rerolls when waiting shop Tags resolve against the new stock. */
+  appliedTags?: SkipRewardId[];
 }
 
 /** Buy the item in slot `index`, respecting gold and joker/consumable slot caps. */

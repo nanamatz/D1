@@ -89,6 +89,28 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.shelf-group\s*\{[^}]*height:\s*187px;/s);
   });
 
+  it('keeps both Words collection tabs in one fixed-height content slot', () => {
+    const collection = source('src/ui/components/Collection.tsx');
+    const screens = source('src/ui/styles/screens.css');
+    expect(collection).toContain('className="word-tab-panel"');
+    expect(screens).toMatch(/\.word-tab-panel\s*\{[^}]*height:\s*300px;[^}]*overflow-y:\s*auto;/s);
+  });
+
+  it('animates only the Main Menu title and disables it for reduced motion', () => {
+    const screens = source('src/ui/styles/screens.css');
+    expect(screens).toMatch(/\.menu \.logotype\s*\{[^}]*animation:\s*menu-title-float/s);
+    expect(screens).toMatch(/\.menu \.lt-bang\s*\{[^}]*animation:\s*menu-title-bang/s);
+    expect(screens).toMatch(/prefers-reduced-motion:[^}]+\)[\s\S]*\.menu \.logotype,[\s\S]*\.menu \.lt-bang\s*\{\s*animation:\s*none;/s);
+  });
+
+  it('maps each Main Menu action to its chromatic unlock group', () => {
+    const screens = source('src/ui/styles/screens.css');
+    expect(screens).toMatch(/\.menu-play\s*\{\s*background:\s*var\(--chips\)/);
+    expect(screens).toMatch(/\.menu-options\s*\{\s*background:\s*var\(--gold\)/);
+    expect(screens).toMatch(/\.menu-collection\s*\{\s*background:\s*var\(--btn-green\)/);
+    expect(screens).toMatch(/\.menu-quit\s*\{\s*background:\s*var\(--mult\)/);
+  });
+
   it('shares the sidebar surface with both shelves and bottom-aligns the shop', () => {
     expect(play).toMatch(/\.sidebar\s*\{[^}]*background:\s*var\(--rail-surface\)/s);
     expect(play).toMatch(/\.shelf-group\s*\{[^}]*background:\s*var\(--rail-surface\)/s);

@@ -141,6 +141,11 @@ describe('richText — pack highlight tags', () => {
   it('leaves untagged prose untouched', () => {
     expect(richText('plain copy')).toEqual(['plain copy']);
   });
+
+  it('keeps every highlighted tooltip phrase on one line as an atomic unit', () => {
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(css).toMatch(/\.tt-body \[class\^='hl-'\][^{]*\{[^}]*white-space:\s*nowrap/s);
+  });
 });
 
 describe('effect-description markup', () => {

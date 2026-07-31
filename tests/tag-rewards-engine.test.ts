@@ -149,6 +149,7 @@ describe('new blind-skip tags: next-shop effects', () => {
     if (!offered || offered.kind !== 'joker') throw new Error('missing tagged Emoji Tile');
     expect(JOKER_REGISTRY.get(offered.id)?.rarity).toBe(rarity as JokerRarity);
     expect(prepared.run.pendingShopTags).toEqual([]);
+    expect(prepared.appliedTags).toEqual([tag]);
   });
 
   it('keeps appended rarity-tag offers while rerolling ordinary stock', () => {
@@ -195,6 +196,7 @@ describe('new blind-skip tags: next-shop effects', () => {
       price: 0,
     });
     expect(prepared.run.pendingShopTags).toEqual([]);
+    expect(prepared.appliedTags).toEqual([tag]);
   });
 
   it('keeps an edition tag pending when the shop has no base-edition Emoji Tile', () => {
@@ -202,6 +204,7 @@ describe('new blind-skip tags: next-shop effects', () => {
     const prepared = applyPendingShopTags(run, emptyShop(), makeRng('edition-waits'));
 
     expect(prepared.run.pendingShopTags).toEqual(['whiteTag']);
+    expect(prepared.appliedTags).toEqual([]);
   });
 
   it('adds one bonus voucher choice while either purchase locks both choices', () => {
@@ -215,6 +218,7 @@ describe('new blind-skip tags: next-shop effects', () => {
     expect(prepared.shop.voucher).toBe('memo');
     expect(prepared.shop.bonusVoucher).not.toBeNull();
     expect(prepared.shop.bonusVoucher).not.toBe(prepared.shop.voucher);
+    expect(prepared.appliedTags).toEqual(['voucherTag']);
     const bought = buyVoucher(prepared.run, prepared.shop, 'bonus');
     expect(bought.ok).toBe(true);
     expect(bought.run.voucherLocked).toBe(true);
@@ -232,6 +236,7 @@ describe('new blind-skip tags: next-shop effects', () => {
     expect(lockedShop.shop.voucher).toBeNull();
     expect(lockedShop.shop.bonusVoucher).toBeNull();
     expect(lockedShop.run.pendingShopTags).toEqual(['voucherTag']);
+    expect(lockedShop.appliedTags).toEqual([]);
 
     const availableShop = prepareShop(
       { ...lockedShop.run, voucherLocked: false, voucherOffer: 'memo' },
@@ -240,6 +245,7 @@ describe('new blind-skip tags: next-shop effects', () => {
     expect(availableShop.shop.bonusVoucher).not.toBeNull();
     expect(availableShop.shop.bonusVoucher).not.toBe('memo');
     expect(availableShop.run.pendingShopTags).toEqual([]);
+    expect(availableShop.appliedTags).toEqual(['voucherTag']);
   });
 
   it('makes every initially stocked item and pack free with Coupon Tag', () => {
@@ -259,6 +265,7 @@ describe('new blind-skip tags: next-shop effects', () => {
     expect(prepared.shop.items.map((item) => item?.price)).toEqual([0, 0]);
     expect(prepared.shop.packs.map((pack) => pack?.free)).toEqual([true, true]);
     expect(prepared.run.pendingShopTags).toEqual([]);
+    expect(prepared.appliedTags).toEqual(['couponTag']);
   });
 });
 

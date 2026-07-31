@@ -407,7 +407,9 @@ export function PackOpening({
         body: tip.body,
         tags: tip.tags,
         sub: tip.sub,
-        extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
+        extra: def
+          ? grownValue(def, undefined, t, g.state.run.bag.length) ?? undefined
+          : undefined,
         rarity: def?.rarity,
       };
     }

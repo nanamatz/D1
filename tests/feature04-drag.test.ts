@@ -21,16 +21,30 @@ describe('feature-04 D — drag physics wiring', () => {
 
   it('the stage wires the spring-drag controller', () => {
     const stage = read('../src/ui/components/StagePanel.tsx');
+    const drag = read('../src/ui/drag.ts');
     expect(stage).toContain('useStageDrag(');
     expect(stage).not.toContain('onDragOver');
     expect(stage).not.toContain('onStageDrop');
+    expect(drag).toContain("container.classList.add('drag-over')");
+    expect(drag).toContain("container.classList.add('drop-append')");
+    expect(drag).toContain("origin.className = 'drag-origin'");
+    expect(drag).toContain("window.addEventListener('pointercancel', onPointerCancel)");
+  });
+
+  it('honours the shown insertion point when moving between hand and staged rows', () => {
+    const drag = read('../src/ui/drag.ts');
+    const stage = read('../src/ui/components/StagePanel.tsx');
+    expect(drag).toContain('cbRef.current.stage(id, insertBefore)');
+    expect(drag).toContain('cbRef.current.unstage(id, insertBefore)');
+    expect(stage).toContain('if (toId) g.reorderStaged(id, toId)');
+    expect(stage).toContain('const next = reorderIds(ids, id, toId)');
   });
 
   it('does not enable manual sort when a hand drop keeps the same order', () => {
     const stage = read('../src/ui/components/StagePanel.tsx');
     const noOpGuard = stage.indexOf('if (next.every((id, index) => id === ids[index])) return;');
     expect(noOpGuard).toBeGreaterThan(-1);
-    expect(stage.indexOf("setSortMode('manual');")).toBeGreaterThan(noOpGuard);
+    expect(stage.indexOf("setSortMode('manual');", noOpGuard)).toBeGreaterThan(noOpGuard);
   });
 
   it('the Emoji-Tile shelf uses the spring controller, not native DnD', () => {

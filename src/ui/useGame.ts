@@ -30,6 +30,7 @@ import type {
   ScoreEvent,
   SentenceBonusBreakdown,
   ShopState,
+  SkipRewardId,
   Tile,
 } from '../engine/types';
 import {
@@ -160,6 +161,8 @@ export interface GameState {
   hint: HintWord[] | null;
   /** shop stock while phase === 'shop', else null */
   shop: ShopState | null;
+  /** Shop Tags consumed by the latest stock roll; presentation clears them after the burst. */
+  shopTagRedemptions: SkipRewardId[];
   /** an open pack awaiting selection, else null */
   pack: { offer: PackOffer; picksLeft: number; candidateTiles: Tile[] } | null;
   /** A free skip-tag pack must finish before the next blind is drawn. */
@@ -354,6 +357,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     lastPlayed: null,
     hint: null,
     shop: null,
+    shopTagRedemptions: [],
     pack: null,
     pendingBlindAfterPack: false,
     cashout: null,
@@ -390,6 +394,7 @@ export interface UseGame {
   sell: (index: number) => void;
   reroll: () => void;
   leaveShop: () => void;
+  clearShopTagRedemptions: () => void;
   buyVoucher: (slot?: 'base' | 'bonus') => void;
   rerollBoss: () => void;
   buyPack: (index: number) => void;
@@ -624,6 +629,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           cashout: outcome.earned,
           pendingRun: advancedRun,
           shop,
+          shopTagRedemptions: preparedShop.appliedTags,
           gameover: {
             finalScore: roundedFinal,
             target: s.blind.target,
@@ -650,6 +656,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         cashout: outcome.earned,
         pendingRun: advancedRun,
         shop,
+        shopTagRedemptions: preparedShop.appliedTags,
         selected: [],
         hint: null,
         message: null,
@@ -707,10 +714,17 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         ...prev,
         run: res.run,
         shop: res.shop,
+        shopTagRedemptions: res.appliedTags ?? [],
         rngCounter: prev.rngCounter + 1,
         stats: { ...prev.stats, rerollsUsed: prev.stats.rerollsUsed + 1 },
       };
     });
+  }, []);
+
+  const clearShopTagRedemptions = useCallback(() => {
+    setState((prev) => prev.shopTagRedemptions.length === 0
+      ? prev
+      : { ...prev, shopTagRedemptions: [] });
   }, []);
 
   const leaveShop = useCallback(() => {
@@ -723,6 +737,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         phase: 'blindselect',
         blind,
         shop: null,
+        shopTagRedemptions: [],
         selected: [],
         hint: null,
         message: null,
@@ -1695,6 +1710,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     sell,
     reroll,
     leaveShop,
+    clearShopTagRedemptions,
     buyVoucher: buyVoucherAction,
     rerollBoss,
     buyPack,

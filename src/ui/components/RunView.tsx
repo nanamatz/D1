@@ -15,7 +15,7 @@ import { SentenceTray } from './SentenceTray';
 import { StagePanel } from './StagePanel';
 import { Shop } from './Shop';
 import { CashOut } from './CashOut';
-import { BlindSelect } from './BlindSelect';
+import { BlindSelect, SkippedTagStack } from './BlindSelect';
 import { GameOver } from './GameOver';
 import { BagWidget } from './BagView';
 import { RunInfo } from './RunInfo';
@@ -209,6 +209,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <main className="main">
           <JokerShelf
             run={run}
+            pouchRemaining={phase === 'shop' ? run.bag.length : blind.bag.length}
             onUseConsumable={(id) => {
               if (fablePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 g.useHeldPackFable(id, packCandidateIds);
@@ -271,6 +272,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           </section>
         </main>
       </SettleProvider>
+      {!ending && <SkippedTagStack g={g} />}
       {!ending && (
         <BagWidget
           run={run}

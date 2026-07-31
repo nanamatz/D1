@@ -25,9 +25,7 @@ export function skipRewardParams(
     levels: BALANCE.skipRewards.patternLevels,
     phases: BALANCE.skipRewards.phases,
     discards: BALANCE.skipRewards.discards,
-    handSize: offer.id === 'jugglerTag'
-      ? BALANCE.skipRewards.jugglerHandSize
-      : BALANCE.skipRewards.handSize,
+    handSize: BALANCE.skipRewards.jugglerHandSize,
     percent: Math.round((1 - BALANCE.skipRewards.targetMultiplier) * 100),
     reward: offer.id === 'investmentTag'
       ? BALANCE.skipRewards.investmentReward

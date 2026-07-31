@@ -179,7 +179,9 @@ export function Shop({ g }: { g: UseGame }) {
         desc: tip.body,
         tags: tip.tags,
         sub: tip.sub,
-        extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
+        extra: def
+          ? grownValue(def, undefined, t, g.state.run.bag.length) ?? undefined
+          : undefined,
         rarity: def?.rarity,
         jokerArt: jokerArt(item.id),
       };

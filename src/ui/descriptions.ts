@@ -5,6 +5,7 @@
  */
 import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';
+import { pouchTagChips } from '../engine/jokers/pouchTag';
 import type {
   ConsumableId,
   JokerEdition,
@@ -116,7 +117,11 @@ export function grownValue(
   def: JokerDef,
   owned: OwnedJoker | undefined,
   t: Translate,
+  pouchRemaining?: number,
 ): string | null {
+  if (def.id === 'pouchTag' && pouchRemaining !== undefined) {
+    return t('joker.currentChips', { value: pouchTagChips(pouchRemaining) });
+  }
   const display = def.growthDisplay;
   if (!display) return null;
   const value = owned?.state[display.stateKey] ?? display.initial;

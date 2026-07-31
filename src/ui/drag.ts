@@ -29,9 +29,9 @@ function clearTilt(node: HTMLElement): void {
 
 export interface StageDragCallbacks {
   /** hand→staged (stage a tile) */
-  stage: (id: string) => void;
+  stage: (id: string, toId: string | null) => void;
   /** staged→hand (unstage) */
-  unstage: (id: string) => void;
+  unstage: (id: string, toId: string | null) => void;
   /** reorder within the hand: move `fromId` before `toId` (toId null = append) */
   reorderHand: (fromId: string, toId: string | null) => void;
   /** reorder within the staged row */
@@ -65,7 +65,6 @@ export function useStageDrag(
     if (!stage || !enabled) return;
 
     let raf = 0;
-    let lastY = 0;
     let dragging = false;
     let justDragged = false;
     let el: HTMLElement | null = null;
@@ -89,14 +88,19 @@ export function useStageDrag(
     // follow delta by this scale keeps the card pinned under the cursor instead of lagging.
     let scale = 1;
     let insertBefore: string | null = null;
+    let origin: HTMLElement | null = null;
 
     const zoneOf = (node: HTMLElement): 'hand' | 'staged' =>
       (node.dataset.zone as 'hand' | 'staged') ?? 'hand';
 
-    // Which zone the pointer Y is over (generous tray band, matching the old drop test).
-    const zoneAtY = (clientY: number): 'hand' | 'staged' => {
-      const r = stagedRef.current?.getBoundingClientRect();
-      return r && clientY <= r.bottom + 28 ? 'staged' : 'hand';
+    // Split the space halfway between both rows. Unlike the old unbounded Y test,
+    // dragging above the board or far below it still resolves to the nearest row.
+    const zoneAt = (clientY: number): 'hand' | 'staged' => {
+      const stagedRect = stagedRef.current?.getBoundingClientRect();
+      const handRect = handRef.current?.getBoundingClientRect();
+      if (!stagedRect) return 'hand';
+      if (!handRect) return 'staged';
+      return clientY < (stagedRect.bottom + handRect.top) / 2 ? 'staged' : 'hand';
     };
 
     // The tile the cursor is BEFORE within a zone (null → append past the last).
@@ -108,6 +112,44 @@ export function useStageDrag(
         if (clientX < r.left + r.width / 2) return c.dataset.tileId ?? null;
       }
       return null;
+    };
+
+    const clearDropVisuals = () => {
+      for (const container of [handRef.current, stagedRef.current]) {
+        if (!container) continue;
+        container.classList.remove('drag-over', 'drop-append');
+        for (const tile of container.querySelectorAll<HTMLElement>('.drop-target')) {
+          tile.classList.remove('drop-target');
+        }
+      }
+    };
+
+    const showDropVisuals = (dropZone: 'hand' | 'staged') => {
+      clearDropVisuals();
+      const container = dropZone === 'staged' ? stagedRef.current : handRef.current;
+      if (!container) return;
+      container.classList.add('drag-over');
+      const target = insertBefore
+        ? container.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(insertBefore)}"]`)
+        : null;
+      if (target) target.classList.add('drop-target');
+      else container.classList.add('drop-append');
+    };
+
+    const showOrigin = () => {
+      if (!el || origin) return;
+      const stageRect = stage.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      origin = document.createElement('span');
+      origin.className = 'drag-origin';
+      origin.setAttribute('aria-hidden', 'true');
+      Object.assign(origin.style, {
+        left: `${(rect.left - stageRect.left) / scale}px`,
+        top: `${(rect.top - stageRect.top) / scale}px`,
+        width: `${el.offsetWidth}px`,
+        height: `${el.offsetHeight}px`,
+      });
+      stage.append(origin);
     };
 
     // Spring siblings aside to open the gap at the current insertion point (transform
@@ -124,6 +166,7 @@ export function useStageDrag(
         c.style.transform = shift ? `translateX(${shift}px)` : '';
         c.style.transition = 'transform 0.18s cubic-bezier(.2,.8,.3,1.2)';
       }
+      showDropVisuals(dropZone);
     };
 
     const clearNeighbours = () => {
@@ -135,6 +178,7 @@ export function useStageDrag(
           c.style.transition = '';
         }
       }
+      clearDropVisuals();
     };
 
     const tick = () => {
@@ -186,6 +230,8 @@ export function useStageDrag(
         dragging = true;
         try { el.setPointerCapture(pointerId); } catch { /* ignore */ }
         el.classList.add('grabbed');
+        stage.classList.add('drag-active');
+        showOrigin();
         cbRef.current.playGrab?.();
         if (reduced()) {
           // No spring — the card just tracks the pointer via a plain transform.
@@ -198,28 +244,46 @@ export function useStageDrag(
       if (reduced() && el) {
         el.style.transform = `translate(${(targetX - homeX) / scale}px, ${(targetY - homeY) / scale}px)`;
       }
-      layoutNeighbours(zoneAtY(e.clientY), e.clientX);
+      layoutNeighbours(zoneAt(e.clientY), e.clientX);
     };
 
-    const finishDrop = () => {
+    const finishDrop = (clientY: number) => {
       if (!el) return;
-      const dropZone = zoneAtY(lastY);
+      const dropZone = zoneAt(clientY);
       const id = el.dataset.tileId!;
       clearNeighbours();
-      // Commit the reorder/stage change to React (the single state update).
+      // Commit only after release; pointer motion itself never updates React state.
       if (dropZone === 'staged') {
-        if (zone === 'hand') cbRef.current.stage(id);
+        if (zone === 'hand') cbRef.current.stage(id, insertBefore);
         else if (insertBefore !== id) cbRef.current.reorderStaged(id, insertBefore);
       } else {
-        if (zone === 'staged') cbRef.current.unstage(id);
+        if (zone === 'staged') cbRef.current.unstage(id, insertBefore);
         else if (insertBefore !== id) cbRef.current.reorderHand(id, insertBefore);
       }
       cbRef.current.playDrop?.();
     };
 
+    const resetDrag = () => {
+      if (!el) return;
+      const node = el;
+      try { node.releasePointerCapture(pointerId); } catch { /* ignore */ }
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      clearNeighbours();
+      origin?.remove();
+      origin = null;
+      stage.classList.remove('drag-active');
+      node.classList.remove('grabbed');
+      clearTilt(node);
+      node.style.removeProperty('transform');
+      node.style.transition = '';
+      dragging = false;
+      el = null;
+      pointerId = -1;
+      insertBefore = null;
+    };
+
     const onPointerUp = (e: PointerEvent) => {
       if (!el || e.pointerId !== pointerId) return;
-      lastY = e.clientY;
       const wasDragging = dragging;
       if (wasDragging) {
         // A real drag doesn't fire a click in most browsers, but pointer capture can
@@ -227,23 +291,20 @@ export function useStageDrag(
         // normal clicks (tap-to-select) through again.
         justDragged = true;
         window.setTimeout(() => { justDragged = false; }, 60);
-        finishDrop();
+        finishDrop(e.clientY);
         // Settle: clear our (important) transform + tilt state and hand the card to its
         // new slot. `.dropping` makes useFlip SKIP it (so it doesn't teleport back to the
         // old slot and fly across) and plays a small settle-pop; neighbours FLIP normally.
         const node = el;
-        node.classList.remove('grabbed');
-        clearTilt(node);
         node.classList.add('dropping');
-        node.style.removeProperty('transform');
-        node.style.transition = '';
         window.setTimeout(() => node.classList.remove('dropping'), 300);
       }
-      try { el.releasePointerCapture(pointerId); } catch { /* ignore */ }
-      if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      dragging = false;
-      el = null;
-      pointerId = -1;
+      resetDrag();
+    };
+
+    const onPointerCancel = (e: PointerEvent) => {
+      if (!el || e.pointerId !== pointerId) return;
+      resetDrag();
     };
 
     // Swallow the click that follows a real drag so it doesn't also toggle selection.
@@ -258,13 +319,15 @@ export function useStageDrag(
     stage.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
     stage.addEventListener('click', onClickCapture, true);
     return () => {
       stage.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
       stage.removeEventListener('click', onClickCapture, true);
-      if (raf) cancelAnimationFrame(raf);
+      resetDrag();
     };
     // cb is read through cbRef so it is intentionally not a dependency (re-attaching
     // the pointer listeners every render would drop an in-flight drag).

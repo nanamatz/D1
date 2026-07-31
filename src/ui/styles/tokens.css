@@ -94,7 +94,7 @@
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
-  /* Reference tooltip proportions: main cards scale from 210–280px, supplemental
+  /* Content-sized tooltip proportions: main cards scale from 150–280px, supplemental
      cards occupy about 64% of the main width, and footer tags occupy 72%.
      Height remains content-driven so translated copy grows without distortion. */
   --tt-bg: #354246;
@@ -102,7 +102,7 @@
   --tt-edge: #b7eee5;
   --tt-copy-font: 'Jost', 'Noto Sans KR', sans-serif;
   --tt-r: 11px;
-  --tt-min-w: 210px;
+  --tt-min-w: 150px;
   --tt-w: 280px;
   --tt-sub-w: 180px;
   --tt-tag-w: 72%;

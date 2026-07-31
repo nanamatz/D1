@@ -11,6 +11,16 @@ describe('Run Info Letter Hands reference', () => {
     expect(source).toContain('LETTER_HAND_REGISTRY.map');
   });
 
+  it('uses the sentence-pattern Chips × Mult readout for hand bonuses', () => {
+    const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
+    const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(source).toContain('className="ri-hand-score pcm"');
+    expect(source).toContain('<b className="chips">+{bonus.chips}</b>');
+    expect(source).toContain('<span className="times">×</span>');
+    expect(source).toContain('<b className="mult">+{bonus.mult}</b>');
+    expect(styles).toMatch(/\.ri-pat \.pcm,\s*\.ri-hand \.pcm\s*\{/);
+  });
+
   it('provides both-locale condition copy for every registered hand', () => {
     for (const { id } of LETTER_HAND_REGISTRY) {
       expect(en).toHaveProperty(`letterhand.${id}.desc`);

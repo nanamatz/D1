@@ -190,6 +190,12 @@
     -0.5px 0 rgba(226, 67, 132, .14),
     0.5px 0 rgba(27, 166, 158, .16);
 }
+/* Highlight markup marks one semantic value/name. Move the whole unit to the
+   next line instead of splitting combinations such as "+2 배수" or "+30 Chips". */
+.tt-body [class^='hl-'],
+.tt-body [class*=' hl-'] {
+  white-space: nowrap;
+}
 .tt-extra {
   font-family: var(--tt-copy-font);
   font-size: var(--fs-md);
@@ -778,23 +784,188 @@
   outline: 3px solid var(--ink);
   outline-offset: 2px;
 }
+.run-tag-stack {
+  position: fixed;
+  right: 28px;
+  bottom: calc(var(--dock-bottom) + 108px);
+  z-index: 44;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+.run-tag-stack > .tt-anchor {
+  width: 52px;
+  height: 52px;
+}
+.run-tag-icon {
+  cursor: help;
+}
+.run-tag-icon.tag-redeeming {
+  pointer-events: none;
+  animation: run-tag-redeem .72s steps(8, end) both;
+}
+.run-tag-stack > .tt-anchor:nth-child(2) .run-tag-icon.tag-redeeming {
+  animation-delay: .08s;
+}
+.run-tag-icon.tag-redeeming::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border: 4px solid var(--gold);
+  border-radius: 50%;
+  animation: run-tag-redeem-ring .48s steps(5, end) both;
+}
+.run-tag-redeem-label {
+  position: absolute;
+  right: 62px;
+  bottom: 12px;
+  width: max-content;
+  padding: 5px 9px;
+  color: var(--ink);
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, .5);
+  font-family: var(--ctl-font);
+  font-size: var(--ds-xs);
+  font-weight: 900;
+  animation: run-tag-redeem-label .72s steps(6, end) both;
+}
+.skip-tag-auto-redeem {
+  position: fixed;
+  right: 96px;
+  bottom: calc(var(--dock-bottom) + 108px);
+  z-index: 190;
+  width: 104px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 9px;
+  color: #fff;
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  border: 4px solid var(--gold);
+  border-radius: 7px;
+  box-shadow:
+    0 0 0 3px var(--ink),
+    8px 8px 0 rgba(0, 0, 0, .55),
+    0 0 24px color-mix(in srgb, var(--gold) 65%, transparent);
+  pointer-events: none;
+  animation: skip-tag-auto-redeem 1.05s steps(10, end) both;
+}
+.skip-tag-auto-redeem img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.skip-tag-auto-name,
+.skip-tag-auto-label {
+  text-align: center;
+  font-family: var(--ctl-font);
+  font-weight: 900;
+  line-height: 1.08;
+}
+.skip-tag-auto-name {
+  font-size: var(--ds-xs);
+}
+.skip-tag-auto-label {
+  color: var(--gold);
+  font-size: var(--ds-2xs);
+}
+@keyframes skip-tag-auto-redeem {
+  0% { opacity: 0; transform: translateY(30px) scale(.55); filter: brightness(1); }
+  18% { opacity: 1; transform: translateY(0) scale(1.14); filter: brightness(1); }
+  38% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  62% { opacity: 1; transform: scale(1.42) rotate(-7deg); filter: brightness(2.2); }
+  76% { opacity: 1; transform: scale(.95) rotate(7deg); filter: brightness(3); }
+  100% { opacity: 0; transform: translateY(-38px) scale(.12) rotate(20deg); filter: brightness(4); }
+}
+@keyframes run-tag-redeem {
+  0% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  35% { opacity: 1; transform: scale(1.35) rotate(-8deg); filter: brightness(1.8); }
+  65% { opacity: 1; transform: scale(.9) rotate(8deg); filter: brightness(2.4); }
+  100% { opacity: 0; transform: translateY(-32px) scale(.18) rotate(20deg); filter: brightness(3); }
+}
+@keyframes run-tag-redeem-ring {
+  from { opacity: 1; transform: scale(.45); }
+  to { opacity: 0; transform: scale(1.75); }
+}
+@keyframes run-tag-redeem-label {
+  0%, 20% { opacity: 0; transform: translateX(10px) scale(.8); }
+  35%, 70% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(.9); }
+}
 .bs-skip-tilt .btn {
   min-height: 44px;
 }
-.bs-skipped-stamp {
+.bs-card.skipped,
+.bs-card.auto-redeeming {
+  border-color: var(--mult);
+  box-shadow:
+    inset 0 0 0 4px color-mix(in srgb, var(--mult) 32%, transparent),
+    var(--shadow);
+}
+.bs-card.skipped::after,
+.bs-card.auto-redeeming::after {
+  content: '';
   position: absolute;
-  top: 132px;
-  left: 50%;
-  z-index: 3;
-  color: var(--ink);
-  font-family: var(--ctl-font);
-  font-size: var(--fs-2xl);
-  font-weight: 900;
-  white-space: nowrap;
-  text-shadow: 3px 3px 0 var(--mult), -2px -2px 0 var(--chips);
-  transform: translateX(-50%) rotate(-12deg);
+  inset: 7px;
+  z-index: 2;
+  border: 4px dashed color-mix(in srgb, var(--mult) 82%, var(--ink));
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 12px,
+    color-mix(in srgb, var(--mult) 14%, transparent) 12px 20px
+  );
   pointer-events: none;
 }
+.bs-card.skipped > :not(.bs-skipped-stamp),
+.bs-card.auto-redeeming > :not(.bs-skipped-stamp) {
+  opacity: .32;
+  filter: grayscale(.85);
+}
+.bs-card.skipped .bs-tag-icon {
+  cursor: default;
+  pointer-events: none;
+  filter: grayscale(1) brightness(.62);
+}
+.bs-card.auto-redeeming .bs-tag-icon {
+  visibility: hidden;
+}
+.bs-skipped-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  color: #fff;
+  background: var(--mult);
+  border: 3px solid var(--ink);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-family: var(--ctl-font);
+  font-size: var(--ds-xs);
+  font-weight: 900;
+  white-space: nowrap;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, .6);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, .52);
+  transform: translate(-50%, -50%) rotate(-12deg);
+  animation: bs-skipped-stamp-in .34s steps(4, end) both;
+  pointer-events: none;
+}
+@keyframes bs-skipped-stamp-in {
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(-20deg) scale(1.7); }
+  to { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-skipped-stamp { animation: none; }
+  .skip-tag-auto-redeem { animation: none; }
+  .run-tag-icon.tag-redeeming,
+  .run-tag-redeem-label { animation: none; opacity: 0; }
+}
+.force-reduced-motion .bs-skipped-stamp { animation: none; }
+.force-reduced-motion .skip-tag-auto-redeem { animation: none; }
+.force-reduced-motion .run-tag-icon.tag-redeeming,
+.force-reduced-motion .run-tag-redeem-label { animation: none; opacity: 0; }
 .bs-status {
   width: 100%;
   min-height: 44px;
@@ -1307,13 +1478,63 @@ body.cb-safe .tile.hint {
 
 /* ---------- Main Menu (spec §2.1) ---------- */
 .menu {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
   gap: 26px;
+}
+.menu::before,
+.menu::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+/* Menu-only monitor field: a static low-resolution phosphor grid under one
+   composited sweep. Global CRT scanlines still finish the whole application. */
+.menu::before {
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 47px, rgba(255, 255, 255, .035) 47px 48px),
+    repeating-linear-gradient(0deg, transparent 0 47px, rgba(255, 255, 255, .035) 47px 48px),
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--chips) 13%, transparent), transparent 58%);
+  opacity: .68;
+}
+.menu::after {
+  top: -42vh;
+  right: -8%;
+  left: -8%;
+  height: 34vh;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .09), transparent);
+  mix-blend-mode: screen;
+  animation: menu-screen-sweep 7.5s linear infinite;
+  will-change: transform;
+}
+@keyframes menu-screen-sweep {
+  to { transform: translateY(184vh); }
 }
 .logotype {
   display: flex;
   flex-direction: column;
   align-items: center;
   line-height: 0.9;
+  transform: perspective(480px) rotateX(8deg) rotateZ(-1deg);
+  transform-origin: 50% 100%;
+}
+.menu .logotype {
+  animation: menu-title-float 4.8s steps(8, end) infinite;
+  will-change: transform;
+}
+@keyframes menu-title-float {
+  0%, 100% {
+    transform: perspective(480px) translateY(0) rotateX(8deg) rotateZ(-1deg);
+  }
+  50% {
+    transform: perspective(480px) translateY(-5px) rotateX(6deg) rotateZ(.4deg);
+  }
 }
 /* Same face, colour and shadow as the word below it — the two lines are one
    logotype, not a caption over a title. Only the size differs. (The credits title
@@ -1323,14 +1544,27 @@ body.cb-safe .tile.hint {
   font-size: var(--ds-sm);
   color: var(--gold);
   letter-spacing: 0.04em;
-  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--gold) 68%, #fff);
+  text-shadow:
+    1px 1px 0 color-mix(in srgb, var(--gold) 76%, #fff),
+    2px 2px 0 color-mix(in srgb, var(--gold) 76%, #5d3a12),
+    3px 3px 0 #5a3615,
+    5px 6px 0 rgba(0, 0, 0, .42);
 }
 .lt-title {
   font-family: 'Jersey 10';
   font-size: var(--ds-4xl);
   color: var(--gold);
   letter-spacing: 0.04em;
-  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  -webkit-text-stroke: 2px color-mix(in srgb, var(--gold) 70%, #fff);
+  text-shadow:
+    1px 1px 0 color-mix(in srgb, var(--gold) 72%, #fff),
+    2px 2px 0 color-mix(in srgb, var(--gold) 86%, #d98220),
+    3px 3px 0 #c8781e,
+    4px 4px 0 #a75c19,
+    5px 5px 0 #824416,
+    6px 6px 0 #5a3014,
+    9px 11px 0 rgba(0, 0, 0, .48);
   line-height: 0.9;
 }
 /* The ! echoes the Exclamation punctuation card (D-1 flavor note). */
@@ -1338,6 +1572,37 @@ body.cb-safe .tile.hint {
   color: var(--mult);
   display: inline-block;
   transform: rotate(4deg);
+  -webkit-text-stroke-color: color-mix(in srgb, var(--mult) 68%, #fff);
+  text-shadow:
+    1px 1px 0 color-mix(in srgb, var(--mult) 70%, #fff),
+    2px 2px 0 color-mix(in srgb, var(--mult) 84%, #99242b),
+    3px 3px 0 #9e2b31,
+    4px 4px 0 #7b2027,
+    5px 5px 0 #54171d,
+    8px 10px 0 rgba(0, 0, 0, .48);
+}
+.menu .lt-bang {
+  animation: menu-title-bang 3.2s steps(1, end) infinite;
+  transform-origin: 50% 78%;
+}
+@keyframes menu-title-bang {
+  0%, 78%, 100% { transform: translateY(0) rotate(4deg) scale(1); }
+  82% { transform: translateY(-4px) rotate(-4deg) scale(1.12); }
+  87% { transform: translateY(1px) rotate(8deg) scale(.98); }
+  92% { transform: translateY(0) rotate(4deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu::after { animation: none; transform: translateY(82vh); }
+  .menu .logotype,
+  .menu .lt-bang { animation: none; }
+}
+.force-reduced-motion .menu::after {
+  animation: none;
+  transform: translateY(82vh);
+}
+.force-reduced-motion .menu .logotype,
+.force-reduced-motion .menu .lt-bang {
+  animation: none;
 }
 .menu-buttons {
   display: flex;
@@ -1366,16 +1631,16 @@ body.cb-safe .tile.hint {
   font-size: 28.6px;
 }
 .menu-buttons .menu-play {
-  background: #168fea;
+  background: var(--chips);
 }
 .menu-buttons .menu-options {
-  background: #e99a24;
+  background: var(--gold);
 }
 .menu-buttons .menu-collection {
-  background: #48ad77;
+  background: var(--btn-green);
 }
 .menu-buttons .menu-quit {
-  background: #ef4d55;
+  background: var(--mult);
 }
 .menu-foot {
   display: flex;
@@ -2253,7 +2518,7 @@ body.cb-safe .tile.hint {
   }
 }
 /* Word search — with the whole dictionary listed, this is the only practical way
-   to reach a specific word (paging alone is ~500 pages). */
+   to reach a specific word (paging alone is 800+ pages). */
 .coll-search {
   display: flex;
   align-items: center;
@@ -2343,6 +2608,18 @@ body.cb-safe .tile.hint {
   color: #15242c;
   background: var(--gold);
 }
+.word-tab-panel {
+  box-sizing: border-box;
+  width: 100%;
+  height: 300px;
+  padding: 2px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
 .register-score-view {
   width: 100%;
   text-align: center;
@@ -2392,6 +2669,9 @@ body.cb-safe .tile.hint {
   font-weight: 800;
 }
 @media (max-width: 720px) {
+  .word-tab-panel {
+    height: 390px;
+  }
   .word-records,
   .register-score-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3726,18 +4006,6 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-sm);
   line-height: 1.25;
 }
-.ri-hand-score {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  font-family: 'Jersey 10';
-  font-size: var(--ds-xs);
-  line-height: 1;
-  white-space: nowrap;
-}
-.ri-hand-score .chips { color: var(--chips); }
-.ri-hand-score .mult { color: var(--mult); }
 .ri-pat {
   display: flex;
   align-items: center;
@@ -3772,8 +4040,9 @@ body.cb-safe .tile.hint {
   color: var(--gold);
   margin-left: 12px;
 }
-/* feature-02 A-3: live [Chips × Mult] per pattern, Balatro-hand-list style */
-.ri-pat .pcm {
+/* Shared [Chips × Mult] axis readout for sentence patterns and Letter Hands. */
+.ri-pat .pcm,
+.ri-hand .pcm {
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
@@ -3781,10 +4050,11 @@ body.cb-safe .tile.hint {
   font-size: var(--ds-xs);
   line-height: 1;
   margin-left: 12px;
+  white-space: nowrap;
 }
-.ri-pat .pcm .chips { color: var(--chips); }
-.ri-pat .pcm .mult { color: var(--mult); }
-.ri-pat .pcm .times { color: var(--ink-dim); }
+.runinfo .pcm .chips { color: var(--chips); }
+.runinfo .pcm .mult { color: var(--mult); }
+.runinfo .pcm .times { color: var(--ink-dim); }
 .ri-vouchers {
   display: flex;
   flex-wrap: wrap;

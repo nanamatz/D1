@@ -17,8 +17,8 @@ describe('P0-1 — real validity dictionary', () => {
     }
   });
 
-  it('is a real curated size, not the ~2k stub', () => {
-    expect(lex.size).toBeGreaterThan(20000);
+  it('contains the expanded 50k validity pool', () => {
+    expect(lex.size).toBeGreaterThanOrEqual(50000);
   });
 
   it('still rejects non-words', () => {

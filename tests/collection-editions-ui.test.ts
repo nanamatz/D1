@@ -62,7 +62,7 @@ describe('Edition Collection page', () => {
     expect(enhanced).not.toContain('role="tablist"');
   });
 
-  it('shows all 27 Tags as a two-page 5×3 image grid with shared interaction', () => {
+  it('shows all 26 Tags as a two-page 5×3 image grid with shared interaction', () => {
     const component = readFileSync(
       new URL('../src/ui/components/Collection.tsx', import.meta.url),
       'utf8',
@@ -76,7 +76,7 @@ describe('Edition Collection page', () => {
       component.indexOf('function usePaged', component.indexOf('function TagsView()')),
     );
 
-    expect(SKIP_REWARD_IDS).toHaveLength(27);
+    expect(SKIP_REWARD_IDS).toHaveLength(26);
     expect(tagsView).toContain('visible.map((id) =>');
     expect(tagsView).toContain('SKIP_REWARD_ART[id]');
     expect(tagsView).toContain('skipRewardCollectionDescKey(id)');
