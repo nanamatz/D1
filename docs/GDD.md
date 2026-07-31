@@ -10,7 +10,7 @@ Version 0.2 — systems expansion
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
-- New: **Blinds, Antes & Bosses** — scaling, run length, boss pool (12, single flat pool; the 2 ante-8 finishers were retired 2026-07-21, see §8.4). Blind skip / tags: adoption itself deferred.
+- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Blind skip / tags: adoption itself deferred.
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
 - Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 artworks; 12 effects implemented 2026-07-30, 2 deliberately pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
@@ -560,7 +560,9 @@ All v0.1 uses of "ante" in the scoring chapter meant "blind" and are corrected t
 
 ### 8.2 Scaling & Run Length
 
-Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**; exponential growth between antes (Balatro's curve steps roughly ×1.6–2.5 per ante — exact curve is playtest material, tuned together with the emoji tile power curve). **A run = 8 antes + endless mode** (default, adopted as-is). **Victory (implemented):** clearing the ante-8 Deadline ends the run as a win — the engine flags it (`BlindOutcome.won`) while still paying out and advancing the run, and the UI routes to the run-end screen's win framing, skipping Fee Settlement and the shop. **Endless mode (planned, not yet implemented):** the win modal will gain an "무한 모드 →" button that routes into the normal Fee Settlement → shop flow and continues record-chasing chapters (ante 9+ target formula comes with it).
+Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**. **A run's victory point is Chapter 8, followed by optional Endless Mode.** Clearing the Chapter-8 Deadline opens the Published screen. **New Run** ends the run; **Endless Mode →** preserves the already-earned win and continues through the normal Fee Settlement → shop flow into Chapter 9.
+
+**Endless curve (implemented 2026-07-31).** For Chapter `a ≥ 9`, let `c = a − 8`. The base target is `105000 × (1.6 + (0.75c)^(1+0.2c))^c`, truncated downward to two significant digits before blind, Pouch, Record, and boss multipliers apply. This double-exponential curve deliberately outruns slot-limited scaling. Chapter 38 is the explicit finite-number endpoint: clearing its Deadline ends the endless run; Chapter 39 is never created. UI score text switches to compact scientific notation at one billion. Lifetime statistics separately track the highest Endless Chapter and best finalized Endless blind score.
 
 **Curve re-tuned 2026-07-30** for the word-length Mult bonus (§3.1): `anteBaseTargets` scaled to hold the shape `src/sim/feel-chip-scale.ts` recorded (ante 1 ~77.5% clear, antes 2–4 falling off sharply), verified with `src/sim/length-mult.ts`. Pattern, Unison, letter-hand and material constants were **not** scaled with it, so they are relatively weaker than before this pass — a known follow-up, not an oversight.
 
@@ -630,13 +632,24 @@ data predicate is the source of truth for both scoring and preview UI.
 
 ### 8.4 Finisher Bosses
 
-**Retired (2026-07-21).** The earlier design carried two ante-8-only finishers (The Proofreader, Babel) on top of a 12-boss pool. The publishing-frame roster above is a single flat pool of **12**, drawn randomly each ante including ante 8 — there is no separate finisher tier. Memoirs (`memoirs`) inherits the Proofreader's "already-played words are dead" idea, scoped to the ante rather than the whole run. A dedicated ante-8 finisher may return later; if so it is added to this section, not folded silently into §8.3.
+**Returned 2026-07-31 as a four-boss tier.** A finisher is drawn only for the Deadline of every Chapter divisible by 8 (8, 16, 24, 32). All other Deadlines use the 12-boss pool in §8.3. Each finisher pays **$8** instead of the ordinary boss reward. The draw and every in-blind random choice use the run's seeded RNG.
 
-**Pool intent:** the 12 bosses cover each system roughly once, and major builds
-among the current §11 Emoji Tile roster have readable checks (Rotary Press ↔
-History Book, Tyrant ↔ White Paper, Tower of Babel ↔ Forbidden Paper, narrow
-vocabulary ↔ Memoirs, economy ↔ Bond). Bosses draw randomly from the pool per
-ante, Balatro-style.
+| Finisher | Effect | Presentation / counterplay |
+|---|---|---|
+| Nokdo Script · 녹도 문자 (`nokdoScript`) | One random letter tile must remain selected and must be included in the next submitted word. It cannot be deselected or discarded. Consumables may still transform it—including changing it to Stone—or destroy it. If it leaves the hand, another random hand tile becomes forced; an empty hand has none. | A parchment bearing deer-track-like glyphs; build or consume around the forced tile. |
+| Blueprint · 블루프린트 (`blueprint`) | On Deadline entry, shuffle the owned Emoji Tiles once and deal every one face-down. Their order and hidden faces then remain fixed for the blind; all effects stay active. | Every back is black and displays `mascotSrc('woodak')`, so it always follows the player's currently selected WooDak skin. |
+| Vital Sign · 바이탈 사인 (`vitalSign`) | Target is ×3 the ordinary boss Deadline target (therefore base Chapter target ×6 before Pouch/Record modifiers). | Vital-sign monitor emblem; pure throughput check. |
+| Ultrasound Photo · 초음파 사진 (`ultrasound`) | On entry, disable one random owned Emoji Tile. After every played word, clear that marker and randomly disable one for the next play. With no Emoji Tiles, nothing is disabled. | Ultrasound-photo emblem; the disabled tile stays in its slot, visibly darkened and marked. |
+
+**Scheduled-blind invariant.** History Book or Old Book can lower Chapter 8 to
+7 after its finisher has already been scheduled. The existing `chapterBossId`
+and blind kind/index are preserved, so that Deadline remains the same finisher.
+Deadline-only boss rerolls also stay within the finisher pool by deriving the
+pool from the scheduled boss id, not the lowered Chapter number.
+
+**Pool intent:** the 12 regular bosses cover each system roughly once, while the
+four finishers are periodic build checks. Memoirs remains scoped to the chapter;
+the old Proofreader/Babel finishers remain retired.
 
 **Debuff convention.** "Debuffed" (White Paper, Burnt Paper, Memoirs) means the affected word scores **0** — its Chips and Mult are both zeroed after emoji tiles, mirroring Balatro's disabled cards (decision 2026-07-21).
 
@@ -648,7 +661,7 @@ ante, Balatro-style.
 
 | Source | Amount (placeholder) |
 |---|---|
-| Blind clear reward | Small 3 / Big 4 / Boss 5 gold |
+| Blind clear reward | Small 3 / Big 4 / ordinary Boss 5 / Finisher Boss 8 gold |
 | Remaining phases on blind end | 1 gold per phase |
 | Interest | 1 gold per 5 held, **cap 5** (max interest from 25 gold) |
 | Selling emoji tiles | Half of purchase price |
@@ -723,7 +736,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **Four families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium); **Fable** awaits art. All 24 runtime illustrations are 32-color, path-only SVGs normalized to a shared `244×400` canvas and `122×200` logical grid; source PNGs remain in `docs/Arts/CardPacks`. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
+**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 runtime illustrations are 32-color, path-only SVGs normalized to a shared `244×400` canvas and `122×200` logical grid; source PNGs remain in `docs/Arts/CardPacks`. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
 
 **Appearance weights (placeholder → `balance.ts`).** Balatro's shape, mapped onto our five families. Type weights (`pack.typeWeights`): **Fable 4 · Constellation 4 · Tile 4 · Charm 2 · Ink 0.6** — the two consumable staples and tiles are the common backbone, Charm (emoji tiles) is deliberately scarcer because each pull is a build decision, and Ink is the rare thrill (Spectral's role). Size weights (`pack.sizeWeights`): **Normal 8 · Jumbo 3 · Mega 1**. Type/size pair weights are their product and shop pack slots draw those pairs without replacement, so duplicate packs cannot appear together. All values are tuning starts for `src/sim`, not claims of balance.
 
@@ -758,16 +771,16 @@ progress remain hidden until the profile unlock is earned.
 | Four-cut Photo → Picture Diary | Hand size +1 → another +1 | Reduce hand size to 8 |
 | EN-KO Dictionary → Encyclopedia | Shop may sell plain tiles → shop tiles may carry material/font/edition | Buy 20 shop tiles |
 | Receipt → Household Ledger | Interest cap $10 → $20 | Hit the interest cap 10 rounds consecutively |
-| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls; the control is available only on Blind Select when the current blind is the Deadline, never while it is merely upcoming | Discover all 12 current bosses (temporary cap) |
+| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls; the control is available only on Blind Select when the current blind is the Deadline, never while it is merely upcoming | Discover all 12 regular bosses (finishers do not substitute) |
 | Catalog → Coupon Book | Shop card slots 3 → 4 | Spend $2,500 in shops |
-| History Book → Old Book | −1 Chapter and −1 hand size → another −1 Chapter and −1 discard/round; each redemption preserves the already-scheduled blind kind/index | Reach Chapter 12 |
+| History Book → Old Book | −1 Chapter and −1 hand size → another −1 Chapter and −1 discard/round; each redemption preserves the already-scheduled blind kind/index and boss id | Win by clearing the Chapter-8 Deadline |
 | Blank Paper → Kung Fu Manual | No effect → +1 Emoji Tile slot | Use Blank Paper 10 times |
 | B&W Photo → Yearbook | Constellation pack guarantees the most-played pattern's card → a held matching card grants ×1.5 sentence Mult | Use 100 Constellation cards |
 | Zero Score → Comic Book | +1 consumable slot → Gambler cards may appear in Fable packs | Use 50 Fable cards |
 
 All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vouchers`, outside `RunState`.
 
-**History Book timing (changed 2026-07-29).** Redeeming History Book immediately lowers the current Chapter by 1 (Chapter 1 may become Chapter 0) and lowers hand size by 1. It does not rewind the blind sequence: the Draft, Revision, or Deadline already scheduled after the shop remains scheduled at the same `blindIndex`, now using the lowered Ante's target. Old Book follows the same scheduled-blind rule for its additional Ante reduction.
+**History Book timing (changed 2026-07-31).** Redeeming History Book immediately lowers the current Chapter by 1 (Chapter 1 may become Chapter 0) and lowers hand size by 1. It does not rewind the blind sequence: the Draft, Revision, Deadline, and exact scheduled boss id remain at the same `blindIndex`, now using the lowered Ante's target. Old Book follows the same rule for its additional Ante reduction. This explicitly preserves a Chapter-8 finisher when the Chapter number becomes 7.
 
 ---
 
@@ -1110,6 +1123,7 @@ Changed 2026-07-30: the canonical edition vocabulary and serialized ids are now 
   Signed baseline modifiers compose before the zero floor.
 - **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Gray/Violet/Rainbow odds.
 - **Emoji Tile presentation (changed 2026-07-30):** background colour is the canonical edition indicator. The rejected alternative (`@`, `#`, `*`, `~`) is not rendered; it would violate the image-only Emoji Tile rule. Tooltips always name the edition and spell out its effect.
+- **Collection reference (changed 2026-07-31):** Collection → Editions shows Base, Gray, White, Rainbow, and Violet on five runtime-size Emoji Tile samples with the live overlays and canonical effect tooltips. White remains Emoji-Tile-only.
 
 ---
 
@@ -1244,7 +1258,7 @@ per-tile state remain at their ordinary base values.
 with transparent backgrounds—no scene, text, smooth gradient, lighting setup, or
 decorative frame. Runtime deliveries use the exact current default-pouch
 `510×511` transparent RGBA canvas with comparable occupied bounds. They fit into
-the shared 72×72 in-run, 140×140 New Run, and 86×86 Collection boxes. This is
+the shared 72×72 in-run, 140×140 New Run, and 176×176 Collection carousel boxes. This is
 one common asset family, not 14 differently sized UI components. Military Pouch
 uses a chunky olive/khaki camouflage textile pattern contained inside the shared
 silhouette; its clasp, dark outline, and object scale remain unchanged. Lucky
@@ -1267,9 +1281,9 @@ column describes the new penalty at that level—every earlier penalty remains
 active.
 
 The ordered selector, position dots, and lock state communicate this progression
-in New Run and Collection. Record unlock-condition text is intentionally not
-rendered in either surface or its tooltip; the rules remain explicit in this
-design table.
+in New Run. Record unlock-condition text is intentionally not rendered in that
+surface or its tooltip; the rules remain explicit in this design table. Records
+have no Collection category.
 
 | Level | Record (ko / en) | Adds at this level | Unlock |
 |---:|---|---|---|

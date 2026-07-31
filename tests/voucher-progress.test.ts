@@ -4,6 +4,7 @@ import {
   recordVoucherProgress,
   unlockedVoucherSet,
 } from '../src/ui/voucherProgress';
+import { CORE_BOSS_IDS } from '../src/engine/bosses';
 
 const mem = new Map<string, string>();
 (globalThis as unknown as { localStorage: Storage }).localStorage = {
@@ -26,8 +27,8 @@ describe('voucher profile unlock progress', () => {
     expect(loadVoucherProgress().fableBought).toBe(50);
   });
 
-  it('tracks the temporary 12-boss discovery cap', () => {
-    for (let i = 0; i < 12; i++) recordVoucherProgress({ kind: 'bossSeen', id: `boss-${i}` });
+  it('requires all 12 regular bosses for Portrait', () => {
+    for (const id of CORE_BOSS_IDS) recordVoucherProgress({ kind: 'bossSeen', id });
     expect(unlockedVoucherSet()).toContain('portrait');
   });
 

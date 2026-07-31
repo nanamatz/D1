@@ -241,7 +241,7 @@ function NewRunBody({
             aria-label={title}
           >
             <img src={src} alt="" />
-            {!unlocked && <span className="run-choice-lock" aria-hidden>🔒</span>}
+            {!unlocked && <span className="run-choice-lock" aria-hidden />}
           </div>
         </Tooltip>
         <div className="run-choice-copy">

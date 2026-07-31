@@ -25,10 +25,8 @@ describe('slice5 economy — blind target curve (GDD §8.2)', () => {
     expect(blindTarget(8, 'boss')).toBe(210000); // 105000 × 2
   });
 
-  it('extrapolates the final growth ratio into endless antes', () => {
-    // ratio anteBaseTargets[7]/anteBaseTargets[6] = 105000/60000 = 1.75
-    // → ante 9 base = 105000 × 1.75 = 183750
-    expect(blindTarget(9, 'small')).toBe(183750);
+  it('uses the endless double-exponential curve after chapter 8', () => {
+    expect(blindTarget(9, 'small')).toBe(240000);
   });
 });
 

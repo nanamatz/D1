@@ -126,6 +126,7 @@ import { towerOfBabel } from './towerOfBabel';
 import { misbound } from './misbound';
 import type { BlindState, RunState } from '../types';
 import type { Rng } from '../rng';
+import { clearBossJokerDebuffs } from '../bosses';
 
 export const COMMON_JOKERS: readonly JokerDef[] = [
   ceramicArtisan,
@@ -305,5 +306,8 @@ export function onBlindEnded(run: RunState, blind: BlindState, rng: Rng): RunSta
   // generically so destruction-fed tiles (Type Foundry L3) see it like any other.
   const lost = bagBefore - next.bag.length;
   if (lost > 0) defaultJokerBus.emit('tilesDestroyed', { run: next, count: lost }, next.jokers);
-  return { ...next, jokers: next.jokers.filter((joker) => joker.state.destroyed !== 1) };
+  return clearBossJokerDebuffs({
+    ...next,
+    jokers: next.jokers.filter((joker) => joker.state.destroyed !== 1),
+  });
 }

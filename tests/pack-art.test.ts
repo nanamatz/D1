@@ -66,32 +66,35 @@ describe('packArt — (type, size) → art mapping', () => {
 });
 
 describe('packGalleryPages — Collection pack gallery', () => {
-  it('has image-only pages for tile, charm, Fable, constellation, and Ink art', () => {
+  it('combines the four-card Charm and Ink families into four image-only pages', () => {
     const pages = packGalleryPages();
-    expect(pages).toHaveLength(5);
+    expect(pages).toHaveLength(4);
     expect(pages.map((page) => page[0]!.family)).toEqual([
       'tile',
       'joker',
       'consumable',
       'pattern',
-      'ink',
+    ]);
+    expect(pages[1]!.map((entry) => entry.family)).toEqual([
+      'joker', 'joker', 'joker', 'joker',
+      'ink', 'ink', 'ink', 'ink',
     ]);
   });
 
   it('each runtime art page lists variants in Basic→Classic→Premium order', () => {
     const pages = packGalleryPages();
     for (const type of ART_TYPES) {
-      const page = pages.find((p) => p[0]!.family === type)!;
+      const entries = pages.flat().filter((entry) => entry.family === type);
       const total = SIZES.reduce((n, s) => n + PACK_ART[type]![s].length, 0);
-      expect(page.length).toBe(total);
-      const srcs = page.map((e) => e.src);
+      expect(entries.length).toBe(total);
+      const srcs = entries.map((e) => e.src);
       expect(srcs).toEqual([...PACK_ART[type]!.normal, ...PACK_ART[type]!.jumbo, ...PACK_ART[type]!.mega]);
     }
   });
 
   it('shows all 32 supplied images: tile 8, charm 4, Fable 8, constellation 8, Ink 4', () => {
     const pages = packGalleryPages();
-    expect(pages.map((page) => page.length)).toEqual([8, 4, 8, 8, 4]);
+    expect(pages.map((page) => page.length)).toEqual([8, 8, 8, 8]);
     expect(pages.flat()).toHaveLength(32);
   });
 
@@ -112,5 +115,22 @@ describe('packGalleryPages — Collection pack gallery', () => {
     expect(packsView).toContain('grade={tip.grade}');
     expect(packsView).not.toContain('className="cc-name"');
     expect(packsView).not.toContain('coming-soon-tag');
+  });
+
+  it('uses the Card Packs label and keeps every family page at the two-row height', () => {
+    const en = JSON.parse(
+      readFileSync(fileURLToPath(new URL('../locales/en.json', import.meta.url)), 'utf8'),
+    ) as Record<string, string>;
+    const ko = JSON.parse(
+      readFileSync(fileURLToPath(new URL('../locales/ko.json', import.meta.url)), 'utf8'),
+    ) as Record<string, string>;
+    const css = readFileSync(
+      fileURLToPath(new URL('../src/ui/styles/screens.css', import.meta.url)),
+      'utf8',
+    );
+
+    expect(en['collection.cat.packs']).toBe('Card Packs');
+    expect(ko['collection.cat.packs']).toBe('카드 팩');
+    expect(css).toMatch(/\.pack-gallery\s*\{[^}]*min-height:\s*300px;/s);
   });
 });

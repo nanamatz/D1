@@ -3,6 +3,7 @@
  * headless engine; only aggregate counters/unlocked upgrade ids are persisted.
  */
 import type { VoucherId } from '../engine/types';
+import { CORE_BOSS_IDS } from '../engine/bosses';
 import { readValue, writeValue } from './storage';
 
 const KEY = 'wj.vouchers';
@@ -17,6 +18,7 @@ export interface VoucherProgress {
   tilesBought: number;
   goldSpent: number;
   highestAnte: number;
+  wins: number;
   blankPaperUses: number;
   constellationUsed: number;
   fableUsed: number;
@@ -39,6 +41,7 @@ const EMPTY: VoucherProgress = {
   tilesBought: 0,
   goldSpent: 0,
   highestAnte: 0,
+  wins: 0,
   blankPaperUses: 0,
   constellationUsed: 0,
   fableUsed: 0,
@@ -62,6 +65,7 @@ export type VoucherProgressEvent =
   | { kind: 'consumableUsed'; family: 'fable' | 'constellation' | 'gambler' }
   | { kind: 'handSize'; size: number }
   | { kind: 'anteReached'; ante: number }
+  | { kind: 'runWon' }
   | { kind: 'bossSeen'; id: string }
   | { kind: 'blindCleared'; ante: number; bossId: string | null; interest: number; interestCap: number; handSize: number }
   | { kind: 'editionedJokers'; count: number };
@@ -84,9 +88,9 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
   { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '손패 크기를 8장으로 감소', met: (p) => p.lowestHandSize <= 8 },
   { id: 'encyclopedia', conditionEn: 'Buy 20 tiles from the shop', conditionKo: '상점에서 타일 20장 구매', met: (p) => p.tilesBought >= 20 },
   { id: 'householdLedger', conditionEn: 'Reach maximum interest for 10 consecutive rounds', conditionKo: '10라운드 연속 최대 이자 획득', met: (p) => p.maxInterestStreak >= 10 },
-  { id: 'portrait', conditionEn: 'Discover all 12 current boss blinds', conditionKo: '현재 보스 블라인드 12종 발견', met: (p) => p.bossesSeen.length >= 12 },
+  { id: 'portrait', conditionEn: 'Discover all 12 regular boss blinds', conditionKo: '일반 보스 블라인드 12종 발견', met: (p) => CORE_BOSS_IDS.every((id) => p.bossesSeen.includes(id)) },
   { id: 'couponBook', conditionEn: 'Spend $2,500 in shops', conditionKo: '상점에서 총 $2,500 지출', met: (p) => p.goldSpent >= 2500 },
-  { id: 'oldBook', conditionEn: 'Reach Ante 12', conditionKo: '앤티 12 도달', met: (p) => p.highestAnte >= 12 },
+  { id: 'oldBook', conditionEn: 'Win a run', conditionKo: '8장 마감 승리', met: (p) => p.wins >= 1 },
   { id: 'kungfuManual', conditionEn: 'Use Blank Paper 10 times', conditionKo: '백지 10회 사용', met: (p) => p.blankPaperUses >= 10 },
   { id: 'yearBook', conditionEn: 'Use 100 Constellation cards', conditionKo: '별자리 카드 100장 사용', met: (p) => p.constellationUsed >= 100 },
   { id: 'comicBook', conditionEn: 'Use 50 Fable cards', conditionKo: '우화 카드 50장 사용', met: (p) => p.fableUsed >= 50 },
@@ -149,6 +153,9 @@ export function recordVoucherProgress(event: VoucherProgressEvent): VoucherProgr
       break;
     case 'anteReached':
       next.highestAnte = Math.max(next.highestAnte, event.ante);
+      break;
+    case 'runWon':
+      next.wins += 1;
       break;
     case 'bossSeen':
       if (!next.bossesSeen.includes(event.id)) next.bossesSeen.push(event.id);

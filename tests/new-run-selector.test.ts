@@ -30,11 +30,33 @@ describe('New Run selector presentation', () => {
     expect(component).toContain('t(`pouch.${id}.unlock`)');
     expect(component).not.toContain('t(`record.${id}.unlock`)');
     expect(collection).toContain('const unlock = !unlocked');
+    expect(collection).toContain("{unlocked ? name : t('newrun.locked')}");
+    expect(collection).toContain('{richText(unlocked ? body : unlock)}');
     expect(collection).toContain(
-      "{unlocked ? t(`pouch.${id}.name`) : t('newrun.locked')}",
+      '{!unlocked && <span className="run-choice-lock" aria-hidden />}',
     );
-    expect(collection).toContain('{!unlocked && <small>🔒 {unlock}</small>}');
     expect(collection).not.toContain('t(`record.${id}.unlock`)');
+  });
+
+  it('uses the generated pixel lock and readable highlighted Pouch effects', () => {
+    const component = source('src/ui/components/NewRun.tsx');
+    const css = source('src/ui/styles/screens.css');
+    const lock = readFileSync('src/ui/assets/pouch-lock.png');
+    const en = JSON.parse(source('locales/en.json')) as Record<string, string>;
+    const ko = JSON.parse(source('locales/ko.json')) as Record<string, string>;
+
+    expect(lock.readUInt32BE(16)).toBe(64);
+    expect(lock.readUInt32BE(20)).toBe(64);
+    expect(lock[25]).toBe(6);
+    expect(component).toContain('<span className="run-choice-lock" aria-hidden />');
+    expect(css).toContain("url('../assets/pouch-lock.png')");
+    expect(css).toMatch(
+      /\.collection-pouch-preview \.select-desc\s*\{[^}]*font-size:\s*var\(--fs-xl\);[^}]*font-weight:\s*800;/s,
+    );
+    expect(en['pouch.fiveColor.desc']).toContain('[n:+2]');
+    expect(en['pouch.military.desc']).toContain('[p:Black & White Photo]');
+    expect(ko['pouch.leather.desc']).toContain('[n:−1]');
+    expect(ko['pouch.shoppingBasket.desc']).toContain('[p:스토리북]');
   });
 
   it('keeps locked choices non-playable and removes Record unlock copy', () => {

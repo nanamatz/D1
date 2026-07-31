@@ -5,9 +5,13 @@ const source = (path: string): string => readFileSync(path, 'utf8');
 
 describe('feedback 2 UI regressions', () => {
   it('keeps the mascot picker in one horizontal row', () => {
+    const css = source('src/ui/styles/screens.css');
     expect(source('src/ui/components/Collection.tsx')).toContain('card-grid mascot-card-row');
-    expect(source('src/ui/styles/screens.css')).toMatch(
+    expect(css).toMatch(
       /\.mascot-collection \.mascot-card-row\s*\{[^}]*flex-flow:\s*row nowrap/s,
+    );
+    expect(css).toMatch(
+      /\.mascot-card-row > \.tt-anchor,\s*\.mascot-card-row > \.mascot-card\s*\{[^}]*flex:\s*1 1 150px;[^}]*width:\s*150px;/s,
     );
   });
 

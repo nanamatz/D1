@@ -11,6 +11,7 @@
     "sim": "tsx src/sim/autoplay.ts",
     "sim:feel-chip-scale": "tsx src/sim/feel-chip-scale.ts",
     "sim:length-mult": "tsx src/sim/length-mult.ts",
+    "sim:endless": "tsx src/sim/endless.ts",
     "sim:materials": "tsx src/sim/materials.ts",
     "sim:emoji-sample": "tsx src/sim/emoji-sample.ts",
     "sim:emoji-bank": "tsx src/sim/emoji-bank.ts",

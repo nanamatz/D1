@@ -169,6 +169,16 @@ export const BALANCE = {
   // Verified with src/sim/length-mult.ts.
   anteBaseTargets: [300, 900, 2400, 6000, 15000, 33000, 60000, 105000],
   runAntes: 8,
+  // Endless begins after Chapter 8. The base and exponent both grow, guaranteeing
+  // that the target curve eventually outruns slot-limited player scaling. Chapter
+  // 39 would exceed Number's finite range, so Chapter 38 is the explicit finale.
+  endless: {
+    baseFactor: 1.6,
+    growth: 0.75,
+    exponentGrowth: 0.2,
+    significantDigits: 2,
+    maxAnte: 38,
+  },
 
   // ----- Economy (GDD §9.1) -----
   startingGold: 4, // Base run starting Fee before Pouch modifiers
@@ -390,5 +400,7 @@ export const BALANCE = {
     historyBookPhaseReduction: 2, // History Book: −2 phases in this boss blind (역사책)
     budgetBookHandDelta: -3, // Budget Book: hand size −3 (가계부)
     willScale: 0.5, // Will: base chips & mult ×0.5 (유서)
+    finisherReward: 8,
+    vitalSignTargetMult: 3,
   },
 } as const;

@@ -14,6 +14,8 @@ const KEY = 'wj.lifetime';
 export interface Lifetime {
   runs: number;
   highestAnte: number;
+  highestEndlessAnte: number;
+  bestEndlessScore: number;
   bestWordScore: number;
   bestWord: string;
   mostGold: number;
@@ -24,6 +26,8 @@ export interface Lifetime {
 const EMPTY: Lifetime = {
   runs: 0,
   highestAnte: 0,
+  highestEndlessAnte: 0,
+  bestEndlessScore: 0,
   bestWordScore: 0,
   bestWord: '',
   mostGold: 0,
@@ -68,6 +72,8 @@ export function recordRunEnd(r: RunResult): void {
   const next: Lifetime = {
     runs: lt.runs + 1,
     highestAnte: Math.max(lt.highestAnte, r.ante),
+    highestEndlessAnte: lt.highestEndlessAnte,
+    bestEndlessScore: lt.bestEndlessScore,
     bestWordScore: Math.max(lt.bestWordScore, r.bestWord?.score ?? 0),
     bestWord: (r.bestWord?.score ?? 0) > lt.bestWordScore ? (r.bestWord?.text ?? '') : lt.bestWord,
     mostGold: Math.max(lt.mostGold, r.gold),
@@ -75,4 +81,14 @@ export function recordRunEnd(r: RunResult): void {
     recordWins: [...recordWins],
   };
   writeValue(KEY, next);
+}
+
+/** Endless is a benchmark attached to an already-recorded win, not a second run. */
+export function recordEndlessEnd(r: { ante: number; bestScore: number }): void {
+  const lt = loadLifetime();
+  writeValue(KEY, {
+    ...lt,
+    highestEndlessAnte: Math.max(lt.highestEndlessAnte, r.ante),
+    bestEndlessScore: Math.max(lt.bestEndlessScore, r.bestScore),
+  });
 }

@@ -7,6 +7,7 @@ import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
 import { BONUS_LAND_MS, type SentenceBonusDisplay } from '../useGame';
 import { useI18n } from '../i18n';
+import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
 import { patternSymbol } from '../patternSymbols';
@@ -216,7 +217,7 @@ export function Sidebar({
                     numbers; the "Chips" term/box stay unchanged. Art (grey/red/green/
                     full) is composited by .tomato-icon from the unlock classes. */}
                 <span className="tomato-icon" aria-hidden />
-                <span className="target">{blind.target}</span>
+                <span className="target">{formatScore(blind.target)}</span>
               </span>
             </div>
             <div className="bs-reward">
@@ -246,12 +247,12 @@ export function Sidebar({
                 <span className="tomato-icon" key={settle.scorePop?.id ?? 'idle'} aria-hidden />
               </span>
             </span>{' '}
-            {Math.round(round)}
+            {formatScore(round)}
           </span>
         </div>
         {mode === 'blind' && !blind.previewHidden && forecast > 0 && (
           <div className="round-forecast">
-            {t('sidebar.forecast', { n: Math.round(forecast) })}
+            {t('sidebar.forecast', { n: formatScore(forecast) })}
           </div>
         )}
       </div>

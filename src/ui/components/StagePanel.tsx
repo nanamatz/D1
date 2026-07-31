@@ -228,6 +228,7 @@ export function StagePanel({
             zone="staged"
             faceDown={faceDown(tile)}
             invalid={!!preview?.debuffed}
+            forced={tile.id === blind.forcedTileId}
             onSelect={selectTile}
             tooltip={tileTip(tile)}
           />

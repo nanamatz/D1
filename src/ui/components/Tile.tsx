@@ -42,6 +42,8 @@ interface Props {
   disabled?: boolean;
   /** The currently staged word will be debuffed to zero by the active boss. */
   invalid?: boolean;
+  /** Nokdo Script: this tile must remain in the staged word. */
+  forced?: boolean;
   /** Disable local tilt when a parent surface owns the whole interaction layer. */
   tilt?: boolean;
   /** anchored hover tooltip for the tile (C-4): chip value, material, font */
@@ -66,6 +68,7 @@ function TileViewImpl({
   faceDown = false,
   disabled = false,
   invalid = false,
+  forced = false,
   tilt = true,
   tooltip,
 }: Props) {
@@ -141,6 +144,7 @@ function TileViewImpl({
     faceDown && 'facedown',
     disabled && 'locked',
     invalid && 'boss-invalid',
+    forced && 'boss-forced',
   ]
     .filter(Boolean)
     .join(' ');
@@ -213,6 +217,7 @@ function TileViewImpl({
             </span>
           )}
           {invalid && <span className="boss-invalid-tag">{t('boss.notAllowed')}</span>}
+          {forced && <span className="boss-forced-tag">{t('boss.forced')}</span>}
           {enhancementFx.map((axis) => (
             <span
               key={axis}

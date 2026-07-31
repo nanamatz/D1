@@ -88,22 +88,17 @@ export type PackGalleryEntry = {
 
 const SIZE_ORDER: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 
-/** Image-only Collection pages, one per pack family. */
+/** Image-only Collection pages; the four-card Charm and Ink families share a page. */
 export function packGalleryPages(): PackGalleryEntry[][] {
-  const pages: ReadonlyArray<{
-    family: PackGalleryEntry['family'];
-    art: Record<PackSize, readonly string[]>;
-  }> = [
-    { family: 'tile', art: PACK_ART.tile },
-    { family: 'joker', art: PACK_ART.joker },
-    { family: 'consumable', art: PACK_ART.consumable },
-    { family: 'pattern', art: PACK_ART.pattern },
-    { family: 'ink', art: PACK_ART.ink },
-  ];
-
-  return pages.map(({ family, art }) =>
+  const entries = (family: PackType) =>
     SIZE_ORDER.flatMap((size) =>
-      art[size].map((src): PackGalleryEntry => ({ family, size, src })),
-    ),
-  );
+      PACK_ART[family][size].map((src): PackGalleryEntry => ({ family, size, src })),
+    );
+
+  return [
+    entries('tile'),
+    [...entries('joker'), ...entries('ink')],
+    entries('consumable'),
+    entries('pattern'),
+  ];
 }

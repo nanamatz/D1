@@ -3,6 +3,7 @@ import type { BlindKind, BlindState, PatternId, RunState } from '../../engine/ty
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
 import { effectiveBlindTarget, effectiveClearReward } from '../../engine/economy';
+import { formatScore } from '../formatScore';
 import { kindForIndex } from '../../engine/progression';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { patternChipsMult } from '../../engine/patterns';
@@ -99,7 +100,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 const bossId = kind === 'boss' ? (blind.bossId ?? run.chapterBossId) : null;
                 const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
                 const target = effectiveBlindTarget(run, kind, boss?.targetMult ?? 1);
-                const reward = effectiveClearReward(run, kind);
+                const reward = effectiveClearReward(run, kind, bossId);
                 return (
                   <div key={i} className={['bs-card', kind, status].join(' ')}>
                     <div className="bs-kind">{t(`blind.${kind}`)}</div>
@@ -119,7 +120,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                     )}
                     <div className="bs-target">
                       <span className="label">{t('sidebar.target')}</span>
-                      <span className="n">{target}</span>
+                      <span className="n">{formatScore(target)}</span>
                     </div>
                     <div className="bs-reward">
                       <span className="label">{t('blindselect.reward')}</span>

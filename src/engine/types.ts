@@ -259,6 +259,11 @@ export interface BlindState {
   earlyEndDisabled?: boolean; // dormant early-end lock (no boss in the current roster sets it)
   previewHidden?: boolean; // dormant preview-hide flag (UI hides the projected preview)
   vowelsHidden?: boolean; // Ancient Paper (고대 문서): vowel tiles drawn face-down (UI only)
+  /** Nokdo Script: this hand tile must remain staged and be included in Play.
+   *  Consumables may still transform or destroy it. */
+  forcedTileId?: string | null;
+  /** Blueprint: Emoji Tile identities are hidden for this blind. */
+  jokersFaceDown?: boolean;
 }
 
 export interface RunState {
@@ -268,6 +273,8 @@ export interface RunState {
   customSeed: boolean;
   seed: string; // seeded RNG — reproducible runs (roguelite requirement)
   ante: number; // 1..8, then endless
+  /** Chapter 8 Deadline already cleared. Endless failure never revokes this win. */
+  victorySecured: boolean;
   blindIndex: 0 | 1 | 2; // small / big / boss
   gold: number;
   handSize: number; // base 11, a balance knob (GDD §6.2)

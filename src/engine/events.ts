@@ -182,6 +182,9 @@ export class JokerBus {
   ): void {
     for (let index = 0; index < owned.length; index++) {
       const joker = owned[index]!;
+      // Generic boss debuff marker. The owner stays in place, but every hook and
+      // edition effect is inactive until the marker is cleared at blind end.
+      if (joker.state.bossDisabled === 1) continue;
       const def = this.defs.get(joker.defId);
       const handler = def?.hooks[event];
       if (handler) handler(payload, joker, { index, lookup: (id) => this.defs.get(id) });

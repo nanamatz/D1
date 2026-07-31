@@ -42,6 +42,8 @@ export interface BlindOutcome {
   /** cleared the final chapter's Boss — the run is won (GDD §8.2); endless mode
    *  (planned) will consume `run`/`earned` to continue past this instead */
   won: boolean;
+  /** Chapter 38 Deadline cleared; the intentional Number-safe endpoint. */
+  endlessComplete: boolean;
   earned: BlindEarnings;
   /** the run after payout + advancement (unchanged on a miss) */
   run: RunState;
@@ -69,20 +71,36 @@ function advance(ante: number, blindIndex: 0 | 1 | 2): { ante: number; blindInde
  */
 export function resolveBlind(run: RunState, blind: BlindState, finalScore: number): BlindOutcome {
   if (finalScore < blind.target) {
-    return { cleared: false, gameOver: true, won: false, earned: NO_EARNINGS, run };
+    return {
+      cleared: false,
+      gameOver: true,
+      won: false,
+      endlessComplete: false,
+      earned: NO_EARNINGS,
+      run,
+    };
   }
-  const reward = effectiveClearReward(run, blind.kind);
+  const reward = effectiveClearReward(run, blind.kind, blind.bossId);
   const phaseCount = blind.phasesTotal - blind.phasesUsed;
   const phases = remainingPhaseGold(run, phaseCount);
   const discardCount = blind.discardsLeft;
   const discards = remainingDiscardGold(run, discardCount);
   const interestGold = effectiveInterest(run);
   const total = reward + phases + discards + interestGold;
-  const next = advance(run.ante, run.blindIndex);
+  const won =
+    !run.victorySecured && run.ante === BALANCE.runAntes && run.blindIndex === 2;
+  const endlessComplete =
+    run.victorySecured &&
+    run.ante === BALANCE.endless.maxAnte &&
+    run.blindIndex === 2;
+  const next = endlessComplete
+    ? { ante: run.ante, blindIndex: run.blindIndex }
+    : advance(run.ante, run.blindIndex);
   return {
     cleared: true,
     gameOver: false,
-    won: run.ante === BALANCE.runAntes && run.blindIndex === 2,
+    won,
+    endlessComplete,
     earned: {
       reward,
       phaseCount,
@@ -92,6 +110,12 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
       interest: interestGold,
       total,
     },
-    run: { ...run, gold: run.gold + total, ante: next.ante, blindIndex: next.blindIndex },
+    run: {
+      ...run,
+      gold: run.gold + total,
+      ante: next.ante,
+      blindIndex: next.blindIndex,
+      victorySecured: run.victorySecured || won,
+    },
   };
 }

@@ -1,14 +1,21 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ALL_JOKERS } from '../../engine/jokers';
 import { VOUCHER_REGISTRY, ALL_VOUCHER_IDS, BASE_VOUCHER_IDS } from '../../engine/vouchers';
-import { BOSS_REGISTRY, CORE_BOSS_IDS } from '../../engine/bosses';
+import { ALL_BOSS_IDS, BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, BLIND_ART } from '../bossArt';
 import { blindTarget } from '../../engine/economy';
 import { BALANCE } from '../../engine/balance';
+import { formatScore } from '../formatScore';
 import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
-import { RECORD_IDS, isRecordUnlocked } from '../../engine/records';
 import type { Lexicon } from '../../engine/lexicon';
-import type { Suit, TileFont, TileMaterial, Tile, VoucherId } from '../../engine/types';
+import type {
+  JokerEdition,
+  Suit,
+  TileFont,
+  TileMaterial,
+  Tile,
+  VoucherId,
+} from '../../engine/types';
 import {
   collectionHighlights,
   loadCollection,
@@ -32,7 +39,6 @@ import { useI18n } from '../i18n';
 import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { pouchArt } from '../pouchArt';
-import { recordArt } from '../recordArt';
 import { loadLifetime } from '../lifetime';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
@@ -49,12 +55,13 @@ import { TiltCard } from './TiltCard';
 import { useSettings } from '../settings';
 import { jokerArt } from '../jokerArt';
 import { audio } from '../audio';
+import { richText } from '../richtext';
 
 type Category =
   | 'words'
   | 'jokers'
-  | 'materials'
-  | 'fonts'
+  | 'enhancedTiles'
+  | 'editions'
   | 'vouchers'
   | 'fableCards'
   | 'constellationCards'
@@ -63,45 +70,31 @@ type Category =
   | 'packs'
   | 'palette'
   | 'mascots'
-  | 'pouches'
-  | 'records';
-
-type CategoryMenuItem = {
-  id: Category;
-  scale: number;
-};
+  | 'pouches';
 
 type CategoryMenuBlock = {
-  /** Relative detail-row footprint. Both columns intentionally total 8.6. */
-  scale: number;
-  items: CategoryMenuItem[];
+  items: Category[];
   family?: 'cards';
 };
 
-const CATEGORY_COLUMNS: CategoryMenuBlock[][] = [
+export const CATEGORY_COLUMNS: CategoryMenuBlock[][] = [
   [
-    { scale: 2.2, items: [{ id: 'words', scale: 1 }] },
-    { scale: 1.8, items: [{ id: 'jokers', scale: 1 }] },
-    { scale: 1.6, items: [{ id: 'vouchers', scale: 1 }] },
+    { items: ['jokers'] },
+    { items: ['pouches'] },
+    { items: ['vouchers'] },
     {
-      scale: 3,
       family: 'cards',
-      items: [
-        { id: 'fableCards', scale: 1 },
-        { id: 'constellationCards', scale: 1 },
-        { id: 'inkCards', scale: 1 },
-      ],
+      items: ['fableCards', 'constellationCards', 'inkCards'],
     },
   ],
   [
-    { scale: 1.7, items: [{ id: 'bosses', scale: 1 }] },
-    { scale: 1.3, items: [{ id: 'packs', scale: 1 }] },
-    { scale: 0.9, items: [{ id: 'materials', scale: 1 }] },
-    { scale: 0.9, items: [{ id: 'fonts', scale: 1 }] },
-    { scale: 1.1, items: [{ id: 'palette', scale: 1 }] },
-    { scale: 1, items: [{ id: 'mascots', scale: 1 }] },
-    { scale: 0.85, items: [{ id: 'pouches', scale: 1 }] },
-    { scale: 0.85, items: [{ id: 'records', scale: 1 }] },
+    { items: ['enhancedTiles'] },
+    { items: ['editions'] },
+    { items: ['packs'] },
+    { items: ['palette'] },
+    { items: ['mascots'] },
+    { items: ['words'] },
+    { items: ['bosses'] },
   ],
 ];
 
@@ -109,6 +102,7 @@ export const MATERIALS: TileMaterial[] = [
   'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
 ];
 const FONTS: TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
+export const EDITIONS: JokerEdition[] = ['base', 'gray', 'white', 'rainbow', 'violet'];
 // The five pack families the Collection shows (feedback): the three consumable packs
 // Fable / Ink / Constellation, plus Charm and Tile. `ink` is presentation-only until
 // its Gambler registry lands, but it still counts as a family in the gallery.
@@ -172,8 +166,11 @@ export function Collection({ lexicon, onBack }: Props) {
       return {
       words: { have: collectionSize(), total: lexicon.size },
       jokers: { have: ALL_JOKERS.length, total: ALL_JOKERS.length },
-      materials: { have: MATERIALS.length, total: MATERIALS.length },
-      fonts: { have: FONTS.length, total: FONTS.length },
+      enhancedTiles: {
+        have: MATERIALS.length + FONTS.length,
+        total: MATERIALS.length + FONTS.length,
+      },
+      editions: { have: EDITIONS.length, total: EDITIONS.length },
       vouchers: {
         have: BASE_VOUCHER_IDS.length + loadVoucherProgress().unlocked.length,
         total: ALL_VOUCHER_IDS.length,
@@ -184,7 +181,7 @@ export function Collection({ lexicon, onBack }: Props) {
         total: CONSTELLATION_DEFS.length,
       },
       inkCards: { have: GAMBLER_CARDS.length, total: GAMBLER_CARDS.length },
-      bosses: { have: CORE_BOSS_IDS.length, total: CORE_BOSS_IDS.length },
+      bosses: { have: ALL_BOSS_IDS.length, total: ALL_BOSS_IDS.length },
       packs: { have: PACK_TYPES.length, total: PACK_TYPES.length },
       palette: { have: playedCount(), total: UNLOCKS.length },
       mascots: {
@@ -194,10 +191,6 @@ export function Collection({ lexicon, onBack }: Props) {
       pouches: {
         have: POUCH_IDS.filter((id) => isPouchUnlocked(id, progress)).length,
         total: POUCH_IDS.length,
-      },
-      records: {
-        have: RECORD_IDS.filter((id) => isRecordUnlocked(id, progress.recordWins)).length,
-        total: RECORD_IDS.length,
       },
     };
     },
@@ -214,17 +207,15 @@ export function Collection({ lexicon, onBack }: Props) {
               <div className="cat-column" key={columnIndex}>
                 {column.map((block) => (
                   <div
-                    key={block.items.map(({ id }) => id).join('-')}
+                    key={block.items.join('-')}
                     className={`cat-block${block.family ? ` cat-family-block ${block.family}` : ''}`}
-                    style={{ '--category-scale': block.scale } as CSSProperties}
                   >
-                    {block.items.map(({ id, scale }) => {
+                    {block.items.map((id) => {
                       const n = counts[id];
                       return (
                         <button
                           key={id}
                           className={`cat-btn cat-${id}`}
-                          style={{ '--category-scale': scale } as CSSProperties}
                           onClick={() => setCat(id)}
                         >
                           <span className="cat-name">{t(`collection.cat.${id}`)}</span>
@@ -258,8 +249,8 @@ export function Collection({ lexicon, onBack }: Props) {
         <div className="coll-detail">
           {cat === 'words' && <WordsView lexicon={lexicon} />}
           {cat === 'jokers' && <JokersView />}
-          {cat === 'materials' && <MaterialsView />}
-          {cat === 'fonts' && <FontsView />}
+          {cat === 'enhancedTiles' && <EnhancedTilesView />}
+          {cat === 'editions' && <EditionsView />}
           {cat === 'vouchers' && <VouchersView />}
           {cat === 'fableCards' && <FablesView />}
           {cat === 'constellationCards' && <ConstellationsView />}
@@ -269,7 +260,6 @@ export function Collection({ lexicon, onBack }: Props) {
           {cat === 'palette' && <PaletteView />}
           {cat === 'mascots' && <MascotsView />}
           {cat === 'pouches' && <PouchesView />}
-          {cat === 'records' && <RecordsView />}
         </div>
 
         {/* 뒤로 = the previous screen: from a detail view that's the category
@@ -487,7 +477,17 @@ function JokersView() {
   );
 }
 
-// ---------- Materials / Fonts (tile swatches) ----------
+// ---------- Enhanced tiles (Materials / Fonts) ----------
+function EnhancedTilesView() {
+  const [page, setPage] = useState(0);
+  return (
+    <>
+      {page === 0 ? <MaterialsView /> : <FontsView />}
+      <Pager page={page} pages={2} onPage={setPage} />
+    </>
+  );
+}
+
 function MaterialsView() {
   const { t } = useI18n();
   return (
@@ -512,6 +512,35 @@ function FontsView() {
           <div className="swatch">
             <TileView tile={sampleTile({ font: f })} />
             <span className="sw-name">{t(`font.${f}`)}</span>
+          </div>
+        </Tooltip>
+      ))}
+    </div>
+  );
+}
+
+function EditionsView() {
+  const { t } = useI18n();
+  const art = jokerArt('bookworm');
+  return (
+    <div className="edition-collection-grid">
+      {EDITIONS.map((edition) => (
+        <Tooltip
+          key={edition}
+          title={t(`edition.${edition}`)}
+          body={t(`editiondesc.${edition}`)}
+          down
+        >
+          <div className="swatch">
+            <TiltCard
+              idle
+              className={`emoji-tile-collection emoji-tile-image-only edition-${edition}`}
+              tabIndex={0}
+              aria-label={t(`edition.${edition}`)}
+            >
+              {art && <img className="cc-joker-art" src={art} alt="" />}
+            </TiltCard>
+            <span className="sw-name">{t(`edition.${edition}`)}</span>
           </div>
         </Tooltip>
       ))}
@@ -568,10 +597,10 @@ function VouchersView() {
   );
 }
 
-// ---------- Blinds & Bosses ----------
+// ---------- Blinds ----------
 function BossesView() {
   const { t, lang } = useI18n();
-  const antes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const antes = Array.from({ length: 16 }, (_, index) => index + 1);
   return (
     <div className="bosses-split">
       <div className="panel target-table">
@@ -602,9 +631,9 @@ function BossesView() {
             {antes.map((a) => (
               <tr key={a} className={a > BALANCE.anteBaseTargets.length ? 'endless' : ''}>
                 <td>{a}</td>
-                <td>{blindTarget(a, 'small')}</td>
-                <td>{blindTarget(a, 'big')}</td>
-                <td>{blindTarget(a, 'boss')}</td>
+                <td>{formatScore(blindTarget(a, 'small'))}</td>
+                <td>{formatScore(blindTarget(a, 'big'))}</td>
+                <td>{formatScore(blindTarget(a, 'boss'))}</td>
               </tr>
             ))}
           </tbody>
@@ -613,7 +642,7 @@ function BossesView() {
       <div className="boss-chips">
         <div className="label">{t('collection.bosses')}</div>
         <div className="card-grid">
-          {CORE_BOSS_IDS.map((id) => {
+          {ALL_BOSS_IDS.map((id) => {
             const b = BOSS_REGISTRY.get(id)!;
             return (
               <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))} down>
@@ -634,7 +663,7 @@ function BossesView() {
   );
 }
 
-// ---------- Packs / Pouches / Records ----------
+// ---------- Packs / Pouches ----------
 /** Image-only paged gallery for all supplied Tile, Charm, Constellation, and Ink art. */
 function PacksView() {
   const { t } = useI18n();
@@ -798,65 +827,82 @@ function MascotsView() {
 }
 function PouchesView() {
   const { t } = useI18n();
+  const [index, setIndex] = useState(0);
   const progress = runUnlockProgress();
-  return (
-    <div className="pouch-record-grid">
-      {POUCH_IDS.map((id) => {
-        const unlocked = isPouchUnlocked(id, progress);
-        const unlock = !unlocked
-          ? t('newrun.unlock', { requirement: t(`pouch.${id}.unlock`) })
-          : '';
-        return (
-          <Tooltip
-            key={id}
-            title={t(`pouch.${id}.name`)}
-            body={[t(`pouch.${id}.desc`), unlock].filter(Boolean).join('\n')}
-            down
-          >
-            <div
-              className={['collection-object', 'pouch-object', !unlocked && 'locked'].filter(Boolean).join(' ')}
-              tabIndex={0}
-            >
-              <img className="pouch-gallery-art" src={pouchArt(id)} alt="" />
-              <span className="collection-object-name">
-                {unlocked ? t(`pouch.${id}.name`) : t('newrun.locked')}
-              </span>
-              {!unlocked && <small>🔒 {unlock}</small>}
-            </div>
-          </Tooltip>
-        );
-      })}
-    </div>
-  );
-}
+  const id = POUCH_IDS[index]!;
+  const unlocked = isPouchUnlocked(id, progress);
+  const name = t(`pouch.${id}.name`);
+  const body = t(`pouch.${id}.desc`);
+  const unlock = !unlocked
+    ? t('newrun.unlock', { requirement: t(`pouch.${id}.unlock`) })
+    : '';
+  const move = (delta: number) =>
+    setIndex((current) => (current + delta + POUCH_IDS.length) % POUCH_IDS.length);
 
-function RecordsView() {
-  const { t } = useI18n();
-  const progress = runUnlockProgress();
   return (
-    <div className="pouch-record-grid record-grid">
-      {RECORD_IDS.map((id) => {
-        const unlocked = isRecordUnlocked(id, progress.recordWins);
-        const cumulative = id === 'whiteLp' ? '' : `\n${t('newrun.cumulative')}`;
-        return (
+    <section
+      className="collection-pouch-carousel"
+      aria-label={`${t('collection.cat.pouches')}: ${name}, ${index + 1}/${POUCH_IDS.length}`}
+    >
+      <button
+        type="button"
+        className="car-arrow"
+        onClick={() => move(-1)}
+        aria-label={t('collection.pouchPrevious')}
+      >
+        ‹
+      </button>
+      <div className="collection-pouch-stage">
+        <div
+          key={id}
+          className={['select-preview', 'collection-pouch-preview', !unlocked && 'locked'].filter(Boolean).join(' ')}
+        >
           <Tooltip
-            key={id}
-            title={t(`record.${id}.name`)}
-            body={`${t(`record.${id}.desc`)}${cumulative}`}
+            title={name}
+            body={[body, unlock].filter(Boolean).join('\n')}
             down
           >
             <div
-              className={['collection-object', 'record-object', !unlocked && 'locked'].filter(Boolean).join(' ')}
+              className="run-choice-art collection-pouch-art"
+              role="img"
               tabIndex={0}
+              aria-label={unlocked ? name : t('newrun.locked')}
             >
-              <img className="record-gallery-art" src={recordArt(id)} alt="" />
-              <span className="collection-object-name">{t(`record.${id}.name`)}</span>
-              {!unlocked && <small>{t('newrun.locked')}</small>}
+              <img src={pouchArt(id)} alt="" />
+              {!unlocked && <span className="run-choice-lock" aria-hidden />}
             </div>
           </Tooltip>
-        );
-      })}
-    </div>
+          <div className="run-choice-copy">
+            <h3 className="run-choice-title" aria-live="polite">
+              {unlocked ? name : t('newrun.locked')}
+            </h3>
+            <div className="run-choice-effect">
+              <p className="select-desc">{richText(unlocked ? body : unlock)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="carousel-dots" aria-hidden="true">
+          {POUCH_IDS.map((pouchId, dot) => (
+            <span
+              key={pouchId}
+              className={[
+                'carousel-dot',
+                dot === index && 'current',
+                dot < index && 'past',
+              ].filter(Boolean).join(' ')}
+            />
+          ))}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="car-arrow"
+        onClick={() => move(1)}
+        aria-label={t('collection.pouchNext')}
+      >
+        ›
+      </button>
+    </section>
   );
 }
 

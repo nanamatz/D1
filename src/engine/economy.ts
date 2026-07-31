@@ -5,6 +5,7 @@
  */
 
 import { BALANCE } from './balance';
+import { BOSS_REGISTRY } from './bosses';
 import {
   pouchDiscardGoldRate,
   pouchDisablesInterest,
@@ -21,8 +22,8 @@ import type { BlindKind, RunState } from './types';
 
 /**
  * The score needed to clear a blind (GDD §8.2): per-ante base × kind multiplier
- * (Small ×1 / Big ×1.5 / Boss ×2). Antes past the table (endless mode) keep the
- * curve's final growth ratio.
+ * (Small ×1 / Big ×1.5 / Boss ×2). Chapters 9–38 use the endless curve; Chapter
+ * 39 is intentionally unavailable because its target exceeds Number's range.
  */
 export function blindTarget(ante: number, kind: BlindKind): number {
   const table = BALANCE.anteBaseTargets;
@@ -34,11 +35,25 @@ export function blindTarget(ante: number, kind: BlindKind): number {
   } else if (ante <= table.length) {
     base = table[ante - 1]!;
   } else {
+    if (ante > BALANCE.endless.maxAnte) {
+      throw new RangeError(`chapter ${ante} exceeds the endless limit`);
+    }
     const last = table[table.length - 1]!;
-    const prev = table[table.length - 2]!;
-    base = last * Math.pow(last / prev, ante - table.length);
+    const c = ante - table.length;
+    const d = 1 + BALANCE.endless.exponentGrowth * c;
+    const inner =
+      BALANCE.endless.baseFactor + Math.pow(BALANCE.endless.growth * c, d);
+    const log10 = Math.log10(last) + c * Math.log10(inner);
+    const raw = Math.pow(10, log10);
+    const unit = Math.pow(
+      10,
+      Math.floor(Math.log10(raw)) - BALANCE.endless.significantDigits + 1,
+    );
+    base = Math.floor(raw / unit) * unit;
   }
-  return Math.round(base * BALANCE.blindTargetMult[kind]);
+  const target = Math.round(base * BALANCE.blindTargetMult[kind]);
+  if (!Number.isFinite(target)) throw new RangeError(`chapter ${ante} target overflow`);
+  return target;
 }
 
 /** Actual target for this run's pouch + cumulative Record modifiers.
@@ -48,12 +63,14 @@ export function effectiveBlindTarget(
   kind: BlindKind,
   extraMultiplier = 1,
 ): number {
-  return Math.round(
+  const target = Math.round(
     blindTarget(run.ante, kind) *
       recordTargetMultiplier(run, run.ante) *
       pouchTargetMultiplier(run) *
       extraMultiplier,
   );
+  if (!Number.isFinite(target)) throw new RangeError(`chapter ${run.ante} target overflow`);
+  return target;
 }
 
 /** Gold granted for clearing a blind of the given kind (GDD §9.1). */
@@ -62,7 +79,13 @@ export function clearReward(kind: BlindKind): number {
 }
 
 /** Red LP and every higher Record remove the Draft clear reward. */
-export function effectiveClearReward(run: RunState, kind: BlindKind): number {
+export function effectiveClearReward(
+  run: RunState,
+  kind: BlindKind,
+  bossId: string | null = null,
+): number {
+  const bossReward = bossId ? BOSS_REGISTRY.get(bossId)?.clearReward : undefined;
+  if (bossReward !== undefined) return bossReward;
   return kind === 'small' && recordRemovesDraftReward(run) ? 0 : clearReward(kind);
 }
 

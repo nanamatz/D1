@@ -7,6 +7,7 @@ import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { bossRerollLimit, bossRerollPrice } from '../../engine/vouchers';
 import { useState } from 'react';
+import { formatScore } from '../formatScore';
 
 type Status = 'defeated' | 'current' | 'upcoming';
 
@@ -37,7 +38,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
           const bossId = kind === 'boss' ? (blind.bossId ?? run.chapterBossId) : null;
           const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
           const target = effectiveBlindTarget(run, kind, boss?.targetMult ?? 1);
-          const reward = effectiveClearReward(run, kind);
+          const reward = effectiveClearReward(run, kind, bossId);
 
           return (
             <div key={i} className={['bs-card', kind, status].join(' ')}>
@@ -58,7 +59,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
               )}
               <div className="bs-target">
                 <span className="label">{t('sidebar.target')}</span>
-                <span className="n">{target}</span>
+                <span className="n">{formatScore(target)}</span>
               </div>
               <div className="bs-reward">
                 <span className="label">{t('blindselect.reward')}</span>

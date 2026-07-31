@@ -8,7 +8,13 @@ import { newRun } from '../engine/run';
 import { makeRng } from '../engine/rng';
 import { startBlind, submitWord, discardTiles, endBlind, blindExhausted } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
-import { drawBoss } from '../engine/bosses';
+import {
+  bossPoolForAnte,
+  bossPoolForId,
+  drawBoss,
+  enterBossBlind,
+  reconcileBossHand,
+} from '../engine/bosses';
 import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from './tutorial';
 import { readTips } from './settings';
 import { checkWordPlayed, unlockBus } from './unlocks';
@@ -41,8 +47,8 @@ import { BALANCE } from '../engine/balance';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import { loadBrowserLexicon } from './lexicon.browser';
 import { recordWord } from './collection';
-import { recordRunEnd } from './lifetime';
-import { loadRun, serializeRun, writeRun } from './persist';
+import { recordEndlessEnd, recordRunEnd } from './lifetime';
+import { clearRun, loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
 import { patternLevelBus } from './patternLevel';
@@ -87,6 +93,10 @@ export interface GameOverInfo {
   bossId: string | null;
   /** true when the run ended by clearing the final chapter's Deadline (a win) */
   won: boolean;
+  /** true for a post-victory loss or the explicit Chapter-38 endpoint. */
+  endlessRun: boolean;
+  /** true when the Chapter-38 Deadline itself was cleared. */
+  endlessComplete: boolean;
 }
 
 /**
@@ -113,6 +123,13 @@ const freshStats = (): RunStats => ({
   patternCounts: {},
   discoveries: 0,
 });
+
+const keepSelectedInHand = (selected: readonly string[], blind: BlindState): string[] => {
+  const kept = selected.filter((id) => blind.hand.some((tile) => tile.id === id));
+  return blind.forcedTileId && !kept.includes(blind.forcedTileId)
+    ? [blind.forcedTileId, ...kept]
+    : kept;
+};
 
 export interface GameState {
   seed: string;
@@ -147,6 +164,8 @@ export interface GameState {
   gameover: GameOverInfo | null;
   /** per-run display stats (Game Over screen) */
   stats: RunStats;
+  /** Highest finalized blind score after choosing Endless Mode. */
+  endlessBestScore: number;
   /**
    * The blind's last phase was just played and its settle is still animating
    * (A-4). The board stays visible; finalize (→ cash out or game over) runs once
@@ -269,7 +288,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
   const run: RunState = {
     ...base,
     voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`), unlockedVoucherSet()),
-    chapterBossId: drawBoss(makeRng(`${seed}#boss-1`)),
+    chapterBossId: drawBoss(makeRng(`${seed}#boss-1`), bossPoolForAnte(1)),
   };
   // First-run lesson (2026-07-21): rig the opening hand to contain YELLOW so the guided
   // steps can teach build → submit. The target is NOT lowered — it stays the normal ante-1
@@ -301,6 +320,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     pendingRun: null,
     gameover: null,
     stats: freshStats(),
+    endlessBestScore: 0,
     pendingEnd: false,
     settleComplete: true,
     finalScore: null,
@@ -349,6 +369,8 @@ export interface UseGame {
   confirmCashout: () => void;
   /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
   markSettleComplete: () => void;
+  continueEndless: () => void;
+  endRun: () => void;
   newGame: () => void;
   /** Start a fresh run with the New Run screen's pouch, record, and seed choices. */
   startRun: (options: RunStartOptions) => void;
@@ -382,15 +404,22 @@ export function useGame(): UseGame {
     const go = state.gameover;
     if (go && recordedGameOver.current !== go) {
       recordedGameOver.current = go;
-      recordRunEnd({
-        ante: go.ante,
-        gold: state.run.gold,
-        bestWord: state.stats.bestWord,
-        won: go.won,
-        pouchId: state.run.pouchId,
-        recordId: state.run.recordId,
-        customSeed: state.run.customSeed,
-      });
+      if (go.endlessRun && !go.won) {
+        recordEndlessEnd({
+          ante: go.ante,
+          bestScore: state.endlessBestScore,
+        });
+      } else {
+        recordRunEnd({
+          ante: go.ante,
+          gold: state.run.gold,
+          bestWord: state.stats.bestWord,
+          won: go.won,
+          pouchId: state.run.pouchId,
+          recordId: state.run.recordId,
+          customSeed: state.run.customSeed,
+        });
+      }
     }
   }, [
     state.gameover,
@@ -399,6 +428,7 @@ export function useGame(): UseGame {
     state.run.recordId,
     state.run.customSeed,
     state.stats.bestWord,
+    state.endlessBestScore,
   ]);
 
   // Word collection (P2-2): record each non-gibberish play once it settles.
@@ -443,20 +473,27 @@ export function useGame(): UseGame {
       const patternCounts = { ...s.stats.patternCounts };
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
       const stats: RunStats = { ...s.stats, patternCounts };
+      const roundedFinal = Math.round(final.finalScore);
+      const endlessBestScore = s.run.victorySecured
+        ? Math.max(s.endlessBestScore, roundedFinal)
+        : s.endlessBestScore;
 
       if (!outcome.cleared) {
         return {
           ...s,
           run: outcome.run,
           stats,
+          endlessBestScore,
           phase: 'gameover',
           gameover: {
-            finalScore: Math.round(final.finalScore),
+            finalScore: roundedFinal,
             target: s.blind.target,
             ante: outcome.run.ante,
             blindKind: s.blind.kind,
             bossId: s.blind.bossId,
             won: false,
+            endlessRun: s.run.victorySecured,
+            endlessComplete: false,
           },
         };
       }
@@ -468,23 +505,24 @@ export function useGame(): UseGame {
         interestCap: interestCap(runWithPattern),
         handSize: s.blind.hand.length,
       });
-      // Final-chapter Deadline cleared → the run is WON (spec 2026-07-19).
-      // Skip Fee Settlement/shop for now; outcome.run (advanced, paid out) is
-      // still applied so the planned endless mode can later route this through
-      // the normal cashout path instead.
-      if (outcome.won) {
+      if (outcome.won) recordVoucherProgress({ kind: 'runWon' });
+
+      if (outcome.endlessComplete) {
         return {
           ...s,
           run: outcome.run,
           stats,
+          endlessBestScore,
           phase: 'gameover',
           gameover: {
-            finalScore: Math.round(final.finalScore),
+            finalScore: roundedFinal,
             target: s.blind.target,
-            ante: s.run.ante, // the chapter just completed, not the advanced one
+            ante: s.run.ante,
             blindKind: s.blind.kind,
             bossId: s.blind.bossId,
-            won: true,
+            won: false,
+            endlessRun: true,
+            endlessComplete: true,
           },
         };
       }
@@ -512,17 +550,50 @@ export function useGame(): UseGame {
           ),
           voucherLocked: false,
           bossRerollsUsed: 0,
-          chapterBossId: drawBoss(makeRng(`${s.seed}#boss-${advancedRun.ante}`)),
+          chapterBossId: drawBoss(
+            makeRng(`${s.seed}#boss-${advancedRun.ante}`),
+            bossPoolForAnte(advancedRun.ante),
+          ),
           wordsThisAnte: [], // new ante → Memoirs' pool resets (회고록)
         };
       }
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
       const shop = rollShopStock(advancedRun, rng);
+      if (outcome.won) {
+        return {
+          ...s,
+          run: {
+            ...runAfterJokers,
+            gold: outcome.run.gold,
+            victorySecured: true,
+          },
+          stats,
+          phase: 'gameover',
+          cashout: outcome.earned,
+          pendingRun: advancedRun,
+          shop,
+          gameover: {
+            finalScore: roundedFinal,
+            target: s.blind.target,
+            ante: s.run.ante,
+            blindKind: s.blind.kind,
+            bossId: s.blind.bossId,
+            won: true,
+            endlessRun: false,
+            endlessComplete: false,
+          },
+          selected: [],
+          hint: null,
+          message: null,
+          rngCounter: s.rngCounter + 1,
+        };
+      }
       // Keep s.run / s.blind on the CLEARED blind so the board stays frozen behind
       // the Fee Settlement overlay (A-2); the advanced run applies on confirm.
       return {
         ...s,
         stats,
+        endlessBestScore,
         phase: 'cashout',
         cashout: outcome.earned,
         pendingRun: advancedRun,
@@ -650,16 +721,49 @@ export function useGame(): UseGame {
   const selectBlind = useCallback(() => {
     setState((prev) => {
       if (prev.phase !== 'blindselect') return prev;
-      recordVoucherProgress({ kind: 'handSize', size: prev.blind.hand.length });
+      const entered = enterBossBlind(
+        prev.run,
+        prev.blind,
+        makeRng(`${prev.seed}#boss-enter-${prev.run.ante}-${prev.rngCounter}`),
+      );
+      recordVoucherProgress({ kind: 'handSize', size: entered.blind.hand.length });
       recordVoucherProgress({ kind: 'anteReached', ante: prev.run.ante });
       if (prev.blind.bossId) recordVoucherProgress({ kind: 'bossSeen', id: prev.blind.bossId });
-      return { ...prev, phase: 'playing' };
+      return {
+        ...prev,
+        phase: 'playing',
+        run: entered.run,
+        blind: entered.blind,
+        selected: entered.blind.forcedTileId ? [entered.blind.forcedTileId] : [],
+      };
     });
   }, []);
 
   /** SettleProvider signals the settle timeline has landed — arms the clear UI (05 A). */
   const markSettleComplete = useCallback(() => {
     setState((prev) => (prev.settleComplete ? prev : { ...prev, settleComplete: true }));
+  }, []);
+
+  const continueEndless = useCallback(() => {
+    setState((prev) =>
+      prev.phase === 'gameover' &&
+      prev.gameover?.won &&
+      prev.cashout &&
+      prev.pendingRun &&
+      prev.shop
+        ? {
+            ...prev,
+            phase: 'cashout',
+            gameover: null,
+            endlessBestScore: 0,
+          }
+        : prev,
+    );
+  }, []);
+
+  const endRun = useCallback(() => {
+    clearRun();
+    setState((prev) => ({ ...prev, runStarted: false }));
   }, []);
 
   const buyVoucherAction = useCallback(() => {
@@ -937,6 +1041,7 @@ export function useGame(): UseGame {
     setState((prev) => {
       if (prev.phase !== 'playing' || prev.pendingEnd || !prev.blind.hand.some((t) => t.id === id))
         return prev;
+      if (id === prev.blind.forcedTileId && prev.selected.includes(id)) return prev;
       const selected = prev.selected.includes(id)
         ? prev.selected.filter((x) => x !== id)
         : [...prev.selected, id];
@@ -1003,52 +1108,60 @@ export function useGame(): UseGame {
       // so it must be held for a blind — the same rule tile-targeting Fables follow.
       if (prev.phase === 'shop' && gamblerTargetsTiles(id)) return prev;
       if (isGamblerId(id)) {
+        const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
         const result = useGambler(
           id,
           prev.run,
           prev.blind,
           prev.blind.hand,
           prev.selected,
-          makeRng(`${prev.seed}#${prev.rngCounter}`),
+          rng,
         );
         if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
+        const selected = prev.selected.filter((tileId) =>
+          result.blind.hand.some((tile) => tile.id === tileId),
+        );
+        const blind = reconcileBossHand(result.run, result.blind, rng);
         audio.play('consumableUse');
         recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
         return {
           ...prev,
           run: result.run,
-          blind: result.blind,
-          selected: prev.selected.filter((tileId) =>
-            result.blind.hand.some((tile) => tile.id === tileId)),
+          blind,
+          selected: keepSelectedInHand(selected, blind),
           message: null,
           rngCounter: prev.rngCounter + 1,
         };
       }
       if (isFableId(id)) {
+        const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
         const result = useFable(
           id,
           prev.run,
           prev.blind,
           prev.selected,
-          makeRng(`${prev.seed}#${prev.rngCounter}`),
+          rng,
         );
         if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
+        const blind = reconcileBossHand(result.run, result.blind, rng);
         audio.play('consumableUse'); // A-3: object actions are audible
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
         recordEditionedJokers(result.run);
         const hint = result.requestHint
-          ? findSpellableWords(result.blind.hand, lexicon, 3)
+          ? findSpellableWords(blind.hand, lexicon, 3)
           : prev.hint;
-        return {
+        const next = {
           ...prev,
           run: result.run,
-          blind: result.blind,
+          blind,
           selected: prev.selected.filter((tileId) =>
-            result.blind.hand.some((tile) => tile.id === tileId)),
+            result.blind.hand.some((tile) => tile.id === tileId),
+          ),
           hint,
           message: null,
           rngCounter: prev.rngCounter + 1,
         };
+        return { ...next, selected: keepSelectedInHand(next.selected, blind) };
       }
       const idx = prev.run.consumables.indexOf(id);
       const consumables = prev.run.consumables.slice();
@@ -1223,7 +1336,7 @@ export function useGame(): UseGame {
         ...prev,
         run: nextRun,
         blind,
-        selected: [],
+        selected: keepSelectedInHand([], blind),
         message: submission.debuffed ? { key: 'boss.notAllowed' } : null,
         runUnlocks: unlockedId ? [...prev.runUnlocks, unlockedId] : prev.runUnlocks,
         lastEvents: events,
@@ -1397,8 +1510,11 @@ export function useGame(): UseGame {
       if (prev.run.gold < bossRerollPrice()) return prev;
       if (prev.run.bossRerollsUsed >= bossRerollLimit(prev.run)) return prev;
       const rng = makeRng(`${prev.seed}#boss-reroll-${prev.rngCounter}`);
-      let bossId = drawBoss(rng);
-      if (bossId === prev.run.chapterBossId) bossId = drawBoss(rng);
+      const pool = prev.run.chapterBossId
+        ? bossPoolForId(prev.run.chapterBossId)
+        : bossPoolForAnte(prev.run.ante);
+      let bossId = drawBoss(rng, pool);
+      if (bossId === prev.run.chapterBossId) bossId = drawBoss(rng, pool);
       const run = {
         ...prev.run,
         gold: prev.run.gold - bossRerollPrice(),
@@ -1474,6 +1590,8 @@ export function useGame(): UseGame {
     selectBlind,
     confirmCashout,
     markSettleComplete,
+    continueEndless,
+    endRun,
     newGame,
     startRun,
   };

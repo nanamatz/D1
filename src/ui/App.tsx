@@ -37,7 +37,9 @@ export function App() {
   // `useGame` lives here, so leaving the run view (Options → Main Menu) keeps the
   // run intact, and it's persisted to localStorage so a reload keeps it too.
   // `runStarted` rides along in the save. A finished run is not resumable.
-  const canContinue = g.state.runStarted && g.state.phase !== 'gameover';
+  const canContinue =
+    g.state.runStarted &&
+    (g.state.phase !== 'gameover' || !!g.state.gameover?.won);
 
   // BGM (work order B-2): one place picks the loop for the current context — menu
   // track off-run, the shop lounge in the Stationery Shop, and the play track

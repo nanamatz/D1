@@ -7,6 +7,7 @@ import { patternSymbol } from '../patternSymbols';
 import type { UseGame } from '../useGame';
 import { WooDakMascot } from './WooDakMascot';
 import { UNLOCKS } from '../unlocks';
+import { formatScore } from '../formatScore';
 
 /** The most-frequent finalized sentence pattern this run, with its count. */
 function topPattern(counts: Partial<Record<PatternId, number>>): { id: PatternId; n: number } | null {
@@ -36,6 +37,14 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
   const top = topPattern(stats.patternCounts);
   const bestWord = stats.bestWord;
   const won = gameover.won;
+  const endless = gameover.endlessRun;
+  const titleKey = gameover.endlessComplete
+    ? 'gameover.endlessCompleteTitle'
+    : endless
+      ? 'gameover.endlessEndedTitle'
+      : won
+        ? 'gameover.wonTitle'
+        : 'gameover.title';
   // feedback #2: the chromatic unlocks earned THIS run — announced by the mascot and
   // shown as cards below (deduped, in play order).
   const unlocks = [...new Set(g.state.runUnlocks)]
@@ -54,12 +63,12 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
 
   return (
     <div className="overlay gameover-overlay">
-      <WooDakMascot stats={stats} won={won} unlocked={unlocks.length} />
-      <div className={['overlay-card', 'gameover', won ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
-      <div className="go-title">{t(won ? 'gameover.wonTitle' : 'gameover.title')}</div>
+      <WooDakMascot stats={stats} won={won || gameover.endlessComplete} unlocked={unlocks.length} />
+      <div className={['overlay-card', 'gameover', won || gameover.endlessComplete ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
+      <div className="go-title">{t(titleKey)}</div>
 
       <div className="panel go-defeat">
-        <span className="label">{t(won ? 'gameover.wonBy' : 'gameover.defeatedBy')}</span>
+        <span className="label">{t(won || gameover.endlessComplete ? 'gameover.wonBy' : 'gameover.defeatedBy')}</span>
         <div className="go-defeat-row">
           {boss ? (
             <span className="go-boss">
@@ -74,13 +83,16 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
             <span className="go-boss">{t(`blind.${gameover.blindKind}`)}</span>
           )}
           <span className="go-reach">
-            {won
+            {won || gameover.endlessComplete
               ? t('gameover.wonReached', { ante: gameover.ante })
               : t('gameover.reached', { ante: gameover.ante, blind: t(`blind.${gameover.blindKind}`) })}
           </span>
         </div>
         <div className="go-score">
-          {t('gameover.score', { score: gameover.finalScore, target: gameover.target })}
+          {t('gameover.score', {
+            score: formatScore(gameover.finalScore),
+            target: formatScore(gameover.target),
+          })}
         </div>
       </div>
 
@@ -156,11 +168,29 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
       </div>
 
       <div className="go-actions">
-        <button className="btn play" onClick={onNewRun ?? g.newGame} autoFocus>
+        {won && (
+          <button className="btn gold" onClick={g.continueEndless} autoFocus>
+            {t('gameover.endless')}
+          </button>
+        )}
+        <button
+          className="btn play"
+          onClick={() => {
+            g.endRun();
+            (onNewRun ?? g.newGame)();
+          }}
+          autoFocus={!won}
+        >
           {t('gameover.newRun')}
         </button>
         {onMainMenu && (
-          <button className="btn exchange" onClick={onMainMenu}>
+          <button
+            className="btn exchange"
+            onClick={() => {
+              g.endRun();
+              onMainMenu();
+            }}
+          >
             {t('gameover.mainMenu')}
           </button>
         )}

@@ -221,6 +221,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}
+            jokersFaceDown={!!blind.jokersFaceDown}
           />
           <section className="phase-workspace">
             {notAllowedNotice !== null && (

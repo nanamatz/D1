@@ -6,6 +6,7 @@ import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
+import { formatScore } from '../formatScore';
 import { Collection } from './Collection';
 import { ENCOUNTERS, hasSeen, resetIntro, type EncounterGroup } from '../tutorial';
 import { richText } from '../richtext';
@@ -265,6 +266,8 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
           <div className="label">{t('stats.records')}</div>
           <Stat k={t('stats.bestWord')} v={lt.bestWord ? `${lt.bestWord.toUpperCase()} · ${lt.bestWordScore}` : '—'} />
           <Stat k={t('stats.highestAnte')} v={lt.highestAnte || '—'} />
+          <Stat k={t('stats.highestEndlessAnte')} v={lt.highestEndlessAnte || '—'} />
+          <Stat k={t('stats.bestEndlessScore')} v={lt.bestEndlessScore ? formatScore(lt.bestEndlessScore) : '—'} />
           <Stat k={t('stats.mostGold')} v={lt.mostGold ? `$${lt.mostGold}` : '—'} />
           <Stat k={t('stats.runs')} v={lt.runs} />
         </div>

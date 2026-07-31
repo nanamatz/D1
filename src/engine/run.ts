@@ -55,6 +55,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     customSeed: options.customSeed ?? false,
     seed,
     ante: 1,
+    victorySecured: false,
     blindIndex: 0,
     gold: BALANCE.startingGold,
     handSize: BALANCE.handSize,

@@ -633,6 +633,32 @@
   mix-blend-mode: screen;
   opacity: .86;
 }
+.emoji-tile-image-only.face-down {
+  background: #000;
+}
+.emoji-tile-image-only.face-down::after {
+  display: none;
+}
+.joker-art.joker-back-mascot {
+  box-sizing: border-box;
+  padding: 10px;
+  filter: url(#unlock-chroma);
+}
+.emoji-tile-image-only.boss-disabled {
+  filter: grayscale(1) brightness(.38);
+}
+.emoji-tile-image-only.boss-disabled::before {
+  content: '×';
+  position: absolute;
+  z-index: 4;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  color: var(--mult);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: 72px;
+  line-height: 1;
+  text-shadow: 3px 3px 0 #000;
+}
 @keyframes emojiEditionRainbow {
   to { background-position: 300% 0; }
 }
@@ -3816,6 +3842,29 @@
   border-radius: 3px;
   background: var(--mult);
   color: #fff;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-xs);
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .48);
+}
+.tile.boss-forced {
+  outline: 4px solid var(--gold);
+  outline-offset: 2px;
+}
+.boss-forced-tag {
+  position: absolute;
+  z-index: 12;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  background: var(--gold);
+  color: #111;
   font-family: 'Jersey 10', var(--ctl-font);
   font-size: var(--fs-xs);
   font-style: normal;

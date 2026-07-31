@@ -18,6 +18,10 @@ import contract from './assets/bosses/T_Contract.png';
 import burntPaper from './assets/bosses/T_BurntPaper.png';
 import whitePaper from './assets/bosses/T_WhitePaper.png';
 import will from './assets/bosses/T_will.png';
+import nokdoScript from './assets/bosses/T_NokdoScript.png';
+import blueprint from './assets/bosses/T_Blueprint.png';
+import vitalSign from './assets/bosses/T_VitalSign.png';
+import ultrasound from './assets/bosses/T_Ultrasound.png';
 import draft from './assets/bosses/T_Draft.png';
 import revision from './assets/bosses/T_Revision.png';
 
@@ -35,6 +39,10 @@ export const BOSS_ART: Record<string, string> = {
   burntPaper,
   whitePaper,
   will,
+  nokdoScript,
+  blueprint,
+  vitalSign,
+  ultrasound,
 };
 
 /** Non-boss blind emblems: Draft (small) / Revision (big). Boss blinds use BOSS_ART. */

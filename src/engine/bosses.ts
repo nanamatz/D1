@@ -19,6 +19,7 @@
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
+import type { Rng } from './rng';
 import { isVerb } from './types';
 import type {
   BlindState,
@@ -44,7 +45,15 @@ export interface BossDef {
   handSizeDelta?: number;
   /** blind-target multiplier, applied at start and mirrored by Blind Select (Wanted ×2) */
   targetMult?: number;
+  /** clear reward override; finisher bosses pay $8. */
+  clearReward?: number;
   setup?: (blind: BlindState) => BlindState;
+  /** Seeded one-shot mutations applied when Blind Select is confirmed. */
+  enter?: (run: RunState, blind: BlindState, rng: Rng) => { run: RunState; blind: BlindState };
+  /** Seeded state change after each submitted word. */
+  afterPlay?: (run: RunState, blind: BlindState, rng: Rng) => { run: RunState; blind: BlindState };
+  /** Reconcile hand-bound state after a consumable changes the hand. */
+  handChanged?: (run: RunState, blind: BlindState, rng: Rng) => BlindState;
   wordScoring?: (ctx: WordScoringContext, env: BossScoringEnv) => void;
   sentenceScoring?: (ctx: SentenceScoringContext) => void;
   /** true → the submission is allowed but its word score is reduced to 0 */
@@ -148,10 +157,112 @@ const BOSSES: readonly BossDef[] = [
   },
 ];
 
-export const BOSS_REGISTRY: ReadonlyMap<string, BossDef> = new Map(BOSSES.map((b) => [b.id, b]));
+const forceRandomTile = (blind: BlindState, rng: Rng): BlindState => {
+  if (blind.forcedTileId && blind.hand.some((tile) => tile.id === blind.forcedTileId)) return blind;
+  return {
+    ...blind,
+    forcedTileId: blind.hand.length > 0 ? blind.hand[rng.int(blind.hand.length)]!.id : null,
+  };
+};
+
+const disableRandomJoker = (run: RunState, blind: BlindState, rng: Rng) => {
+  const jokers = run.jokers.map((joker) => {
+    const state = { ...joker.state };
+    delete state.bossDisabled;
+    return { ...joker, state };
+  });
+  if (jokers.length > 0) jokers[rng.int(jokers.length)]!.state.bossDisabled = 1;
+  return { run: { ...run, jokers }, blind };
+};
+
+const FINISHERS: readonly BossDef[] = [
+  {
+    id: 'nokdoScript',
+    nameEn: 'Nokdo Script',
+    nameKo: '녹도 문자',
+    emoji: '🦌',
+    clearReward: BALANCE.boss.finisherReward,
+    enter: (run, blind, rng) => ({ run, blind: forceRandomTile(blind, rng) }),
+    afterPlay: (run, blind, rng) => ({ run, blind: forceRandomTile(blind, rng) }),
+    handChanged: (_run, blind, rng) => forceRandomTile(blind, rng),
+  },
+  {
+    id: 'blueprint',
+    nameEn: 'Blueprint',
+    nameKo: '블루프린트',
+    emoji: '📐',
+    clearReward: BALANCE.boss.finisherReward,
+    enter: (run, blind, rng) => ({
+      run: { ...run, jokers: rng.shuffle(run.jokers) },
+      blind: { ...blind, jokersFaceDown: true },
+    }),
+  },
+  {
+    id: 'vitalSign',
+    nameEn: 'Vital Sign',
+    nameKo: '바이탈 사인',
+    emoji: '💓',
+    clearReward: BALANCE.boss.finisherReward,
+    targetMult: BALANCE.boss.vitalSignTargetMult,
+  },
+  {
+    id: 'ultrasound',
+    nameEn: 'Ultrasound Photo',
+    nameKo: '초음파 사진',
+    emoji: '🩻',
+    clearReward: BALANCE.boss.finisherReward,
+    enter: disableRandomJoker,
+    afterPlay: disableRandomJoker,
+  },
+];
+
+export const BOSS_REGISTRY: ReadonlyMap<string, BossDef> = new Map(
+  [...BOSSES, ...FINISHERS].map((boss) => [boss.id, boss]),
+);
 export const CORE_BOSS_IDS: readonly string[] = BOSSES.map((b) => b.id);
+export const FINISHER_BOSS_IDS: readonly string[] = FINISHERS.map((boss) => boss.id);
+export const ALL_BOSS_IDS: readonly string[] = [...CORE_BOSS_IDS, ...FINISHER_BOSS_IDS];
+export type BossPool = 'core' | 'finisher';
+
+export const bossPoolForAnte = (ante: number): BossPool =>
+  ante > 0 && ante % BALANCE.runAntes === 0 ? 'finisher' : 'core';
+
+export const bossPoolForId = (id: string | null): BossPool =>
+  id && FINISHER_BOSS_IDS.includes(id) ? 'finisher' : 'core';
 
 /** Draw a boss for a boss blind (seeded). */
-export function drawBoss(rng: { int: (n: number) => number }): string {
-  return CORE_BOSS_IDS[rng.int(CORE_BOSS_IDS.length)]!;
+export function drawBoss(rng: { int: (n: number) => number }, pool: BossPool = 'core'): string {
+  const ids = pool === 'finisher' ? FINISHER_BOSS_IDS : CORE_BOSS_IDS;
+  return ids[rng.int(ids.length)]!;
+}
+
+export function enterBossBlind(
+  run: RunState,
+  blind: BlindState,
+  rng: Rng,
+): { run: RunState; blind: BlindState } {
+  return BOSS_REGISTRY.get(blind.bossId ?? '')?.enter?.(run, blind, rng) ?? { run, blind };
+}
+
+export function afterBossPlay(
+  run: RunState,
+  blind: BlindState,
+  rng: Rng,
+): { run: RunState; blind: BlindState } {
+  return BOSS_REGISTRY.get(blind.bossId ?? '')?.afterPlay?.(run, blind, rng) ?? { run, blind };
+}
+
+export function reconcileBossHand(run: RunState, blind: BlindState, rng: Rng): BlindState {
+  return BOSS_REGISTRY.get(blind.bossId ?? '')?.handChanged?.(run, blind, rng) ?? blind;
+}
+
+export function clearBossJokerDebuffs(run: RunState): RunState {
+  return {
+    ...run,
+    jokers: run.jokers.map((joker) => {
+      const state = { ...joker.state };
+      delete state.bossDisabled;
+      return { ...joker, state };
+    }),
+  };
 }

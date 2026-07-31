@@ -177,10 +177,11 @@ description that mentions **Gibberish / 횡설수설** emphasizes that term in r
 with a dotted underline and adds the shared secondary definition tooltip.
 
 ### 2.7 Run End (Game Over / Published)
-One screen, two framings on `gameover.won`: **loss** — red "Game Over",
-defeated-by panel; **win** — gold "출간 완료!/Published!", final-Deadline result
-panel; stats/seed/actions shared. A future **endless mode** button will join the
-action row (routing into Fee Settlement → shop; planned, not implemented).
+One screen with three framings: **loss** — red "Game Over", defeated-by panel;
+**Chapter-8 win** — gold "출간 완료!/Published!" with **Endless Mode →** in the
+action row; **post-win end** — "Endless Run Ended" (or "Beyond Publication!" for
+the Chapter-38 endpoint). Endless Mode routes into the already-earned win's Fee
+Settlement → shop flow. New Run/Main Menu instead finish and clear that run.
 **우땅 (WooDak)**, the orangutan mentor mascot, stands beside the card (hidden
 ≤720px) with a speech bubble: discovery mention (`{n}` new words) → stat-based
 tip → random tip; a congratulation leads on a win. Idle = shared single-sprite
@@ -191,7 +192,8 @@ breathe + slow sway. Art: `docs/WooDak.png` →
 - **New discoveries: N** (ties into the collection tracking already shipped)
 - Defeated by: boss badge · Chapter / stage reached
 - **Seed + Copy button** (engine seed makes runs reproducible)
-- Buttons: New Run · Main Menu. (The run-summary quip is now 우땅's speech bubble — see above.)
+- Buttons: on the Chapter-8 win, Endless Mode · New Run · Main Menu; otherwise
+  New Run · Main Menu. (The run-summary quip is now 우땅's speech bubble — see above.)
 
 ### 2.8 Pouch widget + centered modal (주머니)
 **Persistent pouch widget** bottom-right: the selected Starting Pouch's
@@ -210,7 +212,7 @@ Coin Purse always starts from a total of 68; letters with zero copies simply do
 not appear among its remaining tile objects.
 
 ### 2.9 Collection (도감)
-**Root screen = centred category modal** (not tabs — too many categories): a framed two-column menu uses thick red buttons and a full-width orange Back bar, following the reference layout. Each button shows `discovered/total` and a `!` badge for new finds. Button height is proportional to a normalized estimate of the category's visible content rows; the two columns have equal total weight. Each category opens a content-sized detail modal using the shared grid card + pagination patterns (§0), so short categories no longer inherit the Words view's height. Mobile collapses the menu to one column.
+**Root screen = centred category modal** (not tabs — too many categories): a framed two-column menu uses thick red buttons and a full-width orange Back bar, following the reference layout. The left column is Emoji Tiles → Pouches → Vouchers → the inset Fable/Constellation/Gambler family panel; the right column is Enhanced Tiles → Editions → Card Packs → Palette → Mascots → Words → Blinds. Words and Blinds share the taller 84px category height; every ordinary standalone category and each of the three consumable buttons uses the 75px Voucher height. Emoji Tiles receives the freed left-column space and is 164px tall, keeping both columns equal in total height. Each button shows `discovered/total` and a `!` badge for new finds. Each category opens a content-sized detail modal using the shared grid card + pagination patterns (§0); Card Packs alone reserves the tallest two-row gallery height across all family pages so paging never resizes its modal. Mobile collapses the menu to one column.
 
 | Category | Contents | Notes |
 |---|---|---|
@@ -219,18 +221,17 @@ not appear among its remaining tile objects.
 
 All 116 Emoji Tile images use the shared `jokerArt` resolver on every rendered
 surface.
-| Materials | 9 tile faces (base + 8 enhanced, including Wood) | rendered as large pixel-art tile swatches; maps the reference's "enhanced cards" screen |
-| Fonts | 5 (Futura variants) | rendered as the same letter in each style; shows each font's seal effect from `balance.ts` `fontEffects` (GDD §2.3); maps the reference's "editions" screen |
+| **Enhanced Tiles** | two paged views using the shared `< · page · >` footer: page 1 Materials = 9 tile faces (base + 8 enhanced, including Wood); page 2 Fonts = 5 Futura variants | both pages render large pixel-art tile swatches; Font tooltips show each seal effect from `balance.ts` `fontEffects` (GDD §2.3) (changed 2026-07-31) |
+| **Editions** | Base / Gray / White / Rainbow / Violet | five runtime-size Emoji Tile samples in one unbroken horizontal row using the live edition overlays; narrow viewports scroll horizontally instead of wrapping; each tooltip names the edition and its effect; White remains Emoji-Tile-only per GDD §11.8 |
 | Vouchers | 32 tickets | 16 base/upgraded pairs; four pairs per page; locked upgrades show only “Undiscovered” and the unseeded-run discovery hint — no name, effect, condition, or progress |
 | **Fable Cards** | 18 implemented cards | supplied pixel art normalized to the shared `500×700` 5:7 SVG surface, in a 5-column, 10-per-page gallery; hover shows the full effect |
 | **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art normalized to the same `500×700` path-only SVG surface and 5-column, 10-per-page gallery; hover shows the mapped sentence pattern |
 | **Gambler Cards** | 14 artworks; 12 implemented effects, 2 pending | supplied artwork normalized to the same `500×700` path-only SVG surface and 5-column, 10-per-page gallery; Rainman and Sake Cup remain art-only and show Pending, while the other 12 use live runtime tooltips |
-| Packs | Tile 8 · Charm 4 · Constellation 8 · Ink 4 | image-only paged gallery; all 24 supplied artworks use a shared `244×400` path-only SVG canvas plus the common idle and cursor tilt/sheen, with no persistent type/grade/coming-soon labels; hover or keyboard focus restores the shared type/description/grade tooltip |
+| Card Packs | Tile 8 · Charm 4 · Fable 8 · Constellation 8 · Ink 4 | four-page image-only gallery: Tile, combined Charm + Ink, Fable, Constellation; every page contains eight cards and therefore shares the same two-row height; all 32 supplied artworks use a shared `244×400` path-only SVG canvas plus the common idle and cursor tilt/sheen, with no persistent type/grade/coming-soon labels; hover or keyboard focus restores the shared type/description/grade tooltip |
 | **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
-| Mascots | WooDak skin roster | **primary skin picker** (moved from Settings 2026-07-29): one horizontal, centred, non-wrapping card row; locked skins use non-selectable silhouettes; unlocked cards have tooltip + cursor tilt/sheen, select on click/keyboard, and mark the equipped skin with a gold outline and Selected label |
-| **Starting Pouches** | 14 object-art entries from GDD §12.2 | unlocked = full art/effect with no unlock copy; locked = silhouette + exact unlock condition only; the tooltip retains the actual name/effect |
-| **Records** | White/Red/Green/Blue/Yellow/Clear LP, CD, DVD | ordered cumulative ladder; each entry shows its added penalty and cumulative marker, but never prints its unlock condition; art follows GDD §12.3 |
-| **Blinds & Bosses** | left: Chapter → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Draft/Revision badges + 12 boss chips (undiscovered = `?`) | doubles as the player-facing target-curve reference; Record modifiers are shown in the separate Records category; boss cards retain their tooltip and use shared cursor tilt/sheen |
+| Mascots | WooDak skin roster | **primary skin picker** (moved from Settings 2026-07-29): one horizontal, centred, non-wrapping card row; discovered tooltip-wrapped cards and undiscovered raw cards share the same 150px basis width; locked skins use non-selectable silhouettes; unlocked cards select on click/keyboard and mark the equipped skin with a gold outline and Selected label |
+| **Starting Pouches** | 14 object-art entries from GDD §12.2 | one-at-a-time `arrow | panel | arrow` carousel with art left, enlarged bold localized effect right, 14 position dots below, and the shared orange Back footer; signed/count values and voucher names use semantic highlight colours; unlocked = full art/effect with no unlock copy; locked = silhouette + generated arcade-pixel lock sprite + exact unlock condition only; the tooltip retains the actual name/effect (changed 2026-07-31) |
+| **Blinds** | left: Chapter → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Draft/Revision badges + 12 boss chips (undiscovered = `?`) | doubles as the player-facing target-curve reference; boss cards retain their tooltip and use shared cursor tilt/sheen |
 
 Fable reports `18/18`, Constellation reports `12/12`, and Gambler reports `14/14`
 supplied artworks. Twelve Gambler effects and their Ink Pack,

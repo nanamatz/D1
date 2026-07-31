@@ -25,7 +25,7 @@ const KEY = 'wj.run';
  * Bump whenever GameState's shape changes. Mismatched saves are DISCARDED, not
  * migrated — a stale save that half-fits is worse than a fresh run.
  */
-const VERSION = 6;
+const VERSION = 7;
 
 interface Envelope {
   version: number;
@@ -41,7 +41,7 @@ interface Envelope {
 function atRest(state: GameState): GameState {
   return {
     ...state,
-    selected: [],
+    selected: state.blind.forcedTileId ? [state.blind.forcedTileId] : [],
     message: null,
     hint: null,
     lastPlayed: null,

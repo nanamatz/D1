@@ -23,6 +23,7 @@ import { consumableClassification } from '../cardClassification';
 import { useShelfDrag } from '../drag';
 import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
+import { mascotSrc } from '../mascots';
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
 
@@ -61,6 +62,8 @@ interface Props {
   onReorderJoker?: (from: number, to: number) => void;
   /** An open Fable pack supplies pouch targets, so targeted Fables wait for its FX. */
   deferTargetFableUse?: boolean;
+  /** Blueprint: hide every Emoji Tile behind the selected WooDak skin. */
+  jokersFaceDown?: boolean;
 }
 
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
@@ -72,6 +75,7 @@ export function JokerShelf({
   onSellJoker,
   onReorderJoker,
   deferTargetFableUse = false,
+  jokersFaceDown = false,
 }: Props) {
   const { t, lang } = useI18n();
   const settle = useSettleView();
@@ -141,6 +145,8 @@ export function JokerShelf({
               'joker',
               'emoji-tile-image-only',
               `edition-${owned.edition ?? 'base'}`,
+              jokersFaceDown ? 'face-down' : '',
+              owned.state.bossDisabled === 1 ? 'boss-disabled' : '',
               firing ? 'firing' : '',
             ].filter(Boolean).join(' ');
             const jokerLeaving = leaving?.zone === 'joker' && leaving.index === i;
@@ -155,10 +161,13 @@ export function JokerShelf({
                 {...(onReorderJoker ? { 'data-drag-idx': i } : {})}
               >
                 <Tooltip
-                  title={name}
-                  body={jokerTooltipBody(def.id, owned.edition ?? 'base', t)}
-                  extra={grownValue(def, owned, t)}
-                  rarity={def.rarity}
+                  title={jokersFaceDown ? t('boss.faceDownJoker') : name}
+                  body={jokersFaceDown
+                    ? t('boss.faceDownJokerDesc')
+                    : jokerTooltipBody(def.id, owned.edition ?? 'base', t)}
+                  {...(!jokersFaceDown
+                    ? { extra: grownValue(def, owned, t), rarity: def.rarity }
+                    : {})}
                   down
                 >
                   <TiltCard
@@ -170,7 +179,11 @@ export function JokerShelf({
                     aria-expanded={onSellJoker ? jokerMenuIdx === i : undefined}
                     onClick={onSellJoker ? () => setJokerMenuIdx(jokerMenuIdx === i ? null : i) : undefined}
                   >
-                    {art && <img className="joker-art" src={art} alt="" />}
+                    {jokersFaceDown ? (
+                      <img className="joker-art joker-back-mascot" src={mascotSrc('woodak')} alt="" />
+                    ) : (
+                      art && <img className="joker-art" src={art} alt="" />
+                    )}
                     {firing && settle.jokerPop && (
                       <JokerPop
                         chips={settle.jokerPop.chips}

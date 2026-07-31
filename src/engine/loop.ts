@@ -22,7 +22,7 @@ import { finalizeScore, judgeSentence } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus } from './jokers';
-import { BOSS_REGISTRY, drawBoss } from './bosses';
+import { afterBossPlay, BOSS_REGISTRY, bossPoolForAnte, drawBoss } from './bosses';
 import { effectiveBlindTarget } from './economy';
 import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
@@ -74,7 +74,8 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   // always pass the pre-drawn chapter boss, playtest-04 D-6). Resolve the boss BEFORE
   // the shuffle so its hand-size delta can shrink the opening draw (Budget Book, §8.3);
   // drawBoss (the no-explicit-id path) consumes rng, so ordering matters only there.
-  const bossId = kind === 'boss' ? (opts.bossId ?? drawBoss(rng)) : null;
+  const bossId =
+    kind === 'boss' ? (opts.bossId ?? drawBoss(rng, bossPoolForAnte(run.ante))) : null;
   const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
 
   const effHandSize = Math.max(1, run.handSize + (boss?.handSizeDelta ?? 0));
@@ -102,6 +103,8 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     earlyEndDisabled: false,
     previewHidden: false,
     vowelsHidden: false,
+    forcedTileId: null,
+    jokersFaceDown: false,
   };
 
   // Apply the boss's setup effect (phases, discards, flags — GDD §8.3).
@@ -178,6 +181,9 @@ export function discardTiles(
 ): DiscardResult {
   if (blind.discardsLeft <= 0) {
     throw new Error('discard budget exhausted for this blind');
+  }
+  if (blind.forcedTileId && tileIds.includes(blind.forcedTileId)) {
+    throw new Error('boss: forced tile cannot be discarded');
   }
   const removed = takeFromHand(blind.hand, tileIds); // validates membership
 
@@ -493,6 +499,8 @@ function scoreSubmission(
   }
 
   for (const joker of run.jokers) {
+    // Ultrasound disables the whole Emoji Tile, including its edition.
+    if (joker.state.bossDisabled === 1) continue;
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
     const beforeScore = ctx.scoreBonus ?? 0;
@@ -716,6 +724,9 @@ export function submitWord(
   if (blind.phasesUsed >= blind.phasesTotal) {
     throw new Error('no phases remain in this blind');
   }
+  if (blind.forcedTileId && !tileIds.includes(blind.forcedTileId)) {
+    throw new Error('boss: forced tile must be submitted');
+  }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
 
   // Boss legality (kept as infra; no current-roster boss blocks) + economy drains.
@@ -779,6 +790,19 @@ export function submitWord(
       discardedThisBlind: [...afterBlind.discardedThisBlind, ...dumped],
     };
   }
+
+  // Finisher state rotates only after the current word has fully scored. Nokdo
+  // selects from the replacement hand; Ultrasound changes the disabled Emoji Tile.
+  const afterBoss = afterBossPlay(
+    {
+      ...scoringRun,
+      jokers: scoringRun.jokers.filter((joker) => joker.state.destroyed !== 1),
+    },
+    afterBlind,
+    rng,
+  );
+  const postBossRun = afterBoss.run;
+  afterBlind = afterBoss.blind;
   const committedScore = afterBlind.committedScore;
   const sequence = afterBlind.sequence;
 
@@ -789,7 +813,7 @@ export function submitWord(
     committedScore,
     sequence,
     judgment,
-    scoringRun,
+    postBossRun,
     afterBlind,
     lexicon,
   ).total;
@@ -801,7 +825,7 @@ export function submitWord(
     destroyedTileIds,
     grownWoodTileIds,
     bossDiscardedTiles,
-    jokers: scoringRun.jokers.filter((joker) => joker.state.destroyed !== 1),
+    jokers: postBossRun.jokers,
     blind: { ...afterBlind, projectedScore },
   };
 }
