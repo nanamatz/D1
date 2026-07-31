@@ -74,7 +74,16 @@ export function StagePanel({
     const dock = document.querySelector('.pouch-dock');
     if (!dock) return null;
     const r = dock.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    const bounds = handRef.current?.closest('.phase-workspace')?.getBoundingClientRect();
+    const tile = handRef.current?.querySelector<HTMLElement>('[data-flip-id]');
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    return bounds && tile
+      ? {
+          x: Math.min(x, bounds.right - tile.offsetWidth),
+          y: Math.min(y, bounds.bottom - tile.offsetHeight),
+        }
+      : { x, y };
   };
   useFlip(handRef, `${sortMode}|${entering ? 'entering' : ''}|${shownHand.map((tl) => tl.id).join(',')}`, {
     enterOrigin: pouchOrigin,

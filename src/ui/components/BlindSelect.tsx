@@ -1,4 +1,4 @@
-import { blindTarget, clearReward } from '../../engine/economy';
+import { effectiveBlindTarget, effectiveClearReward } from '../../engine/economy';
 import { kindForIndex } from '../../engine/progression';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
@@ -32,12 +32,12 @@ export function BlindSelect({ g }: { g: UseGame }) {
           const kind = kindForIndex(i);
           const status: Status =
             i < run.blindIndex ? 'defeated' : i === run.blindIndex ? 'current' : 'upcoming';
-          const target = blindTarget(run.ante, kind);
-          const reward = clearReward(kind);
           // D-6: the chapter's Deadline boss is drawn up front, so its effect is
           // ALWAYS shown — no hiding — even before you reach it.
           const bossId = kind === 'boss' ? (blind.bossId ?? run.chapterBossId) : null;
           const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
+          const target = effectiveBlindTarget(run, kind, boss?.targetMult ?? 1);
+          const reward = effectiveClearReward(run, kind);
 
           return (
             <div key={i} className={['bs-card', kind, status].join(' ')}>

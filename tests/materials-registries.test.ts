@@ -41,6 +41,17 @@ describe('material registries stay in sync with the engine (I-1 regression guard
     }
   });
 
+  it('puts Korean Chips and Mult units after their values in tile-axis tooltips', () => {
+    const descriptions = Object.entries(ko as Record<string, string>)
+      .filter(([key]) => /^(materialdesc|fonteffectdesc|editiondesc)\./.test(key));
+
+    for (const [, body] of descriptions) {
+      expect(body).not.toMatch(/\[(?:c:칩|m:배수)\s/);
+    }
+    expect((ko as Record<string, string>)['materialdesc.leadPlate'])
+      .toContain('1/5 확률로 [m:+20 배수], 1/5 확률로 [$:+$20]');
+  });
+
   it("Collection.tsx's MATERIALS list covers the full TileMaterial union", () => {
     expect([...COLLECTION_MATERIALS].sort()).toEqual([...ALL_MATERIALS].sort());
   });

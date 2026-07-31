@@ -12,7 +12,7 @@ describe('feedback 3 UI regressions', () => {
     // the preview is cleared. `syncCandidates` is that step, shared by every path.
     expect(game).toContain('function syncCandidates(');
     expect(game).toContain('candidateTiles: syncCandidates(');
-    expect(pack).toMatch(/resolvePick\(\);\s*\/\/ The committed candidate state[\s\S]*setFableFx\(null\)/);
+    expect(pack).toMatch(/resolvePick\(\);\s*\/\/ The committed candidate state[\s\S]*setTileFx\(null\)/);
   });
 
   it('fits Tile Pack choices to the tile image', () => {
@@ -39,6 +39,8 @@ describe('feedback 3 UI regressions', () => {
   it('preloads only first-interaction art', () => {
     const loading = source('src/ui/components/LoadingScreen.tsx');
     expect(loading).not.toContain('import.meta.glob');
-    expect(loading).toContain("const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, draftUrl]");
+    expect(loading).toContain(
+      "const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, recordUrl, draftUrl]",
+    );
   });
 });

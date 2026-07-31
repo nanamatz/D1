@@ -26,7 +26,36 @@ interface Props {
   children: ReactNode;
 }
 
+interface SupplementProps {
+  body: string;
+  sub?: { title: string; body: string } | undefined;
+}
+
 export type TooltipClassification = 'voucher' | 'fable' | 'constellation' | 'gambler';
+
+/** Secondary definitions shared by card and letter-tile tooltips. */
+export function TooltipSupplement({ body, sub }: SupplementProps) {
+  const { t } = useI18n();
+  const explainsGibberish = body.includes('[g:') || sub?.body.includes('[g:');
+  if (!sub && !explainsGibberish) return null;
+
+  return (
+    <span className="tt-sub-card">
+      {sub && (
+        <span className="tt-sub-section">
+          <span className="tt-sub-title">{sub.title}</span>
+          <span className="tt-body">{richText(sub.body)}</span>
+        </span>
+      )}
+      {explainsGibberish && (
+        <span className="tt-sub-section">
+          <span className="tt-sub-title">{t('tooltip.gibberish.title')}</span>
+          <span className="tt-body">{richText(t('tooltip.gibberish.body'))}</span>
+        </span>
+      )}
+    </span>
+  );
+}
 
 /**
  * Shared anchored card tooltip (spec §0): wraps any card and portals its panel to
@@ -100,12 +129,7 @@ export function Tooltip({
           {t(`tooltip.classification.${classification}`)}
         </span>
       )}
-      {sub && (
-        <span className="tt-sub-card">
-          <span className="tt-sub-title">{sub.title}</span>
-          <span className="tt-body">{richText(sub.body)}</span>
-        </span>
-      )}
+      <TooltipSupplement body={body} sub={sub} />
     </span>
   );
 

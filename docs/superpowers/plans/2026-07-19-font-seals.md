@@ -644,7 +644,7 @@ export const fontDescKey = (font: TileFont): string =>
 ```json
   "fontdesc.medium": "기본 서체 — 추가 효과 없음",
   "fonteffectdesc.goldPlay": "득점 시 +$3",
-  "fonteffectdesc.chipPlay": "득점 시 [c:칩 +30]",
+  "fonteffectdesc.chipPlay": "득점 시 [c:+30 칩]",
   "fonteffectdesc.retriggerPlay": "득점 시 이 타일의 득점을 1회 재발동",
   "fonteffectdesc.discardGain": "버릴 때 무작위 소모품 1개 획득 (슬롯이 가득 차면 없음)",
 ```

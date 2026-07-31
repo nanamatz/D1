@@ -10,6 +10,8 @@ import { sampleJokerDefs } from './offers';
 import { rerollCost, sellValue } from './economy';
 import { rollJokerEdition } from './editions';
 import { CONSTELLATION_POOL, rollTile, FABLE_POOL } from './packs';
+import { GAMBLER_IDS } from './gamblers';
+import { pouchAllowsGamblerShop } from './pouches';
 import {
   CONSUMABLE_PATTERN,
   VOUCHER_REGISTRY,
@@ -57,7 +59,10 @@ function buildPools(run: RunState, rng: Rng): ItemPools {
     edition: rollJokerEdition(run, rng),
     price: emojiTileShopPrice(run, discountedPrice(run, BALANCE.jokerPrice[j.rarity])),
   }));
-  const consumables: ShopItem[] = FABLE_POOL.map((id) => ({
+  const consumableIds = pouchAllowsGamblerShop(run)
+    ? [...FABLE_POOL, ...GAMBLER_IDS]
+    : FABLE_POOL;
+  const consumables: ShopItem[] = consumableIds.map((id) => ({
     kind: 'consumable',
     id,
     price: discountedPrice(run, BALANCE.consumablePrice),

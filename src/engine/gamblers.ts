@@ -162,6 +162,12 @@ export const canUseUnheldGambler = (
 ): boolean =>
   canUseGambler(id, { ...run, consumables: [...run.consumables, id] }, field, selectedIds);
 
+/** Presentation preview for a tile-targeting Gambler before the mutation commits. */
+export function previewGamblerTile(id: GamblerId, tile: Tile): Tile {
+  const effect = GAMBLER_REGISTRY.get(id)?.effect;
+  return effect?.kind === 'font' ? { ...tile, font: effect.font } : tile;
+}
+
 export interface UseGamblerResult {
   ok: boolean;
   run: RunState;

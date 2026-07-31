@@ -5,8 +5,13 @@
  */
 
 import { BALANCE } from './balance';
-import { blindTarget, clearReward, interest } from './economy';
-import { interestCap } from './vouchers';
+import {
+  effectiveBlindTarget,
+  effectiveClearReward,
+  effectiveInterest,
+  remainingDiscardGold,
+  remainingPhaseGold,
+} from './economy';
 import type { BlindKind, BlindState, RunState } from './types';
 
 const KINDS = ['small', 'big', 'boss'] as const;
@@ -18,12 +23,15 @@ export function kindForIndex(index: 0 | 1 | 2): BlindKind {
 
 /** The target the run's current blind must beat (GDD §8.2). */
 export function currentTarget(run: RunState): number {
-  return blindTarget(run.ante, kindForIndex(run.blindIndex));
+  return effectiveBlindTarget(run, kindForIndex(run.blindIndex));
 }
 
 export interface BlindEarnings {
   reward: number;
+  phaseCount: number;
   phases: number;
+  discardCount: number;
+  discards: number;
   interest: number;
   total: number;
 }
@@ -39,7 +47,15 @@ export interface BlindOutcome {
   run: RunState;
 }
 
-const NO_EARNINGS: BlindEarnings = { reward: 0, phases: 0, interest: 0, total: 0 };
+const NO_EARNINGS: BlindEarnings = {
+  reward: 0,
+  phaseCount: 0,
+  phases: 0,
+  discardCount: 0,
+  discards: 0,
+  interest: 0,
+  total: 0,
+};
 
 function advance(ante: number, blindIndex: 0 | 1 | 2): { ante: number; blindIndex: 0 | 1 | 2 } {
   if (blindIndex < 2) return { ante, blindIndex: (blindIndex + 1) as 0 | 1 | 2 };
@@ -55,16 +71,27 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
   if (finalScore < blind.target) {
     return { cleared: false, gameOver: true, won: false, earned: NO_EARNINGS, run };
   }
-  const reward = clearReward(blind.kind);
-  const phases = (blind.phasesTotal - blind.phasesUsed) * BALANCE.goldPerRemainingPhase;
-  const interestGold = interest(run.gold, interestCap(run));
-  const total = reward + phases + interestGold;
+  const reward = effectiveClearReward(run, blind.kind);
+  const phaseCount = blind.phasesTotal - blind.phasesUsed;
+  const phases = remainingPhaseGold(run, phaseCount);
+  const discardCount = blind.discardsLeft;
+  const discards = remainingDiscardGold(run, discardCount);
+  const interestGold = effectiveInterest(run);
+  const total = reward + phases + discards + interestGold;
   const next = advance(run.ante, run.blindIndex);
   return {
     cleared: true,
     gameOver: false,
     won: run.ante === BALANCE.runAntes && run.blindIndex === 2,
-    earned: { reward, phases, interest: interestGold, total },
+    earned: {
+      reward,
+      phaseCount,
+      phases,
+      discardCount,
+      discards,
+      interest: interestGold,
+      total,
+    },
     run: { ...run, gold: run.gold + total, ante: next.ante, blindIndex: next.blindIndex },
   };
 }

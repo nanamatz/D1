@@ -4,7 +4,8 @@ import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
 import { tutorialBus } from '../tutorial';
-import pouchUrl from '../assets/pouch.png';
+import { pouchArt } from '../pouchArt';
+import { richText } from '../richtext';
 import { TileView } from './Tile';
 
 interface Counts {
@@ -51,7 +52,7 @@ function sortForDisplay(tiles: readonly Tile[]): Tile[] {
  * font are readable at a glance. Totals stay in the side rail. Remaining = undrawn
  * bag ONLY (playtest-03 D-1).
  */
-function PouchContents({ blind }: { blind: BlindState }) {
+function PouchContents({ run, blind }: { run: RunState; blind: BlindState }) {
   const { t } = useI18n();
   const tiles = pouchRemaining(blind);
   const active = tally(tiles);
@@ -59,6 +60,10 @@ function PouchContents({ blind }: { blind: BlindState }) {
   return (
     <div className="pouch-body">
       <aside className="pouch-totals">
+        <div className="pouch-selected-info">
+          <strong>{t(`pouch.${run.pouchId}.name`)}</strong>
+          <p>{richText(t(`pouch.${run.pouchId}.desc`))}</p>
+        </div>
         <div className="bt-row">
           <span>{t('bagview.vowels')}</span>
           <b>{active.vowels}</b>
@@ -151,7 +156,7 @@ export function BagWidget({
           aria-label={t('bagview.title')}
           aria-expanded={open}
         >
-          <img className="pouch-art" src={pouchUrl} alt="" aria-hidden />
+          <img className="pouch-art" src={pouchArt(run.pouchId)} alt="" aria-hidden />
         </div>
         <span className="pouch-count">
           {remaining}/{total}
@@ -173,7 +178,7 @@ export function BagWidget({
                 {t('bagview.remaining')}: {remaining}/{total}
               </span>
             </div>
-            <PouchContents blind={blind} />
+            <PouchContents run={run} blind={blind} />
           </div>
         </div>
       )}

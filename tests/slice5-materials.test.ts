@@ -6,6 +6,7 @@ import type { Letter, Tile, TileMaterial } from '../src/engine/types';
 import { makeRng } from '../src/engine/rng';
 import { startBlind, submitWord, endBlind } from '../src/engine/loop';
 import { newRun } from '../src/engine/run';
+import { BALANCE } from '../src/engine/balance';
 
 let idc = 0;
 /** Build tiles from a word; '_' means a letterless stone tile. */
@@ -103,6 +104,15 @@ describe('slice5 — static per-tile material effects (GDD §2.2)', () => {
 });
 
 describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
+  it('uses independent 1-in-5 rolls for +20 Mult and +$20', () => {
+    expect(BALANCE.materials.leadPlate).toEqual({
+      multChance: 0.2,
+      mult: 20,
+      goldChance: 0.2,
+      gold: 20,
+    });
+  });
+
   it('is reproducible: the same seed gives the same outcome', () => {
     const build = () => {
       const run = { ...newRun('mat-seed'), bag: tiles('cat', 'leadPlate') };

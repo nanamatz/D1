@@ -15,6 +15,27 @@ export const BALANCE = {
   basePhases: 5,
   discardsPerBlind: 4, // per-blind count; no per-use tile cap (playtest-04 D-4)
 
+  // ----- Starting pouches + cumulative Record difficulty (GDD §12) -----
+  pouches: {
+    yellow: { discards: 1 },
+    blue: { phases: 1 },
+    green: { gold: 10 },
+    purple: { phaseGold: 2, discardGold: 1 },
+    fiveColor: { handSize: 2, jokerSlots: -1 },
+    leather: { jokerSlots: 1, phases: -1 },
+    military: { consumableSlots: -1 },
+    lunchBag: { targetMult: 2 },
+    unlockWords: { blue: 25, green: 50, purple: 100 },
+  },
+  records: {
+    /** Chapter 1 is unchanged; each later chapter compounds this growth. */
+    greenTargetGrowth: 1.15,
+    blueHandSize: -1,
+    yellowDiscards: -1,
+    clearPhases: -1,
+    cdJokerSlots: -1,
+  },
+
   // ----- Letter values (GDD §2.1) — Scrabble ratios × 3 (feel pass 2026-07-21):
   //       raise the base floor so tiles feel impactful; ratios (rare-letter payoff)
   //       are preserved. Only these scale — pattern/unison/hand/material constants
@@ -51,17 +72,15 @@ export const BALANCE = {
   gibberish: { mult: 1.0 }, // letter chips × 1.0; no suit, no POS, leaves a hole
 
   /**
-   * Materials (GDD §2.2). First-pass values are Balatro's enhancement numbers
-   * VERBATIM — a validated reference point to tune from, not a claim they fit
-   * our scale. See docs/superpowers/specs/2026-07-17-tile-materials-design.md
-   * for the three predicted breakages src/sim should measure.
+   * Materials (GDD §2.2). Values started from Balatro's enhancements, then tune
+   * from playtest decisions (Lead plate's gold chance is now 1/5).
    */
   materials: {
     porcelain: { chips: 30 }, // Balatro Bonus
     polished: { mult: 4 }, // Balatro Mult
     glass: { multFactor: 2, destroyChance: 0.25 }, // Balatro Glass
     stone: { chips: 50 }, // Balatro Stone
-    leadPlate: { multChance: 0.2, mult: 20, goldChance: 1 / 15, gold: 20 }, // Balatro Lucky
+    leadPlate: { multChance: 0.2, mult: 20, goldChance: 0.2, gold: 20 },
     ivory: { gold: 3 }, // Balatro Gold
     brass: { multFactor: 1.5 }, // Balatro Steel
     wood: { baseChips: 15, chipsPerPlay: 10 },
@@ -152,7 +171,7 @@ export const BALANCE = {
   runAntes: 8,
 
   // ----- Economy (GDD §9.1) -----
-  startingGold: 4, // Balatro-parity starting stake (placeholder)
+  startingGold: 4, // Base run starting Fee before Pouch modifiers
   clearReward: { small: 3, big: 4, boss: 5 },
   goldPerRemainingPhase: 1,
   interest: { per: 5, rate: 1, cap: 5 },

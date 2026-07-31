@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Lexicon } from '../../engine/lexicon';
 import { collectionSize } from '../collection';
+import { RECORD_IDS } from '../../engine/records';
 import { loadLifetime } from '../lifetime';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
@@ -271,7 +272,7 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
           <div className="label">{t('stats.progress')}</div>
           <Stat k={t('stats.collection')} v={`${collPct}%`} />
           <Stat k={t('stats.challenges')} v="0/0" muted />
-          <Stat k={t('stats.stakeWins')} v="—" muted />
+          <Stat k={t('stats.recordWins')} v={`${lt.recordWins.length}/${RECORD_IDS.length}`} />
         </div>
       </div>
       <p className="set-note">{t('stats.cardStubs')}</p>

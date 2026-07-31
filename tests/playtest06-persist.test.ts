@@ -59,6 +59,9 @@ const dirty = (): GameState =>
       unisonMult: 1,
       effectChips: 0,
       effectMult: 1,
+      pouchId: null,
+      pouchChipsDelta: 0,
+      pouchMultDelta: 0,
     },
     pendingEnd: true,
   }) as unknown as GameState;

@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { BlindState, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
-import { clearReward } from '../../engine/economy';
+import { effectiveClearReward } from '../../engine/economy';
 import type { StagePreview } from '../game';
 import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
@@ -73,7 +73,7 @@ export function Sidebar({
   const { t, lang } = useI18n();
   const phasesLeft = mode === 'blind' ? blind.phasesTotal - blind.phasesUsed : 0;
   const settle = useSettleView();
-  const reward = clearReward(blind.kind);
+  const reward = effectiveClearReward(run, blind.kind);
   // A (playtest-04) + item 7: the ROUND score is committed ONLY and never decreases,
   // and it ALWAYS rolls up with the same eased count-up the sentence bonus uses — no
   // more per-beat stepping. While a word's settle animates the scorebox, the round
@@ -285,6 +285,15 @@ export function Sidebar({
             {Math.abs(sentenceBonus!.effectMult - 1) > 0.001 && (
               <span className="bonus-part effect">
                 {t('sidebar.bonusEffectMult', { mult: fmtMult(sentenceBonus!.effectMult) })}
+              </span>
+            )}
+            {sentenceBonus!.pouchId && (
+              <span className="bonus-part pouch">
+                {t('sidebar.bonusPouch', {
+                  name: t(`pouch.${sentenceBonus!.pouchId}.name`),
+                  chips: fmtSigned(sentenceBonus!.pouchChipsDelta),
+                  mult: fmtSigned(sentenceBonus!.pouchMultDelta),
+                })}
               </span>
             )}
           </div>

@@ -92,8 +92,8 @@ export function App() {
       case 'newrun':
         return (
           <NewRun
-            onStart={(seed) => {
-              g.startRun(seed);
+            onStart={(config) => {
+              g.startRun(config);
               setScreen('run');
             }}
             onBack={() => setScreen('menu')}

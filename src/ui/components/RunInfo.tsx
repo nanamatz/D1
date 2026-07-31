@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { BlindKind, BlindState, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
-import { blindTarget, clearReward } from '../../engine/economy';
+import { effectiveBlindTarget, effectiveClearReward } from '../../engine/economy';
 import { kindForIndex } from '../../engine/progression';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { patternChipsMult } from '../../engine/patterns';
@@ -96,10 +96,10 @@ export function RunInfo({ run, blind, onClose }: Props) {
               {([0, 1, 2] as const).map((i) => {
                 const kind: BlindKind = kindForIndex(i);
                 const status = i < run.blindIndex ? 'defeated' : i === run.blindIndex ? 'current' : 'upcoming';
-                const target = blindTarget(run.ante, kind);
-                const reward = clearReward(kind);
                 const bossId = kind === 'boss' ? (blind.bossId ?? run.chapterBossId) : null;
                 const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
+                const target = effectiveBlindTarget(run, kind, boss?.targetMult ?? 1);
+                const reward = effectiveClearReward(run, kind);
                 return (
                   <div key={i} className={['bs-card', kind, status].join(' ')}>
                     <div className="bs-kind">{t(`blind.${kind}`)}</div>

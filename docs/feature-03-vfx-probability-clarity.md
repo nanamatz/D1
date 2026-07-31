@@ -1,12 +1,21 @@
 # Feature Work Order 03 — Effect Bug · Clarity · VFX · Probability
 
-Confirmed batch from the 2026-07-27 design review. **The docs are already updated** for everything below (GDD §2.4 / §9.2 / §9.3 / §12, UI_DESIGN §3.1 / §4, screens-spec §2.0, AGENTS+CLAUDE guardrail) — implement against them; residual mismatches, the docs win and flag it.
+Confirmed batch from the 2026-07-27 design review. **The docs are already
+updated** for everything below (GDD §2.4 / §9.2 / §9.3, UI_DESIGN §3.1 / §4,
+screens-spec §2.0, AGENTS+CLAUDE guardrail)—implement against them; residual
+mismatches, the docs win and flag it. GDD §12 has since been reassigned to
+Starting Pouches and Records.
 
 Order: **A (bug — blocks trusting anything else) → B (clarity) → C (probability) → D (VFX/screens)**.
 
-Deliberately NOT in this implementation order (design-side, deferred by decision): pouch/bag types, the stakes/Ink-colour ladder, and acronyms in the lexicon. *(Changed 2026-07-29: Gambler design moved forward in GDD §10.3 — 12 effects are confirmed, Phoenix defines the Legendary route, and Boar defines the explicit clone exception — but their engine implementation remains out of this feature order.)*
+Deliberately NOT in this historical implementation order: the now-confirmed
+**14 Starting Pouches and 8 cumulative Records** (GDD §12) and acronyms in the
+lexicon. The former starting-bag placeholders and stake/Ink-colour difficulty
+proposal are retired; new work must use Pouches + Records. *(Changed
+2026-07-30: the 12 confirmed Gambler effects, Phoenix route, and Boar clone
+exception now ship, but were not part of this older work order.)*
 
-**Resolved since the review** — two former blockers are now decided: the **font↔effect mapping is confirmed** (GDD §2.3 table — Light Italic `goldPlay` / Bold `chipPlay` / Inline `discardGain` / Black `retriggerPlay`), and the **Ink Pack name is settled** (Forbidden Books stays deferred, §10.3).
+**Resolved since the review** — two former blockers are now decided: the **font↔effect mapping is confirmed** (GDD §2.3 table — Light Italic `goldPlay` / Bold `chipPlay` / Inline `discardGain` / Black `retriggerPlay`), and the **Ink Pack name is settled** (Forbidden Books stays deferred, §10.3). Ink Pack is a consumable source; it is unrelated to the new Record difficulty ladder.
 
 ---
 
@@ -23,7 +32,9 @@ Reported: enhancement effects appear to do nothing in play. **Diagnose before fi
 
 **Note:** GDD §2.4 now states the three axes stack simultaneously. Verify a tile carrying material + font + edition pays all three.
 
-**Also in scope for A:** apply the confirmed `fontEffects` mapping (above) and delete any `// PROVISIONAL` marker; this closes the corresponding GDD §12 item.
+**Also in scope for A:** apply the confirmed `fontEffects` mapping (above) and
+delete any `// PROVISIONAL` marker. The former GDD §12 open item is historical;
+the canonical mapping now lives in §2.3.
 
 ## B. Clarity
 
@@ -33,19 +44,30 @@ Implement the per-material treatment table: face texture per material, **corner 
 ### B-2. Per-material ink contrast
 Add the light `--tile-ink` variant and apply it automatically on dark faces (Lead plate, Stone). Accessibility floor — verify contrast in both the monochrome start state and the fully-unlocked palette.
 
-### B-3. Overwrite warning (GDD §2.4)
-When an action would replace an existing same-axis enhancement, confirm first ("this tile is already Ceramic — replace with Polished?"). Cross-axis application applies silently.
+### B-3. Immediate same-axis overwrite (GDD §2.4)
+When an action replaces an existing same-axis enhancement, apply it immediately
+with no confirmation modal. Cross-axis application remains non-conflicting.
+*(Reversed 2026-07-28: the warning in the original work order was removed.)*
 
 ## C. Probability tables
 
 ### C-1. Emoji tile rarity weights (GDD §9.2)
-`balance.ts` `emoji.rarityWeights` = Common 70 / Uncommon 25 / Rare 5. **Legendary is excluded from shop and Charm Pack rolls** — it has no acquisition route yet (§12 open), so it must simply never roll rather than silently appearing.
+`balance.ts` `emoji.rarityWeights` = Common 70 / Uncommon 25 / Rare 5.
+**Legendary remains excluded from shop and Charm Pack rolls**; Phoenix is its
+normal seeded acquisition route (GDD §10.3).
 
 ### C-2. No duplicate Emoji Tiles (GDD §9.2)
-Offer pools (shop item slots, Charm Packs) exclude tiles the player already owns; selling returns a tile to the pool. Build the exclusion as a **single shared filter** both call — not two implementations. The "explicit effect may break this" exception has no item yet; leave a documented hook so adding one later is a data change, not a refactor.
+Offer pools (shop item slots, Charm Packs) exclude tiles the player already owns;
+selling returns a tile to the pool. Build the exclusion as a **single shared
+filter** both call—not two implementations. Boar is the explicit cloning
+exception and may bypass ownership uniqueness only for its created copy
+(GDD §10.3).
 
 ### C-3. Pack weights (GDD §9.3)
-`pack.typeWeights` = Fable 4 / Constellation 4 / Tile 4 / Charm 2 / Ink 0.6; `pack.sizeWeights` = Normal 8 / Jumbo 3 / Mega 1, rolled independently. Ink stays unrollable until its Gambler registry lands — keep the weight in data but gated, so enabling it is a flag flip.
+`pack.typeWeights` = Fable 4 / Constellation 4 / Tile 4 / Charm 2 / Ink 0.6;
+`pack.sizeWeights` = Normal 8 / Jumbo 3 / Mega 1, rolled independently. Ink now
+rolls because the 12 implemented Gambler definitions ship; Rainman and Sake Cup
+remain art-only and cannot enter its pool.
 
 ### C-4. Sim check
 Add a `src/sim/` scenario reporting, over many runs: rarity distribution of offered tiles, how often a shop offers nothing new (the shrinking-pool effect of C-2), and pack type/size distribution. These weights are guesses until the sim says otherwise.
@@ -60,4 +82,9 @@ Add a `src/sim/` scenario reporting, over many runs: rarity distribution of offe
 ---
 
 ## Docs sync (already applied — verify, don't redo)
-GDD **§2.4** (new: three-axis stacking + same-axis overwrite + Stone exception) · **§9.2** (rarity weights, Legendary exclusion, no-duplicate rule) · **§9.3** (type/size weights) · **§12** (open runtime work and acronyms) · UI_DESIGN **§3.1** (material legibility) and **§4.6–4.8** (tomato, burning boxes, side interactions) · screens-spec **§2.0** (loading screen) · AGENTS.md + CLAUDE.md (stacking/overwrite guardrail appended to the modifier-axes bullet).
+GDD **§2.4** (three-axis stacking + immediate same-axis overwrite + Stone
+exception) · **§9.2** (rarity weights, Legendary exclusion, no-duplicate rule) ·
+**§9.3** (type/size weights) · **§12** (superseded by confirmed Starting Pouches
+and Records; acronyms remain open) · UI_DESIGN **§3.1** (material legibility) and
+**§4.6–4.8** (tomato, burning boxes, side interactions) · screens-spec **§2.0**
+(loading screen) · AGENTS.md + CLAUDE.md (modifier and Pouch/Record guardrails).

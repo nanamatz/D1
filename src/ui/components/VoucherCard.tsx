@@ -5,6 +5,8 @@ interface VoucherCardProps {
   name: string;
   artSrc?: string;
   muted?: boolean;
+  /** Shop-only top-to-bottom shred beat before the purchased voucher leaves. */
+  redeeming?: boolean;
   /** ShopOffer owns motion for its whole image/price/action foreground layer. */
   motion?: boolean;
 }
@@ -20,6 +22,7 @@ export function VoucherCard({
   name,
   artSrc,
   muted = false,
+  redeeming = false,
   motion = true,
 }: VoucherCardProps) {
   const content = (
@@ -36,9 +39,14 @@ export function VoucherCard({
         VOUCHER
       </span>
       <span className="voucher-card__name">{name}</span>
+      {redeeming && <span className="voucher-card__shred" aria-hidden />}
     </>
   );
-  const className = `voucher-card${muted ? ' muted' : ''}`;
+  const className = [
+    'voucher-card',
+    muted && 'muted',
+    redeeming && 'redeeming',
+  ].filter(Boolean).join(' ');
   return motion
     ? <TiltCard idle className={className}>{content}</TiltCard>
     : <div className={className}>{content}</div>;

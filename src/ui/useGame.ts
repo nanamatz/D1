@@ -18,6 +18,8 @@ import type {
   ConsumableId,
   Letter,
   PatternId,
+  PouchId,
+  RecordId,
   RunState,
   ScoreEvent,
   SentenceBonusBreakdown,
@@ -248,9 +250,21 @@ function recordEditionedJokers(run: RunState): void {
   });
 }
 
-function bootstrap(seed: string = randomSeed()): GameState {
+export interface RunStartOptions {
+  seed?: string;
+  pouchId: PouchId;
+  recordId: RecordId;
+  customSeed: boolean;
+}
+
+function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
+  const seed = options.seed?.trim() || randomSeed();
   // runs start empty — jokers/consumables are acquired in the shop (was: 3 demo jokers + a magnifier)
-  const base: RunState = newRun(seed);
+  const base: RunState = newRun(seed, {
+    pouchId: options.pouchId ?? 'yellow',
+    recordId: options.recordId ?? 'whiteLp',
+    customSeed: options.customSeed ?? false,
+  });
   // Chapter 1's voucher offer + Deadline boss (fixed per chapter; playtest-03 C, 04 D-6).
   const run: RunState = {
     ...base,
@@ -336,8 +350,8 @@ export interface UseGame {
   /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
   markSettleComplete: () => void;
   newGame: () => void;
-  /** Start a fresh run from a specific seed (New Run screen); random if omitted. */
-  startRun: (seed?: string) => void;
+  /** Start a fresh run with the New Run screen's pouch, record, and seed choices. */
+  startRun: (options: RunStartOptions) => void;
 }
 
 export function useGame(): UseGame {
@@ -368,9 +382,24 @@ export function useGame(): UseGame {
     const go = state.gameover;
     if (go && recordedGameOver.current !== go) {
       recordedGameOver.current = go;
-      recordRunEnd({ ante: go.ante, gold: state.run.gold, bestWord: state.stats.bestWord });
+      recordRunEnd({
+        ante: go.ante,
+        gold: state.run.gold,
+        bestWord: state.stats.bestWord,
+        won: go.won,
+        pouchId: state.run.pouchId,
+        recordId: state.run.recordId,
+        customSeed: state.run.customSeed,
+      });
     }
-  }, [state.gameover, state.run.gold, state.stats.bestWord]);
+  }, [
+    state.gameover,
+    state.run.gold,
+    state.run.pouchId,
+    state.run.recordId,
+    state.run.customSeed,
+    state.stats.bestWord,
+  ]);
 
   // Word collection (P2-2): record each non-gibberish play once it settles.
   // A globally-new word also bumps this run's discovery count (Game Over §2.7).
@@ -1388,18 +1417,11 @@ export function useGame(): UseGame {
     recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
     setState(next);
   }, []);
-  const startRun = useCallback(
-    (seed?: string) =>
-      {
-        const next = {
-          ...bootstrap(seed && seed.trim() ? seed.trim() : undefined),
-          runStarted: true,
-        };
-        recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
-        setState(next);
-      },
-    [],
-  );
+  const startRun = useCallback((options: RunStartOptions) => {
+    const next = { ...bootstrap(options), runStarted: true };
+    recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+    setState(next);
+  }, []);
 
   return {
     state,

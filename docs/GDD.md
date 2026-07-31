@@ -16,6 +16,16 @@ Version 0.2 — systems expansion
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
 - Changed 2026-07-30: the twelve confirmed Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls in the shop;
   Rainman and Sake Cup have art but no engine id.
+- Changed 2026-07-30: the deferred starting-deck and stake/Ink concepts are
+  retired. Runs now choose one of **14 Starting Pouches** and one of **8
+  cumulative Records** (White LP → DVD); the complete effects, unlock ladder,
+  composition order, and art contracts are fixed in §12. The **Ink Pack** keeps
+  its name and remains unrelated to difficulty.
+- Changed 2026-07-31: **도시락 가방 / Lunch Bag** is renamed
+  **서류 가방 / Briefcase** to match its case-shaped art; the saved engine id
+  remains `lunchBag`. Pouch object art also removes the pencils from Pencil
+  Case and the coins from Coin Purse, while Lucky Pouch gains a centred gold
+  circular emblem (§12.2).
 - Changed 2026-07-29: twelve Gambler-card effects are confirmed; Rainman and Sake Cup remain pending until the Emoji Tile roster is selected. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Deer may rarely appear in Constellation Packs, and Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3).
 - Changed 2026-07-29: Emoji Tiles now have profile unlocks. A starter subset is available immediately; every other tile needs its own condition completed in an unseeded run, and locked tiles are absent from every acquisition pool (§9.2, §11).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
@@ -46,7 +56,8 @@ Version 0.2 — systems expansion
 9. [Shop & Economy](#9-shop--economy)
 10. [Consumables](#10-consumables)
 11. [Emoji Tiles](#11-emoji-tiles)
-12. [Open Questions & Next Steps](#12-open-questions--next-steps)
+12. [Starting Pouches & Records](#12-starting-pouches--records)
+13. [Chromatic Unlocks](#13-chromatic-unlocks--writing-the-world-into-color)
 
 ---
 
@@ -62,7 +73,8 @@ Version 0.2 — systems expansion
 
 | Balatro | This Game | Notes |
 |---|---|---|
-| Deck / Cards | Alphabet tiles (the "bag") | Scrabble-style per-letter score & count; 68 tiles (§2.1) |
+| Deck / Cards | Alphabet tiles in a Pouch | Scrabble-style per-letter score & count; normally 68 tiles (§2.1) |
+| Deck archetype | Starting Pouch | Choose one of 14 run-defining starts (§12.2) |
 | Suits (♠♥♦♣) | 4 register suits | Formal / Standard / Slang / Vulgar — asymmetric |
 | Enhancement | 9 tile materials | Ceramic (base) + Porcelain, Polished, Glass, Stone, Lead plate, Ivory, Brass, Wood |
 | Edition / Seal | 5 letter fonts | Futura Medium (base) + 4 styles |
@@ -78,6 +90,7 @@ Version 0.2 — systems expansion
 | Planet cards | Constellation Cards | Sentence-pattern level-up consumables |
 | Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); 12 implemented, 2 pending |
 | Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
+| Stakes / difficulty | Records | 8 cumulative levels: five LPs, Clear LP, CD, DVD (§12.3) |
 | Blind skip / Tags | — (deferred) | Adoption itself on hold; revisit if early-run recovery proves weak |
 
 ### 1.2 Fiction & Glossary — the publishing frame (playtest-03 A)
@@ -94,8 +107,9 @@ The fiction: **you are a writer**. Poker/Balatro structure terms are re-skinned 
 | money (`gold`) | **원고료** | **Fee** | `$` symbol stays |
 | Cash Out screen | **원고료 정산** | **Fee Settlement** | |
 | shop | **문방구** | **Stationery Shop** | |
-| bag/deck | **보따리** | **Pouch** | in-run tile pouch |
-| stakes (deferred) | **잉크색** | **Ink** | red ink = the editor's pen; see §12 |
+| bag/deck | **주머니** | **Pouch** | selected Starting Pouch also supplies the in-run tile-pouch art |
+| starting run modifier | **시작 주머니** | **Starting Pouch** | one of 14; code may retain existing `bag` identifiers |
+| difficulty | **음반** | **Record** | cumulative White LP → DVD ladder (§12.3) |
 
 **One object, one name (2026-07-30).** The owned joker object is **Emoji Tile / 이모지 타일** in every string (GDD §11). **Charm / 부적** survives only as the name of the pack that contains them — **Charm Pack / 부적 팩** (§9.3). Text that called the object a Charm was corrected; text naming the pack was not.
 
@@ -125,6 +139,12 @@ classification, and three independent modifier axes.
 > a separate visual/scoring axis (§2.4, §11.8).
 
 **Tile permanence.** Tiles are permanent assets, like Balatro's deck cards. Tiles submitted during a blind are consumed for that blind and return to the bag when the blind ends. The bag is sculpted across a run via packs (add) and consumables (remove/transform) — see §9–10.
+
+**Transformation presentation (changed 2026-07-30).** Replacing an existing
+tile axis commits only that axis, then the UI plays its shared axis-specific beat:
+material = forge burst, font = type-press stamp, edition = chromatic foil sweep.
+Multi-axis changes stagger in that order. This presentation never changes the
+headless mutation rule and is skipped under reduced motion.
 
 ### 2.1 Per-Letter Score & Count (rebalanced — diverges from Scrabble on purpose)
 
@@ -156,7 +176,7 @@ Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE
 | Polished | 광택 | **+4 Mult** | Mult |
 | Glass | 유리 | **×2 Mult**, 1/4 chance to destroy the tile after the word settles | Glass |
 | Stone | 석재 | **+50 Chips, no letter** (see below) | Stone |
-| Lead plate | 연판 | **1/5 → +20 Mult; 1/15 → $20** (independent rolls) | Lucky |
+| Lead plate | 연판 | **1/5 → +20 Mult; 1/5 → $20** (independent rolls) | Lucky, gold chance retuned 2026-07-30 |
 | Ivory | 상아 | **$3** if held in hand at blind end | Gold |
 | Brass | 황동 | **×1.5 Mult** while held in hand | Steel |
 | Wood | 목재 | Starts at **+15 Chips**; permanently gains **+10 Chips** each time that tile is played during the run | custom |
@@ -165,7 +185,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 
 **Risk budget: Glass only.** Every other material is pure upside. Stone's letter loss is a trade-off known at the moment it is applied, not a gamble, so it does not break this rule. A destroyed Glass tile leaves the run permanently.
 
-**Numbers are Balatro's reference values except for the custom Wood growth curve.** They are a validated point to tune *from*, not a claim that they fit our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. Three predicted breakages are recorded for `src/sim` to measure: Brass compounding (≈×11 off ~6 held tiles), Porcelain over-tuning, and the economy values (Ivory/Lead plate) surviving unscaled because our gold scale already matches Balatro's. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
+**Numbers started from Balatro's reference values, then follow playtest tuning.** Wood uses its custom growth curve and Lead plate's $20 chance was raised from 1/15 to 1/5 on 2026-07-30. They remain values to verify against our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
 
 **Names follow the ids (changed 2026-07-30).** The display names used to be
 inverted against the engine identifiers — id `porcelain` was shown as "Ceramic /
@@ -405,7 +425,9 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +60 Chips, +4 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **Out of scope (for now):** leveling letter hands (Constellation cards level sentence patterns only) and emoji tiles keyed to letter hands — see §12 open items.
+- **Out of scope (for now):** leveling Letter Hands (Constellation Cards level
+  sentence patterns only) and dedicated Emoji Tiles keyed to Letter Hands—see
+  §12.4.
 
 ---
 
@@ -419,11 +441,26 @@ This parallels Balatro exactly: cards played within a blind do not return until 
 
 ### 6.2 Hand Size — 11 (a balance knob)
 
-Baseline hand size **11** (placeholder within the 10–12 band). Larger than Balatro's 8 because poker *selects* from a hand while this game must *spell* — more degrees of freedom are needed; larger than Scrabble's 7 because Scrabble extends existing board letters while this game builds standalone words. Hand size is an adjustable resource like Balatro's: vouchers +1, certain bosses −2. This single number is a primary difficulty lever; tune against "average word length achieved" in playtests.
+Baseline hand size **11** (placeholder within the 10–12 band). Larger than
+Balatro's 8 because poker *selects* from a hand while this game must *spell* —
+more degrees of freedom are needed; larger than Scrabble's 7 because Scrabble
+extends existing board letters while this game builds standalone words. Hand
+size is an adjustable resource: Five-Color Lucky Pouch +2, Blue LP −1, vouchers
+may add 1, and boss hooks may reduce it, with a final minimum of 1 (§12). This single
+number is a primary difficulty lever; tune against “average word length
+achieved” in playtests.
 
 ### 6.3 Discard — per-blind budget (Balatro-aligned; playtest-02 A-1)
 
-Mirroring Balatro's discards (3 per blind, up to 5 cards each): **4 discards per blind, up to 5 tiles each** (structure confirmed; values are placeholders). **Discarded tiles exit play for the rest of the blind** — they move to the discarded pile (like played tiles) and are NOT returned to the bag mid-blind; the same number are drawn from the remaining bag. Discarded tiles return to the bag only when the blind ends. (Earlier design returned tiles to the bag immediately; that was dropped in favor of the Balatro-aligned semantics so a discarded letter can't be redrawn within the same blind.)
+Baseline is **4 discards per blind, with no per-use tile cap**: one discard may
+dump any number of marked hand tiles. Yellow Pouch adds 1 and Yellow LP subtracts
+1, with a final minimum of 0 (§12). **Discarded tiles exit play for the rest of
+the blind** — they move to the discarded pile (like played tiles) and are NOT
+returned to the bag mid-blind; the same number are drawn from the remaining bag.
+Discarded tiles return to the bag only when the blind ends. (Earlier design
+returned tiles to the bag immediately; that was dropped in favor of the
+Balatro-aligned semantics so a discarded letter can't be redrawn within the same
+blind.)
 
 The budget is **per blind, not per phase** — this is the point. Sharing the budget across phases creates inter-phase resource management ("burn discards now or save them for later phases"). A per-phase allowance would reduce it to a resetting convenience with no strategic weight.
 
@@ -432,7 +469,9 @@ The budget is **per blind, not per phase** — this is the point. Sharing the bu
 Letter scores are intrinsic tile value, so they must be recoverable regardless of word validity. Therefore:
 
 - Any tile set may be submitted even if it is not a dictionary word.
-- **Payout:** sum of letter Chips × 1.0. No suit (hence no suit multiplier), no POS.
+- **Payout:** sum of letter Chips × 1.0. No suit (hence no suit multiplier), no
+  POS. **Briefcase is the sole Starting-Pouch exception:** after every ordinary
+  gibberish hook, it balances those final `Chips × 1.0` axes per §12.2.
 - **Sequence effect (b-2):** the gibberish entry is recorded as a **hole** in the sentence sequence. Under whole-sequence matching (§5.1) a hole voids all pattern matches. Correction Tape removes a hole.
 - **Letter hands (§5.5):** even as a hole, a gibberish submission can still score the gibberish-eligible letter hands — **Vowel Flush** and **Straight**. The Straight jackpot (dumping Q-R-S-T-U-V) is the headline case; suit/POS stay null and the hole is still recorded.
 - **Emoji tile interaction:** layer-1 (letter-level) emoji tiles fire on gibberish; layer-2/3 naturally cannot because suit and POS are null. R9 Dadaist is the explicit exception: it supplies Slang only for word scoring and applies ×2 Mult, while POS remains null and the sentence hole remains. No other rule is silently restored.
@@ -474,7 +513,9 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 The old "cash-out button unlocks at projected ≥ target" was a fake choice: surplus score is worthless and remaining phases pay gold, so continuing past the target was always wrong. **Auto-settle** removes the non-choice.
 
 - **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
-- **Remaining phases = money.** Unchanged: 1 gold per remaining phase, paid as a Fee Settlement line item (§9.1).
+- **Remaining phases = money.** Normally 1 gold per remaining phase, paid as a
+  Fee Settlement line item (§9.1). Purple Pouch replaces this with $2 per phase
+  and adds $1 per remaining discard (§12.2).
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). A 1-phase clear of a 5-phase blind still pays more remaining-phase gold than a last-phase clear; the confirmed Rare/Legendary roster no longer adds the retired Rush Specialist or Loan Shark bonuses.
 - **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 12-boss roster (§8.3, 2026-07-21) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
@@ -488,13 +529,22 @@ Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(p
 
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
-**On ending (early/final):** finalize the sentence bonus from the sequence — `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)` per §5.2, Unison folded in (§5.3) — add it to the committed total → grant 1 gold per remaining phase → end blind.
+**On ending (early/final):** finalize the sentence bonus from the sequence —
+`(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)` per
+§5.2, Unison folded in (§5.3) — add it to the committed total → grant the
+selected Pouch/Record's Fee Settlement lines (§9.1, §12) → end blind.
+
+**Briefcase insertion point (§12.2):** after all hooks have finalized a word's
+Chips and Mult, but before their product, balance the two axes to their arithmetic
+mean. Repeat independently for the finalized sentence-bonus axes. No other
+Starting Pouch rewrites the scoring pipeline.
 
 ### 7.5 Variable Phases
 
-Base 5 phases per blind. Future effects may increase it; the player may also end
-in a single phase. Longer sentences seek pattern/modifier value, while fast
-clears preserve remaining-phase gold. The confirmed Rare/Legendary roster no
+Base 5 phases per blind. Blue Pouch adds 1; Leather Pouch and Clear LP each
+subtract 1, with a final minimum of 1 (§12). Other effects may modify it; the
+player may also end in a single phase. Longer sentences seek pattern/modifier
+value, while fast clears preserve remaining-phase gold. The confirmed Rare/Legendary roster no
 longer hard-codes the retired Rush ↔ Epic Poet pair.
 
 ---
@@ -513,6 +563,10 @@ All v0.1 uses of "ante" in the scoring chapter meant "blind" and are corrected t
 Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**; exponential growth between antes (Balatro's curve steps roughly ×1.6–2.5 per ante — exact curve is playtest material, tuned together with the emoji tile power curve). **A run = 8 antes + endless mode** (default, adopted as-is). **Victory (implemented):** clearing the ante-8 Deadline ends the run as a win — the engine flags it (`BlindOutcome.won`) while still paying out and advancing the run, and the UI routes to the run-end screen's win framing, skipping Fee Settlement and the shop. **Endless mode (planned, not yet implemented):** the win modal will gain an "무한 모드 →" button that routes into the normal Fee Settlement → shop flow and continues record-chasing chapters (ante 9+ target formula comes with it).
 
 **Curve re-tuned 2026-07-30** for the word-length Mult bonus (§3.1): `anteBaseTargets` scaled to hold the shape `src/sim/feel-chip-scale.ts` recorded (ante 1 ~77.5% clear, antes 2–4 falling off sharply), verified with `src/sim/length-mult.ts`. Pattern, Unison, letter-hand and material constants were **not** scaled with it, so they are relatively weaker than before this pass — a known follow-up, not an oversight.
+
+**Record/Pouch target modifiers (changed 2026-07-30).** Green LP adds
+`×1.15^(Chapter−1)` and Briefcase adds ×2. They multiply the ordinary
+Chapter/blind/boss target and round only once at the end (§12.1–§12.3).
 
 **Blind skip & tags: deferred.** Adoption itself is on hold, not just the tag pool. Recorded implication: with no skip, every blind is a mandatory stop, removing one tempo-variation tool; in Balatro, skipping doubles as a recovery route for weak early builds (rush to shops for jokers). **Trigger to revisit:** if playtests show unrecoverable early runs when emoji-tile luck is poor.
 
@@ -601,9 +655,14 @@ ante, Balatro-style.
 
 > **Interest is the heart** (adopted as-is): the cap creates the "save to 25, spend above it" rhythm and the early-game conflict between buying Emoji Tiles and building an interest base. Miser converts held gold into current Mult, while R10 Interest Glutton converts interest actually received into next-round Mult; Bond (§8.3) pressures both economies.
 
+**Starting-Pouch/Record overrides (§12).** Purple Pouch replaces the remaining
+phase rate with $2, adds $1 per remaining discard, and forces interest to $0.
+Red LP makes only the Draft clear reward $0. DVD also forces interest to $0.
+These are explicit line-item overrides; all unaffected income streams remain.
+
 ### 9.2 Shop Layout — five stalls
 
-Balatro-mirrored: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. Item-slot base type weights are **Emoji Tile 80 · letter tile 10 · Fable 5 · Constellation 5** (`balance.ts` `shop.itemWeights`). Unavailable types are removed and the remaining weights are normalized: letter tiles still require EN-KO Dictionary, and Encyclopedia still enables their modifiers. Story Book/Novel and Bible/The Law retain their ×2/×4 multipliers on the corresponding base weight. Gambler cards do not enter ordinary item slots; their existing Comic Book-gated Fable-Pack route remains unchanged. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
+Balatro-mirrored: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. Item-slot base type weights are **Emoji Tile 80 · letter tile 10 · Fable 5 · Constellation 5** (`balance.ts` `shop.itemWeights`). Unavailable types are removed and the remaining weights are normalized: letter tiles still require EN-KO Dictionary, and Encyclopedia still enables their modifiers. Story Book/Novel and Bible/The Law retain their ×2/×4 multipliers on the corresponding base weight. Gambler cards ordinarily do not enter item slots; **Lucky Pouch is the explicit exception** and adds implemented Gambler Cards as a data-weighted item family (§12.2). Their Comic Book-gated Fable-Pack route remains unchanged. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
 
 **Offer interaction (pack rollback 2026-07-30).** Shop stalls are image-first. Emoji Tiles, consumables, and the vertical voucher use the shared rounded `124×165px` stage. Sale packs use the requested older `131×229px` foreground with square corners. Their row slots match the 131px art width, preserving the normal 12px gap between packs, and the pack panel reserves enough lower space for the attached Open button to remain inside the persistent run layer. The price tag shares one foreground layer with the product and action. Selecting an offer raises that complete layer by 59px — the 15px base lift plus the 44px action-button height — and reveals the attached action: **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs. This does not reflow the stall layout. When an instant-use option exists, Buy remains below while **Use now** appears vertically centred outside the product's right edge. Product animation is never clipped. Voucher and pack background panels retain a `273px` minimum height. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
 
@@ -618,6 +677,11 @@ Balatro-mirrored: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**
 - **One voucher purchase per chapter (ante)**; only an effect that explicitly grants extra purchases can exceed this. Buying greys the slot for the rest of the chapter.
 - **Restock timing:** the voucher slot restocks when the Deadline (boss blind) ends — the *next* chapter's shop carries the new voucher. Within a chapter, the same voucher persists across the Draft/Revision/Deadline shops.
 - **Reappearance (Balatro-style):** purchased vouchers never reappear this run; **unpurchased** vouchers stay in the pool and may reappear in a later chapter (preserves "buy now or gamble on later").
+- **Redemption presentation (changed 2026-07-30):** Redeem shreds the voucher
+  vertically from top to bottom: a cutter head descends, narrow cut lanes open
+  behind it, and the separated strips drop away before the slot clears. Shop
+  actions are briefly locked so the visual delay cannot double-buy or leave the
+  shop midway. Reduced motion commits immediately.
 
 **Emoji tile pricing (placeholder):** Common 4–5 / Uncommon 6–7 / Rare 8–10 / Legendary 20.
 
@@ -709,7 +773,10 @@ All voucher tuning values live in `balance.ts`. Profile progress lives at `wj.vo
 
 ## 10. Consumables
 
-Three families mapping Balatro's trio, themed for a word game. **Held slots: 2** (expandable via Zero Score). **Usable during blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired from shop item slots and packs.
+Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
+(expandable via Zero Score; Military Pouch subtracts 1, §12.2). **Usable during
+blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired
+from shop item slots and packs.
 
 **Fable Pack resolution (changed 2026-07-29).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field is selectable immediately when the pack opens. While it is open, a compatible tile-targeting Fable already held on the consumable shelf may also use those selected pouch candidates; this is the only shop-phase exception to the normal staged-hand targeting rule. Enabled and disabled Use states occupy the same fixed position. Using previews the resulting letter/material/font/edition on every target and plays the complete card-to-target application animation; the transformed candidate image remains in that committed state instead of reverting when the preview ends. Only after that animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
 
@@ -1037,57 +1104,241 @@ Changed 2026-07-30: the canonical edition vocabulary and serialized ids are now 
 | Rainbow | ×1.5 Mult | animated rainbow background |
 | White | occupies no joker slot → **+1 owned-joker slot** | white background |
 
-- **Slot cap.** The owned-emoji-tile cap is `RunState.jokerSlots` (base 5). Kung Fu Manual raises it by 1; each White Emoji Tile raises effective capacity by 1.
+- **Slot cap.** The owned-emoji-tile cap is `RunState.jokerSlots` (base 5).
+  Five-Color Lucky Pouch and CD each subtract 1; Leather Pouch and Kung Fu
+  Manual each add 1 (§12); each White Emoji Tile raises effective capacity by 1.
+  Signed baseline modifiers compose before the zero floor.
 - **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Gray/Violet/Rainbow odds.
 - **Emoji Tile presentation (changed 2026-07-30):** background colour is the canonical edition indicator. The rejected alternative (`@`, `#`, `*`, `~`) is not rendered; it would violate the image-only Emoji Tile rule. Tooltips always name the edition and spell out its effect.
 
 ---
 
-## 12. Open Questions & Next Steps
+## 12. Starting Pouches & Records
 
-**Resolved since v0.1:** sentence pattern table (→ §5) · in-phase loop (→ §6) · blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consumables (→ §10) · round-level suit synergy (→ Unison, §5.3).
+The former open-ended starting-deck ideas and stake/Ink difficulty proposal are
+retired (changed 2026-07-30). Every new run now selects exactly **one Starting
+Pouch** and exactly **one Record**. A Starting Pouch defines the run's starting
+build; a Record defines cumulative difficulty. “Round” in the effects below
+means one blind (Draft, Revision, or Deadline); “hand per round” means a
+**phase**, while “hand size” means the number of letter tiles held. The Ink Pack
+remains a consumable pack and has no relationship to Records.
+
+Every numeric modifier and shop weight in this section lives in `balance.ts`;
+Pouch and Record definitions reference those values rather than embedding magic
+numbers in reducers or components.
+
+### 12.1 Shared rules, composition, and unlocks
+
+- **One Pouch, one Record.** Starting Pouches never stack with one another.
+  Records do stack: selecting a level applies that row and every row above it.
+- **Modifier order.** Build the ordinary 68-tile run first, apply the selected
+  Starting Pouch's one-time contents and run modifiers, then apply every active
+  Record modifier. Per-blind voucher, Emoji Tile, and boss hooks apply through
+  their normal data/hooks after those run baselines are established.
+- **Signed modifiers add before floors.** Hand size and phases have a minimum of
+  **1**; discards, Emoji Tile slots, and consumable slots have a minimum of
+  **0**. No intermediate clamp may erase a later positive modifier.
+- **Target modifiers multiply, then round once.** Let `T` be the normal target
+  after Chapter, blind-kind, and boss target modifiers. The Green LP multiplier
+  and Briefcase multiplier compose as
+  `round(T × 1.15^(Chapter−1) × 2)` when both are active. Omit the factor for an
+  inactive effect; do not round between factors.
+- **No-interest priority.** Purple Pouch and DVD each force round-end interest to
+  **$0**. Owning both is still one zero, not an additional penalty. Receipt,
+  Household Ledger, or any future interest-cap modifier cannot restore interest;
+  effects that read “interest received” observe zero.
+- **Starting vouchers.** A voucher granted by a Pouch is owned and applied from
+  the run's first frame **before the initial voucher offer is rolled**, cannot
+  be offered again, does not consume the current Chapter's voucher purchase, and
+  does not set `voucherLocked`. It is a starting grant, not a redemption, so it
+  does not increment redemption-based profile progress. A profile-unlocked
+  upgrade may still appear because its base is already owned.
+- **Unlock persistence.** Pouch and Record unlocks are profile-scoped. A word
+  threshold counts distinct valid words in the Collection; gibberish and repeat
+  plays do not increase it. A “win” means clearing the Chapter 8 Deadline.
+  Persistence goes through `src/ui/storage.ts`, never direct `localStorage`; if
+  implementation adds a save key, mirror it in `desktop/save-store.js`.
+- **Custom-seed rule.** A run created from a player-entered custom seed can be
+  played and reproduced, but its win cannot satisfy a Pouch win condition or
+  advance the Record ladder. Ordinary unseeded wins may satisfy every matching
+  condition at once.
+- **Seeded starting randomness.** Lucky Pouch's starting card and Coin Purse's
+  letters consume the run's single seeded RNG stream. The same Pouch, Record,
+  and seed must reproduce the same start. No Starting Pouch effect may call
+  `Math.random()`.
+
+Useful composition checks:
+
+- Yellow Pouch + Yellow LP: `4 + 1 − 1 = 4` discards.
+- Blue Pouch + Clear LP: `5 + 1 − 1 = 5` phases.
+- Five-Color Lucky Pouch + Blue LP: `11 + 2 − 1 = 12` hand size.
+- Five-Color Lucky Pouch + CD: `5 − 1 − 1 = 3` Emoji Tile slots.
+- Leather Pouch + CD: `5 + 1 − 1 = 5` Emoji Tile slots.
+
+### 12.2 Starting Pouches — 14
+
+| # | Starting Pouch (ko / en) | Effect | Profile unlock |
+|---:|---|---|---|
+| 1 | **노란 주머니 / Yellow Pouch** | +1 discard per round | Default |
+| 2 | **파란 주머니 / Blue Pouch** | +1 phase per round | Discover 25 distinct valid words |
+| 3 | **초록 주머니 / Green Pouch** | Start with an additional **$10** | Discover 50 distinct valid words |
+| 4 | **보라 주머니 / Purple Pouch** | On a clear, gain **$2 per remaining phase** and **$1 per remaining discard**; **interest is always $0** | Discover 100 distinct valid words |
+| 5 | **복주머니 / Lucky Pouch** | Gambler Cards may roll in ordinary shop item slots; start with one seeded-random implemented Gambler Card | Win with Yellow Pouch |
+| 6 | **오색 복주머니 / Five-Color Lucky Pouch** | Hand size +2; Emoji Tile slots −1 | Win with Blue Pouch |
+| 7 | **황금 복주머니 / Golden Lucky Pouch** | Every starting A/E/I/O/U tile begins with the Brass material; Y remains a consonant | Win with Green Pouch |
+| 8 | **가죽 파우치 / Leather Pouch** | Emoji Tile slots +1; phases per round −1 | Win with Purple Pouch |
+| 9 | **밀리터리 파우치 / Military Pouch** | Start owning B&W Photo; consumable slots −1 | Win on White LP |
+| 10 | **명품 가방 / Luxury Bag** | Start owning Newspaper and holding two **The Goose That Laid the Golden Eggs** Fable Cards | Win on Red LP |
+| 11 | **필통 / Pencil Case** | Start owning Zero Score and holding two **The Boy Who Cried Wolf** Fable Cards | Win on Green LP |
+| 12 | **서류 가방 / Briefcase** | Balance each word's and sentence bonus's final Chips/Mult axes; all blind targets ×2 | Win on Blue LP |
+| 13 | **장바구니 / Shopping Basket** | Start owning Story Book, Bible, and Catalog | Win on Yellow LP |
+| 14 | **동전 지갑 / Coin Purse** | Keep 68 tiles, but independently reassign every starting tile to a seeded-uniform A–Z letter; any letter may have zero copies | Win on Clear LP |
+
+**Purple Pouch settlement.** Its phase line replaces the ordinary $1-per-phase
+line with $2 per phase, adds a separate $1-per-unused-discard line, and suppresses
+the interest line to $0. These rewards pay only after a clear; a lost blind never
+opens Fee Settlement. Red LP suppresses only a Draft's clear-reward line, so
+Purple's remaining-resource lines still pay on a cleared Draft.
+
+**Lucky Pouch shop route.** This is an explicit acquisition-route exception:
+implemented Gambler Cards become eligible in ordinary shop item slots under a
+data-defined shop weight, in addition to their Ink Pack and Comic Book routes.
+The starting card is chosen uniformly from the 12 implemented definitions and
+occupies one held-consumable slot. Rainman and Sake Cup have no engine id and
+cannot be selected.
+
+**Briefcase balance transform.** Resolve one individual word through every normal
+base, letter, material, font, edition, Letter Hand, suit, Emoji Tile, voucher,
+and boss hook. Then, immediately before that word's final product, replace its
+axes with:
+
+`mean = (finalChips + finalMult) / 2`
+
+`wordScore = mean × mean`
+
+Do the same **independently** for the sentence bonus after pattern, modifier,
+Unison, Emoji Tile, voucher, and boss hooks, immediately before the sentence
+product. Do not average the already-committed word total with the sentence
+bonus. Keep the arithmetic mean at full precision—no floor, ceiling, or nearest
+integer step in the transform. The UI may format a value without mutating the
+headless value. Thus `100 × 50` becomes `75 × 75 = 5,625`. Gibberish participates
+as its final `Chips × 1.0` axes; this Pouch is the explicit exception to the
+ordinary fixed `×1.0` gibberish payout in §6.4. A full boss debuff remains zero
+because `0 × 0` balances to `0 × 0`.
+
+This creates Briefcase's distinct curve: by the arithmetic-mean/geometric-mean
+relationship, uneven positive axes gain more than already-balanced axes. Early
+high-Chips effects can carry weak Mult; late multiplicative-Mult builds
+automatically pull Chips upward and can reach an unusually high ceiling. The
+transition between those plans is its weak period, while the ×2 target is the
+always-on price for the upside.
+
+**Coin Purse generation.** Start from the ordinary 68 stable tile ids. In stable
+id order, draw one uniform integer in `[0, 26)` per tile and replace its letter
+with the matching A–Z value, recalculating vowel/consonant classification. The
+result is a 68-draw multinomial distribution: total size always remains 68, but
+every per-letter count may be zero. Starting material, font, edition, and other
+per-tile state remain at their ordinary base values.
+
+**Starting-Pouch art contract.** All 14 are simple, standalone pixel-art objects
+with transparent backgrounds—no scene, text, smooth gradient, lighting setup, or
+decorative frame. Runtime deliveries use the exact current default-pouch
+`510×511` transparent RGBA canvas with comparable occupied bounds. They fit into
+the shared 72×72 in-run, 140×140 New Run, and 86×86 Collection boxes. This is
+one common asset family, not 14 differently sized UI components. Military Pouch
+uses a chunky olive/khaki camouflage textile pattern contained inside the shared
+silhouette; its clasp, dark outline, and object scale remain unchanged. Lucky
+Pouch has one centred gold circular emblem. Pencil Case and Coin Purse are shown
+open and empty, with no pencils or coins. The case-shaped asset is retained
+under the Briefcase display name.
+
+**Selection disclosure (changed 2026-07-31).** An unlocked Pouch shows its
+name/effect without unlock copy. A locked Pouch's New Run panel instead shows a
+muted locked object and its exact unlock condition; its tooltip retains the
+actual name/effect. This disclosure rule also gates Collection unlock copy to
+locked Pouches only.
+
+### 12.3 Records — 8 cumulative difficulty levels
+
+Records are the run difficulty system: a Slay-the-Spire-style ascending ladder
+whose penalties accumulate from LP through DVD. White LP is available by default;
+winning the highest unlocked level unlocks the next row. The table's “adds”
+column describes the new penalty at that level—every earlier penalty remains
+active.
+
+The ordered selector, position dots, and lock state communicate this progression
+in New Run and Collection. Record unlock-condition text is intentionally not
+rendered in either surface or its tooltip; the rules remain explicit in this
+design table.
+
+| Level | Record (ko / en) | Adds at this level | Unlock |
+|---:|---|---|---|
+| 1 | **흰색 LP 판 / White LP** | No penalty | Default |
+| 2 | **붉은색 LP 판 / Red LP** | Draft clear reward becomes $0; remaining-resource and interest lines are unchanged | Win on White LP |
+| 3 | **초록색 LP 판 / Green LP** | Every blind target gains `×1.15^(Chapter−1)` | Win on Red LP |
+| 4 | **파란색 LP 판 / Blue LP** | Hand size −1 | Win on Green LP |
+| 5 | **노란색 LP 판 / Yellow LP** | Discards per round −1 | Win on Blue LP |
+| 6 | **투명한 LP 판 / Clear LP** | Phases per round −1 | Win on Yellow LP |
+| 7 | **CD / CD** | Emoji Tile slots −1 | Win on Clear LP |
+| 8 | **DVD / DVD** | Interest is always $0 | Win on CD |
+
+For example, DVD includes Red LP's Draft reward removal, Green LP's target
+growth, Blue/Yellow/Clear resource reductions, CD's Emoji Tile slot reduction,
+and DVD's no-interest rule.
+
+At Green LP, Chapter 1's added factor is 1.0, Chapter 2's is 1.15, Chapter 3's
+is 1.3225, and so on. Apply it to every Draft, Revision, and Deadline after the
+ordinary target—including boss target modifiers—has been established, then
+compose Briefcase's ×2 if selected (§12.1).
+
+**Record art contract.** Every Record image is pixel art on the same `510×511`
+transparent RGBA selection canvas used by the Pouch family.
+
+- White, Red, Green, Blue, and Yellow LP use one pixel-identical black-vinyl
+  master; **only the centre label sticker colour changes**.
+- Clear LP keeps a white centre label and replaces the vinyl with a
+  semi-transparent acrylic disc. Use stepped highlights/dither rather than a
+  smooth opacity gradient.
+- CD uses a conventional silver reflective-disc treatment and its visible
+  diameter is smaller than an LP in the same selector frame.
+- DVD matches the CD's physical size but uses a clearly different iridescent
+  rainbow surface pattern.
+
+### 12.4 Open Questions & Next Steps
+
+**Resolved since v0.1:** sentence pattern table (→ §5) · in-phase loop (→ §6) ·
+blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consumables
+(→ §10) · Starting Pouches and Records (→ §12) · round-level suit synergy
+(→ Unison, §5.3).
 
 **Still open:**
 
-- **Value balancing across the board.** All numbers remain placeholders (emoji tiles, patterns, unison, vouchers, prices, target-score curve). Playtest-driven.
-- **Blind skip & tags.** Adoption itself deferred. Revisit trigger: unrecoverable early runs in playtests (§8.2).
-- **Starting deck types.** Balatro's Red/Blue/Plasma analogy — bags with different tile compositions (vowel-heavy, rare-letter-heavy, slang-friendly…). Untouched.
-- **Stakes (difficulty) & stake-ladder unlock structure.** Replayability layer.
-  Untouched; this is separate from the confirmed per-Emoji-Tile profile unlocks
-  in §11.
-- **Duplicate-offer item (Showman-equivalent).** Boar now supplies a one-shot
-  cloning exception (§10.3), but it does not allow duplicate shop/pack offers.
-  Whether the candidate Copy Editor Emoji Tile from
-  `docs/EMOJI_TILE_IDEA_BANK.md` should fill that broader role remains open.
-- **Legendary runtime route.** Phoenix is the designed normal-play route (§10.3),
-  while §9.2 still excludes Legendary from shop/Charm-Pack rolls. The 5
-  Legendary tiles remain unreachable only until the Gambler engine registry is
-  implemented.
-- **Acronyms in the lexicon.** Adding MVP/VIP-class abbreviations is requested.
-  Tiles are uppercase-only, so acronyms use the ordinary validity/scoring path.
-  They are absent from ENABLE-class lists and need a separate curated list
-  feeding §3.2's pipeline.
-- **Gambler card implementation + final 2 effects.** All 14 artworks and the
-  Collection category exist; 12 effects are confirmed, while Rainman and Sake
-  Cup wait on the selected Emoji Tile roster (§10.3). The engine registry, Ink
-  Pack roll, Comic-Book Fable mixing, Deer Constellation mixing, target
-  interaction, and persistence remain unimplemented.
-- **Stakes = matcher-leniency knobs (reframed, playtest-01).** True grammar checking stays out (§4.1 level 3); instead, future stake levels modulate knobs that already exist — modifier absorption on/off, hole forgiveness, unison strictness.
-- **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch classification → baked table; one-word = one-suit/POS resolution rule (§3.2, §4.2).
-- **Finisher boss count.** 2 concepts exist; decide whether the pool needs more for endless-mode variety.
-- **Emoji tiles keyed to letter hands (§5.5).** Letter Hands ship without emoji-tile support; a family of emoji tiles that trigger on / scale with specific hands (e.g. "+Mult per Twin this blind", "Straights also give $2") is open emoji-tile material.
-- **Emoji Tile balance verification.** The 116-tile active roster is implemented.
-  Run 8-Ante and endless simulations over the promoted Common 19, Uncommon 33,
-  and Rare 34 effects; the separate 97-tile redesign remains postponed.
+- **Value balancing across the board.** Emoji Tiles, patterns, Unison, vouchers,
+  prices, target curves, Pouch effects, and Record penalties need simulation and
+  playtest tuning without changing §12's confirmed identities.
+- **Blind skip & tags.** Adoption itself remains deferred. Revisit trigger:
+  unrecoverable early runs in playtests (§8.2).
+- **Duplicate-offer item (Showman-equivalent).** Boar supplies a one-shot cloning
+  exception (§10.3), but does not allow duplicate shop/pack offers.
+- **Acronyms in the lexicon.** MVP/VIP-class abbreviations need a separate curated
+  list feeding §3.2; uppercase tiles already support them mechanically.
+- **Final two Gambler effects.** Rainman and Sake Cup retain art but no engine id
+  until their effects are approved (§10.3).
+- **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch
+  classification → baked table (§3.2, §4.2).
+- **Emoji Tiles keyed to Letter Hands (§5.5).** Letter Hands currently ship
+  without a dedicated Emoji Tile family.
+- **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
+  the active 116-tile roster; the separate 97-tile redesign remains postponed.
 - **Emoji Tile profile unlock implementation.** The unseeded-only unlock rule and
-  locked-pool exclusion are confirmed (§9.2, §11), but the final starter subset,
-  achievements, profile storage schema, Collection disclosure, and offer filters
-  build on the now-fixed 116-tile roster. Adding a persistence key requires matching
-  updates in `src/ui/storage.ts` and `desktop/save-store.js`.
-- **Letter-hand leveling (if ever).** Constellation cards level sentence patterns only; whether letter hands should ever be levelable (and by what consumable) is deferred.
-- **Ink colors = stakes (playtest-03 A).** The deferred difficulty/stake ladder is re-skinned as **Ink** (검정 → 빨강 …); red ink = the editor's pen. Reframed as matcher-leniency knobs (per playtest-01), not true grammar checking.
-- **Touch long-press marking (playtest-03 F).** Discard-marking uses right-click (desktop-only); a long-press gesture for touch devices is open. No change now.
-- **Suit dataset batch (playtest-03 F).** The real 20–30k LLM batch classification stays an offline design-side task; the lexicon loader format is kept stable so a larger baked table drops in without code changes.
+  locked-pool exclusion are confirmed (§9.2, §11), but remaining profile work
+  must keep `src/ui/storage.ts` and `desktop/save-store.js` in sync.
+- **Letter-Hand leveling (if ever).** Constellation Cards level sentence patterns
+  only; whether Letter Hands should ever level remains deferred.
+- **Touch long-press marking (playtest-03 F).** Right-click discard marking still
+  needs a touch equivalent.
+- **Suit dataset batch (playtest-03 F).** The real 20–30k classification stays an
+  offline task; the baked loader format remains stable.
 
 ---
 

@@ -57,7 +57,15 @@ describe('slice5 progression — resolveBlind gold & advancement (GDD §9.1)', (
     const out = resolveBlind(run, blind, 120);
     expect(out.cleared).toBe(true);
     // reward 3 + phases 2 + interest(10)=2 → 7
-    expect(out.earned).toEqual({ reward: 3, phases: 2, interest: 2, total: 7 });
+    expect(out.earned).toEqual({
+      reward: 3,
+      phaseCount: 2,
+      phases: 2,
+      discardCount: 3,
+      discards: 0,
+      interest: 2,
+      total: 7,
+    });
     expect(out.run.gold).toBe(17);
     expect(out.run.blindIndex).toBe(1);
     expect(out.run.ante).toBe(1);

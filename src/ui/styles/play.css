@@ -542,6 +542,9 @@
   cursor: default;
   opacity: 0;
 }
+.shop2.voucher-redeeming button {
+  pointer-events: none;
+}
 .shop-tile-art {
   width: 100%;
   height: 100%;
@@ -566,16 +569,16 @@
   gap: 6px;
   min-width: 0;
 }
-.edition-gray {
+.edition-gray:not(.tile) {
   box-shadow: inset 0 0 0 2px #dcecff, 0 0 8px rgba(190, 225, 255, 0.75), var(--shadow);
 }
-.edition-violet {
+.edition-violet:not(.tile) {
   background-image: linear-gradient(135deg, rgba(89, 221, 255, 0.28), rgba(255, 99, 215, 0.3), rgba(255, 231, 95, 0.28));
 }
-.edition-rainbow {
+.edition-rainbow:not(.tile) {
   background-image: linear-gradient(120deg, rgba(255, 64, 96, 0.32), rgba(255, 225, 66, 0.26), rgba(75, 224, 160, 0.28), rgba(93, 135, 255, 0.34));
 }
-.edition-white {
+.edition-white:not(.tile) {
   filter: invert(0.88) hue-rotate(180deg);
 }
 /* Emoji Tile editions use one image-only language: background colour, never
@@ -1057,6 +1060,9 @@
 }
 .fable-effect-target.fx-material .fable-target-fx::after {
   content: '✦';
+}
+.fable-effect-target.fx-font .fable-target-fx::after {
+  content: 'Aa';
 }
 .fable-effect-target.fx-destroy .fable-target-fx::after {
   content: '×';
@@ -2852,8 +2858,10 @@
 .tile {
   width: 64px;
   height: 64px;
+  border: 0;
   border-radius: 10px;
   position: relative;
+  isolation: isolate;
   cursor: pointer;
   background: radial-gradient(120% 120% at 25% 18%, #fffdf6 0%, var(--tile-face) 45%, #e2d8c4 100%);
   box-shadow: var(--shadow), inset 0 2px 2px rgba(255, 255, 255, 0.8);
@@ -2886,11 +2894,58 @@
 }
 .tile .val {
   position: absolute;
+  z-index: 1;
   right: 6px;
   bottom: 3px;
   font-size: var(--fs-sm);
   font-weight: 700;
   font-family: var(--ctl-font);
+}
+.tile-letter {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+}
+.tile-material-texture,
+.tile-edition-surface {
+  position: absolute;
+  z-index: 0;
+  inset: 3px;
+  border-radius: calc(100% / 8);
+  pointer-events: none;
+}
+.tile-edition-surface {
+  inset: 2px;
+  opacity: .72;
+  mix-blend-mode: screen;
+}
+.tile-edition-gray {
+  border: 2px dashed rgba(228, 240, 255, .95);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 5px, rgba(170, 190, 215, .34) 5px 7px);
+  box-shadow: inset 0 0 0 2px rgba(80, 96, 118, .42);
+}
+.tile-edition-violet {
+  border: 2px solid rgba(234, 166, 255, .9);
+  background:
+    linear-gradient(120deg, transparent 10%, rgba(102, 216, 255, .42) 35%, transparent 48%),
+    linear-gradient(300deg, transparent 30%, rgba(255, 94, 216, .45) 58%, transparent 76%);
+  background-size: 180% 180%;
+  animation: tile-edition-violet 2.8s ease-in-out infinite alternate;
+}
+.tile-edition-rainbow {
+  border: 3px solid transparent;
+  background:
+    linear-gradient(transparent, transparent) padding-box,
+    conic-gradient(#ff405f, #ffe142, #4be0a0, #5d87ff, #d65dff, #ff405f) border-box;
+  filter: saturate(1.25);
+  animation: tile-edition-rainbow 2.4s linear infinite;
+}
+@keyframes tile-edition-violet {
+  to { background-position: 100% 100%; }
+}
+@keyframes tile-edition-rainbow {
+  to { filter: hue-rotate(360deg) saturate(1.25); }
 }
 /* Ancient Paper (고대 문서): a face-down vowel tile — identity hidden until played.
    A dark parchment back with a "?" so the player knows it's a (vowel) tile. */
@@ -3015,25 +3070,25 @@
 }
 /* materials */
 .tile.glass {
-  background: radial-gradient(
-    120% 120% at 25% 18%,
-    rgba(255, 255, 255, 0.95),
-    rgba(190, 225, 245, 0.55) 60%,
-    rgba(140, 190, 220, 0.5)
-  );
-  box-shadow: var(--shadow), inset 0 0 12px rgba(120, 190, 235, 0.8);
+  background:
+    linear-gradient(132deg, transparent 0 39%, rgba(255,255,255,.72) 40% 42%, transparent 43%),
+    radial-gradient(120% 120% at 25% 18%, #f8ffff 0%, #addbea 55%, #568fa9 100%);
+  box-shadow: var(--shadow), inset 0 0 0 2px rgba(65, 138, 170, .42), inset 0 0 14px #d9f8ff;
 }
 /* Stone: a letterless tile (GDD §2.2). tileGlyph() renders nothing, so the face
    carries the whole read — no letter, no ink tint (color: transparent hides the
    0-chip .val badge too, since Stone's identity is purely material, not numeric). */
 .tile.stone {
-  background: radial-gradient(circle at 30% 25%, #c9c6be, #9da09b 70%),
-    radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.15) 1px, transparent 2px);
+  background:
+    radial-gradient(circle at 25% 20%, #e3e0d7 0 3px, transparent 4px),
+    radial-gradient(circle at 72% 68%, #777b76 0 4px, transparent 5px),
+    linear-gradient(145deg, #c9c6be, #858983 70%, #666963);
+  box-shadow: var(--shadow), inset 3px 3px 0 rgba(255,255,255,.18), inset -4px -4px 0 rgba(0,0,0,.18);
   color: transparent;
 }
 .tile.porcelain {
-  background: radial-gradient(120% 120% at 25% 18%, #ffffff, #f2f6f7 55%, #d9e4e8);
-  border: 1px solid #bfd3da;
+  background: radial-gradient(120% 120% at 25% 18%, #ffffff, #eef8fb 55%, #c5e0ea);
+  box-shadow: var(--shadow), inset 0 0 0 2px rgba(255,255,255,.9);
 }
 /* Polished: buffed ceramic — same warm face as the base tile (still tinted by
    --tile-face, so vowel/cons tints still show through, unlike the other
@@ -3095,15 +3150,15 @@
 /* Lead plate: a worn stereotype plate — dull, flat, matte type-metal grey.
    Deliberately static (no sheen) to read as heavier/duller than Brass or Polished. */
 .tile.leadPlate {
-  background: radial-gradient(120% 120% at 25% 18%, #9a9d9f 0%, #6f7274 50%, #45484b 100%);
+  background: linear-gradient(145deg, #a7aaad 0%, #656a6e 48%, #363b3e 100%);
   box-shadow:
     var(--shadow),
+    inset 0 0 0 3px rgba(25, 28, 30, .28),
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     inset 0 -3px 4px rgba(0, 0, 0, 0.35);
-  border: 1px solid #3a3c3e;
 }
 /* Ivory: warm cream/bone, prized — brighter and more saturated than the base
-   ceramic face, with faint Schreger-line grain and a gilt-toned border so it
+   ceramic face, with faint Schreger-line grain and a gilt-toned inset so it
    reads as a distinct, valuable material rather than "ceramic but paler". */
 .tile.ivory {
   background:
@@ -3114,24 +3169,197 @@
       rgba(255, 250, 232, 0) 3px
     ),
     radial-gradient(120% 120% at 25% 18%, #fffaf0 0%, #f6ecd2 50%, #e4d3a0 100%);
-  border: 1px solid #d8c48f;
 }
 /* Brass: yellow type metal — warm gold-brass gradient with a brighter specular
    highlight than Lead plate, but no animation (Polished owns motion). */
 .tile.brass {
-  background: radial-gradient(120% 120% at 25% 18%, #ffe9a8 0%, #d1a13c 50%, #8f6a1f 100%);
+  background: radial-gradient(circle at 50% 45%, #ffeeb1 0%, #d9a943 48%, #805914 100%);
   box-shadow:
     var(--shadow),
+    inset 0 0 0 3px rgba(255, 231, 150, .3),
     inset 0 2px 2px rgba(255, 250, 220, 0.6),
     inset 0 -3px 4px rgba(90, 60, 10, 0.4);
-  border: 1px solid #7a5a1a;
 }
 .tile.wood {
   background:
     repeating-linear-gradient(8deg, rgba(74, 38, 15, 0.18) 0 2px, transparent 2px 9px),
     linear-gradient(145deg, #d9a866, #9a6031 72%, #6e3f20);
-  border-color: #5d351d;
   color: #2d190d;
+}
+/* Every material keeps Ceramic's outer border and radius. Identity comes from
+   face texture and internal detail, never hue alone. These overlays stay
+   legible after the fresh-profile grayscale pass and scale down with mini tiles. */
+.tile[data-material='ceramic'] .tile-material-texture {
+  border: 1px solid rgba(112, 82, 45, .22);
+  background:
+    radial-gradient(circle at 8px 8px, rgba(112, 82, 45, .22) 0 1px, transparent 2px),
+    radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), rgba(255,255,255,.75) 0 2px, transparent 3px);
+}
+.tile.glass .tile-material-texture {
+  inset: 5px;
+  background:
+    linear-gradient(34deg, transparent 0 47%, rgba(55, 125, 155, .55) 48% 50%, transparent 51%),
+    linear-gradient(154deg, transparent 0 57%, rgba(255,255,255,.78) 58% 60%, transparent 61%);
+  clip-path: polygon(0 0, 100% 0, 86% 38%, 100% 100%, 0 100%, 18% 58%);
+}
+.tile.stone .tile-material-texture {
+  background:
+    radial-gradient(circle at 18% 70%, #5f625e 0 2px, transparent 3px),
+    radial-gradient(circle at 68% 24%, #dad7cf 0 2px, transparent 3px),
+    radial-gradient(circle at 76% 80%, #4f5350 0 1px, transparent 2px);
+}
+.tile.porcelain .tile-material-texture {
+  inset: 5px;
+  border: 1px solid rgba(55, 111, 143, .52);
+  background:
+    radial-gradient(circle at 0 0, transparent 0 7px, #4f91b1 8px 9px, transparent 10px),
+    radial-gradient(circle at 100% 100%, transparent 0 7px, #4f91b1 8px 9px, transparent 10px);
+}
+.tile.polished .tile-material-texture {
+  background:
+    linear-gradient(135deg, transparent 0 20%, rgba(255,255,255,.68) 21% 24%, transparent 25%),
+    radial-gradient(circle at 78% 22%, #fff 0 2px, transparent 3px);
+}
+.tile.leadPlate .tile-material-texture {
+  inset: 5px;
+  background:
+    radial-gradient(circle at 3px 3px, #d1d4d5 0 2px, #25292b 3px, transparent 4px),
+    radial-gradient(circle at calc(100% - 3px) 3px, #d1d4d5 0 2px, #25292b 3px, transparent 4px),
+    radial-gradient(circle at 3px calc(100% - 3px), #d1d4d5 0 2px, #25292b 3px, transparent 4px),
+    radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #d1d4d5 0 2px, #25292b 3px, transparent 4px),
+    repeating-linear-gradient(165deg, transparent 0 8px, rgba(20,24,26,.22) 9px 10px);
+}
+.tile.ivory .tile-material-texture {
+  inset: 4px;
+  background:
+    repeating-radial-gradient(ellipse at 0 100%, transparent 0 8px, rgba(151,116,54,.25) 9px 10px);
+}
+.tile.brass .tile-material-texture {
+  inset: 5px;
+  border: 1px solid rgba(91, 57, 6, .62);
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 13px, rgba(99,62,6,.42) 14px 15px, transparent 16px),
+    radial-gradient(circle at 4px 4px, #fff1a8 0 2px, #6d4707 3px, transparent 4px),
+    radial-gradient(circle at calc(100% - 4px) calc(100% - 4px), #fff1a8 0 2px, #6d4707 3px, transparent 4px);
+}
+.tile.wood .tile-material-texture {
+  inset: 4px;
+  background:
+    radial-gradient(ellipse at 72% 58%, transparent 0 4px, rgba(65,31,10,.58) 5px 7px, transparent 8px 12px, rgba(65,31,10,.34) 13px 14px, transparent 15px),
+    repeating-linear-gradient(7deg, transparent 0 7px, rgba(74,38,15,.3) 8px 9px);
+}
+
+/* Enhancement application language: material bursts outward, font lands like a
+   press, and edition washes over the face. Multiple changed axes stagger in order. */
+.tile-enhance-fx {
+  --fx-delay: 0s;
+  position: absolute;
+  z-index: 7;
+  inset: -12px;
+  border-radius: 16px;
+  pointer-events: none;
+}
+.tile-enhance-fx::before,
+.tile-enhance-fx::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+.tile-enhance-material::before {
+  inset: 10px;
+  border: 4px solid #fff2b0;
+  border-radius: 14px;
+  box-shadow: 0 0 18px #ffb84f;
+  animation: tile-material-change .72s cubic-bezier(.18,.8,.3,1) var(--fx-delay) both;
+}
+.tile-enhance-material::after {
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: #fff8d6;
+  box-shadow:
+    0 -42px #ffd65c, 30px -30px #fff, 42px 0 #ff9e43, 30px 30px #fff,
+    0 42px #ffd65c, -30px 30px #fff, -42px 0 #ff9e43, -30px -30px #fff;
+  animation: tile-material-sparks .72s ease-out var(--fx-delay) both;
+}
+.tile-enhance-font {
+  --fx-delay: .14s;
+}
+.tile-enhance-font::before {
+  content: attr(data-letter);
+  inset: 11px;
+  display: grid;
+  place-items: center;
+  border-block: 5px solid #12110e;
+  background: rgba(246, 235, 199, .86);
+  color: #12110e;
+  font: inherit;
+  font-size: 42px;
+  line-height: 1;
+  animation: tile-font-press .62s cubic-bezier(.2,.78,.25,1) var(--fx-delay) both;
+}
+.tile-enhance-font::after {
+  left: 12px;
+  right: 12px;
+  bottom: 7px;
+  height: 7px;
+  background: repeating-linear-gradient(90deg, #17130d 0 5px, transparent 5px 9px);
+  animation: tile-font-ink .62s ease var(--fx-delay) both;
+}
+.tile-enhance-edition {
+  --fx-delay: .28s;
+  overflow: hidden;
+}
+.tile-enhance-edition::before {
+  inset: 9px;
+  border: 4px solid rgba(255,255,255,.9);
+  border-radius: 14px;
+  background: conic-gradient(from 90deg, #ff405f, #ffe142, #4be0a0, #5d87ff, #d65dff, #ff405f);
+  mix-blend-mode: screen;
+  animation: tile-edition-change .72s ease-out var(--fx-delay) both;
+}
+.tile-enhance-edition::after {
+  top: -20%;
+  bottom: -20%;
+  left: -45%;
+  width: 26px;
+  transform: rotate(18deg);
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 0 18px #fff;
+  animation: tile-edition-sweep .72s ease-in-out var(--fx-delay) both;
+}
+@keyframes tile-material-change {
+  0% { opacity: 0; transform: scale(.45) rotate(-8deg); }
+  32% { opacity: 1; transform: scale(1.12) rotate(2deg); }
+  100% { opacity: 0; transform: scale(1.28); }
+}
+@keyframes tile-material-sparks {
+  0% { opacity: 0; transform: translate(-50%,-50%) scale(.1) rotate(-18deg); }
+  28% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(1.18) rotate(12deg); }
+}
+@keyframes tile-font-press {
+  0% { opacity: 0; transform: translateY(-24px) scaleY(1.35); }
+  34% { opacity: 1; transform: translateY(5px) scaleY(.76); }
+  58% { transform: translateY(-2px) scaleY(1.06); }
+  100% { opacity: 0; transform: translateY(0) scaleY(1); }
+}
+@keyframes tile-font-ink {
+  0%, 24% { opacity: 0; transform: scaleX(.2); }
+  45% { opacity: .9; transform: scaleX(1); }
+  100% { opacity: 0; }
+}
+@keyframes tile-edition-change {
+  0% { opacity: 0; transform: scale(.7) rotate(-25deg); filter: hue-rotate(0); }
+  38% { opacity: .72; transform: scale(1.04) rotate(8deg); }
+  100% { opacity: 0; transform: scale(1.22) rotate(22deg); filter: hue-rotate(180deg); }
+}
+@keyframes tile-edition-sweep {
+  0% { opacity: 0; translate: 0; }
+  24% { opacity: 1; }
+  100% { opacity: 0; translate: 150px; }
 }
 /* B-2 · per-material ink contrast (UI_DESIGN §3.1 ③): dark faces flip letter +
    value + corner glyph to a light ink, overriding the value-tier ink so a
@@ -3186,7 +3414,13 @@
 @media (prefers-reduced-motion: reduce) {
   .tile.mat-flash,
   .tile.trig-bounce,
-  .tile.mat-destroy { animation: none; }
+  .tile.mat-destroy,
+  .tile-edition-violet,
+  .tile-edition-rainbow { animation: none; }
+  .tile-enhance-fx { display: none; }
+}
+.force-reduced-motion .tile-enhance-fx {
+  display: none;
 }
 
 /* B-1 · conditional-material corner glyph — the "why is this tile special" read
@@ -3410,22 +3644,6 @@
   justify-content: center;
   padding: 6px 0 2px;
   flex-wrap: wrap;
-  /* Round-start flourish (playtest-06): the hand slides in from the right half a
-     second after the board appears. This slide used to fire by ACCIDENT on the
-     first tile selection of a round — the FLIP cache was captured while the
-     screen transition still had the board mid-transform (see useFlip) — so it is
-     now deliberate: once per round, on mount (the board remounts each blind). */
-  animation: handIntro 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.5s backwards;
-}
-@keyframes handIntro {
-  from {
-    transform: translateX(46px);
-    opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
 }
 /* Fresh draws are animated exactly once by useFlip from the live pouch origin.
    CSS owns only the idle wobble; duplicating entry motion here made the finite
@@ -4021,6 +4239,7 @@
 .bonus-part.modifier { color: var(--chips); }
 .bonus-part.unison { color: var(--gold); }
 .bonus-part.effect { color: #d7a8ff; }
+.bonus-part.pouch { color: var(--gold); }
 .sb-status.warn {
   color: var(--gold);
 }

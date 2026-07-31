@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 const play = readFileSync('src/ui/styles/play.css', 'utf8');
 const screens = readFileSync('src/ui/styles/screens.css', 'utf8');
 const hooks = readFileSync('src/ui/hooks.ts', 'utf8');
+const stage = readFileSync('src/ui/components/StagePanel.tsx', 'utf8');
 
 describe('blind ambient layout and tile entry', () => {
   it('gives the blind emblem a restrained idle with reduced-motion support', () => {
@@ -22,5 +23,11 @@ describe('blind ambient layout and tile entry', () => {
     expect(hooks).toContain("k.classList.remove('flip-entering')");
     expect(play).toMatch(/\.hand \.tile\.flip-entering\s*\{[^}]*animation:\s*none/s);
     expect(play).not.toContain('@keyframes tile-draw-in');
+  });
+
+  it('keeps the opening deal inside the work panel without a second row animation', () => {
+    expect(play).not.toContain('@keyframes handIntro');
+    expect(stage).toContain('bounds.right - tile.offsetWidth');
+    expect(stage).toContain('bounds.bottom - tile.offsetHeight');
   });
 });

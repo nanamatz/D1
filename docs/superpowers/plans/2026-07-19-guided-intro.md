@@ -176,7 +176,7 @@ describe('guided intro copy coverage', () => {
   "intro.step.clear.body": "Once your projected score clears the target, the blind settles itself. That's the loop — good luck!",
 ```
 
-`locales/ko.json` (glossary: 초고/퇴고/마감, 원고료, 보따리; suit=접미):
+`locales/ko.json` (glossary: 초고/퇴고/마감, 원고료, 주머니; suit=접미):
 
 ```json
   "intro.next": "다음",

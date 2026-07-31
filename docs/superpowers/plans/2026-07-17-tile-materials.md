@@ -366,7 +366,7 @@ In `src/engine/balance.ts`, after the `gibberish` block (~line 40):
     polished: { mult: 4 }, // Balatro Mult
     glass: { multFactor: 2, destroyChance: 0.25 }, // Balatro Glass
     stone: { chips: 50 }, // Balatro Stone
-    leadPlate: { multChance: 0.2, mult: 20, goldChance: 1 / 15, gold: 20 }, // Balatro Lucky
+    leadPlate: { multChance: 0.2, mult: 20, goldChance: 0.2, gold: 20 },
     ivory: { gold: 3 }, // Balatro Gold
     brass: { multFactor: 1.5 }, // Balatro Steel
   },
@@ -750,7 +750,7 @@ git add src/engine/loop.ts src/engine/materials.ts src/ui/useGame.ts src/sim/aut
 git commit -m "feat(materials): thread seeded RNG into scoring + Lead plate
 
 submitWord now takes an Rng so material rolls stay reproducible from
-RunState.seed. Lead plate rolls mult (1/5) and gold (1/15) independently.
+RunState.seed. Lead plate rolls mult (1/5) and gold (1/5) independently (gold chance retuned 2026-07-30).
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -1440,8 +1440,8 @@ Create `src/sim/materials.ts`:
  * Materials balance scenario (GDD §2.2). Measures the three predictions recorded
  * in docs/superpowers/specs/2026-07-17-tile-materials-design.md:
  *   1. Brass compounds to roughly ×11 off ~6 held tiles at hand size 11
- *   2. Porcelain's +30 dwarfs our Scrabble letter chips ("TASTE" = 5)
- *   3. Ivory / Lead plate economy values need no scaling
+ *   2. Porcelain's +30 against our Scrabble ×3 letter chips ("TASTE" = 15)
+ *   3. Ivory payout and Lead plate gold after its 1/5 chance retune
  *
  * Run: npx tsx src/sim/materials.ts
  */

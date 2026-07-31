@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { BlindEarnings } from '../../engine/progression';
+import { pouchDisablesInterest } from '../../engine/pouches';
+import { recordDisablesInterest } from '../../engine/records';
 import { useCountUp, useReveal } from '../useAnim';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
@@ -30,10 +32,15 @@ export function CashOut({ g }: { g: UseGame }) {
   const e: BlindEarnings | null = g.state.cashout;
   if (!e) return null;
 
+  const noInterest =
+    pouchDisablesInterest(g.state.run) || recordDisablesInterest(g.state.run);
   const lines: Line[] = [
     { key: 'cashout.reward', amount: e.reward },
-    { key: 'cashout.phases', params: { n: e.phases }, amount: e.phases },
-    { key: 'cashout.interest', amount: e.interest },
+    { key: 'cashout.phases', params: { n: e.phaseCount }, amount: e.phases },
+    ...(g.state.run.pouchId === 'purple'
+      ? [{ key: 'cashout.discards', params: { n: e.discardCount }, amount: e.discards }]
+      : []),
+    { key: noInterest ? 'cashout.noInterest' : 'cashout.interest', amount: e.interest },
   ];
 
   const shown = useReveal(lines.length);

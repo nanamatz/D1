@@ -6,7 +6,16 @@
 
 import { BALANCE } from './balance';
 import { buildBag } from './bag';
-import type { PatternId, RunState, ScalingCounters } from './types';
+import { applyStartingPouch } from './pouches';
+import { applyStartingRecord } from './records';
+import { makeRng } from './rng';
+import type {
+  PatternId,
+  PouchId,
+  RecordId,
+  RunState,
+  ScalingCounters,
+} from './types';
 
 function freshPatternLevels(): Record<PatternId, number> {
   const levels = {} as Record<PatternId, number>;
@@ -32,9 +41,18 @@ function freshCounters(): ScalingCounters {
   };
 }
 
-/** A brand-new run at ante 1 with the starting bag and base resources. */
-export function newRun(seed: string): RunState {
-  return {
+export interface NewRunOptions {
+  pouchId?: PouchId;
+  recordId?: RecordId;
+  customSeed?: boolean;
+}
+
+/** A brand-new run at ante 1 with the selected pouch and cumulative Record. */
+export function newRun(seed: string, options: NewRunOptions = {}): RunState {
+  const run: RunState = {
+    pouchId: options.pouchId ?? 'yellow',
+    recordId: options.recordId ?? 'whiteLp',
+    customSeed: options.customSeed ?? false,
     seed,
     ante: 1,
     blindIndex: 0,
@@ -58,4 +76,7 @@ export function newRun(seed: string): RunState {
     bossRerollsUsed: 0,
     counters: freshCounters(),
   };
+  return applyStartingRecord(
+    applyStartingPouch(run, makeRng(`${seed}#starting-pouch`)),
+  );
 }

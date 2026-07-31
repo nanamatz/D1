@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
@@ -123,21 +123,28 @@ function ShopOffer({
 }
 
 const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
+const VOUCHER_REDEEM_MS = 720;
 
 /** The shop screen between blinds (GDD §9.2). Buy/sell/reroll, then Next blind. */
 export function Shop({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const { run, shop } = g.state;
   const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
+  const [redeemingVoucher, setRedeemingVoucher] = useState(false);
+  const redeemTimer = useRef<number | null>(null);
   const [leaving, setLeaving] = useState(false);
   useEffect(() => setSelectedOffer(null), [shop]);
+  useEffect(() => () => {
+    if (redeemTimer.current !== null) window.clearTimeout(redeemTimer.current);
+  }, []);
   if (!shop) return null;
 
   const toggleOffer = (key: string) => {
+    if (redeemingVoucher) return;
     setSelectedOffer((current) => current === key ? null : key);
   };
   const leavePanel = (action: () => void) => {
-    if (leaving) return;
+    if (leaving || redeemingVoucher) return;
     setLeaving(true);
     window.setTimeout(action, 360);
   };
@@ -186,7 +193,7 @@ export function Shop({ g }: { g: UseGame }) {
   };
 
   const affordable = (item: ShopItem): boolean => {
-    if (run.gold < item.price) return false;
+    if (redeemingVoucher || run.gold < item.price) return false;
     return item.kind === 'joker'
       ? canAddJoker(run, item.id, item.edition ?? 'base')
       : item.kind === 'tile' || run.consumables.length < run.consumableSlots;
@@ -194,17 +201,41 @@ export function Shop({ g }: { g: UseGame }) {
 
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
   const voucher = shop.voucher ? VOUCHER_REGISTRY.get(shop.voucher) : undefined;
+  const redeemVoucher = () => {
+    if (redeemingVoucher || !voucher || run.gold < voucher.price) return;
+    setRedeemingVoucher(true);
+    const motionOff =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
+      document.body.classList.contains('force-reduced-motion');
+    redeemTimer.current = window.setTimeout(() => {
+      g.buyVoucher();
+      setRedeemingVoucher(false);
+      redeemTimer.current = null;
+    }, motionOff ? 0 : VOUCHER_REDEEM_MS);
+  };
 
   return (
-    <div className={['shop2', leaving && 'phase-panel-leaving'].filter(Boolean).join(' ')}>
+    <div
+      className={[
+        'shop2',
+        leaving && 'phase-panel-leaving',
+        redeemingVoucher && 'voucher-redeeming',
+      ].filter(Boolean).join(' ')}
+      aria-busy={redeemingVoucher}
+    >
       <aside className="shop-rail">
         <button
           className="btn play next-blind"
+          disabled={redeemingVoucher}
           onClick={() => leavePanel(g.leaveShop)}
         >
           {t('shop.next')}
         </button>
-        <button className="btn green reroll-btn" disabled={run.gold < cost} onClick={g.reroll}>
+        <button
+          className="btn green reroll-btn"
+          disabled={redeemingVoucher || run.gold < cost}
+          onClick={g.reroll}
+        >
           {t('shop.reroll', { cost })}
         </button>
         <div className="shop-gold">
@@ -326,14 +357,15 @@ export function Shop({ g }: { g: UseGame }) {
                     selected={selectedOffer === 'voucher'}
                     actionLabel={t('shop.redeem')}
                     actionClassName="exchange"
-                    disabled={run.gold < voucher.price}
+                    disabled={redeemingVoucher || run.gold < voucher.price}
                     onSelect={() => toggleOffer('voucher')}
-                    onAction={g.buyVoucher}
+                    onAction={redeemVoucher}
                   >
                     <VoucherCard
                       emoji={voucher.emoji}
                       name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
                       artSrc={voucherArt(voucher.id)}
+                      redeeming={redeemingVoucher}
                       motion={false}
                     />
                   </ShopOffer>
@@ -362,7 +394,7 @@ export function Shop({ g }: { g: UseGame }) {
                       selected={selectedOffer === offerKey}
                       actionLabel={t('pack.open')}
                       actionClassName="green"
-                      disabled={run.gold < price}
+                      disabled={redeemingVoucher || run.gold < price}
                       onSelect={() => toggleOffer(offerKey)}
                       onAction={() => leavePanel(() => g.buyPack(i))}
                     >

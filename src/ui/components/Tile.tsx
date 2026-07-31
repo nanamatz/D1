@@ -1,11 +1,22 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import type { Tile } from '../../engine/types';
-import { faceClass, fontClass, inkClass, materialClass, materialGlyph, tileGlyph, tileValue } from '../game';
+import {
+  changedTileAxes,
+  faceClass,
+  fontClass,
+  inkClass,
+  materialClass,
+  materialGlyph,
+  tileGlyph,
+  tileValue,
+  type TileEnhancementAxis,
+} from '../game';
 import { useI18n } from '../i18n';
 import { usePointerTilt } from '../hooks';
 import { richText } from '../richtext';
 import { useSettleView } from '../settle';
+import { TooltipSupplement } from './Tooltip';
 
 interface Props {
   tile: Tile;
@@ -66,6 +77,36 @@ function TileViewImpl({
   const matGlyph = faceDown ? null : materialGlyph(tile);
   const rootRef = useRef<HTMLDivElement>(null);
   usePointerTilt(rootRef, tilt && !mini && !disabled);
+  const previousAxes = useRef({
+    id: tile.id,
+    material: tile.material,
+    font: tile.font,
+    edition: tile.edition ?? 'base',
+  });
+  const [enhancementFx, setEnhancementFx] = useState<TileEnhancementAxis[]>([]);
+  useEffect(() => {
+    if (previousAxes.current.id !== tile.id) {
+      previousAxes.current = {
+        id: tile.id,
+        material: tile.material,
+        font: tile.font,
+        edition: tile.edition ?? 'base',
+      };
+      setEnhancementFx([]);
+      return;
+    }
+    const changed = changedTileAxes(previousAxes.current, tile);
+    previousAxes.current = {
+      id: tile.id,
+      material: tile.material,
+      font: tile.font,
+      edition: tile.edition ?? 'base',
+    };
+    if (changed.length === 0) return;
+    setEnhancementFx(changed);
+    const timer = window.setTimeout(() => setEnhancementFx([]), 1100);
+    return () => window.clearTimeout(timer);
+  }, [tile.id, tile.material, tile.font, tile.edition]);
   // feedback #1: the tooltip must never warp. Rendered in a body PORTAL positioned at
   // the tile's rect, so it escapes the tile's tilt/drag 3D transform (a descendant
   // would inherit it and skew). Shown on hover; hidden the moment a drag press starts.
@@ -114,6 +155,7 @@ function TileViewImpl({
       className={className}
       data-flip-id={tile.id}
       data-tile-id={tile.id}
+      data-material={tile.material}
       // feature-04 D: the spring-drag controller (useStageDrag) owns dragging via
       // pointer events; the home zone is read from here. Native HTML5 drag is off —
       // it can't spring-follow or rotate (the browser owns its drag image).
@@ -156,7 +198,11 @@ function TileViewImpl({
         <span className="tile-back" aria-hidden>?</span>
       ) : (
         <>
-          {tileGlyph(tile)}
+          <span className="tile-material-texture" aria-hidden />
+          {(tile.edition ?? 'base') !== 'base' && (
+            <span className={`tile-edition-surface tile-edition-${tile.edition}`} aria-hidden />
+          )}
+          <span className="tile-letter">{tileGlyph(tile)}</span>
           <span className="val">{tileValue(tile)}</span>
           {matGlyph && (
             <span
@@ -167,6 +213,14 @@ function TileViewImpl({
             </span>
           )}
           {invalid && <span className="boss-invalid-tag">{t('boss.notAllowed')}</span>}
+          {enhancementFx.map((axis) => (
+            <span
+              key={axis}
+              className={`tile-enhance-fx tile-enhance-${axis}`}
+              data-letter={tileGlyph(tile)}
+              aria-hidden
+            />
+          ))}
         </>
       )}
       {!faceDown && tooltip && tipPos &&
@@ -180,6 +234,7 @@ function TileViewImpl({
             <span className="tt-desc">
               <span className="tt-body">{richText(tooltip.body)}</span>
             </span>
+            <TooltipSupplement body={tooltip.body} />
           </span>,
           document.body,
         )}

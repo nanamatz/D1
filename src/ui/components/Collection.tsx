@@ -5,6 +5,8 @@ import { BOSS_REGISTRY, CORE_BOSS_IDS } from '../../engine/bosses';
 import { BOSS_ART, BLIND_ART } from '../bossArt';
 import { blindTarget } from '../../engine/economy';
 import { BALANCE } from '../../engine/balance';
+import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
+import { RECORD_IDS, isRecordUnlocked } from '../../engine/records';
 import type { Lexicon } from '../../engine/lexicon';
 import type { Suit, TileFont, TileMaterial, Tile, VoucherId } from '../../engine/types';
 import {
@@ -29,7 +31,9 @@ import {
 import { useI18n } from '../i18n';
 import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
-import pouchUrl from '../assets/pouch.png';
+import { pouchArt } from '../pouchArt';
+import { recordArt } from '../recordArt';
+import { loadLifetime } from '../lifetime';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
 import { VoucherCard } from './VoucherCard';
@@ -59,7 +63,8 @@ type Category =
   | 'packs'
   | 'palette'
   | 'mascots'
-  | 'bags';
+  | 'pouches'
+  | 'records';
 
 type CategoryMenuItem = {
   id: Category;
@@ -89,13 +94,14 @@ const CATEGORY_COLUMNS: CategoryMenuBlock[][] = [
     },
   ],
   [
-    { scale: 1.9, items: [{ id: 'bosses', scale: 1 }] },
-    { scale: 1.5, items: [{ id: 'packs', scale: 1 }] },
-    { scale: 1, items: [{ id: 'materials', scale: 1 }] },
-    { scale: 1, items: [{ id: 'fonts', scale: 1 }] },
-    { scale: 1.2, items: [{ id: 'palette', scale: 1 }] },
-    { scale: 1.1, items: [{ id: 'mascots', scale: 1 }] },
-    { scale: 0.9, items: [{ id: 'bags', scale: 1 }] },
+    { scale: 1.7, items: [{ id: 'bosses', scale: 1 }] },
+    { scale: 1.3, items: [{ id: 'packs', scale: 1 }] },
+    { scale: 0.9, items: [{ id: 'materials', scale: 1 }] },
+    { scale: 0.9, items: [{ id: 'fonts', scale: 1 }] },
+    { scale: 1.1, items: [{ id: 'palette', scale: 1 }] },
+    { scale: 1, items: [{ id: 'mascots', scale: 1 }] },
+    { scale: 0.85, items: [{ id: 'pouches', scale: 1 }] },
+    { scale: 0.85, items: [{ id: 'records', scale: 1 }] },
   ],
 ];
 
@@ -111,6 +117,15 @@ const PAGE = 60;
 const JOKERS_PER_PAGE = 15;
 const CARDS_PER_PAGE = 10;
 const VOUCHER_PAIRS_PER_PAGE = 4;
+
+function runUnlockProgress() {
+  const lifetime = loadLifetime();
+  return {
+    discoveredWords: collectionSize(),
+    pouchWins: new Set(lifetime.pouchWins),
+    recordWins: new Set(lifetime.recordWins),
+  };
+}
 
 const sampleTile = (over: Partial<Tile>): Tile => {
   const material = over.material ?? 'ceramic';
@@ -152,7 +167,9 @@ export function Collection({ lexicon, onBack }: Props) {
   }, []);
 
   const counts = useMemo(
-    () => ({
+    () => {
+      const progress = runUnlockProgress();
+      return {
       words: { have: collectionSize(), total: lexicon.size },
       jokers: { have: ALL_JOKERS.length, total: ALL_JOKERS.length },
       materials: { have: MATERIALS.length, total: MATERIALS.length },
@@ -174,8 +191,16 @@ export function Collection({ lexicon, onBack }: Props) {
         have: mascotCollectionRows(activeUnlocks(false)).filter((r) => r.unlocked && r.art).length,
         total: mascotCollectionRows(activeUnlocks(false)).length,
       },
-      bags: { have: 1, total: 1 },
-    }),
+      pouches: {
+        have: POUCH_IDS.filter((id) => isPouchUnlocked(id, progress)).length,
+        total: POUCH_IDS.length,
+      },
+      records: {
+        have: RECORD_IDS.filter((id) => isRecordUnlocked(id, progress.recordWins)).length,
+        total: RECORD_IDS.length,
+      },
+    };
+    },
     [lexicon],
   );
 
@@ -243,7 +268,8 @@ export function Collection({ lexicon, onBack }: Props) {
           {cat === 'packs' && <PacksView />}
           {cat === 'palette' && <PaletteView />}
           {cat === 'mascots' && <MascotsView />}
-          {cat === 'bags' && <BagsView />}
+          {cat === 'pouches' && <PouchesView />}
+          {cat === 'records' && <RecordsView />}
         </div>
 
         {/* 뒤로 = the previous screen: from a detail view that's the category
@@ -608,7 +634,7 @@ function BossesView() {
   );
 }
 
-// ---------- Packs / Bags ----------
+// ---------- Packs / Pouches / Records ----------
 /** Image-only paged gallery for all supplied Tile, Charm, Constellation, and Ink art. */
 function PacksView() {
   const { t } = useI18n();
@@ -770,15 +796,66 @@ function MascotsView() {
     </div>
   );
 }
-function BagsView() {
+function PouchesView() {
   const { t } = useI18n();
+  const progress = runUnlockProgress();
   return (
-    <div className="swatch-grid">
-      <div className="swatch bag-detail">
-        <img className="bag-art big" src={pouchUrl} alt="" />
-        <span className="sw-name">{t('bag.standard.name')}</span>
-        <p className="select-desc">{t('bag.standard.desc')}</p>
-      </div>
+    <div className="pouch-record-grid">
+      {POUCH_IDS.map((id) => {
+        const unlocked = isPouchUnlocked(id, progress);
+        const unlock = !unlocked
+          ? t('newrun.unlock', { requirement: t(`pouch.${id}.unlock`) })
+          : '';
+        return (
+          <Tooltip
+            key={id}
+            title={t(`pouch.${id}.name`)}
+            body={[t(`pouch.${id}.desc`), unlock].filter(Boolean).join('\n')}
+            down
+          >
+            <div
+              className={['collection-object', 'pouch-object', !unlocked && 'locked'].filter(Boolean).join(' ')}
+              tabIndex={0}
+            >
+              <img className="pouch-gallery-art" src={pouchArt(id)} alt="" />
+              <span className="collection-object-name">
+                {unlocked ? t(`pouch.${id}.name`) : t('newrun.locked')}
+              </span>
+              {!unlocked && <small>🔒 {unlock}</small>}
+            </div>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+}
+
+function RecordsView() {
+  const { t } = useI18n();
+  const progress = runUnlockProgress();
+  return (
+    <div className="pouch-record-grid record-grid">
+      {RECORD_IDS.map((id) => {
+        const unlocked = isRecordUnlocked(id, progress.recordWins);
+        const cumulative = id === 'whiteLp' ? '' : `\n${t('newrun.cumulative')}`;
+        return (
+          <Tooltip
+            key={id}
+            title={t(`record.${id}.name`)}
+            body={`${t(`record.${id}.desc`)}${cumulative}`}
+            down
+          >
+            <div
+              className={['collection-object', 'record-object', !unlocked && 'locked'].filter(Boolean).join(' ')}
+              tabIndex={0}
+            >
+              <img className="record-gallery-art" src={recordArt(id)} alt="" />
+              <span className="collection-object-name">{t(`record.${id}.name`)}</span>
+              {!unlocked && <small>{t('newrun.locked')}</small>}
+            </div>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }

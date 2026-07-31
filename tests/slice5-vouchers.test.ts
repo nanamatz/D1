@@ -16,7 +16,8 @@ import {
 
 describe('two-tier vouchers — direct resource effects', () => {
   it('stacks hand, discard, phase, and slot upgrades', () => {
-    let run = applyVoucher(newRun('v'), 'memo');
+    const fresh = newRun('v');
+    let run = applyVoucher(fresh, 'memo');
     run = applyVoucher(run, 'notebook');
     run = applyVoucher(run, 'poetryBook');
     run = applyVoucher(run, 'sheetMusic');
@@ -25,21 +26,22 @@ describe('two-tier vouchers — direct resource effects', () => {
     run = applyVoucher(run, 'zeroScore');
     run = applyVoucher(run, 'kungfuManual');
     expect(run.basePhases).toBe(BALANCE.basePhases + 2);
-    expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind + 2);
+    expect(run.baseDiscards).toBe(fresh.baseDiscards + 2);
     expect(run.handSize).toBe(BALANCE.handSize + 2);
     expect(run.consumableSlots).toBe(BALANCE.consumableSlots + 1);
     expect(run.jokerSlots).toBe(BALANCE.jokerSlots + 1);
   });
 
   it('History/Old Book each lower ante, preserve the scheduled blind, and apply their penalties', () => {
-    let run: import('../src/engine/types').RunState = { ...newRun('v'), ante: 5, blindIndex: 2 };
+    const fresh = newRun('v');
+    let run: import('../src/engine/types').RunState = { ...fresh, ante: 5, blindIndex: 2 };
     run = applyVoucher(run, 'historyBook');
     expect(run.blindIndex).toBe(2);
     run = applyVoucher(run, 'oldBook');
     expect(run.ante).toBe(3);
     expect(run.blindIndex).toBe(2); // the already-scheduled Deadline remains scheduled
     expect(run.handSize).toBe(BALANCE.handSize - 1); // History Book −1 hand (per its tooltip)
-    expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind - 1);
+    expect(run.baseDiscards).toBe(fresh.baseDiscards - 1);
   });
 
   it('History Book can push the ante to 0 with a valid (easier) target', () => {

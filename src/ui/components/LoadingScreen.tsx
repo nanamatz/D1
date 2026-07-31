@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { activeUnlocks } from '../unlocks';
 import { mascotSrc } from '../mascots';
-import pouchUrl from '../assets/pouch.png';
+import { pouchArt } from '../pouchArt';
+import { recordArt } from '../recordArt';
 import draftUrl from '../assets/bosses/T_Draft.png';
 
 /**
@@ -15,7 +16,9 @@ import draftUrl from '../assets/bosses/T_Draft.png';
 
 // Only first-interaction art belongs on the critical path. Preloading the complete
 // gallery caused a cold deployment to download and decode tens of MB at once.
-const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, draftUrl];
+const pouchUrl = pouchArt('yellow');
+const recordUrl = recordArt('whiteLp');
+const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, recordUrl, draftUrl];
 
 const COLOR_UNLOCKS = ['RED', 'YELLOW', 'GREEN', 'BLUE'];
 

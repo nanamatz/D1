@@ -1,10 +1,9 @@
 /// <reference types="node" />
 /**
- * Materials balance scenario (GDD §2.2). Measures the three predictions recorded
- * in docs/superpowers/specs/2026-07-17-tile-materials-design.md:
- *   1. Brass compounds to roughly ×11 off ~6 held tiles at hand size 11
- *   2. Porcelain's +30 dwarfs our Scrabble letter chips ("TASTE" = 5)
- *   3. Ivory / Lead plate economy values need no scaling
+ * Materials balance scenario (GDD §2.2). Tracks the current material watchlist:
+ *   1. Brass compounding from held tiles
+ *   2. Porcelain's +30 against our Scrabble ×3 letter chips ("TASTE" = 15)
+ *   3. Ivory payout and Lead plate gold after its 1/5 chance retune
  *
  * Each trial builds an all-one-material bag (honoring the material 'stone' ⟺
  * letter null invariant), starts a blind, plays one word, and — since endBlind
@@ -91,4 +90,4 @@ for (const m of MATERIALS) {
 }
 console.log(`\nAnte-1 Draft target for reference: ${BALANCE.anteBaseTargets[0]}`);
 console.log(`Economy for reference: clearReward small/big/boss ${BALANCE.clearReward.small}/${BALANCE.clearReward.big}/${BALANCE.clearReward.boss} · interest cap ${BALANCE.interest.cap} · jokerPrice common ${BALANCE.jokerPrice.common}`);
-console.log('Predictions: Brass ≈ ×11 · Porcelain heavily over base · Ivory/Lead plate economy unscaled.');
+console.log('Watchlist: Brass compounding · Porcelain over base · Lead plate gold after 1/5 retune.');

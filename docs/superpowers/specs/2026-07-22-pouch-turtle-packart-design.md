@@ -3,6 +3,12 @@
 **Date:** 2026-07-22
 **Status:** Approved
 
+> **Amended 2026-07-30 — Starting Pouches + Records.** The single default
+> Pouch was the first asset, not a permanent one-entry roster. GDD §12 now
+> defines 14 Starting Pouches and 8 cumulative Records. The old
+> starting-bag/stake/Ink-difficulty placeholders are retired; Ink Pack remains
+> unrelated consumable-pack terminology.
+
 ## Goal
 
 Wire three sets of newly-prepared pixel-art assets into the UI, following the
@@ -29,15 +35,33 @@ imports them):
 
 ## 1. Pouch icon
 
-The default-pouch art replaces the old bag glyph everywhere a pouch/bag is shown:
+The default-pouch art replaced the old bag glyph everywhere the original single
+Pouch was shown:
 
 - `BagView.tsx` — the in-game `.pouch-art` widget (`👝` → `<img>`); this also covers
   the blind-select screen, where the widget renders.
-- `NewRun.tsx` — the New Run bag selector preview (`🎒` → `<img>`).
-- `Collection.tsx` `BagsView` — the 도감 Pouches detail (`🎒` → `<img>`).
+- `NewRun.tsx` — the then-single New Run selector preview (`🎒` → `<img>`), now
+  the 14-entry Starting-Pouch selector.
+- `Collection.tsx` `PouchesView` — the Collection Pouches detail
+  (`🎒` → `<img>`).
 
 Minimal CSS sizes the image (`.pouch-art`, `.bag-art` / `.bag-art.big`). Count,
 hover, and modal behaviour are unchanged.
+
+**2026-07-30 family contract.** Treat this default as **Yellow Pouch**, the first
+of the 14-entry Starting-Pouch family. Every runtime image uses the same exact
+`510×511` transparent RGBA canvas and comparable occupied bounds as
+`src/ui/assets/pouch.png`.
+Each is a simple standalone pixel-art object with no text, scene, frame, smooth
+gradient, or lighting setup. All variants reuse the shared 72×72 in-run,
+140×140 New Run, and 86×86 Collection boxes; the selected Pouch changes the image,
+not component dimensions.
+
+Records use their own shared resolver and transparent selector frame. White,
+Red, Green, Blue, and Yellow LP are pixel-identical black vinyl except for the
+centre label; Clear LP has a white label and semi-transparent acrylic disc; CD
+is visibly smaller than LP; DVD matches CD size with a distinct rainbow surface.
+See GDD §12.3 and `docs/UI_DESIGN.md` for the canonical art contract.
 
 ## 2. Turtle WooDak skin
 
@@ -103,7 +127,9 @@ non-tile) so tile packs stay seed-reproducible.
 
 ## Out of scope
 
-- Pouch skins / additional pouch variants (only the single default is wired).
+- This historical patch still wires only the first Pouch asset. Producing and
+  wiring the remaining 13 Pouches and 8 Record assets is follow-up work governed
+  by the 2026-07-30 amendment above—not an open design question.
 - The CAT mascot variant is retired from the roster (removed 2026-07-22 —
   no unlock row, no skin, no i18n).
 - Any change to pack contents, sizes' show/pick/price, or roll weights.

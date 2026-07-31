@@ -116,6 +116,9 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
       unisonMult: 1,
       effectChips: 0,
       effectMult: 1,
+      pouchId: null,
+      pouchChipsDelta: 0,
+      pouchMultDelta: 0,
     });
   });
 });

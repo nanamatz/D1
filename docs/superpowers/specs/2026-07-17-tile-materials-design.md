@@ -47,7 +47,7 @@ A 연판 (鉛版, stereotype plate) wears down as it prints, so impressions vary
 | Porcelain 자기 | +30 chips | Bonus | word scoring, per tile |
 | Polished 연마 | +4 mult | Mult | word scoring, per tile |
 | Glass 유리 | ×2 mult, 1/4 chance to destroy the tile | Glass | word scoring, per tile (RNG) |
-| Lead plate 연판 | 1/5 → +20 mult; 1/15 → $20 | Lucky | word scoring, per tile (RNG) |
+| Lead plate 연판 | 1/5 → +20 mult; 1/5 → $20 | Lucky, gold chance retuned 2026-07-30 | word scoring, per tile (RNG) |
 | Brass 황동 | ×1.5 mult while held in hand | Steel | word scoring, per word (reads hand) |
 | Ivory 상아 | $3 if held in hand at blind end | Gold | blind end |
 | Stone 석재 | +50 chips, **no letter** | Stone (no rank/suit) | word scoring, per tile + type change |
@@ -61,7 +61,7 @@ Resolved ambiguities (all Balatro-matching):
   breaks it. A destroyed tile leaves the run permanently (it is removed from `run.bag`, not just the
   blind), which is what makes Glass the one real gamble.
 - **Lead plate rolls the two outcomes independently.** It is not one roll on a shared table: a tile can
-  hit +20 mult and $20 on the same word. Stone's `letter: null` contributes 0 letter chips, so its +50
+  hit +20 mult and $20 on the same word. Both Lead plate chances are 1/5 as of 2026-07-30. Stone's `letter: null` contributes 0 letter chips, so its +50
   is its whole chip contribution — nothing is double-counted.
 
 ## Architecture
@@ -122,49 +122,36 @@ matches Balatro.
 
 ## Balance strategy
 
-**Ship Balatro's numbers first, then patch from measurement.** Invented numbers would be armchair
-arithmetic; Balatro's are validated. `BALANCE` centralizes every value and `src/sim` autoplays runs
-headlessly, so re-tuning is a one-file edit against real data.
+**Start from reference values, then patch from measurement.** `BALANCE` centralizes every value and
+`src/sim` autoplays runs headlessly, so re-tuning is a one-file edit against real data. Lead plate's
+gold chance was raised from the original 1/15 reference to 1/5 on 2026-07-30.
 
-Our scale does differ from Balatro's, and the design recorded **three predictions to check in the sim**
-rather than pre-emptively "fixing" them. `npm run sim:materials` (`src/sim/materials.ts`, Task 9) measured
-them with 500 trials per material, an all-one-material bag per trial (to isolate each effect), and
-Ivory's blind-end payout read directly via `endBlind().materialGold`:
+`npm run sim:materials` (`src/sim/materials.ts`) measures 500 trials per material with an
+all-one-material bag per trial, and reads Ivory's blind-end payout directly through
+`endBlind().materialGold`. This snapshot was refreshed after the 2026-07-30 Lead plate retune:
 
 ```
 Materials balance sweep — 500 words per material, hand 11
 
-  ceramic    mean score       7.7  ×   1.0 vs ceramic
-  porcelain  mean score      92.7  ×  12.0 vs ceramic
-  polished   mean score      67.8  ×   8.8 vs ceramic
-  glass      mean score      58.4  ×   7.5 vs ceramic
-  stone      mean score     150.0  ×  19.4 vs ceramic
-  leadPlate  mean score      62.0  ×   8.0 vs ceramic   gold/word 3.20
-  ivory      mean score       7.2  ×   0.9 vs ceramic   blind-end gold 33.00
-  brass      mean score     185.2  ×  23.9 vs ceramic
+  ceramic    mean score      61.0  ×   1.0 vs ceramic
+  porcelain  mean score     341.0  ×   5.6 vs ceramic
+  polished   mean score     232.3  ×   3.8 vs ceramic
+  glass      mean score     190.4  ×   3.1 vs ceramic
+  stone      mean score     150.0  ×   2.5 vs ceramic
+  leadPlate  mean score     228.2  ×   3.7 vs ceramic   gold/word 10.24
+  ivory      mean score      61.0  ×   1.0 vs ceramic   blind-end gold 33.00
+  brass      mean score    1642.0  ×  26.9 vs ceramic
 
-Ante-1 Draft target for reference: 100
+Ante-1 Draft target for reference: 300
 Economy for reference: clearReward small/big/boss 3/4/5 · interest cap 5 · jokerPrice common 5
 ```
 
-1. **Brass explodes — CONFIRMED, worse than predicted.** Measured ×23.9 vs ceramic, more than double the
-   informal ×11 estimate. Cause: `findWord`'s average found word is only ~2.4 tiles (not the guessed ~5),
-   leaving ~8.6 of the 11 hand tiles held → 1.5^8.6 ≈ ×32 raw, damped to ×23.9 by mean-of-ratios vs
-   ratio-of-means and the words' own suit/letter-hand variance. Either direction the original prediction
-   pointed (coefficient down, or additive) is warranted; the multiplicative shape is the more violent of
-   the two once real (short) word lengths are accounted for.
-2. **Porcelain is over-tuned — CONFIRMED.** ×12.0 vs ceramic (mean 92.7 vs 7.7), matching the prediction
-   that +30/tile dwarfs 1–10-point Scrabble chips against an ante-1 target of 100.
-3. **Ivory and Lead plate's economy survive as-is — CONFIRMED at the per-tile level, but the pure-bag
-   harness inflates the raw number.** Lead plate: 3.20 gold/word from ~2–3 played tiles, in line with the
-   theoretical per-tile EV (20 × 1/15 ≈ 1.33/tile) and comparable to `clearReward` (3–5) — no scaling
-   issue. Ivory: the raw blind-end figure ($33.00) looks large only because the synthetic all-Ivory bag
-   means all ~11 held tiles are Ivory simultaneously, which never happens with a handful of packed-in
-   Ivory tiles in real play; normalized per held tile it is $33.00 / 11 ≈ **$3.00**, exactly
-   `BALANCE.materials.ivory.gold` — confirms the per-tile value needs no scaling. (Stone's ×19.4 is a
-   size artifact of the same pure-bag setup — Stone's `letter: null` forces every trial into a
-   1–2-letter gibberish "word" so the fixed +50 chips looms large over a tiny ceramic-word denominator;
-   it was not one of the three predictions and is not read as a balance signal here.)
+1. **Brass remains the largest score outlier.** The all-Brass bag measures ×26.9 versus Ceramic.
+2. **Porcelain remains substantially above base.** The current run measures ×5.6 versus Ceramic.
+3. **Lead plate's economy changed materially.** Its 1/5 $20 roll has an expected value of $4 per
+   scored Lead plate tile; the synthetic all-Lead bag measures $10.24 per word. Keep it on the
+   playtest watchlist rather than carrying forward the former “no scaling issue” conclusion. Ivory's
+   synthetic $33 blind-end total still normalizes to its configured $3 per held tile.
 
 Full reasoning, the sim's code, and the autoplay.ts import-hazard fix are in
 `.superpowers/sdd/task-9-report.md`.

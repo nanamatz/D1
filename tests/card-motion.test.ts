@@ -28,6 +28,24 @@ describe('shared card motion', () => {
     expect(markup).toContain('class="tilt-sheen"');
   });
 
+  it('renders the vertical shred layer only while a voucher is redeeming', () => {
+    const resting = renderToStaticMarkup(createElement(VoucherCard, {
+      emoji: 'V',
+      name: 'Voucher',
+      motion: false,
+    }));
+    const redeeming = renderToStaticMarkup(createElement(VoucherCard, {
+      emoji: 'V',
+      name: 'Voucher',
+      motion: false,
+      redeeming: true,
+    }));
+
+    expect(resting).not.toContain('voucher-card__shred');
+    expect(redeeming).toContain('voucher-card redeeming');
+    expect(redeeming).toContain('voucher-card__shred');
+  });
+
   it('defines idle, pointer tilt, sheen, and reduced-motion fallbacks', () => {
     const screens = readFileSync(
       fileURLToPath(new URL('../src/ui/styles/screens.css', import.meta.url)),
@@ -39,6 +57,9 @@ describe('shared card motion', () => {
     );
 
     expect(screens).toContain('@keyframes cardIdleFloat');
+    expect(screens).toContain('@keyframes voucher-shred-head');
+    expect(screens).toContain('translateY(calc(var(--voucher-h) + 12px))');
+    expect(screens).toContain('@keyframes voucher-shred-release');
     expect(screens).toContain('.motion-card.tilting');
     expect(screens).toContain('@media (prefers-reduced-motion: reduce)');
     expect(play).toContain('.motion-card.tilting');

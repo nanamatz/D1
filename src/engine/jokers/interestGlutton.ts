@@ -1,7 +1,6 @@
 import { BALANCE } from '../balance';
-import { interest } from '../economy';
+import { effectiveInterest } from '../economy';
 import type { JokerDef } from '../events';
-import { interestCap } from '../vouchers';
 
 /**
  * R10 (GDD §11.4) — ★ +2 Mult per $1 of interest received at round end, spent
@@ -24,8 +23,7 @@ export const interestGlutton: JokerDef = {
       ctx.mult += self.state.mult ?? 0;
     },
     blindEnd: ({ run }, self) => {
-      self.state.mult =
-        interest(run.gold, interestCap(run)) * BALANCE.jokers.interestGlutton.multPerGold;
+      self.state.mult = effectiveInterest(run) * BALANCE.jokers.interestGlutton.multPerGold;
     },
   },
 };

@@ -148,6 +148,20 @@ export function materialClass(material: Tile['material']): string {
   return material === 'ceramic' ? '' : material;
 }
 
+export type TileEnhancementAxis = 'material' | 'font' | 'edition';
+
+/** Presentation-only diff for the three independent tile enhancement axes. */
+export function changedTileAxes(
+  previous: Pick<Tile, 'material' | 'font' | 'edition'>,
+  next: Pick<Tile, 'material' | 'font' | 'edition'>,
+): TileEnhancementAxis[] {
+  const changed: TileEnhancementAxis[] = [];
+  if (previous.material !== next.material) changed.push('material');
+  if (previous.font !== next.font) changed.push('font');
+  if ((previous.edition ?? 'base') !== (next.edition ?? 'base')) changed.push('edition');
+  return changed;
+}
+
 /** A translate fn that also takes interpolation params (tile chips line needs one). */
 type TFull = (key: string, params?: Record<string, string | number>) => string;
 

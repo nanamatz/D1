@@ -93,7 +93,15 @@ target—no smaller nested click region.
 
 **Signature element — the Sentence Tray.** Balatro has no equivalent: our played words accumulate left-to-right *as a sentence under construction*. Each played word is a mini-card group (its tiles shrunk), framed in its suit color, with a POS tag chip beneath. A gibberish play renders as a cracked/burned slot — the **hole** made visible. At the tray's right end, a pattern status chip shows the live judgment ("Transitive ✓ ×2" / "— no pattern"). This tray is the game's identity on screen; spend the polish budget here.
 
-Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score · committed score as `[chips]×[mult]` blue/red boxes · projected score in gold (pulses when ≥ target — the auto-settle status indicator; there is **no** early-end/cash-out button, GDD §7.2) · phase dots · discard dots · gold · ante N/8. The `bb-art` blind emblem carries a restrained 3px idle float/scale loop, disabled by either reduced-motion setting. During a round, the pouch dock hangs beyond the right edge of `main.main` and the black play surface (`right: -96px`) while retaining a visible click target.
+Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score ·
+selected Record icon/name · committed score as `[chips]×[mult]` blue/red boxes ·
+projected score in gold (pulses when ≥ target — the auto-settle status
+indicator; there is **no** early-end/cash-out button, GDD §7.2) · phase dots ·
+discard dots · gold · Chapter N/8. The `bb-art` blind emblem carries a restrained
+3px idle float/scale loop, disabled by either reduced-motion setting. During a
+round, the selected Starting Pouch art occupies the pouch dock beyond the right
+edge of `main.main` and the black play surface (`right: -96px`) while retaining
+a visible click target.
 
 ---
 
@@ -124,6 +132,10 @@ All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
 13px live-value row, and a 280px maximum card width. Shared tooltips are rendered
 through a `document.body` portal above the CRT and every product panel, so their
 layout is never clipped or covered by the hovered surface.
+Money amounts in effect descriptions always use the shared gold `$` highlight
+markup. **Gibberish / 횡설수설** references use the shared red underlined term
+style and automatically add a secondary definition card explaining its ×1
+scoring and sentence-pattern hole.
 
 **Emoji Tile art (direction corrected 2026-07-30).** The original 30 assets and
 every promoted roster asset must be brought into the Pac-Man-style maze-arcade
@@ -143,6 +155,13 @@ scrollbar.
 | `ScoreBox` | blue chips box × red mult box, Jersey 10 numerals, count-up animation on settle. |
 | `Button` | **Play word = blue, Discard = red** (Balatro convention, playtest-02 C-5), gold variant (Cash out / early end). Depress on press. |
 | `ProjectedPanel` | gold number + tiny breakdown line (pattern + unison), overwritten each phase (GDD §7.1). |
+| `PouchArt` | One resolver for all 14 Starting Pouches (GDD §12.2). Every runtime image uses the current default's exact `510×511` transparent RGBA canvas and comparable occupied bounds; copies fit with `object-fit: contain` into the shared 72×72 dock, 140×140 New Run preview, and 86×86 Collection preview. New Run uses a large `arrow | panel | arrow` selector. Unlocked panels show name/effect without unlock copy; locked panels show a muted silhouette, centred lock, `Locked / 잠김`, and the unlock condition only. The tooltip still supplies actual name/effect and, only while locked, the condition. Art is a simple standalone pixel object—no text, scene, frame, smooth gradient, lighting, or pouch-specific wrapper. Military Pouch carries a chunky olive/khaki camouflage pattern inside the unchanged shared silhouette and hardware. |
+| `RecordArt` | One resolver for the 8 cumulative Records (GDD §12.3), also on a `510×511` transparent RGBA canvas. White/Red/Green/Blue/Yellow LP share pixel-identical black vinyl and change only the centre-label colour. Clear LP uses a white label and semi-transparent dithered acrylic disc. CD is visibly smaller than LP in the shared frame; DVD matches CD size with a distinct rainbow-iridescent pixel pattern. New Run gives Records a compact 88×88 preview below the Pouch selector. Name, added penalty, cumulative marker, ordered dots, and lock state communicate the ladder; unlock-condition copy never appears in the panel, tooltip, or Collection. |
+
+Roster-specific Pouch reads are fixed: Lucky Pouch has one centred gold circular
+emblem; Pencil Case and Coin Purse are open and empty with no pencils or coins;
+the case-shaped object is displayed as **Briefcase / 서류 가방** while its
+internal id remains `lunchBag`.
 
 ---
 
@@ -150,25 +169,34 @@ scrollbar.
 
 Nine materials (GDD §2.2) cannot be separated by face tint alone at 64px — especially under the CRT pass, which softens fine differences. Three rules:
 
-**① Every material gets a shape/texture cue, not just a hue.** Texture must survive desaturation (the game may be running fully monochrome, §13).
+**① Every material gets a texture/detail cue, not just a hue.** Texture must survive desaturation (the game may be running fully monochrome, §13). **All nine materials share Ceramic's exact outer border, 10px radius, and rounded silhouette (changed 2026-07-30); material identity must stay inside that common edge.**
 
 **② Materials whose effect fires on a *condition* wear that condition as a corner glyph.** The player must be able to read "why is this tile special" without opening a tooltip — this is the single biggest clarity win.
 
 | Material | Face treatment | Corner glyph |
 |---|---|---|
-| Ceramic (base) | plain warm face | — |
-| Porcelain | glazed sheen, subtle speckle | — (flat +Chips) |
-| Polished | animated pixel shine sweep | — (flat +Mult) |
-| Glass | translucent + inner glow, faint crack hairlines | **crack/risk mark** (1/4 destroy) |
-| Stone | grey speckle/dither, **no letter** (already unique) | — |
-| Lead plate | dark type-metal, beveled edge | **dice pip** (Lucky rolls) |
-| Ivory | cream with sheen | **$** (pays at blind end *if held*) |
-| Brass | metallic gold dither + glint | **hand icon** (×1.5 *while held*) |
-| Wood | grain pattern | **live growth counter** — the tile's current +Chips, since it permanently grows +10 per play; a Wood tile that has grown must *look* grown |
+| Ceramic (base) | warm face, quiet inset rim and corner dimples | — |
+| Porcelain | bright glaze, cobalt inset ring and opposite-corner rosettes | — (flat +Chips) |
+| Polished | warm base face, fixed diagonal buff band + animated pixel shine sweep | — (flat +Mult) |
+| Glass | translucent facets, inner glow and crossed crack lines | **crack/risk mark** (1/4 destroy) |
+| Stone | heavy internal bevel and high-contrast pits, **no letter** | — |
+| Lead plate | dark type-metal face, four rivets and diagonal wear scratches | **dice pip** (Lucky rolls) |
+| Ivory | cream face, gold inset ridge and curved Schreger-line grain | **$** (pays at blind end *if held*) |
+| Brass | engraved face, double inset edge, etched ring and corner screws | **hand icon** (×1.5 *while held*) |
+| Wood | strong grain and a visible knot | **live growth counter** — the tile's current +Chips, since it permanently grows +10 per play; a Wood tile that has grown must *look* grown |
 
 **③ Ink contrast is per-material.** `--tile-ink` gets a light variant for dark faces (Lead plate, Stone, and any future dark material); the letter and chip value switch to it automatically. Never let a dark face keep the default dark ink — this is an accessibility floor, not a preference.
 
 Font and edition sit *on top of* material, so a tile can show all three at once: read font from the glyph's weight/style, edition from its overlay (gray sheen / violet shimmer / rainbow cycle), material from face + glyph. Keep the three visual languages non-overlapping.
+
+**Enhancement application motion (changed 2026-07-30).** `TileView` compares the
+same tile id's three axes and plays a distinct application beat whenever one is
+replaced: material expands as a warm forge burst with outward fragments; font
+lands vertically like an inked type press; edition receives a chromatic ring and
+foil sweep. If several axes change together, they play in material → font →
+edition order with a short stagger. This is one shared tile-level treatment, so
+hand, shop, pouch-candidate, pack, and Collection surfaces cannot drift. Reduced
+motion shows the committed final face immediately.
 
 **Emoji Tile editions (changed 2026-07-30)** use background colour, not persistent special-character badges: Gray = ash gray, Violet = ash violet, Rainbow = animated rainbow, White = white. The treatment overlays the existing Pac-Man-style pixel-art master without adding labels, borders, or scenery. Every Emoji Tile tooltip names the edition and its effect.
 
@@ -177,8 +205,14 @@ Font and edition sit *on top of* material, so a tile can show all three at once:
 Priority order — implement top-down, cut from the bottom if time-boxed:
 
 1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): whole-word stamps (suit/gibberish and the highest Letter Hand) → played letter tiles from first to last, with each tile's base score, material/font/edition, and tile-triggered Emoji effects kept together → the owned Emoji Tile list from first to last → tiles still held in the hand, frozen in their visible order at Play time → consumable hooks (reserved for future mechanics) → global/boss beats → committed score rolls. The currently evaluated tile lifts slightly; every score/effect beat makes it bounce. Every tile-specific beat also fires at the source letter tile itself, whether that tile is now in the played-word tray or remains in hand: the tile flashes/bounces and a popup above it shows Chips, Mult, multiplicative factor, gold, or retrigger as applicable. Additive Mult popups use the red Mult colour and render `+N` only; they do not append a redundant `×`. Score-box-only feedback is insufficient. The readable base cadence is **600ms per scoring beat at 1×** (rolled back from 800ms on 2026-07-29), scaled by the game-speed setting; settle completion uses the same calculated duration.
+   **Briefcase adds the final axis beat** (GDD §12.2): after every ordinary
+   word hook, show a balance-scale stamp and tween the Chips and Mult boxes from
+   their final values to their exact shared arithmetic mean, then multiply.
+   Repeat independently after every sentence-bonus hook. The beat belongs to the
+   score-event log and `settleDurationMs()`; never hide the transform or guess
+   its duration. Reduced motion keeps the labeled stamp and snaps the values.
 2. **Projected update**: after settle, pattern chip re-evaluates with a soft flip; projected number rolls to new value; if ≥ target, the projected panel ignites (gold pulse) to signal the imminent **auto-settle** (a status cue, not a button — GDD §7.2).
-3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel. Fresh tiles fly from the live pouch position through `useFlip`; their wobble is suspended during that flight and starts from the flight's matching −1.2° landing angle, so entry never hands off through a visible extra hop. **Jokers & consumables share this wobble family (feature-02 D-4)**; the firing joker is excluded so its settle wiggle wins.
+3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel. Fresh tiles fly from the live pouch position through `useFlip`; the visible origin is clamped one tile inside the work panel so a tile can never flash as a clipped fragment at the right/bottom edge. The hand row has no separate entrance translation. Wobble is suspended during the flight and starts from the flight's matching −1.2° landing angle, so entry never hands off through a visible extra hop. **Jokers & consumables share this wobble family (feature-02 D-4)**; the firing joker is excluded so its settle wiggle wins.
 4. **Card motion (changed 2026-07-30):** vouchers, packs, and every Fable, Constellation, and Gambler card idle with a slow 3px float plus ±0.45° sway. Pointer movement pauses the idle loop, lifts and scales the card, tilts it in 3D toward the cursor, and moves a radial sheen with the pointer; leaving eases flat and resumes the idle phase. Keyboard focus straightens, lifts, and adds a gold outline. Generic select = rise 10px + gold ring; shop-offer select raises the complete product/price/action layer by 59px (15px base + 44px action height). Collection pack entries keep the grid image-only—no persistent pack-type, grade, or coming-soon label—but restore the shared type/description/grade tooltip on hover or keyboard focus.
    **Constellation use (changed 2026-07-29):** the used card shakes while the
    score panel shows the pattern's old Mult and Chips. A green `+Mult` merges
@@ -211,7 +245,7 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
 
 Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle disable wobble/shake, shared card idle, cursor tilt, and sheen (including joker/consumable idle) and reduce settle to fades · keyboard focus visible on tiles, cards, and buttons (gold outline) · all color-coded info (suits, chips/mult) doubled with a text label — never color alone.
 
-**Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (`src/ui/assets/tomato.png`, from `docs/T_Tomato.png`; tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. The tomato is greyscaled until **RED** unlocks (it belongs to the red group). *D-6 retired 2026-07-30:* the main `.frame` is transparent; Draft/Revision/Deadline no longer paint per-stage backdrops. *D-7 (changed 2026-07-29):* Collection uses a centred framed modal. Its root menu is an asymmetric two-column stack whose category-button thickness is proportional to a normalized estimate of that category's visible row footprint; both columns use the same total weight so equal weights stay physically equal. Fable, Constellation, and Gambler Cards form one inset three-button family block and use distinct purple/cyan/green buttons. All three families use high-detail, path-only, 32-color SVG illustrations normalized without cropping to the Fable standard: a `500×700` 5:7 output canvas with a `250×350` logical pixel grid. They share the same framed SVG component in the 5-column, 10-per-page Collection galleries and in shop, pack, and held-card surfaces. Fable retains its original English title plates, while localized names remain available in tooltips and accessible labels. Twelve Gambler effects are now designed and two remain pending, but their engine registry, Ink Pack acquisition, and runtime tooltips remain intentionally unimplemented. Detail modals have no shared fixed minimum height and instead size to their actual grid rows. The orange Back bar spans the modal footer; mobile collapses the menu to one column. Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
+**Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (`src/ui/assets/tomato.png`, from `docs/T_Tomato.png`; tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. The tomato is greyscaled until **RED** unlocks (it belongs to the red group). *D-6 retired 2026-07-30:* the main `.frame` is transparent; Draft/Revision/Deadline no longer paint per-stage backdrops. *D-7 (changed 2026-07-29):* Collection uses a centred framed modal. Its root menu is an asymmetric two-column stack whose category-button thickness is proportional to a normalized estimate of that category's visible row footprint; both columns use the same total weight so equal weights stay physically equal. Fable, Constellation, and Gambler Cards form one inset three-button family block and use distinct purple/cyan/green buttons. All three families use high-detail, path-only, 32-color SVG illustrations normalized without cropping to the Fable standard: a `500×700` 5:7 output canvas with a `250×350` logical pixel grid. They share the same framed SVG component in the 5-column, 10-per-page Collection galleries and in shop, pack, and held-card surfaces. Fable retains its original English title plates, while localized names remain available in tooltips and accessible labels. Twelve Gambler effects, Ink Pack acquisition, and runtime tooltips ship; Rainman and Sake Cup remain art-only/Pending. Detail modals have no shared fixed minimum height and instead size to their actual grid rows. The orange Back bar spans the modal footer; mobile collapses the menu to one column. Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
 
 *D-7a Words reference + records (added 2026-07-30):* Collection → Words begins
 with a compact four-card challenge strip: highest-scoring word (best settled

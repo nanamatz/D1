@@ -1,9 +1,16 @@
-import { useState } from 'react';
-import type { BlindKind } from '../../engine/types';
+import { useMemo, useState, type ReactNode } from 'react';
+import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
+import { RECORD_IDS, isRecordUnlocked } from '../../engine/records';
+import type { BlindKind, PouchId, RecordId } from '../../engine/types';
+import { collectionSize } from '../collection';
 import { useI18n } from '../i18n';
-import pouchUrl from '../assets/pouch.png';
+import { loadLifetime } from '../lifetime';
+import { pouchArt } from '../pouchArt';
+import { recordArt } from '../recordArt';
+import { richText } from '../richtext';
+import { Tooltip } from './Tooltip';
 
-/** Summary of the in-memory run behind the Continue tab. */
+/** Summary of the persisted run behind the Continue tab. */
 export interface ContinueInfo {
   ante: number;
   blindKind: BlindKind;
@@ -11,41 +18,99 @@ export interface ContinueInfo {
   seed: string;
 }
 
+export interface StartRunConfig {
+  seed?: string;
+  pouchId: PouchId;
+  recordId: RecordId;
+  customSeed: boolean;
+}
+
 interface Props {
-  onStart: (seed?: string) => void;
+  onStart: (config: StartRunConfig) => void;
   onBack: () => void;
-  /** The run left in memory (Options → Main Menu), or undefined if none. */
   continueInfo?: ContinueInfo | undefined;
   onContinue?: (() => void) | undefined;
 }
 
-/** Carousel `< value >` selector (spec §0). Single-entry stubs disable the arrows. */
-function Carousel({ label, value }: { label: string; value: string }) {
+interface CarouselProps<T extends string> {
+  label: string;
+  kind: 'pouch' | 'record';
+  ids: readonly T[];
+  selected: T;
+  onSelect: (id: T) => void;
+  name: (id: T) => string;
+  disabled?: boolean;
+  children: ReactNode;
+}
+
+/** Wrapping selector for all pouch and cumulative difficulty entries. */
+function Carousel<T extends string>({
+  label,
+  kind,
+  ids,
+  selected,
+  onSelect,
+  name,
+  disabled = false,
+  children,
+}: CarouselProps<T>) {
+  const index = Math.max(0, ids.indexOf(selected));
+  const move = (delta: number) => {
+    if (disabled) return;
+    const next = ids[index + delta];
+    if (next) onSelect(next);
+  };
   return (
-    <div className="carousel">
-      <span className="label">{label}</span>
-      <div className="carousel-row">
-        <button className="car-arrow" disabled aria-hidden>
-          ‹
-        </button>
-        <span className="car-value">{value}</span>
-        <button className="car-arrow" disabled aria-hidden>
-          ›
-        </button>
+    <section
+      className={[
+        'run-choice',
+        `run-choice-${kind}`,
+        disabled && 'choice-disabled',
+      ].filter(Boolean).join(' ')}
+      aria-label={`${label}: ${name(selected)}, ${index + 1}/${ids.length}`}
+      aria-disabled={disabled || undefined}
+    >
+      <button
+        type="button"
+        className="car-arrow"
+        disabled={disabled || index === 0}
+        onClick={() => move(-1)}
+        aria-label={`${label}: previous`}
+      >
+        ‹
+      </button>
+      <div className="run-choice-stage">
+        <span className="run-choice-label">{label}</span>
+        {children}
+        <div className="carousel-dots" aria-hidden="true">
+          {ids.map((id, dot) => (
+            <span
+              key={id}
+              className={[
+                'carousel-dot',
+                dot === index && 'current',
+                dot < index && 'past',
+              ].filter(Boolean).join(' ')}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+      <button
+        type="button"
+        className="car-arrow"
+        disabled={disabled || index === ids.length - 1}
+        onClick={() => move(1)}
+        aria-label={`${label}: next`}
+      >
+        ›
+      </button>
+    </section>
   );
 }
 
 /**
- * New Run (spec §2.2). Bag/stake carousels are single-entry placeholders — the
- * structure ships so future starting bags (GDD §12) and stakes slot in.
- * Challenges is hidden.
- *
- * Continue resumes the run left in memory when you exit via Options → Main Menu.
- * It is session-scoped: there is still no save system, so a reload clears it and
- * the tab greys out again. It defaults to selected when a run exists, so hitting
- * Play after stepping away doesn't wipe the run by accident.
+ * New Run. Starting Pouch and cumulative Record difficulty are profile-gated.
+ * Profile reads stay in UI; engine helpers only evaluate supplied progress.
  */
 export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
   const { t } = useI18n();
@@ -53,8 +118,6 @@ export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
   const [seed, setSeed] = useState('');
   const canContinue = !!continueInfo && !!onContinue;
   const [tab, setTab] = useState<'new' | 'continue'>(canContinue ? 'continue' : 'new');
-  // The run can end (game over) while this screen is mounted; never strand the
-  // user on a Continue tab that no longer has a run behind it.
   const active = tab === 'continue' && canContinue ? 'continue' : 'new';
 
   return (
@@ -73,14 +136,13 @@ export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
         >
           {t('newrun.tab.continue')}
         </button>
-        {/* Challenges tab hidden by design until challenges exist */}
       </div>
 
       {active === 'continue' && continueInfo ? (
         <>
           <div className="panel newrun-body">
             <div className="continue-card">
-              <div className="continue-art">📖</div>
+              <div className="continue-art">📝</div>
               <h3 className="continue-title">{t('newrun.continueTitle')}</h3>
               <p className="select-desc">{t('newrun.continueHint')}</p>
               <div className="continue-stats">
@@ -127,48 +189,134 @@ function NewRunBody({
   onBack,
 }: {
   seeded: boolean;
-  setSeeded: (v: boolean) => void;
+  setSeeded: (value: boolean) => void;
   seed: string;
-  setSeed: (v: string) => void;
-  onStart: (seed?: string) => void;
+  setSeed: (value: string) => void;
+  onStart: (config: StartRunConfig) => void;
   onBack: () => void;
 }) {
   const { t } = useI18n();
+  const [pouchId, setPouchId] = useState<PouchId>('yellow');
+  const [recordId, setRecordId] = useState<RecordId>('whiteLp');
+  const progress = useMemo(() => {
+    const lifetime = loadLifetime();
+    return {
+      discoveredWords: collectionSize(),
+      pouchWins: new Set(lifetime.pouchWins),
+      recordWins: new Set(lifetime.recordWins),
+    };
+  }, []);
+  const pouchUnlocked = isPouchUnlocked(pouchId, progress);
+  const recordUnlocked = isRecordUnlocked(recordId, progress.recordWins);
+  const canStart = pouchUnlocked && recordUnlocked && (!seeded || seed.trim().length > 0);
+
+  const choice = (
+    kind: 'pouch' | 'record',
+    id: PouchId | RecordId,
+    unlocked: boolean,
+    src: string,
+  ) => {
+    const name = t(`${kind}.${id}.name`);
+    const body = t(`${kind}.${id}.desc`);
+    const lockedPouch = kind === 'pouch' && !unlocked;
+    const unlock = lockedPouch
+      ? t('newrun.unlock', { requirement: t(`pouch.${id}.unlock`) })
+      : '';
+    const title = lockedPouch ? t('newrun.locked') : name;
+    const detail = lockedPouch ? unlock : body;
+    const cumulative = kind === 'record' && id !== 'whiteLp'
+      ? t('newrun.cumulative')
+      : '';
+    return (
+      <div className={['select-preview', !unlocked && 'locked'].filter(Boolean).join(' ')}>
+        <Tooltip
+          title={name}
+          body={[body, unlock, cumulative].filter(Boolean).join('\n')}
+          down
+        >
+          <div
+            className={['run-choice-art', `run-choice-art-${kind}`].join(' ')}
+            role="img"
+            tabIndex={0}
+            aria-label={title}
+          >
+            <img src={src} alt="" />
+            {!unlocked && <span className="run-choice-lock" aria-hidden>🔒</span>}
+          </div>
+        </Tooltip>
+        <div className="run-choice-copy">
+          <h2 className="run-choice-title" aria-live="polite">{title}</h2>
+          <div className="run-choice-effect">
+            <p className="select-desc">{richText(detail)}</p>
+            {cumulative && <p className="cumulative-note">{cumulative}</p>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="panel newrun-body">
-        <div className="select-card">
-          <Carousel label={t('newrun.bag')} value={t('bag.standard.name')} />
-          <div className="select-preview">
-            <img className="bag-art" src={pouchUrl} alt="" />
-            <p className="select-desc">{t('bag.standard.desc')}</p>
-          </div>
-        </div>
+        <Carousel
+          label={t('newrun.bag')}
+          kind="pouch"
+          ids={POUCH_IDS}
+          selected={pouchId}
+          onSelect={setPouchId}
+          name={(id) => t(`pouch.${id}.name`)}
+        >
+          {choice('pouch', pouchId, pouchUnlocked, pouchArt(pouchId))}
+        </Carousel>
 
-        <Carousel label={t('newrun.stake')} value={t('stake.white.name')} />
+        <Carousel
+          label={t('newrun.record')}
+          kind="record"
+          ids={RECORD_IDS}
+          selected={recordId}
+          onSelect={setRecordId}
+          name={(id) => t(`record.${id}.name`)}
+          disabled={!pouchUnlocked}
+        >
+          {choice('record', recordId, recordUnlocked, recordArt(recordId))}
+        </Carousel>
 
-        <label className="seed-toggle">
-          <input type="checkbox" checked={seeded} onChange={(e) => setSeeded(e.target.checked)} />
-          <span>{t('newrun.seeded')}</span>
-        </label>
-        {seeded && (
-          <input
-            className="seed-input"
-            type="text"
-            value={seed}
-            placeholder={t('newrun.seedPlaceholder')}
-            onChange={(e) => setSeed(e.target.value)}
-            spellCheck={false}
-          />
-        )}
       </div>
 
-      <button
-        className="btn exchange big play-run"
-        onClick={() => onStart(seeded ? seed : undefined)}
-      >
-        {t('newrun.play')}
-      </button>
+      <div className="run-start-row">
+        <div className="seed-controls">
+          <label className="seed-toggle">
+            <input type="checkbox" checked={seeded} onChange={(event) => setSeeded(event.target.checked)} />
+            <span>{t('newrun.seeded')}</span>
+          </label>
+          {seeded && (
+            <>
+              <input
+                className="seed-input"
+                type="text"
+                value={seed}
+                placeholder={t('newrun.seedPlaceholder')}
+                onChange={(event) => setSeed(event.target.value)}
+                spellCheck={false}
+              />
+              <p className="seed-unlock-note">{t('newrun.seedNoUnlocks')}</p>
+            </>
+          )}
+        </div>
+
+        <button
+          className="btn exchange big play-run"
+          disabled={!canStart}
+          onClick={() => onStart({
+            ...(seeded ? { seed: seed.trim() } : {}),
+            pouchId,
+            recordId,
+            customSeed: seeded,
+          })}
+        >
+          {t('newrun.play')}
+        </button>
+      </div>
 
       <button className="btn back-bar" onClick={onBack}>
         {t('common.back')}

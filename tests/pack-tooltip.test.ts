@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isValidElement } from 'react';
+import { readFileSync } from 'node:fs';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { BALANCE } from '../src/engine/balance';
@@ -96,7 +97,45 @@ describe('richText — pack highlight tags', () => {
     expect(classes).toEqual(['hl-money', 'hl-property']);
   });
 
+  it('emphasizes the gibberish term', () => {
+    const classes = richText('[g:Gibberish]')
+      .filter(isValidElement)
+      .map((node) => (node.props as { className: string }).className);
+    expect(classes).toEqual(['hl-gibberish']);
+  });
+
   it('leaves untagged prose untouched', () => {
     expect(richText('plain copy')).toEqual(['plain copy']);
+  });
+});
+
+describe('effect-description markup', () => {
+  it('marks every displayed money amount in both locales', () => {
+    for (const [lang, dict] of Object.entries(LOCALES)) {
+      for (const [key, value] of Object.entries(dict)) {
+        if (!/desc/i.test(key) && key !== 'consumable.currentSellValue') continue;
+        expect(value.replace(/\[\$:[^\]]*]/g, ''), `${lang}/${key}`).not.toContain('$');
+      }
+    }
+  });
+
+  it('marks every Gibberish mention and routes it to the shared definition tooltip', () => {
+    for (const [lang, dict] of Object.entries(LOCALES)) {
+      for (const [key, value] of Object.entries(dict)) {
+        if (!/desc/i.test(key)) continue;
+        expect(
+          value.replace(/\[g:[^\]]*]/g, ''),
+          `${lang}/${key}`,
+        ).not.toMatch(/횡설수설|gibberish/i);
+      }
+      expect(dict['tooltip.gibberish.title']).toBeDefined();
+      expect(dict['tooltip.gibberish.body']).toBeDefined();
+    }
+
+    const tooltip = readFileSync('src/ui/components/Tooltip.tsx', 'utf8');
+    const tile = readFileSync('src/ui/components/Tile.tsx', 'utf8');
+    expect(tooltip).toContain("body.includes('[g:')");
+    expect(tooltip).toContain("t('tooltip.gibberish.body')");
+    expect(tile).toContain('<TooltipSupplement body={tooltip.body} />');
   });
 });

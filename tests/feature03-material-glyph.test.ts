@@ -2,6 +2,7 @@
  * feature-03 B-1 — conditional-material corner glyph + Wood live growth counter.
  * The glyph is the "why is this tile special" read without a tooltip (UI_DESIGN §3.1 ②).
  */
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { materialGlyph } from '../src/ui/game';
 import { BALANCE } from '../src/engine/balance';
@@ -33,5 +34,17 @@ describe('materialGlyph (B-1)', () => {
     expect(materialGlyph(tile('wood'))).toBe(`+${BALANCE.materials.wood.baseChips}`);
     const grown = tile('wood', { woodBonusChips: BALANCE.materials.wood.baseChips + 20 });
     expect(materialGlyph(grown)).toBe(`+${BALANCE.materials.wood.baseChips + 20}`);
+  });
+});
+
+describe('material tile silhouette', () => {
+  const css = readFileSync('src/ui/styles/play.css', 'utf8');
+
+  it('keeps every material on the Ceramic border and radius', () => {
+    expect(css).toMatch(/\.tile\s*\{[^}]*border:\s*0;[^}]*border-radius:\s*10px/s);
+    for (const material of ['glass', 'stone', 'porcelain', 'polished', 'leadPlate', 'ivory', 'brass', 'wood']) {
+      const block = css.match(new RegExp(`\\.tile\\.${material}\\s*\\{([^}]*)}`))?.[1] ?? '';
+      expect(block, material).not.toMatch(/\bborder(?:-radius)?:/);
+    }
   });
 });

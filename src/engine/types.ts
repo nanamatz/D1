@@ -179,6 +179,7 @@ export type ScoreEvent =
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; scoreDelta?: number; goldDelta?: number; tileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
 
 export interface SentenceScoringContext {
@@ -203,11 +204,43 @@ export interface SentenceBonusBreakdown {
   /** Post-pattern effects from Emoji Tiles, vouchers, or bosses. */
   effectChips: number;
   effectMult: number;
+  /** Final Starting-Pouch axis transform, kept separate from ordinary effects. */
+  pouchId: PouchId | null;
+  pouchChipsDelta: number;
+  pouchMultDelta: number;
 }
 
 // ---------- Blind / Ante / Run state (GDD §8) ----------
 
 export type BlindKind = 'small' | 'big' | 'boss';
+
+/** Starting-pouch choice. Display names live in i18n; engine ids stay stable. */
+export type PouchId =
+  | 'yellow'
+  | 'blue'
+  | 'green'
+  | 'purple'
+  | 'lucky'
+  | 'fiveColor'
+  | 'golden'
+  | 'leather'
+  | 'military'
+  | 'luxury'
+  | 'pencilCase'
+  | 'lunchBag'
+  | 'shoppingBasket'
+  | 'coinPurse';
+
+/** Cumulative Record difficulty choice. */
+export type RecordId =
+  | 'whiteLp'
+  | 'redLp'
+  | 'greenLp'
+  | 'blueLp'
+  | 'yellowLp'
+  | 'clearLp'
+  | 'cd'
+  | 'dvd';
 
 export interface BlindState {
   kind: BlindKind;
@@ -229,6 +262,10 @@ export interface BlindState {
 }
 
 export interface RunState {
+  pouchId: PouchId;
+  recordId: RecordId;
+  /** Explicit seed entered on New Run; these runs grant no pouch/record unlocks. */
+  customSeed: boolean;
   seed: string; // seeded RNG — reproducible runs (roguelite requirement)
   ante: number; // 1..8, then endless
   blindIndex: 0 | 1 | 2; // small / big / boss

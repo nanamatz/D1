@@ -30,9 +30,12 @@ import {
 import { isConstellationId } from '../../engine/constellations';
 import {
   canUseUnheldGambler,
+  GAMBLER_REGISTRY,
   gamblerPickCount,
   gamblerTargetsTiles,
   isGamblerId,
+  previewGamblerTile,
+  type GamblerId,
 } from '../../engine/gamblers';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
@@ -83,7 +86,7 @@ function OptionCard({
   actionDisabled?: boolean;
   /** feature-04 C: this card is the one just chosen — lifts, pulses, gains an outline */
   picked?: boolean;
-  /** Fable is casting onto its selected pouch tiles. */
+  /** A targeting card is casting onto its selected pouch tiles. */
   effecting?: boolean;
   /** Tile/Charm pack actions appear only while the stable shell is hovered. */
   hoverOnlyAction?: boolean;
@@ -228,9 +231,9 @@ export function PackOpening({
   // (or the overlay closes on the last pick) — selecting used to do nothing visible.
   const [picking, setPicking] = useState<string | null>(null);
   const [selectedFable, setSelectedFable] = useState<string | null>(null);
-  const [fableFx, setFableFx] = useState<{
+  const [tileFx, setTileFx] = useState<{
     key: string;
-    kind: 'material' | 'rankUp' | 'destroy' | 'other';
+    kind: 'material' | 'font' | 'rankUp' | 'destroy' | 'other';
     tileIds: string[];
     preview: Map<string, Tile>;
   } | null>(null);
@@ -264,7 +267,7 @@ export function PackOpening({
       const key = `held:${event.id}`;
       audio.play('packPick');
       setPicking(key);
-      setFableFx({
+      setTileFx({
         key,
         kind,
         tileIds: event.tileIds,
@@ -276,7 +279,7 @@ export function PackOpening({
       });
       timer = window.setTimeout(() => {
         event.resolve();
-        setFableFx(null);
+        setTileFx(null);
         setPicking(null);
         onSelectedCandidatesChange([]);
       }, effectMs);
@@ -306,30 +309,25 @@ export function PackOpening({
       onSelectedCandidatesChange([]);
     }, PICK_BEAT);
   };
-  const doFableUse = (
+  const doTileEffectUse = (
     key: string,
-    fableId: Extract<ConsumableId, `fable${number}`>,
+    kind: 'material' | 'font' | 'rankUp' | 'destroy' | 'other',
     tileIds: string[],
+    previewTile: (tile: Tile) => Tile,
     resolvePick: () => void,
   ) => {
     if (picking) return;
-    const targetIds = fableTargetsTiles(fableId) ? tileIds : [];
-    const effectKind = FABLE_REGISTRY.get(fableId)?.effect.kind;
-    const kind =
-      effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
-        ? effectKind
-        : 'other';
     const effectMs = motionOff() ? 120 : 900;
     audio.play('packPick');
     setPicking(key);
-    setFableFx({
+    setTileFx({
       key,
       kind,
-      tileIds: targetIds,
+      tileIds,
       preview: new Map(
         (pack.candidateTiles ?? [])
-          .filter((tile) => targetIds.includes(tile.id))
-          .map((tile) => [tile.id, previewFableTile(fableId, tile)]),
+          .filter((tile) => tileIds.includes(tile.id))
+          .map((tile) => [tile.id, previewTile(tile)]),
       ),
     });
     window.setTimeout(() => {
@@ -341,7 +339,7 @@ export function PackOpening({
         } else {
           resolvePick();
           // The committed candidate state replaces the preview in this render.
-          setFableFx(null);
+          setTileFx(null);
         }
         setPicking(null);
         setSelectedFable(null);
@@ -349,6 +347,38 @@ export function PackOpening({
       }, 500);
     }, effectMs);
   };
+  const doFableUse = (
+    key: string,
+    fableId: Extract<ConsumableId, `fable${number}`>,
+    tileIds: string[],
+    resolvePick: () => void,
+  ) => {
+    const targetIds = fableTargetsTiles(fableId) ? tileIds : [];
+    const effectKind = FABLE_REGISTRY.get(fableId)?.effect.kind;
+    const kind =
+      effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
+        ? effectKind
+        : 'other';
+    doTileEffectUse(
+      key,
+      kind,
+      targetIds,
+      (tile) => previewFableTile(fableId, tile),
+      resolvePick,
+    );
+  };
+  const doGamblerFontUse = (
+    key: string,
+    gamblerId: GamblerId,
+    tileIds: string[],
+    resolvePick: () => void,
+  ) => doTileEffectUse(
+    key,
+    'font',
+    tileIds,
+    (tile) => previewGamblerTile(gamblerId, tile),
+    resolvePick,
+  );
   const close = () => {
     if (closing || picking) return;
     setClosing(true);
@@ -468,7 +498,7 @@ export function PackOpening({
             <div className="label">{t('pack.effectCandidates')}</div>
             <div className="pack-candidate-row">
               {candidateTiles.map((tile, i) => {
-                const preview = fableFx?.preview.get(tile.id) ?? tile;
+                const preview = tileFx?.preview.get(tile.id) ?? tile;
                 const changes = [
                   preview.material !== tile.material ? t(`material.${preview.material}`) : null,
                   preview.font !== tile.font ? t(`font.${preview.font}`) : null,
@@ -482,8 +512,8 @@ export function PackOpening({
                     key={tile.id}
                     className={[
                       'pack-candidate-tile',
-                      fableFx?.tileIds.includes(tile.id) && 'fable-effect-target',
-                      fableFx?.tileIds.includes(tile.id) && `fx-${fableFx.kind}`,
+                      tileFx?.tileIds.includes(tile.id) && 'fable-effect-target',
+                      tileFx?.tileIds.includes(tile.id) && `fx-${tileFx.kind}`,
                     ].filter(Boolean).join(' ')}
                     style={{ ['--candidate-i' as string]: i }}
                   >
@@ -494,7 +524,7 @@ export function PackOpening({
                       {...(candidatesActive ? { onSelect: toggleCandidate } : {})}
                       tooltip={tileTooltip(preview, t)}
                     />
-                    {fableFx?.tileIds.includes(tile.id) && (
+                    {tileFx?.tileIds.includes(tile.id) && (
                       <>
                         <span className="fable-target-fx" aria-hidden />
                         {changes.length > 0 && (
@@ -534,6 +564,9 @@ export function PackOpening({
             const actionVisible = !needsConfirmation || selected;
             const gamblerTargets =
               gamblerId !== null && gamblerTargetsTiles(gamblerId) ? selectedCandidates : [];
+            const gamblerChangesFont =
+              gamblerId !== null &&
+              GAMBLER_REGISTRY.get(gamblerId)?.effect.kind === 'font';
             const actionDisabled =
               (fable &&
                 !canUseFableFromPack(fableId, g.state.run, g.state.blind, selectedCandidates)) ||
@@ -561,7 +594,7 @@ export function PackOpening({
                   actionVisible={actionVisible}
                   actionDisabled={actionDisabled}
                   picked={picking === key}
-                  effecting={fableFx?.key === key}
+                  effecting={tileFx?.key === key}
                   hoverOnlyAction={o.kind === 'tile' || o.kind === 'joker'}
                   onSelect={needsConfirmation ? () => {
                     if (picking) return;
@@ -574,6 +607,15 @@ export function PackOpening({
                         fableId,
                         selectedCandidates,
                         () => g.usePackFable(i, selectedCandidates),
+                      );
+                      return;
+                    }
+                    if (gamblerId !== null && gamblerChangesFont) {
+                      doGamblerFontUse(
+                        key,
+                        gamblerId,
+                        gamblerTargets,
+                        () => g.usePackGambler(i, gamblerTargets),
                       );
                       return;
                     }

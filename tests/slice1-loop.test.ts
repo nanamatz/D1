@@ -19,11 +19,13 @@ const tile = (letter: Letter): Tile => ({
 });
 
 describe('slice1 run — newRun initialization', () => {
-  it('starts with a full 98-tile bag and base resources (GDD §6.2)', () => {
+  it('starts with a full pouch and Yellow Pouch resources (GDD §6.2, §12)', () => {
     const run = newRun('seed');
     expect(run.bag.length).toBe(BAG_TOTAL);
     expect(run.handSize).toBe(BALANCE.handSize);
-    expect(run.baseDiscards).toBe(BALANCE.discardsPerBlind);
+    expect(run.baseDiscards).toBe(
+      BALANCE.discardsPerBlind + BALANCE.pouches.yellow.discards,
+    );
     expect(run.gold).toBe(BALANCE.startingGold);
   });
 
@@ -101,7 +103,7 @@ describe('slice1 loop — discard budget is PER BLIND (GDD §6.3)', () => {
   it('throws once the per-blind budget is exhausted', () => {
     const { run, blind: initialBlind, rng } = setup();
     let blind = initialBlind;
-    for (let i = 0; i < BALANCE.discardsPerBlind; i++) {
+    for (let i = 0; i < run.baseDiscards; i++) {
       const ids = blind.hand.slice(0, 1).map((t) => t.id);
       blind = discardTiles(blind, run, ids, rng).blind;
     }

@@ -23,9 +23,10 @@ import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus } from './jokers';
 import { BOSS_REGISTRY, drawBoss } from './bosses';
-import { blindTarget } from './economy';
+import { effectiveBlindTarget } from './economy';
 import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
+import { balancePouchAxes } from './pouches';
 import type {
   BlindKind,
   BlindState,
@@ -85,7 +86,10 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   let blind: BlindState = {
     kind,
     bossId,
-    target: (opts.target ?? blindTarget(run.ante, kind)) * targetMult,
+    target:
+      opts.target !== undefined
+        ? opts.target * targetMult
+        : effectiveBlindTarget(run, kind, targetMult),
     phasesTotal: run.basePhases,
     phasesUsed: 0,
     discardsLeft: run.baseDiscards,
@@ -217,7 +221,7 @@ export interface SubmitResult {
   submission: WordSubmission;
   /** ordered settle steps for the UI to replay (UI_DESIGN §4.1) */
   events: ScoreEvent[];
-  /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/15 roll;
+  /** run-gold change from this submission (The Taxman = −1; Lead plate material = +$20 on its 1/5 roll;
    *  goldPlay font seal = +BALANCE.fontEffectValues.goldPlay.gold per trigger); 0 normally */
   goldDelta: number;
   /** tiles destroyed by their material (Glass) — the caller removes them from run.bag */
@@ -554,6 +558,16 @@ function scoreSubmission(
       });
     }
   }
+
+  const balanced = balancePouchAxes(run, ctx.chips, ctx.mult);
+  if (balanced.chips !== ctx.chips || balanced.mult !== ctx.mult) {
+    const chipsDelta = balanced.chips - ctx.chips;
+    const multDelta = balanced.mult - ctx.mult;
+    ctx.chips = balanced.chips;
+    ctx.mult = balanced.mult;
+    events.push({ kind: 'pouch', pouchId: run.pouchId, chipsDelta, multDelta });
+  }
+
   if (debuffed) {
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
@@ -648,6 +662,21 @@ function scoreSentence(
   ctx.sentenceMult *= constellationPassiveFactor(run, ctx.match?.pattern ?? null);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
+  const effectChips = ctx.sentenceChips - base.sentenceChips;
+  const effectMult = ctx.sentenceMult / base.sentenceMult;
+  let pouchId: RunState['pouchId'] | null = null;
+  let pouchChipsDelta = 0;
+  let pouchMultDelta = 0;
+  if (ctx.sentenceChips !== 0 && ctx.sentenceMult !== 0) {
+    const beforeChips = ctx.sentenceChips;
+    const beforeMult = ctx.sentenceMult;
+    const balanced = balancePouchAxes(run, ctx.sentenceChips, ctx.sentenceMult);
+    ctx.sentenceChips = balanced.chips;
+    ctx.sentenceMult = balanced.mult;
+    pouchChipsDelta = balanced.chips - beforeChips;
+    pouchMultDelta = balanced.mult - beforeMult;
+    if (pouchChipsDelta !== 0 || pouchMultDelta !== 0) pouchId = run.pouchId;
+  }
   const unison = judgment.unison
     ? BALANCE.unison[judgment.unison.suit] as { chips?: number; mult?: number }
     : null;
@@ -662,8 +691,11 @@ function scoreSentence(
       unisonSuit: judgment.unison?.suit ?? null,
       unisonChips: unison?.chips ?? 0,
       unisonMult: unison?.mult ?? 1,
-      effectChips: ctx.sentenceChips - base.sentenceChips,
-      effectMult: ctx.sentenceMult / base.sentenceMult,
+      effectChips,
+      effectMult,
+      pouchId,
+      pouchChipsDelta,
+      pouchMultDelta,
     },
   };
 }
