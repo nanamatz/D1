@@ -10,7 +10,7 @@ Version 0.2 — systems expansion
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
-- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Blind skip / tags: adoption itself deferred.
+- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 27 Editorial Perks now ship (§8.2, expanded 2026-07-31).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
 - Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 artworks; 12 effects implemented 2026-07-30, 2 deliberately pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
@@ -91,7 +91,7 @@ Version 0.2 — systems expansion
 | Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); 12 implemented, 2 pending |
 | Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
 | Stakes / difficulty | Records | 8 cumulative levels: five LPs, Clear LP, CD, DVD (§12.3) |
-| Blind skip / Tags | — (deferred) | Adoption itself on hold; revisit if early-run recovery proves weak |
+| Blind skip / Tags | Skip / Editorial Perks | Draft and Revision may be traded for one disclosed publishing-world reward; Deadline is mandatory (§8.2) |
 
 ### 1.2 Fiction & Glossary — the publishing frame (playtest-03 A)
 
@@ -210,7 +210,7 @@ Common Emoji Tile that pays on the base is renamed **Ceramic Artisan / 도자기
 |---|---|
 | Futura Medium | Base |
 | Futura Light Italic | Edition |
-| Futura Bold | Edition |
+| Futura Underline (`bold` internally) | Edition |
 | Futura Inline | Edition |
 | Futura Black | Edition |
 
@@ -232,17 +232,17 @@ Rules: "scores in a played word" **includes gibberish** (tile-level effects fire
 | Font | Effect | Reading |
 |---|---|---|
 | Light Italic | `goldPlay` — +$3 when the tile scores | the lightest touch pays out sideways, in money rather than score |
-| Bold | `chipPlay` — +30 Chips when the tile scores | thick ink = substantial, the plainly additive one |
+| Underline (`bold` internally) | `chipPlay` — +30 Chips when the tile scores | editorial emphasis is the plainly additive one |
 | Inline | `discardGain` — gain 1 consumable when discarded (needs a free slot) | the hollow glyph has something inside it |
 | Black | `retriggerPlay` — retrigger the tile's scoring contribution once | the heaviest ink prints twice |
 
-Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. Reassignment stays a one-line data change.
+Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. The persisted `bold` id displays as **Underline / 밑줄** for save compatibility. Reassignment stays a one-line data change.
 
-> **Decision — fonts unified as style variants within the Futura family.** A font functions as a visual signal that "this tile has a special effect." Weight/italic/inline variants within one family are instantly distinguishable from a single glyph while keeping the screen's tone coherent. Mixing distinct typefaces blurs the information axis ("is this a different font, or a different letter/material?"), so it is avoided. Room is left to give only the top rarity an exceptional emphasis. (License note: Futura is a paid commercial font. Prototype-stage alternatives — Jost, Spartan, Century Gothic family.)
+> **Decision — fonts unified as style variants within the Futura family (changed 2026-07-31).** A font functions as a visual signal that "this tile has a special effect." Medium 500, Bold 700, and Black 900 were not distinguishable enough on the small tile, so the former Bold display is now Underline: Medium weight plus a fixed hard underline. The internal `bold` id remains for save compatibility. Mixing distinct typefaces still blurs the information axis ("is this a different font, or a different letter/material?"), so it is avoided. Room is left to give only the top rarity an exceptional emphasis. (License note: Futura is a paid commercial font. Prototype-stage alternatives — Jost, Spartan, Century Gothic family.)
 
 ### 2.4 Enhancement Stacking & Replacement
 
-A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Bold / Gray tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
+A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Underline / Gray tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
 
 **Same-axis replacement is destructive (rule).** Applying an enhancement to a tile that already carries one **on the same axis** overwrites it; the previous one is discarded, not stored or refunded. Re-applying Polished to a Ceramic tile leaves a Polished tile, not both. Cross-axis application never conflicts (a Fable that sets material leaves font and edition untouched). **The overwrite applies immediately, with no confirmation prompt** (revised 2026-07-28: the earlier warn-before-overwrite modal was removed — players learn the rule by doing, and the modal only added friction).
 
@@ -272,11 +272,11 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 **Collection surfacing (added 2026-07-30).** Collection → Words has a separate
 Register Scores tab that exposes these four live `balance.ts` multipliers and
 their risk/reward roles. The Words tab also shows profile-derived challenge
-records: highest-scoring word (best settled individual-word score, excluding
-sentence bonuses), longest discovered word, most-played word, and total
-discoveries. `wj.collection` stores each word's first-play time, play count,
-and best score without adding a save key; legacy timestamp-only entries migrate
-as one play with no historical score.
+records: highest-scoring word (intrinsic letter-chip sum only; material, font,
+edition, Mult, Emoji Tile, boss, and sentence effects are excluded), longest
+discovered word, most-played word, and total discoveries. `wj.collection`
+stores each word's first-play time, play count, and intrinsic score without
+adding a save key; old settled-score records are recomputed from the word on read.
 
 ### 3.2 Register Data Acquisition Pipeline
 
@@ -425,6 +425,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +60 Chips, +4 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
+- **In-game reference (added 2026-07-31).** Run Info → Letter Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility.
 - **Out of scope (for now):** leveling Letter Hands (Constellation Cards level
   sentence patterns only) and dedicated Emoji Tiles keyed to Letter Hands—see
   §12.4.
@@ -475,7 +476,7 @@ Letter scores are intrinsic tile value, so they must be recoverable regardless o
 - **Sequence effect (b-2):** the gibberish entry is recorded as a **hole** in the sentence sequence. Under whole-sequence matching (§5.1) a hole voids all pattern matches. Correction Tape removes a hole.
 - **Letter hands (§5.5):** even as a hole, a gibberish submission can still score the gibberish-eligible letter hands — **Vowel Flush** and **Straight**. The Straight jackpot (dumping Q-R-S-T-U-V) is the headline case; suit/POS stay null and the hole is still recorded.
 - **Emoji tile interaction:** layer-1 (letter-level) emoji tiles fire on gibberish; layer-2/3 naturally cannot because suit and POS are null. R9 Dadaist is the explicit exception: it supplies Slang only for word scoring and applies ×2 Mult, while POS remains null and the sentence hole remains. No other rule is silently restored.
-- **UI note:** the projected-score preview (§7) shows the sentence bonus collapsing the moment a gibberish submission is staged — the rule explains itself without warning dialogs.
+- **UI note:** after a gibberish word is submitted, the current sentence-pattern label disappears because the sequence no longer matches — the rule explains itself without warning dialogs.
 - **UX surfacing (playtest-01 P0-3):** when staged tiles are not a valid word, the staged preview must say so explicitly (e.g. *"Not a word — submit as gibberish: +N chips, breaks the sentence"*) and the play button relabels to *Submit gibberish*. With the escape valve visible, the "my phase was wasted" complaint becomes impossible.
 
 ### 6.5 No Minimum Word Length
@@ -499,12 +500,12 @@ If the bag empties mid-blind, **no refill**; play continues on the remaining han
 
 Score uses the same **Chips × Mult** structure as Balatro. Because the sentence bonus requires viewing all phases, settlement is two-layered rather than per-hand independent.
 
-### 7.1 Two-Layer Settlement + Projected Score
+### 7.1 Two-Layer Settlement + Current Pattern Display
 
 - **Layer 1 — individual word score (settled immediately).** On each phase submission, (letter score × suit multiplier × emoji tiles) is settled and accumulated immediately. Irreversible. Secures per-phase feedback.
 - **Layer 2 — sentence bonus (projected → final).** Each phase, the "sequence so far" is judged (§5) and the projected score is updated — **overwrite, not accumulate**. The bonus is finalized from the sequence at the moment the blind ends.
 
-> **Displayed round score = committed ONLY (playtest-04 A — canonical fix for "score drops").** The big round number on screen is the **committed** score (layer 1) and **never decreases** — it climbs, per beat, during each word's settle. The **sentence bonus is a separate on-screen forecast** ("if the sentence ends like this: +N"), a ghost near the target, not part of the committed number. Merging the two (showing committed + projected as one number) makes a pattern-breaking word *lower* the total — the exact bug this split removes. The bonus resolves visibly in the settle sequence (§7.2) when it's the deciding factor.
+> **Displayed round score = committed ONLY (playtest-04 A; changed 2026-07-31).** The big round number on screen is the **committed** score (layer 1) and **never decreases** — it climbs during each word's settle. Beside it, the UI shows the **current highest valid sentence pattern** and its live sentence-bonus score as `pattern name : score` (for example, `의문문 : 120`). That score is still a projection which may be overwritten as the sentence changes; it is never folded into the round number during play. The engine uses the same projected score for auto-clear, and the bonus resolves visibly in the settle sequence (§7.2) when it is the deciding factor.
 
 > **Why "overwrite"? — resolving the double-counting problem.** Committing the sentence bonus every phase creates double-counting/cancellation problems. Instead, separate the committed score and the projected score, and re-judge the entire sequence wholesale each time. Re-judgment cost is negligible (short sequences). Fully compatible with variable phases: whatever the phase count, only the end-of-blind sequence matters.
 
@@ -523,11 +524,11 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 
 Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)`, **added** to the committed total at finalization. There is no per-pattern "+ vs ×" operation — the strong/structural patterns simply carry a higher Mult (and Chips). This replaces the v0.2 add/multiply split.
 
-> **Balance warning — high-Mult sentences × projected-score preview.** Because the bonus's Mult amplifies its own Chips (pattern base + modifiers + Standard Unison), high-Mult patterns still spike hard when the player also stacks Chips. If "one more phase visibly doubles the forecast" no one ends early. This is both an intended temptation and a balance pressure point — how easily/often high-Mult sentences can be made governs game tempo. The #1 playtest observation point.
+> **Balance warning — high-Mult sentences.** Because the bonus's Mult amplifies its own Chips (pattern base + modifiers + Standard Unison), high-Mult patterns still spike hard when the player also stacks Chips. The exact projection is intentionally hidden during play, so pattern frequency and final landing clarity are the primary playtest observation points.
 
 ### 7.4 Final Pipeline Summary
 
-**Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display updated projected score (pattern bonus + unison) → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
+**Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
 **On ending (early/final):** finalize the sentence bonus from the sequence —
 `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)` per
@@ -570,7 +571,59 @@ Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**.
 `×1.15^(Chapter−1)` and Briefcase adds ×2. They multiply the ordinary
 Chapter/blind/boss target and round only once at the end (§12.1–§12.3).
 
-**Blind skip & tags: deferred.** Adoption itself is on hold, not just the tag pool. Recorded implication: with no skip, every blind is a mandatory stop, removing one tempo-variation tool; in Balatro, skipping doubles as a recovery route for weak early builds (rush to shops for jokers). **Trigger to revisit:** if playtests show unrecoverable early runs when emoji-tile luck is poor.
+**Blind skip & Editorial Perks (implemented 2026-07-31).** Draft and Revision may
+be skipped; Deadline may never be skipped. Skipping immediately advances to the
+next blind and forfeits every output of the skipped blind: clear reward, remaining
+Phase/Discard rewards, interest, word/pattern and Emoji Tile growth triggers, Fee
+Settlement, and the following Stationery Shop visit. The Chapter and scheduled
+Deadline boss do not change.
+
+Each Chapter rolls one seeded offer for Draft and one for Revision. The 27
+rewards below are independently and uniformly selected, so duplicates are valid.
+The complete reward—including House Style's exact pattern—is disclosed on Blind
+Select before the player chooses. There is no post-choice failure roll and no
+Chapter gating in this first balance slice.
+
+| Editorial Perk / 편집 특전 | Effect |
+|---|---|
+| Advance Payment · 선인세 | Gain **$7** immediately |
+| House Style · 편집 지침 | Raise the disclosed sentence pattern by **1 level** immediately |
+| Extra Pages · 증면 | The next blind actually played gets **+1 Phase** |
+| Copy Pass · 교정 패스 | The next blind actually played gets **+1 Discard** |
+| Lead Story · 표지 기사 | The next blind actually played draws **+2 opening tiles** |
+| Quota Relief · 할당량 완화 | The next blind actually played has a **15% lower target** |
+| Publicity Deal · 홍보 계약 | Add **$5** to the next successfully collected blind-clear reward |
+| Cover Quote · 추천사 | The next blind actually played starts with **75 committed score** |
+| Uncommon Tag · 고급 태그 | Add one free **Uncommon Emoji Tile** to the next shop |
+| Rare Tag · 레어 태그 | Add one free **Rare Emoji Tile** to the next shop |
+| White Tag · 화이트 태그 | The next base-edition shop Emoji Tile becomes **free + White** |
+| Violet Tag · 바이올렛 태그 | The next base-edition shop Emoji Tile becomes **free + Violet** |
+| Rainbow Tag · 레인보우 태그 | The next base-edition shop Emoji Tile becomes **free + Rainbow** |
+| Gray Tag · 그레이 태그 | The next base-edition shop Emoji Tile becomes **free + Gray** |
+| Investment Tag · 투자 태그 | Add **$25** to the next successfully cleared Deadline reward |
+| Voucher Tag · 바우처 태그 | Add one extra Voucher choice to the next shop; the Chapter still permits one purchase total |
+| Boss Tag · 보스 태그 | Immediately reroll the scheduled Deadline from its correct regular/finisher pool |
+| Tile Tag · 타일 태그 | Immediately open a free **Premium Tile Pack** |
+| Fable Tag · 우화 태그 | Immediately open a free **Premium Fable Pack** |
+| Constellation Tag · 별자리 태그 | Immediately open a free **Premium Constellation Pack** |
+| Charm Tag · 부적 태그 | Immediately open a free **Premium Charm Pack** |
+| Handy Tag · 유용한 태그 | Gain **$1 per hand submitted this run** |
+| Garbage Tag · 쓰레기 태그 | Gain **$1 per unused Discard banked on successful blind clears this run** |
+| Ink Tag · 잉크 태그 | Immediately open a free **Basic Ink Pack** |
+| Coupon Tag · 쿠폰 태그 | The next shop's **initial item stock and card packs are free**; rerolled stock is normally priced |
+| Juggler Tag · 저글러 태그 | The next blind actually played gets **+3 hand size** |
+| Economy Tag · 경제 태그 | Immediately **double current gold** |
+
+Next-blind effects stack and survive another skip; they are consumed only when
+the player selects Play. Publicity, Investment, and next-shop effects persist
+until their named successful resolution. An edition tag waits through a stock
+roll with no base-edition Emoji Tile and may resolve on a reroll. Free pack tags
+open **before** the next blind is constructed, so every pouch mutation is present
+when that blind draws. `src/engine/skipRewards.ts` is the headless source of truth,
+all values live in `BALANCE.skipRewards`, and `RunState.skipOffers` persists the
+Chapter's disclosed offers for seeded reproducibility. *(Changed 2026-07-31:
+feedback expanded the original eight-entry publishing pool to 27 and added its
+Collection reference.)* The tuning target remains a 20–35% skip rate.
 
 ### 8.3 Boss Pool — Design Principles & 12 Bosses
 
@@ -675,11 +728,11 @@ These are explicit line-item overrides; all unaffected income streams remain.
 
 ### 9.2 Shop Layout — five stalls
 
-Balatro-mirrored: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. Item-slot base type weights are **Emoji Tile 80 · letter tile 10 · Fable 5 · Constellation 5** (`balance.ts` `shop.itemWeights`). Unavailable types are removed and the remaining weights are normalized: letter tiles still require EN-KO Dictionary, and Encyclopedia still enables their modifiers. Story Book/Novel and Bible/The Law retain their ×2/×4 multipliers on the corresponding base weight. Gambler cards ordinarily do not enter item slots; **Lucky Pouch is the explicit exception** and adds implemented Gambler Cards as a data-weighted item family (§12.2). Their Comic Book-gated Fable-Pack route remains unchanged. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
+Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. Voucher Tag may add one temporary second Voucher choice, and rarity tags may append their guaranteed free Emoji Tile; these are disclosed reward exceptions, not changes to ordinary stock counts. Item-slot base type weights are **Emoji Tile 80 · letter tile 10 · Fable 5 · Constellation 5** (`balance.ts` `shop.itemWeights`). Unavailable types are removed and the remaining weights are normalized: letter tiles still require EN-KO Dictionary, and Encyclopedia still enables their modifiers. Story Book/Novel and Bible/The Law retain their ×2/×4 multipliers on the corresponding base weight. Gambler cards ordinarily do not enter item slots; **Lucky Pouch is the explicit exception** and adds implemented Gambler Cards as a data-weighted item family (§12.2). Their Comic Book-gated Fable-Pack route remains unchanged. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
 
 **Offer interaction (pack rollback 2026-07-30).** Shop stalls are image-first. Emoji Tiles, consumables, and the vertical voucher use the shared rounded `124×165px` stage. Sale packs use the requested older `131×229px` foreground with square corners. Their row slots match the 131px art width, preserving the normal 12px gap between packs, and the pack panel reserves enough lower space for the attached Open button to remain inside the persistent run layer. The price tag shares one foreground layer with the product and action. Selecting an offer raises that complete layer by 59px — the 15px base lift plus the 44px action-button height — and reveals the attached action: **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs. This does not reflow the stall layout. When an instant-use option exists, Buy remains below while **Use now** appears vertically centred outside the product's right edge. Product animation is never clipped. Voucher and pack background panels retain a `273px` minimum height. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
 
-**Persistent framing (changed 2026-07-28).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted. Because the sidebar and settlement provider stay mounted, shop entry also consumes the previous blind's UI-only settle log/id and finalized sentence fields before the first shop frame; the zero reset is immediate and must never replay the prior score animation.
+**Persistent framing (changed 2026-07-31).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted. On the shop's first frame the pouch switches from the completed blind's undrawn remainder to the complete permanent `run.bag`; stale `blind.bag` contents must never remain visible there. Because the sidebar and settlement provider stay mounted, shop entry also consumes the previous blind's UI-only settle log/id and finalized sentence fields before the first shop frame; the zero reset is immediate and must never replay the prior score animation.
 
 **Full consumable slots and shop consumables (changed 2026-07-29).** A full held-consumable zone disables **Buy** for a consumable offer. An affordable shop Constellation still offers **Use now** even when the zone is full: it charges the same price, levels its pattern immediately, and never occupies a resting slot. A shop-offered Fable whose effect targets letter tiles is the exception: it shows **Buy only**, enters a held slot, and may be used only during a blind; it cannot use pouch tiles from the shop and has no Use-now fallback when slots are full. Blind-only Fables follow the same Buy-only presentation.
 
@@ -688,6 +741,7 @@ Balatro-mirrored: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
 - **One voucher purchase per chapter (ante)**; only an effect that explicitly grants extra purchases can exceed this. Buying greys the slot for the rest of the chapter.
+- **Voucher Tag adds a choice, not a purchase.** It may show a second, distinct Voucher in the next shop, but redeeming either clears both choices and consumes the same one-purchase Chapter lock.
 - **Restock timing:** the voucher slot restocks when the Deadline (boss blind) ends — the *next* chapter's shop carries the new voucher. Within a chapter, the same voucher persists across the Draft/Revision/Deadline shops.
 - **Reappearance (Balatro-style):** purchased vouchers never reappear this run; **unpurchased** vouchers stay in the pool and may reappear in a later chapter (preserves "buy now or gamble on later").
 - **Redemption presentation (changed 2026-07-30):** Redeem shreds the voucher
@@ -736,7 +790,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 runtime illustrations are 32-color, path-only SVGs normalized to a shared `244×400` canvas and `122×200` logical grid; source PNGs remain in `docs/Arts/CardPacks`. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
+**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
 
 **Appearance weights (placeholder → `balance.ts`).** Balatro's shape, mapped onto our five families. Type weights (`pack.typeWeights`): **Fable 4 · Constellation 4 · Tile 4 · Charm 2 · Ink 0.6** — the two consumable staples and tiles are the common backbone, Charm (emoji tiles) is deliberately scarcer because each pull is a build decision, and Ink is the rare thrill (Spectral's role). Size weights (`pack.sizeWeights`): **Normal 8 · Jumbo 3 · Mega 1**. Type/size pair weights are their product and shop pack slots draw those pairs without replacement, so duplicate packs cannot appear together. All values are tuning starts for `src/sim`, not claims of balance.
 
@@ -764,8 +818,8 @@ progress remain hidden until the profile unlock is earned.
 | Story Book → Novel | Fable shop weight ×2 → ×4 | Buy 50 Fable cards from shops |
 | Bible → The Law | Constellation shop weight ×2 → ×4 | Buy 50 Constellation cards from shops |
 | Fashion Book → Fashion Magazine | Reroll −$2 → an additional −$2 | 100 shop rerolls |
-| Flyer → Wanted Poster | Gray/Violet/Rainbow rate ×2 → ×4 on letter tiles and Emoji Tiles | Own 5 editioned Emoji Tiles at once |
 | Newspaper → Papyrus | Shop cards/packs 25% off → 50% off | Use 10 vouchers in one run |
+| Flyer → Wanted Poster | Gray/Violet/Rainbow rate ×2 → ×4 on letter tiles and Emoji Tiles | Own 5 editioned Emoji Tiles at once |
 | Memo → Notebook | +1 phase per round → another +1 | Play 5,000 tiles |
 | Poetry Book → Sheet Music | +1 discard per round → another +1 | Discard 5,000 tiles |
 | Four-cut Photo → Picture Diary | Hand size +1 → another +1 | Reduce hand size to 8 |
@@ -795,7 +849,7 @@ from shop item slots and packs.
 
 **Constellation Pack resolution (changed 2026-07-29).** A revealed Constellation follows the same select-then-confirm interaction, but its action is always named **Use**, never Select. Use immediately levels the mapped sentence pattern, plays the full Constellation level-up sequence, ignores held-consumable capacity, and does not place the card in a held slot.
 
-**Held-slot presentation (changed 2026-07-27).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Idle/hover/focus/select motion applies to the image object itself, and clicking raises it above the shelf with Sell/Use actions attached beneath the image without reflowing the shelf.
+**Held-slot presentation (changed 2026-07-31).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Sell and Use belong to the same mouse-interaction transform as the image, so idle motion, pointer tilt, rotation, scaling, and lift move the card and buttons together without reflowing the shelf. Sell is vertically centred at the image's right and Use sits beneath it; both match the shop Buy button's dimensions. An owned Emoji Tile and its Sell button use the same centred position, dimensions, and shared pointer transform.
 
 ### 10.1 Fable Cards (Tarot-equivalent), 18
 
@@ -913,7 +967,7 @@ receive new ids and enter the run's pouch permanently.
 | 8 | Curtain / 휘장 | Create two complete copies of one selected letter tile in the active field and add them permanently to the pouch. Copy letter/hidden letter, material, font, edition, and Wood growth; assign new ids. |
 | 9 | Deer / 사슴 | Raise all 12 sentence-pattern levels by 1. May also appear very rarely in Constellation Packs and resolves immediately without occupying a held slot. |
 | 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U and random non-base materials. Stone is excluded because it would erase the promised vowel. |
-| 11 | Geese / 기러기 | Change one selected letter tile's font to **Bold**. Preserve material and edition. |
+| 11 | Geese / 기러기 | Change one selected letter tile's font to **Underline** (`bold` internally). Preserve material and edition. |
 | 12 | Phoenix / 봉황 | Create one seeded-random unowned Legendary Emoji Tile. Unusable without an eligible tile or free slot. This is the normal-play Legendary acquisition route. |
 | 13 | Rainman / 우중인 | **Effect pending** until the Emoji Tile roster and its scaling/decay coverage are selected. |
 | 14 | Sake Cup / 사케 잔 | **Effect pending** until the Emoji Tile roster and its probability/duplication coverage are selected. |
@@ -962,7 +1016,12 @@ the Phoenix-only Legendary acquisition route remain pending, so every
 definition is deliberately visible to review code paths while Legendary
 tiles still have no normal runtime acquisition path.
 
-Two engine notes fall out of the roster pass. **Glasswork (U4)** shrinks the
+Four engine notes fall out of the roster pass. **Stenographer (C06 / 속기사)**
+adds +3 Mult once only when the current submitted word is strictly shorter
+than the immediately previous submitted word; equal lengths and the first word
+never trigger it. **Hollow Promise (U21)** pays $2 for each Inline discard-gain
+trigger blocked specifically because the consumable shelf has no free slot.
+**Glasswork (U4)** shrinks the
 permanent pouch in its `blindEnd` hook; `onBlindEnded` compares the bag length
 around the emit and re-announces the shrink as `tilesDestroyed`, so Type
 Foundry (L3) and any future destruction-fed tile see it generically rather than
@@ -1109,21 +1168,22 @@ Common/Uncommon additions may expand the table after their review.
 ### 11.8 Editions (implemented)
 
 Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each carry a dedicated edition field. `TileEdition` and `JokerEdition` are separate type unions; neither replaces a letter tile's material/font, and Emoji Tiles still never receive letter material/font modifiers.
-Changed 2026-07-30: the canonical edition vocabulary and serialized ids are now Gray, Violet, Rainbow, and White everywhere.
+Changed 2026-07-30: the shared edition vocabulary and serialized ids are Gray, Violet, and Rainbow; `JokerEdition` additionally owns the Emoji-Tile-only White edition.
 
-| Edition | Effect | Emoji Tile display |
-|---|---|---|
-| Base | no edition | original background |
-| Gray | +50 Chips | ash-gray background |
-| Violet | +10 Mult | ash-violet background |
-| Rainbow | ×1.5 Mult | animated rainbow background |
-| White | occupies no joker slot → **+1 owned-joker slot** | white background |
+| Edition | Effect | Letter tile display | Emoji Tile display |
+|---|---|---|---|
+| Base | no edition | original material | original background |
+| Gray | +50 Chips | ash-gray colour layer | ash-gray background |
+| Violet | +10 Mult | ash-violet colour layer | ash-violet background |
+| Rainbow | ×1.5 Mult | animated rainbow colour layer | animated rainbow background |
+| White | occupies no joker slot → **+1 owned-joker slot** | unavailable | white background |
 
 - **Slot cap.** The owned-emoji-tile cap is `RunState.jokerSlots` (base 5).
   Five-Color Lucky Pouch and CD each subtract 1; Leather Pouch and Kung Fu
   Manual each add 1 (§12); each White Emoji Tile raises effective capacity by 1.
   Signed baseline modifiers compose before the zero floor.
 - **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Gray/Violet/Rainbow odds.
+- **Letter-tile presentation (changed 2026-07-31):** colour is the canonical edition indicator, matching the Emoji Tile palette. Its translucent, luminance-preserving layer sits beneath the material texture so material identity remains readable. White is not a `TileEdition` and never appears on a letter tile.
 - **Emoji Tile presentation (changed 2026-07-30):** background colour is the canonical edition indicator. The rejected alternative (`@`, `#`, `*`, `~`) is not rendered; it would violate the image-only Emoji Tile rule. Tooltips always name the edition and spell out its effect.
 - **Collection reference (changed 2026-07-31):** Collection → Editions shows Base, Gray, White, Rainbow, and Violet on five runtime-size Emoji Tile samples with the live overlays and canonical effect tooltips. White remains Emoji-Tile-only.
 
@@ -1332,8 +1392,9 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 - **Value balancing across the board.** Emoji Tiles, patterns, Unison, vouchers,
   prices, target curves, Pouch effects, and Record penalties need simulation and
   playtest tuning without changing §12's confirmed identities.
-- **Blind skip & tags.** Adoption itself remains deferred. Revisit trigger:
-  unrecoverable early runs in playtests (§8.2).
+- **Blind skip & Editorial Perk balance.** The 27-entry uniform pool
+  ships without timing gates. Measure the §8.2 target skip rate (20–35%) before
+  adding early-Chapter exclusions, a chaining reward, or skip-synergy Emoji Tiles.
 - **Acronyms in the lexicon.** MVP/VIP-class abbreviations need a separate curated
   list feeding §3.2; uppercase tiles already support them mechanically.
 - **Final two Gambler effects.** Rainman and Sake Cup retain art but no engine id

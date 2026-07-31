@@ -14,7 +14,7 @@ import {
 import { useI18n } from '../i18n';
 import { usePointerTilt } from '../hooks';
 import { useSettleView } from '../settle';
-import { Tooltip } from './Tooltip';
+import { Tooltip, type TooltipDetail, type TooltipTag } from './Tooltip';
 
 interface Props {
   tile: Tile;
@@ -44,8 +44,13 @@ interface Props {
   forced?: boolean;
   /** Disable local tilt when a parent surface owns the whole interaction layer. */
   tilt?: boolean;
-  /** anchored hover tooltip for the tile (C-4): chip value, material, font */
-  tooltip?: { title: string; body: string };
+  /** Anchored hover tooltip with enhancement tags and left-side definitions. */
+  tooltip?: {
+    title: string;
+    body: string;
+    tags?: readonly TooltipTag[];
+    sub?: readonly TooltipDetail[];
+  };
 }
 
 /** A ceramic letter tile (UI_DESIGN §3). Interactive unless `mini` or no handler.
@@ -232,6 +237,8 @@ function TileViewImpl({
           anchorRef={rootRef}
           title={tooltip.title}
           body={tooltip.body}
+          tags={tooltip.tags}
+          sub={tooltip.sub}
           compact
         />
       )}

@@ -65,7 +65,8 @@ describe('feedback 4 UI regressions', () => {
     const screens = source('src/ui/styles/screens.css');
     expect(level).toContain('const PATTERN_LEVEL_DURATION_MS = 3500');
     expect(screens).toMatch(/\.pattern-levelup\s*\{[^}]*animation:\s*plu-overlay 3\.5s/s);
-    expect(play).toMatch(/\.btn\.sm\s*\{[^}]*min-height:\s*var\(--shop-action-h\)/s);
-    expect(play).toMatch(/\.consumable-menu\.bare button\.use\s*\{[^}]*height:\s*44px/s);
+    expect(play).toMatch(
+      /\.btn\.sm,\s*\.consumable-menu\.bare button\s*\{[^}]*min-height:\s*var\(--shop-action-h\)/s,
+    );
   });
 });

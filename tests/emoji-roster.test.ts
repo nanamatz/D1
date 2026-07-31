@@ -140,9 +140,29 @@ describe('Common — §11.2', () => {
     const run = runWith('miser', { gold: 23 });
     expect(play(run, blindFor(run), submission('cat')).mult).toBe(1 + 4);
   });
+
+  it('Stenographer triggers once only for a strictly shorter word', () => {
+    const run = runWith('stenographer');
+    const blind = blindFor(run);
+    expect(JOKER_REGISTRY.get('stenographer')?.nameKo).toBe('속기사');
+    expect(play(run, { ...blind, sequence: [] }, submission('cat')).mult).toBe(1);
+    expect(play(run, { ...blind, sequence: [submission('dog')] }, submission('cat')).mult).toBe(1);
+    expect(play(run, { ...blind, sequence: [submission('paper')] }, submission('cat')).mult).toBe(4);
+  });
 });
 
 describe('Uncommon — §11.3', () => {
+  it('Hollow Promise pays per Inline discard blocked by full slots', () => {
+    const run = runWith('hollowPromise', { gold: 0 });
+    const blind = blindFor(run);
+    bus.emit(
+      'discardUsed',
+      { run, blind, tiles: [], gained: 0, slotsBlocked: 2 },
+      run.jokers,
+    );
+    expect(run.gold).toBe(4);
+  });
+
   it('Literary Judge pays on Formal, including a virtual Formal', () => {
     const run = runWith('literaryJudge');
     const blind = blindFor(run);

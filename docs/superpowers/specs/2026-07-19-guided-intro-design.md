@@ -54,14 +54,14 @@ out of the intro too, consistent with the popup layer).
 Reuses `src/ui/assets/woodak.png` + the `.mascot`/`.mascot-bubble` grammar (already used by
 `WooDakMascot`). WooDak sits beside the bubble. Reduced-motion respected (no bubble bounce).
 
-### Re-play from Help (A-3 tie-in)
-Options → Help gains a **"Replay tutorial"** button that calls `resetIntro()` and shows a
-short confirmation toast; the walkthrough then re-plays the next time the player enters the
-play screen (avoids cross-screen intro launching).
+### Replay retired (changed 2026-07-31)
+Options → Help is a compact glossary only. The former **"Replay tutorial"** button and
+confirmation toast are removed; clearing the internal intro flag remains a test/profile
+utility and is not exposed as a player action.
 
 ### Copy
 i18n single source: `intro.step.<n>.title` / `intro.step.<n>.body` (1–6, ko/en) + `intro.next`,
-`intro.skip`, `intro.done`, `help.replayIntro` (+ toast). Body may use richtext `[c:]/[m:]/[b:]`.
+`intro.skip`, `intro.done`. Body may use richtext `[c:]/[m:]/[b:]`.
 
 ## Out of scope (later)
 - Interactive gating (requiring the player to perform each action).
@@ -72,4 +72,4 @@ i18n single source: `intro.step.<n>.title` / `intro.step.<n>.body` (1–6, ko/en
 - Copy: coverage test (all 6 steps have title+body both locales).
 - Walkthrough behavior: in-app Playwright smoke (fresh profile → intro auto-opens on first
   play; Next advances through 6; spotlight rect tracks; Skip closes + marks seen; second run
-  → no intro; Help "Replay tutorial" → intro re-plays next entry; tips-off → no intro).
+  → no intro; Help contains no replay action; tips-off → no intro).

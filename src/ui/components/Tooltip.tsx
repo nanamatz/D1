@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { JokerRarity, PackSize } from '../../engine/types';
+import { referencedFontTips } from '../descriptions';
 import { useI18n } from '../i18n';
 import { richText } from '../richtext';
 
@@ -26,11 +27,12 @@ interface Props {
   grade?: PackSize | undefined;
   /** Card family/type badge beneath the description. Hidden cards omit this. */
   classification?: TooltipClassification | undefined;
+  /** Enhancement badges stacked beneath the main description/badges. */
+  tags?: readonly TooltipTag[] | undefined;
   /** open the card downward instead of upward (shelf tooltips, E-7) */
   down?: boolean;
-  /** feedback #5: a second, boxed tooltip beneath the main one — used when a consumable
-   *  references a material/font, to explain that axis inline. */
-  sub?: { title: string; body: string } | undefined;
+  /** Additional definitions; one stays left, while 2+ fold the highest priority inline. */
+  sub?: TooltipDetail | readonly TooltipDetail[] | undefined;
   /** Compact letter-tile shape. */
   compact?: boolean;
   /** Use an existing DOM node without adding a layout wrapper. */
@@ -41,32 +43,87 @@ interface Props {
 
 interface SupplementProps {
   body: string;
-  sub?: { title: string; body: string } | undefined;
+  sub?: TooltipDetail | readonly TooltipDetail[] | undefined;
 }
 
 export type TooltipClassification = 'voucher' | 'fable' | 'constellation' | 'gambler';
+export type TooltipDetailKind = 'material' | 'font' | 'edition' | 'other';
+export interface TooltipDetail {
+  title: string;
+  body: string;
+  kind?: TooltipDetailKind;
+}
+export interface TooltipTag {
+  label: string;
+  tone: 'material' | 'font' | 'gray' | 'violet' | 'rainbow' | 'white';
+}
+
+const TOOLTIP_DETAIL_PRIORITY: Record<TooltipDetailKind, number> = {
+  material: 0,
+  font: 1,
+  edition: 2,
+  other: 3,
+};
+
+/** Deduplicate and enforce material > font > edition before choosing the inline detail. */
+export function splitTooltipDetails(details: readonly TooltipDetail[]): {
+  inline: TooltipDetail | null;
+  left: readonly TooltipDetail[];
+} {
+  const ordered = details
+    .filter((detail, index, all) => all.findIndex((candidate) =>
+      candidate.title === detail.title && candidate.body === detail.body) === index)
+    .map((detail, index) => ({ detail, index }))
+    .sort((a, b) =>
+      TOOLTIP_DETAIL_PRIORITY[a.detail.kind ?? 'other']
+      - TOOLTIP_DETAIL_PRIORITY[b.detail.kind ?? 'other']
+      || a.index - b.index)
+    .map(({ detail }) => detail);
+  if (ordered.length < 2) return { inline: null, left: ordered };
+  return { inline: ordered[0]!, left: ordered.slice(1) };
+}
+
+export const stripTooltipPeriods = (text: string): string =>
+  text.replace(/\.(?!\d)|。/g, '');
 
 /** Secondary definitions shared by card and letter-tile tooltips. */
 export function TooltipSupplement({ body, sub }: SupplementProps) {
   const { t } = useI18n();
-  const explainsGibberish = body.includes('[g:') || sub?.body.includes('[g:');
-  if (!sub && !explainsGibberish) return null;
+  const details = sub ? (Array.isArray(sub) ? sub : [sub]) : [];
+  const copy = [body, ...details.map((detail) => detail.body)];
+  const fontTips = referencedFontTips(copy.join('\n'), t);
+  const explainsGibberish = copy
+    .some((copy) => copy.includes('[g:'));
+  if (details.length === 0 && fontTips.length === 0 && !explainsGibberish) return null;
+  const supplements = [...details, ...fontTips];
+  if (explainsGibberish) {
+    supplements.push({
+        title: t('tooltip.gibberish.title'),
+        body: t('tooltip.gibberish.body'),
+        kind: 'other',
+      });
+  }
+  const { inline, left } = splitTooltipDetails(supplements);
 
   return (
-    <span className="tt-sub-card">
-      {sub && (
-        <span className="tt-sub-section">
-          <span className="tt-sub-title">{sub.title}</span>
-          <span className="tt-body">{richText(sub.body)}</span>
+    <>
+      {inline && (
+        <span className="tt-inline-detail">
+          <span className="tt-inline-title">{inline.title}</span>
+          <span className="tt-body">{richText(stripTooltipPeriods(inline.body))}</span>
         </span>
       )}
-      {explainsGibberish && (
-        <span className="tt-sub-section">
-          <span className="tt-sub-title">{t('tooltip.gibberish.title')}</span>
-          <span className="tt-body">{richText(t('tooltip.gibberish.body'))}</span>
+      {left.length > 0 && (
+        <span className="tt-sub-stack">
+          {left.map((detail, index) => (
+            <span className="tt-sub-card" key={`${detail.title}-${index}`}>
+              <span className="tt-sub-title">{detail.title}</span>
+              <span className="tt-body">{richText(stripTooltipPeriods(detail.body))}</span>
+            </span>
+          ))}
         </span>
       )}
-    </span>
+    </>
   );
 }
 
@@ -86,6 +143,7 @@ export function Tooltip({
   rarity,
   grade,
   classification,
+  tags,
   down,
   sub,
   compact,
@@ -101,6 +159,19 @@ export function Tooltip({
   const [focused, setFocused] = useState(false);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const open = !disabled && (hovered || focused) && position !== null;
+  const subDetails = sub ? (Array.isArray(sub) ? sub : [sub]) : [];
+  const supplementCopy = [body, ...subDetails.map((detail) => detail.body)].join('\n');
+  const hasSupplement = subDetails.length > 0
+    || body.includes('[g:')
+    || subDetails.some((detail) => detail.body.includes('[g:'))
+    || referencedFontTips(supplementCopy, t).length > 0;
+
+  useEffect(() => {
+    if (!disabled) return;
+    setHovered(false);
+    setFocused(false);
+    setPosition(null);
+  }, [disabled]);
 
   const anchor = () => externalAnchorRef?.current ?? anchorRef.current;
   const target = () => {
@@ -192,6 +263,7 @@ export function Tooltip({
         down ? 'down' : '',
         grade ? 'pack' : '',
         compact ? 'tile-tt' : '',
+        hasSupplement ? 'has-sub' : '',
       ].filter(Boolean).join(' ')}
       role="tooltip"
       style={{
@@ -201,8 +273,9 @@ export function Tooltip({
     >
       <span className="tt-title">{title}</span>
       <span className="tt-desc">
-        <span className="tt-body">{richText(body)}</span>
-        {extra && <span className="tt-extra">{richText(extra)}</span>}
+        <span className="tt-body">{richText(stripTooltipPeriods(body))}</span>
+        {extra && <span className="tt-extra">{richText(stripTooltipPeriods(extra))}</span>}
+        <TooltipSupplement body={body} sub={sub} />
       </span>
       {rarity && <span className={['tt-rarity', rarity].join(' ')}>{t(`rarity.${rarity}`)}</span>}
       {grade && <span className={['tt-grade', grade].join(' ')}>{t(`pack.size.${grade}`)}</span>}
@@ -211,7 +284,14 @@ export function Tooltip({
           {t(`tooltip.classification.${classification}`)}
         </span>
       )}
-      <TooltipSupplement body={body} sub={sub} />
+      {tags?.map((tag, index) => (
+        <span
+          className={['tt-enhancement-tag', tag.tone].join(' ')}
+          key={`${tag.tone}-${tag.label}-${index}`}
+        >
+          {tag.label}
+        </span>
+      ))}
     </span>
   );
 

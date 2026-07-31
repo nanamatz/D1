@@ -11,8 +11,9 @@ LATER slice, out of scope here.**
 
 The first time the player meets a game element, a one-time explainer card appears
 (dismissable, suppressible via a "don't show tips" toggle). Everything those cards
-teach is also re-readable on an **Options → Help** glossary, greyed until encountered.
-Copy is authored once in i18n and shared by both.
+teach is also re-readable on an **Options → Help** glossary regardless of encounter
+status. Copy is authored once in i18n and shared by both. *(Changed 2026-07-31:
+Help is no longer discovery-gated.)*
 
 ## Design
 
@@ -28,9 +29,9 @@ Data table `ENCOUNTERS: { id: EncounterId; group: EncounterGroup; icon?: string 
 `firstUnison`, `firstGibberish`, `shopFirstVisit`, `firstConsumable`, `firstVoucher`,
 `firstPack`, `pouchHover`, `magnifier`. **Per-boss encounters are deferred to a later
 slice** (bosses already carry `bossdesc.*` copy the future per-boss popup can reuse),
-to keep this slice's copy volume bounded. Copy lives in i18n as
-`tutorial.<id>.title` / `tutorial.<id>.body` (ko/en) — **the Help screen reuses the
-exact same keys** (single copy source). Body copy uses the richtext markup
+to keep this slice's copy volume bounded. Titles live at `tutorial.<id>.title`;
+dialogue resolves through `voicedKeys('enc.<id>', role)` (ko/en), and **the Help
+screen uses that same mascot-aware route** (single copy source). Body copy uses the richtext markup
 (`[c:]`/`[m:]`/`[b:]`) already in the tooltips.
 
 ### 3. Trigger transport — `tutorialBus` (module singleton in `src/ui/tutorial.ts`)
@@ -53,14 +54,14 @@ for the Help screen and later wiring:
 - `firstVoucher` — in `useGame.buyVoucherAction` success.
 The remaining encounters (per-boss, firstLetterHand, firstPattern, firstUnison,
 firstJoker, firstMaterial, firstFont, firstConsumable, pouchHover, magnifier) are
-registered (so Help lists them, greyed) and wired in a later slice — matching the work
+registered (so Help lists them immediately) and wired in a later slice — matching the work
 order's "extend as systems ship".
 
 ### 6. Help glossary — Options → Help (A-3)
 New `View: 'help'` in `Options.tsx` + a **Help** button on the Options root (screens-spec
-§2.10 already specs it). Renders the registry grouped by `EncounterGroup`; each entry
-shows its `tutorial.<id>.title`/`.body`; `!hasSeen(id)` renders greyed (undiscovered).
-Same copy keys as the popups.
+§2.10 already specs it). Renders the registry grouped by `EncounterGroup`; every entry
+shows its `tutorial.<id>.title` plus mascot-aware `voicedKeys('enc.<id>', role)` body.
+Encounter status does not hide or grey glossary copy; the popup uses the same route.
 
 ### 7. "Don't show tips" toggle (A-2 kill switch)
 `settings.ts` gains `tips: boolean` (default `true`); a Toggle in the Settings **Game**
@@ -81,4 +82,4 @@ after Work Order B shipped. Update that one string in the same pass.
   localStorage mock; registry ids all have both-locale copy — a sync test like the
   materials/fonts registry guard).
 - Popup host / Help / triggers: in-app Playwright smoke (fresh profile → trigger fires
-  once, second time silent; tips-off suppresses; Help lists entries, greyed vs seen).
+  once, second time silent; tips-off suppresses; Help lists every entry with visible copy).

@@ -153,6 +153,52 @@ describe('slice1 loop — submitWord (GDD §6.1, §7.1)', () => {
     expect(after.hand.length).toBe(blind.hand.length); // played 3, drew 3
   });
 
+  it('recovers a missing hand-size snapshot after playing Lead plate + Black DRUG and discarding', () => {
+    const run = newRun('drug-draw-regression');
+    const blind = startBlind(run, makeRng('drug-draw-regression'));
+    const letters: Letter[] = ['D', 'R', 'U', 'G'];
+    const hand = blind.hand.map((t, i) =>
+      i < letters.length
+        ? {
+            ...t,
+            letter: letters[i]!,
+            material: i === 0 ? ('leadPlate' as const) : ('ceramic' as const),
+            font: i === 0 ? ('black' as const) : ('medium' as const),
+          }
+        : t,
+    );
+    const staleBlind = {
+      ...blind,
+      hand,
+      handSizeTotal: undefined as unknown as number,
+    };
+    const bagBeforePlay = staleBlind.bag.length;
+
+    const played = submitWord(
+      staleBlind,
+      run,
+      makeLexicon(['drug'], {}),
+      staleBlind.hand.slice(0, 4).map((t) => t.id),
+      makeRng('drug-lead-black'),
+    );
+
+    expect(played.submission.text).toBe('DRUG');
+    expect(played.submission.tiles[0]).toMatchObject({ material: 'leadPlate', font: 'black' });
+    expect(played.blind.hand).toHaveLength(run.handSize);
+    expect(played.blind.bag).toHaveLength(bagBeforePlay - 4);
+
+    const bagBeforeDiscard = played.blind.bag.length;
+    const discarded = discardTiles(
+      played.blind,
+      run,
+      [played.blind.hand[0]!.id],
+      makeRng('drug-followup-discard'),
+    ).blind;
+
+    expect(discarded.hand).toHaveLength(run.handSize);
+    expect(discarded.bag).toHaveLength(bagBeforeDiscard - 1);
+  });
+
   it('routes an invalid word through the gibberish hole (GDD §6.4)', () => {
     const { run, blind } = controlledBlind();
     // Spell T A C — not a word in our lexicon

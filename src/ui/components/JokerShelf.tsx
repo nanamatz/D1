@@ -8,7 +8,7 @@ import {
   consumableTooltipBody,
   consumableTooltipExtra,
   grownValue,
-  jokerTooltipBody,
+  jokerTooltip,
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
@@ -137,6 +137,7 @@ export function JokerShelf({
             if (!def) return null;
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
             const art = jokerArt(def.id);
+            const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
             const firing = settle.active && settle.activeJokerId === def.id;
             const className = [
               'joker',
@@ -152,6 +153,7 @@ export function JokerShelf({
                 key={i}
                 className={[
                   'joker-slot',
+                  jokerMenuIdx === i && 'menu-open',
                   jokerLeaving && 'leave-sell',
                   arriving?.zone === 'joker' && i >= arriving.from && 'slot-arriving',
                 ].filter(Boolean).join(' ')}
@@ -161,21 +163,31 @@ export function JokerShelf({
                   title={jokersFaceDown ? t('boss.faceDownJoker') : name}
                   body={jokersFaceDown
                     ? t('boss.faceDownJokerDesc')
-                    : jokerTooltipBody(def.id, owned.edition ?? 'base', t)}
+                    : tip.body}
                   {...(!jokersFaceDown
-                    ? { extra: grownValue(def, owned, t), rarity: def.rarity }
+                    ? {
+                        extra: grownValue(def, owned, t),
+                        rarity: def.rarity,
+                        tags: tip.tags,
+                        sub: tip.sub,
+                      }
                     : {})}
                   down
                 >
                   <TiltCard
                     idle
                     className={className}
-                    tabIndex={0}
-                    role={onSellJoker ? 'button' : undefined}
-                    aria-haspopup={onSellJoker ? 'menu' : undefined}
-                    aria-expanded={onSellJoker ? jokerMenuIdx === i : undefined}
-                    onClick={onSellJoker ? () => setJokerMenuIdx(jokerMenuIdx === i ? null : i) : undefined}
                   >
+                    {onSellJoker && (
+                      <button
+                        type="button"
+                        className="owned-object-select"
+                        aria-label={jokersFaceDown ? t('boss.faceDownJoker') : name}
+                        aria-haspopup="menu"
+                        aria-expanded={jokerMenuIdx === i}
+                        onClick={() => setJokerMenuIdx(jokerMenuIdx === i ? null : i)}
+                      />
+                    )}
                     {jokersFaceDown ? (
                       <img className="joker-art joker-back-mascot" src={mascotSrc('woodak')} alt="" />
                     ) : (
@@ -189,24 +201,23 @@ export function JokerShelf({
                         gold={settle.jokerPop.gold}
                       />
                     )}
+                    {onSellJoker && jokerMenuIdx === i && (
+                      <div className="consumable-menu bare" role="menu">
+                        <button
+                          className="sell"
+                          role="menuitem"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setJokerMenuIdx(null);
+                            beginLeave('joker', i, 'sell', () => onSellJoker(i));
+                          }}
+                        >
+                          {t('shop.sell', { value: sellValue(BALANCE.jokerPrice[def.rarity]) })}
+                        </button>
+                      </div>
+                    )}
                   </TiltCard>
                 </Tooltip>
-                {onSellJoker && jokerMenuIdx === i && (
-                  // Same `bare` menu the consumable shelf uses, so Sell looks and
-                  // behaves identically on both shelves.
-                  <div className="consumable-menu bare" role="menu">
-                    <button
-                      className="sell"
-                      role="menuitem"
-                      onClick={() => {
-                        setJokerMenuIdx(null);
-                        beginLeave('joker', i, 'sell', () => onSellJoker(i));
-                      }}
-                    >
-                      {t('shop.sell', { value: sellValue(BALANCE.jokerPrice[def.rarity]) })}
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -240,16 +251,8 @@ export function JokerShelf({
               <TiltCard
                 idle
                 className="consumable-object"
-                role="button"
-                tabIndex={0}
-                aria-haspopup="menu"
-                aria-expanded={menuIdx === i}
-                onClick={() => setMenuIdx(menuIdx === i ? null : i)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setMenuIdx(menuIdx === i ? null : i);
-                  } else if (e.key === 'Escape') {
+                  if (e.key === 'Escape') {
                     // Stop here — otherwise RunView's window-level ESC handler
                     // also fires and opens the pause menu behind this one.
                     e.stopPropagation();
@@ -257,6 +260,14 @@ export function JokerShelf({
                   }
                 }}
               >
+                <button
+                  type="button"
+                  className="owned-object-select"
+                  aria-label={t(`consumable.${c}`)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuIdx === i}
+                  onClick={() => setMenuIdx(menuIdx === i ? null : i)}
+                />
                 <div className="consumable-object-art">
                   {isFableId(c) ? (
                     <CardArt family="fable"
@@ -280,45 +291,45 @@ export function JokerShelf({
                     <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
                   )}
                 </div>
+                {menuIdx === i && (
+                  // Keep actions inside TiltCard so pointer tilt transforms the
+                  // card and buttons as one attached interaction object.
+                  <div className="consumable-menu bare" role="menu">
+                    <button
+                      className="sell"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuIdx(null);
+                        beginLeave('consumable', i, 'sell', () => onSellConsumable?.(i));
+                      }}
+                    >
+                      {t('consumable.sellAction', { value: sellValue(BALANCE.consumablePrice) })}
+                    </button>
+                    {onUseConsumable && (
+                      <button
+                        className="use"
+                        role="menuitem"
+                        disabled={canUseConsumable ? !canUseConsumable(c) : false}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuIdx(null);
+                          // Targeted Fables used against an open pack stay on the shelf
+                          // until the pack-owned transformation animation commits them.
+                          if (deferTargetFableUse && isFableId(c) && fableTargetsTiles(c)) {
+                            onUseConsumable(c);
+                          } else {
+                            beginLeave('consumable', i, 'use', () => onUseConsumable(c));
+                          }
+                        }}
+                      >
+                        {t('consumable.useAction')}
+                      </button>
+                    )}
+                  </div>
+                )}
               </TiltCard>
             </Tooltip>
-            {menuIdx === i && (
-              // `bare` = no wrapping box; the buttons carry the meaning by colour
-              // (use = pack-open green, sell = discard red) — playtest-06 item 3.
-              <div className="consumable-menu bare" role="menu">
-                {/* Sell sits above Use — reordered here rather than with CSS
-                    `order` so keyboard/AT order follows the visual order. */}
-                <button
-                  className="sell"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuIdx(null);
-                    beginLeave('consumable', i, 'sell', () => onSellConsumable?.(i));
-                  }}
-                >
-                  {t('consumable.sellAction', { value: sellValue(BALANCE.consumablePrice) })}
-                </button>
-                {onUseConsumable && (
-                  <button
-                    className="use"
-                    role="menuitem"
-                    disabled={canUseConsumable ? !canUseConsumable(c) : false}
-                    onClick={() => {
-                      setMenuIdx(null);
-                      // Targeted Fables used against an open pack stay on the shelf
-                      // until the pack-owned transformation animation commits them.
-                      if (deferTargetFableUse && isFableId(c) && fableTargetsTiles(c)) {
-                        onUseConsumable(c);
-                      } else {
-                        beginLeave('consumable', i, 'use', () => onUseConsumable(c));
-                      }
-                    }}
-                  >
-                    {t('consumable.useAction')}
-                  </button>
-                )}
-              </div>
-            )}
           </div>
         ))}
           </div>

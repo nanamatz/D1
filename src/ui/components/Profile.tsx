@@ -159,6 +159,15 @@ export function Profile({ lexicon, onBack }: Props) {
   const totalHave = rows.reduce((sum, row) => sum + row.have, 0);
   const totalItems = rows.reduce((sum, row) => sum + row.total, 0);
   const worldComplete = isProfileWorldComplete(selectedSlot, lexicon);
+  const balanceWinRate =
+    lifetime.balance.runs > 0
+      ? Math.round((lifetime.balance.wins / lifetime.balance.runs) * 100)
+      : 0;
+  const commonLossChapter =
+    Object.entries(lifetime.balance.lossesByChapter)
+      .sort(([chapterA, countA], [chapterB, countB]) =>
+        countB - countA || Number(chapterA) - Number(chapterB))
+      .at(0)?.[0] ?? '—';
 
   return (
     <div className="screen profile-screen">
@@ -199,9 +208,14 @@ export function Profile({ lexicon, onBack }: Props) {
         </div>
 
         <div className="profile-actions">
-          <p className="profile-wins">
-            {t('profile.wins')}: <strong>{lifetime.wins}</strong>
-          </p>
+          <div className="profile-balance">
+            <span>{t('profile.wins')}: <strong>{lifetime.wins}</strong></span>
+            <span>{t('profile.balanceRuns')}: <strong>{lifetime.balance.runs}</strong></span>
+            <span>{t('profile.balanceWinRate')}: <strong>{balanceWinRate}%</strong></span>
+            <span>
+              {t('profile.balanceCommonLoss')}: <strong>{commonLossChapter}</strong>
+            </span>
+          </div>
           {selectedSlot === currentSlot ? (
             <button className="btn exchange profile-primary" disabled>
               {t('profile.current')}

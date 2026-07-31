@@ -6,9 +6,8 @@
  * without threading a callback through props — the same singleton shape as
  * src/ui/audio.ts.
  *
- * Copy is NOT here: each encounter's title/body are i18n keys
- * `tutorial.<id>.title` / `.body`, shared verbatim by the popup and the Help
- * glossary (single source).
+ * Copy is NOT here: titles use `tutorial.<id>.title`; dialogue resolves through
+ * `voicedKeys('enc.<id>', role)` so the popup and Help share mascot-aware copy.
  */
 
 import { readValue, remove as removeKey, writeValue } from './storage';

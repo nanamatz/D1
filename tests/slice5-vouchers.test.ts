@@ -4,6 +4,7 @@ import { blindTarget, interest, rerollCost } from '../src/engine/economy';
 import { newRun } from '../src/engine/run';
 import {
   ALL_VOUCHER_IDS,
+  BASE_VOUCHER_IDS,
   applyVoucher,
   availableVoucherIds,
   discountedPrice,
@@ -85,6 +86,10 @@ describe('two-tier voucher pool and registry', () => {
   it('registers 16 base and 16 upgraded vouchers', () => {
     expect(ALL_VOUCHER_IDS).toHaveLength(32);
     for (const id of ALL_VOUCHER_IDS) expect(VOUCHER_REGISTRY.get(id)?.price).toBe(10);
+  });
+
+  it('places Newspaper before Flyer in the shared voucher order', () => {
+    expect(BASE_VOUCHER_IDS.indexOf('newspaper')).toBeLessThan(BASE_VOUCHER_IDS.indexOf('flyer'));
   });
 
   it('requires profile unlock and the base in this run before an upgrade appears', () => {

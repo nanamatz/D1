@@ -103,8 +103,10 @@ export function saveSaveFile(file, entries) {
     }
     if (existsSync(file)) copyFileSync(file, file + '.bak');
     renameSync(tmp, file);
+    return true;
   } catch {
     /* disk full, permissions, a watcher holding a handle — keep playing */
+    return false;
   }
 }
 
@@ -117,7 +119,7 @@ function fileNameFor(key) {
  * The live store the main process talks to.
  * @param {string} dir the saves directory
  */
-export function createSaveStore(dir) {
+export function createSaveStore(dir, onStatus = () => {}) {
   // Captured before any write creates the directory — gates the one-time import.
   const fresh = !existsSync(dir);
 
@@ -128,11 +130,15 @@ export function createSaveStore(dir) {
   };
   /** @type {Record<string, ReturnType<typeof setTimeout> | undefined>} */
   const timers = {};
+  const healthy = { run: true, profile: true };
 
   function writeNow(name) {
     clearTimeout(timers[name]);
     timers[name] = undefined;
-    saveSaveFile(pathFor(name), data[name]);
+    const before = healthy.run && healthy.profile;
+    healthy[name] = saveSaveFile(pathFor(name), data[name]);
+    const after = healthy.run && healthy.profile;
+    if (before !== after) onStatus(after);
   }
 
   function schedule(name) {

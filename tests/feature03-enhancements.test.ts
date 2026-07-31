@@ -54,7 +54,7 @@ describe('feature-03 A — each axis changes the scored total (full pipeline)', 
     expect(r.submission.settledScore).toBe(PLAIN + BALANCE.materials.porcelain.chips);
   });
 
-  it('font: a chipPlay (Bold) tile adds its chips', () => {
+  it('font: a chipPlay Underline tile (internal bold id) adds its chips', () => {
     const r = submit(wordTiles('cat', { 0: { font: 'bold' } }));
     expect(r.submission.settledScore).toBe(PLAIN + BALANCE.fontEffectValues.chipPlay.chips);
   });
@@ -74,7 +74,7 @@ describe('feature-03 A — each axis changes the scored total (full pipeline)', 
 });
 
 describe('feature-03 A — GDD §2.4 three axes stack on one tile', () => {
-  it('a Porcelain + Bold(chipPlay) + Gray tile pays all three at once', () => {
+  it('a Porcelain + Underline(chipPlay) + Gray tile pays all three at once', () => {
     const r = submit(wordTiles('cat', { 0: { material: 'porcelain', font: 'bold', edition: 'gray' } }));
     expect(r.submission.settledScore).toBe(
       PLAIN +

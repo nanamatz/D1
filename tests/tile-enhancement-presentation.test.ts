@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Tile } from '../src/engine/types';
 import { previewGamblerTile } from '../src/engine/gamblers';
@@ -33,5 +35,18 @@ describe('tile enhancement presentation', () => {
       ...original,
       font: 'bold',
     });
+  });
+
+  it('colours letter editions beneath material texture and omits White', () => {
+    const css = readFileSync(
+      fileURLToPath(new URL('../src/ui/styles/play.css', import.meta.url)),
+      'utf8',
+    );
+
+    expect(css).toContain('.tile-edition-gray');
+    expect(css).toContain('.tile-edition-violet');
+    expect(css).toContain('.tile-edition-rainbow');
+    expect(css).toContain('mix-blend-mode: color');
+    expect(css).not.toContain('.tile-edition-white');
   });
 });

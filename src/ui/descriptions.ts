@@ -24,16 +24,23 @@ export const voucherDescKey = (id: string): string => `voucherdesc.${id}`;
 export const consumableDescKey = (id: string): string => `consumabledesc.${id}`;
 export const bossDescKey = (id: string): string => `bossdesc.${id}`;
 
-/** Emoji Tile effect plus its edition effect, shared by every rendered surface. */
-export function jokerTooltipBody(
+/** Emoji Tile effect plus its separately presented edition enhancement. */
+export function jokerTooltip(
   id: string,
   edition: JokerEdition,
   t: Translate,
-): string {
-  const body = t(jokerDescKey(id));
-  return edition === 'base'
-    ? body
-    : `${body}\n${t(`edition.${edition}`)} — ${t(`editiondesc.${edition}`)}`;
+): {
+  body: string;
+  tags: { label: string; tone: Exclude<JokerEdition, 'base'> }[];
+  sub: { title: string; body: string; kind: 'edition' }[];
+} {
+  if (edition === 'base') return { body: t(jokerDescKey(id)), tags: [], sub: [] };
+  const title = t(`edition.${edition}`);
+  return {
+    body: t(jokerDescKey(id)),
+    tags: [{ label: title, tone: edition }],
+    sub: [{ title, body: t(`editiondesc.${edition}`), kind: 'edition' }],
+  };
 }
 
 /** Canonical consumable body used by shop, shelf, opened packs, and Collection. */
@@ -62,20 +69,40 @@ export function consumableTooltipExtra(
 export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
+const TILE_FONTS: readonly TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
+
+/** Font names mentioned in effect copy get their canonical definition card. */
+export function referencedFontTips(
+  copy: string,
+  t: Translate,
+): { title: string; body: string; kind: 'font' }[] {
+  // Property spans may contain names such as the Black & White Photo voucher;
+  // those are object names, not font references.
+  const effectCopy = copy.replace(/\[p:[^\]]*\]/g, '');
+  return TILE_FONTS.flatMap((font) => {
+    const title = t(`font.${font}`);
+    return effectCopy.includes(title) ? [{ title, body: t(fontDescKey(font)), kind: 'font' }] : [];
+  });
+}
+
 /**
  * feedback #5: a consumable whose effect references a material (or, later, a font)
- * carries a SUB-tooltip explaining that material/font, shown below the card's own
- * tooltip. Returns null for consumables that reference neither. Data-driven off the
+ * carries a supplemental definition explaining that material/font. Its placement follows
+ * the shared count-aware tooltip layout. Returns null for consumables that reference neither. Data-driven off the
  * Fable registry — no per-consumable hard-coding.
  */
 export function consumableAxisTip(
   id: ConsumableId,
   t: Translate,
-): { title: string; body: string } | null {
+): { title: string; body: string; kind: 'material' } | null {
   if (!isFableId(id)) return null;
   const effect = FABLE_REGISTRY.get(id)?.effect;
   if (effect?.kind === 'material') {
-    return { title: t(`material.${effect.material}`), body: t(`materialdesc.${effect.material}`) };
+    return {
+      title: t(`material.${effect.material}`),
+      body: t(`materialdesc.${effect.material}`),
+      kind: 'material',
+    };
   }
   return null;
 }

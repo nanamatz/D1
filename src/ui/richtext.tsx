@@ -3,11 +3,12 @@
  *
  * Description strings in locales/*.json tag the parts that must stand out:
  *
- *   [m:…]  a Mult value       → red chip, white text
- *   [c:…]  a Chips value      → blue chip, white text
+ *   [m:…]  a Mult value       → number-only red; a leading ×factor gets a box
+ *   [c:…]  a Chips value      → number-only blue; a leading ×factor gets a box
  *   [b:…]  the word "Blind"   → sky-blue text
  *   [n:…]  a count ("5")      → orange text   (pack copy: "up to 5 … choose 2")
  *   [k:…]  a card-kind noun   → red text      (pack copy: "Punctuation", "Charm")
+ *   [C/U/R/L:…] an Emoji Tile rarity → matching rarity-badge colour
  *
  * `$` marks money in gold, `p` marks passive/property copy in green, and `g`
  * marks the Gibberish term in red with an underline.
@@ -22,7 +23,8 @@
  */
 import type { ReactNode } from 'react';
 
-const TAG = /\[([mcbnkag$p]):([^\]]*)\]/g;
+const TAG = /\[([mcbnkag$pCURL]):([^\]]*)\]/g;
+const SCORE_VALUE = /^(\s*(?:×\s*)?(?:[+-]?\{[^}]+\}|[+-]?\d+(?:\.\d+)?))(.*)$/;
 
 const CLASS: Record<string, string> = {
   m: 'hl-mult',
@@ -34,6 +36,10 @@ const CLASS: Record<string, string> = {
   g: 'hl-gibberish',
   $: 'hl-money',
   p: 'hl-property',
+  C: 'hl-rarity-common',
+  U: 'hl-rarity-uncommon',
+  R: 'hl-rarity-rare',
+  L: 'hl-rarity-legendary',
 };
 
 /**
@@ -49,9 +55,17 @@ export function richText(text: string): ReactNode[] {
   for (const m of text.matchAll(TAG)) {
     const at = m.index;
     if (at > last) out.push(text.slice(last, at));
+    const value = m[2]!;
+    const score = (m[1] === 'm' || m[1] === 'c') ? value.match(SCORE_VALUE) : null;
+    const factor = score?.[1]?.trimStart().startsWith('×') ?? false;
     out.push(
       <span key={key++} className={CLASS[m[1]!]}>
-        {m[2]}
+        {score
+          ? [
+              <span key="value" className={factor ? 'hl-factor' : 'hl-value'}>{score[1]}</span>,
+              score[2],
+            ]
+          : value}
       </span>,
     );
     last = at + m[0].length;

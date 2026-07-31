@@ -9,6 +9,10 @@ import { buildBag } from './bag';
 import { applyStartingPouch } from './pouches';
 import { applyStartingRecord } from './records';
 import { makeRng } from './rng';
+import {
+  EMPTY_NEXT_BLIND_BONUS,
+  rollSkipOffers,
+} from './skipRewards';
 import type {
   PatternId,
   PouchId,
@@ -38,6 +42,7 @@ function freshCounters(): ScalingCounters {
     earlyEnds: 0,
     enhancedTilesUsed: 0,
     nonBaseFontTilesUsed: 0,
+    unusedDiscards: 0,
   };
 }
 
@@ -57,6 +62,13 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     ante: 1,
     victorySecured: false,
     blindIndex: 0,
+    skipOffers: [{ id: 'advancePayment' }, { id: 'advancePayment' }],
+    skippedThisChapter: [],
+    skippedBlinds: 0,
+    nextBlindBonus: { ...EMPTY_NEXT_BLIND_BONUS },
+    pendingClearReward: 0,
+    pendingShopTags: [],
+    pendingBossReward: 0,
     gold: BALANCE.startingGold,
     handSize: BALANCE.handSize,
     basePhases: BALANCE.basePhases,
@@ -77,7 +89,11 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     bossRerollsUsed: 0,
     counters: freshCounters(),
   };
-  return applyStartingRecord(
+  const configured = applyStartingRecord(
     applyStartingPouch(run, makeRng(`${seed}#starting-pouch`)),
   );
+  return {
+    ...configured,
+    skipOffers: rollSkipOffers(configured, makeRng(`${seed}#skip-1`)),
+  };
 }

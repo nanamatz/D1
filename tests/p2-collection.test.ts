@@ -34,22 +34,22 @@ beforeEach(() => {
 
 describe('P2-2 — word collection tracking', () => {
   it('records a newly played word with score and timestamp', () => {
-    expect(recordWord('cat', 12, 1000)).toBe(true);
+    expect(recordWord('cat', 1000)).toBe(true);
     expect(loadCollection().cat).toEqual({
       firstPlayedAt: 1000,
       plays: 1,
-      bestScore: 12,
+      bestScore: 15,
     });
   });
 
   it('counts repeat plays, keeps the best score and first timestamp', () => {
-    expect(recordWord('cat', 12, 1000)).toBe(true);
-    expect(recordWord('cat', 8, 2000)).toBe(false);
-    expect(recordWord('CAT', 20, 3000)).toBe(false);
+    expect(recordWord('cat', 1000)).toBe(true);
+    expect(recordWord('cat', 2000)).toBe(false);
+    expect(recordWord('CAT', 3000)).toBe(false);
     expect(loadCollection().cat).toEqual({
       firstPlayedAt: 1000,
       plays: 3,
-      bestScore: 20,
+      bestScore: 15,
     });
   });
 
@@ -61,12 +61,12 @@ describe('P2-2 — word collection tracking', () => {
   });
 
   it('persists across a reload (same storage → loadCollection sees prior writes)', () => {
-    recordWord('gem', 15, 500);
+    recordWord('gem', 500);
     // simulate a fresh read (as a later session would)
     expect(loadCollection().gem).toEqual({
       firstPlayedAt: 500,
       plays: 1,
-      bestScore: 15,
+      bestScore: 18,
     });
   });
 
@@ -80,8 +80,15 @@ describe('P2-2 — word collection tracking', () => {
     expect(loadCollection().cat).toEqual({
       firstPlayedAt: 500,
       plays: 1,
-      bestScore: 0,
+      bestScore: 15,
     });
+  });
+
+  it('recomputes old settled scores from intrinsic letter chips', () => {
+    localStorage.setItem('wj.collection', JSON.stringify({
+      cat: { firstPlayedAt: 500, plays: 2, bestScore: 9999 },
+    }));
+    expect(loadCollection().cat!.bestScore).toBe(15);
   });
 
   it('derives highest-score, longest and most-played records', () => {

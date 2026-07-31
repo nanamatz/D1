@@ -7,6 +7,7 @@ import {
   resetActiveProfile,
   resetStorageCache,
   selectProfile,
+  storageHealthSnapshot,
   writeRaw,
   writeValue,
   type StorageBridge,
@@ -27,13 +28,15 @@ class MemStorage {
 function fakeBridge(snapshot: Record<string, string> = {}, fresh = false) {
   const writes: [string, string][] = [];
   const removes: string[] = [];
+  let statusListener: ((ok: boolean) => void) | undefined;
   const bridge: StorageBridge = {
     snapshot,
     fresh,
     write: (k, j) => { writes.push([k, j]); },
     remove: (k) => { removes.push(k); },
+    onSaveStatus: (listener) => { statusListener = listener; },
   };
-  return { bridge, writes, removes };
+  return { bridge, writes, removes, emitStatus: (ok: boolean) => statusListener?.(ok) };
 }
 
 function installBridge(b: StorageBridge | null) {
@@ -58,6 +61,21 @@ describe('web backend (no bridge)', () => {
   it('sends a preference key to localStorage', () => {
     writeValue('wj.lang', 'ko');
     expect(readValue<string>('wj.lang')).toBe('ko');
+  });
+
+  it('reports a failed write and clears the warning after recovery', () => {
+    const broken = new MemStorage();
+    broken.setItem = () => { throw new Error('quota'); };
+    (globalThis as unknown as { localStorage: Storage }).localStorage =
+      broken as unknown as Storage;
+
+    writeValue('wj.lifetime', { runs: 3 });
+    expect(storageHealthSnapshot()).toEqual({ backend: 'web' });
+
+    (globalThis as unknown as { localStorage: Storage }).localStorage =
+      new MemStorage() as unknown as Storage;
+    writeValue('wj.lifetime', { runs: 4 });
+    expect(storageHealthSnapshot()).toBeNull();
   });
 
   it('isolates the three profile slots while keeping legacy data in P1', () => {
@@ -105,6 +123,19 @@ describe('desktop backend (bridge present)', () => {
     installBridge(bridge);
     writeValue('wj.unlocks', ['red']);
     expect(readValue<string[]>('wj.unlocks')).toEqual(['red']);
+  });
+
+  it('reports desktop disk status from the bridge', () => {
+    const { bridge, emitStatus } = fakeBridge();
+    installBridge(bridge);
+    readValue('wj.lifetime');
+
+    emitStatus(false);
+    expect(storageHealthSnapshot()).toEqual({ backend: 'desktop' });
+    writeValue('wj.settings', { tips: false });
+    expect(storageHealthSnapshot()).toEqual({ backend: 'desktop' });
+    emitStatus(true);
+    expect(storageHealthSnapshot()).toBeNull();
   });
 
   it('seeds reads from the boot snapshot', () => {

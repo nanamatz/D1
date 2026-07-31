@@ -191,7 +191,9 @@ body{
 
 /* ---------- fonts (Jost weights/styles — 5, per UI_DESIGN §1 / TileFont) ---------- */
 .tile.f-light{font-weight:300;font-style:italic}
-.tile.f-bold{font-weight:700}
+.tile.f-bold{font-weight:500}
+.tile.f-bold .tile-letter{position:relative}
+.tile.f-bold .tile-letter::after{content:'';position:absolute;left:50%;bottom:-2px;width:.82em;height:3px;background:currentColor;transform:translateX(-50%)}
 .tile.f-black{font-weight:900}
 .tile.f-inline{font-weight:500;-webkit-text-stroke:2px var(--tile-ink);color:transparent}
 /* (base font = Jost Medium 500, the default above; f-light = Futura Light Italic) */
@@ -316,7 +318,7 @@ body{
         <div class="tile cons ink-hi">F<span class="val">4</span></div>
         <div class="tile glass vowel">I<span class="val">1</span></div>
         <div class="tile cons">S<span class="val">1</span></div>
-        <div class="tile f-bold cons ink-hi">H<span class="val">4</span></div>
+        <div class="tile f-bold cons ink-hi"><span class="tile-letter">H</span><span class="val">4</span></div>
       </div>
 
       <div class="hand">

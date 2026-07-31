@@ -40,12 +40,19 @@ function triggerTile(tileId: string): void {
  * slider's `--screen-shake` variable; reduced motion never reaches this path. */
 function triggerScreenShake(): void {
   if (typeof document === 'undefined') return;
-  const frame = document.querySelector<HTMLElement>('.frame');
-  if (!frame) return;
-  frame.classList.remove('settle-shake');
-  void frame.offsetWidth;
-  frame.classList.add('settle-shake');
-  frame.addEventListener('animationend', () => frame.classList.remove('settle-shake'), { once: true });
+  const surfaces = document.querySelectorAll<HTMLElement>(
+    '.persistent-run > .sidebar, .persistent-run > .main',
+  );
+  for (const surface of surfaces) {
+    surface.classList.remove('settle-shake');
+    void surface.offsetWidth;
+    surface.classList.add('settle-shake');
+    surface.addEventListener(
+      'animationend',
+      () => surface.classList.remove('settle-shake'),
+      { once: true },
+    );
+  }
 }
 
 export interface SettleView {

@@ -7,8 +7,9 @@ import { useSettings } from '../settings';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
+import { voicedKeys } from '../mascots';
 import { Collection } from './Collection';
-import { ENCOUNTERS, hasSeen, resetIntro, type EncounterGroup } from '../tutorial';
+import { ENCOUNTERS, type EncounterGroup } from '../tutorial';
 import { richText } from '../richtext';
 
 type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection' | 'help';
@@ -85,7 +86,7 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
     <div className="screen options">
       {view === 'settings' && <SettingsView />}
       {view === 'stats' && <StatsView lexicon={lexicon} />}
-      {view === 'help' && <HelpView {...(onNewRun ? { onNewRun } : {})} />}
+      {view === 'help' && <HelpView />}
       {view === 'credits' && <CreditsView />}
       <button className="btn back-bar" onClick={back}>
         {t('common.back')}
@@ -284,27 +285,12 @@ function Stat({ k, v, muted }: { k: string; v: string | number; muted?: boolean 
 }
 
 // ---------- Help ----------
-function HelpView({ onNewRun }: { onNewRun?: () => void }) {
+function HelpView() {
   const { t } = useI18n();
-  const [replayed, setReplayed] = useState(false);
   const groups: EncounterGroup[] = ['tiles', 'scoring', 'economy', 'run'];
-  // The lesson rigs the opening hand at run start, so replaying means a fresh run. From the
-  // pause menu (onNewRun available) jump straight there; from the main menu, clear the flag
-  // and tell the player to start a New Run.
-  const replay = () => {
-    resetIntro();
-    if (onNewRun) onNewRun();
-    else setReplayed(true);
-  };
   return (
     <>
       <h2 className="scr-title">{t('help.title')}</h2>
-      <div className="help-replay">
-        <button className="btn exchange sm" onClick={replay}>
-          {t('help.replayIntro')}
-        </button>
-        {replayed && <span className="help-replay-note">{t('help.replayIntroDone')}</span>}
-      </div>
       <div className="help-groups">
         {groups.map((g) => {
           const items = ENCOUNTERS.filter((e) => e.group === g);
@@ -312,20 +298,17 @@ function HelpView({ onNewRun }: { onNewRun?: () => void }) {
           return (
             <div key={g} className="panel help-group">
               <div className="label">{t(`help.group.${g}`)}</div>
-              {items.map((e) => {
-                const seen = hasSeen(e.id);
-                return (
-                  <div key={e.id} className={['help-entry', seen ? '' : 'locked'].filter(Boolean).join(' ')}>
-                    <div className="help-entry-head">
-                      <span className="tut-icon">{e.icon}</span>
-                      <span className="help-entry-title">
-                        {seen ? t(`tutorial.${e.id}.title`) : t('help.undiscovered')}
-                      </span>
-                    </div>
-                    {seen && <p className="help-entry-body">{richText(t(`tutorial.${e.id}.body`))}</p>}
+              {items.map((e) => (
+                <div key={e.id} className="help-entry">
+                  <div className="help-entry-head">
+                    <span className="tut-icon">{e.icon}</span>
+                    <span className="help-entry-title">{t(`tutorial.${e.id}.title`)}</span>
                   </div>
-                );
-              })}
+                  <p className="help-entry-body">
+                    {richText(t(voicedKeys(`enc.${e.id}`, e.mascot ?? 'woodak')))}
+                  </p>
+                </div>
+              ))}
             </div>
           );
         })}

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isValidElement } from 'react';
+import { createElement, isValidElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
@@ -90,6 +91,23 @@ describe('richText — pack highlight tags', () => {
     expect(classes).toEqual(['hl-mult', 'hl-chips', 'hl-blind']);
   });
 
+  it('boxes only multiplication numbers and leaves additive values and units colour-only', () => {
+    const markup = renderToStaticMarkup(createElement(
+      'span',
+      null,
+      richText('[m:+4 Mult] [c:+30 Chips] [m:×1.5 Mult] [c:×3 칩]'),
+    ));
+    expect(markup).toContain('<span class="hl-mult"><span class="hl-value">+4</span> Mult</span>');
+    expect(markup).toContain('<span class="hl-chips"><span class="hl-value">+30</span> Chips</span>');
+    expect(markup).toContain('<span class="hl-mult"><span class="hl-factor">×1.5</span> Mult</span>');
+    expect(markup).toContain('<span class="hl-chips"><span class="hl-factor">×3</span> 칩</span>');
+  });
+
+  it('leaves axis words without a numeric value uncoloured', () => {
+    const markup = renderToStaticMarkup(createElement('span', null, richText('[m:Mult] [c:칩]')));
+    expect(markup).toBe('<span><span class="hl-mult">Mult</span> <span class="hl-chips">칩</span></span>');
+  });
+
   it('renders money and passive-property tags instead of leaking markup', () => {
     const classes = richText('[$:$5] [p:+1 Emoji Tile slot]')
       .filter(isValidElement)
@@ -104,12 +122,40 @@ describe('richText — pack highlight tags', () => {
     expect(classes).toEqual(['hl-gibberish']);
   });
 
+  it('uses the matching Emoji Tile rarity classes', () => {
+    const classes = richText('[C:Common] [U:Uncommon] [R:Rare] [L:Legendary]')
+      .filter(isValidElement)
+      .map((node) => (node.props as { className: string }).className);
+    expect(classes).toEqual([
+      'hl-rarity-common',
+      'hl-rarity-uncommon',
+      'hl-rarity-rare',
+      'hl-rarity-legendary',
+    ]);
+
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(css).toMatch(/\.hl-rarity-rare\s*\{[^}]*color:\s*var\(--rarity-rare\)/s);
+    expect(css).toMatch(/\.tt-rarity\.rare\s*\{[^}]*background:\s*var\(--rarity-rare\)/s);
+  });
+
   it('leaves untagged prose untouched', () => {
     expect(richText('plain copy')).toEqual(['plain copy']);
   });
 });
 
 describe('effect-description markup', () => {
+  it('marks every Emoji Tile rarity mention in both locales', () => {
+    for (const [lang, dict] of Object.entries(LOCALES)) {
+      for (const [key, value] of Object.entries(dict)) {
+        if (!/desc/i.test(key)) continue;
+        const plain = value.replace(/\[[CURL]:[^\]]*]/g, '');
+        expect(plain, `${lang}/${key}`).not.toMatch(
+          /(?:Common|Uncommon|Rare|Legendary) Emoji Tile|(?:일반|고급|희귀|전설) 이모지 타일/i,
+        );
+      }
+    }
+  });
+
   it('marks every displayed money amount in both locales', () => {
     for (const [lang, dict] of Object.entries(LOCALES)) {
       for (const [key, value] of Object.entries(dict)) {

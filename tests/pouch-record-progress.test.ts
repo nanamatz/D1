@@ -42,6 +42,12 @@ describe('pouch and Record profile progress', () => {
     expect(loadLifetime().pouchWins).toEqual(['yellow']);
     expect(loadLifetime().recordWins).toEqual(['whiteLp']);
     expect(loadLifetime().wins).toBe(2);
+    expect(loadLifetime().balance).toEqual({
+      version: 1,
+      runs: 2,
+      wins: 2,
+      lossesByChapter: {},
+    });
   });
 
   it('does not grant unlock progress for losses or custom-seed wins', () => {
@@ -66,6 +72,12 @@ describe('pouch and Record profile progress', () => {
     expect(loadLifetime().pouchWins).toEqual([]);
     expect(loadLifetime().recordWins).toEqual([]);
     expect(loadLifetime().wins).toBe(1);
+    expect(loadLifetime().balance).toEqual({
+      version: 1,
+      runs: 1,
+      wins: 0,
+      lossesByChapter: { '3': 1 },
+    });
   });
 
   it('loads legacy lifetime data with empty progress arrays', () => {
@@ -76,6 +88,31 @@ describe('pouch and Record profile progress', () => {
       mostGold: 12,
       pouchWins: [],
       recordWins: [],
+      balance: { version: 1, runs: 0, wins: 0, lossesByChapter: {} },
+    });
+  });
+
+  it('recomputes a legacy best-word score from intrinsic letter chips', () => {
+    localStorage.setItem('wj.lifetime', JSON.stringify({
+      bestWord: 'quiz',
+      bestWordScore: 9999,
+    }));
+    expect(loadLifetime()).toMatchObject({ bestWord: 'quiz', bestWordScore: 66 });
+  });
+
+  it('normalizes malformed balance telemetry from storage', () => {
+    localStorage.setItem('wj.lifetime', JSON.stringify({
+      balance: {
+        runs: 2.8,
+        wins: 8,
+        lossesByChapter: { '2': 3.9, '39': 2, nope: 4 },
+      },
+    }));
+    expect(loadLifetime().balance).toEqual({
+      version: 1,
+      runs: 2,
+      wins: 2,
+      lossesByChapter: { '2': 3 },
     });
   });
 });

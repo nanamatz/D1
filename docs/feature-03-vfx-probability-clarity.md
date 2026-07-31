@@ -15,7 +15,7 @@ proposal are retired; new work must use Pouches + Records. *(Changed
 2026-07-30: the 12 confirmed Gambler effects, Phoenix route, and Boar clone
 exception now ship, but were not part of this older work order.)*
 
-**Resolved since the review** — two former blockers are now decided: the **font↔effect mapping is confirmed** (GDD §2.3 table — Light Italic `goldPlay` / Bold `chipPlay` / Inline `discardGain` / Black `retriggerPlay`), and the **Ink Pack name is settled** (Forbidden Books stays deferred, §10.3). Ink Pack is a consumable source; it is unrelated to the new Record difficulty ladder.
+**Resolved since the review** — two former blockers are now decided: the **font↔effect mapping is confirmed** (GDD §2.3 table — Light Italic `goldPlay` / Underline (`bold` internally) `chipPlay` / Inline `discardGain` / Black `retriggerPlay`), and the **Ink Pack name is settled** (Forbidden Books stays deferred, §10.3). Ink Pack is a consumable source; it is unrelated to the new Record difficulty ladder.
 
 ---
 
@@ -24,7 +24,7 @@ exception now ship, but were not part of this older work order.)*
 Reported: enhancement effects appear to do nothing in play. **Diagnose before fixing**, and report which of these it is (they need different fixes):
 
 1. **Hooks not wired** — the material/font/edition effects are defined but never invoked by the scoring pipeline.
-2. **Font mapping was provisional** — `balance.ts` `fontEffects` may still hold the old placeholder assignment. This is no longer an open question: write the confirmed mapping from GDD §2.3 (Light Italic `goldPlay` / Bold `chipPlay` / Inline `discardGain` / Black `retriggerPlay`) and re-check whether fonts were only *appearing* inert because of it.
+2. **Font mapping was provisional** — `balance.ts` `fontEffects` may still hold the old placeholder assignment. This is no longer an open question: write the confirmed mapping from GDD §2.3 (Light Italic `goldPlay` / Underline (`bold` internally) `chipPlay` / Inline `discardGain` / Black `retriggerPlay`) and re-check whether fonts were only *appearing* inert because of it.
 3. **Acquisition path blocked** — effects work, but enhanced tiles never reach the player (pack rolls not attaching material/font/edition, or attaching only `base`).
 4. **Display-only** — effects fire but nothing shows them, so they read as broken.
 

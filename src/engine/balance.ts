@@ -180,6 +180,26 @@ export const BALANCE = {
     maxAnte: 38,
   },
 
+  // ----- Blind skip rewards (GDD §8.2) -----
+  // Twenty-seven equally likely publishing-world rewards. Draft and Revision may be
+  // skipped; Deadline never may. Delayed blind bonuses carry across another
+  // skip so the player always receives them on the next stage they actually play.
+  skipRewards: {
+    advanceGold: 7,
+    patternLevels: 1,
+    phases: 1,
+    discards: 1,
+    handSize: 2,
+    targetMultiplier: 0.85,
+    clearReward: 5,
+    startingScore: 75,
+    investmentReward: 25,
+    handyGoldPerHand: 1,
+    garbageGoldPerDiscard: 1,
+    jugglerHandSize: 3,
+    economyGoldMultiplier: 2,
+  },
+
   // ----- Economy (GDD §9.1) -----
   startingGold: 4, // Base run starting Fee before Pouch modifiers
   clearReward: { small: 3, big: 4, boss: 5 },
@@ -265,7 +285,7 @@ export const BALANCE = {
     redPencil: { chips: 18 },
     pocketDictionary: { mult: 5 },
     tongueTwister: { minLength: 6, mult: 8 },
-    stenographer: { multPerRepeatedLetter: 3 },
+    stenographer: { mult: 3 },
     fillInTheBlank: { chips: 25 },
     leftMargin: { chips: 15 },
     rightMargin: { mult: 4 },

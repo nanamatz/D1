@@ -3,6 +3,7 @@ import type { BlindState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART } from '../bossArt';
 import { useI18n } from '../i18n';
+import { richText } from '../richtext';
 import { useEntering } from './ScreenTransition';
 
 const BOSS_ENTER_MS = 520;
@@ -43,7 +44,7 @@ export function BossIntro({ blind }: { blind: BlindState }) {
         <div className="boss-intro-copy">
           <div className="boss-intro-kicker">{t('blind.boss')}</div>
           <div className="boss-intro-name">{lang === 'ko' ? boss.nameKo : boss.nameEn}</div>
-          <div className="boss-intro-effect">{t(`bossdesc.${boss.id}`)}</div>
+          <div className="boss-intro-effect">{richText(t(`bossdesc.${boss.id}`))}</div>
         </div>
       </div>
     </div>

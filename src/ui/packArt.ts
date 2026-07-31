@@ -1,45 +1,45 @@
 /**
  * Card-pack art mapping. The headless engine stores only a seeded cosmetic
- * artVariant; the UI resolves that index to a normalized path-only SVG.
+ * artVariant; the UI resolves that index to a pixel-identical runtime PNG.
  */
 import type { PackSize, PackType } from '../engine/types';
 
-import tileBasic1 from './assets/packs/T_BasicTilePack1.svg';
-import tileBasic2 from './assets/packs/T_BasicTilePack2.svg';
-import tileBasic3 from './assets/packs/T_BasicTilePack3.svg';
-import tileBasic4 from './assets/packs/T_BasicTilePack4.svg';
-import tileClassic1 from './assets/packs/T_ClassicTilePack1.svg';
-import tileClassic2 from './assets/packs/T_ClassicTilePack2.svg';
-import tilePremium1 from './assets/packs/T_PremiumTilePack1.svg';
-import tilePremium2 from './assets/packs/T_PremiumTilePack2.svg';
+import tileBasic1 from './assets/packs/T_BasicTilePack1-preview.png';
+import tileBasic2 from './assets/packs/T_BasicTilePack2-preview.png';
+import tileBasic3 from './assets/packs/T_BasicTilePack3-preview.png';
+import tileBasic4 from './assets/packs/T_BasicTilePack4-preview.png';
+import tileClassic1 from './assets/packs/T_ClassicTilePack1-preview.png';
+import tileClassic2 from './assets/packs/T_ClassicTilePack2-preview.png';
+import tilePremium1 from './assets/packs/T_PremiumTilePack1-preview.png';
+import tilePremium2 from './assets/packs/T_PremiumTilePack2-preview.png';
 
-import charmBasic1 from './assets/packs/T_BasicCharmPack.svg';
-import charmBasic2 from './assets/packs/T_BasicCharmPack2.svg';
-import charmClassic1 from './assets/packs/T_ClassicCharmPack.svg';
-import charmPremium1 from './assets/packs/T_PremiumCharmPack.svg';
+import charmBasic1 from './assets/packs/T_BasicCharmPack-preview.png';
+import charmBasic2 from './assets/packs/T_BasicCharmPack2-preview.png';
+import charmClassic1 from './assets/packs/T_ClassicCharmPack-preview.png';
+import charmPremium1 from './assets/packs/T_PremiumCharmPack-preview.png';
 
-import fableBasic1 from './assets/packs/T_BasicFablePack1.svg';
-import fableBasic2 from './assets/packs/T_BasicFablePack2.svg';
-import fableBasic3 from './assets/packs/T_BasicFablePack3.svg';
-import fableBasic4 from './assets/packs/T_BasicFablePack4.svg';
-import fableClassic1 from './assets/packs/T_ClassicFablePack1.svg';
-import fableClassic2 from './assets/packs/T_ClassicFablePack2.svg';
-import fablePremium1 from './assets/packs/T_PremiumFablePack1.svg';
-import fablePremium2 from './assets/packs/T_PremiumFablePack2.svg';
+import fableBasic1 from './assets/packs/T_BasicFablePack1-preview.png';
+import fableBasic2 from './assets/packs/T_BasicFablePack2-preview.png';
+import fableBasic3 from './assets/packs/T_BasicFablePack3-preview.png';
+import fableBasic4 from './assets/packs/T_BasicFablePack4-preview.png';
+import fableClassic1 from './assets/packs/T_ClassicFablePack1-preview.png';
+import fableClassic2 from './assets/packs/T_ClassicFablePack2-preview.png';
+import fablePremium1 from './assets/packs/T_PremiumFablePack1-preview.png';
+import fablePremium2 from './assets/packs/T_PremiumFablePack2-preview.png';
 
-import constellationBasic1 from './assets/packs/T_BasicConstellationPack1.svg';
-import constellationBasic2 from './assets/packs/T_BasicConstellationPack2.svg';
-import constellationBasic3 from './assets/packs/T_BasicConstellationPack3.svg';
-import constellationBasic4 from './assets/packs/T_BasicConstellationPack4.svg';
-import constellationClassic1 from './assets/packs/T_ClassicConstellationPack1.svg';
-import constellationClassic2 from './assets/packs/T_ClassicConstellationPack2.svg';
-import constellationPremium1 from './assets/packs/T_PremiumConstellationPack1.svg';
-import constellationPremium2 from './assets/packs/T_PremiumConstellationPack2.svg';
+import constellationBasic1 from './assets/packs/T_BasicConstellationPack1-preview.png';
+import constellationBasic2 from './assets/packs/T_BasicConstellationPack2-preview.png';
+import constellationBasic3 from './assets/packs/T_BasicConstellationPack3-preview.png';
+import constellationBasic4 from './assets/packs/T_BasicConstellationPack4-preview.png';
+import constellationClassic1 from './assets/packs/T_ClassicConstellationPack1-preview.png';
+import constellationClassic2 from './assets/packs/T_ClassicConstellationPack2-preview.png';
+import constellationPremium1 from './assets/packs/T_PremiumConstellationPack1-preview.png';
+import constellationPremium2 from './assets/packs/T_PremiumConstellationPack2-preview.png';
 
-import inkBasic1 from './assets/packs/T_BasicInkPack1.svg';
-import inkBasic2 from './assets/packs/T_BasicInkPack2.svg';
-import inkClassic1 from './assets/packs/T_ClassicInkPack1.svg';
-import inkPremium1 from './assets/packs/T_PremiumInkPack1.svg';
+import inkBasic1 from './assets/packs/T_BasicInkPack1-preview.png';
+import inkBasic2 from './assets/packs/T_BasicInkPack2-preview.png';
+import inkClassic1 from './assets/packs/T_ClassicInkPack1-preview.png';
+import inkPremium1 from './assets/packs/T_PremiumInkPack1-preview.png';
 
 export const PACK_ART: Record<PackType, Record<PackSize, readonly string[]>> = {
   tile: {

@@ -50,10 +50,15 @@ describe('feedback 5 UI regressions', () => {
     expect(screens).toMatch(/\.bs-head \.label\s*\{[^}]*font-size:\s*var\(--ds-xs\)/s);
   });
 
-  it('emphasizes the secondary tooltip subject and uses positive slot copy', () => {
-    expect(screens).toMatch(/\.tt-sub-title\s*\{[^}]*font-size:\s*var\(--fs-lg\)[^}]*color:\s*var\(--gold\)/s);
-    expect(source('locales/ko.json')).toContain('소모품 슬롯이 비어있는 경우');
-    expect(source('locales/en.json')).toContain('when a consumable slot is empty');
+  it('emphasizes the secondary tooltip subject and unifies available-space copy', () => {
+    expect(screens).toMatch(/\.tt-sub-title\s*\{[^}]*font-size:\s*var\(--fs-lg\)[^}]*color:\s*#fff/s);
+    expect(screens).toContain('text-shadow:');
+    const ko = source('locales/ko.json');
+    const en = source('locales/en.json');
+    expect(ko.match(/공간이 있어야 합니다/g)).toHaveLength(4);
+    expect(en.match(/Requires available space/g)).toHaveLength(4);
+    expect(ko).not.toContain('소모품 슬롯이 비어있는 경우');
+    expect(ko).not.toContain('빈 이모지 타일 슬롯에');
   });
 
   it('centres the boss intro in the phase workspace', () => {

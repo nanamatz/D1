@@ -115,6 +115,12 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
       gold: run.gold + total,
       ante: next.ante,
       blindIndex: next.blindIndex,
+      pendingClearReward: 0,
+      pendingBossReward: blind.kind === 'boss' ? 0 : (run.pendingBossReward ?? 0),
+      counters: {
+        ...run.counters,
+        unusedDiscards: (run.counters.unusedDiscards ?? 0) + discardCount,
+      },
       victorySecured: run.victorySecured || won,
     },
   };

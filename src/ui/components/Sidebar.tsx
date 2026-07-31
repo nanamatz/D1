@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import type { BlindState, RunState } from '../../engine/types';
+import type { BlindState, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { effectiveClearReward } from '../../engine/economy';
 import type { StagePreview } from '../game';
@@ -12,6 +12,7 @@ import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
 import { patternSymbol } from '../patternSymbols';
+import { richText } from '../richtext';
 
 interface Props {
   run: RunState;
@@ -25,6 +26,8 @@ interface Props {
   finalScore: number | null;
   /** finalized sentence-bonus breakdown while it lands (item 2), else null */
   sentenceBonus: SentenceBonusDisplay | null;
+  /** highest valid pattern in the already-submitted sequence */
+  currentPattern: PatternId | null;
   /** the staged-word preview — its status shows above the 0×0 box (E-9) */
   preview: StagePreview | null;
   onOpenInfo: () => void;
@@ -67,6 +70,7 @@ export function Sidebar({
   settleComplete,
   finalScore,
   sentenceBonus,
+  currentPattern,
   preview,
   onOpenInfo,
   onOpenOptions,
@@ -98,7 +102,6 @@ export function Sidebar({
   // score as a count-down/count-up animation.
   const round = useCountUp(roundTarget, BONUS_LAND_MS, mode !== 'blind');
   // The sentence bonus as a forecast — "if the sentence ends like this: +N".
-  const forecast = mode === 'blind' ? blind.projectedScore - blind.committedScore : 0;
   // Sentence-bonus beat (item 2): when the bonus lands, the scorebox fills to the
   // bonus' chips × mult over the same BONUS_LAND_MS the round number rolls over, so
   // the player sees the round box's chips and mult climb by the bonus.
@@ -186,7 +189,9 @@ export function Sidebar({
               )}
         </div>
         <div className="bb-eff">
-          {mode === 'blind' && boss && <span className="bosseff">{t(`bossdesc.${boss.id}`)}</span>}
+          {mode === 'blind' && boss && (
+            <span className="bosseff">{richText(t(`bossdesc.${boss.id}`))}</span>
+          )}
         </div>
         {mode !== 'blind' ? (
           <div className="sidebar-mode-emblem" aria-hidden>
@@ -251,9 +256,13 @@ export function Sidebar({
             {formatScore(round)}
           </span>
         </div>
-        {mode === 'blind' && !blind.previewHidden && forecast > 0 && (
-          <div className="round-forecast">
-            {t('sidebar.forecast', { n: formatScore(forecast) })}
+        {mode === 'blind' && !blind.previewHidden && currentPattern && (
+          <div className="round-pattern">
+            <span className="pattern-symbol" aria-hidden>{patternSymbol(currentPattern)}</span>
+            {t('sidebar.currentPattern', {
+              pattern: t(`pattern.${currentPattern}`),
+              score: formatScore(Math.max(0, blind.projectedScore - blind.committedScore)),
+            })}
           </div>
         )}
       </div>

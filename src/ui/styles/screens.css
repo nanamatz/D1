@@ -46,18 +46,28 @@
   min-width: 0;
 }
 .tt-card {
+  --rarity-common: #4e9289;
+  --rarity-uncommon: var(--chips);
+  --rarity-rare: var(--mult);
+  --rarity-legendary: var(--gold);
   position: absolute;
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  /* feedback: size to content, not a fixed 220px slab — short tooltips read tight,
-     long copy still wraps at --tt-w rather than stretching off-screen. */
-  width: max-content;
-  max-width: var(--tt-w);
-  background: var(--tt-bg);
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: min(var(--tt-min-w), calc(100vw - 16px));
+  max-width: min(var(--tt-w), calc(100vw - 16px));
+  background:
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(255, 255, 255, .035) 2px 3px),
+    var(--tt-bg);
+  border: 3px solid var(--tt-edge);
   border-radius: var(--tt-r);
-  box-shadow: var(--shadow);
-  padding: 9px 4px;
+  box-shadow:
+    0 0 0 1px #182327,
+    inset 0 0 0 2px rgba(255, 255, 255, .16),
+    4px 4px 0 rgba(10, 17, 20, .72);
+  padding: 7px 3px 6px;
   flex-direction: column;
   gap: 8px;
   text-align: left;
@@ -124,6 +134,18 @@
   font-weight: 500;
   -webkit-text-stroke: 0;
 }
+.tt-card.tt-portal.has-sub {
+  /* Reserve the supplemental card's lane while keeping the main card anchored
+     as closely as possible to its subject. */
+  left: clamp(
+    min(
+      calc(100vw - var(--tt-w) / 2 - 8px),
+      calc(var(--tt-w) / 2 + var(--tt-sub-w) + 12px)
+    ),
+    var(--tt-x),
+    calc(100vw - var(--tt-w) / 2 - 8px)
+  );
+}
 .tt-card.tt-portal.down {
   top: calc(var(--tt-y) + 10px);
   transform: translateX(-50%);
@@ -131,95 +153,149 @@
 /* The name, centred at the top of the dark card. Always white: rarity is the
    badge's job now, so the title doesn't have to double as a rarity readout. */
 .tt-title {
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--fs-xl);
   color: #fff;
+  line-height: 1.08;
   text-align: center;
-  padding: 0 10px;
+  padding: 0 10px 1px;
+  text-shadow:
+    -1px 0 #f05b9a,
+    1px 0 #58e8df,
+    0 2px 0 #17282d;
 }
-/* The description plate — white, rounded, inset 2px from the card's edges. */
+/* Pale inset plate, proportioned like the reference and free to grow by line count. */
 .tt-desc {
-  background: #fff;
-  border-radius: var(--tt-r);
-  margin: 0 2px;
-  padding: 10px 12px;
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--tt-plate);
+  border: 2px solid color-mix(in srgb, var(--tt-edge) 72%, #fff);
+  border-radius: calc(var(--tt-r) - 4px);
+  margin: 0;
+  padding: 8px 11px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 .tt-body {
   white-space: pre-line;
+  font-family: var(--tt-copy-font);
   font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -.018em;
   /* The card's own grey, so the plate reads as a window cut out of it. */
   color: var(--tt-bg);
-  line-height: 1.45;
+  line-height: 1.4;
+  text-shadow:
+    -0.5px 0 rgba(226, 67, 132, .14),
+    0.5px 0 rgba(27, 166, 158, .16);
 }
 .tt-extra {
+  font-family: var(--tt-copy-font);
   font-size: var(--fs-md);
   font-weight: 700;
+  letter-spacing: -.012em;
   color: #9b9b9b;
   text-align: center;
 }
-/* feedback · the material/font sub-tooltip is a SEPARATE card 3px below the main one
-   (not a section merged into it) — its own dark card, positioned just under the
-   parent tooltip so it reads as a distinct, secondary tooltip. */
-.tt-sub-card {
+.tt-inline-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 3px;
+  padding-top: 6px;
+  border-top: 2px solid color-mix(in srgb, var(--tt-bg) 24%, transparent);
+}
+.tt-inline-title {
+  color: var(--tt-bg);
+  font-family: var(--tt-copy-font);
+  font-size: var(--fs-md);
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+}
+.tt-inline-detail .tt-body {
+  font-size: var(--fs-md);
+  line-height: 1.28;
+  text-align: center;
+}
+/* Every remaining supplemental definition is its own left-side card. */
+.tt-sub-stack {
   position: absolute;
-  /* feedback: an UP-opening tooltip stacks the sub ABOVE the main, so the sub's bottom
-     stays above the object's top (never covering the object). A DOWN tooltip (shelf)
-     already sits below the object, so its sub goes below the main (override further down). */
-  bottom: calc(100% + 3px);
-  top: auto;
-  left: 0;
-  right: 0;
-  background: var(--tt-bg);
-  border-radius: var(--tt-r);
-  box-shadow: var(--shadow);
-  padding: 8px 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  text-align: left;
-}
-.tt-sub-section {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.tt-sub-section + .tt-sub-section {
-  border-top: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
-  margin-top: 4px;
-  padding-top: 7px;
-}
-.tt-card.down .tt-sub-card {
-  top: calc(100% + 3px);
+  top: 0;
+  right: calc(100% + 4px);
   bottom: auto;
+  left: auto;
+  width: 64%;
+  max-width: min(var(--tt-sub-w), calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.tt-sub-card {
+  box-sizing: border-box;
+  width: 100%;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(255, 255, 255, .035) 2px 3px),
+    var(--tt-bg);
+  border: 3px solid var(--tt-edge);
+  border-radius: var(--tt-r);
+  box-shadow:
+    0 0 0 1px #182327,
+    inset 0 0 0 2px rgba(255, 255, 255, .14),
+    3px 3px 0 rgba(10, 17, 20, .65);
+  padding: 5px 3px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
 }
 .tt-sub-title {
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--fs-lg);
-  line-height: 1.15;
-  color: var(--gold);
-  letter-spacing: .025em;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, .45);
+  line-height: 1.08;
+  color: #fff;
+  letter-spacing: .01em;
+  text-shadow:
+    -1px 0 #f05b9a,
+    1px 0 #58e8df,
+    0 2px 0 #17282d;
 }
 .tt-sub-card .tt-body {
-  color: var(--ink); /* light text on the dark sub-card, not the white-plate grey */
+  display: block;
+  padding: 5px 6px;
+  background: var(--tt-plate);
+  border: 2px solid color-mix(in srgb, var(--tt-edge) 72%, #fff);
+  border-radius: calc(var(--tt-r) - 5px);
+  color: var(--tt-bg);
+  font-size: var(--fs-md);
+  line-height: 1.28;
+  text-align: center;
 }
-/* Highlights inside description copy (see richtext.tsx). Values get a filled
-   chip; "Blind" is only recoloured — it's a noun, not a number. */
-.hl-mult,
-.hl-chips {
-  color: #fff;
+/* Only the numeric portion carries an axis colour. Units stay in the normal
+   body colour. A multiplication factor upgrades that numeric portion to a box. */
+.hl-value,
+.hl-factor {
   font-weight: 700;
-  border-radius: 4px;
+}
+.hl-mult .hl-value {
+  color: var(--mult);
+}
+.hl-chips .hl-value {
+  color: var(--chips);
+}
+.hl-factor {
+  display: inline-block;
   padding: 0 4px;
+  border-radius: 4px;
+  color: #fff;
+  line-height: 1.15;
   white-space: nowrap;
 }
-.hl-mult {
+.hl-mult .hl-factor {
   background: var(--mult);
 }
-.hl-chips {
+.hl-chips .hl-factor {
   background: var(--chips);
 }
 .hl-blind {
@@ -260,6 +336,24 @@
   color: var(--btn-green);
   font-weight: 900;
 }
+.hl-rarity-common,
+.hl-rarity-uncommon,
+.hl-rarity-rare,
+.hl-rarity-legendary {
+  font-weight: 900;
+}
+.hl-rarity-common {
+  color: var(--rarity-common);
+}
+.hl-rarity-uncommon {
+  color: var(--rarity-uncommon);
+}
+.hl-rarity-rare {
+  color: var(--rarity-rare);
+}
+.hl-rarity-legendary {
+  color: var(--rarity-legendary);
+}
 /* Pack descriptions read as a centred two/three-line blurb (Reference.png). Scoped to
    .pack so joker copy keeps its left alignment. */
 .tt-card.pack .tt-body {
@@ -268,27 +362,37 @@
 /* Badges beneath the description plate: joker rarity, or pack grade. */
 .tt-rarity,
 .tt-grade,
-.tt-classification {
+.tt-classification,
+.tt-enhancement-tag {
+  box-sizing: border-box;
+  width: var(--tt-tag-w);
   align-self: center;
   font-size: var(--fs-sm);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #fff;
-  border-radius: 4px;
-  padding: 3px 12px;
+  border: 2px solid rgba(255, 255, 255, .18);
+  border-radius: 7px;
+  padding: 3px 10px;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .72);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .12),
+    inset 0 -2px 0 rgba(0, 0, 0, .18);
 }
 .tt-rarity.common {
-  background: #6b7a84;
+  background: var(--rarity-common);
 }
 .tt-rarity.uncommon {
-  background: var(--chips);
+  background: var(--rarity-uncommon);
 }
 .tt-rarity.rare {
-  background: var(--mult);
+  background: var(--rarity-rare);
 }
 .tt-rarity.legendary {
-  background: var(--gold);
+  background: var(--rarity-legendary);
   color: #20160a;
 }
 /* Grade tones escalate like rarity does, so the badge reads at a glance.
@@ -316,6 +420,21 @@
 .tt-classification.gambler {
   background: var(--btn-green);
 }
+.tt-enhancement-tag {
+  text-transform: none;
+}
+.tt-enhancement-tag.material { background: #4e9289; }
+.tt-enhancement-tag.font { background: #685484; }
+.tt-enhancement-tag.gray { background: #718185; }
+.tt-enhancement-tag.violet { background: #875b91; }
+.tt-enhancement-tag.rainbow {
+  background: linear-gradient(90deg, #b8342b, #b47b00, #25845f, #356bc4, #8b4ab0);
+}
+.tt-enhancement-tag.white {
+  background: #f4f4f0;
+  color: #30343a;
+  text-shadow: none;
+}
 
 /* item 1: the letter-tile tooltip is its OWN, compact shape — NOT the shared
    joker card. Its content is a single-letter title and a short
@@ -325,6 +444,7 @@
    base `.tt-card` width. */
 .tt-card.tile-tt {
   width: max-content;
+  min-width: 132px;
   max-width: 210px;
   padding: 6px 3px;
   gap: 5px;
@@ -463,6 +583,7 @@
 }
 .bs-card {
   --blind-accent: var(--panel-edge);
+  position: relative;
   background: var(--badge-bg);
   border-radius: 14px;
   border-top: 1px solid var(--panel-edge);
@@ -506,6 +627,12 @@
 }
 .blindselect .bs-card.current.boss {
   height: 450px;
+}
+.blindselect .bs-card:not(.boss) {
+  gap: 8px;
+}
+.blindselect .bs-card.current:not(.boss) {
+  padding-block: 18px;
 }
 .bs-card.current .bs-kind {
   font-size: var(--fs-xl);
@@ -582,18 +709,119 @@
 .bs-select {
   width: 100%;
 }
+.bs-control-tilt {
+  position: relative;
+  width: 100%;
+  transform-origin: 50% 65%;
+  transform-style: preserve-3d;
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.16s ease;
+  will-change: transform;
+}
+.bs-control-tilt.tilting {
+  transform: perspective(520px)
+    rotateX(calc(var(--tilt-x, 0) * 5deg))
+    rotateY(calc(var(--tilt-y, 0) * 7deg))
+    translateY(calc(var(--tilt-k, 1) * -3px))
+    scale(calc(1 + var(--tilt-k, 1) * 0.025));
+  filter: brightness(1.08);
+  z-index: 5;
+}
+.bs-control-tilt > .btn {
+  width: 100%;
+  min-height: 44px;
+  padding-inline: 8px;
+  font-size: var(--fs-md);
+}
+.bs-skip-zone {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.bs-or {
+  font-family: var(--ctl-font);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
+}
+.bs-skip-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.bs-skip-row > .tt-anchor {
+  display: block;
+  width: 52px;
+  height: 52px;
+}
+.bs-tag-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  cursor: help;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.42));
+}
+.bs-tag-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.bs-tag-icon:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+.bs-skip-tilt .btn {
+  min-height: 44px;
+}
+.bs-skipped-stamp {
+  position: absolute;
+  top: 132px;
+  left: 50%;
+  z-index: 3;
+  color: var(--ink);
+  font-family: var(--ctl-font);
+  font-size: var(--fs-2xl);
+  font-weight: 900;
+  white-space: nowrap;
+  text-shadow: 3px 3px 0 var(--mult), -2px -2px 0 var(--chips);
+  transform: translateX(-50%) rotate(-12deg);
+  pointer-events: none;
+}
 .bs-status {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  border: 2px solid var(--panel-edge);
+  border-radius: 6px;
   font-size: var(--fs-sm);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 8px 0;
+  padding: 6px;
 }
 .bs-status.defeated {
   color: var(--suit-standard);
 }
+.bs-status.skipped {
+  color: var(--mult);
+}
 .bs-status.upcoming {
   color: var(--ink-dim);
+}
+.bs-boss-reroll {
+  width: 100%;
+  margin-top: auto;
 }
 
 /* ---------- Game Over (spec §2.7 / playtest-02 A-4: overlays the board) ---------- */
@@ -1390,15 +1618,24 @@ body.cb-safe .tile.hint {
   text-align: center;
   text-shadow: 0 2px 0 #000;
 }
-.profile-wins {
-  font-size: var(--fs-2xl);
-  font-weight: 800;
-  text-align: center;
+.profile-balance {
+  display: grid;
+  gap: 3px;
+  padding: 7px 10px;
+  background: var(--inset);
+  border: 2px solid var(--slate);
+  font-size: var(--fs-sm);
 }
-.profile-wins strong {
+.profile-balance span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.profile-balance strong {
+  color: var(--chips);
+}
+.profile-balance span:first-child strong {
   color: var(--mult);
-  font-family: 'Jersey 10';
-  font-size: var(--ds-lg);
 }
 .profile-warning {
   width: min(720px, 94vw);
@@ -1428,7 +1665,7 @@ body.cb-safe .tile.hint {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
-  .profile-wins {
+  .profile-balance {
     grid-column: 1 / -1;
   }
 }
@@ -2665,6 +2902,54 @@ body.cb-safe .tile.hint {
   overflow-x: auto;
   padding-block: 10px;
 }
+.tag-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(92px, 1fr));
+  gap: 16px 20px;
+  width: min(760px, 100%);
+  min-height: 360px;
+  margin: 0 auto;
+  padding: 12px 18px;
+  border: 2px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+  background: rgba(6, 15, 18, 0.42);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.18);
+}
+.tag-collection-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tag-collection-icon {
+  width: 92px;
+  height: 92px;
+  border-radius: 10px;
+}
+.tag-collection-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.45));
+}
+.tag-collection-name {
+  max-width: 118px;
+  color: var(--ink);
+  font-family: var(--ctl-font);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+}
+@media (max-width: 680px) {
+  .tag-collection-grid {
+    grid-template-columns: repeat(3, minmax(84px, 1fr));
+    min-height: 0;
+  }
+}
 .swatch {
   display: flex;
   flex-direction: column;
@@ -3405,6 +3690,54 @@ body.cb-safe .tile.hint {
   grid-template-columns: 1fr;
   gap: 8px;
 }
+.ri-hands {
+  display: grid;
+  gap: 8px;
+}
+.ri-hand {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+}
+.ri-hand-rank {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  line-height: 1;
+}
+.ri-hand-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.ri-hand-copy > span {
+  color: var(--ink-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.25;
+}
+.ri-hand-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  line-height: 1;
+  white-space: nowrap;
+}
+.ri-hand-score .chips { color: var(--chips); }
+.ri-hand-score .mult { color: var(--mult); }
 .ri-pat {
   display: flex;
   align-items: center;
@@ -3595,16 +3928,22 @@ body.cb-safe .tile.hint {
 }
 
 /* ---------- Help glossary (work order A-3) ---------- */
-.help-replay { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.help-replay-note { font-size: 12px; opacity: 0.75; }
-.help-groups { display: flex; flex-direction: column; gap: 12px; }
+.help-groups {
+  display: grid;
+  width: min(820px, 94vw);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
 .help-group { text-align: left; }
 .help-entry { padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .help-entry:first-of-type { border-top: 0; }
-.help-entry.locked { opacity: 0.4; }
 .help-entry-head { display: flex; align-items: center; gap: 8px; }
 .help-entry-title { font-weight: 700; font-size: 14px; }
 .help-entry-body { font-size: 12px; line-height: 1.45; margin-top: 4px; }
+@media (max-width: 680px) {
+  .help-groups { grid-template-columns: 1fr; }
+}
 
 /* ---------- guided first-run intro (work order A-1) ---------- */
 .intro-overlay {
@@ -4024,7 +4363,7 @@ body.cb-safe .tile.hint {
   }
 }
 
-/* feedback · Run Info tabs (Patterns / Blinds / Vouchers). */
+/* Run Info tabs (Patterns / Letter Hands / Blinds / Vouchers). */
 .ri-tabs {
   display: flex;
   gap: 4px;
@@ -4093,4 +4432,23 @@ body.cb-safe .tile.hint {
   font-family: 'Jersey 10', var(--ctl-font);
   font-size: var(--fs-lg);
   color: var(--ink);
+}
+.save-health-notice {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  z-index: 10000;
+  width: min(560px, calc(100vw - 32px));
+  padding: 12px 16px;
+  transform: translateX(-50%);
+  border: 3px solid var(--red);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 5px 5px 0 var(--shadow);
+  text-align: center;
+}
+
+.save-health-notice strong,
+.save-health-notice span {
+  display: block;
 }

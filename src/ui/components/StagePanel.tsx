@@ -14,7 +14,6 @@ import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { audio } from '../audio';
 import { motionOff } from '../motion';
-import { patternSymbol } from '../patternSymbols';
 import { TileView } from './Tile';
 import { useEntering } from './ScreenTransition';
 import { useStageDrag, type StageDragCallbacks } from '../drag';
@@ -232,22 +231,11 @@ export function StagePanel({
         ))}
       </div>
 
-      {/* item 6: preview the staged word BEFORE submitting — its part of speech and
-          the sentence bonus this play would project (pattern + unison). */}
-      {preview && !preview.isGibberish && (preview.pos || preview.sentenceBonus > 0) && (
+      {/* Preview only the staged word's part of speech. The sidebar reports the
+          current pattern formed by words that have already been submitted. */}
+      {preview && !preview.isGibberish && preview.pos && (
         <div className="stage-preview">
-          {preview.pos && <span className="sp-pos">{preview.pos}</span>}
-          {preview.sentenceBonus > 0 && (
-            <span className="sp-forecast">
-              {preview.completes && (
-                <span className="pattern-symbol" aria-hidden>
-                  {patternSymbol(preview.completes.pattern)}
-                </span>
-              )}
-              {preview.completes ? t(`pattern.${preview.completes.pattern}`) : t('stage.bonus')}
-              <span className="sp-bonus">+{Math.round(preview.sentenceBonus)}</span>
-            </span>
-          )}
+          <span className="sp-pos">{preview.pos}</span>
         </div>
       )}
 

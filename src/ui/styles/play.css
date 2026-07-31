@@ -535,7 +535,8 @@
 .shop-offer-action-secondary .btn {
   min-width: 96px;
 }
-.shop-offer-action .btn {
+.shop-offer-action .btn,
+.consumable-menu.bare button {
   min-width: 82px;
 }
 .shop-offer.empty .shop-offer-card {
@@ -1267,7 +1268,8 @@
   font-style: italic;
   justify-content: center;
 }
-.btn.sm {
+.btn.sm,
+.consumable-menu.bare button {
   font-size: var(--fs-md);
   min-height: var(--shop-action-h);
   padding: 9px 18px;
@@ -2481,6 +2483,20 @@
 .joker {
   position: relative;
 }
+.owned-object-select {
+  position: absolute;
+  z-index: 3;
+  /* Match shop offers: keep the lifted card under a pointer at its lower edge. */
+  inset: 0 0 -12px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.owned-object-select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
 .joker-slot {
   position: relative;
   flex: 0 1 var(--shop-card-w);
@@ -2620,20 +2636,21 @@
 }
 .consumable-object:hover .consumable-object-art,
 .consumable-object:focus-visible .consumable-object-art {
-  translate: 0 -3px;
   filter: brightness(1.08);
 }
+.joker-slot.menu-open,
 .consumable-slot.menu-open {
   z-index: 24;
+  translate: 0 -5px;
+  transition: translate 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .consumable-slot.menu-open .consumable-object-art {
-  translate: 0 -5px;
   outline: 3px solid var(--gold);
   filter: drop-shadow(0 7px 0 rgba(5, 12, 14, 0.46));
 }
 @media (prefers-reduced-motion: reduce) {
   .consumable-object-art,
-  .consumable-slot > .consumable-menu.bare {
+  .consumable-object > .consumable-menu.bare {
     animation: none;
     transition: none;
   }
@@ -2875,6 +2892,7 @@
 
 /* ---------- tiles ---------- */
 .tile {
+  --tile-radius: 10px;
   width: 64px;
   height: 64px;
   border: 0;
@@ -2913,7 +2931,7 @@
 }
 .tile .val {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   right: 6px;
   bottom: 3px;
   font-size: var(--fs-sm);
@@ -2922,49 +2940,54 @@
 }
 .tile-letter {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   line-height: 1;
 }
 .tile-material-texture,
 .tile-edition-surface {
   position: absolute;
-  z-index: 0;
   inset: 3px;
-  border-radius: calc(100% / 8);
+  border-radius: calc(var(--tile-radius) - 1px);
   pointer-events: none;
 }
+.tile-material-texture {
+  z-index: 1;
+}
 .tile-edition-surface {
-  inset: 2px;
-  opacity: .72;
-  mix-blend-mode: screen;
+  z-index: 0;
+  inset: 1px;
+  opacity: .58;
+  mix-blend-mode: color;
 }
 .tile-edition-gray {
-  border: 2px dashed rgba(228, 240, 255, .95);
-  background:
-    repeating-linear-gradient(135deg, transparent 0 5px, rgba(170, 190, 215, .34) 5px 7px);
-  box-shadow: inset 0 0 0 2px rgba(80, 96, 118, .42);
+  border: 2px solid rgba(215, 215, 222, .9);
+  background: #74747a;
+  box-shadow: inset 0 0 0 2px rgba(70, 70, 76, .48);
 }
 .tile-edition-violet {
-  border: 2px solid rgba(234, 166, 255, .9);
-  background:
-    linear-gradient(120deg, transparent 10%, rgba(102, 216, 255, .42) 35%, transparent 48%),
-    linear-gradient(300deg, transparent 30%, rgba(255, 94, 216, .45) 58%, transparent 76%);
-  background-size: 180% 180%;
+  border: 2px solid rgba(205, 174, 226, .92);
+  background: #75657f;
   animation: tile-edition-violet 2.8s ease-in-out infinite alternate;
 }
 .tile-edition-rainbow {
-  border: 3px solid transparent;
-  background:
-    linear-gradient(transparent, transparent) padding-box,
-    conic-gradient(#ff405f, #ffe142, #4be0a0, #5d87ff, #d65dff, #ff405f) border-box;
-  filter: saturate(1.25);
+  border: 2px solid rgba(255, 255, 255, .78);
+  background: linear-gradient(
+    120deg,
+    #ff405f,
+    #ffe142,
+    #4be0a0,
+    #5d87ff,
+    #d65dff,
+    #ff405f
+  );
+  background-size: 300% 100%;
   animation: tile-edition-rainbow 2.4s linear infinite;
 }
 @keyframes tile-edition-violet {
-  to { background-position: 100% 100%; }
+  to { opacity: .72; }
 }
 @keyframes tile-edition-rainbow {
-  to { filter: hue-rotate(360deg) saturate(1.25); }
+  to { background-position: 300% 0; }
 }
 /* Ancient Paper (고대 문서): a face-down vowel tile — identity hidden until played.
    A dark parchment back with a "?" so the player knows it's a (vowel) tile. */
@@ -3072,12 +3095,17 @@
   transform: none !important;
 }
 .tile.mini {
+  --tile-radius: 7px;
   width: 36px;
   height: 36px;
   font-size: var(--fs-2xl);
-  border-radius: 7px;
+  border-radius: var(--tile-radius);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.8);
   cursor: default;
+}
+.tile.mini .tile-edition-surface {
+  border-width: 3px;
+  opacity: .82;
 }
 .tile.mini .val {
   font-size: var(--fs-2xs);
@@ -3468,9 +3496,20 @@
 .tile.mini .mat-glyph {
   display: none; /* 36px face has no room; mini tiles rely on their tooltip */
 }
-/* font editions (Jost styles) */
+/* Font editions (Jost styles). The internal `bold` id is displayed as
+   Underline: a second weight between Medium and Black disappeared at tile size. */
 .tile.f-bold {
-  font-weight: 700;
+  font-weight: 500;
+}
+.tile.f-bold .tile-letter::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: .82em;
+  height: 3px;
+  background: currentColor;
+  transform: translateX(-50%);
 }
 .tile.f-black {
   font-weight: 900;
@@ -3895,20 +3934,6 @@
   text-transform: lowercase;
   letter-spacing: 0.02em;
 }
-.sp-forecast {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--gold);
-}
-.sp-bonus {
-  color: #15242c;
-  background: var(--gold);
-  border-radius: 6px;
-  padding: 1px 8px;
-  font-family: 'Jersey 10';
-  font-size: var(--fs-lg);
-}
 
 /* Letter tiles use the shared body portal with a compact card shape. */
 .tt-card.tt-portal.tile-tt {
@@ -3980,38 +4005,54 @@
      buttons need the space to read as separate actions. */
   gap: 12px;
 }
-.consumable-slot > .consumable-menu.bare {
-  top: calc(100% + 8px);
-  left: 50%;
+.consumable-object > .consumable-menu.bare {
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
   z-index: 25;
-  transform: translateX(-50%);
+  pointer-events: none;
   animation: consumableActionsIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.joker > .consumable-menu.bare {
+  top: 50%;
+  transform: translateY(-50%);
 }
 @keyframes consumableActionsIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px) scale(0.92);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
   }
+}
+.consumable-object > .consumable-menu.bare button {
+  position: absolute;
+  pointer-events: auto;
+}
+.consumable-object > .consumable-menu.bare button.sell {
+  top: 50%;
+  left: calc(100% + var(--menu-offset));
+  transform: translateY(-50%);
+}
+.consumable-object > .consumable-menu.bare button.use {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
 }
 .consumable-menu.bare button {
   border: none;
   box-shadow: var(--shadow);
 }
-/* Colours swapped: Use is now the red, Sell the green. Heights are set from the
-   ~26px natural button (padding + line + border): Sell 2×, Use 1.5×. */
+/* Use is red and Sell is green; both inherit the shop Buy dimensions. */
 .consumable-menu.bare button.use {
-  height: 44px;
   background: var(--mult);
 }
 .consumable-menu.bare button.use:hover {
   filter: brightness(1.12);
 }
 .consumable-menu.bare button.sell {
-  height: 50px;
   background: var(--btn-green);
 }
 .consumable-menu.bare button.sell:hover {
@@ -4186,15 +4227,17 @@
   position: static;
   vertical-align: middle;
 }
-/* A: sentence-bonus forecast — a ghost, clearly separate from the committed number. */
-.round-forecast {
+/* Current pattern and its live sentence-bonus score. */
+.round-pattern {
   margin-top: 3px;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
   font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--gold);
-  opacity: 0.8;
-  font-style: italic;
+  opacity: 0.9;
 }
 /* FIXED size (playtest-06): the status line's text varies (letter-hand name /
    "not a word" / suit) and the 0×0 box only fills during a settle, so a content-
@@ -4534,9 +4577,10 @@
   .pouch-slot.applied,
   .pouch-slot.destroying { animation: none; }
 }
-/* Settings → Screenshake. `translate` preserves the frame's existing transform/
-   zoom layout; 0 makes every keyframe stationary, 100 reaches ±3px. */
-.frame.settle-shake {
+/* Shake only the board rails. The fixed pouch is deliberately outside these
+   surfaces, so a score hit cannot drag it sideways. */
+.persistent-run > .sidebar.settle-shake,
+.persistent-run > .main.settle-shake {
   animation: settle-screen-shake 160ms steps(2, end);
 }
 @keyframes settle-screen-shake {

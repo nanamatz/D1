@@ -8,7 +8,7 @@ import {
   consumableTooltipBody,
   consumableTooltipExtra,
   grownValue,
-  jokerTooltipBody,
+  jokerTooltip,
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
@@ -17,7 +17,12 @@ import { packArt } from '../packArt';
 import type { UseGame } from '../useGame';
 import { TileView } from './Tile';
 import { tileTooltip } from '../game';
-import { Tooltip, type TooltipClassification } from './Tooltip';
+import {
+  Tooltip,
+  type TooltipClassification,
+  type TooltipDetail,
+  type TooltipTag,
+} from './Tooltip';
 import { canAddJoker } from '../../engine/vouchers';
 import {
   canUseFableFromPack,
@@ -57,7 +62,8 @@ interface Tip {
   extra?: string | undefined;
   rarity?: JokerRarity | undefined;
   classification?: TooltipClassification | undefined;
-  sub?: { title: string; body: string } | undefined;
+  tags?: readonly TooltipTag[];
+  sub?: TooltipDetail | readonly TooltipDetail[] | undefined;
 }
 
 function OptionCard({
@@ -169,6 +175,7 @@ function OptionCard({
       {...(tip.extra ? { extra: tip.extra } : {})}
       rarity={tip.rarity}
       classification={tip.classification}
+      tags={tip.tags}
       sub={tip.sub}
     >
       {cardFace}
@@ -394,9 +401,12 @@ export function PackOpening({
     if (o.kind === 'tile') return tileTooltip(o.tile, t);
     if (o.kind === 'joker') {
       const def = JOKER_REGISTRY.get(o.id);
+      const tip = jokerTooltip(o.id, o.edition, t);
       return {
         title: optionName(o),
-        body: jokerTooltipBody(o.id, o.edition, t),
+        body: tip.body,
+        tags: tip.tags,
+        sub: tip.sub,
         extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
         rarity: def?.rarity,
       };

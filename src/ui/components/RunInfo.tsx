@@ -7,8 +7,11 @@ import { formatScore } from '../formatScore';
 import { kindForIndex } from '../../engine/progression';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { patternChipsMult } from '../../engine/patterns';
+import { BALANCE } from '../../engine/balance';
+import { LETTER_HAND_REGISTRY } from '../../engine/letterHands';
 import { bossDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
+import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
 import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
@@ -20,7 +23,14 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'patterns' | 'blind' | 'vouchers';
+type Tab = 'patterns' | 'hands' | 'blind' | 'vouchers';
+
+const TABS: readonly { id: Tab; label: string }[] = [
+  { id: 'patterns', label: 'runinfo.tabPatterns' },
+  { id: 'hands', label: 'runinfo.tabHands' },
+  { id: 'blind', label: 'runinfo.tabBlind' },
+  { id: 'vouchers', label: 'runinfo.tabVouchers' },
+];
 
 const PATTERN_ORDER: PatternId[] = [
   'outcry',
@@ -37,8 +47,7 @@ const PATTERN_ORDER: PatternId[] = [
   'complex',
 ];
 
-/** Run Info overlay (spec §2.4) — three tabs (feedback): 1 Pattern levels · 2 Blinds
- *  (blind-select layout) · 3 Vouchers. */
+/** Run Info overlay (spec §2.4): Pattern levels · Letter Hands · Blinds · Vouchers. */
 export function RunInfo({ run, blind, onClose }: Props) {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>('patterns');
@@ -54,15 +63,15 @@ export function RunInfo({ run, blind, onClose }: Props) {
         </div>
 
         <div className="ri-tabs" role="tablist">
-          {(['patterns', 'blind', 'vouchers'] as Tab[]).map((tb) => (
+          {TABS.map(({ id, label }) => (
             <button
-              key={tb}
+              key={id}
               role="tab"
-              aria-selected={tab === tb}
-              className={['ri-tab', tab === tb ? 'active' : ''].filter(Boolean).join(' ')}
-              onClick={() => setTab(tb)}
+              aria-selected={tab === id}
+              className={['ri-tab', tab === id ? 'active' : ''].filter(Boolean).join(' ')}
+              onClick={() => setTab(id)}
             >
-              {t(`runinfo.tab${tb === 'patterns' ? 'Patterns' : tb === 'blind' ? 'Blind' : 'Vouchers'}`)}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -92,15 +101,38 @@ export function RunInfo({ run, blind, onClose }: Props) {
             </div>
           )}
 
+          {tab === 'hands' && (
+            <div className="ri-hands">
+              {LETTER_HAND_REGISTRY.map((hand) => {
+                const bonus = BALANCE.letterHands[hand.id];
+                return (
+                  <div className="ri-hand" key={hand.id}>
+                    <span className="ri-hand-rank">{hand.rank}</span>
+                    <span className="ri-hand-copy">
+                      <strong>{t(`letterhand.${hand.id}`)}</strong>
+                      <span>{richText(t(`letterhand.${hand.id}.desc`))}</span>
+                    </span>
+                    <span className="ri-hand-score">
+                      <b className="chips">+{bonus.chips} {t('patternLevel.chips')}</b>
+                      <b className="mult">+{bonus.mult} {t('patternLevel.mult')}</b>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {tab === 'blind' && (
             <div className="bs-cards ri-blinds">
               {([0, 1, 2] as const).map((i) => {
                 const kind: BlindKind = kindForIndex(i);
-                const status = i < run.blindIndex ? 'defeated' : i === run.blindIndex ? 'current' : 'upcoming';
+                const status = i < run.blindIndex
+                  ? run.skippedThisChapter.includes(i as 0 | 1) ? 'skipped' : 'defeated'
+                  : i === run.blindIndex ? 'current' : 'upcoming';
                 const bossId = kind === 'boss' ? (blind.bossId ?? run.chapterBossId) : null;
                 const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
                 const target = effectiveBlindTarget(run, kind, boss?.targetMult ?? 1);
-                const reward = effectiveClearReward(run, kind, bossId);
+                const reward = effectiveClearReward(run, kind, bossId, status === 'current');
                 return (
                   <div key={i} className={['bs-card', kind, status].join(' ')}>
                     <div className="bs-kind">{t(`blind.${kind}`)}</div>
@@ -115,7 +147,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                           <span className="e">{boss.emoji}</span>
                         )}
                         <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
-                        <span className="be">{t(bossDescKey(boss.id))}</span>
+                        <span className="be">{richText(t(bossDescKey(boss.id)))}</span>
                       </div>
                     )}
                     <div className="bs-target">

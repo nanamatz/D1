@@ -11,7 +11,7 @@ Suggested order: **C (font seals, smallest & unblocks tooltips) → B (sound pha
 Requirement: every element and mechanic gets explained **exactly once**. Do NOT front-load everything into the first run; layer it.
 
 ### A-1. Layer 1 — first-run guided intro (core loop only)
-- Runs on a player's first run (skippable at any moment; "skip tutorial" also offered up front; re-triggerable from Options → Help).
+- Runs on a player's first run (skippable at any moment; "skip tutorial" also offered up front). It is not replayable from Options → Help.
 - **Guide character: 우땅 (WooDak), the orangutan editor-mentor** (UI_DESIGN §6.1) — this is his designated future role per the GDD mascot spec, now activated. Reuses the shipped mascot grammar (breathe idle, pixel speech bubble, jump-pop entry). **Piyak (the cat) is NOT the tutorial guide** — she keeps her shipped shop-greeting role, and fronts only the shop-first-visit encounter card (A-2).
 - Scope: ~6 short steps in the first blind only — ① spell a word from hand tiles → ② the settle sequence & chips×mult → ③ the target and committed score → ④ discard (marking hand tiles) → ⑤ the sentence tray & pattern forecast (one sentence: "words you play line up into a sentence — finish one for a bonus") → ⑥ auto-settle on clearing. Nothing else.
 - Steps gate input minimally (highlight the relevant control, dim the rest); never soft-lock — every step has a "got it" advance.
@@ -23,7 +23,7 @@ Requirement: every element and mechanic gets explained **exactly once**. Do NOT 
 
 ### A-3. Layer 3 — Help / Glossary screen
 - Options → Help: re-readable entries for everything Layer 1–2 covers, grouped by system. Entries can mirror the popup copy (single source of copy strings — write once in i18n, both ko/en).
-- Optional nicety: entries unlock as encountered (ties into the discovery flags) with undiscovered shown greyed.
+- Every term and explanation is always visible; encounter flags govern one-time popups only.
 
 ### A-4. Acceptance
 - Fresh profile: guided intro plays; skipping works; every listed element shows its card exactly once across sessions; "don't show tips" suppresses Layer 2; Help screen lists all copy in both languages; reduced-motion respected in bubble animations.
@@ -56,7 +56,7 @@ Menu / play / Stationery Shop / **Deadline (boss) variation** — boss blind swa
 
 ## C. Font effects — Balatro-seal adoption (decision confirmed)
 
-Fonts are the letter-tile edition layer: **Medium (base, no effect) + 4 effect fonts (Light Italic · Bold · Inline · Black)**. GDD §2.3 now carries the full seal-effect table — implement exactly that. One code check: `types.ts` `TileFont` must carry all five values (it should already), and CLAUDE.md's TileFont guardrail must say 5, not 4 — fix if stale.
+Fonts are the letter-tile edition layer: **Medium (base, no effect) + 4 effect fonts (Light Italic · Underline · Inline · Black)**. Underline retains the internal `bold` id for save compatibility. GDD §2.3 carries the full seal-effect table — implement exactly that. One code check: `types.ts` `TileFont` must carry all five internal values, and CLAUDE.md's TileFont guardrail must say 5, not 4 — fix if stale.
 
 ### C-1. The four effects (Balatro-seal ports; values → balance.ts)
 

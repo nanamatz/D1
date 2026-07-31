@@ -9,6 +9,7 @@ import { ChromaticReveal } from './components/ChromaticReveal';
 import { CrtOverlay } from './components/CrtOverlay';
 import { LoadingScreen } from './components/LoadingScreen';
 import { PatternLevelUp } from './components/PatternLevelUp';
+import { SaveHealthNotice } from './components/SaveHealthNotice';
 import type { Lexicon } from '../engine/lexicon';
 
 const NewRun = lazy(() =>
@@ -201,6 +202,7 @@ export function App() {
         </filter>
       </svg>
       <CrtOverlay />
+      <SaveHealthNotice />
     </>
   );
 }

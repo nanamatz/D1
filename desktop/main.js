@@ -74,7 +74,11 @@ app.whenReady().then(() => {
   // Player progress lives in <userData>/saves/, NOT the userData root, which is
   // full of Chromium's own Cache/Local Storage/GPUCache directories. This folder
   // is what Steam Cloud will point at.
-  const saves = createSaveStore(path.join(app.getPath('userData'), 'saves'));
+  let win;
+  const saves = createSaveStore(
+    path.join(app.getPath('userData'), 'saves'),
+    (ok) => win?.webContents.send('wj:save-status', ok),
+  );
 
   // Registered before createWindow: the preload calls wj:load synchronously.
   ipcMain.on('wj:load', (event) => {
@@ -86,7 +90,7 @@ app.whenReady().then(() => {
   // Writes are debounced; make sure the last action reaches disk.
   app.on('before-quit', () => saves.flush());
 
-  const win = createWindow();
+  win = createWindow();
 
   globalShortcut.register('F11', () => {
     win.setFullScreen(!win.isFullScreen());

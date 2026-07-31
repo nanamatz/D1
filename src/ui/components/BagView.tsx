@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BlindState, RunState, Tile } from '../../engine/types';
+import type { RunState, Tile } from '../../engine/types';
 import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
@@ -15,10 +15,13 @@ interface Counts {
   consonants: number;
   materials: Record<string, number>;
   fonts: Record<string, number>;
+  editions: Record<string, number>;
 }
 
 function tally(tiles: readonly Tile[]): Counts {
-  const c: Counts = { perLetter: {}, vowels: 0, consonants: 0, materials: {}, fonts: {} };
+  const c: Counts = {
+    perLetter: {}, vowels: 0, consonants: 0, materials: {}, fonts: {}, editions: {},
+  };
   for (const t of tiles) {
     if (t.letter !== null) {
       c.perLetter[t.letter] = (c.perLetter[t.letter] ?? 0) + 1;
@@ -27,15 +30,12 @@ function tally(tiles: readonly Tile[]): Counts {
     }
     if (t.material !== 'ceramic') c.materials[t.material] = (c.materials[t.material] ?? 0) + 1;
     if (t.font !== 'medium') c.fonts[t.font] = (c.fonts[t.font] ?? 0) + 1;
+    if ((t.edition ?? 'base') !== 'base') {
+      c.editions[t.edition!] = (c.editions[t.edition!] ?? 0) + 1;
+    }
   }
   return c;
 }
-
-/**
- * Remaining = the pouch (undrawn bag) contents ONLY (playtest-03 D-1): tiles in
- * hand, played, or discarded are excluded — they've left the pouch.
- */
-const pouchRemaining = (blind: BlindState): Tile[] => blind.bag;
 
 /** Order tiles for the pouch view: by letter A–Z, letterless (Stone) last. */
 function sortForDisplay(tiles: readonly Tile[]): Tile[] {
@@ -53,9 +53,8 @@ function sortForDisplay(tiles: readonly Tile[]): Tile[] {
  * font are readable at a glance. Totals stay in the side rail. Remaining = undrawn
  * bag ONLY (playtest-03 D-1).
  */
-function PouchContents({ run, blind }: { run: RunState; blind: BlindState }) {
+function PouchContents({ run, tiles }: { run: RunState; tiles: readonly Tile[] }) {
   const { t } = useI18n();
-  const tiles = pouchRemaining(blind);
   const active = tally(tiles);
 
   return (
@@ -77,7 +76,9 @@ function PouchContents({ run, blind }: { run: RunState; blind: BlindState }) {
           <span>{t('bagview.tiles')}</span>
           <b>{active.vowels + active.consonants}</b>
         </div>
-        {(Object.keys(active.materials).length > 0 || Object.keys(active.fonts).length > 0) && (
+        {(Object.keys(active.materials).length > 0 ||
+          Object.keys(active.fonts).length > 0 ||
+          Object.keys(active.editions).length > 0) && (
           <>
             <div className="label" style={{ marginTop: 6 }}>
               {t('bagview.enhanced')}
@@ -91,6 +92,12 @@ function PouchContents({ run, blind }: { run: RunState; blind: BlindState }) {
             {Object.entries(active.fonts).map(([f, n]) => (
               <div key={f} className="bt-row">
                 <span>{t(`font.${f}`)}</span>
+                <b>{n}</b>
+              </div>
+            ))}
+            {Object.entries(active.editions).map(([edition, n]) => (
+              <div key={edition} className="bt-row">
+                <span>{t(`edition.${edition}`)}</span>
                 <b>{n}</b>
               </div>
             ))}
@@ -115,17 +122,17 @@ function PouchContents({ run, blind }: { run: RunState; blind: BlindState }) {
  */
 export function BagWidget({
   run,
-  blind,
+  tiles,
   onOpenChange,
 }: {
   run: RunState;
-  blind: BlindState;
+  tiles: readonly Tile[];
   onOpenChange?: (open: boolean) => void;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const remaining = pouchRemaining(blind).length;
+  const remaining = tiles.length;
   const total = run.bag.length;
 
   useEffect(() => {
@@ -198,7 +205,7 @@ export function BagWidget({
                 {t('bagview.remaining')}: {remaining}/{total}
               </span>
             </div>
-            <PouchContents run={run} blind={blind} />
+            <PouchContents run={run} tiles={tiles} />
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PNG } from 'pngjs';
 
@@ -40,4 +40,34 @@ for (const [family, names] of Object.entries(families)) {
   }
 }
 
-console.log('Card assets OK: 44 SVG masters + 44 runtime PNG derivatives');
+const packDirectory = resolve('src/ui/assets/packs');
+const packSvgFiles = readFileNames(packDirectory, '.svg');
+if (packSvgFiles.length !== 32) {
+  throw new Error(`Expected 32 pack SVG masters, found ${packSvgFiles.length}`);
+}
+for (const file of packSvgFiles) {
+  const svgPath = resolve(packDirectory, file);
+  const pngPath = resolve(packDirectory, file.replace(/\.svg$/, '-preview.png'));
+  if (!existsSync(pngPath)) throw new Error(`Missing pack runtime PNG: ${pngPath}`);
+
+  const svg = readFileSync(svgPath, 'utf8');
+  if (
+    !svg.includes('width="244" height="400"')
+    || !svg.includes('viewBox="0 0 122 200"')
+    || !svg.includes('<path ')
+    || /<image|data:image|\.png/.test(svg)
+  ) {
+    throw new Error(`Invalid path-only pack SVG master: ${svgPath}`);
+  }
+
+  const png = PNG.sync.read(readFileSync(pngPath));
+  if (png.width !== 244 || png.height !== 400) {
+    throw new Error(`Invalid pack runtime PNG dimensions: ${pngPath}`);
+  }
+}
+
+console.log('Card assets OK: 76 SVG masters + 76 runtime PNG derivatives');
+
+function readFileNames(directory, extension) {
+  return readdirSync(directory).filter((file) => file.endsWith(extension));
+}

@@ -63,6 +63,15 @@ describe('loadSaveFile / saveSaveFile', () => {
     saveSaveFile(file, { 'wj.lifetime': '{"runs":1}', 'wj.unlocks': '{broken' });
     expect(loadSaveFile(file)).toEqual({ 'wj.lifetime': '{"runs":1}' });
   });
+
+  it('reports a disk write failure', () => {
+    const root = dir();
+    const blocker = path.join(root, 'file-not-directory');
+    writeFileSync(blocker, 'x', 'utf8');
+    expect(saveSaveFile(path.join(blocker, 'profile.json'), {
+      'wj.lifetime': '{"runs":1}',
+    })).toBe(false);
+  });
 });
 
 describe('createSaveStore', () => {
@@ -120,6 +129,17 @@ describe('createSaveStore', () => {
     store.set('../../evil', '"x"');
     store.flush();
     expect(createSaveStore(d).snapshot()).toEqual({});
+  });
+
+  it('publishes store health changes', () => {
+    const root = dir();
+    const blocker = path.join(root, 'file-not-directory');
+    writeFileSync(blocker, 'x', 'utf8');
+    const statuses = [];
+    const store = createSaveStore(path.join(blocker, 'saves'), (ok) => statuses.push(ok));
+    store.set('wj.lifetime', '{"runs":1}');
+    store.flush();
+    expect(statuses).toEqual([false]);
   });
 });
 

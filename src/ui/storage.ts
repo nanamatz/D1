@@ -52,12 +52,48 @@ export interface StorageBridge {
   fresh: boolean;
   write(key: string, json: string): void;
   remove(key: string): void;
+  onSaveStatus?(listener: (ok: boolean) => void): void;
 }
 
 let cache: Map<string, string> | null = null;
+let boundBridge: StorageBridge | null = null;
+
+export interface StorageFailure {
+  backend: 'web' | 'desktop';
+}
+
+let storageFailure: StorageFailure | null = null;
+const healthListeners = new Set<() => void>();
+
+function setStorageFailure(next: StorageFailure | null): void {
+  if (storageFailure?.backend === next?.backend) return;
+  storageFailure = next;
+  healthListeners.forEach((listener) => listener());
+}
+
+function clearStorageFailure(backend: StorageFailure['backend']): void {
+  if (storageFailure?.backend === backend) setStorageFailure(null);
+}
+
+export function storageHealthSnapshot(): StorageFailure | null {
+  return storageFailure;
+}
+
+export function subscribeStorageHealth(listener: () => void): () => void {
+  healthListeners.add(listener);
+  return () => healthListeners.delete(listener);
+}
 
 function getBridge(): StorageBridge | null {
-  return (globalThis as { wj?: StorageBridge }).wj ?? null;
+  const bridge = (globalThis as { wj?: StorageBridge }).wj ?? null;
+  if (bridge && bridge !== boundBridge) {
+    boundBridge = bridge;
+    bridge.onSaveStatus?.((ok) => {
+      if (ok) clearStorageFailure('desktop');
+      else setStorageFailure({ backend: 'desktop' });
+    });
+  }
+  return bridge;
 }
 
 /**
@@ -101,6 +137,8 @@ function getCache(bridge: StorageBridge): Map<string, string> {
 /** Test-only: drop the boot cache so a test can install a different bridge. */
 export function resetStorageCache(): void {
   cache = null;
+  boundBridge = null;
+  setStorageFailure(null);
 }
 
 /** The selected slot is a machine-local preference; the slot contents are saves. */
@@ -116,8 +154,9 @@ export function activeProfile(): ProfileSlot {
 export function selectProfile(slot: ProfileSlot): void {
   try {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(slot));
+    clearStorageFailure('web');
   } catch {
-    /* ignore */
+    setStorageFailure({ backend: 'web' });
   }
 }
 
@@ -189,8 +228,9 @@ function writePhysicalRaw(key: string, json: string): void {
   }
   try {
     localStorage.setItem(key, json);
+    clearStorageFailure('web');
   } catch {
-    /* quota / privacy mode — the value just stays session-only */
+    setStorageFailure({ backend: 'web' });
   }
 }
 
@@ -203,8 +243,9 @@ function removePhysical(key: string): void {
   }
   try {
     localStorage.removeItem(key);
+    clearStorageFailure('web');
   } catch {
-    /* ignore */
+    setStorageFailure({ backend: 'web' });
   }
 }
 

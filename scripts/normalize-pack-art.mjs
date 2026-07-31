@@ -1,8 +1,8 @@
 /**
- * Normalize every supplied pack PNG into the runtime path-only SVG standard.
+ * Normalize every supplied pack PNG into an SVG master and runtime PNG pair.
  *
  * Output: 244×400 (ratio 0.61), 122×200 logical grid, 32 colors, stretch fit.
- * Source PNGs remain in docs/Arts/CardPacks; runtime imports use only SVG.
+ * Source PNGs remain in docs/Arts/CardPacks; runtime imports use preview PNGs.
  *
  * Usage:
  *   npm run normalize:packs
@@ -51,8 +51,14 @@ const FILES = {
 };
 
 const expectedOutputs = new Set(Object.values(FILES));
+const expectedPreviews = new Set(
+  [...expectedOutputs].map((file) => file.replace(/\.svg$/i, '-preview.png')),
+);
 for (const file of readdirSync(OUTPUT)) {
-  if (file.endsWith('.svg') && !expectedOutputs.has(file)) {
+  if (
+    (file.endsWith('.svg') && !expectedOutputs.has(file))
+    || (file.endsWith('-preview.png') && !expectedPreviews.has(file))
+  ) {
     unlinkSync(path.join(OUTPUT, file));
   }
 }
@@ -68,9 +74,8 @@ for (const [sourceName, outputName] of Object.entries(FILES)) {
   if (result.status !== 0) {
     throw new Error(`Failed to trace pack artwork: ${sourceName}`);
   }
-
   const preview = output.replace(/\.svg$/i, '-preview.png');
-  if (existsSync(preview)) unlinkSync(preview);
+  if (!existsSync(preview)) throw new Error(`Missing runtime preview: ${sourceName}`);
 }
 
-console.log(`Normalized ${Object.keys(FILES).length} pack artworks to path-only SVG.`);
+console.log(`Normalized ${Object.keys(FILES).length} pack SVG masters + runtime PNGs.`);

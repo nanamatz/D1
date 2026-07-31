@@ -94,14 +94,18 @@
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
-  /* Tooltips: one dark-grey card, one radius, ONE WIDTH, everywhere. The body text
-     reuses --tt-bg so the white description plate reads as a window cut out of the
-     card. --tt-w is a fixed width, not a max: sizing to content made every tooltip
-     a different shape (66px on a tile, 220px on a long joker). Long copy wraps and
-     the height grows instead. */
-  --tt-bg: #3a444c;
-  --tt-r: 10px;
+  /* Reference tooltip proportions: main cards scale from 210–280px, supplemental
+     cards occupy about 64% of the main width, and footer tags occupy 72%.
+     Height remains content-driven so translated copy grows without distortion. */
+  --tt-bg: #354246;
+  --tt-plate: #fffdf7;
+  --tt-edge: #b7eee5;
+  --tt-copy-font: 'Jost', 'Noto Sans KR', sans-serif;
+  --tt-r: 11px;
+  --tt-min-w: 210px;
   --tt-w: 280px;
+  --tt-sub-w: 180px;
+  --tt-tag-w: 72%;
   --z-tooltip: 10000;
   /* The Collection's card columns. Named because the card grid has to reserve room
      for a tooltip wider than one card (see .card-grid) and the two numbers must not

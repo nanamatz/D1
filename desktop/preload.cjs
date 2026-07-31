@@ -17,4 +17,7 @@ contextBridge.exposeInMainWorld('wj', {
   fresh: loaded.fresh,
   write: (key, json) => ipcRenderer.send('wj:write', key, json),
   remove: (key) => ipcRenderer.send('wj:remove', key),
+  onSaveStatus: (listener) => {
+    ipcRenderer.on('wj:save-status', (_event, ok) => listener(ok));
+  },
 });

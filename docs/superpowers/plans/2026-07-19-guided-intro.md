@@ -2,9 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A 6-step passive coach-mark walkthrough that spotlights core play-screen controls on a player's first run, narrated by WooDak — skippable, re-playable from Help, never soft-locks.
+> **Historical plan.** Current guided-intro behavior is defined by `AGENTS.md` and
+> `docs/screens-spec.md`; the Help replay control described in the original plan
+> was retired on 2026-07-31.
 
-**Architecture:** `tutorial.ts` gains an intro seen-flag (`wj.tutorialIntro`) + an `INTRO_STEPS` table (step key → CSS selector). A `GuidedIntro` component (mounted in RunView's playing board) measures the current step's target via `getBoundingClientRect()` and renders a `box-shadow` spotlight + a WooDak bubble with Next/Skip. RunView opens it on first play-screen entry when tips are on and it hasn't been seen. Options → Help gets a "Replay tutorial" button that resets the flag.
+**Goal:** A first-run coach-mark walkthrough that spotlights core play-screen controls, narrated by WooDak, without exposing a replay action in Help.
+
+**Architecture:** `tutorial.ts` owns the intro seen-flag (`wj.tutorialIntro`) + `INTRO_STEPS`. `GuidedIntro` measures its target and renders the spotlight/WooDak bubble. RunView opens it on first play-screen entry when tips are on and it has not been seen. Options → Help remains a glossary only.
 
 **Tech Stack:** TypeScript strict, React, plain CSS (reuses `.mascot-bubble` grammar + woodak.png), Vitest.
 
@@ -14,7 +18,7 @@
 - Passive walkthrough: NO step requires performing the action — advance is always via the bubble's Next button. Never soft-lock; a missing target falls back to a centered bubble.
 - Intro seen-flag in localStorage `wj.tutorialIntro` (try/catch-guarded, like the rest of `tutorial.ts`); distinct from `wj.tutorial` (encounter flags), `wj.collection`, `wj.settings`.
 - Intro gates on `readTips()` (tips-off opts out, consistent with the A-2 popup layer) AND `!hasSeenIntro()`.
-- Copy is i18n single-source: `intro.step.<key>.title` / `intro.step.<key>.body` + `intro.next`/`intro.skip`/`intro.done` + `help.replayIntro` (+ its confirmation). Body may use richtext `[c:]/[m:]/[b:]`.
+- Copy is i18n single-source: `intro.step.<key>.title` / `intro.step.<key>.body` + `intro.next`/`intro.skip`/`intro.done`. Body may use richtext `[c:]/[m:]/[b:]`.
 - Reuse existing patterns: `src/ui/tutorial.ts` store idiom, `WooDakMascot`'s `.mascot`/`.mascot-bubble`/`.mascot-sway` markup + `woodakUrl`, the registry-sync test idiom for copy coverage.
 - TypeScript strict; `npx tsc --noEmit` clean; full `npx vitest run` stays green.
 - Commit messages end with: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`
@@ -358,15 +362,13 @@ git commit -m "feat : GuidedIntro component — spotlight coach-marks with WooDa
 
 ---
 
-### Task 4: Trigger in RunView + "Replay tutorial" in Help
+### Task 4: Trigger in RunView
 
 **Files:**
 - Modify: `src/ui/components/RunView.tsx` (open the intro on first play-screen entry; render it in the board)
-- Modify: `src/ui/components/Options.tsx` (Help "Replay tutorial" button)
-- Modify: `locales/en.json`, `locales/ko.json` (`help.replayIntro`, `help.replayIntroDone`)
 
 **Interfaces:**
-- Consumes: `GuidedIntro` (Task 3); `hasSeenIntro`, `resetIntro` (Task 1); `readTips` (settings).
+- Consumes: `GuidedIntro` (Task 3); `hasSeenIntro` (Task 1); `readTips` (settings).
 - Produces: nothing.
 
 - [ ] **Step 1: RunView trigger** — READ `src/ui/components/RunView.tsx` first. Add imports:
@@ -395,41 +397,16 @@ Render it inside the playing board `frame` return (as a sibling of `SettleProvid
       )}
 ```
 
-- [ ] **Step 2: Help "Replay tutorial" button** — in `src/ui/components/Options.tsx` `HelpView`, add `resetIntro` to the tutorial import (`import { ENCOUNTERS, hasSeen, resetIntro, type EncounterGroup } from '../tutorial';`) and a small local state + button at the top of the Help view:
-
-```tsx
-  const { t } = useI18n();
-  const [replayed, setReplayed] = useState(false);
-  // ... existing groups ...
-  return (
-    <>
-      <h2 className="scr-title">{t('help.title')}</h2>
-      <div className="help-replay">
-        <button
-          className="btn exchange sm"
-          onClick={() => { resetIntro(); setReplayed(true); }}
-        >
-          {t('help.replayIntro')}
-        </button>
-        {replayed && <span className="help-replay-note">{t('help.replayIntroDone')}</span>}
-      </div>
-      <div className="help-groups">
-        {/* ... */}
-```
-
-(Import `useState` in Options.tsx if not already imported — it is, the file uses it.)
-
-Copy — en: `"help.replayIntro": "Replay tutorial"`, `"help.replayIntroDone": "The tutorial will play again next time you enter a blind."`; ko: `"help.replayIntro": "튜토리얼 다시 보기"`, `"help.replayIntroDone": "다음 블라인드에 들어가면 튜토리얼이 다시 표시됩니다."`.
-
-Optional tiny CSS (append to screens.css): `.help-replay { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; } .help-replay-note { font-size: 12px; opacity: 0.75; }`
+- [ ] **Step 2: Help remains glossary-only** — do not add an intro reset/replay action,
+  replay confirmation copy, or replay-specific CSS. *(Changed 2026-07-31.)*
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` clean; full `npx vitest run` green; JSON valid.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/ui/components/RunView.tsx src/ui/components/Options.tsx locales/en.json locales/ko.json src/ui/styles/screens.css
-git commit -m "feat : trigger guided intro on first play entry + Replay-tutorial button in Help"
+git add src/ui/components/RunView.tsx
+git commit -m "feat : trigger guided intro on first play entry"
 ```
 
 ---
@@ -446,7 +423,7 @@ git commit -m "feat : trigger guided intro on first play entry + Replay-tutorial
   - (a) Start a run → on the first play screen the `.intro-overlay` auto-appears with step 1 (`.intro-spot` present, bubble shows step "1 / 6"). Assert no console errors.
   - (b) Click Next 5× → dots advance 2/6…6/6, the last button reads `intro.done`; clicking it closes the overlay (`.intro-overlay` gone).
   - (c) Reload / start another run → NO `.intro-overlay` (seen).
-  - (d) Options → Help → click "Replay tutorial"; the confirmation note shows. Start a run → intro re-appears.
+  - (d) Options → Help → verify the glossary has no tutorial replay action.
   - (e) Fresh profile with tips off (seed `wj.settings` `tips:false`) → start a run → NO intro overlay.
   - Screenshot step 1 and a mid-step to confirm the spotlight tracks different targets.
   - If the spotlight rect is visibly off (targets measured before layout settles), add a one-frame `requestAnimationFrame` re-measure in GuidedIntro and note it.

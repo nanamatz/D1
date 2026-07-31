@@ -6,7 +6,7 @@
 
 import { BALANCE } from './balance';
 import { JOKER_REGISTRY } from './jokers';
-import { sampleJokerDefs } from './offers';
+import { availableJokerDefs, sampleJokerDefs } from './offers';
 import { rerollCost, sellValue } from './economy';
 import { rollJokerEdition } from './editions';
 import { CONSTELLATION_POOL, rollTile, FABLE_POOL } from './packs';
@@ -30,17 +30,31 @@ import {
 import type { Rng } from './rng';
 import type {
   OwnedJoker,
+  JokerEdition,
+  JokerRarity,
   PackSize,
   PackSlot,
   PackType,
   RunState,
   ShopItem,
   ShopState,
+  SkipRewardId,
   VoucherId,
 } from './types';
 
 const PACK_TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'ink'];
 const PACK_SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
+
+const RARITY_TAGS: Partial<Record<SkipRewardId, JokerRarity>> = {
+  uncommonTag: 'uncommon',
+  rareTag: 'rare',
+};
+const EDITION_TAGS: Partial<Record<SkipRewardId, JokerEdition>> = {
+  whiteTag: 'white',
+  violetTag: 'violet',
+  rainbowTag: 'rainbow',
+  grayTag: 'gray',
+};
 
 type ItemKind = ShopItem['kind'];
 type ItemPools = Record<ItemKind, ShopItem[]>;
@@ -106,8 +120,15 @@ function drawItem(run: RunState, pools: ItemPools, rng: Rng): ShopItem | null {
   return pool.splice(rng.int(pool.length), 1)[0] ?? null;
 }
 
-function rollItems(run: RunState, rng: Rng): (ShopItem | null)[] {
+function rollItems(
+  run: RunState,
+  rng: Rng,
+  excludedJokers: ReadonlySet<string> = new Set(),
+): (ShopItem | null)[] {
   const pools = buildPools(run, rng);
+  pools.joker = pools.joker.filter((item) =>
+    item.kind !== 'joker' || !excludedJokers.has(item.id),
+  );
   const items: (ShopItem | null)[] = [];
   while (items.length < shopItemSlots(run)) items.push(drawItem(run, pools, rng));
   return items;
@@ -192,9 +213,105 @@ export function rollShopStock(run: RunState, rng: Rng): ShopState {
   return {
     items: rollItems(run, rng),
     voucher: run.voucherLocked ? null : run.voucherOffer,
+    bonusVoucher: null,
     packs: rollPacks(rng),
     rerolls: 0,
   };
+}
+
+export interface PreparedShop {
+  run: RunState;
+  shop: ShopState;
+}
+
+/** Apply every pending shop tag that can resolve against this stock. */
+export function applyPendingShopTags(
+  run: RunState,
+  shop: ShopState,
+  rng: Rng,
+  profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+): PreparedShop {
+  const tags = run.pendingShopTags ?? [];
+  if (tags.length === 0) return { run, shop };
+
+  let items = shop.items.slice();
+  let packs = shop.packs.slice();
+  let bonusVoucher = shop.bonusVoucher ?? null;
+  const consumed = new Set<number>();
+
+  // Guaranteed-rarity tags add inventory first, so a later edition tag can
+  // enhance that newly-added base Emoji Tile when ordinary stock has none.
+  tags.forEach((tag, tagIndex) => {
+    const rarity = RARITY_TAGS[tag];
+    if (!rarity) return;
+    const shown = new Set(
+      items.flatMap((item) => item?.kind === 'joker' ? [item.id] : []),
+    );
+    const pool = availableJokerDefs(run).filter(
+      (def) => def.rarity === rarity && !shown.has(def.id),
+    );
+    const def = pool.length > 0 ? pool[rng.int(pool.length)] : undefined;
+    if (!def) return;
+    items.push({
+      kind: 'joker',
+      id: def.id,
+      edition: 'base',
+      price: 0,
+      rarityTag: rarity === 'uncommon' ? 'uncommonTag' : 'rareTag',
+    });
+    consumed.add(tagIndex);
+  });
+
+  // One additional choice only. Locked Chapters cannot redeem either choice,
+  // so the tag waits for the next shop where its reward can actually resolve.
+  tags.forEach((tag, tagIndex) => {
+    if (tag !== 'voucherTag' || consumed.has(tagIndex) || bonusVoucher || run.voucherLocked) {
+      return;
+    }
+    const candidates = availableVoucherIds(run, profileUnlocked).filter(
+      (id) => id !== shop.voucher,
+    );
+    if (candidates.length === 0) return;
+    bonusVoucher = candidates[rng.int(candidates.length)]!;
+    consumed.add(tagIndex);
+  });
+
+  tags.forEach((tag, tagIndex) => {
+    const edition = EDITION_TAGS[tag];
+    if (!edition) return;
+    const itemIndex = items.findIndex(
+      (item) => item?.kind === 'joker' && (item.edition ?? 'base') === 'base',
+    );
+    const item = itemIndex >= 0 ? items[itemIndex] : null;
+    if (!item || item.kind !== 'joker') return;
+    items[itemIndex] = { ...item, edition, price: 0 };
+    consumed.add(tagIndex);
+  });
+
+  if (tags.some((tag) => tag === 'couponTag')) {
+    items = items.map((item) => item ? { ...item, price: 0 } : null);
+    packs = packs.map((pack) => pack ? { ...pack, free: true } : null);
+    tags.forEach((tag, tagIndex) => {
+      if (tag === 'couponTag') consumed.add(tagIndex);
+    });
+  }
+
+  return {
+    run: {
+      ...run,
+      pendingShopTags: tags.filter((_, index) => !consumed.has(index)),
+    },
+    shop: { ...shop, items, packs, bonusVoucher },
+  };
+}
+
+/** Roll and tag-adjust the next real shop in one seeded operation. */
+export function prepareShop(
+  run: RunState,
+  rng: Rng,
+  profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+): PreparedShop {
+  return applyPendingShopTags(run, rollShopStock(run, rng), rng, profileUnlocked);
 }
 
 export interface BuyResult {
@@ -249,23 +366,47 @@ export function sellJoker(run: RunState, index: number): SellResult {
  * ONE voucher purchase per chapter (playtest-03 C) — locks the slot until the
  * next chapter's shop.
  */
-export function buyVoucher(run: RunState, shop: ShopState): BuyResult {
-  const id = shop.voucher;
+export function buyVoucher(
+  run: RunState,
+  shop: ShopState,
+  slot: 'base' | 'bonus' = 'base',
+): BuyResult {
+  const id = slot === 'bonus' ? shop.bonusVoucher : shop.voucher;
   if (!id || run.voucherLocked) return { run, shop, ok: false };
   const def = VOUCHER_REGISTRY.get(id);
   if (!def || run.gold < def.price) return { run, shop, ok: false };
   const nextRun = applyVoucher({ ...run, gold: run.gold - def.price, voucherLocked: true }, id);
-  return { run: nextRun, shop: { ...shop, voucher: null }, ok: true };
+  return {
+    run: nextRun,
+    shop: { ...shop, voucher: null, bonusVoucher: null },
+    ok: true,
+  };
 }
 
 /** Reroll the item slots only, for the escalating (voucher-discounted) cost (GDD §9.2). */
-export function rerollShop(run: RunState, shop: ShopState, rng: Rng): BuyResult {
+export function rerollShop(
+  run: RunState,
+  shop: ShopState,
+  rng: Rng,
+  profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+): BuyResult {
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
   if (run.gold < cost) return { run, shop, ok: false };
   const nextRun = { ...run, gold: run.gold - cost };
-  return {
-    run: nextRun,
-    shop: { ...shop, items: rollItems(nextRun, rng), rerolls: shop.rerolls + 1 },
-    ok: true,
-  };
+  const tagged = shop.items.filter(
+    (item): item is Extract<ShopItem, { kind: 'joker' }> =>
+      item?.kind === 'joker' && item.rarityTag !== undefined,
+  );
+  const taggedIds = new Set(tagged.map((item) => item.id));
+  const prepared = applyPendingShopTags(
+    nextRun,
+    {
+      ...shop,
+      items: [...rollItems(nextRun, rng, taggedIds), ...tagged],
+      rerolls: shop.rerolls + 1,
+    },
+    rng,
+    profileUnlocked,
+  );
+  return { ...prepared, ok: true };
 }

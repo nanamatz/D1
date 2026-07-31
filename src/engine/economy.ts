@@ -63,11 +63,14 @@ export function effectiveBlindTarget(
   kind: BlindKind,
   extraMultiplier = 1,
 ): number {
+  const currentKind = (['small', 'big', 'boss'] as const)[run.blindIndex];
+  const skipMultiplier = kind === currentKind ? run.nextBlindBonus.targetMultiplier : 1;
   const target = Math.round(
     blindTarget(run.ante, kind) *
       recordTargetMultiplier(run, run.ante) *
       pouchTargetMultiplier(run) *
-      extraMultiplier,
+      extraMultiplier *
+      skipMultiplier,
   );
   if (!Number.isFinite(target)) throw new RangeError(`chapter ${run.ante} target overflow`);
   return target;
@@ -83,10 +86,15 @@ export function effectiveClearReward(
   run: RunState,
   kind: BlindKind,
   bossId: string | null = null,
+  includePending = true,
 ): number {
   const bossReward = bossId ? BOSS_REGISTRY.get(bossId)?.clearReward : undefined;
-  if (bossReward !== undefined) return bossReward;
-  return kind === 'small' && recordRemovesDraftReward(run) ? 0 : clearReward(kind);
+  const base = bossReward !== undefined
+    ? bossReward
+    : kind === 'small' && recordRemovesDraftReward(run) ? 0 : clearReward(kind);
+  return base +
+    (includePending ? run.pendingClearReward : 0) +
+    (kind === 'boss' ? (run.pendingBossReward ?? 0) : 0);
 }
 
 /** Interest: `rate` gold per `per` held, capped (GDD §9.1). Cap is raised by the

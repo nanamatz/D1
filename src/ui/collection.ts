@@ -10,6 +10,7 @@ import {
   writeValue,
   type ProfileSlot,
 } from './storage';
+import { wordLetterChips } from '../engine/scoring';
 
 const KEY = 'wj.collection';
 
@@ -28,7 +29,7 @@ export function loadCollection(slot: ProfileSlot = activeProfile()): Collection 
 
   const collection: Collection = {};
   for (const [word, value] of Object.entries(stored)) {
-    const entry = normalizeEntry(value);
+    const entry = normalizeEntry(value, word);
     if (entry) collection[word] = entry;
   }
   return collection;
@@ -36,23 +37,24 @@ export function loadCollection(slot: ProfileSlot = activeProfile()): Collection 
 
 /**
  * Record a valid word play. Returns true only when it is newly discovered.
- * Score is the settled individual-word score; sentence bonuses are separate.
+ * Score is the word's intrinsic letter-chip sum; all enhancements and Mult are excluded.
  */
-export function recordWord(word: string, score = 0, now: number = Date.now()): boolean {
+export function recordWord(word: string, now: number = Date.now()): boolean {
   const w = word.trim().toLowerCase();
   if (!w) return false;
+  const score = wordLetterChips(w);
   const collection = loadCollection();
   const previous = collection[w];
   collection[w] = previous
     ? {
         ...previous,
         plays: previous.plays + 1,
-        bestScore: Math.max(previous.bestScore, normalizedScore(score)),
+        bestScore: Math.max(previous.bestScore, score),
       }
     : {
         firstPlayedAt: now,
         plays: 1,
-        bestScore: normalizedScore(score),
+        bestScore: score,
       };
   writeValue(KEY, collection);
   return previous === undefined;
@@ -104,10 +106,11 @@ export function collectionHighlights(collection: Collection = loadCollection()):
   return { highestScore, longest, mostPlayed };
 }
 
-function normalizeEntry(value: unknown): WordCollectionEntry | null {
+function normalizeEntry(value: unknown, word: string): WordCollectionEntry | null {
+  const bestScore = wordLetterChips(word);
   // Pre-stat schema: the value was the first-played timestamp.
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return { firstPlayedAt: value, plays: 1, bestScore: 0 };
+    return { firstPlayedAt: value, plays: 1, bestScore };
   }
   if (!value || typeof value !== 'object') return null;
 
@@ -121,12 +124,9 @@ function normalizeEntry(value: unknown): WordCollectionEntry | null {
       typeof raw.plays === 'number' && Number.isFinite(raw.plays)
         ? Math.max(1, Math.floor(raw.plays))
         : 1,
-    bestScore: normalizedScore(raw.bestScore ?? 0),
+    // Recompute old settled-score records so existing profiles migrate immediately.
+    bestScore,
   };
-}
-
-function normalizedScore(score: number): number {
-  return Number.isFinite(score) ? Math.max(0, Math.round(score)) : 0;
 }
 
 const SEEN_KEY = 'wj.collectionSeen';

@@ -33,7 +33,7 @@ import type {
   Tile,
 } from '../engine/types';
 import {
-  rollShopStock,
+  prepareShop,
   buyItem,
   sellJoker,
   rerollShop,
@@ -44,6 +44,7 @@ import {
 import { rerollCost, sellValue } from '../engine/economy';
 import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
 import { BALANCE } from '../engine/balance';
+import { letterChips } from '../engine/scoring';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import type { Lexicon } from '../engine/lexicon';
 import { recordWord } from './collection';
@@ -84,6 +85,11 @@ import {
   VOUCHER_REGISTRY,
 } from '../engine/vouchers';
 import { onBlindEnded, onConstellationUsed, onTilesDestroyed } from '../engine/jokers';
+import {
+  consumeNextBlindBonus,
+  rollSkipOffers,
+  skipCurrentBlind,
+} from '../engine/skipRewards';
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -156,6 +162,8 @@ export interface GameState {
   shop: ShopState | null;
   /** an open pack awaiting selection, else null */
   pack: { offer: PackOffer; picksLeft: number; candidateTiles: Tile[] } | null;
+  /** A free skip-tag pack must finish before the next blind is drawn. */
+  pendingBlindAfterPack: boolean;
   /** blind settlement line items while phase === 'cashout', else null */
   cashout: BlindEarnings | null;
   /** the advanced run (gold + next chapter/blind) to apply when Fee Settlement is
@@ -203,8 +211,8 @@ export interface GameState {
   /**
    * This run started as the guided lesson: the opening hand was rigged to YELLOW and the
    * intro should hard-lock the first blind. Decided ONCE at bootstrap (same gate as the
-   * rig) so it stays tied to the rigged blind — a mid-run intro reset (Help → Replay) can't
-   * flip it on and open the hard-lock on a non-rigged blind (that softlocks). Replay = new run.
+   * rig) so it stays tied to the rigged blind. No later profile/internal flag change can
+   * attach the hard-lock to a non-rigged blind, and the player has no replay control.
    */
   showIntro: boolean;
   /** feedback #2: chromatic-unlock ids earned THIS run (RED, MUSIC, ALIEN, …). Game
@@ -248,6 +256,36 @@ function consumePackOption(pack: OpenPack, optionIndex: number): OpenPack | null
   const picksLeft = pack.picksLeft - 1;
   if (picksLeft <= 0 || options.length === 0) return null;
   return { ...pack, offer: { ...pack.offer, options }, picksLeft };
+}
+
+/**
+ * A skip-tag pack is part of Blind Select, not a shop visit. When its last pick
+ * lands (or the player closes it), build the next blind in the SAME state update
+ * so no empty SHOP frame can render between the two panels.
+ */
+export function completePendingPackTransition(state: GameState): GameState {
+  if (!state.pendingBlindAfterPack || state.pack) return state;
+  const rng = makeRng(`${state.seed}#${state.rngCounter}`);
+  const blind = startBlind(state.run, rng, { bossId: state.run.chapterBossId });
+  return {
+    ...state,
+    phase: 'blindselect',
+    blind,
+    pendingBlindAfterPack: false,
+    selected: [],
+    hint: null,
+    message: null,
+    lastEvents: [],
+    bossDiscard: null,
+    settleId: 0,
+    committedBefore: 0,
+    lastPlayed: null,
+    pendingEnd: false,
+    settleComplete: true,
+    finalScore: null,
+    sentenceBonus: null,
+    rngCounter: state.rngCounter + 1,
+  };
 }
 
 /**
@@ -317,6 +355,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     hint: null,
     shop: null,
     pack: null,
+    pendingBlindAfterPack: false,
     cashout: null,
     pendingRun: null,
     gameover: null,
@@ -351,7 +390,7 @@ export interface UseGame {
   sell: (index: number) => void;
   reroll: () => void;
   leaveShop: () => void;
-  buyVoucher: () => void;
+  buyVoucher: (slot?: 'base' | 'bonus') => void;
   rerollBoss: () => void;
   buyPack: (index: number) => void;
   pickPackOption: (index: number) => void;
@@ -367,6 +406,7 @@ export interface UseGame {
   playWord: (heldOrder?: string[]) => void;
   discard: (ids: string[]) => void;
   selectBlind: () => void;
+  skipBlind: () => void;
   confirmCashout: () => void;
   /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
   markSettleComplete: () => void;
@@ -379,7 +419,9 @@ export interface UseGame {
 
 export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGame {
   // Resume a saved run if there is one; otherwise the idle bootstrap run.
-  const [state, setState] = useState<GameState>(() => loadRun() ?? bootstrap());
+  const [state, setState] = useState<GameState>(() =>
+    completePendingPackTransition(loadRun() ?? bootstrap()),
+  );
   const stateRef = useRef(state);
   stateRef.current = state;
   const heldPackFablePending = useRef(false);
@@ -435,7 +477,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // A globally-new word also bumps this run's discovery count (Game Over §2.7).
   useEffect(() => {
     const lp = state.lastPlayed;
-    if (lp && !lp.isGibberish && recordWord(lp.text, lp.score)) {
+    if (lp && !lp.isGibberish && recordWord(lp.text)) {
       setState((prev) => ({
         ...prev,
         stats: { ...prev.stats, discoveries: prev.stats.discoveries + 1 },
@@ -541,7 +583,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // Clearing the Deadline (boss) restocks the voucher for the next chapter
       // and unlocks the one-purchase-per-chapter slot (playtest-03 C).
       if (runWithMaterialGold.blindIndex === 2) {
-        advancedRun = {
+        const chapterRun: RunState = {
           ...advancedRun,
           voucherOffer: rollVoucherOffer(
             advancedRun,
@@ -555,10 +597,20 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             bossPoolForAnte(advancedRun.ante),
           ),
           wordsThisAnte: [], // new ante → Memoirs' pool resets (회고록)
+          skippedThisChapter: [],
+        };
+        advancedRun = {
+          ...chapterRun,
+          skipOffers: rollSkipOffers(
+            chapterRun,
+            makeRng(`${s.seed}#skip-${chapterRun.ante}`),
+          ),
         };
       }
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
-      const shop = rollShopStock(advancedRun, rng);
+      const preparedShop = prepareShop(advancedRun, rng, unlockedVoucherSet());
+      advancedRun = preparedShop.run;
+      const shop = preparedShop.shop;
       if (outcome.won) {
         return {
           ...s,
@@ -647,7 +699,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const res = rerollShop(prev.run, prev.shop, rng);
+      const res = rerollShop(prev.run, prev.shop, rng, unlockedVoucherSet());
       if (!res.ok) return prev;
       recordVoucherProgress({ kind: 'reroll', spent: rerollCost(prev.shop.rerolls, rerollDiscount(prev.run)) });
       audio.play('reroll');
@@ -732,9 +784,63 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       return {
         ...prev,
         phase: 'playing',
-        run: entered.run,
+        run: consumeNextBlindBonus(entered.run),
         blind: entered.blind,
         selected: entered.blind.forcedTileId ? [entered.blind.forcedTileId] : [],
+      };
+    });
+  }, []);
+
+  /** Skip Draft/Revision, grant its disclosed reward, and prepare the next blind. */
+  const skipBlind = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== 'blindselect' || prev.run.blindIndex === 2) return prev;
+      const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
+      const reward = skipCurrentBlind(prev.run, rng);
+      const run = reward.run;
+      const blind = reward.freePack
+        ? prev.blind
+        : startBlind(run, rng, { bossId: run.chapterBossId });
+      const pack = reward.freePack
+        ? (() => {
+            const offer = rollPack(reward.freePack, run, rng);
+            return {
+              offer,
+              picksLeft: offer.pick,
+              candidateTiles:
+                reward.freePack.type === 'consumable' || reward.freePack.type === 'ink'
+                  ? rng.shuffle(run.bag).slice(0, 10)
+                  : [],
+            };
+          })()
+        : null;
+      audio.play('voucherRedeem');
+      return {
+        ...prev,
+        run,
+        blind,
+        phase: pack ? 'shop' : 'blindselect',
+        pack,
+        pendingBlindAfterPack: pack !== null,
+        selected: [],
+        hint: null,
+        message: null,
+        shop: null,
+        cashout: null,
+        pendingRun: null,
+        lastEvents: [],
+        bossDiscard: null,
+        settleId: 0,
+        committedBefore: 0,
+        lastPlayed: null,
+        pendingEnd: false,
+        settleComplete: true,
+        finalScore: null,
+        sentenceBonus: null,
+        rngCounter: prev.rngCounter + 1,
+        // The YELLOW lesson was rigged only for the skipped Draft. Keep it for
+        // the next new run instead of hard-locking an ordinary Revision hand.
+        showIntro: false,
       };
     });
   }, []);
@@ -766,11 +872,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     setState((prev) => ({ ...prev, runStarted: false }));
   }, []);
 
-  const buyVoucherAction = useCallback(() => {
+  const buyVoucherAction = useCallback((slot: 'base' | 'bonus' = 'base') => {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
-      const boughtId = prev.shop.voucher;
-      const res = buyVoucher(prev.run, prev.shop);
+      const boughtId = slot === 'bonus' ? prev.shop.bonusVoucher : prev.shop.voucher;
+      const res = buyVoucher(prev.run, prev.shop, slot);
       if (!res.ok) return prev;
       if (boughtId) {
         recordVoucherProgress({
@@ -804,7 +910,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const slot = prev.shop.packs[index];
       if (!slot) return prev;
-      const price = discountedPrice(prev.run, BALANCE.pack.size[slot.size].price);
+      const price = slot.free
+        ? 0
+        : discountedPrice(prev.run, BALANCE.pack.size[slot.size].price);
       if (prev.run.gold < price) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const offer = rollPack(slot, prev.run, rng);
@@ -851,7 +959,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // C) rather than here — blocked picks there never reach the pick action, so they
       // stay silent without a run-identity check.
       recordEditionedJokers(run);
-      return { ...prev, run, pack: consumePackOption(prev.pack, optionIndex) };
+      return completePendingPackTransition({
+        ...prev,
+        run,
+        pack: consumePackOption(prev.pack, optionIndex),
+      });
     });
   }, []);
 
@@ -867,14 +979,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         const pack = remaining
           ? { ...remaining, candidateTiles: syncCandidates(remaining.candidateTiles, run) }
           : null;
-        return {
+        return completePendingPackTransition({
           ...prev,
           run,
           blind,
           pack,
           rngCounter: prev.rngCounter + rngDelta,
           message: null,
-        };
+        });
       };
 
       if (isBlindOnlyConsumable(id)) {
@@ -946,14 +1058,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
       recordEditionedJokers(result.run);
-      return {
+      return completePendingPackTransition({
         ...prev,
         run: result.run,
         blind: result.blind,
         pack,
         rngCounter: prev.rngCounter + 1,
         message: null,
-      };
+      });
     });
   }, []);
 
@@ -982,7 +1094,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         from,
         to: from + 1,
       });
-      return { ...prev, run, pack };
+      return completePendingPackTransition({ ...prev, run, pack });
     });
   }, []);
 
@@ -1035,7 +1147,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     [],
   );
 
-  const closePack = useCallback(() => setState((prev) => ({ ...prev, pack: null })), []);
+  const closePack = useCallback(() => setState((prev) =>
+    completePendingPackTransition({ ...prev, pack: null }),
+  ), []);
 
   const toggleTile = useCallback((id: string) => {
     setState((prev) => {
@@ -1277,6 +1391,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         grownWoodTileIds,
         bossDiscardedTiles,
         jokers,
+        counters,
       } = result;
       // Glass shatter (A polish): a tile broke this play. Delayed so the shatter lands
       // during the settle, after the glass tile's own ring beat — not at submit.
@@ -1317,6 +1432,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const nextRun = onTilesDestroyed({
         ...prev.run,
         jokers,
+        counters,
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))
@@ -1327,10 +1443,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           ? prev.run.wordsThisAnte
           : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],
       }, destroyedTileIds.length);
+      const wordScore = letterChips(submission.tiles);
       const best = prev.stats.bestWord;
       const bestWord =
-        !submission.isGibberish && (!best || submission.settledScore > best.score)
-          ? { text: submission.text, score: Math.round(submission.settledScore) }
+        !submission.isGibberish && (!best || wordScore > best.score)
+          ? { text: submission.text, score: wordScore }
           : best;
       const next: GameState = {
         ...prev,
@@ -1355,7 +1472,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         lastPlayed: {
           text: submission.text,
           isGibberish: submission.isGibberish,
-          score: Math.round(submission.settledScore),
+          score: wordScore,
         },
         hint: null,
         stats: { ...prev.stats, wordsPlayed: prev.stats.wordsPlayed + 1, bestWord },
@@ -1590,6 +1707,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     playWord,
     discard,
     selectBlind,
+    skipBlind,
     confirmCashout,
     markSettleComplete,
     continueEndless,

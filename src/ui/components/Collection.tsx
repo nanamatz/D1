@@ -56,6 +56,9 @@ import { useSettings } from '../settings';
 import { jokerArt } from '../jokerArt';
 import { audio } from '../audio';
 import { richText } from '../richtext';
+import { SKIP_REWARD_IDS } from '../../engine/skipRewards';
+import { SKIP_REWARD_ART } from '../skipRewardArt';
+import { skipRewardCollectionDescKey, skipRewardParams } from '../skipRewardTooltip';
 
 type Category =
   | 'words'
@@ -63,6 +66,7 @@ type Category =
   | 'enhancedTiles'
   | 'editions'
   | 'vouchers'
+  | 'tags'
   | 'fableCards'
   | 'constellationCards'
   | 'inkCards'
@@ -81,7 +85,7 @@ export const CATEGORY_COLUMNS: CategoryMenuBlock[][] = [
   [
     { items: ['jokers'] },
     { items: ['pouches'] },
-    { items: ['vouchers'] },
+    { items: ['vouchers', 'tags'] },
     {
       family: 'cards',
       items: ['fableCards', 'constellationCards', 'inkCards'],
@@ -111,6 +115,7 @@ const PAGE = 60;
 const JOKERS_PER_PAGE = 15;
 const CARDS_PER_PAGE = 10;
 const VOUCHER_PAIRS_PER_PAGE = 4;
+const TAGS_PER_PAGE = 15;
 
 function runUnlockProgress() {
   const lifetime = loadLifetime();
@@ -175,6 +180,7 @@ export function Collection({ lexicon, onBack }: Props) {
         have: BASE_VOUCHER_IDS.length + loadVoucherProgress().unlocked.length,
         total: ALL_VOUCHER_IDS.length,
       },
+      tags: { have: SKIP_REWARD_IDS.length, total: SKIP_REWARD_IDS.length },
       fableCards: { have: FABLE_DEFS.length, total: FABLE_DEFS.length },
       constellationCards: {
         have: CONSTELLATION_DEFS.length,
@@ -252,6 +258,7 @@ export function Collection({ lexicon, onBack }: Props) {
           {cat === 'enhancedTiles' && <EnhancedTilesView />}
           {cat === 'editions' && <EditionsView />}
           {cat === 'vouchers' && <VouchersView />}
+          {cat === 'tags' && <TagsView />}
           {cat === 'fableCards' && <FablesView />}
           {cat === 'constellationCards' && <ConstellationsView />}
           {cat === 'inkCards' && <GamblerCardsView />}
@@ -269,6 +276,43 @@ export function Collection({ lexicon, onBack }: Props) {
         </button>
       </section>
     </div>
+  );
+}
+
+// ---------- Tags ----------
+function TagsView() {
+  const { t } = useI18n();
+  const { page, pages, visible, setPage } = usePaged(SKIP_REWARD_IDS, TAGS_PER_PAGE);
+
+  return (
+    <>
+      <div className="tag-collection-grid">
+        {visible.map((id) => {
+          const name = t(`skipReward.${id}.name`);
+          return (
+            <div key={id} className="tag-collection-entry">
+              <Tooltip
+                title={name}
+                body={t(skipRewardCollectionDescKey(id), skipRewardParams({ id }))}
+                down
+              >
+                <TiltCard
+                  idle
+                  className="tag-collection-icon"
+                  tabIndex={0}
+                  role="img"
+                  aria-label={name}
+                >
+                  <img src={SKIP_REWARD_ART[id]} alt="" />
+                </TiltCard>
+              </Tooltip>
+              <span className="tag-collection-name">{name}</span>
+            </div>
+          );
+        })}
+      </div>
+      <Pager page={page} pages={pages} onPage={setPage} />
+    </>
   );
 }
 

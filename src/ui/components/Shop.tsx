@@ -11,13 +11,18 @@ import {
   consumableTooltipBody,
   consumableTooltipExtra,
   grownValue,
-  jokerTooltipBody,
+  jokerTooltip,
   voucherDescKey,
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
 import type { UseGame } from '../useGame';
-import { Tooltip, type TooltipClassification } from './Tooltip';
+import {
+  Tooltip,
+  type TooltipClassification,
+  type TooltipDetail,
+  type TooltipTag,
+} from './Tooltip';
 import { MoneyValue } from './MoneyValue';
 import { ShopMascot } from './ShopMascot';
 import { VoucherCard } from './VoucherCard';
@@ -131,7 +136,7 @@ export function Shop({ g }: { g: UseGame }) {
   const { t, lang } = useI18n();
   const { run, shop } = g.state;
   const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
-  const [redeemingVoucher, setRedeemingVoucher] = useState(false);
+  const [redeemingVoucher, setRedeemingVoucher] = useState<'base' | 'bonus' | null>(null);
   const redeemTimer = useRef<number | null>(null);
   const [leaving, setLeaving] = useState(false);
   useEffect(() => setSelectedOffer(null), [shop]);
@@ -161,15 +166,19 @@ export function Shop({ g }: { g: UseGame }) {
     fableId?: FableId | undefined;
     rarity?: JokerRarity | undefined;
     classification?: TooltipClassification | undefined;
-    sub?: { title: string; body: string } | undefined;
+    tags?: readonly TooltipTag[];
+    sub?: TooltipDetail | readonly TooltipDetail[] | undefined;
     extra?: string | undefined;
   } => {
     if (item.kind === 'joker') {
       const def = JOKER_REGISTRY.get(item.id);
+      const tip = jokerTooltip(item.id, item.edition ?? 'base', t);
       return {
         emoji: def?.emoji ?? '🃏',
         name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
-        desc: jokerTooltipBody(item.id, item.edition ?? 'base', t),
+        desc: tip.body,
+        tags: tip.tags,
+        sub: tip.sub,
         extra: def ? grownValue(def, undefined, t) ?? undefined : undefined,
         rarity: def?.rarity,
         jokerArt: jokerArt(item.id),
@@ -179,7 +188,13 @@ export function Shop({ g }: { g: UseGame }) {
       // The shared 3-axis tile tooltip (feature-04 B) — material/font/edition each
       // with its effect, so a shop tile reads the same as one in hand.
       const tip = tileTooltip(item.tile, t);
-      return { emoji: item.tile.letter ?? '◆', name: tip.title, desc: tip.body };
+      return {
+        emoji: item.tile.letter ?? '◆',
+        name: tip.title,
+        desc: tip.body,
+        tags: tip.tags,
+        sub: tip.sub,
+      };
     }
     return {
       emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',
@@ -201,13 +216,12 @@ export function Shop({ g }: { g: UseGame }) {
   };
 
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
-  const voucher = shop.voucher ? VOUCHER_REGISTRY.get(shop.voucher) : undefined;
-  const redeemVoucher = () => {
-    if (redeemingVoucher || !voucher || run.gold < voucher.price) return;
-    setRedeemingVoucher(true);
+  const redeemVoucher = (slot: 'base' | 'bonus', price: number) => {
+    if (redeemingVoucher || run.voucherLocked || run.gold < price) return;
+    setRedeemingVoucher(slot);
     redeemTimer.current = window.setTimeout(() => {
-      g.buyVoucher();
-      setRedeemingVoucher(false);
+      g.buyVoucher(slot);
+      setRedeemingVoucher(null);
       redeemTimer.current = null;
     }, motionOff() ? 0 : VOUCHER_REDEEM_MS);
   };
@@ -219,19 +233,19 @@ export function Shop({ g }: { g: UseGame }) {
         leaving && 'phase-panel-leaving',
         redeemingVoucher && 'voucher-redeeming',
       ].filter(Boolean).join(' ')}
-      aria-busy={redeemingVoucher}
+      aria-busy={!!redeemingVoucher}
     >
       <aside className="shop-rail">
         <button
           className="btn play next-blind"
-          disabled={redeemingVoucher}
+          disabled={!!redeemingVoucher}
           onClick={() => leavePanel(g.leaveShop)}
         >
           {t('shop.next')}
         </button>
         <button
           className="btn green reroll-btn"
-          disabled={redeemingVoucher || run.gold < cost}
+          disabled={!!redeemingVoucher || run.gold < cost}
           onClick={g.reroll}
         >
           {t('shop.reroll', { cost })}
@@ -266,6 +280,7 @@ export function Shop({ g }: { g: UseGame }) {
                   body={m.desc}
                   rarity={m.rarity}
                   classification={m.classification}
+                  tags={m.tags}
                   sub={m.sub}
                   {...(m.extra ? { extra: m.extra } : {})}
                 >
@@ -343,32 +358,43 @@ export function Shop({ g }: { g: UseGame }) {
           <div className="panel">
             <div className="label">{t('shop.vouchers')}</div>
             <div className="shop-row">
-              {voucher ? (
-                <Tooltip
-                  title={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
-                  body={t(voucherDescKey(voucher.id))}
-                  classification="voucher"
-                >
-                  <ShopOffer
-                    label={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
-                    price={voucher.price}
-                    selected={selectedOffer === 'voucher'}
-                    actionLabel={t('shop.redeem')}
-                    actionClassName="exchange"
-                    disabled={redeemingVoucher || run.gold < voucher.price}
-                    onSelect={() => toggleOffer('voucher')}
-                    onAction={redeemVoucher}
+              {([
+                ['base', shop.voucher],
+                ['bonus', shop.bonusVoucher],
+              ] as const).map(([slot, id]) => {
+                const voucher = id ? VOUCHER_REGISTRY.get(id) : undefined;
+                if (!voucher) return null;
+                const offerKey = `voucher-${slot}`;
+                return (
+                  <Tooltip
+                    key={slot}
+                    title={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                    body={t(voucherDescKey(voucher.id))}
+                    classification="voucher"
                   >
-                    <VoucherCard
-                      emoji={voucher.emoji}
-                      name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
-                      artSrc={voucherArt(voucher.id)}
-                      redeeming={redeemingVoucher}
-                      motion={false}
-                    />
-                  </ShopOffer>
-                </Tooltip>
-              ) : null}
+                    <ShopOffer
+                      label={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                      price={voucher.price}
+                      selected={selectedOffer === offerKey}
+                      actionLabel={t('shop.redeem')}
+                      actionClassName="exchange"
+                      disabled={
+                        !!redeemingVoucher || run.voucherLocked || run.gold < voucher.price
+                      }
+                      onSelect={() => toggleOffer(offerKey)}
+                      onAction={() => redeemVoucher(slot, voucher.price)}
+                    >
+                      <VoucherCard
+                        emoji={voucher.emoji}
+                        name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                        artSrc={voucherArt(voucher.id)}
+                        redeeming={redeemingVoucher === slot}
+                        motion={false}
+                      />
+                    </ShopOffer>
+                  </Tooltip>
+                );
+              })}
             </div>
           </div>
 
@@ -381,7 +407,9 @@ export function Shop({ g }: { g: UseGame }) {
                   entry.p !== null)
                 .map(({ p, i }) => {
                 const tip = packTooltip(p.type, p.size, t);
-                const price = discountedPrice(run, BALANCE.pack.size[p.size].price);
+                const price = p.free
+                  ? 0
+                  : discountedPrice(run, BALANCE.pack.size[p.size].price);
                 const offerKey = `pack-${i}`;
                 const art = packArt(p.type, p.size, p.artVariant);
                 return (
@@ -392,7 +420,7 @@ export function Shop({ g }: { g: UseGame }) {
                       selected={selectedOffer === offerKey}
                       actionLabel={t('pack.open')}
                       actionClassName="green"
-                      disabled={redeemingVoucher || run.gold < price}
+                      disabled={!!redeemingVoucher || run.gold < price}
                       onSelect={() => toggleOffer(offerKey)}
                       onAction={() => leavePanel(() => g.buyPack(i))}
                     >

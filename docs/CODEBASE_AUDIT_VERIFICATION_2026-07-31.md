@@ -711,6 +711,11 @@ net: -450 lines, -0 deps possible.
 | BALANCE-03 | 해결. 유료 Boss reroll은 현재 id를 draw pool에서 먼저 제외 |
 | AUDIO-01 | 해결. background throttling 동안 놓친 sequencer step을 건너뛰고 미래 시각부터 재개 |
 | COPY-03 | 해결. locale 동일 영문 prose 검사에서 미번역 행 0건 |
+| DATA-04 | 해결. web/desktop 저장 실패를 지속 경고하고 다음 정상 progress 저장 때 해제 |
+| QA-01 핵심 흐름 | 해결. 실제 `file://` 빌드에서 도감→새 게임→플레이→재실행 복구→정산→상점→팩 E2E 추가 |
+| 밸런스 telemetry | 해결. 커스텀 시드를 제외한 완료 run·승률·Chapter별 패배를 프로필에 누적 |
+| Pack art | 해결. 32개 SVG 마스터를 보존하고 `244×400` PNG runtime derivative 사용 |
+| COPY-01 / COPY-02 | 해결. 896개 locale key의 종결형·숫자 강조·변수/태그 parity를 build lint로 강제 |
 | 리팩터링 소항목 | 죽은 `BALANCE.jokers.loanShark`와 사용되지 않는 Constellation 설명 24행 제거 |
 
 대형 R-11 consumable executor 통합과 R-14 `useGame.ts` 물리 분할은 적용하지
@@ -725,8 +730,9 @@ net: -450 lines, -0 deps possible.
 | 초기 static JS (`index` + preload) | 2,306.65 kB | 457.10 kB | -80.2% |
 | 초기 static JS gzip | 411.09 kB | 148.65 kB | -63.8% |
 | lexicon JS | 초기 chunk 포함 | 1,722.07 kB 별도 on-demand chunk | 첫 메뉴 동작 전 parse 없음 |
-| `dist/assets` | 72.60 MiB / 827 files | 28.67 MiB / 297 files | -60.5% |
-| PNG | 38.90 MiB | 21.53 MiB | -44.7% |
+| `dist/assets` | 72.60 MiB / 827 files | 26.25 MiB / 297 files | -63.8% |
+| PNG | 38.90 MiB | 22.62 MiB | -41.9% |
+| SVG | 21.92 MiB | 0 MiB | runtime path parse 제거 |
 | fonts | 9.26 MiB (WOFF+WOFF2) | 1.20 MiB (WOFF2) | -87.0% |
 
 Voucher 원본은 `docs/Arts/Voucher`에 그대로 보존한다.
@@ -741,6 +747,9 @@ Fable/Constellation/Gambler 카드의 path-only SVG 원본 44개도 그대로
 production 산출물에서 해당 SVG 44개와 125만 개 이상의 path 명령이
 제거됐다. 첫 도감 페이지 전송량은 우화 4.04→1.15 MiB, 별자리
 3.22→0.80 MiB, 노름꾼 4.79→1.31 MiB다.
+
+Card Pack도 같은 구조로 전환했다. 32개 path-only SVG 마스터 3.68 MiB는
+소스에 남고 runtime PNG는 1.14 MiB라서 해당 런타임 묶음이 69.1% 줄었다.
 
 Vite의 500 kB 경고는 남는다. 대상은 초기 entry가 아니라 의도적으로 지연된
 1.72 MB lexicon chunk다. 사전은 desktop `file://` 계약 때문에 여전히 번들
@@ -781,20 +790,20 @@ nerf할 근거는 사라졌다. 접근성을 포함한 실전 노출에서는 �
 
 | 검증 | 결과 |
 |---|---|
-| `npm test -- --reporter=dot` | **95 files / 798 tests 통과** |
-| `npm run build` | data 30,259행, asset derivative, TypeScript, engine cycle, glyph coverage, Vite build 통과 |
+| `npm test -- --reporter=dot` | **95 files / 803 tests 통과** |
+| `npm run build` | data 30,259행, 76쌍 asset derivative, locale 896쌍, TypeScript, engine cycle, glyph coverage, Vite build 통과 |
 | `node scripts/check-offline.mjs` | 12 build files 검사, 외부 URL/절대 asset path 0 |
+| `npm run e2e:smoke` | `file://` Collection→New Run→Play→reload→Settlement→Shop→Pack 통과 |
 | `npm run sim:full-run` | 1,000 seed × 자연 생존군 + 8-Chapter 노출군 완료 |
 | `electron-builder --dir` | Windows x64 `Play the World.exe` 패키징 성공 (`../D1-release/win-unpacked`) |
 
-### 10.5 남은 작업
+### 10.5 후속 1~5 완료와 남은 작업
 
-- DATA-04: web quota/desktop disk write 실패를 사용자에게 알리는 save-health
-  상태는 아직 없다.
-- COPY-01 / COPY-02: 전체 설명문의 종결형과 모든 수치 강조를 강제하는 locale
-  lint는 아직 없다.
+- DATA-04, 핵심 E2E, human balance telemetry, Card Pack runtime derivative,
+  COPY-01/COPY-02 locale lint를 순서대로 완료했다.
 - VFX-02: 모든 animation duration과 z-layer를 전역 token으로 옮기는 대형
   정리는 하지 않았다. 현재 재현 결함이 있는 경로만 공용 helper로 통일했다.
-- QA-01: 핵심 회귀는 runtime/behavior test로 보강했지만 전체 browser E2E
-  suite는 없다.
-- 밸런스 목표 곡선은 human playtest telemetry 전에는 변경하지 않는다.
+- QA-01: 출시 핵심 흐름 smoke는 생겼다. 모든 세부 상호작용을 포괄하는 대형
+  browser E2E suite는 아직 없으며, 실제 재발 경로가 생길 때 확장한다.
+- 밸런스 목표 곡선은 변경하지 않았다. 프로필 telemetry가 실제 비커스텀
+  플레이의 승률과 패배 Chapter를 누적하므로 표본이 쌓인 뒤 판단한다.

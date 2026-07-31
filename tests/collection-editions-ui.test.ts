@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { CATEGORY_COLUMNS, EDITIONS } from '../src/ui/components/Collection';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
+import { SKIP_REWARD_IDS } from '../src/engine/skipRewards';
 
 describe('Edition Collection page', () => {
   it('lists Base and every special Emoji Tile edition with localized names and effects', () => {
@@ -27,7 +28,7 @@ describe('Edition Collection page', () => {
 
   it('keeps the requested two-column category order without a Records page', () => {
     expect(CATEGORY_COLUMNS.map((column) => column.flatMap(({ items }) => items))).toEqual([
-      ['jokers', 'pouches', 'vouchers', 'fableCards', 'constellationCards', 'inkCards'],
+      ['jokers', 'pouches', 'vouchers', 'tags', 'fableCards', 'constellationCards', 'inkCards'],
       ['enhancedTiles', 'editions', 'packs', 'palette', 'mascots', 'words', 'bosses'],
     ]);
   });
@@ -59,6 +60,34 @@ describe('Edition Collection page', () => {
     expect(enhanced).toContain('{page === 0 ? <MaterialsView /> : <FontsView />}');
     expect(enhanced).toContain('<Pager page={page} pages={2} onPage={setPage} />');
     expect(enhanced).not.toContain('role="tablist"');
+  });
+
+  it('shows all 27 Tags as a two-page 5×3 image grid with shared interaction', () => {
+    const component = readFileSync(
+      new URL('../src/ui/components/Collection.tsx', import.meta.url),
+      'utf8',
+    );
+    const css = readFileSync(
+      new URL('../src/ui/styles/screens.css', import.meta.url),
+      'utf8',
+    );
+    const tagsView = component.slice(
+      component.indexOf('function TagsView()'),
+      component.indexOf('function usePaged', component.indexOf('function TagsView()')),
+    );
+
+    expect(SKIP_REWARD_IDS).toHaveLength(27);
+    expect(tagsView).toContain('visible.map((id) =>');
+    expect(tagsView).toContain('SKIP_REWARD_ART[id]');
+    expect(tagsView).toContain('skipRewardCollectionDescKey(id)');
+    expect(tagsView).toMatch(
+      /<div key=\{id\} className="tag-collection-entry">\s*<Tooltip[\s\S]*?>\s*<TiltCard/,
+    );
+    expect(tagsView).toContain('<Pager page={page} pages={pages} onPage={setPage} />');
+    expect(component).toContain('const TAGS_PER_PAGE = 15;');
+    expect(css).toMatch(
+      /\.tag-collection-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5,\s*minmax\(92px,\s*1fr\)\);/s,
+    );
   });
 
   it('shows Starting Pouches as the reference-style single-item carousel', () => {

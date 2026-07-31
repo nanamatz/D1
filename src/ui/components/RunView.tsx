@@ -93,8 +93,8 @@ export function RunView({ g, onExit, onNewRun }: Props) {
 
   // Guided first-run lesson: opens once, on entry into the playing board — but ONLY for a run
   // that bootstrapped as the tutorial (showIntro), so its hand is rigged for the YELLOW lock.
-  // `!hasSeenIntro()` is the once-guard (finishing the intro marks it seen). Replaying (Help)
-  // clears the seen-flag, but a rigged hand only comes from a fresh run, so replay = New Run.
+  // `!hasSeenIntro()` is the once-guard (finishing the intro marks it seen). There is no
+  // replay control; a rigged hand only comes from a fresh profile's first run.
   useEffect(() => {
     if (phase === 'playing' && g.state.showIntro && !hasSeenIntro() && readTips()) setIntroOpen(true);
   }, [phase, g.state.showIntro]);
@@ -123,7 +123,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   // Mascot beat on shop enter + blind-resolution stings (B-1 settle-set:
   // clearFanfare / failSting), keyed purely on phase transitions.
   useEffect(() => {
-    if (phase === 'shop') {
+    if (phase === 'shop' && g.state.shop) {
       audio.play('catMeow');
       tutorialBus.fire('shopFirstVisit');
     }
@@ -200,6 +200,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           settleComplete={g.state.settleComplete}
           finalScore={g.state.finalScore}
           sentenceBonus={g.state.sentenceBonus}
+          currentPattern={judgment.match?.pattern ?? null}
           preview={preview}
           onOpenInfo={() => setShowInfo(true)}
           onOpenOptions={() => setPaused(true)}
@@ -271,7 +272,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         </main>
       </SettleProvider>
       {!ending && (
-        <BagWidget run={run} blind={blind} onOpenChange={setPouchOpen} />
+        <BagWidget
+          run={run}
+          tiles={phase === 'shop' ? run.bag : blind.bag}
+          onOpenChange={setPouchOpen}
+        />
       )}
       {!ending && !settling && introOpen && (
         <GuidedIntro g={g} onClose={() => setIntroOpen(false)} />

@@ -10,6 +10,7 @@ const blindWith = (over: Partial<BlindState>): BlindState => ({
   kind: 'small',
   bossId: null,
   target: 100,
+  handSizeTotal: 11,
   phasesTotal: 4,
   phasesUsed: 0,
   discardsLeft: 3,

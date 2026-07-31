@@ -14,6 +14,8 @@ import {
 import { POUCH_IDS } from '../engine/pouches';
 import { RECORD_IDS } from '../engine/records';
 import type { PouchId, RecordId } from '../engine/types';
+import { wordLetterChips } from '../engine/scoring';
+import { collectionHighlights, loadCollection } from './collection';
 
 const KEY = 'wj.lifetime';
 
@@ -33,6 +35,15 @@ export interface Lifetime {
   mostGold: number;
   pouchWins: PouchId[];
   recordWins: RecordId[];
+  balance: BalanceTelemetry;
+}
+
+/** Unseeded human-run outcomes used for target/balance review. */
+export interface BalanceTelemetry {
+  version: 1;
+  runs: number;
+  wins: number;
+  lossesByChapter: Record<string, number>;
 }
 
 const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
@@ -51,7 +62,38 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   mostGold: 0,
   pouchWins: [],
   recordWins: [],
+  balance: {
+    version: 1,
+    runs: 0,
+    wins: 0,
+    lossesByChapter: {},
+  },
 });
+
+const safeCount = (value: unknown): number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+
+function normalizeBalance(value: unknown): BalanceTelemetry {
+  const stored =
+    value && typeof value === 'object' ? (value as Partial<BalanceTelemetry>) : {};
+  const lossesByChapter: Record<string, number> = {};
+  if (stored.lossesByChapter && typeof stored.lossesByChapter === 'object') {
+    for (const [chapter, count] of Object.entries(stored.lossesByChapter)) {
+      const parsed = Number(chapter);
+      const safe = safeCount(count);
+      if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 38 && safe > 0) {
+        lossesByChapter[String(parsed)] = safe;
+      }
+    }
+  }
+  const runs = safeCount(stored.runs);
+  return {
+    version: 1,
+    runs,
+    wins: Math.min(runs, safeCount(stored.wins)),
+    lossesByChapter,
+  };
+}
 
 export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
   const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
@@ -66,6 +108,9 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
   }
   const profileCreated = stored.profileCreated ?? true;
   const storedName = typeof stored.profileName === 'string' ? stored.profileName.trim() : '';
+  const storedBestWord = typeof stored.bestWord === 'string' ? stored.bestWord : '';
+  const collectionBest = collectionHighlights(loadCollection(slot)).highestScore;
+  const bestWord = collectionBest?.word ?? storedBestWord;
   return {
     ...empty,
     ...stored,
@@ -74,12 +119,15 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
     unlockAllWarned: stored.unlockAllWarned === true,
     unlockAllApplied: stored.unlockAllApplied === true,
     challengesDisabled: stored.challengesDisabled === true,
+    bestWord,
+    bestWordScore: collectionBest?.value ?? wordLetterChips(bestWord),
     pouchWins: Array.isArray(stored.pouchWins)
       ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId))
       : [],
     recordWins: Array.isArray(stored.recordWins)
       ? stored.recordWins.filter((id): id is RecordId => RECORD_IDS.includes(id as RecordId))
       : [],
+    balance: normalizeBalance(stored.balance),
   };
 }
 
@@ -106,6 +154,15 @@ export function recordRunEnd(r: RunResult): void {
     if (r.pouchId) pouchWins.add(r.pouchId);
     if (r.recordId) recordWins.add(r.recordId);
   }
+  const balance = { ...lt.balance, lossesByChapter: { ...lt.balance.lossesByChapter } };
+  if (!r.customSeed) {
+    balance.runs += 1;
+    balance.wins += r.won ? 1 : 0;
+    if (!r.won) {
+      const chapter = String(Math.min(38, Math.max(1, Math.floor(r.ante))));
+      balance.lossesByChapter[chapter] = (balance.lossesByChapter[chapter] ?? 0) + 1;
+    }
+  }
   const next: Lifetime = {
     ...lt,
     runs: lt.runs + 1,
@@ -116,6 +173,7 @@ export function recordRunEnd(r: RunResult): void {
     mostGold: Math.max(lt.mostGold, r.gold),
     pouchWins: [...pouchWins],
     recordWins: [...recordWins],
+    balance,
   };
   writeLifetime(next);
 }

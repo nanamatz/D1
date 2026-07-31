@@ -348,7 +348,7 @@ GDD §10.3: 노름꾼 = **스펙트럴 대응**. 희귀하고, 강력하고, **�
 | ✔ | 이름 (ko / en) | 효과 | 특성 | 비고 |
 |---|---|---|---|---|
 | [ ] | 제비 / Barn Swallow | 핸드에서 선택한 타일 1장의 폰트를 **Black**으로 | 강화 | `retriggerPlay` |
-| [ ] | 기러기 / Geese | 선택한 타일 1장의 폰트를 **Bold**로 | 강화 | `chipPlay` |
+| [ ] | 기러기 / Geese | 선택한 타일 1장의 폰트를 **Underline / 밑줄**로 (`bold` 내부 ID) | 강화 | `chipPlay` |
 | [ ] | 휘파람새 / Bush Warbler | 선택한 타일 1장의 폰트를 **Light Italic**으로 | 강화 | `goldPlay` |
 | [ ] | 뻐꾸기 / Cuckoo | 선택한 타일 1장의 폰트를 **Inline**으로 | 강화 | `discardGain` |
 | [ ] | 휘장 / Curtain | 선택한 타일 1장의 **복사본 2장**을 핸드에 추가 | 생성 | 재료·폰트·판본까지 복사 |

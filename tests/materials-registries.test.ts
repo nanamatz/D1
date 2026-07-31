@@ -49,7 +49,7 @@ describe('material registries stay in sync with the engine (I-1 regression guard
       expect(body).not.toMatch(/\[(?:c:칩|m:배수)\s/);
     }
     expect((ko as Record<string, string>)['materialdesc.leadPlate'])
-      .toContain('1/5 확률로 [m:+20 배수], 1/5 확률로 [$:+$20]');
+      .toContain('[n:1]/[n:5] 확률로 [m:+20 배수], [n:1]/[n:5] 확률로 [$:+$20]');
   });
 
   it("Collection.tsx's MATERIALS list covers the full TileMaterial union", () => {

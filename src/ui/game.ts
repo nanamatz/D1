@@ -1,10 +1,9 @@
 /**
  * UI-side game helpers. These read engine snapshots and derive display data;
  * they contain NO game rules — every decision routes back through the engine
- * (scoreWord/judgeSentence/etc). The React hook (useGame) owns the state.
+ * (scoreWord/etc). The React hook (useGame) owns the state.
  */
 import { baseScore, scoreWord, letterString } from '../engine/scoring';
-import { judgeSentence, finalizeScore } from '../engine/patterns';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
@@ -13,7 +12,6 @@ import { fontDescKey } from './descriptions';
 import type { Lexicon } from '../engine/lexicon';
 import type {
   BlindState,
-  PatternId,
   RunState,
   Suit,
   Tile,
@@ -34,22 +32,6 @@ export function tilesByIds(hand: readonly Tile[], ids: readonly string[]): Tile[
   return ids.map((id) => byId.get(id)).filter((t): t is Tile => t !== undefined);
 }
 
-const PATTERN_LABEL: Record<PatternId, string> = {
-  outcry: 'Outcry',
-  imperative: 'Imperative',
-  chant: 'Chant',
-  simple: 'Simple',
-  descriptive: 'Descriptive',
-  transitive: 'Transitive',
-  ditransitive: 'Ditransitive',
-  compound: 'Compound',
-  objectComplement: 'Object Complement',
-  interrogative: 'Interrogative',
-  negative: 'Negative',
-  complex: 'Complex',
-};
-export const patternLabel = (id: PatternId): string => PATTERN_LABEL[id];
-
 /** css class suffix for a suit (word frame / tile). */
 export const suitClass = (suit: Suit | null): string => (suit ? suit : 'standard');
 
@@ -59,14 +41,8 @@ export interface StagePreview {
   suit: Suit | null;
   chips: number;
   suitMult: number;
-  /** the pattern this play would complete for the whole sequence, if any */
-  completes: { pattern: PatternId; label: string } | null;
   /** POS of the staged word (item 6) — its tagged set, shown before submitting */
   pos: string | null;
-  /** projected sentence bonus if this word is submitted (item 6): pattern + unison
-   *  + modifiers on top of the raw committed. Jokers are NOT simulated here, so this
-   *  is the base forecast; 0 when the play adds no sentence bonus. */
-  sentenceBonus: number;
   /** the letter hand this word matches (A-2), if any */
   letterHand: { id: LetterHandId; chips: number; mult: number } | null;
   /** true if the active boss forbids this word (The Noun Lock) */
@@ -78,7 +54,7 @@ export interface StagePreview {
 /** A translate fn (i18n `t`) — POS keys carry no params, so a key→string is enough. */
 export type PosTranslate = (key: string) => string;
 
-/** Preview the staged word: validity, suit, chips, POS, and pattern/bonus forecast. */
+/** Preview the staged word: validity, suit, chips, POS, and letter hand. */
 export function stagePreview(
   blind: BlindState,
   run: RunState,
@@ -90,7 +66,6 @@ export function stagePreview(
   if (tiles.length === 0) return null;
   const base = baseScore(tiles, lexicon);
   const hypothetical: WordSubmission = scoreWord(tiles, lexicon);
-  const judged = judgeSentence([...blind.sequence, hypothetical], lexicon);
   const blocked = blind.bossId
     ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
     : false;
@@ -100,22 +75,13 @@ export function stagePreview(
     (boss?.voids?.(hypothetical, blind.sequence) ?? false);
   const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, base.isGibberish);
-  // Forecast the sentence bonus this play would add: finalize the whole sequence
-  // (existing words + this staged one) and subtract the raw committed. Uses the
-  // joker-less settled scores (scoreWord), so it matches the engine minus sentence
-  // jokers — a stable, honest preview number.
-  const committedAfter = blind.committedScore + hypothetical.settledScore;
-  const finalized = finalizeScore(committedAfter, judged, run.patternLevels);
-  const sentenceBonus = base.isGibberish ? 0 : Math.max(0, finalized.total - committedAfter);
   return {
     text: base.text,
     isGibberish: base.isGibberish,
     suit: base.suit,
     chips: base.chips,
     suitMult: base.mult,
-    completes: judged.match ? { pattern: judged.match.pattern, label: patternLabel(judged.match.pattern) } : null,
     pos: base.isGibberish ? null : posLabel(hypothetical, lexicon, t),
-    sentenceBonus,
     letterHand: letterHand ? { id: letterHand.id, chips: letterHand.chips, mult: letterHand.mult } : null,
     blocked,
     debuffed,
@@ -167,28 +133,32 @@ type TFull = (key: string, params?: Record<string, string | number>) => string;
 
 /**
  * The shared letter-tile tooltip (feature-04 B, GDD §2.4). Spells out the three
- * enhancement axes SEPARATELY, each with its own effect text: material, font, and
- * edition — only the ones a tile actually carries. One builder so every surface
- * (hand, tray, pouch, shop, opened packs, collection) shows the identical read, and
- * a Light-Italic Lead-plate Gray tile is legible in a single hover. Newline-joined;
- * `.tt-body` is `white-space: pre-line`, so each axis lands on its own line.
+ * enhancement axes SEPARATELY: compact badges stack beneath the main tooltip and
+ * their effect definitions use the shared count-aware inline/left layout.
  */
-export function tileTooltip(tile: Tile, t: TFull): { title: string; body: string } {
-  const lines: string[] = [t('tile.chips', { n: tileValue(tile) })];
+export function tileTooltip(tile: Tile, t: TFull) {
+  const tags: { label: string; tone: 'material' | 'font' | 'gray' | 'violet' | 'rainbow' }[] = [];
+  const sub: { title: string; body: string; kind: 'material' | 'font' | 'edition' }[] = [];
   if (tile.material !== 'ceramic') {
-    lines.push(`[a:${t(`material.${tile.material}`)}] — ${t(`materialdesc.${tile.material}`)}`);
+    const title = t(`material.${tile.material}`);
+    tags.push({ label: title, tone: 'material' });
+    sub.push({ title, body: t(`materialdesc.${tile.material}`), kind: 'material' });
   }
   if (tile.font !== 'medium') {
     // fonteffectdesc is keyed by EFFECT, resolved through the balance mapping.
-    lines.push(`[a:${t(`font.${tile.font}`)}] — ${t(fontDescKey(tile.font))}`);
+    const title = t(`font.${tile.font}`);
+    tags.push({ label: title, tone: 'font' });
+    sub.push({ title, body: t(fontDescKey(tile.font)), kind: 'font' });
   }
   const edition = tile.edition ?? 'base';
   if (edition !== 'base') {
-    lines.push(`${t(`edition.${edition}`)} — ${t(`editiondesc.${edition}`)}`);
+    const title = t(`edition.${edition}`);
+    tags.push({ label: title, tone: edition });
+    sub.push({ title, body: t(`editiondesc.${edition}`), kind: 'edition' });
   }
   // Stone has no glyph — title falls back to its material name so the card is identifiable.
   const title = tileGlyph(tile) || t(`material.${tile.material}`);
-  return { title, body: lines.join('\n') };
+  return { title, body: t('tile.chips', { n: tileValue(tile) }), tags, sub };
 }
 
 /**

@@ -24,8 +24,28 @@ describe('latest feedback UI regressions', () => {
     expect(screens).toContain('.coll-card.mascot-card.selected');
   });
 
+  it('keeps Help compact, restores voiced glossary copy, and omits tutorial replay', () => {
+    const options = source('src/ui/components/Options.tsx');
+    expect(options).toContain("voicedKeys(`enc.${e.id}`, e.mascot ?? 'woodak')");
+    expect(options).not.toContain('tutorial.${e.id}.body');
+    expect(options).not.toContain('hasSeen(e.id)');
+    expect(options).not.toContain("t('help.undiscovered')");
+    expect(options).not.toContain('help.replayIntro');
+    expect(options).not.toContain('resetIntro');
+    expect(screens).toMatch(
+      /\.help-groups\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*repeat\(2,/s,
+    );
+  });
+
   it('makes the boss entry card 50 percent taller', () => {
     expect(play).toMatch(/\.boss-intro-card\s*\{[^}]*min-height:\s*264px/s);
+  });
+
+  it('renders boss-description highlight markup on every plain-text surface', () => {
+    for (const component of ['BlindSelect', 'BossIntro', 'RunInfo', 'Sidebar']) {
+      const content = source(`src/ui/components/${component}.tsx`);
+      expect(content, component).toMatch(/richText\(t\((?:bossDescKey|`bossdesc\.)/);
+    }
   });
 
   it('runs the ordered Constellation score and dissolve sequence', () => {
@@ -38,11 +58,13 @@ describe('latest feedback UI regressions', () => {
     expect(screens).toContain('@keyframes plu-card-vanish');
   });
 
-  it('emphasizes material and font names in tile tooltip copy', () => {
+  it('separates material and font names into enhancement tags and left definitions', () => {
     const game = source('src/ui/game.ts');
-    expect(game).toContain('[a:${t(`material.${tile.material}`)}]');
-    expect(game).toContain('[a:${t(`font.${tile.font}`)}]');
-    expect(screens).toContain('.hl-axis');
+    expect(game).toContain("tags.push({ label: title, tone: 'material' })");
+    expect(game).toContain("tags.push({ label: title, tone: 'font' })");
+    expect(game).toContain('sub.push({ title, body:');
+    expect(screens).toContain('.tt-enhancement-tag');
+    expect(screens).toContain('right: calc(100% + 4px)');
   });
 
   it('opens revealed pack-card tooltips above the card', () => {

@@ -1,10 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import en from '../locales/en.json';
+import ko from '../locales/ko.json';
 import type { RunState } from '../src/engine/types';
 import {
   consumableAxisTip,
   consumableTooltipBody,
   consumableTooltipExtra,
+  referencedFontTips,
 } from '../src/ui/descriptions';
 
 const t = (key: string | string[], params?: Record<string, string | number>): string => {
@@ -25,7 +28,28 @@ describe('shared consumable tooltip copy', () => {
     expect(consumableAxisTip('fable4', t)).toEqual({
       title: 'material.leadPlate',
       body: 'materialdesc.leadPlate',
+      kind: 'material',
     });
+  });
+
+  it('derives font sub-tooltips from any effect description that names a font', () => {
+    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    const koT = translate(ko);
+    const enT = translate(en);
+
+    expect(referencedFontTips(ko['consumabledesc.barnSwallow'], koT)).toEqual([{
+      title: ko['font.black'],
+      body: ko['fonteffectdesc.retriggerPlay'],
+      kind: 'font',
+    }]);
+    expect(referencedFontTips(en['jokerdesc.lightTouch'], enT)).toEqual([{
+      title: en['font.lightItalic'],
+      body: en['fonteffectdesc.goldPlay'],
+      kind: 'font',
+    }]);
+    expect(referencedFontTips(en['pouch.military.desc'], enT)).toEqual([]);
+    expect(readFileSync('src/ui/components/Tooltip.tsx', 'utf8')).toContain('referencedFontTips');
   });
 
   it('provides the live Fable 17 value only when applicable', () => {

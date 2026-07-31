@@ -27,6 +27,7 @@ import { effectiveBlindTarget } from './economy';
 import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
 import { balancePouchAxes } from './pouches';
+import { EMPTY_NEXT_BLIND_BONUS } from './skipRewards';
 import type {
   BlindKind,
   BlindState,
@@ -78,7 +79,13 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     kind === 'boss' ? (opts.bossId ?? drawBoss(rng, bossPoolForAnte(run.ante))) : null;
   const boss = bossId ? BOSS_REGISTRY.get(bossId) : undefined;
 
-  const effHandSize = Math.max(1, run.handSize + (boss?.handSizeDelta ?? 0));
+  const nextBonus = kind === kindForIndex(run.blindIndex)
+    ? run.nextBlindBonus
+    : EMPTY_NEXT_BLIND_BONUS;
+  const effHandSize = Math.max(
+    1,
+    run.handSize + (boss?.handSizeDelta ?? 0) + nextBonus.handSize,
+  );
   const shuffled = rng.shuffle(run.bag);
   const ordered = opts.openingLetters ? frontLoadLetters(shuffled, opts.openingLetters) : shuffled;
   const { drawn: hand, bag } = drawTiles(ordered, effHandSize);
@@ -89,13 +96,14 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     bossId,
     target:
       opts.target !== undefined
-        ? opts.target * targetMult
+        ? opts.target * targetMult * nextBonus.targetMultiplier
         : effectiveBlindTarget(run, kind, targetMult),
-    phasesTotal: run.basePhases,
+    handSizeTotal: effHandSize,
+    phasesTotal: Math.max(1, run.basePhases + nextBonus.phases),
     phasesUsed: 0,
-    discardsLeft: run.baseDiscards,
-    committedScore: 0,
-    projectedScore: 0,
+    discardsLeft: Math.max(0, run.baseDiscards + nextBonus.discards),
+    committedScore: nextBonus.startingScore,
+    projectedScore: nextBonus.startingScore,
     sequence: [],
     bag,
     hand,
@@ -169,6 +177,9 @@ export interface DiscardResult {
  *  Book −3, §8.3). Draw-backs fill the hand UP TO this, so it never sits below full while
  *  the bag has tiles (feedback #9: draw by empty slots, not by the count removed). */
 function effectiveHandSize(run: RunState, blind: BlindState): number {
+  if (Number.isFinite(blind.handSizeTotal) && blind.handSizeTotal > 0) {
+    return blind.handSizeTotal;
+  }
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   return Math.max(1, run.handSize + (boss?.handSizeDelta ?? 0));
 }
@@ -238,6 +249,8 @@ export interface SubmitResult {
   bossDiscardedTiles: Tile[];
   /** cloned, state-updated owned Emoji Tiles */
   jokers: RunState['jokers'];
+  /** run-wide counters updated by this successful submission */
+  counters: RunState['counters'];
 }
 
 /**
@@ -801,8 +814,19 @@ export function submitWord(
     afterBlind,
     rng,
   );
-  const postBossRun = afterBoss.run;
+  const postBossRun: RunState = {
+    ...afterBoss.run,
+    counters: {
+      ...afterBoss.run.counters,
+      totalWords: afterBoss.run.counters.totalWords + 1,
+    },
+  };
   afterBlind = afterBoss.blind;
+  defaultJokerBus.emit(
+    'wordScored',
+    { run: postBossRun, blind: afterBlind, index: afterBlind.sequence.length - 1 },
+    postBossRun.jokers,
+  );
   const committedScore = afterBlind.committedScore;
   const sequence = afterBlind.sequence;
 
@@ -826,6 +850,7 @@ export function submitWord(
     grownWoodTileIds,
     bossDiscardedTiles,
     jokers: postBossRun.jokers,
+    counters: postBossRun.counters,
     blind: { ...afterBlind, projectedScore },
   };
 }

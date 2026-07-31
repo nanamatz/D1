@@ -10,7 +10,7 @@ const shopWith = (
   items: (ShopItem | null)[],
   rerolls = 0,
   voucher: VoucherId | null = null,
-): ShopState => ({ items, voucher, packs: [], rerolls });
+): ShopState => ({ items, voucher, bonusVoucher: null, packs: [], rerolls });
 const dummyJokers = (n: number): OwnedJoker[] =>
   Array.from({ length: n }, (_, i) => ({ defId: `d${i}`, state: {} }));
 

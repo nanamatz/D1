@@ -16,7 +16,7 @@ export type TileMaterial =
   | 'ceramic' | 'porcelain' | 'polished' | 'glass' | 'stone'
   | 'leadPlate' | 'ivory' | 'brass' | 'wood';
 
-/** Edition layer (GDD §2.3). 'medium' (Futura Medium) is the base. */
+/** Font enhancement axis (GDD §2.3). `bold` is the persisted id displayed as Underline. */
 export type TileFont = 'medium' | 'lightItalic' | 'bold' | 'inline' | 'black';
 
 /** Balatro-style visual/scoring edition, separate from material and font. */
@@ -214,6 +214,52 @@ export interface SentenceBonusBreakdown {
 
 export type BlindKind = 'small' | 'big' | 'boss';
 
+/** Publishing-world rewards offered for skipping Draft or Revision (GDD §8.2). */
+export type SkipRewardId =
+  | 'advancePayment'
+  | 'houseStyle'
+  | 'extraPages'
+  | 'copyPass'
+  | 'leadStory'
+  | 'quotaRelief'
+  | 'publicity'
+  | 'coverQuote'
+  | 'uncommonTag'
+  | 'rareTag'
+  | 'whiteTag'
+  | 'violetTag'
+  | 'rainbowTag'
+  | 'grayTag'
+  | 'investmentTag'
+  | 'voucherTag'
+  | 'bossTag'
+  | 'tileTag'
+  | 'fableTag'
+  | 'constellationTag'
+  | 'charmTag'
+  | 'handyTag'
+  | 'garbageTag'
+  | 'inkTag'
+  | 'couponTag'
+  | 'jugglerTag'
+  | 'economyTag';
+
+/** The reward is rolled and fully disclosed before the player chooses to skip. */
+export interface SkipRewardOffer {
+  id: SkipRewardId;
+  /** House Style's exact sentence pattern is part of the disclosed offer. */
+  pattern?: PatternId;
+}
+
+/** Bonuses carried until the next blind the player actually chooses to play. */
+export interface NextBlindBonus {
+  phases: number;
+  discards: number;
+  handSize: number;
+  targetMultiplier: number;
+  startingScore: number;
+}
+
 /** Starting-pouch choice. Display names live in i18n; engine ids stay stable. */
 export type PouchId =
   | 'yellow'
@@ -246,6 +292,8 @@ export interface BlindState {
   kind: BlindKind;
   bossId: string | null; // from data/bosses, only when kind === 'boss'
   target: number;
+  /** Opening/draw-back hand size after boss and carried skip-reward modifiers. */
+  handSizeTotal: number;
   phasesTotal: number;
   phasesUsed: number;
   discardsLeft: number;
@@ -276,6 +324,20 @@ export interface RunState {
   /** Chapter 8 Deadline already cleared. Endless failure never revokes this win. */
   victorySecured: boolean;
   blindIndex: 0 | 1 | 2; // small / big / boss
+  /** Fixed, seeded Draft/Revision skip rewards for the current Chapter. */
+  skipOffers: [SkipRewardOffer, SkipRewardOffer];
+  /** Which non-Deadline stages were skipped in the current Chapter. */
+  skippedThisChapter: (0 | 1)[];
+  /** Lifetime count within this run; balance telemetry and future hooks read it. */
+  skippedBlinds: number;
+  /** Stacks across consecutive skips and is consumed only when Play is chosen. */
+  nextBlindBonus: NextBlindBonus;
+  /** Stacks across skips and is consumed by the next successfully cleared blind. */
+  pendingClearReward: number;
+  /** Shop-facing tags wait here until a generated shop can apply them. */
+  pendingShopTags: SkipRewardId[];
+  /** Investment Tags stack until the next successfully cleared Deadline. */
+  pendingBossReward: number;
   gold: number;
   handSize: number; // base 11, a balance knob (GDD §6.2)
   basePhases: number; // base 5
@@ -315,13 +377,22 @@ export interface ScalingCounters {
   earlyEnds: number;
   enhancedTilesUsed: number;
   nonBaseFontTilesUsed: number;
+  /** Discard actions left unused on successfully cleared blinds this run. */
+  unusedDiscards: number;
 }
 
 // ---------- Shop (GDD §9.2) ----------
 
 /** One purchasable in a shop item slot. `null` in a slot means bought/empty. */
 export type ShopItem =
-  | { kind: 'joker'; id: string; edition?: JokerEdition; price: number }
+  | {
+      kind: 'joker';
+      id: string;
+      edition?: JokerEdition;
+      price: number;
+      /** Guaranteed rarity-tag stock stays beside ordinary items on reroll. */
+      rarityTag?: 'uncommonTag' | 'rareTag';
+    }
   | { kind: 'consumable'; id: ConsumableId; price: number }
   | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId; price: number }
   | { kind: 'tile'; tile: Tile; price: number };
@@ -338,6 +409,8 @@ export type PackSize = 'normal' | 'jumbo' | 'mega';
 export interface PackSlot {
   type: PackType;
   size: PackSize;
+  /** Coupon Tag makes only the next shop's initially stocked packs free. */
+  free?: boolean;
   /** cosmetic art-variant index for this size, seeded at stock time (UI maps it
    *  to a PNG in packArt.ts). Purely presentational — no gameplay effect. */
   artVariant: number;
@@ -347,6 +420,8 @@ export interface ShopState {
   items: (ShopItem | null)[];
   /** single voucher slot, restocks each ante (GDD §9.2); null when owned/bought */
   voucher: VoucherId | null;
+  /** Voucher Tag adds one extra choice; either purchase still locks the Chapter. */
+  bonusVoucher: VoucherId | null;
   /** pack slots (null = bought) */
   packs: (PackSlot | null)[];
   /** rerolls done this visit — drives the escalating reroll cost */

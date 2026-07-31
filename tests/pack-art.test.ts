@@ -44,14 +44,15 @@ describe('packArt — (type, size) → art mapping', () => {
     }
   });
 
-  it('ships all 32 runtime artworks as Star-Pack-sized path-only SVGs', () => {
+  it('ships 32 path-only SVG masters and 32 runtime PNG derivatives', () => {
     const directory = fileURLToPath(
       new URL('../src/ui/assets/packs/', import.meta.url),
     );
     const files = readdirSync(directory);
     const svgFiles = files.filter((file) => file.endsWith('.svg'));
+    const pngFiles = files.filter((file) => file.endsWith('-preview.png'));
     expect(svgFiles).toHaveLength(32);
-    expect(files.some((file) => file.endsWith('.png'))).toBe(false);
+    expect(pngFiles).toHaveLength(32);
 
     for (const file of svgFiles) {
       const svg = readFileSync(`${directory}/${file}`, 'utf8');
@@ -61,7 +62,12 @@ describe('packArt — (type, size) → art mapping', () => {
       expect(svg).toContain('stretch fit');
       expect(svg).toContain('<path ');
       expect(svg).not.toMatch(/<image|data:image|\.png/);
+      expect(pngFiles).toContain(file.replace(/\.svg$/, '-preview.png'));
     }
+
+    expect(Object.values(PACK_ART).flatMap((sizes) =>
+      Object.values(sizes).flat(),
+    ).every((src) => src.includes('-preview-') || src.includes('-preview.'))).toBe(true);
   });
 });
 

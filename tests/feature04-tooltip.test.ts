@@ -5,7 +5,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { tileTooltip } from '../src/ui/game';
-import { jokerTooltipBody } from '../src/ui/descriptions';
+import { jokerTooltip } from '../src/ui/descriptions';
+import { splitTooltipDetails, stripTooltipPeriods } from '../src/ui/components/Tooltip';
 import type { Tile } from '../src/engine/types';
 
 // key-echo translator: returns the key itself (params ignored) so assertions can
@@ -17,31 +18,59 @@ const tile = (over: Partial<Tile> = {}): Tile => ({
 });
 
 describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
-  it('a plain tile shows only its chip value — no axis lines', () => {
-    const { body } = tileTooltip(tile(), t);
+  it('a plain tile shows only its chip value — no enhancement tags or definitions', () => {
+    const { body, tags, sub } = tileTooltip(tile(), t);
     expect(body).toBe('tile.chips');
-    expect(body).not.toContain('material.');
-    expect(body).not.toContain('font.');
-    expect(body).not.toContain('edition.');
+    expect(tags).toEqual([]);
+    expect(sub).toEqual([]);
   });
 
-  it('acceptance: a Light-Italic Lead-plate Gray tile reads all three in one hover', () => {
-    const { title, body } = tileTooltip(
+  it('stacks all three enhancement tags in material, font, edition priority order', () => {
+    const { title, body, tags, sub } = tileTooltip(
       tile({ material: 'leadPlate', font: 'lightItalic', edition: 'gray' }),
       t,
     );
     expect(title).toBe('C');
-    const lines = body.split('\n');
-    expect(lines).toHaveLength(4); // chips + material + font + edition
-    // material axis: name + its effect
-    expect(body).toContain('material.leadPlate');
-    expect(body).toContain('materialdesc.leadPlate');
-    // font axis: name + effect (resolved through the balance mapping → goldPlay)
-    expect(body).toContain('font.lightItalic');
-    expect(body).toContain('fonteffectdesc.goldPlay');
-    // edition axis: name + effect
-    expect(body).toContain('edition.gray');
-    expect(body).toContain('editiondesc.gray');
+    expect(body).toBe('tile.chips');
+    expect(tags).toEqual([
+      { label: 'material.leadPlate', tone: 'material' },
+      { label: 'font.lightItalic', tone: 'font' },
+      { label: 'edition.gray', tone: 'gray' },
+    ]);
+    expect(sub).toEqual([
+      { title: 'material.leadPlate', body: 'materialdesc.leadPlate', kind: 'material' },
+      { title: 'font.lightItalic', body: 'fonteffectdesc.goldPlay', kind: 'font' },
+      { title: 'edition.gray', body: 'editiondesc.gray', kind: 'edition' },
+    ]);
+  });
+
+  it('folds the highest-priority detail into the main card only when two or more exist', () => {
+    const details = tileTooltip(
+      tile({ material: 'leadPlate', font: 'lightItalic', edition: 'gray' }),
+      t,
+    ).sub;
+
+    expect(splitTooltipDetails(details.slice(0, 1))).toEqual({
+      inline: null,
+      left: [details[0]],
+    });
+    expect(splitTooltipDetails(details.slice(0, 2))).toEqual({
+      inline: details[0],
+      left: [details[1]],
+    });
+    expect(splitTooltipDetails(details)).toEqual({
+      inline: details[0],
+      left: [details[1], details[2]],
+    });
+  });
+
+  it('uses semantic priority for automatic details and removes duplicate definitions', () => {
+    const font = { title: 'Black', body: 'Retrigger once', kind: 'font' as const };
+    const edition = { title: 'Gray', body: '+20 Chips', kind: 'edition' as const };
+    expect(splitTooltipDetails([edition, font, { ...font }])).toEqual({
+      inline: font,
+      left: [edition],
+    });
   });
 
   it('a Stone tile (no glyph) titles by its material name', () => {
@@ -49,9 +78,15 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
   });
 
   it('an Emoji Tile tooltip names its edition and effect', () => {
-    const body = jokerTooltipBody('stargazer', 'white', t);
-    expect(body).toContain('jokerdesc.stargazer');
-    expect(body).toContain('edition.white');
-    expect(body).toContain('editiondesc.white');
+    expect(jokerTooltip('stargazer', 'white', t)).toEqual({
+      body: 'jokerdesc.stargazer',
+      tags: [{ label: 'edition.white', tone: 'white' }],
+      sub: [{ title: 'edition.white', body: 'editiondesc.white', kind: 'edition' }],
+    });
+  });
+
+  it('removes description periods without breaking decimal values', () => {
+    expect(stripTooltipPeriods('Gain Chips. Current ×1.5.\n끝. 다음。'))
+      .toBe('Gain Chips Current ×1.5\n끝 다음');
   });
 });
