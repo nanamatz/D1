@@ -201,6 +201,36 @@ export const MUSIC: Record<MusicTrack, TrackDef> = {
   },
 };
 
+/**
+ * Re-sync a lookahead sequencer after the timer driving it was throttled.
+ *
+ * Browsers clamp background-tab `setInterval` to ~1s while the AudioContext
+ * clock keeps advancing, so on return the next scheduled step sits in the PAST.
+ * Scheduling the missed steps anyway fires them all at once — an audible burst.
+ * Skip them instead, advancing the step index by the same amount so the loop
+ * keeps its phase rather than restarting mid-bar.
+ *
+ * Returns the input unchanged when nothing was missed. Pure, so the burst case
+ * is testable without a real AudioContext.
+ */
+export function catchUpSequencer(
+  nextStepTime: number,
+  currentStep: number,
+  now: number,
+  secPerStep: number,
+  steps: number,
+): { nextStepTime: number; currentStep: number; skipped: number } {
+  if (nextStepTime >= now || secPerStep <= 0 || steps <= 0) {
+    return { nextStepTime, currentStep, skipped: 0 };
+  }
+  const skipped = Math.ceil((now - nextStepTime) / secPerStep);
+  return {
+    nextStepTime: nextStepTime + skipped * secPerStep,
+    currentStep: (currentStep + skipped) % steps,
+    skipped,
+  };
+}
+
 /** Pure gain computation — master × group × recipe, each 0..1. Exposed for tests. */
 export function effectiveGain(
   name: SfxName,
@@ -333,7 +363,12 @@ class Audio {
     this.currentStep = 0;
     const tick = () => {
       if (!this.ctx || !this.musicGain) return;
-      const horizon = this.ctx.currentTime + 0.12; // schedule ~120ms ahead
+      const now = this.ctx.currentTime;
+      // Drop anything a throttled background tab made us miss (see above).
+      const synced = catchUpSequencer(this.nextStepTime, this.currentStep, now, secPerStep, steps);
+      this.nextStepTime = synced.nextStepTime;
+      this.currentStep = synced.currentStep;
+      const horizon = now + 0.12; // schedule ~120ms ahead
       while (this.nextStepTime < horizon) {
         this.scheduleStep(track, this.currentStep, this.nextStepTime, secPerStep);
         this.nextStepTime += secPerStep;

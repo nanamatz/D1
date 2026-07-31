@@ -181,7 +181,7 @@
   "pack.constellationLevels": "{pattern} 패턴을 즉시 레벨업",
   "boss.blocked": "보스가 이 단어를 막았습니다.",
   "boss.blockedWord": "보스 차단 — 이 단어는 제출할 수 없습니다",
-  "boss.notAllowed": "Not Allowed",
+  "boss.notAllowed": "점수 무효",
   "patternLevel.chips": "칩",
   "patternLevel.mult": "배수",
   "boss.faceDownTile": "뒤집힌 모음 타일",

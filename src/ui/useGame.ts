@@ -1515,8 +1515,9 @@ export function useGame(): UseGame {
       const pool = prev.run.chapterBossId
         ? bossPoolForId(prev.run.chapterBossId)
         : bossPoolForAnte(prev.run.ante);
-      let bossId = drawBoss(rng, pool);
-      if (bossId === prev.run.chapterBossId) bossId = drawBoss(rng, pool);
+      // Exclude the current boss from the pool rather than re-drawing on a
+      // match: two draws could both land on it, and the player paid for a change.
+      const bossId = drawBoss(rng, pool, prev.run.chapterBossId);
       const run = {
         ...prev.run,
         gold: prev.run.gold - bossRerollPrice(),

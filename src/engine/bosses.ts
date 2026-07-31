@@ -230,10 +230,28 @@ export const bossPoolForAnte = (ante: number): BossPool =>
 export const bossPoolForId = (id: string | null): BossPool =>
   id && FINISHER_BOSS_IDS.includes(id) ? 'finisher' : 'core';
 
-/** Draw a boss for a boss blind (seeded). */
-export function drawBoss(rng: { int: (n: number) => number }, pool: BossPool = 'core'): string {
-  const ids = pool === 'finisher' ? FINISHER_BOSS_IDS : CORE_BOSS_IDS;
-  return ids[rng.int(ids.length)]!;
+/**
+ * Draw a boss for a boss blind (seeded).
+ *
+ * `exclude` removes an id from the pool BEFORE the draw — that is what makes a
+ * paid reroll actually reroll. The UI used to draw once and re-draw only if it
+ * matched, which still returns the same boss when both draws land on it: 0.69%
+ * on the 12-boss core pool but 6.25% on the 4-boss finisher pool, i.e. one in
+ * sixteen $10 rerolls on a final Chapter did nothing at all. Excluding is also
+ * one seeded draw instead of two, so the RNG stream stays simple.
+ *
+ * A pool of one falls back to that id: a reroll that cannot change anything is
+ * the caller's decision to prevent, not a reason to return nothing.
+ */
+export function drawBoss(
+  rng: { int: (n: number) => number },
+  pool: BossPool = 'core',
+  exclude?: string | null,
+): string {
+  const all = pool === 'finisher' ? FINISHER_BOSS_IDS : CORE_BOSS_IDS;
+  const ids = exclude ? all.filter((id) => id !== exclude) : all;
+  const from = ids.length > 0 ? ids : all;
+  return from[rng.int(from.length)]!;
 }
 
 export function enterBossBlind(
