@@ -159,7 +159,7 @@ describe('#5 Butterflies / #10 Full Moon — destruction', () => {
     );
   });
 
-  it('Full Moon trades one tile for three enhanced vowels, never Stone', () => {
+  it('Full Moon trades one tile for three vowels enhanced on any one tile axis', () => {
     const { run, blind } = setup('fullMoon');
     const result = useGambler('fullMoon', run, blind, blind.hand.slice(0, 1), [], rng('moon'));
     expect(result.run.bag).toHaveLength(run.bag.length - 1 + 3);
@@ -167,9 +167,29 @@ describe('#5 Butterflies / #10 Full Moon — destruction', () => {
     expect(born).toHaveLength(3);
     for (const tile of born) {
       expect(['A', 'E', 'I', 'O', 'U']).toContain(tile.letter);
-      expect(tile.material).not.toBe('ceramic');
       expect(tile.material).not.toBe('stone');
+      expect([
+        tile.material !== 'ceramic',
+        tile.font !== 'medium',
+        (tile.edition ?? 'base') !== 'base',
+      ].filter(Boolean)).toHaveLength(1);
     }
+  });
+
+  it('Full Moon can roll material, font, and edition enhancements', () => {
+    const axes = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      const { run, blind } = setup('fullMoon');
+      const result = useGambler(
+        'fullMoon', run, blind, blind.hand.slice(0, 1), [], rng(`moon-axis-${i}`),
+      );
+      for (const tile of result.run.bag.filter((candidate) => candidate.id.startsWith('gb'))) {
+        if (tile.material !== 'ceramic') axes.add('material');
+        if (tile.font !== 'medium') axes.add('font');
+        if ((tile.edition ?? 'base') !== 'base') axes.add('edition');
+      }
+    }
+    expect(axes).toEqual(new Set(['material', 'font', 'edition']));
   });
 });
 

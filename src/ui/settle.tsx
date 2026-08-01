@@ -283,7 +283,9 @@ export function SettleProvider({
           // Preserve the source operation in both the score-box and Emoji Tile
           // readouts: additive Mult shows +N, multiplicative Mult shows ×factor.
           const multFactor =
-            e.kind === 'joker' || e.kind === 'edition' ? e.multFactor : undefined;
+            e.kind === 'joker' || e.kind === 'edition' || e.kind === 'material'
+              ? e.multFactor
+              : undefined;
           const multiplied = multFactor !== undefined;
           const scorePop =
             chips !== prevChips || mult !== prevMult
@@ -372,6 +374,7 @@ export function SettleProvider({
                 tileId: e.tileId,
                 chips: e.chipsDelta,
                 mult: e.multDelta,
+                ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
                 gold: 0,
                 retrigger: false,
                 id: i,

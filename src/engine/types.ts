@@ -171,7 +171,7 @@ export interface WordScoringContext {
  */
 export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter | null; chips: number }
-  | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'font'; font: TileFont; effect: FontEffectId; tileId: string; chipsDelta: number; multDelta: number; goldDelta: number }
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }

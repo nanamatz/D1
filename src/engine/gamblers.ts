@@ -24,6 +24,7 @@ import type {
   PatternId,
   RunState,
   Tile,
+  TileEdition,
   TileFont,
   TileMaterial,
 } from './types';
@@ -83,11 +84,14 @@ const POOL_BY_RARITY: Record<'rare' | 'legendary', typeof RARE_JOKERS> = {
   legendary: LEGENDARY_JOKERS,
 };
 
-/** Vowel materials for Full Moon. Stone is excluded — it would erase the letter
- *  the card promises (GDD §10.3 #10). */
+/** Non-base enhancement pools for Full Moon. Stone is excluded because it would
+ * erase the vowel the card promises (GDD §10.3 #10). */
 const VOWEL_MATERIALS: readonly TileMaterial[] = [
   'porcelain', 'polished', 'glass', 'leadPlate', 'ivory', 'brass', 'wood',
 ];
+const VOWEL_FONTS: readonly TileFont[] = ['lightItalic', 'bold', 'inline', 'black'];
+const VOWEL_EDITIONS: readonly TileEdition[] = ['gray', 'violet', 'rainbow'];
+const VOWEL_ENHANCEMENT_AXES = ['material', 'font', 'edition'] as const;
 const VOWEL_LETTERS: readonly Letter[] = ['A', 'E', 'I', 'O', 'U'];
 const ALPHABET: readonly Letter[] = Object.keys(BALANCE.bagComposition) as Letter[];
 
@@ -255,13 +259,20 @@ export function useGambler(
         nextBlind,
         new Set(doomed.map((tile) => tile.id)),
       ));
-      const born = Array.from({ length: BALANCE.gambler.fullMoonVowels }, (_, i): Tile => ({
-        id: newTileId(rng, i),
-        letter: VOWEL_LETTERS[rng.int(VOWEL_LETTERS.length)]!,
-        material: VOWEL_MATERIALS[rng.int(VOWEL_MATERIALS.length)]!,
-        font: 'medium',
-        edition: 'base',
-      }));
+      const born = Array.from({ length: BALANCE.gambler.fullMoonVowels }, (_, i): Tile => {
+        const axis = VOWEL_ENHANCEMENT_AXES[rng.int(VOWEL_ENHANCEMENT_AXES.length)]!;
+        return {
+          id: newTileId(rng, i),
+          letter: VOWEL_LETTERS[rng.int(VOWEL_LETTERS.length)]!,
+          material: axis === 'material'
+            ? VOWEL_MATERIALS[rng.int(VOWEL_MATERIALS.length)]!
+            : 'ceramic',
+          font: axis === 'font' ? VOWEL_FONTS[rng.int(VOWEL_FONTS.length)]! : 'medium',
+          edition: axis === 'edition'
+            ? VOWEL_EDITIONS[rng.int(VOWEL_EDITIONS.length)]!
+            : 'base',
+        };
+      });
       nextRun = onTilesCreated(
         onTilesDestroyed({ ...nextRun, bag: [...nextRun.bag, ...born] }, doomed.length),
         born.length,

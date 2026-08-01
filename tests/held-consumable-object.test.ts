@@ -32,14 +32,14 @@ describe('held consumable foreground objects', () => {
     expect(shelf).toMatch(
       /className="consumable-object"[\s\S]*className="owned-object-select"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>/,
     );
-    expect(css).toContain('.consumable-slot.menu-open');
+    expect(css).toContain('.consumables .consumable-slot.menu-open');
     expect(css).toContain('.consumable-slot.menu-open .consumable-object-art');
     expect(css).toContain('.consumable-object > .consumable-menu.bare');
     expect(css).toMatch(
       /\.consumable-object:hover \.consumable-object-art,\s*\.consumable-object:focus-visible \.consumable-object-art\s*\{\s*filter: brightness\(1\.08\);\s*\}/,
     );
     expect(css).toMatch(
-      /\.joker-slot\.menu-open,\s*\.consumable-slot\.menu-open\s*\{[^}]*translate: 0 -5px/s,
+      /\.jokers \.joker-slot\.menu-open,\s*\.consumables \.consumable-slot\.menu-open\s*\{[^}]*z-index: 24;[^}]*translate: 0 -5px/s,
     );
     expect(css).toMatch(
       /\.consumable-object > \.consumable-menu\.bare button\.sell \{[^}]*left: calc\(100% \+ var\(--menu-offset\)\)/s,

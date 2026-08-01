@@ -3691,6 +3691,39 @@ body.cb-safe .tile.hint {
   color: var(--ink-dim);
   font-size: var(--fs-md);
 }
+.cr-tabs {
+  width: 100%;
+  margin: 4px 0 0;
+}
+.cr-tabs .ri-tab {
+  padding-inline: 5px;
+}
+.cr-body {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  text-align: left;
+}
+.cr-row,
+.cr-fonts p {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 10px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+}
+.cr-row span,
+.cr-fonts span {
+  color: var(--ink-dim);
+}
+.cr-fonts {
+  display: grid;
+  gap: 6px;
+}
 
 /* ---------- in-run overlays (spec §2.4, §2.8) ---------- */
 .sidebar-nav {
@@ -4490,6 +4523,175 @@ body.cb-safe .tile.hint {
 @media (prefers-reduced-motion: reduce) {
   .loading-mascot {
     animation: none;
+  }
+}
+
+/* Consumables without a bespoke sequence share one result vignette. Removed
+   objects collapse first; changed/created objects then land from the same
+   committed engine-state diff, so even pouch-only changes remain visible. */
+.consumable-effect {
+  position: fixed;
+  inset: 0;
+  z-index: 71;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgba(3, 9, 13, .4);
+  animation: cfx-overlay 2.4s ease forwards;
+}
+.cfx-stage {
+  display: grid;
+  grid-template-columns: 150px minmax(320px, 540px);
+  align-items: center;
+  gap: 24px;
+  max-width: min(760px, calc(100vw - 28px));
+  padding: 24px 28px;
+  border: 3px solid var(--gold);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: 0 12px 0 rgba(0, 0, 0, .45), 0 0 30px rgba(240, 178, 62, .3);
+  animation: cfx-stage-in .3s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+.cfx-stage.cfx-no-source {
+  grid-template-columns: minmax(320px, 540px);
+}
+.cfx-source {
+  width: 140px;
+  aspect-ratio: 5 / 7;
+  pointer-events: auto;
+  animation: cfx-card-cast 2.15s ease both;
+}
+.cfx-source img,
+.cfx-card-object img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.cfx-copy {
+  min-width: 0;
+  text-align: center;
+}
+.cfx-copy > strong {
+  display: block;
+  color: var(--gold);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-lg);
+  line-height: 1;
+}
+.cfx-copy > p {
+  margin: 7px 0 14px;
+  color: var(--ink);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.cfx-results {
+  min-height: 58px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.cfx-object {
+  position: relative;
+  pointer-events: auto;
+}
+.cfx-object .tile.mini {
+  width: 52px;
+  height: 52px;
+  font-size: 32px;
+}
+.cfx-joker,
+.cfx-card-object {
+  width: 52px;
+  height: 70px;
+  border-radius: 6px;
+}
+.cfx-joker img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.cfx-destroyed {
+  animation: cfx-destroy .85s ease .2s both;
+}
+.cfx-changed {
+  animation: cfx-change 1.15s cubic-bezier(.34, 1.7, .5, 1) .58s both;
+}
+.cfx-created {
+  animation: cfx-create 1.05s cubic-bezier(.34, 1.7, .5, 1) .76s both;
+}
+.cfx-stats {
+  min-height: 30px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cfx-stats span {
+  padding: 3px 9px;
+  border: 2px solid var(--gold);
+  border-radius: 7px;
+  color: var(--gold);
+  background: var(--inset);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-xl);
+  animation: cfx-stat-in .4s ease .9s both;
+}
+@keyframes cfx-overlay {
+  0%, 86% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes cfx-stage-in {
+  from { opacity: 0; transform: translateY(18px) scale(.84); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cfx-card-cast {
+  0% { transform: rotate(0) scale(.88); filter: brightness(1); }
+  18% { transform: rotate(-2deg) scale(1.06); }
+  28% { transform: rotate(2deg) scale(1.06); }
+  38% { transform: rotate(-1deg) scale(1.06); filter: brightness(1.6); }
+  72% { transform: none; opacity: 1; }
+  100% { transform: translateY(-15px) scale(.82); opacity: 0; filter: brightness(2); }
+}
+@keyframes cfx-destroy {
+  0%, 25% { opacity: 1; transform: none; filter: brightness(1); }
+  55% { filter: brightness(2); }
+  100% { opacity: 0; transform: scale(.12) rotate(18deg); filter: brightness(2); }
+}
+@keyframes cfx-change {
+  from { opacity: 0; transform: scale(.65); filter: brightness(2); }
+  55% { transform: scale(1.24); filter: brightness(1.7); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes cfx-create {
+  from { opacity: 0; transform: translateY(18px) scale(.2); filter: brightness(2); }
+  58% { opacity: 1; transform: translateY(-5px) scale(1.25); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes cfx-stat-in {
+  from { opacity: 0; transform: translateY(8px) scale(.75); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 620px) {
+  .cfx-stage {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px;
+  }
+  .cfx-source { width: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consumable-effect { animation: cfx-overlay 2.4s linear forwards; }
+  .cfx-stage,
+  .cfx-source,
+  .cfx-object,
+  .cfx-stats span {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
   }
 }
 

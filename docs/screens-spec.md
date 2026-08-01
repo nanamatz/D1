@@ -302,6 +302,16 @@ win rate, and the most common loss Chapter; the profile save retains the full
 per-Chapter loss histogram.
 Sub-screen **Word/Joker stats** (reference: per-card bar chart): per-joker "blinds completed while owned" bar chart **[PLACEHOLDER: ship data hooks only, screen later]**.
 
+### 2.13 Credits
+
+The Credits panel uses four compact, accessible tabs so attribution never
+overflows the shell screen: **Team · Visuals · Audio · Fonts**. Team names Ben
+Kim for game design/planning, development, and art direction, with an AI-use
+disclosure. Visuals disclose the ChatGPT/Claude-assisted generation and editing
+workflow. Audio states that all SFX/BGM are original runtime synthesis with no
+external samples. Fonts list Jost, Noto Sans KR, Baloo 2, and Jersey 10 with
+their project attribution and SIL OFL 1.1 source information.
+
 ## 3. Build notes
 
 - All screens are pure UI over headless engine state. Starting-Pouch/Record rules

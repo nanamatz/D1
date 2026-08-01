@@ -415,6 +415,7 @@ function scoreSubmission(
             tileId: t.id,
             chipsDelta: mat.chipsDelta,
             multDelta: mat.multDelta,
+            ...(mat.multFactor !== undefined ? { multFactor: mat.multFactor } : {}),
           });
         }
         defaultJokerBus.emit('materialScored', {

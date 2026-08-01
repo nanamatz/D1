@@ -12,6 +12,9 @@ import { Collection } from './Collection';
 
 type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
 type Tab = 'game' | 'video' | 'audio';
+type CreditsTab = 'team' | 'visuals' | 'audio' | 'fonts';
+
+const CREDIT_TABS: readonly CreditsTab[] = ['team', 'visuals', 'audio', 'fonts'];
 
 interface Props {
   lexicon: Lexicon;
@@ -281,6 +284,7 @@ function Stat({ k, v, muted }: { k: string; v: string | number; muted?: boolean 
 // ---------- Credits ----------
 function CreditsView() {
   const { t } = useI18n();
+  const [tab, setTab] = useState<CreditsTab>('team');
   return (
     <>
       <h2 className="scr-title">{t('options.credits')}</h2>
@@ -290,7 +294,53 @@ function CreditsView() {
           Play the Wor<span className="lt-bang">!</span>d
         </p>
         <p>{t('credits.tagline')}</p>
-        <p className="cr-dim">{t('credits.inspired')}</p>
+        <div className="ri-tabs cr-tabs" role="tablist" aria-label={t('options.credits')}>
+          {CREDIT_TABS.map((id) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              aria-controls={`credits-${id}`}
+              className={['ri-tab', tab === id ? 'active' : ''].filter(Boolean).join(' ')}
+              onClick={() => setTab(id)}
+            >
+              {t(`credits.tab.${id}`)}
+            </button>
+          ))}
+        </div>
+        <div id={`credits-${tab}`} className="cr-body" role="tabpanel">
+          {tab === 'team' && (
+            <>
+              <div className="cr-row"><span>{t('credits.planning')}</span><b>Ben Kim</b></div>
+              <div className="cr-row"><span>{t('credits.development')}</span><b>Ben Kim</b></div>
+              <p className="cr-dim">{t('credits.aiDisclosure')}</p>
+            </>
+          )}
+          {tab === 'visuals' && (
+            <>
+              <p>{t('credits.visuals')}</p>
+              <p className="cr-dim">{t('credits.aiTools')}</p>
+            </>
+          )}
+          {tab === 'audio' && (
+            <>
+              <p>{t('credits.audio')}</p>
+              <p className="cr-dim">{t('credits.audioSource')}</p>
+              <p className="cr-dim">{t('credits.aiTools')}</p>
+            </>
+          )}
+          {tab === 'fonts' && (
+            <>
+              <div className="cr-fonts">
+                <p><b>Jost</b><span>The Jost Project Authors</span></p>
+                <p><b>Noto Sans KR</b><span>Google Inc.</span></p>
+                <p><b>Baloo 2</b><span>The Baloo 2 Project Authors</span></p>
+                <p><b>Jersey 10</b><span>The Soft Type Project Authors</span></p>
+              </div>
+              <p className="cr-dim">{t('credits.fontSource')}</p>
+            </>
+          )}
+        </div>
       </div>
     </>
   );

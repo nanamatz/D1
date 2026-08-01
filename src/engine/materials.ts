@@ -29,6 +29,8 @@ export interface MaterialSideEffects {
 
 export interface MaterialDef {
   id: TileMaterial;
+  /** Preserve multiplicative scoring semantics in settle presentation. */
+  multFactor?: number;
   onTileScored?(ctx: WordScoringContext, tile: Tile, rng: Rng): MaterialSideEffects | void;
   onHeldDuringScoring?(ctx: WordScoringContext, tile: Tile): void;
   onHeldAtBlindEnd?(tile: Tile): MaterialSideEffects | void;
@@ -78,6 +80,7 @@ const leadPlate: MaterialDef = {
 
 const glass: MaterialDef = {
   id: 'glass',
+  multFactor: BALANCE.materials.glass.multFactor,
   // The ×2 ALWAYS lands on the word that breaks it — the destroy roll is reported
   // as a side effect and applied by the caller after the word settles (GDD §2.2).
   onTileScored: (ctx, _tile, rng) => {
@@ -89,6 +92,7 @@ const glass: MaterialDef = {
 
 const brass: MaterialDef = {
   id: 'brass',
+  multFactor: BALANCE.materials.brass.multFactor,
   // Type metal that stays in the case: pays while it is NOT played.
   onHeldDuringScoring: (ctx) => {
     ctx.mult *= BALANCE.materials.brass.multFactor;
@@ -113,13 +117,18 @@ export function applyTileMaterial(
   ctx: WordScoringContext,
   tile: Tile,
   rng: Rng,
-): { chipsDelta: number; multDelta: number; side: MaterialSideEffects } | null {
+): { chipsDelta: number; multDelta: number; multFactor?: number; side: MaterialSideEffects } | null {
   const def = MATERIAL_REGISTRY.get(tile.material);
   if (!def?.onTileScored) return null;
   const beforeChips = ctx.chips;
   const beforeMult = ctx.mult;
   const side = def.onTileScored(ctx, tile, rng) ?? {};
-  return { chipsDelta: ctx.chips - beforeChips, multDelta: ctx.mult - beforeMult, side };
+  return {
+    chipsDelta: ctx.chips - beforeChips,
+    multDelta: ctx.mult - beforeMult,
+    ...(def.multFactor !== undefined ? { multFactor: def.multFactor } : {}),
+    side,
+  };
 }
 
 /**
@@ -130,8 +139,8 @@ export function applyTileMaterial(
 export function applyHeldMaterials(
   ctx: WordScoringContext,
   held: readonly Tile[],
-): { material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }[] {
-  const out: { material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number }[] = [];
+): { material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number; multFactor?: number }[] {
+  const out: { material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number; multFactor?: number }[] = [];
   for (const tile of held) {
     const def = MATERIAL_REGISTRY.get(tile.material);
     if (!def?.onHeldDuringScoring) continue;
@@ -141,7 +150,13 @@ export function applyHeldMaterials(
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     if (chipsDelta !== 0 || multDelta !== 0) {
-      out.push({ material: tile.material, tileId: tile.id, chipsDelta, multDelta });
+      out.push({
+        material: tile.material,
+        tileId: tile.id,
+        chipsDelta,
+        multDelta,
+        ...(def.multFactor !== undefined ? { multFactor: def.multFactor } : {}),
+      });
     }
   }
   return out;

@@ -70,12 +70,14 @@ import {
 import {
   canUseGambler,
   canUseUnheldGambler,
+  GAMBLER_REGISTRY,
   gamblerTargetsTiles,
   isGamblerId,
   useGambler,
   type GamblerId,
 } from '../engine/gamblers';
 import { packFableFxBus } from './packFableFx';
+import { consumableEffectBus } from './consumableEffect';
 import {
   bossRerollLimit,
   bossRerollPrice,
@@ -1033,6 +1035,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
       recordEditionedJokers(run);
+      if (!fableTargetsTiles(id)) consumableEffectBus.emit(id, prev.run, run);
       return finish(run, blind, 1);
     });
   }, []);
@@ -1073,6 +1076,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
       recordEditionedJokers(result.run);
+      if (GAMBLER_REGISTRY.get(id)?.effect.kind !== 'font') {
+        consumableEffectBus.emit(id, prev.run, result.run);
+      }
       return completePendingPackTransition({
         ...prev,
         run: result.run,
@@ -1253,6 +1259,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         const blind = reconcileBossHand(result.run, result.blind, rng);
         audio.play('consumableUse');
         recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+        consumableEffectBus.emit(id, prev.run, result.run);
         return {
           ...prev,
           run: result.run,
@@ -1276,6 +1283,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         audio.play('consumableUse'); // A-3: object actions are audible
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
         recordEditionedJokers(result.run);
+        consumableEffectBus.emit(id, prev.run, result.run);
         const hint = result.requestHint
           ? findSpellableWords(blind.hand, getLexicon(), 3)
           : prev.hint;
@@ -1314,7 +1322,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       }
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
       const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, getLexicon(), 3) : prev.hint;
-      return { ...prev, run: { ...prev.run, consumables }, hint };
+      const run = { ...prev.run, consumables };
+      consumableEffectBus.emit(id, prev.run, run);
+      return { ...prev, run, hint };
     },
     [getLexicon],
   );

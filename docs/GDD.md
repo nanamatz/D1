@@ -16,6 +16,7 @@ Version 0.2 — systems expansion
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
 - Changed 2026-07-30: the twelve confirmed Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls in the shop;
   Rainman and Sake Cup have art but no engine id.
+- Changed 2026-08-02: Full Moon's three created vowels now each receive one seeded-random non-base enhancement axis (material, font, or letter-tile edition), rather than always receiving a material (§10.3).
 - Changed 2026-07-30: the deferred starting-deck and stake/Ink concepts are
   retired. Runs now choose one of **14 Starting Pouches** and one of **8
   cumulative Records** (White LP → DVD); the complete effects, unlock ladder,
@@ -977,7 +978,7 @@ receive new ids and enter the run's pouch permanently.
 | 7 | Cuckoo / 뻐꾸기 | Change one selected letter tile's font to **Inline**. Preserve material and edition. |
 | 8 | Curtain / 휘장 | Create two complete copies of one selected letter tile in the active field and add them permanently to the pouch. Copy letter/hidden letter, material, font, edition, and Wood growth; assign new ids. |
 | 9 | Deer / 사슴 | Raise all 12 sentence-pattern levels by 1. May also appear very rarely in Constellation Packs and resolves immediately without occupying a held slot. |
-| 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U and random non-base materials. Stone is excluded because it would erase the promised vowel. |
+| 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U. Each created tile receives one seeded-random non-base enhancement from material, font, or letter-tile edition; Stone is excluded because it would erase the promised vowel. |
 | 11 | Geese / 기러기 | Change one selected letter tile's font to **Void** (`bold` internally). Preserve material and edition. |
 | 12 | Phoenix / 봉황 | Create one seeded-random unowned Legendary Emoji Tile. Unusable without an eligible tile or free slot. This is the normal-play Legendary acquisition route. |
 | 13 | Rainman / 우중인 | **Effect pending** until the Emoji Tile roster and its scaling/decay coverage are selected. |

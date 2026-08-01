@@ -2829,8 +2829,10 @@
 .consumable-object:focus-visible .consumable-object-art {
   filter: brightness(1.08);
 }
-.joker-slot.menu-open,
-.consumable-slot.menu-open {
+/* Match the shelf hover selectors' specificity so a later sibling cannot rise
+   over an open action menu when the pointer moves onto its Sell button. */
+.jokers .joker-slot.menu-open,
+.consumables .consumable-slot.menu-open {
   z-index: 24;
   translate: 0 -5px;
   transition: translate 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);

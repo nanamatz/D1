@@ -51,9 +51,14 @@ describe('latest feedback regressions', () => {
   });
 
   it('distinguishes additive from multiplicative Mult popups', () => {
-    expect(source('src/ui/components/Tile.tsx')).toContain(
+    const tile = source('src/ui/components/Tile.tsx');
+    const settle = source('src/ui/settle.tsx');
+    expect(tile).toContain(
       '<span className="mult">+{Number.isInteger(effectPop.mult)',
     );
+    expect(tile).toContain('effectPop.multFactor !== undefined');
+    expect(settle).toMatch(/e\.kind === 'joker' \|\| e\.kind === 'edition' \|\| e\.kind === 'material'/);
+    expect(settle).toMatch(/e\.kind === 'material'[\s\S]*multFactor: e\.multFactor/);
     const shelf = source('src/ui/components/JokerShelf.tsx');
     expect(shelf).toContain('multFactor !== undefined ? `×${fmtMult(multFactor)}` : signed(mult)');
     expect(shelf).not.toContain('+×');

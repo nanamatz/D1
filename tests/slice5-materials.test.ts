@@ -166,6 +166,24 @@ describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
 });
 
 describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
+  it('reports its tooltip factor for multiplicative settle presentation', () => {
+    const run = newRun('glass-factor');
+    const hand = tiles('cat');
+    hand[0]!.material = 'glass';
+    const { events } = submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      lex,
+      hand.map((tile) => tile.id),
+      makeRng('glass-factor-score'),
+    );
+    const glassBeat = events.find(
+      (e): e is Extract<typeof e, { kind: 'material' }> =>
+        e.kind === 'material' && e.material === 'glass',
+    );
+    expect(glassBeat?.multFactor).toBe(BALANCE.materials.glass.multFactor);
+  });
+
   it('doubles the mult on the word it is played in', () => {
     // scoreWord applies materials BEFORE length (matches loop.ts::scoreSubmission):
     // glass doubles the suit mult only: mult = (1.0 × 2) + length 3 = 5.0
@@ -234,8 +252,12 @@ describe('slice5 — Brass (GDD §2.2, Balatro Steel)', () => {
     const { events } = submitWord(
       blind, run, lex, played.map((t) => t.id), makeRng('r'),
     );
-    const brassBeats = events.filter((e) => e.kind === 'material' && e.material === 'brass');
+    const brassBeats = events.filter(
+      (e): e is Extract<typeof e, { kind: 'material' }> =>
+        e.kind === 'material' && e.material === 'brass',
+    );
     expect(brassBeats).toHaveLength(heldBrass);
+    expect(brassBeats.every((e) => e.multFactor === BALANCE.materials.brass.multFactor)).toBe(true);
   });
 
   it('a played brass tile does not pay the held bonus', () => {
