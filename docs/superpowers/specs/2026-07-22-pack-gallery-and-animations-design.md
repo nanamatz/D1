@@ -11,7 +11,7 @@ of pack artwork, `‹ page n/m ›` pager, Back bar).
 1. Cut the pack taxonomy to **4 types** and rename them; remove Forbidden Stacks.
 2. Rebuild Collection → Packs as a **paged gallery** matching the reference.
 3. Give every pack a subtle **idle animation**.
-4. Play a shared **open sequence** (shake → burst → cards fly in) when a pack opens.
+4. Play a shared **open sequence** (tear top → card spill → choices settle) when a pack opens.
 
 ## Part A — Pack taxonomy (engine + i18n + docs)
 
@@ -70,16 +70,18 @@ A shared CSS idle on every pack image (gallery cards + shop pack cards):
 don't move in unison. Disabled under `prefers-reduced-motion` and
 `body.force-reduced-motion`.
 
-## Part D — Shared pack-opening sequence
+## Part D — Shared pack-opening sequence *(revised 2026-08-02)*
 
 `PackOpening` gains a phase machine: `opening → revealed`.
-1. `opening`: the pack (tile art, or a generic pack shape for the others) sits
-   center and **shakes** (~400ms).
-2. **Flash + burst**: white flash + CSS particle pop; pack scales up and vanishes.
-3. `revealed`: the option cards **fly/scale in**, staggered.
+1. `opening`: the selected pack illustration rattles briefly, then splits across
+   a jagged seam near its top edge.
+2. The illustrated top strip peels away while seven navy pixel-card backs pour
+   out with rectangular gold/blue/red ink debris; the seam fades together with
+   the top/body pieces as the empty wrapper collapses.
+3. `revealed`: the real option objects fall into their final fan, staggered.
 
 CSS keyframes + `useState` phase + timers (no new dependency). Under reduced-motion,
-skip straight to `revealed` with a quick fade — no shake/burst. Common to all types.
+skip straight to `revealed`. Common to all types.
 
 ## Testing
 

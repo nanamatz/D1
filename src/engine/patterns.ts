@@ -143,9 +143,9 @@ function countCompoundAbsorbed(words: readonly POSWord[]): number {
   return best ?? 0;
 }
 
-/** Chant: 3+ occurrences of the identical word, each usable as a verb. */
+/** Chant: 2+ occurrences of the identical word, each usable as a verb. */
 function matchChant(words: readonly POSWord[]): number | null {
-  if (words.length < 3) return null;
+  if (words.length < BALANCE.patterns.chant.repeatFloor) return null;
   const first = words[0]!.text.toLowerCase();
   const allSame = words.every((w) => w.text.toLowerCase() === first && canVerb(w));
   return allSame ? words.length : null;
@@ -325,7 +325,7 @@ export function finalizeScore(
     mult *= cm.mult;
     // Chant: +repeatChips per repeat beyond the floor (each +repeatLevelChips/level).
     if (m.pattern === 'chant' && m.repeats !== undefined) {
-      const extra = Math.max(0, m.repeats - (P.repeatFloor ?? 3));
+      const extra = Math.max(0, m.repeats - (P.repeatFloor ?? 2));
       chips += extra * ((P.repeatChips ?? 0) + (lvl - 1) * (P.repeatLevelChips ?? 0));
     }
     chips += BALANCE.modifierAbsorption.chips * m.absorbedModifiers;

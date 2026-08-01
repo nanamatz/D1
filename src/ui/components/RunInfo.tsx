@@ -114,8 +114,12 @@ export function RunInfo({ run, blind, onClose }: Props) {
                     </span>
                     <span className="ri-hand-score pcm">
                       <b className="chips">+{bonus.chips}</b>
-                      <span className="times">×</span>
-                      <b className="mult">+{bonus.mult}</b>
+                      {bonus.mult > 0 && (
+                        <>
+                          <span className="times">×</span>
+                          <b className="mult">{bonus.mult}</b>
+                        </>
+                      )}
                     </span>
                   </div>
                 );

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BALANCE } from '../src/engine/balance';
 import { JokerBus } from '../src/engine/events';
 import {
   JOKER_REGISTRY,
@@ -36,16 +37,17 @@ const wordCtx = (submission: WordSubmission): WordScoringContext => ({
 });
 
 describe('promoted Emoji Tile hooks', () => {
-  it('Stone Tongue removes one Stone only from the spelling projection', () => {
+  it('Stone Tongue removes up to two Stone tiles only from the spelling projection', () => {
     const run = newRun('stone-tongue');
     run.jokers = [owned('stoneTongue')];
     const blind = startBlind(run, makeRng('stone-tongue'));
     const stone = tile('stone', null, { material: 'stone', letterBeforeStone: 'X' });
-    const tiles = [tile('c', 'C'), stone, tile('a', 'A'), tile('t', 'T')];
+    const stone2 = tile('stone2', null, { material: 'stone', letterBeforeStone: 'Y' });
+    const tiles = [tile('c', 'C'), stone, tile('a', 'A'), stone2, tile('t', 'T')];
     const payload = { run, blind, tiles, spellingTiles: tiles.slice() };
     bus.emit('wordPrepare', payload, run.jokers);
     expect(payload.spellingTiles.map((entry) => entry.id)).toEqual(['c', 'a', 't']);
-    expect(tiles).toHaveLength(4);
+    expect(tiles).toHaveLength(5);
   });
 
   it('Acrostic Poet triples a sentence whose initials form a valid word', () => {
@@ -62,7 +64,7 @@ describe('promoted Emoji Tile hooks', () => {
         ? { word: text, suit: 'standard', pos: [] }
         : null,
     }, run.jokers);
-    expect(ctx.sentenceMult).toBe(6);
+    expect(ctx.sentenceMult).toBe(2 * BALANCE.jokers.acrosticPoet.factor);
   });
 
   it('Blackletter Engine queues a retrigger on each Black tile', () => {
@@ -80,23 +82,25 @@ describe('promoted Emoji Tile hooks', () => {
     const run = newRun('living-type');
     run.jokers = [owned('livingType')];
     const next = onTilesCreated(run, 3);
-    expect(next.jokers[0]?.state.chips).toBe(30);
+    expect(next.jokers[0]?.state.chips).toBe(3 * BALANCE.jokers.livingType.chipsPerTile);
   });
 
-  it('Term Insurance cancels three destructions, scores each, then destroys itself', () => {
+  it('Term Insurance cancels its configured destructions, scores each, then destroys itself', () => {
     const run = newRun('insurance');
     run.jokers = [owned('termInsurance')];
     const blind = startBlind(run, makeRng('insurance'));
     const ctx = wordCtx(word('CAT'));
-    for (let index = 0; index < 3; index++) {
+    for (let index = 0; index < BALANCE.jokers.termInsurance.prevents; index++) {
       const payload = {
-        run, blind, ctx, tile: ctx.submission.tiles[index]!,
+        run, blind, ctx, tile: ctx.submission.tiles[index % ctx.submission.tiles.length]!,
         cause: 'glass' as const, cancelled: false,
       };
       bus.emit('tileDestroying', payload, run.jokers);
       expect(payload.cancelled).toBe(true);
     }
-    expect(ctx.chips).toBe(150);
+    expect(ctx.chips).toBe(
+      BALANCE.jokers.termInsurance.prevents * BALANCE.jokers.termInsurance.chipsPerPrevent,
+    );
     expect(run.jokers[0]?.state.destroyed).toBe(1);
   });
 

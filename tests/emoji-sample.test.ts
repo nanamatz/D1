@@ -74,7 +74,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
   it('Carte Blanche adds a slot and discounts Emoji Tile shop prices', () => {
     const run = runWith('carteBlanche');
     expect(jokerSlotLimit(run)).toBe(BALANCE.jokerSlots + 1);
-    expect(emojiTileShopPrice(run, 7)).toBe(5);
+    expect(emojiTileShopPrice(run, 7)).toBe(7 - BALANCE.jokers.carteBlanche.shopDiscount);
   });
 
   it('Hypocrite doubles only a mixed Formal/Vulgar sentence bonus', () => {
@@ -89,7 +89,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
       sentenceMult: 3,
     };
     bus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
-    expect(ctx.sentenceMult).toBe(6);
+    expect(ctx.sentenceMult).toBe(3 * BALANCE.jokers.hypocrite.factor);
   });
 
   it('Rhyme Chain compounds its streak on matching endings and resets on a miss', () => {
@@ -98,8 +98,8 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     blind = { ...blind, sequence: [submission('cat', 'standard', false, 15)] };
     const matching = ctxFor(submission('bat'));
     bus.emit('wordScoring', { run, blind, ctx: matching }, run.jokers);
-    expect(matching.mult).toBe(1.5);
-    expect(run.jokers[0]?.state.factor).toBe(1.5);
+    expect(matching.mult).toBe(BALANCE.jokers.rhymeChain.factorPerMatch);
+    expect(run.jokers[0]?.state.factor).toBe(BALANCE.jokers.rhymeChain.factorPerMatch);
 
     blind = { ...blind, sequence: [submission('bat', 'standard', false, 15)] };
     const miss = ctxFor(submission('dog'));
@@ -112,11 +112,11 @@ describe('Emoji Tile sample 10 — mechanics', () => {
 
   it('Stargazer grows when a Constellation card is used', () => {
     const run = onConstellationUsed(runWith('stargazer'));
-    expect(run.jokers[0]?.state.factor).toBe(1.15);
+    expect(run.jokers[0]?.state.factor).toBe(1 + BALANCE.jokers.stargazer.factorPerCard);
     const blind = startBlind(run, makeRng('stars'));
     const ctx = ctxFor(submission('cat'));
     bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
-    expect(ctx.mult).toBeCloseTo(1.15);
+    expect(ctx.mult).toBeCloseTo(1 + BALANCE.jokers.stargazer.factorPerCard);
   });
 
   it('Dadaist makes gibberish virtual Slang without changing its canonical suit', () => {
@@ -126,7 +126,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     bus.emit('wordRules', { run, blind, ctx }, run.jokers);
     bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
     expect(ctx.scoringSuits?.has('slang')).toBe(true);
-    expect(ctx.mult).toBe(2);
+    expect(ctx.mult).toBe(BALANCE.jokers.dadaist.factor);
     expect(ctx.submission.suit).toBeNull();
   });
 

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { makeLexicon } from '../src/engine/lexicon';
+import { BALANCE } from '../src/engine/balance';
 import { startBlind, submitWord } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
@@ -33,7 +34,9 @@ const jokerEvent = (jokerId: string, word: string): Extract<ScoreEvent, { kind: 
 
 describe('Emoji Tile trigger popup', () => {
   it('preserves multiply versus additive Mult semantics', () => {
-    expect(jokerEvent('alphabetPress', 'abc').multFactor).toBeCloseTo(1.5625);
+    expect(jokerEvent('alphabetPress', 'abc').multFactor).toBeCloseTo(
+      BALANCE.jokers.alphabetPress.factorPerPair ** 2,
+    );
     expect(jokerEvent('equilibrist', 'at').multFactor).toBeUndefined();
   });
 

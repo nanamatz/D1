@@ -21,13 +21,13 @@ describe('feedback 7 UI regressions', () => {
     expect(bag).toContain('<TileView tile={tile} inspectable tooltip={tileTooltip(tile, t)} />');
   });
 
-  it('renders the internal Bold font as a clearly distinct Underline style', () => {
+  it('renders the internal Bold font as a counter-filled Void style', () => {
     const ko = JSON.parse(source('locales/ko.json')) as Record<string, string>;
     const en = JSON.parse(source('locales/en.json')) as Record<string, string>;
-    expect(ko['font.bold']).toBe('밑줄');
-    expect(en['font.bold']).toBe('Underline');
-    expect(play).toMatch(/\.tile\.f-bold \.tile-letter::after\s*\{[^}]*bottom:\s*2px[^}]*height:\s*3px[^}]*background:\s*currentColor/s);
-    expect(play).not.toMatch(/\.tile\.f-bold\s*\{[^}]*font-weight:\s*700/s);
+    expect(ko['font.bold']).toBe('보이드');
+    expect(en['font.bold']).toBe('Void');
+    expect(play).toMatch(/\.tile\.f-bold \.tile-letter\s*\{[^}]*-webkit-text-stroke:\s*\.48em currentColor[^}]*transform:\s*scale\(\.61\)/s);
+    expect(play).not.toContain('.tile.f-bold .tile-letter::after');
   });
 
   it('shows the permanent pouch in the shop instead of the completed blind remainder', () => {
@@ -73,8 +73,8 @@ describe('feedback 7 UI regressions', () => {
     for (const key of Object.keys(ko)) {
       expect(operators(en[key] ?? ''), key).toEqual(operators(ko[key] ?? ''));
     }
-    expect(ko['jokerdesc.shortAndSharp']).toContain('[m:+8 배수]');
-    expect(en['jokerdesc.shortAndSharp']).toContain('[m:+8 Mult]');
+    expect(ko['jokerdesc.shortAndSharp']).toContain('[m:+10 배수]');
+    expect(en['jokerdesc.shortAndSharp']).toContain('[m:+10 Mult]');
     expect(source('locales/en.json')).not.toContain('Adds [m:');
   });
 });

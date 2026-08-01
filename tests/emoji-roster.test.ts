@@ -116,29 +116,31 @@ describe('GDD §11 roster shape', () => {
 describe('Common — §11.2', () => {
   it('Ceramic Artisan pays only on un-enhanced base tiles', () => {
     const run = runWith('ceramicArtisan');
-    expect(play(run, blindFor(run), submission('cat')).chips).toBe(15);
+    expect(play(run, blindFor(run), submission('cat')).chips).toBe(3 * BALANCE.jokers.ceramicArtisan.chips);
     expect(play(run, blindFor(run), submission('cat', { material: 'glass' })).chips).toBe(0);
   });
 
   it('Long-Word Fan and Short & Sharp split at the length thresholds', () => {
     const long = runWith('longWordFan');
-    expect(play(long, blindFor(long), submission('paper')).chips).toBe(30);
+    expect(play(long, blindFor(long), submission('paper')).chips).toBe(BALANCE.jokers.longWordFan.chips);
     expect(play(long, blindFor(long), submission('pen')).chips).toBe(0);
 
     const short = runWith('shortAndSharp');
-    expect(play(short, blindFor(short), submission('pen')).mult).toBe(9);
+    expect(play(short, blindFor(short), submission('pen')).mult).toBe(1 + BALANCE.jokers.shortAndSharp.mult);
     expect(play(short, blindFor(short), submission('paper')).mult).toBe(1);
   });
 
   it('Alphabetical Order pays Mult once for a consecutive pair', () => {
     const run = runWith('alphabeticalOrder');
-    expect(play(run, blindFor(run), submission('abcd')).mult).toBe(16);
+    expect(play(run, blindFor(run), submission('abcd')).mult).toBe(1 + BALANCE.jokers.alphabeticalOrder.mult);
     expect(play(run, blindFor(run), submission('dog')).mult).toBe(1);
   });
 
   it('Miser scales with gold held', () => {
     const run = runWith('miser', { gold: 23 });
-    expect(play(run, blindFor(run), submission('cat')).mult).toBe(1 + 4);
+    expect(play(run, blindFor(run), submission('cat')).mult).toBe(
+      1 + Math.floor(23 / BALANCE.jokers.miser.goldPer) * BALANCE.jokers.miser.mult,
+    );
   });
 
   it('Stenographer triggers once only for a strictly shorter word', () => {
@@ -147,7 +149,9 @@ describe('Common — §11.2', () => {
     expect(JOKER_REGISTRY.get('stenographer')?.nameKo).toBe('속기사');
     expect(play(run, { ...blind, sequence: [] }, submission('cat')).mult).toBe(1);
     expect(play(run, { ...blind, sequence: [submission('dog')] }, submission('cat')).mult).toBe(1);
-    expect(play(run, { ...blind, sequence: [submission('paper')] }, submission('cat')).mult).toBe(4);
+    expect(play(run, { ...blind, sequence: [submission('paper')] }, submission('cat')).mult).toBe(
+      1 + BALANCE.jokers.stenographer.mult,
+    );
   });
 });
 
@@ -160,21 +164,21 @@ describe('Uncommon — §11.3', () => {
       { run, blind, tiles: [], gained: 0, slotsBlocked: 2 },
       run.jokers,
     );
-    expect(run.gold).toBe(4);
+    expect(run.gold).toBe(2 * BALANCE.jokers.hollowPromise.gold);
   });
 
   it('Literary Judge pays on Formal, including a virtual Formal', () => {
     const run = runWith('literaryJudge');
     const blind = blindFor(run);
     expect(play(run, blind, submission('cat')).chips).toBe(0);
-    expect(play(run, blind, submission('edict', { suit: 'formal' })).chips).toBe(50);
+    expect(play(run, blind, submission('edict', { suit: 'formal' })).chips).toBe(BALANCE.jokers.literaryJudge.chips);
   });
 
   it('Rare Earth triples only Q · Z · X · J chips', () => {
     const run = runWith('rareEarth');
     const blind = blindFor(run);
     expect(play(run, blind, submission('qz')).chips).toBe(
-      (BALANCE.letterChips.Q! + BALANCE.letterChips.Z!) * 2,
+      (BALANCE.letterChips.Q! + BALANCE.letterChips.Z!) * (BALANCE.jokers.rareEarth.factor - 1),
     );
     expect(play(run, blind, submission('cat')).chips).toBe(0);
   });
@@ -182,7 +186,9 @@ describe('Uncommon — §11.3', () => {
   it('Glasswork pays per Glass tile and eats one Glass tile per blind', () => {
     const run = runWith('glasswork');
     const blind = blindFor(run);
-    expect(play(run, blind, submission('cat', { material: 'glass' })).mult).toBe(1 + 15);
+    expect(play(run, blind, submission('cat', { material: 'glass' })).mult).toBe(
+      1 + 3 * BALANCE.jokers.glasswork.multPerGlass,
+    );
 
     run.bag = run.bag.map((tile, i) => (i < 2 ? { ...tile, material: 'glass' } : tile));
     const after = onBlindEnded(run, blind, fixedRng(1));
@@ -203,29 +209,33 @@ describe('Uncommon — §11.3', () => {
     const run = runWith('voraciousReader');
     const blind = blindFor(run);
     expect(play(run, blind, submission('cat')).chips).toBe(0);
-    expect(play(run, blind, submission('dog')).chips).toBe(1);
-    expect(run.jokers[0]?.state.chips).toBe(2);
+    expect(play(run, blind, submission('dog')).chips).toBe(BALANCE.jokers.voraciousReader.chipsPerWord);
+    expect(run.jokers[0]?.state.chips).toBe(2 * BALANCE.jokers.voraciousReader.chipsPerWord);
   });
 
   it('Classicist and Street Cred grow only on their own register', () => {
     const formal = runWith('classicist');
     const fb = blindFor(formal);
     expect(play(formal, fb, submission('edict', { suit: 'formal' })).mult).toBe(1);
-    expect(play(formal, fb, submission('edict', { suit: 'formal' })).mult).toBe(2);
-    expect(play(formal, fb, submission('cat')).mult).toBe(3);
-    expect(formal.jokers[0]?.state.mult).toBe(2);
+    expect(play(formal, fb, submission('edict', { suit: 'formal' })).mult).toBe(
+      1 + BALANCE.jokers.classicist.multPerFormal,
+    );
+    expect(play(formal, fb, submission('cat')).mult).toBe(
+      1 + 2 * BALANCE.jokers.classicist.multPerFormal,
+    );
+    expect(formal.jokers[0]?.state.mult).toBe(2 * BALANCE.jokers.classicist.multPerFormal);
 
     const slang = runWith('streetCred');
     const sb = blindFor(slang);
     expect(play(slang, sb, submission('yo', { suit: 'slang' })).chips).toBe(0);
-    expect(play(slang, sb, submission('cat')).chips).toBe(8);
+    expect(play(slang, sb, submission('cat')).chips).toBe(BALANCE.jokers.streetCred.chipsPerSlang);
   });
 
   it('Combo Artist needs a real register change, not a gibberish hole', () => {
     const run = runWith('comboArtist');
     const base = blindFor(run);
     const changed = { ...base, sequence: [submission('yo', { suit: 'slang' })] };
-    expect(play(run, changed, submission('cat')).mult).toBe(1 + 6);
+    expect(play(run, changed, submission('cat')).mult).toBe(1 + BALANCE.jokers.comboArtist.mult);
     const same = { ...base, sequence: [submission('dog')] };
     expect(play(run, same, submission('cat')).mult).toBe(1);
     const hole = { ...base, sequence: [submission('zzq', { gibberish: true })] };
@@ -235,13 +245,16 @@ describe('Uncommon — §11.3', () => {
   it('Vowel Magnet and Equilibrist count vowels against consonants', () => {
     const magnet = runWith('vowelMagnet');
     const mb = blindFor(magnet);
-    expect(play(magnet, mb, submission('aim')).mult).toBe(1.5);
+    expect(play(magnet, mb, submission('aim')).mult).toBe(BALANCE.jokers.vowelMagnet.factor);
     expect(play(magnet, mb, submission('cat')).mult).toBe(1);
 
     const balance = runWith('equilibrist');
     const eb = blindFor(balance);
     const even = play(balance, eb, submission('at'));
-    expect([even.chips, even.mult]).toEqual([40, 5]);
+    expect([even.chips, even.mult]).toEqual([
+      BALANCE.jokers.equilibrist.chips,
+      1 + BALANCE.jokers.equilibrist.mult,
+    ]);
     expect(play(balance, eb, submission('cat')).chips).toBe(0);
   });
 });
@@ -252,38 +265,52 @@ describe('Rare — §11.4', () => {
     expect(play(run, blindFor(run), submission('cat')).chips).toBe(0);
     run.bag = run.bag.filter((tile) => tile.letter !== 'Q' && tile.letter !== 'Z');
     const ctx = play(run, blindFor(run), submission('cat'));
-    expect([ctx.chips, ctx.mult]).toEqual([50, 7]);
+    expect([ctx.chips, ctx.mult]).toEqual([
+      2 * BALANCE.jokers.outOfPrint.chipsPerLetter,
+      1 + 2 * BALANCE.jokers.outOfPrint.multPerLetter,
+    ]);
   });
 
   it('Fable Hoard compounds per held consumable', () => {
     const run = runWith('fableHoard', { consumables: ['fable1', 'fable2'] });
-    expect(play(run, blindFor(run), submission('cat')).mult).toBeCloseTo(1.5625);
+    expect(play(run, blindFor(run), submission('cat')).mult).toBeCloseTo(
+      BALANCE.jokers.fableHoard.factorPerConsumable ** 2,
+    );
   });
 
   it('Anonymous fires only on a full effective shelf', () => {
     const run = runWith('anonymous');
     expect(play(run, blindFor(run), submission('cat')).mult).toBe(1);
     run.jokerSlots = 1;
-    expect(play(run, blindFor(run), submission('cat')).mult).toBe(2.5);
+    expect(play(run, blindFor(run), submission('cat')).mult).toBe(BALANCE.jokers.anonymous.factor);
   });
 
   it('Censor s Bane fires only on Deadline blinds', () => {
     const run = runWith('censorsBane');
     expect(play(run, blindFor(run), submission('cat')).mult).toBe(1);
     const boss = startBlind(run, makeRng('boss'), { kind: 'boss', bossId: 'wanted' });
-    expect(play(run, boss, submission('cat')).mult).toBe(2.5);
+    expect(play(run, boss, submission('cat')).mult).toBe(BALANCE.jokers.censorsBane.factor);
   });
 
   it('Interest Glutton banks the round s interest for the next round', () => {
     const run = runWith('interestGlutton', { gold: 17 });
     expect(play(run, blindFor(run), submission('cat')).mult).toBe(1);
     const after = onBlindEnded(run, blindFor(run), fixedRng(1));
-    expect(after.jokers[0]?.state.mult).toBe(3 * 2); // $17 → $3 interest (cap 5)
-    expect(play(after, blindFor(after), submission('cat')).mult).toBe(7);
+    expect(after.jokers[0]?.state.mult).toBe(3 * BALANCE.jokers.interestGlutton.multPerGold); // $17 → $3 interest (cap 5)
+    expect(play(after, blindFor(after), submission('cat')).mult).toBe(
+      1 + 3 * BALANCE.jokers.interestGlutton.multPerGold,
+    );
   });
 });
 
 describe('Legendary — §11.5', () => {
+  it('keeps all Legendary balance values unchanged by the ease pass', () => {
+    expect(BALANCE.jokers.bookOfMargins).toEqual({ slots: 3, factorPerEmptySlot: 2 });
+    expect(BALANCE.jokers.tyrant).toEqual({ vulgarFactor: 2 });
+    expect(BALANCE.jokers.typeFoundry).toEqual({ factorPerTile: 1.5 });
+    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 12, factorPerSurvival: 0.2 });
+  });
+
   it('Tyrant makes every valid word a doubled Vulgar without rewriting its suit', () => {
     const run = runWith('tyrant');
     const blind = blindFor(run);

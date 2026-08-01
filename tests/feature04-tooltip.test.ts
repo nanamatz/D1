@@ -5,8 +5,12 @@
  */
 import { describe, it, expect } from 'vitest';
 import { tileTooltip } from '../src/ui/game';
-import { jokerTooltip } from '../src/ui/descriptions';
-import { splitTooltipDetails, stripTooltipPeriods } from '../src/ui/components/Tooltip';
+import { jokerTooltip, referencedEditionTips } from '../src/ui/descriptions';
+import {
+  splitTooltipDetails,
+  stripTooltipPeriods,
+  supplementalTooltipWidth,
+} from '../src/ui/components/Tooltip';
 import type { Tile } from '../src/engine/types';
 
 // key-echo translator: returns the key itself (params ignored) so assertions can
@@ -73,6 +77,12 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
     });
   });
 
+  it('keeps all three referenced editions to the left, as on Cowherd and Weaver Girl', () => {
+    const editions = referencedEditionTips('[G:Gray], [v:Violet], or [r:Rainbow]', t);
+    expect(editions).toHaveLength(3);
+    expect(splitTooltipDetails(editions)).toEqual({ inline: null, left: editions });
+  });
+
   it('a Stone tile (no glyph) titles by its material name', () => {
     expect(tileTooltip(tile({ material: 'stone', letter: null }), t).title).toBe('material.stone');
   });
@@ -88,5 +98,15 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
   it('removes description periods without breaking decimal values', () => {
     expect(stripTooltipPeriods('Gain Chips. Current ×1.5.\n끝. 다음。'))
       .toBe('Gain Chips Current ×1.5\n끝 다음');
+  });
+
+  it('sizes supplemental cards from visible text rather than rich-text markup', () => {
+    const short = supplementalTooltipWidth({ title: 'Black', body: '[c:+2 Chips]' });
+    const long = supplementalTooltipWidth({
+      title: 'Black',
+      body: '[c:+2 Chips] and retrigger the selected tile one additional time',
+    });
+    expect(short).toBe(148);
+    expect(long).toBeGreaterThan(short);
   });
 });

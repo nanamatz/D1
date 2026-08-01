@@ -206,7 +206,7 @@ function OptionCard({
 }
 
 
-const BURST_MS = 900;
+const BURST_MS = 1500;
 
 /** Pack selection screen (GDD §9.3): pick up to `pick` of the shown options. */
 export function PackOpening({
@@ -221,7 +221,7 @@ export function PackOpening({
   const { t, lang } = useI18n();
   const pack = g.state.pack;
   const entering = useEntering();
-  // Shared open sequence (shake → burst → cards fly in). Plays once per pack — this
+  // Shared open sequence (tear top → card spill → choices settle). Plays once per pack — this
   // component mounts fresh each time a pack is opened. Shop delays the state
   // change until its lower panel has exited, so this starts after that exit beat.
   const [opening, setOpening] = useState(false);
@@ -480,19 +480,34 @@ export function PackOpening({
         entering || !started ? 'preparing' : opening ? 'opening' : 'revealed',
       ].join(' ')}
     >
-      {/* Open sequence overlay: the pack shakes, flashes, and bursts; then the option
-          cards fly in beneath (they mount immediately but are hidden until reveal). */}
+      {/* The pack tears across its top, sheds pixel debris, and pours card backs out.
+          Real choices settle into the fan after this overlay clears. */}
       {opening && (
         <div className="pack-open-fx" aria-hidden>
-          <div className="pack-open-flash" />
-          {artSrc ? (
-            <img className="pack-open-burst" src={artSrc} alt="" />
-          ) : (
-            <div className="pack-open-burst generic">📦</div>
-          )}
+          <div className="pack-open-ink-burst" />
+          <div className="pack-open-stage">
+            <div className="pack-open-card-stream">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <span key={i} className="pack-open-spill-card" />
+              ))}
+            </div>
+            {artSrc ? (
+              <>
+                <img className="pack-open-piece pack-open-body" src={artSrc} alt="" />
+                <img className="pack-open-piece pack-open-top" src={artSrc} alt="" />
+              </>
+            ) : (
+              <>
+                <span className="pack-open-piece pack-open-body generic" />
+                <span className="pack-open-piece pack-open-top generic" />
+              </>
+            )}
+            <span className="pack-open-tear-line" />
+            <span className="pack-open-tear-flash" />
+          </div>
           <div className="pack-open-particles">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <span key={i} className="pack-particle" style={{ ['--a' as string]: `${i * 36}deg` }} />
+            {Array.from({ length: 18 }).map((_, i) => (
+              <span key={i} className="pack-particle" style={{ ['--a' as string]: `${i * 20}deg` }} />
             ))}
           </div>
         </div>
@@ -579,6 +594,7 @@ export function PackOpening({
                 !canUseUnheldGambler(gamblerId, g.state.run, candidateTiles, gamblerTargets));
             const fanStyle = {
               ['--fan-rot' as string]: `${(i - mid) * 7}deg`,
+              ['--fan-entry-rot' as string]: `${(i - mid) * 12}deg`,
               ['--fan-y' as string]: `${Math.abs(i - mid) ** 1.4 * 7}px`,
             };
             return (

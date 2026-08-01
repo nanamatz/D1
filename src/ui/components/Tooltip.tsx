@@ -80,11 +80,24 @@ export function splitTooltipDetails(details: readonly TooltipDetail[]): {
       || a.index - b.index)
     .map(({ detail }) => detail);
   if (ordered.length < 2) return { inline: null, left: ordered };
+  if (ordered.filter((detail) => detail.kind === 'edition').length === 3) {
+    const inline = ordered.find((detail) => detail.kind !== 'edition') ?? null;
+    return { inline, left: inline ? ordered.filter((detail) => detail !== inline) : ordered };
+  }
   return { inline: ordered[0]!, left: ordered.slice(1) };
 }
 
 export const stripTooltipPeriods = (text: string): string =>
   text.replace(/\.(?!\d)|。/g, '');
+
+/** Size supplemental cards from visible copy, not rich-text control markup. */
+export function supplementalTooltipWidth(detail: TooltipDetail): number {
+  const visibleCopy = `${detail.title} ${stripTooltipPeriods(detail.body)}`
+    .replace(/\[[^:\]]+:([^\]]+)\]/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return 120 + Array.from(visibleCopy).length * 2;
+}
 
 /** Secondary definitions shared by card and letter-tile tooltips. */
 export function TooltipSupplement({ body, sub }: SupplementProps) {
@@ -122,7 +135,13 @@ export function TooltipSupplement({ body, sub }: SupplementProps) {
       {left.length > 0 && (
         <span className="tt-sub-stack">
           {left.map((detail, index) => (
-            <span className="tt-sub-card" key={`${detail.title}-${index}`}>
+            <span
+              className="tt-sub-card"
+              key={`${detail.title}-${index}`}
+              style={{
+                '--tt-sub-w': `${supplementalTooltipWidth(detail)}px`,
+              } as CSSProperties}
+            >
               <span className="tt-sub-title">{detail.title}</span>
               <span className="tt-body">{richText(stripTooltipPeriods(detail.body))}</span>
             </span>

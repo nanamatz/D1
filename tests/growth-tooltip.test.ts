@@ -34,7 +34,7 @@ describe('scaling Emoji Tile tooltip value', () => {
 
   it('shows Pouch Tag Chips from the live remaining-tile count', () => {
     expect(grownValue(pouchTag, undefined, t('ko'), 17))
-      .toBe('(현재 [c:+12] 칩)');
+      .toBe('(현재 [c:+15] 칩)');
     expect(grownValue(pouchTag, undefined, t('en'), 4))
       .toBe('(Currently [c:+0] Chips)');
   });

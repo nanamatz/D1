@@ -104,8 +104,8 @@
   --r-md: 12px;
   --r-lg: 16px;
   /* Content-sized tooltip proportions: standard main cards scale from 150–280px,
-     letter-tile cards stay 132px, supplements stay within 100–140% of their main
-     card, and footer tags occupy 72% of their main card. */
+     letter-tile cards stay 132px, supplements derive their width from visible
+     copy, and footer tags occupy 72% of their main card. */
   --tt-bg: #354246;
   --tt-plate: #fffdf7;
   --tt-edge: #b7eee5;

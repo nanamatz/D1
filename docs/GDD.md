@@ -210,7 +210,7 @@ Common Emoji Tile that pays on the base is renamed **Ceramic Artisan / 도자기
 |---|---|
 | Futura Medium | Base |
 | Futura Light Italic | Edition |
-| Futura Underline (`bold` internally) | Edition |
+| Void (`bold` internally; Jost CSS style) | Edition |
 | Futura Inline | Edition |
 | Futura Black | Edition |
 
@@ -232,17 +232,17 @@ Rules: "scores in a played word" **includes gibberish** (tile-level effects fire
 | Font | Effect | Reading |
 |---|---|---|
 | Light Italic | `goldPlay` — +$3 when the tile scores | the lightest touch pays out sideways, in money rather than score |
-| Underline (`bold` internally) | `chipPlay` — +30 Chips when the tile scores | editorial emphasis is the plainly additive one |
+| Void (`bold` internally) | `chipPlay` — +30 Chips when the tile scores | extra ink consumes the glyph's negative space, matching the additive score bonus |
 | Inline | `discardGain` — gain 1 consumable when discarded (needs a free slot) | the hollow glyph has something inside it |
 | Black | `retriggerPlay` — retrigger the tile's scoring contribution once | the heaviest ink prints twice |
 
-Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. The persisted `bold` id displays as **Underline / 밑줄** for save compatibility. Reassignment stays a one-line data change.
+Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. The persisted `bold` id displays as **Void / 보이드** for save compatibility. Reassignment stays a one-line data change.
 
-> **Decision — fonts unified as style variants within the Futura family (changed 2026-07-31).** A font functions as a visual signal that "this tile has a special effect." Medium 500, Bold 700, and Black 900 were not distinguishable enough on the small tile, so the former Bold display is now Underline: Medium weight plus a fixed hard underline. The internal `bold` id remains for save compatibility. Mixing distinct typefaces still blurs the information axis ("is this a different font, or a different letter/material?"), so it is avoided. Room is left to give only the top rarity an exceptional emphasis. (License note: Futura is a paid commercial font. Prototype-stage alternatives — Jost, Spartan, Century Gothic family.)
+> **Decision — fonts unified as style variants within the Futura/Jost family (changed 2026-08-01).** A font functions as a visual signal that "this tile has a special effect." Medium 500, Bold 700, and Black 900 were not distinguishable enough on the small tile, while an underline is decoration rather than a font style. The persisted `bold` display is therefore **Void**: a `.48em` same-colour stroke expands the bundled Jost 500 ink until enclosed counters close, then the glyph is scaled to `.61` to retain its tile footprint. Inline empties the body; Void consumes the negative space; Black keeps open counters but uses the natural 900 weight. The internal `bold` id remains for save compatibility. (License note: commercial Futura is not bundled; the shipped Jost files are OFL-1.1.)
 
 ### 2.4 Enhancement Stacking & Replacement
 
-A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Underline / Gray tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
+A letter tile carries **three independent enhancement axes at once**: `material` (§2.2) + `font` (§2.3) + `edition` (§11.8). All three stack — a Ceramic / Void / Gray tile pays its material, font, and edition effects in the same word. Emoji Tiles carry only `JokerEdition` and never take a material or font.
 
 **Same-axis replacement is destructive (rule).** Applying an enhancement to a tile that already carries one **on the same axis** overwrites it; the previous one is discarded, not stored or refunded. Re-applying Polished to a Ceramic tile leaves a Polished tile, not both. Cross-axis application never conflicts (a Fable that sets material leaves font and edition untouched). **The overwrite applies immediately, with no confirmation prompt** (revised 2026-07-28: the earlier warn-before-overwrite modal was removed — players learn the rule by doing, and the modal only added friction).
 
@@ -344,25 +344,25 @@ folded invisibly into the pattern label.
 
 | # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|
-| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 10 × 1 | +10, +0.5 |
-| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 15 × 2 | +10, +0.5 |
-| 3 | Chant | Same verb ×3+ | RUN RUN RUN RUN | 3+ | 15 × 2, **+10 Chips per repeat beyond the 3rd** | +10, +0.5 (repeat bonus +5/level) |
-| 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | 25 × 2 | +15, +1 |
-| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 30 × 3 | +15, +1 |
-| 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | 40 × 3 | +20, +1 |
-| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 50 × 4 | +25, +1.5 |
-| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 60 × 4 | +30, +1.5 |
-| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 75 × 5 | +35, +2 |
-| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 90 × 5 | +40, +2 |
-| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 110 × 6 | +45, +2.5 |
-| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 130 × 6 | +50, +2.5 |
+| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 2 | +10, +0.5 |
+| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 3 | +10, +0.5 |
+| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 3, **+10 Chips per repeat beyond the 2nd** | +10, +0.5 (repeat bonus +5/level) |
+| 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | 40 × 3 | +15, +1 |
+| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 4 | +15, +1 |
+| 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | 60 × 4 | +20, +1 |
+| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 5 | +25, +1.5 |
+| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 5 | +30, +1.5 |
+| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 6 | +35, +2 |
+| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 6 | +40, +2 |
+| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 7 | +45, +2.5 |
+| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 7 | +50, +2.5 |
 
-(Values are placeholders in `balance.ts` under `patterns`; the hierarchy is preserved from the old ranks.)
+(Values live in `balance.ts` under `patterns`; the 2026-08-02 ease pass raised all base Chips and Mult while preserving the rank hierarchy.)
 
 Design intent:
 
 - **Outcry** gives vowel-less interjections (shh, brr) a home in the pattern table.
-- **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, preserving the RUN×4 showcase as its own pattern.
+- **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, which now starts at two consecutive copies of the same verb.
 - **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences (higher Mult) reward suit/emoji tile Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
 - **#7–12 are tight-to-impossible in the base 5 phases** — the reason to seek future phase-extension effects is built into the table itself.
 - **Object Complement uses a controlled verb family** (`MAKE/CALL/FIND/NAME/KEEP/CONSIDER/ELECT/PAINT` and inflections), because POS alone cannot distinguish `I GIVE HIM FISH` (Ditransitive) from `I MADE HIM HAPPY` (Object Complement).
@@ -417,15 +417,15 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 
 | Rank | Hand | Condition | Example | Bonus (placeholder) | Gibberish |
 |---|---|---|---|---|---|
-| 1 | Twin | two identical letters adjacent | b**OO**k | +10 Chips | no |
-| 2 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +20 Chips, +1 Mult | no |
-| 3 | Longword | 7+ letters | LETTERS | +30 Chips, +1 Mult | no |
-| 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +30 Chips, +2 Mult | no |
-| 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +50 Chips, +3 Mult | **yes** |
-| 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +60 Chips, +4 Mult | **yes** |
+| 1 | Twin | two identical letters adjacent | b**OO**k | +15 Chips, +1 Mult | no |
+| 2 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +30 Chips, +2 Mult | no |
+| 3 | Longword | 7+ letters | LETTERS | +45 Chips, +2 Mult | no |
+| 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +45 Chips, +3 Mult | no |
+| 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +75 Chips, +4 Mult | **yes** |
+| 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +90 Chips, +5 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-01).** Run Info → Letter Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. Its bonuses use the same one-line coloured `Chips × Mult` axis readout as Sentence Patterns; the leading `+` remains because Letter Hands add to the word's axes rather than forming a self-contained product.
+- **In-game reference (changed 2026-08-02).** Run Info → Letter Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. A positive added Mult renders as `+Chips ×Mult`: Chips keeps its additive `+`, but Mult has no `+` after `×`. A 0 added Mult omits the Mult axis entirely and renders only `+Chips`.
 - **Out of scope (for now):** leveling Letter Hands (Constellation Cards level
   sentence patterns only) and dedicated Emoji Tiles keyed to Letter Hands—see
   §12.4.
@@ -801,7 +801,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence (shake → burst → cards fly in).
+**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence: the illustrated pack top tears away along a jagged seam, pixel card backs and hard-edged ink debris pour out, then the real choices settle into their fan (changed 2026-08-02).
 
 **Appearance weights (placeholder → `balance.ts`).** Balatro's shape, mapped onto our five families. Type weights (`pack.typeWeights`): **Fable 4 · Constellation 4 · Tile 4 · Charm 2 · Ink 0.6** — the two consumable staples and tiles are the common backbone, Charm (emoji tiles) is deliberately scarcer because each pull is a build decision, and Ink is the rare thrill (Spectral's role). Size weights (`pack.sizeWeights`): **Normal 8 · Jumbo 3 · Mega 1**. Type/size pair weights are their product and shop pack slots draw those pairs without replacement, so duplicate packs cannot appear together. All values are tuning starts for `src/sim`, not claims of balance.
 
@@ -978,7 +978,7 @@ receive new ids and enter the run's pouch permanently.
 | 8 | Curtain / 휘장 | Create two complete copies of one selected letter tile in the active field and add them permanently to the pouch. Copy letter/hidden letter, material, font, edition, and Wood growth; assign new ids. |
 | 9 | Deer / 사슴 | Raise all 12 sentence-pattern levels by 1. May also appear very rarely in Constellation Packs and resolves immediately without occupying a held slot. |
 | 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U and random non-base materials. Stone is excluded because it would erase the promised vowel. |
-| 11 | Geese / 기러기 | Change one selected letter tile's font to **Underline** (`bold` internally). Preserve material and edition. |
+| 11 | Geese / 기러기 | Change one selected letter tile's font to **Void** (`bold` internally). Preserve material and edition. |
 | 12 | Phoenix / 봉황 | Create one seeded-random unowned Legendary Emoji Tile. Unusable without an eligible tile or free slot. This is the normal-play Legendary acquisition route. |
 | 13 | Rainman / 우중인 | **Effect pending** until the Emoji Tile roster and its scaling/decay coverage are selected. |
 | 14 | Sake Cup / 사케 잔 | **Effect pending** until the Emoji Tile roster and its probability/duplication coverage are selected. |
@@ -1028,9 +1028,9 @@ definition is deliberately visible to review code paths while Legendary
 tiles still have no normal runtime acquisition path.
 
 Four engine notes fall out of the roster pass. **Stenographer (C06 / 속기사)**
-adds +3 Mult once only when the current submitted word is strictly shorter
+adds +4 Mult once only when the current submitted word is strictly shorter
 than the immediately previous submitted word; equal lengths and the first word
-never trigger it. **Hollow Promise (U21)** pays $2 for each Inline discard-gain
+never trigger it. **Hollow Promise (U21)** pays $3 for each Inline discard-gain
 trigger blocked specifically because the consumable shelf has no free slot.
 **Glasswork (U4)** shrinks the
 permanent pouch in its `blindEnd` hook; `onBlindEnded` compares the bag length
@@ -1049,6 +1049,12 @@ offer pools; Legendary has no normal offer weight and is acquired through Phoeni
 **Emoji tiles** are acquired by shop purchase/draw (§9). Unlike Balatro's jokers, which mostly play in the single layer of "score calculation," emoji tiles play across **3 layers**: **(1) Letter/Tile  (2) Suit (register)  (3) Sentence/Phase**.
 
 **Notation.** Chips = base score, Mult = multiplier, Final = Chips × Mult. **Layer** = 1/2/3. **★** = scaling. All values are balancing placeholders.
+
+**Ease pass (2026-08-02).** Common, Uncommon, and Rare reward magnitudes were
+raised by roughly 25% (with clean integer rounding); multiplicative effects
+raise their amount above ×1 by the same proportion. Activation conditions and
+costs stay stable except where a numeric utility is itself the reward. The five
+Legendary definitions are intentionally unchanged.
 
 **Shelf order = execution order (feature-02 D-1).** Owned emoji tiles fire in their left-to-right shelf order, and that order is **drag-reorderable** on the owned-emoji-tile shelf (persisted in run state). Ordering is strategic in the Balatro sense — an additive emoji tile placed before a multiplicative one is worth more than after it — so reordering is a real decision, not cosmetic.
 
@@ -1096,40 +1102,40 @@ the active 116-entry roster.
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
-| C6 | Ceramic Artisan | +5 Chips per unenhanced base Ceramic tile | 1 | — |
-| C7 | Long-Word Fan | +30 Chips if word is 5+ letters | 1 | — |
-| C8 | Short & Sharp | +8 Mult if word is 3 letters or fewer | 1 | — |
-| C9 | Alphabetical Order | +15 Mult if the word contains consecutive letters | 1 | — |
-| C10 | Miser | +1 Mult per 5 gold held | 1 | — |
+| C6 | Ceramic Artisan | +7 Chips per unenhanced base Ceramic tile | 1 | — |
+| C7 | Long-Word Fan | +38 Chips if word is 5+ letters | 1 | — |
+| C8 | Short & Sharp | +10 Mult if word is 3 letters or fewer | 1 | — |
+| C9 | Alphabetical Order | +19 Mult if the word contains consecutive letters | 1 | — |
+| C10 | Miser | +2 Mult per 5 gold held | 1 | — |
 
 ### 11.3 Uncommon — active 42
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
-| U1 | Literary Judge | +50 Chips if word is Formal suit | 1–2 | — |
-| U3 | Rare Earth | ×3 Chips on that letter when using Q·Z·X·J | 1 | — |
-| U4 | Glasswork | +5 Mult per glass tile; 1 glass tile is lost each round | 1 | — |
-| U5 | Voracious Reader | +1 Chips per total words made so far, accumulating | 1 | ★ |
-| U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +1 | 2 | ★ |
-| U7 | Street Cred | Each Slang word made permanently raises Chips by +8 | 2 | ★ |
-| U8 | Combo Artist | +6 Mult if different suit from the previous phase | 2 | — |
-| U9 | Vowel Magnet | ×1.5 Mult if word has more vowels than consonants | 1 | — |
-| U10 | Equilibrist | +40 Chips & +4 Mult if vowel and consonant counts are equal | 1 | — |
+| U1 | Literary Judge | +63 Chips if word is Formal suit | 1–2 | — |
+| U3 | Rare Earth | ×3.5 Chips on that letter when using Q·Z·X·J | 1 | — |
+| U4 | Glasswork | +7 Mult per glass tile; 1 glass tile is lost each round | 1 | — |
+| U5 | Voracious Reader | +2 Chips per total words made so far, accumulating | 1 | ★ |
+| U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +2 | 2 | ★ |
+| U7 | Street Cred | Each Slang word made permanently raises Chips by +10 | 2 | ★ |
+| U8 | Combo Artist | +8 Mult if different suit from the previous phase | 2 | — |
+| U9 | Vowel Magnet | ×1.63 Mult if word has more vowels than consonants | 1 | — |
+| U10 | Equilibrist | +50 Chips & +5 Mult if vowel and consonant counts are equal | 1 | — |
 
 ### 11.4 Rare — active 45
 
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
-| R1 | Carte Blanche | +1 Emoji Tile slot and Emoji Tile shop prices −$2 | 3 | Buy 40 Emoji Tiles from shops |
-| R2 | Hypocrite | ×2 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
-| R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×1.5; a miss resets the streak | 3 | Start |
-| R4 | Out of Print | Whenever one alphabet letter has no copies left in the permanent pouch, permanently gain +25 Chips and +3 Mult | 1 | ★ · Remove every copy of one letter |
-| R5 | Stargazer | Starts at ×1; permanently gain +0.15 ×Mult whenever a Constellation card is used | 3 | ★ · Use 30 Constellation cards |
-| R6 | Fable Hoard | ×1.25 Mult per currently held consumable | 3 | End 5 rounds with consumable slots full |
-| R7 | Anonymous | ×2.5 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
-| R8 | Censor's Bane | ×2.5 Mult during Deadline/boss blinds | 3 | Clear all 12 bosses |
-| R9 | Dadaist | Treat gibberish as Slang for word scoring and apply ×2 Mult; POS remains null and the sentence hole remains | 2 | Clear a blind using only gibberish |
-| R10 | Interest Glutton | For every $1 interest received at round end, gain +2 Mult during the next round | 3 | Hold $100 in one run |
+| R1 | Carte Blanche | +1 Emoji Tile slot and Emoji Tile shop prices −$3 | 3 | Buy 40 Emoji Tiles from shops |
+| R2 | Hypocrite | ×2.25 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
+| R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×1.63; a miss resets the streak | 3 | Start |
+| R4 | Out of Print | Whenever one alphabet letter has no copies left in the permanent pouch, permanently gain +32 Chips and +4 Mult | 1 | ★ · Remove every copy of one letter |
+| R5 | Stargazer | Starts at ×1; permanently gain +0.19 ×Mult whenever a Constellation card is used | 3 | ★ · Use 30 Constellation cards |
+| R6 | Fable Hoard | ×1.31 Mult per currently held consumable | 3 | End 5 rounds with consumable slots full |
+| R7 | Anonymous | ×2.88 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
+| R8 | Censor's Bane | ×2.88 Mult during Deadline/boss blinds | 3 | Clear all 12 bosses |
+| R9 | Dadaist | Treat gibberish as Slang for word scoring and apply ×2.25 Mult; POS remains null and the sentence hole remains | 2 | Clear a blind using only gibberish |
+| R10 | Interest Glutton | For every $1 interest received at round end, gain +3 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
 
 ### 11.5 Legendary — confirmed 5
@@ -1450,7 +1456,7 @@ The game begins **desaturated and silent**; playing specific words permanently u
 | BLUE | blue token group — `--chips`, blue buttons |
 | MUSIC | BGM bus enabled (wraps the feature-01 mixer's music bus) |
 | SOUND | SFX bus enabled (wraps the SFX bus) |
-| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
+| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). ALIEN/GHOST/TURTLE use original local character designs that visibly match their unlock theme while sharing only the project's pixel-art treatment; recognizable third-party character or arcade-sprite features are prohibited (art replaced 2026-08-02). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
 
 **"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces and the blind badge) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The main `.frame` itself is transparent as of 2026-07-30; the former per-stage backdrops are retired. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable.
 

@@ -16,7 +16,7 @@ export type TileMaterial =
   | 'ceramic' | 'porcelain' | 'polished' | 'glass' | 'stone'
   | 'leadPlate' | 'ivory' | 'brass' | 'wood';
 
-/** Font enhancement axis (GDD §2.3). `bold` is the persisted id displayed as Underline. */
+/** Font enhancement axis (GDD §2.3). `bold` is the persisted id displayed as Void. */
 export type TileFont = 'medium' | 'lightItalic' | 'bold' | 'inline' | 'black';
 
 /** Balatro-style visual/scoring edition, separate from material and font. */

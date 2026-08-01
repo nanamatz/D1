@@ -215,17 +215,16 @@
   line-height: 1.28;
   text-align: center;
 }
-/* Supplements follow their main card: never narrower, never more than 40%
-   wider, and still capped by the shared viewport-safe maximum. */
+/* Each supplement sizes itself from its visible copy while staying inside the
+   shared tooltip limits. */
 .tt-sub-stack {
   position: absolute;
   top: 0;
   right: calc(100% + var(--tt-sub-gap));
   bottom: auto;
   left: auto;
-  width: fit-content;
-  min-width: min(100%, calc(100vw - 16px));
-  max-width: min(140%, var(--tt-w), calc(100vw - 16px));
+  width: max-content;
+  max-width: calc(100vw - 16px);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -238,7 +237,10 @@
 }
 .tt-sub-card {
   box-sizing: border-box;
-  width: 100%;
+  width: min(
+    clamp(var(--tt-min-w), var(--tt-sub-w), var(--tt-w)),
+    calc(100vw - 16px)
+  );
   background:
     repeating-linear-gradient(0deg, transparent 0 2px, rgba(255, 255, 255, .035) 2px 3px),
     var(--tt-bg);
@@ -248,7 +250,7 @@
     0 0 0 1px #182327,
     inset 0 0 0 2px rgba(255, 255, 255, .14),
     3px 3px 0 rgba(10, 17, 20, .65);
-  padding: 5px 3px 4px;
+  padding: 7px 3px 6px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2382,7 +2384,7 @@ body.cb-safe .tile.hint {
   width: 100%;
   max-width: none;
   min-height: 44px;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   border-color: #9a6a18;
   box-shadow: var(--shadow-sm);
 }
@@ -2477,12 +2479,12 @@ body.cb-safe .tile.hint {
 }
 .cat-name {
   font-weight: 700;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   line-height: 1;
 }
 .cat-count {
   font-family: 'Jersey 10';
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   color: #fff;
   line-height: 0.9;
 }

@@ -60,7 +60,8 @@ describe('latest feedback UI regressions', () => {
     expect(game).toContain("tags.push({ label: title, tone: 'font' })");
     expect(game).toContain('sub.push({ title, body:');
     expect(screens).toContain('.tt-enhancement-tag');
-    expect(screens).toContain('right: calc(100% + 4px)');
+    expect(screens).toContain('--tt-sub-gap: 10px');
+    expect(screens).toContain('right: calc(100% + var(--tt-sub-gap))');
   });
 
   it('opens revealed pack-card tooltips above the card', () => {

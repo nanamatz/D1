@@ -796,7 +796,7 @@
   image-rendering: pixelated;
 }
 
-/* ---- Shared pack-opening sequence (shake -> burst -> cards fly in) ---- */
+/* ---- Shared pack-opening sequence (tear top -> cards pour out -> fan settles) ---- */
 .pack-opening { position: relative; }
 .pack-candidates {
   padding: 4px 8px 14px;
@@ -808,7 +808,7 @@
   margin-top: 8px;
   min-height: 82px;
 }
-.pack-candidate-tile {
+.pack-opening.revealed .pack-candidate-tile {
   position: relative;
   animation: candidate-deal .36s cubic-bezier(.34, 1.56, .64, 1) both;
   animation-delay: calc(var(--candidate-i) * 45ms);
@@ -845,40 +845,162 @@
   place-items: center;
   z-index: 5;
   pointer-events: none;
+  overflow: visible;
 }
-.pack-open-burst {
-  width: 120px;
-  height: 160px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  transform-origin: 50% 60%;
-  animation: packShakeBurst 0.9s ease-in forwards;
+.pack-open-stage {
+  position: relative;
+  width: 146px;
+  height: 240px;
+  animation: packTearRattle .42s steps(2, end) both;
+  transform-origin: 50% 72%;
 }
-.pack-open-burst.generic {
-  display: grid;
-  place-items: center;
-  width: auto;
-  height: auto;
-  font-size: 96px;
-}
-.pack-open-flash {
+.pack-open-piece {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, #fff, transparent 60%);
-  opacity: 0;
-  animation: packFlash 0.9s ease-out forwards;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
-.pack-open-particles { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.pack-open-piece.generic {
+  background:
+    repeating-conic-gradient(#20303b 0 25%, #354246 0 50%) 0 0 / 18px 18px;
+  border: 4px solid var(--panel-edge);
+  box-shadow: inset 0 0 0 4px #10191d, 6px 6px 0 #091014;
+}
+.pack-open-body {
+  z-index: 3;
+  clip-path: polygon(
+    0 22%, 10% 19%, 19% 23%, 29% 20%, 39% 24%, 49% 20%,
+    59% 23%, 69% 19%, 79% 23%, 89% 20%, 100% 22%, 100% 100%, 0 100%
+  );
+  animation: packBodyEmpty .82s .28s ease-in both;
+}
+.pack-open-top {
+  z-index: 5;
+  clip-path: polygon(
+    0 0, 100% 0, 100% 22%, 89% 20%, 79% 23%, 69% 19%, 59% 23%,
+    49% 20%, 39% 24%, 29% 20%, 19% 23%, 10% 19%, 0 22%
+  );
+  transform-origin: 8% 21%;
+  animation: packTopTear .82s .28s cubic-bezier(.18, .8, .3, 1) both;
+}
+.pack-open-tear-line {
+  position: absolute;
+  z-index: 6;
+  top: 20%;
+  left: -3px;
+  width: calc(100% + 6px);
+  height: 7px;
+  background: repeating-linear-gradient(90deg, #fff 0 8px, var(--gold) 8px 13px, transparent 13px 17px);
+  clip-path: polygon(0 45%, 12% 10%, 22% 80%, 34% 22%, 45% 88%, 57% 20%, 68% 82%, 80% 12%, 91% 72%, 100% 35%, 100% 65%, 91% 100%, 80% 42%, 68% 100%, 57% 48%, 45% 100%, 34% 52%, 22% 100%, 12% 38%, 0 75%);
+  transform-origin: left;
+  animation: packTearLine .98s .12s steps(7, end) both;
+}
+.pack-open-tear-flash {
+  position: absolute;
+  z-index: 7;
+  top: calc(20% - 2px);
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  background: #fff;
+  box-shadow: 0 0 0 5px var(--gold), 0 0 0 9px var(--chips);
+  transform: translate(-50%, -50%);
+  animation: packTearFlash .56s .28s steps(4, end) both;
+}
+.pack-open-ink-burst {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 62px);
+  width: 210px;
+  height: 174px;
+  background: var(--gold);
+  clip-path: polygon(50% 0, 57% 28%, 74% 8%, 72% 34%, 100% 27%, 78% 48%, 98% 61%, 70% 61%, 76% 95%, 55% 70%, 45% 100%, 39% 69%, 12% 91%, 29% 61%, 0 52%, 25% 42%, 4% 18%, 34% 31%);
+  animation: packInkBurst .68s .32s steps(5, end) both;
+}
+.pack-open-ink-burst::before {
+  content: '';
+  position: absolute;
+  inset: 28px 34px;
+  background: var(--chips);
+  clip-path: inherit;
+}
+.pack-open-ink-burst::after {
+  content: '';
+  position: absolute;
+  inset: 58px 70px;
+  background: #fff;
+  clip-path: inherit;
+}
+.pack-open-card-stream {
+  position: absolute;
+  z-index: 2;
+  top: 18%;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+.pack-open-spill-card {
+  --spill-x: 0px;
+  --spill-out-x: 0px;
+  --spill-r: 0deg;
+  position: absolute;
+  width: 46px;
+  height: 64px;
+  margin-left: -23px;
+  background:
+    linear-gradient(90deg, transparent 44%, rgba(255, 255, 255, .15) 44% 56%, transparent 56%),
+    repeating-linear-gradient(0deg, #17262d 0 5px, #203b43 5px 10px);
+  border: 3px solid var(--panel-edge);
+  box-shadow: inset 0 0 0 3px #0c161a, 4px 4px 0 rgba(5, 11, 14, .78);
+  opacity: 0;
+  animation: packCardSpill .7s cubic-bezier(.18, .76, .32, 1) both;
+}
+.pack-open-spill-card::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 2px solid var(--gold);
+}
+.pack-open-spill-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--chips);
+  box-shadow: 8px 0 0 var(--mult), -8px 0 0 var(--gold);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.pack-open-spill-card:nth-child(1) { --spill-x: -118px; --spill-out-x: -174px; --spill-r: -24deg; animation-delay: .42s; }
+.pack-open-spill-card:nth-child(2) { --spill-x: 92px; --spill-out-x: 158px; --spill-r: 19deg; animation-delay: .48s; }
+.pack-open-spill-card:nth-child(3) { --spill-x: -62px; --spill-out-x: -94px; --spill-r: -13deg; animation-delay: .54s; }
+.pack-open-spill-card:nth-child(4) { --spill-x: 48px; --spill-out-x: 78px; --spill-r: 11deg; animation-delay: .6s; }
+.pack-open-spill-card:nth-child(5) { --spill-x: -154px; --spill-out-x: -218px; --spill-r: -31deg; animation-delay: .66s; }
+.pack-open-spill-card:nth-child(6) { --spill-x: 138px; --spill-out-x: 202px; --spill-r: 28deg; animation-delay: .72s; }
+.pack-open-spill-card:nth-child(7) { --spill-x: 0px; --spill-out-x: 18px; --spill-r: 4deg; animation-delay: .78s; }
+.pack-open-particles {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 68px);
+  width: 0;
+  height: 0;
+  z-index: 8;
+}
 .pack-particle {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  margin: -4px;
-  border-radius: 2px;
-  background: var(--gold, #ffd76a);
+  width: 7px;
+  height: 11px;
+  margin: -5px -3px;
+  background: var(--gold);
   opacity: 0;
-  animation: packParticle 0.9s ease-out forwards;
+  box-shadow: 3px 3px 0 rgba(6, 12, 15, .48);
+  animation: packPixelShard .72s .4s steps(5, end) both;
 }
+.pack-particle:nth-child(3n + 2) { width: 10px; height: 6px; background: var(--chips); }
+.pack-particle:nth-child(3n) { width: 6px; height: 6px; background: var(--mult); }
 /* feature-04 C · Balatro fan layout: cards arc across the centre at full size. The
    arc (rotation + drop) is per-card from its index; the transition eases the re-arc
    when a card is taken. */
@@ -997,19 +1119,15 @@
   filter: grayscale(1);
   opacity: .48;
 }
-/* Cards fade in, staggered, once the burst clears — opacity only, so the fan arc
-   (an inline transform) is never fought by a fly-in transform. */
-.pack-opening.revealed .pack-fan-card {
-  animation: packFanIn 0.4s ease backwards;
+/* Choice shells fall into place after the VFX clears. The outer wrapper keeps
+   ownership of its inline fan arc. */
+.pack-opening.revealed .pack-fan-card > .pack-option-shell {
+  animation: packChoiceSettle .48s cubic-bezier(.2, .86, .3, 1.18) backwards;
 }
-.pack-opening.revealed .pack-fan-card:nth-child(2) { animation-delay: 0.06s; }
-.pack-opening.revealed .pack-fan-card:nth-child(3) { animation-delay: 0.12s; }
-.pack-opening.revealed .pack-fan-card:nth-child(4) { animation-delay: 0.18s; }
-.pack-opening.revealed .pack-fan-card:nth-child(5) { animation-delay: 0.24s; }
-@keyframes packFanIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+.pack-opening.revealed .pack-fan-card:nth-child(2) > .pack-option-shell { animation-delay: .06s; }
+.pack-opening.revealed .pack-fan-card:nth-child(3) > .pack-option-shell { animation-delay: .12s; }
+.pack-opening.revealed .pack-fan-card:nth-child(4) > .pack-option-shell { animation-delay: .18s; }
+.pack-opening.revealed .pack-fan-card:nth-child(5) > .pack-option-shell { animation-delay: .24s; }
 /* Selection reaction (§2.6.1, the actual complaint): the chosen card lifts out of the
    arc, pulses, and holds a gold outline for the pick beat before it applies. Held with
    `forwards` so it stays lifted until the card is taken. Overrides TiltCard's idle
@@ -1218,37 +1336,69 @@
   to { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pack-opening.revealed .pack-fan-card,
+  .pack-opening.revealed .pack-fan-card > .pack-option-shell,
   .pack-fan-card .shopitem.picked {
     animation: none;
   }
 }
 
-@keyframes packShakeBurst {
-  0% { transform: scale(1) rotate(0deg); }
-  8%, 24%, 40% { transform: scale(1.02) rotate(-5deg); }
-  16%, 32% { transform: scale(1.02) rotate(5deg); }
-  55% { transform: scale(1.1) rotate(0deg); }
-  70% { transform: scale(1.3) rotate(0deg); opacity: 1; }
-  100% { transform: scale(2) rotate(0deg); opacity: 0; }
+@keyframes packTearRattle {
+  0%, 100% { transform: translate(0) rotate(0); }
+  18% { transform: translate(-5px, 1px) rotate(-2deg); }
+  36% { transform: translate(5px, -1px) rotate(2deg); }
+  54% { transform: translate(-4px, -2px) rotate(-1deg); }
+  72% { transform: translate(4px, 1px) rotate(1deg); }
 }
-@keyframes packFlash {
-  0%, 60% { opacity: 0; }
-  72% { opacity: 0.9; }
-  100% { opacity: 0; }
+@keyframes packTearLine {
+  from { opacity: 0; transform: scaleX(0); }
+  40%, 58% { opacity: 1; transform: scaleX(1); }
+  to { opacity: 0; transform: scaleX(1); }
 }
-@keyframes packParticle {
-  0%, 62% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.4); }
-  72% { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--a)) translateY(-72px) scale(1); }
+@keyframes packTopTear {
+  0%, 14% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
+  35% { transform: translate(9px, -12px) rotate(8deg) scale(1.02); }
+  100% { opacity: 0; transform: translate(98px, -142px) rotate(31deg) scale(.88); }
 }
-@keyframes packCardIn {
-  0% { opacity: 0; transform: translateY(26px) scale(0.82); }
-  100% { opacity: 1; transform: none; }
+@keyframes packBodyEmpty {
+  0%, 42% { opacity: 1; transform: translateY(0) scale(1); }
+  65% { transform: translateY(8px) scale(.98, .94); }
+  100% { opacity: 0; transform: translateY(36px) scale(.9, .72); }
+}
+@keyframes packTearFlash {
+  0%, 18% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.8); }
+}
+@keyframes packInkBurst {
+  0%, 18% { opacity: 0; transform: translate(-50%, -50%) scale(.18) rotate(-8deg); }
+  42% { opacity: .92; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.46) rotate(5deg); }
+}
+@keyframes packCardSpill {
+  0% { opacity: 0; transform: translate(0, 32px) scale(.34) rotate(0); }
+  14% { opacity: 1; }
+  54% { opacity: 1; transform: translate(var(--spill-x), -118px) scale(.94) rotate(var(--spill-r)); }
+  100% { opacity: 0; transform: translate(var(--spill-out-x), 88px) scale(1.04) rotate(var(--spill-r)); }
+}
+@keyframes packPixelShard {
+  0%, 18% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(.35); }
+  38% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-126px) scale(1); }
+}
+@keyframes packChoiceSettle {
+  from { opacity: 0; transform: translateY(-112px) scale(.68) rotate(var(--fan-entry-rot)); }
+  72% { opacity: 1; transform: translateY(7px) scale(1.035) rotate(0); }
+  to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .pack-opening.revealed .shop-row .shopitem { animation: none; }
-  .pack-open-burst, .pack-open-flash, .pack-particle { animation: none; }
+  .pack-open-stage,
+  .pack-open-piece,
+  .pack-open-tear-line,
+  .pack-open-tear-flash,
+  .pack-open-ink-burst,
+  .pack-open-spill-card,
+  .pack-particle { animation: none; }
   .boss-intro,
   .boss-intro-card,
   .joker-slot.slot-arriving,
@@ -1263,6 +1413,10 @@
 .force-reduced-motion .joker-slot.slot-arriving,
 .force-reduced-motion .consumable-slot.slot-arriving {
   animation: none;
+}
+.force-reduced-motion .pack-opening.revealed .pack-fan-card > .pack-option-shell,
+.force-reduced-motion .pack-opening.revealed .pack-candidate-tile {
+  animation: none !important;
 }
 .shopitem.empty {
   color: var(--ink-dim);
@@ -3515,20 +3669,12 @@
 .tile.mini .mat-glyph {
   display: none; /* 36px face has no room; mini tiles rely on their tooltip */
 }
-/* Font editions (Jost styles). The internal `bold` id is displayed as
-   Underline: a second weight between Medium and Black disappeared at tile size. */
-.tile.f-bold {
-  font-weight: 500;
-}
-.tile.f-bold .tile-letter::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 2px;
-  width: .82em;
-  height: 3px;
-  background: currentColor;
-  transform: translateX(-50%);
+/* Font editions (Jost styles). The persisted `bold` id is displayed as Void:
+   Medium's counters close under added ink, unlike Black's naturally heavy strokes. */
+.tile.f-bold .tile-letter {
+  display: inline-block;
+  -webkit-text-stroke: .48em currentColor;
+  transform: scale(.61);
 }
 .tile.f-black {
   font-weight: 900;

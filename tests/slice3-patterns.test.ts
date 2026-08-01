@@ -91,13 +91,13 @@ describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
     expect(pattern(['EAT', 'FISH'])).toBe('imperative');
   });
 
-  it('Chant: same verb ×3+ (FLY FLY FLY — a pure verb, so nothing outranks it)', () => {
+  it('Chant: same verb ×2+ (FLY FLY — a pure verb, so nothing outranks it)', () => {
     // NB: "run" is also a noun, so RUN RUN RUN matches the higher-ranked
     // Transitive (noun-verb-noun) under "highest pattern wins". Chant is the
     // top match only for words with no competing noun reading.
-    const j = judgeSentence(seq(['FLY', 'FLY', 'FLY']), L);
+    const j = judgeSentence(seq(['FLY', 'FLY']), L);
     expect(j.match?.pattern).toBe('chant');
-    expect(j.match?.repeats).toBe(3);
+    expect(j.match?.repeats).toBe(2);
   });
 
   it('Simple: noun + intransitive verb (BIRDS FLY)', () => {

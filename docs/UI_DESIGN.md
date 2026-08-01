@@ -36,11 +36,11 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 | Role | Face | Notes |
 |---|---|---|
 | Score display / big numbers | **Jersey 10** (Google Fonts) | already a pixel face — keep; it now sets the tone for the whole UI rather than being the odd one out |
-| Tile letters | **Jost** | the GDD's own Futura stand-in (§2.3). **Five fonts** map onto Jost styles, matching the persisted `TileFont` union (`medium`/`lightItalic`/`bold`/`inline`/`black`): Medium 500 (base) · Light Italic (Jost 300 italic) · Underline (internal `bold`: Jost 500 + fixed 3px hard underline) · Inline (500 + text-stroke outline) · Black 900. The four non-base fonts carry **seal effects** (GDD §2.3); tile tooltips read the effect text from `balance.ts` `fontEffects` — never hard-coded |
+| Tile letters | **Jost** | the GDD's own Futura stand-in (§2.3). **Five fonts** map onto Jost styles, matching the persisted `TileFont` union (`medium`/`lightItalic`/`bold`/`inline`/`black`): Medium 500 (base) · Light Italic (Jost 300 italic) · Void (internal `bold`: Jost 500 + `.48em` same-ink stroke, scaled to `.61`, closing counters) · Inline (500 + text-stroke outline) · Black 900. The four non-base fonts carry **seal effects** (GDD §2.3); tile tooltips read the effect text from `balance.ts` `fontEffects` — never hard-coded |
 | UI labels / body | **Baloo 2** | rounded, chunky; sentence case |
 | Tooltip descriptions | **Jost 700 + Noto Sans KR 700 fallback** | compact printed-game copy with restrained cyan/magenta separation; tooltip titles remain in the chunkier UI face |
 
-> **Pixel-font note (art-shift) — RESOLVED to (a), "modern pixel hybrid"; Underline changed 2026-07-31.** Jost and Baloo 2 are smooth vector faces that read slightly against the pixel-art surfaces; we **keep them**, rendered at crisp sizes, and lean on Jersey 10 (already a pixel face) for headline/numeric moments. The two candidates considered were **(a)** keep the current faces as a hybrid — *chosen* — and **(b)** swap UI/tile faces for true bitmap fonts (Pixelify Sans / Silkscreen / Departure Mono), *rejected*. The mapping stays **five** — Jost Medium 500 (base) / Light Italic (Jost 300 italic) / Underline (persisted `bold` id; Jost 500 plus hard underline) / Inline (500 + text-stroke) / Black 900 — matching `TileFont` and `fontClass()`. Underline replaces the visually ambiguous Bold 700 without changing saves or engine rules.
+> **Pixel-font note (art-shift) — RESOLVED to (a), "modern pixel hybrid"; Void changed 2026-08-01.** Jost and Baloo 2 are smooth vector faces that read slightly against the pixel-art surfaces; we **keep them**, rendered at crisp sizes, and lean on Jersey 10 (already a pixel face) for headline/numeric moments. The two candidates considered were **(a)** keep the current faces as a hybrid — *chosen* — and **(b)** swap UI/tile faces for true bitmap fonts (Pixelify Sans / Silkscreen / Departure Mono), *rejected*. The mapping stays **five** — Jost Medium 500 (base) / Light Italic (Jost 300 italic) / Void (persisted `bold` id; Jost 500 with counters consumed by expanded ink) / Inline (500 + text-stroke) / Black 900 — matching `TileFont` and `fontClass()`. Void replaces the visually ambiguous Bold 700 and the typographically out-of-axis Underline decoration without changing saves, font files, or engine rules; unlike Black, it closes the glyph's negative space instead of selecting a heavier weight.
 
 ### Surface language (pixel-art / CRT)
 
@@ -155,7 +155,10 @@ font, and edition enhancements follow the same tag-and-definition pattern. One
 supplement remains immediately left of the main tooltip. With two or three, the
 highest-priority one folds into the main effect plate and the rest stay left;
 priority is **material → font → edition**. This distribution also includes
-automatically referenced font, edition, and Gibberish definitions and is unchanged when
+automatically referenced font, edition, and Gibberish definitions. When one
+description references exactly three Emoji Tile editions, all three edition
+definitions stay left; if another definition exists, only the highest-priority
+non-edition definition may fold. This distribution is otherwise unchanged when
 the main tooltip opens downward. Any tooltip effect copy that names a tile font
 automatically adds that font's canonical effect card. Explicitly marked Gray,
 Violet, Rainbow, and White edition names likewise use their edition colour in
@@ -170,10 +173,10 @@ with subtle cyan/magenta separation. Standard main width is content-responsive
 from 150–280px. Letter-tile tooltips instead use one fixed 132px compact frame
 regardless of enhancement count, with the standard 18px title and 15px body sizes
 so the highlighted `[c:+N개의 칩]` / `[c:+N Chips]` line does not leave sparse empty
-space. Left supplements stay between 100% and 140% of their main tooltip width,
-with the universal 280px ceiling, so related cards remain visually paired while
-longer definitions still receive more room. Bottom tags remain 72% of their main
-card. Height is never baked into a bitmap—it follows wrapped copy and padding.
+space. Each left supplement derives its width from its own visible title and body
+copy, clamped to the shared 150–280px range and the viewport. Supplemental height
+follows wrapped content, with the same 7px top / 6px bottom shell padding as the
+main tooltip. Bottom tags remain 72% of their main card.
 
 All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
 13px live-value row, and a 280px maximum card width. Shared tooltips are rendered
@@ -272,6 +275,7 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
 2. **Pattern update**: after settle, the current-pattern symbol and name re-evaluate with a soft flip. Projected score updates internally; if it reaches the target, the score boxes ignite to signal the imminent **auto-settle** (a status cue, not a button — GDD §7.2).
 3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel. Fresh tiles fly from the live pouch position through `useFlip`; the visible origin is clamped one tile inside the work panel so a tile can never flash as a clipped fragment at the right/bottom edge. The hand row has no separate entrance translation. Wobble is suspended during the flight and starts from the flight's matching −1.2° landing angle, so entry never hands off through a visible extra hop. **Jokers & consumables share this wobble family (feature-02 D-4)**; the firing joker is excluded so its settle wiggle wins.
 4. **Card motion (changed 2026-07-30):** vouchers, packs, and every Fable, Constellation, and Gambler card idle with a slow 3px float plus ±0.45° sway. Pointer movement pauses the idle loop, lifts and scales the card, tilts it in 3D toward the cursor, and moves a radial sheen with the pointer; leaving eases flat and resumes the idle phase. Keyboard focus straightens, lifts, and adds a gold outline. Generic select = rise 10px + gold ring; shop-offer select raises the complete product/price/action layer by 59px (15px base + 44px action height). Collection pack entries keep the grid image-only—no persistent pack-type, grade, or coming-soon label—but restore the shared type/description/grade tooltip on hover or keyboard focus.
+   **Pack opening (changed 2026-08-02):** split the active pack illustration with a jagged top seam, peel that illustrated strip away, and pour hard-edged navy card backs through the opening with gold/blue/red pixel ink shards. The seam must fade with the top/body pieces, never linger after the wrapper collapses; the actual choices then settle into the fan. Keep shapes blocky, shadows hard, particles rectangular, and timing stepped; reduced motion reveals choices immediately.
    **Constellation use (changed 2026-07-29):** the used card shakes while the
    score panel shows the pattern's old Mult and Chips. A green `+Mult` merges
    first, followed by green `+Chips`; the level label then flips old → new and
@@ -332,6 +336,12 @@ tooltip-wrapped cards and undiscovered raw cards share the same 150px basis
 width. Locked silhouettes remain visible but non-interactive. Profile Reveal All
 writes the selected profile's actual mascot unlock ids, so those art-backed skins
 become discovered and selectable without affecting another profile.
+
+*D-8a mascot art originality (changed 2026-08-02):* ALIEN, GHOST, and TURTLE
+use original local character art whose species and silhouette clearly communicate
+the matching unlock word. They share the project's chunky pixel edges, navy
+outline, compact palette, and CRT treatment, but must not reuse a recognizable
+third-party mascot silhouette, face, costume, or arcade-sprite composition.
 
 ---
 

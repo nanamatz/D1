@@ -43,14 +43,16 @@ describe('shared tooltip accessibility', () => {
     expect(tooltip).toContain('className="tt-inline-detail"');
     expect(tooltip).toContain('<span className="tt-sub-stack">');
     expect(tooltip).toContain('className="tt-sub-card"');
+    expect(tooltip).toContain("'--tt-sub-w': `${supplementalTooltipWidth(detail)}px`");
     expect(tooltip).toContain("TOOLTIP_DETAIL_PRIORITY[a.detail.kind ?? 'other']");
     expect(tooltip).toContain("classList.toggle(");
     expect(tooltip).toContain("'sub-right'");
     expect(css).not.toContain('.tt-card.tt-portal.has-sub');
     expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*right:\s*calc\(100% \+ var\(--tt-sub-gap\)\)/s);
     expect(css).toMatch(/\.tt-card\.tt-portal\.sub-right \.tt-sub-stack\s*\{[^}]*left:\s*calc\(100% \+ var\(--tt-sub-gap\)\)/s);
-    expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*width:\s*fit-content[^}]*min-width:\s*min\(100%[^}]*max-width:\s*min\(140%, var\(--tt-w\)/s);
-    expect(css).toMatch(/\.tt-sub-card\s*\{[^}]*width:\s*100%/s);
+    expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*width:\s*max-content[^}]*max-width:\s*calc\(100vw - 16px\)/s);
+    expect(css).toMatch(/\.tt-sub-card\s*\{[^}]*width:\s*min\([^}]*clamp\(var\(--tt-min-w\), var\(--tt-sub-w\), var\(--tt-w\)\)[^}]*padding:\s*7px 3px 6px/s);
+    expect(css).not.toMatch(/\.tt-sub-card\s*\{[^}]*aspect-ratio/s);
     expect(css).toMatch(/\.tt-card\.tile-tt\s*\{[^}]*width:\s*132px[^}]*min-width:\s*132px[^}]*max-width:\s*132px/s);
     expect(css).toMatch(/\.tile-tt \.tt-title\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);
     expect(css).toMatch(/\.tile-tt \.tt-body\s*\{[^}]*font-size:\s*var\(--fs-lg\)/s);
