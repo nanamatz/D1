@@ -131,11 +131,11 @@ export function Profile({ lexicon, onBack }: Props) {
               {t('profile.delete')}
             </button>
           </div>
-        </section>
 
-        <button className="btn back-bar" onClick={onBack}>
-          {t('common.back')}
-        </button>
+          <button className="btn back-bar" onClick={onBack}>
+            {t('common.back')}
+          </button>
+        </section>
       </div>
     );
   }
@@ -242,22 +242,22 @@ export function Profile({ lexicon, onBack }: Props) {
             </button>
           )}
         </div>
+
+        {notice === 'unlock' && (
+          <p className="profile-warning" role="alert">
+            {t('profile.unlockWarning')}
+          </p>
+        )}
+        {notice === 'delete' && (
+          <p className="profile-warning" role="alert">
+            {t('profile.deleteWarning', { profile: lifetime.profileName })}
+          </p>
+        )}
+
+        <button className="btn back-bar" onClick={onBack}>
+          {t('common.back')}
+        </button>
       </section>
-
-      {notice === 'unlock' && (
-        <p className="profile-warning" role="alert">
-          {t('profile.unlockWarning')}
-        </p>
-      )}
-      {notice === 'delete' && (
-        <p className="profile-warning" role="alert">
-          {t('profile.deleteWarning', { profile: lifetime.profileName })}
-        </p>
-      )}
-
-      <button className="btn back-bar" onClick={onBack}>
-        {t('common.back')}
-      </button>
     </div>
   );
 }

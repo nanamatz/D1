@@ -570,27 +570,29 @@ function EditionsView() {
   const { t } = useI18n();
   const art = jokerArt('bookworm');
   return (
-    <div className="edition-collection-grid">
-      {EDITIONS.map((edition) => (
-        <Tooltip
-          key={edition}
-          title={t(`edition.${edition}`)}
-          body={t(`editiondesc.${edition}`)}
-          down
-        >
-          <div className="swatch">
-            <TiltCard
-              idle
-              className={`emoji-tile-collection emoji-tile-image-only edition-${edition}`}
-              tabIndex={0}
-              aria-label={t(`edition.${edition}`)}
-            >
-              {art && <img className="cc-joker-art" src={art} alt="" />}
-            </TiltCard>
-            <span className="sw-name">{t(`edition.${edition}`)}</span>
-          </div>
-        </Tooltip>
-      ))}
+    <div className="edition-collection-scroll">
+      <div className="edition-collection-grid">
+        {EDITIONS.map((edition) => (
+          <Tooltip
+            key={edition}
+            title={t(`edition.${edition}`)}
+            body={t(`editiondesc.${edition}`)}
+            down
+          >
+            <div className="swatch">
+              <TiltCard
+                idle
+                className={`emoji-tile-collection emoji-tile-image-only edition-${edition}`}
+                tabIndex={0}
+                aria-label={t(`edition.${edition}`)}
+              >
+                {art && <img className="cc-joker-art" src={art} alt="" />}
+              </TiltCard>
+              <span className="sw-name">{t(`edition.${edition}`)}</span>
+            </div>
+          </Tooltip>
+        ))}
+      </div>
     </div>
   );
 }

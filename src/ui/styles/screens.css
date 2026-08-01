@@ -172,6 +172,7 @@
   font-size: var(--fs-lg);
   font-weight: 700;
   letter-spacing: -.018em;
+  text-align: center;
   /* The card's own grey, so the plate reads as a window cut out of it. */
   color: var(--tt-bg);
   line-height: 1.4;
@@ -379,11 +380,6 @@
   color: #fff;
   -webkit-text-stroke: 1px #4b555b;
   paint-order: stroke fill;
-}
-/* Pack descriptions read as a centred two/three-line blurb (Reference.png). Scoped to
-   .pack so joker copy keeps its left alignment. */
-.tt-card.pack .tt-body {
-  text-align: center;
 }
 /* Badges beneath the description plate: joker rarity, or pack grade. */
 .tt-rarity,
@@ -1783,10 +1779,17 @@ body.cb-safe .tile.hint {
 .profile-dashboard {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(190px, .8fr);
-  gap: 28px;
+  column-gap: 28px;
+  row-gap: 14px;
   width: min(720px, 94vw);
-  height: 280px;
+  min-height: 344px;
   padding: 20px;
+}
+.profile-dashboard > .back-bar,
+.profile-dashboard > .profile-warning {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
 }
 .profile-empty-box {
   display: grid;
@@ -1888,6 +1891,7 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-md);
 }
 .profile-unlock {
+  padding-block: 10.5px;
   background: #728887;
   border-color: #607776;
 }
@@ -3183,14 +3187,18 @@ body.cb-safe .tile.hint {
   gap: 18px;
   justify-content: center;
 }
+.edition-collection-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
 .edition-collection-grid {
   display: grid;
   grid-template-columns: repeat(5, var(--shop-card-w));
   gap: 24px;
   justify-content: safe center;
-  width: 100%;
-  overflow-x: auto;
-  padding-block: 10px;
+  width: max-content;
+  min-width: 100%;
+  padding-block: 22px 10px;
 }
 .tag-collection-grid {
   display: grid;
@@ -3703,6 +3711,7 @@ body.cb-safe .tile.hint {
   padding: 20px;
   z-index: 50;
 }
+.profile-dashboard,
 .collection-modal,
 .overlay-card,
 .tut-card {
