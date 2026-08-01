@@ -11,6 +11,7 @@ export const bookOfMargins: JokerDef = {
   rarity: 'legendary',
   layer: 3,
   price: BALANCE.jokerPrice.legendary,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ run, ctx }) => {
       const empty = Math.max(0, jokerSlotLimit(run) - run.jokers.length);

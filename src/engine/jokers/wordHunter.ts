@@ -5,6 +5,7 @@ export const wordHunter: JokerDef = {
   id: 'wordHunter', gddNumber: 31, nameKo: '단어 사냥꾼', nameEn: 'Word Hunter',
   emoji: '🦋', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }, self) => {
       if (!ctx.submission.isGibberish && !self.state[`seen:${ctx.submission.text}`]) {

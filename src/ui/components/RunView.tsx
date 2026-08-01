@@ -44,7 +44,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const { blind, run, selected, phase } = g.state;
   const [showInfo, setShowInfo] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [pouchOpen, setPouchOpen] = useState(false);
+  const [pouchHovered, setPouchHovered] = useState(false);
   const [packCandidateIds, setPackCandidateIds] = useState<string[]>([]);
   const [introOpen, setIntroOpen] = useState(false);
   const noticeSequence = useRef(0);
@@ -144,7 +144,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   }, [phase]);
 
   // A-2 first-encounter tutorials driven by LIVE board state (material/font tiles
-  // in hand, a pattern or Unison lighting up in the tray, owning the Magnifier).
+  // in hand, a pattern or Unison lighting up in the tray).
   // The bus no-ops on already-seen/tips-off, so re-firing when a condition stays
   // true is harmless; we fire the moment each condition first becomes true.
   const judgment = judgeSentence(blind.sequence, lexicon);
@@ -152,15 +152,13 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const hasFontTile = blind.hand.some((t) => t.font !== 'medium');
   const hasPattern = judgment.match !== null;
   const hasUnison = judgment.unison !== null;
-  const hasMagnifier = run.consumables.includes('magnifier');
   useEffect(() => {
     if (phase !== 'playing') return;
     if (hasMaterialTile) tutorialBus.fire('firstMaterial');
     if (hasFontTile) tutorialBus.fire('firstFont');
     if (hasPattern) tutorialBus.fire('firstPattern');
     if (hasUnison) tutorialBus.fire('firstUnison');
-    if (hasMagnifier) tutorialBus.fire('magnifier');
-  }, [phase, hasMaterialTile, hasFontTile, hasPattern, hasUnison, hasMagnifier]);
+  }, [phase, hasMaterialTile, hasFontTile, hasPattern, hasUnison]);
 
   // Balatro-style persistent table: the sidebar, owned shelves and pouch never
   // swap screens. Only the work surface below them changes phase.
@@ -183,7 +181,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           `phase-${phase}`,
           `stage-${blind.kind === 'small' ? 'draft' : blind.kind === 'big' ? 'revision' : 'deadline'}`,
           ending && 'ending',
-          pouchOpen && 'pouch-open',
+          pouchHovered && 'pouch-hovered',
         ].filter(Boolean).join(' ')}
       >
       <SettleProvider
@@ -277,7 +275,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <BagWidget
           run={run}
           tiles={phase === 'shop' ? run.bag : blind.bag}
-          onOpenChange={setPouchOpen}
+          onHoverChange={setPouchHovered}
         />
       )}
       {!ending && !settling && introOpen && (

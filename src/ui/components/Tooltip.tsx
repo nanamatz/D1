@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { JokerRarity, PackSize } from '../../engine/types';
-import { referencedFontTips } from '../descriptions';
+import { referencedEditionTips, referencedFontTips } from '../descriptions';
 import { useI18n } from '../i18n';
 import { richText } from '../richtext';
 
@@ -92,10 +92,16 @@ export function TooltipSupplement({ body, sub }: SupplementProps) {
   const details = sub ? (Array.isArray(sub) ? sub : [sub]) : [];
   const copy = [body, ...details.map((detail) => detail.body)];
   const fontTips = referencedFontTips(copy.join('\n'), t);
+  const editionTips = referencedEditionTips(copy.join('\n'), t);
   const explainsGibberish = copy
     .some((copy) => copy.includes('[g:'));
-  if (details.length === 0 && fontTips.length === 0 && !explainsGibberish) return null;
-  const supplements = [...details, ...fontTips];
+  if (
+    details.length === 0 &&
+    fontTips.length === 0 &&
+    editionTips.length === 0 &&
+    !explainsGibberish
+  ) return null;
+  const supplements = [...details, ...fontTips, ...editionTips];
   if (explainsGibberish) {
     supplements.push({
         title: t('tooltip.gibberish.title'),
@@ -164,7 +170,8 @@ export function Tooltip({
   const hasSupplement = subDetails.length > 0
     || body.includes('[g:')
     || subDetails.some((detail) => detail.body.includes('[g:'))
-    || referencedFontTips(supplementCopy, t).length > 0;
+    || referencedFontTips(supplementCopy, t).length > 0
+    || referencedEditionTips(supplementCopy, t).length > 0;
 
   useEffect(() => {
     if (!disabled) return;
@@ -225,12 +232,25 @@ export function Tooltip({
   useEffect(() => {
     if (!open) return;
     let frame = 0;
+    const card = cardRef.current;
+    const supplement = card?.querySelector<HTMLElement>('.tt-sub-stack');
+    const supplementGap = card
+      ? Number.parseFloat(getComputedStyle(card).getPropertyValue('--tt-sub-gap'))
+      : 0;
     const track = () => {
       const next = locate();
-      const card = cardRef.current;
       if (next && card) {
         card.style.setProperty('--tt-x', `${next.x}px`);
         card.style.setProperty('--tt-y', `${next.y}px`);
+        if (supplement) {
+          const rect = card.getBoundingClientRect();
+          const leftSpace = rect.left - supplementGap - 8;
+          const rightSpace = window.innerWidth - rect.right - supplementGap - 8;
+          card.classList.toggle(
+            'sub-right',
+            leftSpace < supplement.offsetWidth && rightSpace > leftSpace,
+          );
+        }
       }
       frame = requestAnimationFrame(track);
     };

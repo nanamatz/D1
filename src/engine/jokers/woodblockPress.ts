@@ -5,6 +5,7 @@ export const woodblockPress: JokerDef = {
   id: 'woodblockPress', gddNumber: 21, nameKo: '목판 인쇄', nameEn: 'Woodblock Press',
   emoji: '🪵', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     materialScored: ({ grewWood }, self) => {
       if (grewWood) self.state.factor = (self.state.factor ?? 1) +

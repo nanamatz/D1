@@ -11,6 +11,7 @@ export const censorsBane: JokerDef = {
   rarity: 'rare',
   layer: 3,
   price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ blind, ctx }) => {
       if (blind.kind === 'boss') ctx.mult *= BALANCE.jokers.censorsBane.factor;

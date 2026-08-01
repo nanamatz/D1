@@ -10,8 +10,9 @@ Derived from 18 Balatro reference screenshots. **The screenshots are layout/flow
   Record, window mode).
 - **Slider + value badge** for continuous options (volume, screenshake).
 - **Button feedback (changed 2026-07-31):** every enabled UI button visibly enlarges on pointer hover and presses downward while held. The shared effect composes with each component's existing transform, so centred actions, card buttons, and icon controls never lose their positioning. Disabled buttons do not react.
+- **Modal frame (changed 2026-08-01):** Fee Settlement, Game Over, Run Info, Options, Pouch, Collection, and ordinary tutorial modals all use the Collection panel background and its double-line frame: `3px` panel edge, `3px` inset edge, `18px` radius, and a hard `7px` down-right shadow. A Collection opened inside Options suppresses the redundant outer frame. Spotlight coach-mark speech bubbles are not modal panels and keep their pixel-tail style.
 - **Card tooltip — universal, no exceptions.** Hovering **any** interactive object anywhere opens an anchored tooltip: Emoji Tiles, consumables, letter tiles, vouchers, packs, Starting Pouches, Records, Tags, **and every item revealed inside an opened pack**. Contents: name, full base effect text, and — for scaling Emoji Tiles — the **current grown value** (e.g. "currently ×1.5"). Pouch Tag likewise appends `(currently +N Chips)`, calculated from `blind.bag` during an active/prepared blind and the complete `run.bag` in the Shop. Enhancement names remain coloured footer tags. With one supplemental definition it opens on the left. With two or three, exactly one definition folds into the main effect plate and the rest remain on the left; the fold priority is **material → font → edition**. Letter tiles use this for material/font/edition; Emoji Tiles use it for non-base editions. Any effect description that names a tile font automatically adds that font's canonical effect tooltip. A Record tooltip describes that level's added penalty and marks the ladder as cumulative. One shared component; a surface that renders objects without wiring it is a bug, not a gap. **Every tooltip is portalled to `document.body` and uses the highest UI layer. It must never be clipped, covered, or trapped by a product panel's overflow/stacking context. Left-side supplements keep that placement regardless of the main tooltip's up/down direction.** *(Changed 2026-07-31: multi-definition folding prevents a three-card side stack from obscuring the board.)*
-  - **Reference proportions (changed 2026-08-01):** the shared image-like frame uses mint pixel edges, a charcoal scanlined shell, a pale inset description plate, and cyan/magenta title separation. Main width scales from 150–280px according to content, allowing short descriptions to shrink without a large empty plate; supplemental cards are approximately 64% of the main width, and every footer/enhancement tag is 72% of the main width. Heights remain content-driven within those proportions so Korean/English copy wraps without stretching a raster asset.
+  - **Reference proportions (changed 2026-08-01):** the shared image-like frame uses mint pixel edges, a charcoal scanlined shell, a pale inset description plate, and cyan/magenta title separation. Standard main width scales from 150–280px according to content. Letter-tile tooltips instead use one fixed 132px compact frame regardless of enhancement count, with the standard 18px title / 15px body sizes and a highlighted `[c:+N개의 칩]` / `[c:+N Chips]` score line. Supplemental cards stay between 100% and 140% of their main tooltip width with a universal 280px ceiling, keeping related cards visually paired while allowing longer definitions more room. Footer/enhancement tags remain 72% of the main width. Heights remain content-driven so Korean/English copy wraps without stretching a raster asset.
 - **Description face (changed 2026-07-31):** main and supplemental description plates use bundled Jost 700 with Noto Sans KR 700 fallback, compact tracking, and restrained cyan/magenta separation. This keeps Korean readable offline while giving effect copy the printed arcade tone of the reference.
   Semantic highlight phrases are atomic line-breaking units: `+2 Mult` / `+2 배수`, money values, rarity names, and card-kind names may move to the next line as a whole but must never split internally.
   - **Hover feedback accompanies it:** anything that shows a tooltip also reacts to the cursor (lift/scale + shadow), so hoverability is discoverable without hunting.
@@ -217,23 +218,33 @@ breathe + slow sway. Art: `docs/WooDak.png` →
 - Buttons: on the Chapter-8 win, Endless Mode · New Run · Main Menu; otherwise
   New Run · Main Menu. (The run-summary quip is now 우땅's speech bubble — see above.)
 
-### 2.8 Pouch widget + centered modal (주머니)
+### 2.8 Pouch widget + click view (주머니)
 **Persistent pouch widget** bottom-right: the selected Starting Pouch's
 illustration + `remaining/total` text that updates on every draw/discard. It is
-an image swap in one shared box, never a pouch-specific layout. **Hover** opens a
-**centered modal** (playtest-04 D-3, supersedes the bottom drawer); a grace timer
-bridges widget↔modal so it never flickers. While open, the hand + button cluster
-**slide down** to make room and restore on close. The modal is a wide, no-scroll
-layout: left = selected Pouch name/effect and totals
-(vowels/consonants/materials/fonts); main = the A–Z grid showing **remaining
-tiles only** (playtest-04 item 1; no full-pouch toggle).
+an image swap in one shared box, never a pouch-specific layout. **Hover** opens
+only a compact 13×2 A–Z grid at the workspace centre; every cell shows that
+letter's current remaining count. It rises from below while the hand moves down
+and the Play/Sort/Discard controls leave the bottom of the screen. **Click**
+toggles the full Pouch view. The view rises from the bottom,
+then settles at the exact centre of the game surface. Its content-sized width
+and height follow the permanent tile count up to the viewport cap. It includes
+a full-width Close button and no redundant title/remaining-count header.
+
+The click view uses a wide two-column layout. Left = selected Pouch name/effect
+plus permanent-Pouch vowel, consonant, and total tile counts; whole-Pouch
+enhancement totals may follow, plus a compact **2-column × 13-row** A–Z grid
+showing each letter's current remaining count. Main = every tile in the permanent Pouch, alphabetically ordered at
+the exact in-game `64×64px` tile size. Tiles outside the current remaining Pouch
+stay visible at reduced opacity. Every tile retains its live material, font, and
+edition appearance, cursor tilt/sheen, and shared body-portalled tooltip.
 
 **Remaining-count definition (D-1; shop exception 2026-07-31):** while a blind
 is active or prepared, `remaining` = the undrawn pouch (`blind.bag`) **only** —
 tiles in hand, played, or discarded have left it. In the shop, where no blind is
 active, the same widget displays the complete permanent pouch (`run.bag`).
-Coin Purse always starts from a total of 68; letters with zero copies simply do
-not appear among its remaining tile objects.
+Coin Purse always starts from a total of 68; a letter with zero copies still
+appears as a zero in the hover grid, but contributes no object to the click
+view's permanent Pouch.
 
 ### 2.9 Collection (도감)
 **Root screen = centred category modal** (not tabs — too many categories): a framed two-column menu uses thick red buttons and a full-width orange Back bar, following the reference layout. The left column is Emoji Tiles → Pouches → the paired Vouchers/Tags block → the inset Fable/Constellation/Gambler family panel; the right column is Enhanced Tiles → Editions → Card Packs → Palette → Mascots → Words → Blinds. Words and Blinds share the taller 84px category height; every ordinary standalone category and each of the three consumable buttons uses the 75px Voucher height. Emoji Tiles receives the freed left-column space and is 164px tall, keeping both columns equal in total height. Each button shows `discovered/total` and a `!` badge for new finds. Each category opens a content-sized detail modal using the shared grid card + pagination patterns (§0); Card Packs alone reserves the tallest two-row gallery height across all family pages so paging never resizes its modal. Mobile collapses the menu to one column.
@@ -266,7 +277,7 @@ Comic-Book-gated Fable mixing, and Deer-in-Constellation routes ship per GDD
 **Omitted by design (no equivalent — do not add):** Seals as a separate category (their roles are absorbed into the font layer — GDD §2.3 seal-port).
 
 ### 2.10 Options root
-Buttons: **Settings · Statistics · Help · Credits**. Help is the complete tutorial glossary in a responsive two-column grid (one column on narrow screens); every term title and mascot-voiced explanation is visible regardless of encounter status. The guided tutorial has no replay button. (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
+Buttons: **Settings · Statistics · Collection · Credits**. There is no Help screen (removed 2026-08-01: the glossary duplicated the in-play encounter popups and tooltips, which stay the only explainer surfaces). The guided tutorial has no replay button. (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
 
 ### 2.11 Settings
 Mascot selection does not live here. It is owned by **Collection → Mascots**, so

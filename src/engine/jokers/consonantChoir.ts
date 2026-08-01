@@ -4,6 +4,7 @@ import { isScoringVowel, type JokerDef } from '../events';
 export const consonantChoir: JokerDef = {
   id: 'consonantChoir', gddNumber: 15, nameKo: '자음 합창단', nameEn: 'Consonant Choir',
   emoji: '🎼', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }) => {
       const seen = new Set<string>();

@@ -189,7 +189,7 @@ function OptionCard({
           <span className="pack-option-action pack-block">{t(blockKey)}</span>
         ) : (
           <button
-            className="btn exchange sm pack-option-action"
+            className="btn exchange pack-option-action"
             disabled={actionDisabled}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {

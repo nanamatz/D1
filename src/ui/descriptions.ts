@@ -71,6 +71,12 @@ export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
 const TILE_FONTS: readonly TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
+const REFERENCED_EDITIONS = [
+  ['gray', 'G'],
+  ['violet', 'v'],
+  ['rainbow', 'r'],
+  ['white', 'w'],
+] as const satisfies readonly [Exclude<JokerEdition, 'base'>, string][];
 
 /** Font names mentioned in effect copy get their canonical definition card. */
 export function referencedFontTips(
@@ -84,6 +90,20 @@ export function referencedFontTips(
     const title = t(`font.${font}`);
     return effectCopy.includes(title) ? [{ title, body: t(fontDescKey(font)), kind: 'font' }] : [];
   });
+}
+
+/** Explicitly marked edition names get their canonical definition card. */
+export function referencedEditionTips(
+  copy: string,
+  t: Translate,
+): { title: string; body: string; kind: 'edition' }[] {
+  return REFERENCED_EDITIONS.flatMap(([edition, tag]) => copy.includes(`[${tag}:`)
+    ? [{
+        title: t(`edition.${edition}`),
+        body: t(`editiondesc.${edition}`),
+        kind: 'edition' as const,
+      }]
+    : []);
 }
 
 /**

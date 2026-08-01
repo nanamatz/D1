@@ -13,6 +13,7 @@ export const vowelMagnet: JokerDef = {
   rarity: 'uncommon',
   layer: 1,
   price: BALANCE.jokerPrice.uncommon,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }) => {
       const tiles = ctx.submission.tiles;

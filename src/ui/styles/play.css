@@ -587,6 +587,7 @@
 .emoji-tile-image-only {
   position: relative;
   isolation: isolate;
+  border-radius: var(--r-md);
   background-image: none;
   box-shadow: none;
   filter: none;
@@ -2464,21 +2465,57 @@
   25% { transform: translateY(-8px) rotate(-5deg); }
   75% { transform: translateY(-8px) rotate(5deg); }
 }
-.joker-pop {
+.trigger-pop {
   position: absolute;
-  top: -14px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--gold);
-  color: #173226;
-  font-weight: 800;
-  font-size: var(--fs-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #10212a;
+  border: 3px solid var(--gold);
+  color: #fff;
+  font-weight: 900;
+  font-family: var(--ctl-font);
+  font-size: var(--fs-xl);
+  line-height: 1.1;
   border-radius: 8px;
-  padding: 1px 8px;
+  padding: 5px 11px;
   white-space: nowrap;
   box-shadow: var(--shadow);
-  animation: popRise 0.6s ease-out;
+  pointer-events: none;
+}
+.joker-pop {
+  top: calc(100% + 10px);
+  animation: triggerPopBelow 0.55s ease-out forwards;
   z-index: 5;
+}
+@keyframes triggerPopBelow {
+  0% { transform: translate(-50%, -8px) scale(.72); opacity: 0; }
+  38% { transform: translate(-50%, 0) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, 8px) scale(1); opacity: 0; }
+}
+.trigger-pop .chip {
+  display: inline-flex;
+  align-items: center;
+  color: var(--pop-chip);
+}
+.trigger-pop .mult {
+  color: var(--pop-mult);
+}
+.trigger-pop .gold {
+  color: var(--gold);
+}
+.trigger-pop .score {
+  display: inline-flex;
+  align-items: center;
+  color: #fff;
+}
+.trigger-pop .tomato-icon {
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 3px;
+  vertical-align: middle;
 }
 .joker {
   position: relative;
@@ -2759,26 +2796,14 @@
 /* Every tile-specific settle beat is repeated at the source tile: base Chips plus
    enhanced material/font/edition/Joker Chips, Mult, factor, gold, or retrigger. */
 .tile-effect-pop {
-  position: absolute;
-  top: -22px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #10212a;
-  border: 2px solid var(--gold);
-  color: #fff;
-  font-weight: 800;
-  font-family: var(--ctl-font);
-  font-size: var(--fs-sm);
-  border-radius: 6px;
-  padding: 1px 6px;
-  white-space: nowrap;
-  box-shadow: var(--shadow);
-  pointer-events: none;
+  bottom: calc(100% + 10px);
   z-index: 18;
-  animation: popRise 0.45s ease-out;
+  animation: triggerPopAbove 0.55s ease-out forwards;
+}
+@keyframes triggerPopAbove {
+  0% { transform: translate(-50%, 8px) scale(.72); opacity: 0; }
+  38% { transform: translate(-50%, 0) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, -8px) scale(1); opacity: 0; }
 }
 .tile:has(> .tile-effect-pop) {
   overflow: visible;
@@ -2790,23 +2815,9 @@
   filter: brightness(1.09);
   z-index: 7;
 }
-.tile-effect-pop .chip {
-  color: var(--chips);
-}
-.tile-effect-pop .mult {
-  color: var(--mult);
-}
-.tile-effect-pop .gold {
-  color: var(--gold);
-}
 .tile-effect-pop .retrigger {
   color: #fff;
   font-size: 1.2em;
-}
-@keyframes popRise {
-  0% { transform: translate(-50%, 6px) scale(0.7); opacity: 0; }
-  40% { transform: translate(-50%, -2px) scale(1.1); opacity: 1; }
-  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
 }
 /* Letter-hand / suit / word-length stamp landing on the just-scored word (B step 4). */
 .word-stamp {
@@ -2911,15 +2922,28 @@
   color: var(--ink-tier, var(--tile-ink));
   transition: transform 0.15s;
 }
-/* letter-ink tiers by chip value (P2-3) */
-.tile.ink-mid {
-  --ink-tier: #54432f;
+/* Exact base-score inks. 3 Chips keeps its established colour; every other
+   live score gets its own dark, face-legible hue. */
+.tile.ink-3 {
+  --ink-tier: var(--tile-ink-3);
 }
-.tile.ink-hi {
-  --ink-tier: #6e3a2a;
+.tile.ink-6 {
+  --ink-tier: var(--tile-ink-6);
 }
-.tile.ink-gild {
-  --ink-tier: #8a6420;
+.tile.ink-9 {
+  --ink-tier: var(--tile-ink-9);
+}
+.tile.ink-12 {
+  --ink-tier: var(--tile-ink-12);
+}
+.tile.ink-15 {
+  --ink-tier: var(--tile-ink-15);
+}
+.tile.ink-24 {
+  --ink-tier: var(--tile-ink-24);
+}
+.tile.ink-30 {
+  --ink-tier: var(--tile-ink-30);
 }
 /* vowel/consonant face tint (C-6: strengthened one step, still both "beige").
    Material tiles keep their own faces (their .glass/.stone/... rules win). */
@@ -3437,18 +3461,11 @@
   }
   100% { box-shadow: var(--shadow); filter: brightness(1); }
 }
-/* feedback #3 · a single upward BOUNCE when the tile's material/font/edition triggers
-   (runs together with the glow). Placed after .tile.mat-flash so its combined animation
-   (glow + bounce) wins the `animation` property — the two classes always co-occur. */
+/* A triggering letter tile uses the same wiggle as a firing Emoji Tile, together
+   with its source-tile glow. The hand-specific override below beats idle wobble. */
 .tile.trig-bounce {
   z-index: 6;
-  animation: mat-flash 0.55s ease, trig-bounce 0.42s cubic-bezier(0.3, 1.5, 0.55, 1);
-}
-@keyframes trig-bounce {
-  0% { transform: translateY(0); }
-  34% { transform: translateY(-16px); }
-  62% { transform: translateY(-3px); }
-  100% { transform: translateY(0); }
+  animation: mat-flash 0.55s ease, jokerWiggle 0.32s ease-in-out;
 }
 /* feedback #4 · destroy application: the tile shrinks + fades out (shown in the pouch
    picker before the effect commits). Placed after the others so its animation wins. */
@@ -3735,6 +3752,9 @@
   outline: 3px solid var(--gold);
   outline-offset: 2px;
   animation: none;
+}
+.hand .tile.trig-bounce {
+  animation: mat-flash 0.55s ease, jokerWiggle 0.32s ease-in-out;
 }
 /* Magnifier hint highlight (P2-1) */
 .tile.hint {
@@ -4455,6 +4475,11 @@
    only gain empty space, so the width follows the content rather than the modal. */
 .overlay-card.pause-modal:has(.collection) {
   max-width: min(1240px, 96vw);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 .overlay-card.pause-modal:has(.detail-jokers) {
   max-height: calc(100vh - 40px);

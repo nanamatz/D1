@@ -205,12 +205,9 @@ export function fontClass(font: Tile['font']): string {
 /** Uppercase display glyph. A Stone tile is blank; its material carries the look. */
 export const tileGlyph = (t: Tile): string => t.letter ?? '';
 
-/** Letter-ink tier by chip value (P2-3): 1 default · 2–3 · 4–5 · 8–10 gilded. */
+/** Exact letter-ink class by base chip value. Stone (0) stays unclassified. */
 export function inkClass(value: number): string {
-  if (value >= 8) return 'ink-gild';
-  if (value >= 4) return 'ink-hi';
-  if (value >= 2) return 'ink-mid';
-  return '';
+  return value > 0 ? `ink-${value}` : '';
 }
 
 /** Vowel/consonant ceramic face tint class (P2-3). Stone is neither → no tint. */

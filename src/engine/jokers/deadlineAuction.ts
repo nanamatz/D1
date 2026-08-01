@@ -5,6 +5,7 @@ export const deadlineAuction: JokerDef = {
   id: 'deadlineAuction', gddNumber: 43, nameKo: '마감 경매', nameEn: 'Deadline Auction',
   emoji: '🔨', rarity: 'rare', layer: 3, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     blindEnd: ({ run, blind }, self) => {
       if (blind.kind !== 'boss') return;

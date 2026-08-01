@@ -4,6 +4,7 @@ import type { JokerDef } from '../events';
 export const plagiarist: JokerDef = {
   id: 'plagiarist', gddNumber: 32, nameKo: '표절가', nameEn: 'Plagiarist',
   emoji: '📋', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ blind, ctx }) => {
       const previous = blind.sequence.at(-1);

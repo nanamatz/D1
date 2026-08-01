@@ -177,7 +177,7 @@ export type ScoreEvent =
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; scoreDelta?: number; goldDelta?: number; tileId?: string }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };

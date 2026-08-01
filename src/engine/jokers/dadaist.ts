@@ -10,6 +10,7 @@ export const dadaist: JokerDef = {
   rarity: 'rare',
   layer: 2,
   price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordRules: ({ ctx }) => {
       if (ctx.submission.isGibberish) ctx.scoringSuits?.add('slang');

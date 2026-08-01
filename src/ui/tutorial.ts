@@ -14,12 +14,12 @@ import { readValue, remove as removeKey, writeValue } from './storage';
 
 const KEY = 'wj.tutorial';
 
-/** The 14 encounters (A-2 + first boss). */
+/** The 13 encounters (A-2 + first boss). */
 export type EncounterId =
   | 'firstJoker' | 'firstMaterial' | 'firstFont' | 'firstLetterHand'
   | 'firstPattern' | 'firstUnison' | 'firstGibberish' | 'shopFirstVisit'
   | 'firstConsumable' | 'firstVoucher'
-  | 'firstPack' | 'pouchHover' | 'magnifier' | 'firstBoss';
+  | 'firstPack' | 'pouchHover' | 'firstBoss';
 
 export type EncounterGroup = 'tiles' | 'scoring' | 'economy' | 'run';
 
@@ -49,7 +49,6 @@ export const ENCOUNTERS: readonly Encounter[] = [
   { id: 'firstVoucher', group: 'economy', icon: '🎫', mascot: 'woodak', target: '.shop-sale-region' },
   { id: 'firstPack', group: 'economy', icon: '📦', mascot: 'woodak', target: '.shop-sale-region' },
   { id: 'shopFirstVisit', group: 'economy', icon: '🏪', mascot: 'piyak', target: '.shop-sale-region' },
-  { id: 'magnifier', group: 'economy', icon: '🔍', mascot: 'woodak', target: '.consumables-col' },
   { id: 'pouchHover', group: 'run', icon: '👝', mascot: 'woodak', target: '.pouch-dock' },
   { id: 'firstBoss', group: 'run', icon: '👑', mascot: 'woodak', target: '.bosseff' },
 ];

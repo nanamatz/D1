@@ -31,25 +31,41 @@ const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: 'ðŸ
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 
 /** The firing joker's contribution popup during settle (B step 3). */
-function JokerPop({
+export function JokerPop({
   chips,
   mult,
+  multFactor,
   score = 0,
   gold = 0,
+  applied,
 }: {
   chips: number;
   mult: number;
+  multFactor?: number | undefined;
   score?: number;
   gold?: number;
+  applied: string;
 }) {
-  const parts = [
-    chips ? `+${chips}` : '',
-    mult ? `+${fmtMult(mult)}` : '',
-    score ? `+${score}` : '',
-    gold ? `+$${gold}` : '',
-  ].filter(Boolean);
-  if (parts.length === 0) return null;
-  return <span className="joker-pop">{parts.join(' ')}</span>;
+  const signed = (value: number) => `${value > 0 ? '+' : ''}${fmtMult(value)}`;
+  const money = gold > 0 ? `+$${gold}` : `-$${Math.abs(gold)}`;
+  const hasValue = chips !== 0 || mult !== 0 || multFactor !== undefined || score !== 0 || gold !== 0;
+  return (
+    <span className="trigger-pop joker-pop" aria-hidden>
+      {chips !== 0 && (
+        <span className="chip"><span className="chip-diamond" />{signed(chips)}</span>
+      )}
+      {(mult !== 0 || multFactor !== undefined) && (
+        <span className="mult">
+          {multFactor !== undefined ? `Ã—${fmtMult(multFactor)}` : signed(mult)}
+        </span>
+      )}
+      {score !== 0 && (
+        <span className="score"><span className="tomato-icon" />{signed(score)}</span>
+      )}
+      {gold !== 0 && <span className="gold">{money}</span>}
+      {!hasValue && <span className="applied">{applied}</span>}
+    </span>
+  );
 }
 
 interface Props {
@@ -195,14 +211,6 @@ export function JokerShelf({
                     ) : (
                       art && <img className="joker-art" src={art} alt="" />
                     )}
-                    {firing && settle.jokerPop && (
-                      <JokerPop
-                        chips={settle.jokerPop.chips}
-                        mult={settle.jokerPop.mult}
-                        score={settle.jokerPop.score}
-                        gold={settle.jokerPop.gold}
-                      />
-                    )}
                     {onSellJoker && jokerMenuIdx === i && (
                       <div className="consumable-menu bare" role="menu">
                         <button
@@ -220,6 +228,16 @@ export function JokerShelf({
                     )}
                   </TiltCard>
                 </Tooltip>
+                {firing && settle.jokerPop && (
+                  <JokerPop
+                    chips={settle.jokerPop.chips}
+                    mult={settle.jokerPop.mult}
+                    multFactor={settle.jokerPop.multFactor}
+                    score={settle.jokerPop.score}
+                    gold={settle.jokerPop.gold}
+                    applied={t('settle.applied')}
+                  />
+                )}
               </div>
             );
           })}

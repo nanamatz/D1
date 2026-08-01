@@ -4,6 +4,7 @@ import type { JokerDef } from '../events';
 export const nightOwl: JokerDef = {
   id: 'nightOwl', gddNumber: 34, nameKo: '야행성 작가', nameEn: 'Night Owl',
   emoji: '🦉', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ blind, ctx }) => {
       if (blind.bag.length === 0) ctx.mult *= BALANCE.jokers.nightOwl.emptyFactor;

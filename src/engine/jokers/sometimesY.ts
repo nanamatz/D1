@@ -5,6 +5,8 @@ export const sometimesY: JokerDef = {
   id: 'sometimesY', gddNumber: 16, nameKo: '반모음 Y', nameEn: 'Sometimes Y',
   emoji: '🇾', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
   hooks: {
-    wordRules: ({ ctx }) => { ctx.scoringVowels?.add('Y'); },
+    wordRules: ({ ctx }) => {
+      if (ctx.submission.tiles.some((tile) => tile.letter === 'Y')) ctx.scoringVowels?.add('Y');
+    },
   },
 };

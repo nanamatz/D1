@@ -14,6 +14,7 @@ export const anonymous: JokerDef = {
   rarity: 'rare',
   layer: 3,
   price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ run, ctx }) => {
       if (run.jokers.length >= jokerSlotLimit(run)) ctx.mult *= BALANCE.jokers.anonymous.factor;

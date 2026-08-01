@@ -13,6 +13,7 @@ import {
 } from '../game';
 import { useI18n } from '../i18n';
 import { usePointerTilt } from '../hooks';
+import { stripRichText } from '../richtext';
 import { useSettleView } from '../settle';
 import { Tooltip, type TooltipDetail, type TooltipTag } from './Tooltip';
 
@@ -44,6 +45,8 @@ interface Props {
   forced?: boolean;
   /** Disable local tilt when a parent surface owns the whole interaction layer. */
   tilt?: boolean;
+  /** Focusable display object with no click action, used by inspection galleries. */
+  inspectable?: boolean;
   /** Anchored hover tooltip with enhancement tags and left-side definitions. */
   tooltip?: {
     title: string;
@@ -73,11 +76,13 @@ function TileViewImpl({
   invalid = false,
   forced = false,
   tilt = true,
+  inspectable = false,
   tooltip,
 }: Props) {
   const { t } = useI18n();
   const settle = useSettleView();
   const interactive = !mini && !!onSelect && !disabled;
+  const focusable = (interactive || inspectable) && !disabled;
   const draggable = !mini && !!zone && !disabled;
   // Conditional-material corner glyph (B-1) — hidden face-down (identity hidden).
   const matGlyph = faceDown ? null : materialGlyph(tile);
@@ -157,14 +162,14 @@ function TileViewImpl({
       // pointer events; the home zone is read from here. Native HTML5 drag is off —
       // it can't spring-follow or rotate (the browser owns its drag image).
       data-zone={zone}
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
+      role={interactive ? 'button' : inspectable ? 'img' : undefined}
+      tabIndex={focusable ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}
       aria-label={
-        interactive
+        focusable
           ? faceDown
             ? t('boss.faceDownTile')
-            : `${idLabel} tile, ${t('tile.chips', { n: tileValue(tile) })}`
+            : `${idLabel} tile, ${stripRichText(t('tile.chips', { n: tileValue(tile) }))}`
           : undefined
       }
       draggable={false}
@@ -220,8 +225,12 @@ function TileViewImpl({
       )}
       <span className="tilt-sheen" aria-hidden />
       {effectPop && (
-        <span key={effectPop.id} className="tile-effect-pop" aria-hidden>
-          {effectPop.chips !== 0 && <span className="chip">+{Math.round(effectPop.chips)}</span>}
+        <span key={effectPop.id} className="trigger-pop tile-effect-pop" aria-hidden>
+          {effectPop.chips !== 0 && (
+            <span className="chip">
+              <span className="chip-diamond" />+{Math.round(effectPop.chips)}
+            </span>
+          )}
           {effectPop.multFactor !== undefined ? (
             <span className="mult">×{effectPop.multFactor}</span>
           ) : effectPop.mult !== 0 ? (

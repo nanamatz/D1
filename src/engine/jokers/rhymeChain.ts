@@ -10,6 +10,7 @@ export const rhymeChain: JokerDef = {
   rarity: 'rare',
   layer: 3,
   price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ blind, ctx }, self) => {
       const previous = blind.sequence.at(-1)?.text.toLowerCase();

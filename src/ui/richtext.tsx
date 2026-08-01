@@ -9,6 +9,7 @@
  *   [n:…]  a count ("5")      → orange text   (pack copy: "up to 5 … choose 2")
  *   [k:…]  a card-kind noun   → red text      (pack copy: "Punctuation", "Charm")
  *   [C/U/R/L:…] an Emoji Tile rarity → matching rarity-badge colour
+ *   [G/v/r/w:…] Gray/Violet/Rainbow/White edition → matching edition colour
  *
  * `$` marks money in gold, `p` marks passive/property copy in green, and `g`
  * marks the Gibberish term in red with an underline.
@@ -23,7 +24,7 @@
  */
 import type { ReactNode } from 'react';
 
-const TAG = /\[([mcbnkag$pCURL]):([^\]]*)\]/g;
+const TAG = /\[([mcbnkag$pCURLGvrw]):([^\]]*)\]/g;
 const SCORE_VALUE = /^(\s*(?:×\s*)?(?:[+-]?\{[^}]+\}|[+-]?\d+(?:\.\d+)?))(.*)$/;
 
 const CLASS: Record<string, string> = {
@@ -40,7 +41,14 @@ const CLASS: Record<string, string> = {
   U: 'hl-rarity-uncommon',
   R: 'hl-rarity-rare',
   L: 'hl-rarity-legendary',
+  G: 'hl-edition-gray',
+  v: 'hl-edition-violet',
+  r: 'hl-edition-rainbow',
+  w: 'hl-edition-white',
 };
+
+/** Plain equivalent for accessible labels that reuse marked-up display copy. */
+export const stripRichText = (text: string): string => text.replace(TAG, '$2');
 
 /**
  * Parse highlight markup into renderable nodes. Untagged text passes through

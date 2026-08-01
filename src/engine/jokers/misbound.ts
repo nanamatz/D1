@@ -11,6 +11,7 @@ export const misbound: JokerDef = {
   layer: 3,
   price: BALANCE.jokerPrice.legendary,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }, self) => {
       ctx.mult *= self.state.factor ?? 1;

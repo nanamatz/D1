@@ -6,6 +6,7 @@ import { letterString } from '../scoring';
 export const palindromist: JokerDef = {
   id: 'palindromist', gddNumber: 24, nameKo: '회문 작가', nameEn: 'Palindromist',
   emoji: '🪞', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }) => {
       if (evaluateLetterHand(letterString(ctx.submission.tiles), ctx.submission.isGibberish)?.id === 'palindrome') {

@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import type { RunState, Tile } from '../../engine/types';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
+import { BALANCE } from '../../engine/balance';
+import type { Letter, RunState, Tile } from '../../engine/types';
 import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
@@ -17,6 +19,9 @@ interface Counts {
   fonts: Record<string, number>;
   editions: Record<string, number>;
 }
+
+const LETTERS = Object.keys(BALANCE.bagComposition) as Letter[];
+const POUCH_GRID_COLUMNS = 13;
 
 function tally(tiles: readonly Tile[]): Counts {
   const c: Counts = {
@@ -47,15 +52,19 @@ function sortForDisplay(tiles: readonly Tile[]): Tile[] {
   });
 }
 
-/**
- * The remaining pouch, shown as the ACTUAL tiles (playtest item 4) — same visual as
- * in-blind tiles (material face, font, chip value), just mini-sized — so material and
- * font are readable at a glance. Totals stay in the side rail. Remaining = undrawn
- * bag ONLY (playtest-03 D-1).
- */
-function PouchContents({ run, tiles }: { run: RunState; tiles: readonly Tile[] }) {
+/** Full permanent pouch; tiles outside the undrawn pouch stay translucent. */
+function PouchContents({
+  run,
+  tiles,
+}: {
+  run: RunState;
+  tiles: readonly Tile[];
+}) {
   const { t } = useI18n();
-  const active = tally(tiles);
+  const full = tally(run.bag);
+  const remaining = tally(tiles);
+  const remainingIds = new Set(tiles.map((tile) => tile.id));
+  const columns = Math.min(POUCH_GRID_COLUMNS, Math.max(1, run.bag.length));
 
   return (
     <div className="pouch-body">
@@ -65,37 +74,45 @@ function PouchContents({ run, tiles }: { run: RunState; tiles: readonly Tile[] }
           <p>{richText(t(`pouch.${run.pouchId}.desc`))}</p>
         </div>
         <div className="bt-row">
-          <span>{t('bagview.vowels')}</span>
-          <b>{active.vowels}</b>
+          <span>{t('bagview.totalVowels')}</span>
+          <b>{full.vowels}</b>
         </div>
         <div className="bt-row">
-          <span>{t('bagview.consonants')}</span>
-          <b>{active.consonants}</b>
+          <span>{t('bagview.totalConsonants')}</span>
+          <b>{full.consonants}</b>
         </div>
         <div className="bt-row total">
-          <span>{t('bagview.tiles')}</span>
-          <b>{active.vowels + active.consonants}</b>
+          <span>{t('bagview.totalTiles')}</span>
+          <b>{run.bag.length}</b>
         </div>
-        {(Object.keys(active.materials).length > 0 ||
-          Object.keys(active.fonts).length > 0 ||
-          Object.keys(active.editions).length > 0) && (
+        <div className="pouch-modal-letter-grid" aria-label={t('bagview.remaining')}>
+          {LETTERS.map((letter) => (
+            <div className="pouch-modal-letter-count" key={letter}>
+              <b>{letter}</b>
+              <span>{remaining.perLetter[letter] ?? 0}</span>
+            </div>
+          ))}
+        </div>
+        {(Object.keys(full.materials).length > 0 ||
+          Object.keys(full.fonts).length > 0 ||
+          Object.keys(full.editions).length > 0) && (
           <>
             <div className="label" style={{ marginTop: 6 }}>
               {t('bagview.enhanced')}
             </div>
-            {Object.entries(active.materials).map(([m, n]) => (
+            {Object.entries(full.materials).map(([m, n]) => (
               <div key={m} className="bt-row">
                 <span>{t(`material.${m}`)}</span>
                 <b>{n}</b>
               </div>
             ))}
-            {Object.entries(active.fonts).map(([f, n]) => (
+            {Object.entries(full.fonts).map(([f, n]) => (
               <div key={f} className="bt-row">
                 <span>{t(`font.${f}`)}</span>
                 <b>{n}</b>
               </div>
             ))}
-            {Object.entries(active.editions).map(([edition, n]) => (
+            {Object.entries(full.editions).map(([edition, n]) => (
               <div key={edition} className="bt-row">
                 <span>{t(`edition.${edition}`)}</span>
                 <b>{n}</b>
@@ -105,9 +122,21 @@ function PouchContents({ run, tiles }: { run: RunState; tiles: readonly Tile[] }
         )}
       </aside>
 
-      <div className="pouch-tiles">
-        {sortForDisplay(tiles).map((tile) => (
-          <TileView key={tile.id} tile={tile} mini tooltip={tileTooltip(tile, t)} />
+      <div
+        className="pouch-tiles"
+        aria-label={t('bagview.full')}
+        style={{ '--pouch-columns': columns } as CSSProperties}
+      >
+        {sortForDisplay(run.bag).map((tile) => (
+          <div
+            key={tile.id}
+            className={[
+              'pouch-tile-slot',
+              remainingIds.has(tile.id) ? '' : 'missing',
+            ].filter(Boolean).join(' ')}
+          >
+            <TileView tile={tile} inspectable tooltip={tileTooltip(tile, t)} />
+          </div>
         ))}
       </div>
     </div>
@@ -115,61 +144,58 @@ function PouchContents({ run, tiles }: { run: RunState; tiles: readonly Tile[] }
 }
 
 /**
- * Persistent pouch widget (E-1) + CENTERED modal (playtest-04 D-3). Opens ONLY
- * while the mouse is over the widget or the modal (a grace timer bridges the gap
- * so it never flickers). `onOpenChange` lets the board slide the hand/buttons
- * down to make room while it's open.
+ * Persistent pouch widget. Hover shows a compact A-Z remaining-count grid;
+ * clicking toggles the full-pouch modal.
  */
 export function BagWidget({
   run,
   tiles,
-  onOpenChange,
+  onHoverChange,
 }: {
   run: RunState;
   tiles: readonly Tile[];
-  onOpenChange?: (open: boolean) => void;
+  onHoverChange?: (hovered: boolean) => void;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hovered, setHovered] = useState(false);
   const remaining = tiles.length;
   const total = run.bag.length;
+  const counts = tally(tiles).perLetter;
+  const workspace = hovered && typeof document !== 'undefined'
+    ? document.querySelector<HTMLElement>('.phase-workspace')
+    : null;
 
   useEffect(() => {
-    onOpenChange?.(open);
-  }, [open, onOpenChange]);
+    onHoverChange?.(hovered && !open);
+  }, [hovered, onHoverChange, open]);
 
-  const enter = () => {
-    if (timer.current) clearTimeout(timer.current);
-    setOpen(true);
-    // A-2: explain the pouch the first time the player hovers the widget. The bus
-    // no-ops on already-seen/tips-off.
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
+
+  const showSummary = () => {
+    setHovered(true);
     tutorialBus.fire('pouchHover');
-  };
-  // Generous grace so the cursor can travel from the corner widget to the
-  // centered modal without the modal closing (D-3).
-  const leave = () => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setOpen(false), 260);
   };
 
   return (
     <>
-      {/* The count sits below the widget box rather than inside it — the same
-          shape as the shelves (box + N/max beneath), playtest-06. Hovering
-          either opens the modal, so the handlers live on the dock. */}
+      {/* Hover shows counts; click toggles the full view. */}
       <div
-        className="pouch-dock"
-        onMouseEnter={enter}
-        onMouseLeave={leave}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') setOpen(false);
-        }}
+        className={['pouch-dock', open ? 'open' : ''].filter(Boolean).join(' ')}
+        onMouseEnter={showSummary}
+        onMouseLeave={() => setHovered(false)}
       >
         <Tooltip
           title={t(`pouch.${run.pouchId}.name`)}
           body={t(`pouch.${run.pouchId}.desc`)}
-          disabled={open}
+          disabled={open || hovered}
         >
           <button
             type="button"
@@ -178,8 +204,9 @@ export function BagWidget({
             aria-expanded={open}
             aria-haspopup="dialog"
             aria-controls="pouch-contents-dialog"
-            onClick={() => setOpen(true)}
-            onFocus={() => tutorialBus.fire('pouchHover')}
+            onClick={() => setOpen((value) => !value)}
+            onFocus={showSummary}
+            onBlur={() => setHovered(false)}
           >
             <img className="pouch-art" src={pouchArt(run.pouchId)} alt="" aria-hidden />
           </button>
@@ -189,23 +216,32 @@ export function BagWidget({
         </span>
       </div>
 
+      {hovered && !open && workspace && createPortal(
+        <div className="pouch-letter-summary" role="status" aria-label={t('bagview.remaining')}>
+            {LETTERS.map((letter) => (
+              <span className="pouch-letter-count" key={letter}>
+                <b>{letter}</b>
+                <span>{counts[letter] ?? 0}</span>
+              </span>
+            ))}
+        </div>,
+        workspace,
+      )}
+
       {open && (
-        <div className="overlay pouch-overlay">
+        <div className="overlay pouch-overlay" onClick={() => setOpen(false)}>
           <div
             id="pouch-contents-dialog"
             className="overlay-card pouch-modal"
             role="dialog"
             aria-modal
-            onMouseEnter={enter}
-            onMouseLeave={leave}
+            aria-label={t('bagview.title')}
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="pouch-drawer-head">
-              <h3>{t('bagview.title')}</h3>
-              <span className="pouch-remaining-label">
-                {t('bagview.remaining')}: {remaining}/{total}
-              </span>
-            </div>
             <PouchContents run={run} tiles={tiles} />
+            <button autoFocus className="btn cash pouch-close" onClick={() => setOpen(false)}>
+              {t('common.close')}
+            </button>
           </div>
         </div>
       )}

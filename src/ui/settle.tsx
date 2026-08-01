@@ -22,7 +22,7 @@ import { motionOff as reducedMotion } from './motion';
 
 /**
  * feedback: when a tile's MATERIAL / FONT / EDITION triggers during scoring, make the
- * tile itself react — a glow pulse (this fired) AND a single upward bounce ("통 튀는").
+ * tile itself react — the same glow + trigger wiggle used by firing Emoji Tiles.
  * Imperative by data-tile-id, so it works for a played tile (tray) AND a held tile in
  * the hand (Brass et al.) without coupling every TileView to the settle context.
  */
@@ -77,7 +77,14 @@ export interface SettleView {
   /** joker currently wiggling */
   activeJokerId: string | null;
   /** the firing joker's contribution, for its popup */
-  jokerPop: { jokerId: string; chips: number; mult: number; score: number; gold: number } | null;
+  jokerPop: {
+    jokerId: string;
+    chips: number;
+    mult: number;
+    multFactor?: number;
+    score: number;
+    gold: number;
+  } | null;
   /** a letter-hand / suit / word-length stamp landing this beat */
   stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch'; label: string } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
@@ -102,8 +109,8 @@ const IDLE: SettleView = {
 const SettleCtx = createContext<SettleView>(IDLE);
 export const useSettleView = (): SettleView => useContext(SettleCtx);
 
-// ms per beat at 1× speed. Matches `.tile-pop.live`'s popRise (0.45s) so each
-// tile's pop *finishes* before the next beat fires — at 150ms the pops overlapped
+// ms per beat at 1× speed. Matches the 0.55s trigger pops so each one *finishes*
+// before the next beat fires — at 150ms the pops overlapped
 // three-deep and the whole tally read as one blur (playtest-06 item 1). Players
 // need to see each contribution land one at a time; game speed (1/2/4×) scales it.
 // Feedback 5: each contribution needs enough time to read and land before the
@@ -273,12 +280,19 @@ export function SettleProvider({
             // feedback #2/#3: flash + a single upward bounce on the triggering tile.
             triggerTile(e.tileId);
           }
-          // This beat's increase drives the floating +N pops (item 6). Every settle
-          // beat is additive, so multOp is 'add'; a future multiplicative beat would
-          // set 'mul' to render ×N instead.
+          // Preserve the source operation in both the score-box and Emoji Tile
+          // readouts: additive Mult shows +N, multiplicative Mult shows ×factor.
+          const multFactor =
+            e.kind === 'joker' || e.kind === 'edition' ? e.multFactor : undefined;
+          const multiplied = multFactor !== undefined;
           const scorePop =
             chips !== prevChips || mult !== prevMult
-              ? { chips: chips - prevChips, mult: mult - prevMult, multOp: 'add' as const, id: i }
+              ? {
+                  chips: chips - prevChips,
+                  mult: multiplied ? multFactor : mult - prevMult,
+                  multOp: multiplied ? 'mul' as const : 'add' as const,
+                  id: i,
+                }
               : null;
           if (scorePop && screenShake > 0) triggerScreenShake();
           const base: SettleView = {
@@ -331,6 +345,7 @@ export function SettleProvider({
                 jokerId: e.jokerId,
                 chips: e.chipsDelta,
                 mult: e.multDelta,
+                ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
                 score: e.scoreDelta ?? 0,
                 gold: e.goldDelta ?? 0,
               },
@@ -388,6 +403,16 @@ export function SettleProvider({
               tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId ?? null,
+              jokerPop: e.jokerId
+                ? {
+                    jokerId: e.jokerId,
+                    chips: e.chipsDelta,
+                    mult: e.multDelta,
+                    ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
+                    score: 0,
+                    gold: 0,
+                  }
+                : null,
               tileEffectPop: e.tileId
                 ? {
                     tileId: e.tileId,

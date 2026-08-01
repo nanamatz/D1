@@ -7,6 +7,7 @@ export const handScholar: JokerDef = {
   id: 'handScholar', gddNumber: 30, nameKo: '족보 학자', nameEn: 'Hand Scholar',
   emoji: '🎓', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }, self) => {
       const hand = evaluateLetterHand(letterString(ctx.submission.tiles), ctx.submission.isGibberish);

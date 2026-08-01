@@ -17,6 +17,15 @@
   --gold: #b0aca4; /* YELLOW; unlock-yellow → #f0b23e */
   --tile-face: #e9e8e4; /* YELLOW (warm cream); unlock-yellow → #f4eddf */
   --tile-ink: #2b2620; /* neutral (near-black) */
+  /* Base-score letter inks. Neutral defaults preserve luminance until their
+     mapped palette word restores the hue below. */
+  --tile-ink-3: #454545; /* YELLOW → #54432f */
+  --tile-ink-6: #5e5e5e; /* GREEN → #3f694d */
+  --tile-ink-9: #585858; /* BLUE → #315f86 */
+  --tile-ink-12: #565656; /* BLUE → #5b4f8b */
+  --tile-ink-15: #5a5a5a; /* RED → #844b78 */
+  --tile-ink-24: #595959; /* RED → #9b4938 */
+  --tile-ink-30: #676767; /* YELLOW → #8a6420 */
   --tile-ink-light: #f4f0e7; /* light ink for dark faces (Lead plate) — accessibility
                                 floor (UI_DESIGN §3.1 ③); stays light under grayscale */
   --suit-standard: #c2c3c4; /* neutral grey */
@@ -94,9 +103,9 @@
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
-  /* Content-sized tooltip proportions: main cards scale from 150–280px, supplemental
-     cards occupy about 64% of the main width, and footer tags occupy 72%.
-     Height remains content-driven so translated copy grows without distortion. */
+  /* Content-sized tooltip proportions: standard main cards scale from 150–280px,
+     letter-tile cards stay 132px, supplements stay within 100–140% of their main
+     card, and footer tags occupy 72% of their main card. */
   --tt-bg: #354246;
   --tt-plate: #fffdf7;
   --tt-edge: #b7eee5;
@@ -104,7 +113,6 @@
   --tt-r: 11px;
   --tt-min-w: 150px;
   --tt-w: 280px;
-  --tt-sub-w: 180px;
   --tt-tag-w: 72%;
   --z-tooltip: 10000;
   /* The Collection's card columns. Named because the card grid has to reserve room
@@ -168,6 +176,8 @@
   --kind-boss-a: #d64d4a; /* boss-blind kind pill */
   --kind-boss-b: #a02c2c;
   --pop-mult: #ff6f6d; /* mult score-pop */
+  --tile-ink-15: #844b78;
+  --tile-ink-24: #9b4938;
 }
 :root.unlock-yellow {
   --gold: #f0b23e; /* money, gold UI, early-end glow */
@@ -175,11 +185,14 @@
   --tile-face: #f4eddf; /* warm ivory tile face returns */
   --kind-big-a: #d6a53a; /* big-blind (Revision) kind pill */
   --kind-big-b: #a87d20;
+  --tile-ink-3: #54432f;
+  --tile-ink-30: #8a6420;
 }
 :root.unlock-green {
   --bg-desk: #22443b; /* desk / blind backgrounds */
   --btn-green: #4a9d5b; /* reroll / pack-open / sell buttons */
   --btn-green-hi: #57b268;
+  --tile-ink-6: #3f694d;
 }
 :root.unlock-blue {
   --chips: #3fa7f5; /* chips, blue buttons */
@@ -196,6 +209,8 @@
   --kind-small-a: #4d7fd6; /* small-blind (Draft) kind pill */
   --kind-small-b: #3a5aa0;
   --pop-chip: #5bb8ff; /* chip score-pop */
+  --tile-ink-9: #315f86;
+  --tile-ink-12: #5b4f8b;
 }
 
 /* "Truly monochrome" guard (revised C-3): while NO colour group is unlocked the

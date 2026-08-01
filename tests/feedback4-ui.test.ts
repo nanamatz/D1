@@ -22,7 +22,7 @@ describe('feedback 4 UI regressions', () => {
     expect(settle).toContain('tileEffectPop');
     expect(settle).toContain('gold: e.goldDelta');
     expect(settle).toContain("retrigger: e.effect === 'retriggerPlay'");
-    expect(tile).toContain('className="tile-effect-pop"');
+    expect(tile).toContain('className="trigger-pop tile-effect-pop"');
   });
 
   it('makes the entire blank cheque writable', () => {

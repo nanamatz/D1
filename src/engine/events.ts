@@ -139,6 +139,9 @@ export interface JokerDef {
   layer: 1 | 2 | 3;
   price: number; // placeholder, see balance.ts
   scalingAxis?: keyof RunState['counters'];
+  /** Preserve multiplicative Mult semantics in the settle log so the UI can
+   *  present ×factor instead of flattening the effect into an additive delta. */
+  multOperation?: 'multiply';
   /** Optional live-value row for scaling Emoji Tile tooltips.
    *  `mult` = a ×factor, `multAdd` = an additive +Mult, `chips` = additive +Chips. */
   growthDisplay?: {

@@ -50,13 +50,13 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.shop-sale-region > \.panel\s*\{[^}]*min-height:\s*var\(--shop-lower-panel-h\)/s);
   });
 
-  it('does not append a multiplication sign to additive Mult tile or joker popups', () => {
+  it('distinguishes additive from multiplicative Mult popups', () => {
     expect(source('src/ui/components/Tile.tsx')).toContain(
       '<span className="mult">+{Number.isInteger(effectPop.mult)',
     );
-    expect(source('src/ui/components/JokerShelf.tsx')).toContain(
-      "mult ? `+${fmtMult(mult)}` : ''",
-    );
+    const shelf = source('src/ui/components/JokerShelf.tsx');
+    expect(shelf).toContain('multFactor !== undefined ? `×${fmtMult(multFactor)}` : signed(mult)');
+    expect(shelf).not.toContain('+×');
   });
 
   it('gives the Emoji Tile shelf remaining width with an exact 10px panel gap', () => {

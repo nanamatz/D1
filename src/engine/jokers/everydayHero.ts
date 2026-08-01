@@ -4,6 +4,7 @@ import { hasScoringSuit, type JokerDef } from '../events';
 export const everydayHero: JokerDef = {
   id: 'everydayHero', gddNumber: 10, nameKo: '일상 영웅', nameEn: 'Everyday Hero',
   emoji: '🦸', rarity: 'uncommon', layer: 2, price: BALANCE.jokerPrice.uncommon,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }) => {
       if (

@@ -7,6 +7,7 @@ import {
   consumableAxisTip,
   consumableTooltipBody,
   consumableTooltipExtra,
+  referencedEditionTips,
   referencedFontTips,
 } from '../src/ui/descriptions';
 
@@ -50,6 +51,23 @@ describe('shared consumable tooltip copy', () => {
     }]);
     expect(referencedFontTips(en['pouch.military.desc'], enT)).toEqual([]);
     expect(readFileSync('src/ui/components/Tooltip.tsx', 'utf8')).toContain('referencedFontTips');
+  });
+
+  it('derives edition sub-tooltips only from explicitly marked edition names', () => {
+    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    const enT = translate(en);
+    const koT = translate(ko);
+
+    expect(referencedEditionTips(en['consumabledesc.fable15'], enT)).toEqual([
+      { title: en['edition.gray'], body: en['editiondesc.gray'], kind: 'edition' },
+      { title: en['edition.violet'], body: en['editiondesc.violet'], kind: 'edition' },
+      { title: en['edition.rainbow'], body: en['editiondesc.rainbow'], kind: 'edition' },
+    ]);
+    expect(referencedEditionTips(ko['skipReward.whiteTag.desc'], koT)).toEqual([
+      { title: ko['edition.white'], body: ko['editiondesc.white'], kind: 'edition' },
+    ]);
+    expect(referencedEditionTips(en['pouch.military.desc'], enT)).toEqual([]);
   });
 
   it('provides the live Fable 17 value only when applicable', () => {

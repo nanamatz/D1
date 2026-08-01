@@ -11,6 +11,7 @@ export const stargazer: JokerDef = {
   layer: 3,
   price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     constellationUsed: (_payload, self) => {
       self.state.factor = (self.state.factor ?? 1) + BALANCE.jokers.stargazer.factorPerCard;

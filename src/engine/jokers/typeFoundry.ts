@@ -11,6 +11,7 @@ export const typeFoundry: JokerDef = {
   layer: 1,
   price: BALANCE.jokerPrice.legendary,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
+  multOperation: 'multiply',
   hooks: {
     tilesDestroyed: ({ count }, self) => {
       self.state.factor =

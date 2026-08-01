@@ -50,12 +50,13 @@
   --rarity-uncommon: var(--chips);
   --rarity-rare: var(--mult);
   --rarity-legendary: var(--gold);
+  --tt-sub-gap: 10px;
   position: absolute;
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
   box-sizing: border-box;
-  width: fit-content;
+  width: max-content;
   min-width: min(var(--tt-min-w), calc(100vw - 16px));
   max-width: min(var(--tt-w), calc(100vw - 16px));
   background:
@@ -133,18 +134,6 @@
   font-style: normal;
   font-weight: 500;
   -webkit-text-stroke: 0;
-}
-.tt-card.tt-portal.has-sub {
-  /* Reserve the supplemental card's lane while keeping the main card anchored
-     as closely as possible to its subject. */
-  left: clamp(
-    min(
-      calc(100vw - var(--tt-w) / 2 - 8px),
-      calc(var(--tt-w) / 2 + var(--tt-sub-w) + 12px)
-    ),
-    var(--tt-x),
-    calc(100vw - var(--tt-w) / 2 - 8px)
-  );
 }
 .tt-card.tt-portal.down {
   top: calc(var(--tt-y) + 10px);
@@ -225,18 +214,26 @@
   line-height: 1.28;
   text-align: center;
 }
-/* Every remaining supplemental definition is its own left-side card. */
+/* Supplements follow their main card: never narrower, never more than 40%
+   wider, and still capped by the shared viewport-safe maximum. */
 .tt-sub-stack {
   position: absolute;
   top: 0;
-  right: calc(100% + 4px);
+  right: calc(100% + var(--tt-sub-gap));
   bottom: auto;
   left: auto;
-  width: 64%;
-  max-width: min(var(--tt-sub-w), calc(100vw - 16px));
+  width: fit-content;
+  min-width: min(100%, calc(100vw - 16px));
+  max-width: min(140%, var(--tt-w), calc(100vw - 16px));
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 5px;
+}
+.tt-card.tt-portal.sub-right .tt-sub-stack {
+  right: auto;
+  left: calc(100% + var(--tt-sub-gap));
+  align-items: flex-start;
 }
 .tt-sub-card {
   box-sizing: border-box;
@@ -360,6 +357,29 @@
 .hl-rarity-legendary {
   color: var(--rarity-legendary);
 }
+.hl-edition-gray,
+.hl-edition-violet,
+.hl-edition-rainbow,
+.hl-edition-white {
+  font-weight: 900;
+}
+.hl-edition-gray {
+  color: #718185;
+}
+.hl-edition-violet {
+  color: #875b91;
+}
+.hl-edition-rainbow {
+  color: transparent;
+  background: linear-gradient(90deg, #b8342b, #b47b00, #25845f, #356bc4, #8b4ab0);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+.hl-edition-white {
+  color: #fff;
+  -webkit-text-stroke: 1px #4b555b;
+  paint-order: stroke fill;
+}
 /* Pack descriptions read as a centred two/three-line blurb (Reference.png). Scoped to
    .pack so joker copy keeps its left alignment. */
 .tt-card.pack .tt-body {
@@ -442,28 +462,24 @@
   text-shadow: none;
 }
 
-/* item 1: the letter-tile tooltip is its OWN, compact shape — NOT the shared
-   joker card. Its content is a single-letter title and a short
-   "N chips · Material · Font" line, so the shared width leaves it
-   mostly empty. Size to content with a small ceiling so a long material+font
-   line still wraps instead of stretching. `.tt-card.tile-tt` (0,2,0) beats the
-   base `.tt-card` width. */
+/* Letter tiles use one stable compact frame. Standard tooltip type sizes fill
+   the 132px width without sparse, undersized copy. */
 .tt-card.tile-tt {
-  width: max-content;
+  width: 132px;
   min-width: 132px;
-  max-width: 210px;
+  max-width: 132px;
   padding: 6px 3px;
   gap: 5px;
 }
 .tile-tt .tt-title {
-  font-size: var(--fs-lg);
+  font-size: var(--fs-xl);
   padding: 0 8px;
 }
 .tile-tt .tt-desc {
   padding: 7px 10px;
 }
 .tile-tt .tt-body {
-  font-size: var(--fs-md);
+  font-size: var(--fs-lg);
   line-height: 1.4;
 }
 
@@ -2350,12 +2366,6 @@ body.cb-safe .tile.hint {
   align-items: center;
   gap: 14px;
   padding: 18px;
-  background: var(--panel);
-  border: 3px solid var(--panel-edge);
-  border-radius: 18px;
-  box-shadow:
-    inset 0 0 0 3px var(--inset-edge),
-    7px 7px 0 rgba(0, 0, 0, 0.48);
 }
 .collection-menu-modal {
   width: min(820px, 96vw);
@@ -3693,11 +3703,17 @@ body.cb-safe .tile.hint {
   padding: 20px;
   z-index: 50;
 }
-.overlay-card {
+.collection-modal,
+.overlay-card,
+.tut-card {
   background: var(--panel);
-  border-radius: 16px;
-  border-top: 1px solid var(--panel-edge);
-  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.4);
+  border: 3px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 3px var(--inset-edge),
+    7px 7px 0 rgba(0, 0, 0, 0.48);
+}
+.overlay-card {
   padding: 18px;
   max-width: 640px;
   width: 100%;
@@ -3739,6 +3755,9 @@ body.cb-safe .tile.hint {
   flex-direction: column;
   align-items: center;
 }
+.pouch-dock.open {
+  z-index: 52;
+}
 /* No box — just the pouch itself (playtest-06). The panel background, edge and
    shadow are gone; the radius and padding stay so the open-state outline still
    traces a sane shape and the hover target keeps some slop around the art. */
@@ -3769,73 +3788,102 @@ body.cb-safe .tile.hint {
 .pouch-count {
   margin-top: 4px;
 }
-.pouch-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 48;
-}
-/* D-3: centered pouch modal. The overlay is a transparent, click-through
-   positioner (hover-driven); only the card is interactive/hoverable. */
-/* Item 4: centre on the STAGE, not the viewport. The rail occupies the left
-   --rail-w of the board, so reserving that much padding shifts the flex centring
-   right by exactly half of it — landing the modal on the stage's midline. */
-.pouch-overlay {
-  background: transparent;
+.pouch-letter-summary {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 47;
+  display: grid;
+  grid-template-columns: repeat(13, 38px);
+  gap: 5px;
+  padding: 9px;
+  background: var(--panel);
+  border: 2px solid var(--panel-edge);
+  border-radius: 12px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, .38);
   pointer-events: none;
+  animation: pouchSummaryIn .24s cubic-bezier(.22, 1, .36, 1);
+  transform: translate(-50%, -50%);
+}
+.pouch-letter-count {
+  width: 38px;
+  min-height: 44px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  overflow: hidden;
+  color: var(--tile-ink);
+  background: var(--tile-face);
+  border: 2px solid var(--tile-ink);
+  border-radius: 7px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .28);
+  font-family: 'Jost';
+  line-height: 1;
+}
+.pouch-letter-count b {
+  font-size: var(--fs-xl);
+}
+.pouch-letter-count span {
+  width: 100%;
+  padding: 2px 0;
+  color: var(--ink);
+  background: var(--inset);
+  border-top: 1px solid var(--tile-ink);
+  font-family: 'Jersey 10';
+  font-size: var(--fs-lg);
+  text-align: center;
+}
+@keyframes pouchSummaryIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 50vh);
+  }
+}
+.frame .stage {
+  transition: transform .24s ease;
+}
+.frame.pouch-hovered .stage {
+  /* Stop as soon as the discard-help line clears the viewport bottom. */
+  transform: translateY(102px);
+}
+/* Click view rises from the bottom and covers 80% of the game surface. */
+.pouch-overlay {
   z-index: 49;
   align-items: center;
-  padding-left: calc(var(--rail-w) + var(--rail-gap));
+  padding: 20px;
 }
 .pouch-modal {
-  pointer-events: auto;
-  width: min(900px, 94vw);
-  max-height: 80vh;
-  overflow: auto;
-  padding: 16px 20px 22px;
-  animation: pouchIn 0.22s ease;
+  width: fit-content;
+  max-width: calc(100% - 40px);
+  height: auto;
+  max-height: calc(100% - 40px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 18px;
+  border-radius: 18px;
+  animation: pouchIn 0.28s cubic-bezier(.22, 1, .36, 1);
 }
 @keyframes pouchIn {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: translateY(60vh);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-/* the hand + button cluster slide down to make room while the pouch is open */
-.frame .stage {
-  transition: transform 0.24s ease;
-}
-.frame.pouch-open .stage {
-  transform: translateY(90px);
-}
-.pouch-drawer-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 0 auto 12px;
-  max-width: 1100px;
-}
-.pouch-drawer-head h3 {
-  flex: 1;
-  font-size: var(--fs-xl);
-}
-.pouch-remaining-label {
-  font-family: 'Jersey 10';
-  font-size: var(--fs-2xl);
-  color: var(--gold);
-}
 .pouch-body {
   display: flex;
   gap: 20px;
-  max-width: 1100px;
-  margin: 0 auto;
-  align-items: flex-start;
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+  align-items: stretch;
 }
 .pouch-totals {
-  width: 180px;
+  width: 210px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -3856,36 +3904,71 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-xs);
   line-height: 1.25;
 }
-.pouch-toggle {
-  display: flex;
-  gap: 4px;
-  background: #0f1b22;
-  border-radius: 10px;
-  padding: 3px;
-  margin-bottom: 8px;
-}
-.pouch-grid {
-  flex: 1;
+.pouch-modal-letter-grid {
   display: grid;
-  grid-template-columns: repeat(13, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 8px;
+  margin-top: 8px;
 }
-/* item 4: the pouch shows the actual remaining tiles as mini tiles (same material
-   face / font / chip value as in-blind), wrapping across the drawer. */
-.pouch-tiles {
-  flex: 1;
+.pouch-modal-letter-count {
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 2px 7px;
+  background: var(--inset);
+  border: 1px solid var(--inset-edge);
+  border-radius: 5px;
+  line-height: 1;
+}
+.pouch-modal-letter-count b {
+  color: var(--ink-dim);
+  font-family: 'Jost';
+  font-size: var(--fs-sm);
+}
+.pouch-modal-letter-count span {
+  color: var(--gold);
+  font-family: 'Jersey 10';
+  font-size: var(--fs-xl);
+}
+/* Full permanent pouch at the in-game tile size. */
+.pouch-tiles {
+  flex: none;
+  min-width: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(var(--pouch-columns), 64px);
+  grid-auto-rows: 64px;
+  gap: 8px;
   align-content: flex-start;
+  justify-content: center;
+  padding: 6px 8px 14px;
+}
+.pouch-tile-slot {
+  width: 64px;
+  height: 64px;
+  transition: opacity .15s, filter .15s;
+}
+.pouch-tile-slot.missing {
+  opacity: .28;
+  filter: grayscale(.55);
+}
+.pouch-tile-slot.missing:hover,
+.pouch-tile-slot.missing:focus-within {
+  opacity: .48;
+}
+.pouch-close {
+  flex: 0 0 48px;
+  width: 100%;
+  margin-top: 12px;
+  font-size: var(--fs-xl);
 }
 @media (prefers-reduced-motion: reduce) {
   .pouch-modal {
     animation: none;
   }
-  .frame .stage {
-    transition: none;
-  }
+  .pouch-letter-summary { animation: none; }
+  .frame .stage { transition: none; }
 }
 @media (max-width: 640px) {
   .pouch-body {
@@ -3893,9 +3976,6 @@ body.cb-safe .tile.hint {
   }
   .pouch-totals {
     width: 100%;
-  }
-  .pouch-grid {
-    grid-template-columns: repeat(9, 1fr);
   }
 }
 
@@ -4167,10 +4247,6 @@ body.cb-safe .tile.hint {
 }
 .tut-card {
   width: min(360px, 86vw);
-  background: var(--panel, #1c2b26);
-  border: 2px solid var(--panel-edge, #0d1512);
-  border-radius: 8px;
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4);
   padding: 16px;
   color: #fff;
 }
@@ -4195,24 +4271,6 @@ body.cb-safe .tile.hint {
   height: auto;
   pointer-events: none;
   image-rendering: pixelated;
-}
-
-/* ---------- Help glossary (work order A-3) ---------- */
-.help-groups {
-  display: grid;
-  width: min(820px, 94vw);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 12px;
-}
-.help-group { text-align: left; }
-.help-entry { padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-.help-entry:first-of-type { border-top: 0; }
-.help-entry-head { display: flex; align-items: center; gap: 8px; }
-.help-entry-title { font-weight: 700; font-size: 14px; }
-.help-entry-body { font-size: 12px; line-height: 1.45; margin-top: 4px; }
-@media (max-width: 680px) {
-  .help-groups { grid-template-columns: 1fr; }
 }
 
 /* ---------- guided first-run intro (work order A-1) ---------- */

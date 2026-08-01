@@ -14,11 +14,11 @@ describe('feedback 7 UI regressions', () => {
     expect(play).not.toContain('.frame.settle-shake');
   });
 
-  it('keeps pouch editions legible and counted at mini-tile size', () => {
+  it('keeps pouch editions legible and counted', () => {
     const bag = source('src/ui/components/BagView.tsx');
     expect(bag).toContain('editions: Record<string, number>');
-    expect(bag).toContain('Object.entries(active.editions)');
-    expect(play).toMatch(/\.tile\.mini \.tile-edition-surface\s*\{[^}]*border-width:\s*3px[^}]*opacity:\s*\.82/s);
+    expect(bag).toContain('Object.entries(full.editions)');
+    expect(bag).toContain('<TileView tile={tile} inspectable tooltip={tileTooltip(tile, t)} />');
   });
 
   it('renders the internal Bold font as a clearly distinct Underline style', () => {

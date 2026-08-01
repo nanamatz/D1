@@ -88,8 +88,8 @@ const PIYAK_LINES: string[] = [
 const RETIRED = [/^woodak\./, /^mascot\.welcome\./, /^tutorial\..*\.body$/];
 
 describe('voice namespace migration', () => {
-  it('covers 23 WooDak line ids', () => {
-    expect(WOODAK_LINES).toHaveLength(23);
+  it('covers 22 WooDak line ids', () => {
+    expect(WOODAK_LINES).toHaveLength(22);
   });
 
   it('has every WooDak line in both locales', () => {
@@ -193,7 +193,7 @@ describe('Emoji Tile terminology', () => {
 const VOICED_SKINS: string[] = ['dog', 'ghost', 'alien', 'turtle'];
 
 describe('skin voice completeness', () => {
-  it.each(VOICED_SKINS)('%s has all 23 lines in both locales', (skin) => {
+  it.each(VOICED_SKINS)('%s has all 22 lines in both locales', (skin) => {
     for (const line of WOODAK_LINES) {
       expect(EN[`voice.${skin}.${line}`], `en voice.${skin}.${line}`).toBeTypeOf('string');
       expect(KO[`voice.${skin}.${line}`], `ko voice.${skin}.${line}`).toBeTypeOf('string');
@@ -234,7 +234,7 @@ const ALIEN_LEXICON: Record<string, string> = {
   "fon'ta": 'font', "glo'ba": 'gibberish', "gru'vak": 'big', "hol'na": 'hole',
   "il'ma": 'see/look', "ka'lith": 'hand', "ka'shen": 'same', "kel'dan": 'money',
   "kon'su": 'consumable', "kre'sha": 'grow', "ku'ren": 'fire/trigger', "lo'ren": 'late',
-  "ma'gni": 'magnifier', "ma'run": 'material', "mi'ren": 'you', "mor'ka": 'shop',
+  "ma'run": 'material', "mi'ren": 'you', "mor'ka": 'shop',
   mul: 'multiplier', "nak'ta": 'draw', "ne'sha": 'rule', nu: 'not',
   "nu'kha": 'none/did not', "nu'ven": 'few/small', "ol'dan": 'order', ollu: 'all',
   "pa'tarn": 'pattern', pak: 'pack', "pen'ta": 'five', "qa'shi": 'score',

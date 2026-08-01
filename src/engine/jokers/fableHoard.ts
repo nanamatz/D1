@@ -11,6 +11,7 @@ export const fableHoard: JokerDef = {
   rarity: 'rare',
   layer: 3,
   price: BALANCE.jokerPrice.rare,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ run, ctx }) => {
       ctx.mult *= Math.pow(

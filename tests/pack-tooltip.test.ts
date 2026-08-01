@@ -6,7 +6,7 @@ import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { BALANCE } from '../src/engine/balance';
 import { packTooltip } from '../src/ui/packTooltip';
-import { richText } from '../src/ui/richtext';
+import { richText, stripRichText } from '../src/ui/richtext';
 import type { PackSize, PackType } from '../src/engine/types';
 
 const TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'ink'];
@@ -103,6 +103,19 @@ describe('richText — pack highlight tags', () => {
     expect(markup).toContain('<span class="hl-chips"><span class="hl-factor">×3</span> 칩</span>');
   });
 
+  it('highlights only the numeric part of a tile Chips contribution', () => {
+    const koText = makeT(LOCALES.ko)('tile.chips', { n: 9 });
+    const enText = makeT(LOCALES.en)('tile.chips', { n: 9 });
+    const markup = renderToStaticMarkup(createElement('span', null, richText(koText)));
+
+    expect(koText).toBe('[c:+9 개의 칩]');
+    expect(enText).toBe('[c:+9 Chips]');
+    expect(markup).toBe(
+      '<span><span class="hl-chips"><span class="hl-value">+9</span> 개의 칩</span></span>',
+    );
+    expect(stripRichText(koText)).toBe('+9 개의 칩');
+  });
+
   it('leaves axis words without a numeric value uncoloured', () => {
     const markup = renderToStaticMarkup(createElement('span', null, richText('[m:Mult] [c:칩]')));
     expect(markup).toBe('<span><span class="hl-mult">Mult</span> <span class="hl-chips">칩</span></span>');
@@ -138,6 +151,24 @@ describe('richText — pack highlight tags', () => {
     expect(css).toMatch(/\.tt-rarity\.rare\s*\{[^}]*background:\s*var\(--rarity-rare\)/s);
   });
 
+  it('uses the matching edition classes', () => {
+    const classes = richText('[G:Gray] [v:Violet] [r:Rainbow] [w:White]')
+      .filter(isValidElement)
+      .map((node) => (node.props as { className: string }).className);
+    expect(classes).toEqual([
+      'hl-edition-gray',
+      'hl-edition-violet',
+      'hl-edition-rainbow',
+      'hl-edition-white',
+    ]);
+
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(css).toMatch(/\.hl-edition-gray\s*\{[^}]*color:\s*#718185/s);
+    expect(css).toMatch(/\.hl-edition-violet\s*\{[^}]*color:\s*#875b91/s);
+    expect(css).toMatch(/\.hl-edition-rainbow\s*\{[^}]*background:\s*linear-gradient/s);
+    expect(css).toMatch(/\.hl-edition-white\s*\{[^}]*color:\s*#fff/s);
+  });
+
   it('leaves untagged prose untouched', () => {
     expect(richText('plain copy')).toEqual(['plain copy']);
   });
@@ -149,6 +180,20 @@ describe('richText — pack highlight tags', () => {
 });
 
 describe('effect-description markup', () => {
+  it('marks every edition mention without treating property names as editions', () => {
+    for (const [lang, dict] of Object.entries(LOCALES)) {
+      for (const [key, value] of Object.entries(dict)) {
+        if (!/desc/i.test(key)) continue;
+        const plain = value
+          .replace(/\[[Gvrw]:[^\]]*]/g, '')
+          .replace(/\[p:[^\]]*]/g, '');
+        expect(plain, `${lang}/${key}`).not.toMatch(
+          /\b(?:Gray|Violet|Rainbow|White)\b|그레이|바이올렛|레인보우|화이트/i,
+        );
+      }
+    }
+  });
+
   it('marks every Emoji Tile rarity mention in both locales', () => {
     for (const [lang, dict] of Object.entries(LOCALES)) {
       for (const [key, value] of Object.entries(dict)) {

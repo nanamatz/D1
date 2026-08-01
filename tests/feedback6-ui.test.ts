@@ -24,17 +24,13 @@ describe('latest feedback UI regressions', () => {
     expect(screens).toContain('.coll-card.mascot-card.selected');
   });
 
-  it('keeps Help compact, restores voiced glossary copy, and omits tutorial replay', () => {
+  // The Help glossary screen was removed 2026-08-01 (screens-spec §2.10); the
+  // encounter popups and tooltips are the only explainer surfaces now.
+  it('has no Help screen left in Options or its styles', () => {
     const options = source('src/ui/components/Options.tsx');
-    expect(options).toContain("voicedKeys(`enc.${e.id}`, e.mascot ?? 'woodak')");
-    expect(options).not.toContain('tutorial.${e.id}.body');
-    expect(options).not.toContain('hasSeen(e.id)');
-    expect(options).not.toContain("t('help.undiscovered')");
-    expect(options).not.toContain('help.replayIntro');
-    expect(options).not.toContain('resetIntro');
-    expect(screens).toMatch(
-      /\.help-groups\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*repeat\(2,/s,
-    );
+    expect(options).not.toContain('help');
+    expect(options).not.toContain('HelpView');
+    expect(screens).not.toContain('.help-groups');
   });
 
   it('makes the boss entry card 50 percent taller', () => {

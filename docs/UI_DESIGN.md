@@ -48,6 +48,7 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 - **Hard offset shadow** stays the signature surface cue but as blocky pixel shadow: a solid dark step down-right (no blur), e.g. a 4–5px hard offset that reads as a chunk, not a soft `box-shadow`. Buttons depress on press (translate + shadow collapse).
 - Radius: panels and controls prefer squared or 1-step chamfered corners. **Card objects are the exception (changed 2026-07-30):** Emoji Tiles, consumables, sale offers, and vouchers share one rounded silhouette. Pack art keeps square corners.
 - Panels get a light top-edge pixel highlight (`--panel-edge`) and a dark bottom-edge for the stamped/embossed look.
+- **Modal frame (changed 2026-08-01):** every modal panel uses the Collection frame: `3px` `--panel-edge` outer border, `3px` inset `--inset-edge`, `18px` radius, and a hard `7px` down-right shadow. Nested Collection views render only their inner Collection frame, never a duplicate outer frame. Coach-mark mascot speech bubbles keep their separate pixel-tail grammar.
 - **CRT post-effect** (global, toggleable in Settings, GDD/screens §2.11): scanlines + slight bloom + subtle barrel/vignette. Ship it as a full-screen overlay/shader pass so any screen inherits it. Must be **disable-able** (accessibility + the reduced-motion/low-end path), and scanline intensity should be a slider (the reference build exposed a "CRT" strength + "CRT bloom" toggle).
 - Background: `--bg-desk` + vignette; noise/texture rendered at the pixel grid, not as a smooth gradient. The Main Menu adds a low-resolution phosphor grid and one slow composited scan beam beneath the global CRT overlay; reduced motion freezes the beam. Its logotype uses stepped diagonal hard-shadow extrusion plus a slight perspective pitch for a 3D pixel-art silhouette, floats through eight discrete vertical/tilt steps, and periodically punches the red exclamation mark through a short three-frame accent. These title animations are Main-Menu-only and stop under either reduced-motion path.
 
@@ -114,6 +115,15 @@ a visible click target.
 | `SentenceTray` | see §2. Includes `HoleSlot` (gibberish) and `PatternChip`. |
 | `JokerCard` | **Fixed 124×165px near-3:4 image-only runtime contract**, shared with the resized shop offer and held-consumable footprints. Existing 84×112 pixel masters scale with `object-fit: contain` and `image-rendering: pixelated`; those 30 masters in `src/ui/assets/jokers/` are the canonical references for every new entry. Match their roster-wide **Pac-Man-style early maze-arcade** system: deep navy playfield, white/red/yellow/cyan-led 3–5-color palette, one large blocky silhouette, hard un-antialiased pixel edges, and the same sprite scale/line weight. No painterly object icon, gradient, shadow, scenery, texture, lighting, or small decoration. This means the visual grammar only—never copy Pac-Man characters, ghosts, maze layouts, or other original assets. Reuse the same source on shelf, shop, opened-pack, and Collection surfaces. Idle float, cursor tilt, and sheen apply directly to the image; name, effect, and rarity stay in the tooltip. |
 
+**Tile score ink (changed 2026-08-01):** every live base score has a distinct
+letter/value ink: `3 #54432f` (the established colour, unchanged), `6 #3f694d`,
+`9 #315f86`, `12 #5b4f8b`, `15 #844b78`, `24 #9b4938`, and `30 #8a6420`.
+These inks follow the chromatic palette unlocks: **YELLOW** restores 3/30,
+**GREEN** restores 6, **BLUE** restores 9/12, and **RED** restores 15/24. Before
+their group unlocks they use luminance-matched neutral-grey tokens. Stone remains
+unclassified/letterless, and dark material faces still override score ink with
+the accessibility light ink.
+
 The held-consumable panel keeps its 286px width. The Emoji Tile panel fills all
 remaining shelf width with an exact 10px gap between panels. Empty-slot
 placeholders are not rendered. Owned Emoji Tiles use a fixed 12px inter-slot gap
@@ -145,17 +155,25 @@ font, and edition enhancements follow the same tag-and-definition pattern. One
 supplement remains immediately left of the main tooltip. With two or three, the
 highest-priority one folds into the main effect plate and the rest stay left;
 priority is **material → font → edition**. This distribution also includes
-automatically referenced font and Gibberish definitions and is unchanged when
+automatically referenced font, edition, and Gibberish definitions and is unchanged when
 the main tooltip opens downward. Any tooltip effect copy that names a tile font
-automatically adds that font's canonical effect card; property/object names
-containing the same word do not count. *(Changed 2026-07-31: feedback3 compacted
+automatically adds that font's canonical effect card. Explicitly marked Gray,
+Violet, Rainbow, and White edition names likewise use their edition colour in
+the copy and add that edition's canonical effect card; property/object names
+containing the same word do not count. *(Changed 2026-08-01: referenced editions
+join the count-aware supplemental-tooltip packing introduced by feedback3.)*
+*(Changed 2026-07-31: feedback3 compacted
 multi-definition stacks while preserving every explanation.)*
 The shared tooltip frame follows the reference as a scalable image-like panel:
 mint pixel edge, charcoal scanlined shell, pale inset plate, and white titles
-with subtle cyan/magenta separation. Main width is content-responsive from
-150–280px so short descriptions do not leave a large empty plate; each independent left supplement is about 64% of the main width and
-each bottom tag is 72%. Height is never baked into a bitmap—it follows wrapped
-copy while preserving these horizontal and internal-padding proportions.
+with subtle cyan/magenta separation. Standard main width is content-responsive
+from 150–280px. Letter-tile tooltips instead use one fixed 132px compact frame
+regardless of enhancement count, with the standard 18px title and 15px body sizes
+so the highlighted `[c:+N개의 칩]` / `[c:+N Chips]` line does not leave sparse empty
+space. Left supplements stay between 100% and 140% of their main tooltip width,
+with the universal 280px ceiling, so related cards remain visually paired while
+longer definitions still receive more room. Bottom tags remain 72% of their main
+card. Height is never baked into a bitmap—it follows wrapped copy and padding.
 
 All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
 13px live-value row, and a 280px maximum card width. Shared tooltips are rendered
@@ -244,7 +262,7 @@ motion shows the committed final face immediately.
 
 Priority order — implement top-down, cut from the bottom if time-boxed:
 
-1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): whole-word stamps (suit/gibberish and the highest Letter Hand) → played letter tiles from first to last, with each tile's base score, material/font/edition, and tile-triggered Emoji effects kept together → the owned Emoji Tile list from first to last → tiles still held in the hand, frozen in their visible order at Play time → consumable hooks (reserved for future mechanics) → global/boss beats → committed score rolls. The currently evaluated tile lifts slightly; every score/effect beat makes it bounce. Every tile-specific beat also fires at the source letter tile itself, whether that tile is now in the played-word tray or remains in hand: the tile flashes/bounces and a popup above it shows Chips, Mult, multiplicative factor, gold, or retrigger as applicable. Additive Mult popups use the red Mult colour and render `+N` only; they do not append a redundant `×`. Score-box-only feedback is insufficient. The readable base cadence is **600ms per scoring beat at 1×** (rolled back from 800ms on 2026-07-29), scaled by the game-speed setting; settle completion uses the same calculated duration.
+1. **Word settle sequence** (the core dopamine loop, GDD §7.1 layer 1): whole-word stamps (suit/gibberish and the highest Letter Hand) → played letter tiles from first to last, with each tile's base score, material/font/edition, and tile-triggered Emoji effects kept together → the owned Emoji Tile list from first to last → tiles still held in the hand, frozen in their visible order at Play time → consumable hooks (reserved for future mechanics) → global/boss beats → committed score rolls. The currently evaluated tile lifts slightly; every score/effect beat makes it bounce. Every tile-specific beat also fires at the source letter tile itself, whether that tile is now in the played-word tray or remains in hand: it uses the same glow/wiggle trigger animation as an Emoji Tile, and a large popup sits fully above the letter tile with Chips, Mult, multiplicative factor, gold, or retrigger as applicable. Additive Mult popups use the red Mult colour and render `+N` only; they do not append a redundant `×`. Every firing Emoji Tile repeats its effect in a large popup below its owned slot: Chips reuse the blue diamond score-box treatment, additive Mult is red `+N`, multiplicative Mult is red `×N`, money uses the gold `$` readout, flat score uses the tomato symbol, and an effect without a numeric/symbolic readout displays localized `Applied / 적용`. Score-box-only feedback is insufficient. The readable base cadence is **600ms per scoring beat at 1×** (rolled back from 800ms on 2026-07-29), scaled by the game-speed setting; settle completion uses the same calculated duration.
    **Briefcase adds the final axis beat** (GDD §12.2): after every ordinary
    word hook, show a balance-scale stamp and tween the Chips and Mult boxes from
    their final values to their exact shared arithmetic mean, then multiply.
