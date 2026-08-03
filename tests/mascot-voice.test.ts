@@ -88,8 +88,8 @@ const PIYAK_LINES: string[] = [
 const RETIRED = [/^woodak\./, /^mascot\.welcome\./, /^tutorial\..*\.body$/];
 
 describe('voice namespace migration', () => {
-  it('covers 22 WooDak line ids', () => {
-    expect(WOODAK_LINES).toHaveLength(22);
+  it('covers 21 WooDak line ids', () => {
+    expect(WOODAK_LINES).toHaveLength(21);
   });
 
   it('has every WooDak line in both locales', () => {
@@ -168,7 +168,6 @@ describe('Emoji Tile terminology', () => {
     'pack.jokersFull',
     'tutorial.firstJoker.title',
     'voice.woodak.enc.firstJoker',
-    'voice.woodak.enc.firstPack',
     'voice.woodak.tip.reroll',
     'voice.piyak.enc.shopFirstVisit',
     'voice.piyak.welcome.3',
@@ -237,7 +236,7 @@ const ALIEN_LEXICON: Record<string, string> = {
   "ma'run": 'material', "mi'ren": 'you', "mor'ka": 'shop',
   mul: 'multiplier', "nak'ta": 'draw', "ne'sha": 'rule', nu: 'not',
   "nu'kha": 'none/did not', "nu'ven": 'few/small', "ol'dan": 'order', ollu: 'all',
-  "pa'tarn": 'pattern', pak: 'pack', "pen'ta": 'five', "qa'shi": 'score',
+  "pa'tarn": 'pattern', "pen'ta": 'five', "qa'shi": 'score',
   "re'rol": 'reroll', reth: 'remain/keep', "se'la": 'seal', "sen'tal": 'sentence',
   shen: 'suit/color', "shi'mela": 'good', "ta'wen": 'two', thal: 'end',
   tolun: 'word', "tor'un": 'tile', "tri'un": 'three', "u'nizn": 'unison',

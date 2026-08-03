@@ -936,7 +936,6 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const packs = prev.shop.packs.slice();
       packs[index] = null;
       audio.play('packOpen');
-      tutorialBus.fire('firstPack');
       recordVoucherProgress({ kind: 'packBuy', spent: price });
       return {
         ...prev,

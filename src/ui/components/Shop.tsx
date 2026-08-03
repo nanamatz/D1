@@ -44,6 +44,8 @@ import { consumableClassification } from '../cardClassification';
 import { TileView } from './Tile';
 import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
+import { UiIcon } from './UiIcon';
+import type { UiIconId } from '../uiIcons';
 
 interface ShopOfferProps {
   label: string;
@@ -128,7 +130,7 @@ function ShopOffer({
   );
 }
 
-const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
+const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
 const VOUCHER_REDEEM_MS = 720;
 
 /** The shop screen between blinds (GDD §9.2). Buy/sell/reroll, then Next blind. */
@@ -158,7 +160,8 @@ export function Shop({ g }: { g: UseGame }) {
   const itemMeta = (
     item: ShopItem,
   ): {
-    emoji: string;
+    emoji?: string;
+    icon?: UiIconId;
     name: string;
     desc: string;
     art?: string | undefined;
@@ -174,7 +177,6 @@ export function Shop({ g }: { g: UseGame }) {
       const def = JOKER_REGISTRY.get(item.id);
       const tip = jokerTooltip(item.id, item.edition ?? 'base', t);
       return {
-        emoji: def?.emoji ?? '🃏',
         name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
         desc: tip.body,
         tags: tip.tags,
@@ -199,7 +201,7 @@ export function Shop({ g }: { g: UseGame }) {
       };
     }
     return {
-      emoji: CONSUMABLE_EMOJI[item.id] ?? '📄',
+      icon: CONSUMABLE_ICON[item.id] ?? 'document',
       name: t(`consumable.${item.id}`),
       desc: consumableTooltipBody(item.id, t),
       fableId: isFableId(item.id) ? item.id : undefined,
@@ -345,7 +347,9 @@ export function Shop({ g }: { g: UseGame }) {
                             title={m.name}
                           />
                         ) : (
-                          <span className="e">{m.emoji}</span>
+                          m.icon
+                            ? <UiIcon name={m.icon} className="object-ui-icon" />
+                            : <span className="e">{m.emoji}</span>
                         )}
                       </div>
                     )}
@@ -387,7 +391,6 @@ export function Shop({ g }: { g: UseGame }) {
                       onAction={() => redeemVoucher(slot, voucher.price)}
                     >
                       <VoucherCard
-                        emoji={voucher.emoji}
                         name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
                         artSrc={voucherArt(voucher.id)}
                         redeeming={redeemingVoucher === slot}
@@ -432,7 +435,7 @@ export function Shop({ g }: { g: UseGame }) {
                         {art ? (
                           <img className="pack-img" src={art} alt="" />
                         ) : (
-                          <span className="e">📦</span>
+                          <UiIcon name="package" className="object-ui-icon" />
                         )}
                       </div>
                     </ShopOffer>

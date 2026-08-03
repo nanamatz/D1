@@ -6,6 +6,7 @@ import { useCountUp, useReveal } from '../useAnim';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
+import { UiIcon } from './UiIcon';
 
 interface Line {
   key: string;
@@ -20,7 +21,7 @@ function Coins({ n }: { n: number }) {
   return (
     <span className="coins" aria-hidden>
       {Array.from({ length: count }, (_, i) => (
-        <span key={i}>🪙</span>
+        <UiIcon key={i} name="coin" className="coin-icon" />
       ))}
     </span>
   );

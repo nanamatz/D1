@@ -25,8 +25,10 @@ import { useShelfDrag } from '../drag';
 import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
 import { mascotSrc } from '../mascots';
+import { UiIcon } from './UiIcon';
+import type { UiIconId } from '../uiIcons';
 
-const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
+const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 
@@ -157,6 +159,7 @@ export function JokerShelf({
             const art = jokerArt(def.id);
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
             const firing = settle.active && settle.activeJokerId === def.id;
+            const enhancedFiring = firing && settle.activeJokerEnhanced;
             const className = [
               'joker',
               'emoji-tile-image-only',
@@ -164,6 +167,7 @@ export function JokerShelf({
               jokersFaceDown ? 'face-down' : '',
               owned.state.bossDisabled === 1 ? 'boss-disabled' : '',
               firing ? 'firing' : '',
+              enhancedFiring ? 'enhanced-firing' : '',
             ].filter(Boolean).join(' ');
             const jokerLeaving = leaving?.zone === 'joker' && leaving.index === i;
             return (
@@ -308,7 +312,7 @@ export function JokerShelf({
                       title={t(`consumable.${c}`)}
                     />
                   ) : (
-                    <span className="e">{CONSUMABLE_EMOJI[c] ?? '📄'}</span>
+                    <UiIcon name={CONSUMABLE_ICON[c] ?? 'document'} className="object-ui-icon" />
                   )}
                 </div>
                 {menuIdx === i && (

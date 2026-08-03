@@ -1,7 +1,9 @@
 import { TiltCard } from './TiltCard';
+import { UiIcon } from './UiIcon';
 
 interface VoucherCardProps {
-  emoji: string;
+  /** Legacy data prop accepted for callers; rendering always uses bundled art. */
+  emoji?: string;
   name: string;
   artSrc?: string;
   muted?: boolean;
@@ -18,7 +20,6 @@ interface VoucherCardProps {
  * same silhouette, size, and internal layout.
  */
 export function VoucherCard({
-  emoji,
   name,
   artSrc,
   muted = false,
@@ -33,7 +34,7 @@ export function VoucherCard({
       {artSrc ? (
         <img className="voucher-card__art" src={artSrc} alt="" />
       ) : (
-        <span className="voucher-card__icon" aria-hidden="true">{emoji}</span>
+        <UiIcon name="document" className="voucher-card__icon" />
       )}
       <span className="voucher-card__side voucher-card__side--right" aria-hidden="true">
         VOUCHER

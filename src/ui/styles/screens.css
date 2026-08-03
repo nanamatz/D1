@@ -152,6 +152,8 @@
     -1px 0 #f05b9a,
     1px 0 #58e8df,
     0 2px 0 #17282d;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 /* Pale inset plate, proportioned like the reference and free to grow by line count. */
 .tt-desc {
@@ -168,6 +170,8 @@
 }
 .tt-body {
   white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   font-family: var(--tt-copy-font);
   font-size: var(--fs-lg);
   font-weight: 700;
@@ -193,6 +197,8 @@
   letter-spacing: -.012em;
   color: #9b9b9b;
   text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .tt-inline-detail {
   display: flex;
@@ -554,10 +560,8 @@
 .coins {
   font-size: var(--fs-md);
   letter-spacing: -2px;
-  /* The 🪙 emoji is a fixed-colour glyph, not a token — so like the tomato icon it
-     can only be greyscaled wholesale. It belongs to the YELLOW (gold) group, so keep
-     it desaturated until yellow unlocks, matching the per-group reveal (feature-02
-     C-3 bug: it used to turn gold on ANY unlock once world-mono dropped). */
+  /* The bundled coin image belongs to the YELLOW group, so keep it desaturated
+     until that palette group is unlocked. */
   filter: grayscale(1);
 }
 :root.unlock-yellow .coins {
@@ -576,8 +580,8 @@
   justify-content: center;
   position: relative;
   z-index: 6;
-  margin-bottom: 22px;
-  transform: translateY(-28px);
+  margin-bottom: 28px;
+  transform: none;
 }
 .bs-head .label {
   font-size: var(--ds-xs);
@@ -652,6 +656,9 @@
   gap: 8px;
 }
 .blindselect .bs-card.current:not(.boss) {
+  padding-block: 18px;
+}
+.blindselect .bs-card:not(.current) {
   padding-block: 18px;
 }
 .bs-card.current .bs-kind {
@@ -759,6 +766,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  min-height: 82px;
 }
 .bs-or {
   font-family: var(--ctl-font);
@@ -910,6 +918,7 @@
   100% { opacity: 0; transform: translateY(-12px) scale(.9); }
 }
 .bs-skip-tilt .btn {
+  width: 100%;
   min-height: 44px;
 }
 .bs-card.skipped,
@@ -1784,7 +1793,8 @@ body.cb-safe .tile.hint {
   column-gap: 28px;
   row-gap: 14px;
   width: min(720px, 94vw);
-  min-height: 344px;
+  min-height: 430px;
+  box-sizing: border-box;
   padding: 20px;
 }
 .profile-dashboard > .back-bar,
@@ -4300,7 +4310,8 @@ body.cb-safe .tile.hint {
   gap: 8px;
   margin-bottom: 8px;
 }
-.tut-icon { font-size: 22px; }
+.tut-icon { width: 28px; height: 28px; }
+.cc-icon { width: 54px; height: 54px; }
 .tut-title { font-weight: 700; font-size: 16px; }
 .tut-body { line-height: 1.5; font-size: 13px; margin-bottom: 14px; }
 .tut-ok { width: 100%; }

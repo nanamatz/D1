@@ -53,6 +53,7 @@ import { GAMBLER_IDS } from '../../engine/gamblers';
 import { CardArt, type CardFamily } from './CardArt';
 import { TiltCard } from './TiltCard';
 import { useSettings } from '../settings';
+import { UiIcon } from './UiIcon';
 import { jokerArt } from '../jokerArt';
 import { audio } from '../audio';
 import { richText } from '../richtext';
@@ -622,7 +623,6 @@ function VouchersView() {
         down={down}
       >
         <VoucherCard
-          emoji={locked ? '?' : v.emoji}
           name={name}
           muted={locked}
           {...(!locked ? { artSrc: voucherArt(v.id) } : {})}
@@ -696,11 +696,7 @@ function BossesView() {
             return (
               <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))} down>
                 <TiltCard idle className="coll-card boss-card">
-                  {BOSS_ART[id] ? (
-                    <img className="boss-card-art" src={BOSS_ART[id]} alt="" />
-                  ) : (
-                    <span className="cc-emoji">{b.emoji}</span>
-                  )}
+                  <img className="boss-card-art" src={BOSS_ART[id]} alt="" />
                   <span className="cc-name">{lang === 'ko' ? b.nameKo : b.nameEn}</span>
                 </TiltCard>
               </Tooltip>
@@ -781,7 +777,7 @@ function PaletteView() {
         down
       >
         <div className={['coll-card', 'palette-card', found ? `chroma-${group ?? 'audio'}` : 'locked'].join(' ')}>
-          <span className="cc-emoji">🎨</span>
+          <UiIcon name="palette" className="cc-icon" />
           <span className="cc-name">{found ? u.word : hint}</span>
         </div>
       </Tooltip>
@@ -848,7 +844,7 @@ function MascotsView() {
                 alt=""
               />
             ) : (
-              <span className="cc-emoji">❔</span>
+              <UiIcon name="unknown" className="cc-icon" />
             )}
             <span className="cc-name">{reveal ? t(r.nameKey) : '???'}</span>
             {reveal && (

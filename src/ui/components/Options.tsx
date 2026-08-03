@@ -9,6 +9,7 @@ import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { voicedKeys } from '../mascots';
 import { Collection } from './Collection';
+import { UiIcon } from './UiIcon';
 
 type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
 type Tab = 'game' | 'video' | 'audio';
@@ -230,7 +231,7 @@ function SettingsView() {
         <div className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>
             <p className="set-note">{t('settings.audioNote')}</p>
             {(!audio.isBusEnabled('sfx') || !audio.isBusEnabled('music')) && (
-              <p className="set-note locked-hint">🔇 {t('settings.audioLockedHint')}</p>
+              <p className="set-note locked-hint"><UiIcon name="mutedSpeaker" className="inline-ui-icon" /> {t('settings.audioLockedHint')}</p>
             )}
             <Slider label={t('settings.master')} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
             <Slider label={t('settings.music')} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />

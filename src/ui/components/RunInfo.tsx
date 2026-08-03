@@ -15,7 +15,7 @@ import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
 import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
-import { patternSymbol } from '../patternSymbols';
+import { PatternIcon, UiIcon } from './UiIcon';
 
 interface Props {
   run: RunState;
@@ -86,7 +86,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 return (
                   <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
                     <div className="ri-pat">
-                      <span className="pattern-symbol" aria-hidden>{patternSymbol(p)}</span>
+                      <PatternIcon pattern={p} />
                       <span className="pn">{t(`pattern.${p}`)}</span>
                       <span className="pl">Lv {run.patternLevels[p]}</span>
                       <span className="pcm">
@@ -146,11 +146,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                     )}
                     {kind === 'boss' && boss && (
                       <div className="bs-boss">
-                        {BOSS_ART[boss.id] ? (
-                          <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
-                        ) : (
-                          <span className="e">{boss.emoji}</span>
-                        )}
+                        <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
                         <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
                         <span className="be">{richText(t(bossDescKey(boss.id)))}</span>
                       </div>
@@ -166,7 +162,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                     </div>
                     <div className="bs-reward">
                       <span className="label">{t('blindselect.reward')}</span>
-                      <span className="r">🪙 <b>${reward}</b></span>
+                      <span className="r"><UiIcon name="coin" className="inline-ui-icon" /> <b>${reward}</b></span>
                     </div>
                     <div className={['bs-status', status].join(' ')}>{t(`blindselect.${status}`)}</div>
                   </div>
@@ -186,7 +182,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                   const name = lang === 'ko' ? v.nameKo : v.nameEn;
                   return (
                     <Tooltip key={id} title={name} body={t(voucherDescKey(id))} classification="voucher" down>
-                      <VoucherCard emoji={v.emoji} name={name} artSrc={voucherArt(v.id)} />
+                      <VoucherCard name={name} artSrc={voucherArt(v.id)} />
                     </Tooltip>
                   );
                 })}

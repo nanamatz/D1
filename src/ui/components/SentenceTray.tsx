@@ -3,8 +3,8 @@ import type { Lexicon } from '../../engine/lexicon';
 import { posLabel, suitClass } from '../game';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
-import { patternSymbol } from '../patternSymbols';
 import { TileView } from './Tile';
+import { PatternIcon } from './UiIcon';
 
 function PatternChip({ judgment }: { judgment: SentenceJudgment }) {
   const { t } = useI18n();
@@ -21,7 +21,7 @@ function PatternChip({ judgment }: { judgment: SentenceJudgment }) {
   return (
     <div className={['pattern-chip', m ? 'hit' : ''].filter(Boolean).join(' ')}>
       <div className="p">
-        {m && <span className="pattern-symbol" aria-hidden>{patternSymbol(m.pattern)}</span>}
+        {m && <PatternIcon pattern={m.pattern} />}
         {p}
       </div>
       <div className="s">{s}</div>

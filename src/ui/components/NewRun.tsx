@@ -9,6 +9,7 @@ import { pouchArt } from '../pouchArt';
 import { recordArt } from '../recordArt';
 import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
+import { UiIcon } from './UiIcon';
 
 /** Summary of the persisted run behind the Continue tab. */
 export interface ContinueInfo {
@@ -142,7 +143,7 @@ export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
         <>
           <div className="panel newrun-body">
             <div className="continue-card">
-              <div className="continue-art">📝</div>
+              <div className="continue-art"><UiIcon name="manuscript" /></div>
               <h3 className="continue-title">{t('newrun.continueTitle')}</h3>
               <p className="select-desc">{t('newrun.continueHint')}</p>
               <div className="continue-stats">

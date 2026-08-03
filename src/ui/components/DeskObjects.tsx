@@ -5,17 +5,16 @@ import { audio } from '../audio';
 import type { SfxName } from '../audio';
 import { motionOff } from '../motion';
 import coffeeCup from '../assets/desk-coffee-cup.png';
-import coffeePot from '../assets/desk-coffee-pot.png';
 import callBell from '../assets/desk-call-bell.png';
 import blankCheck from '../assets/desk-blank-check.png';
 import { clamp } from '../math';
 
 /**
- * D-3 ambient side interactions (UI_DESIGN §4.8). Persistent cup/bell fixtures
- * and transient cheque/refill encounters live in the viewport margins, portaled
- * to <body>, so they never affect the headless engine or block the game board.
+ * D-3 ambient side interactions (UI_DESIGN §4.8). One-shot cup, bell, and cheque
+ * encounters live in the viewport margins, portaled to <body>, so they never
+ * affect the headless engine or block the game board.
  */
-type DeskKind = 'cup' | 'bell' | 'check' | 'refill';
+type DeskKind = 'cup' | 'bell' | 'check';
 
 interface DeskObj {
   kind: DeskKind;
@@ -29,7 +28,6 @@ const BASE_KINDS: Pick<DeskObj, 'kind' | 'sfx'>[] = [
   { kind: 'bell', sfx: 'deskBell' },
   { kind: 'check', sfx: 'deskCheck' },
 ];
-const REFILL_CHANCE = 0.12;
 const ENCOUNTER_GAP_MIN_MS = 70_000;
 const ENCOUNTER_GAP_SPREAD_MS = 70_000;
 const SIGNATURE_VIEWBOX_WIDTH = 100;
@@ -48,10 +46,10 @@ export function DeskObjects({ active }: { active: boolean }) {
   const [cup, setCup] = useState<DeskObj | null>(null);
   const [bell, setBell] = useState<DeskObj | null>(null);
   const [encounter, setEncounter] = useState<DeskObj | null>(null);
-  const [cupEmpty, setCupEmpty] = useState(false);
   const [cupDrinking, setCupDrinking] = useState(false);
-  const [cupRefilling, setCupRefilling] = useState(false);
+  const [cupLeaving, setCupLeaving] = useState(false);
   const [bellRinging, setBellRinging] = useState(false);
+  const [bellLeaving, setBellLeaving] = useState(false);
   const [encounterLeaving, setEncounterLeaving] = useState(false);
   const [encounterInteracting, setEncounterInteracting] = useState(false);
   const [encounterCycle, setEncounterCycle] = useState(0);
@@ -73,10 +71,10 @@ export function DeskObjects({ active }: { active: boolean }) {
     setCup(null);
     setBell(null);
     setEncounter(null);
-    setCupEmpty(false);
     setCupDrinking(false);
-    setCupRefilling(false);
+    setCupLeaving(false);
     setBellRinging(false);
+    setBellLeaving(false);
     setEncounterLeaving(false);
     setEncounterInteracting(false);
     signaturePointer.current = null;
@@ -98,20 +96,6 @@ export function DeskObjects({ active }: { active: boolean }) {
     const gap = ENCOUNTER_GAP_MIN_MS + Math.random() * ENCOUNTER_GAP_SPREAD_MS;
     const timer = setTimeout(() => {
       if (!live) return;
-
-      // A refill is deliberately rare and can enter the pool only while the
-      // persistent cup is visibly empty.
-      if (cup && cupEmpty && Math.random() < REFILL_CHANCE) {
-        setEncounterLeaving(false);
-        setEncounterInteracting(false);
-        setEncounter({
-          kind: 'refill',
-          sfx: 'deskPour',
-          side: cup.side,
-          spawn: seq.current++,
-        });
-        return;
-      }
 
       const candidates = BASE_KINDS.filter(
         ({ kind }) => (kind !== 'cup' || !cup) && (kind !== 'bell' || !bell),
@@ -142,7 +126,7 @@ export function DeskObjects({ active }: { active: boolean }) {
       live = false;
       clearTimeout(timer);
     };
-  }, [active, encounter, encounterCycle, cup, cupEmpty, bell]);
+  }, [active, encounter, encounterCycle, cup, bell]);
 
   const finishEncounter = () => {
     setEncounter(null);
@@ -156,21 +140,33 @@ export function DeskObjects({ active }: { active: boolean }) {
   };
 
   const drinkCoffee = () => {
-    if (!cup || cupEmpty || cupDrinking || cupRefilling) return;
+    if (!cup || cupDrinking || cupLeaving) return;
     audio.play('deskCup');
     setCupDrinking(true);
     later(() => {
-      setCupEmpty(true);
       setCupDrinking(false);
-      setEncounterCycle((n) => n + 1);
+      setCupLeaving(true);
     }, 820);
+    later(() => {
+      setCup(null);
+      setCupLeaving(false);
+      setEncounterCycle((n) => n + 1);
+    }, 1280);
   };
 
   const ringBell = () => {
-    if (!bell || bellRinging) return;
+    if (!bell || bellRinging || bellLeaving) return;
     audio.play('deskBell');
     setBellRinging(true);
-    later(() => setBellRinging(false), 760);
+    later(() => {
+      setBellRinging(false);
+      setBellLeaving(true);
+    }, 760);
+    later(() => {
+      setBell(null);
+      setBellLeaving(false);
+      setEncounterCycle((n) => n + 1);
+    }, 1180);
   };
 
   const signaturePoint = (
@@ -257,27 +253,6 @@ export function DeskObjects({ active }: { active: boolean }) {
     setSignatureDrawing(false);
   };
 
-  const interactEncounter = () => {
-    if (!encounter || encounterLeaving || encounterInteracting) return;
-    if (encounter.kind === 'check') return;
-    audio.play(encounter.sfx);
-    setEncounterInteracting(true);
-
-    if (encounter.kind === 'refill') {
-      setCupRefilling(true);
-      later(() => {
-        setCupEmpty(false);
-        setCupRefilling(false);
-        setEncounterLeaving(true);
-      }, 1100);
-      later(finishEncounter, 1640);
-      return;
-    }
-
-    later(() => setEncounterLeaving(true), 1180);
-    later(finishEncounter, 1760);
-  };
-
   const still = reduced() ? 'desk-still' : '';
   // Three independent height zones PER SIDE (six total), oldest at the bottom.
   // Removing an object compacts only the stack on that same side.
@@ -295,9 +270,7 @@ export function DeskObjects({ active }: { active: boolean }) {
         `desk-${cup.side}`,
         slotClass(cup),
         cupDrinking && 'desk-drinking',
-        cupEmpty && 'desk-empty',
-        cupRefilling && 'desk-refilling',
-        'desk-entering',
+        cupLeaving ? 'desk-leaving' : 'desk-entering',
         still,
       ]
         .filter(Boolean)
@@ -310,7 +283,7 @@ export function DeskObjects({ active }: { active: boolean }) {
         `desk-${bell.side}`,
         slotClass(bell),
         bellRinging && 'desk-ringing',
-        'desk-entering',
+        bellLeaving ? 'desk-leaving' : 'desk-entering',
         still,
       ]
         .filter(Boolean)
@@ -324,7 +297,6 @@ export function DeskObjects({ active }: { active: boolean }) {
         slotClass(encounter),
         encounterInteracting && encounter.kind === 'check' && 'desk-signing',
         signatureDrawing && encounter.kind === 'check' && 'desk-drawing',
-        encounterInteracting && encounter.kind === 'refill' && 'desk-pouring',
         encounterLeaving ? 'desk-leaving' : 'desk-entering',
         still,
       ]
@@ -381,21 +353,6 @@ export function DeskObjects({ active }: { active: boolean }) {
               alt=""
               draggable={false}
             />
-          </span>
-        </button>
-      )}
-
-      {encounter?.kind === 'refill' && (
-        <button
-          key={encounter.spawn}
-          className={encounterClass}
-          onClick={interactEncounter}
-          aria-hidden
-          tabIndex={-1}
-        >
-          <span className="desk-glyph desk-refill-sprite">
-            <span className="desk-pour-stream" aria-hidden />
-            <img className="desk-refill-art" src={coffeePot} alt="" draggable={false} />
           </span>
         </button>
       )}

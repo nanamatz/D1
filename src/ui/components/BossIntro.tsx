@@ -36,11 +36,7 @@ export function BossIntro({ blind }: { blind: BlindState }) {
   return (
     <div className={['boss-intro', state].join(' ')} aria-live="polite">
       <div className="boss-intro-card">
-        {BOSS_ART[boss.id] ? (
-          <img className="boss-intro-art" src={BOSS_ART[boss.id]} alt="" />
-        ) : (
-          <span className="boss-intro-emoji" aria-hidden>{boss.emoji}</span>
-        )}
+        <img className="boss-intro-art" src={BOSS_ART[boss.id]} alt="" />
         <div className="boss-intro-copy">
           <div className="boss-intro-kicker">{t('blind.boss')}</div>
           <div className="boss-intro-name">{lang === 'ko' ? boss.nameKo : boss.nameEn}</div>

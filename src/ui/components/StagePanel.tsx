@@ -17,6 +17,7 @@ import { motionOff } from '../motion';
 import { TileView } from './Tile';
 import { useEntering } from './ScreenTransition';
 import { useStageDrag, type StageDragCallbacks } from '../drag';
+import { UiIcon } from './UiIcon';
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
@@ -252,7 +253,7 @@ export function StagePanel({
 
       {g.state.hint && (
         <div className="hintbar">
-          🔍{' '}
+          <UiIcon name="magnifier" className="inline-ui-icon" />{' '}
           {g.state.hint.length > 0
             ? g.state.hint.map((w) => w.word.toUpperCase()).join('  ·  ')
             : t('hint.none')}

@@ -40,16 +40,16 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('transition: bottom 0.34s steps(6, end)');
   });
 
-  it('finishes the slurp into a persistent empty-cup state', () => {
+  it('drinks once, plays its exit, and removes the cup', () => {
     expect(component).toContain('setCupDrinking(true)');
-    expect(component).toContain('setCupEmpty(true)');
     expect(component).toContain('setCupDrinking(false)');
-    expect(component).not.toContain('setTimeout(finishEncounter, 1480)');
-    expect(css).toContain('.desk-cup.desk-empty .desk-coffee-liquid');
+    expect(component).toContain('setCupLeaving(true)');
+    expect(component).toContain('setCup(null)');
+    expect(component).toContain("cupLeaving ? 'desk-leaving' : 'desk-entering'");
     expect(audio).toMatch(/deskCup:\s+\{[^}]*dur:\s*0\.68/s);
   });
 
-  it('keeps persistent fixtures while waiting longer between transient encounters', () => {
+  it('waits longer between one-shot encounters', () => {
     expect(component).toContain('ENCOUNTER_GAP_MIN_MS = 70_000');
     expect(component).toContain('ENCOUNTER_GAP_SPREAD_MS = 70_000');
     expect(component).toContain('setEncounterCycle((n) => n + 1)');
@@ -57,21 +57,23 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('setBell(next)');
   });
 
-  it('limits the pool to cup, call-bell, blank-check, and conditional refill encounters', () => {
-    expect(component).toContain("type DeskKind = 'cup' | 'bell' | 'check' | 'refill'");
+  it('limits the pool to cup, call-bell, and blank-check encounters', () => {
+    expect(component).toContain("type DeskKind = 'cup' | 'bell' | 'check'");
     expect(component).toContain("{ kind: 'bell', sfx: 'deskBell' }");
     expect(component).toContain("{ kind: 'check', sfx: 'deskCheck' }");
     expect(component).not.toContain("'pencil'");
     expect(component).not.toContain("'plane'");
     expect(component).toContain("import callBell from '../assets/desk-call-bell.png'");
     expect(component).toContain("import blankCheck from '../assets/desk-blank-check.png'");
+    expect(component).not.toContain("kind: 'refill'");
   });
 
-  it('rings repeatedly without removing the persistent call bell', () => {
+  it('rings once, then plays its exit and removes the call bell', () => {
     expect(component).toContain("bellRinging && 'desk-ringing'");
     expect(component).toContain('className="desk-bell-art desk-bell-switch"');
-    expect(component).toContain('later(() => setBellRinging(false), 760)');
-    expect(component).not.toContain('setTimeout(finishEncounter, 1340)');
+    expect(component).toContain('setBellLeaving(true)');
+    expect(component).toContain('setBell(null)');
+    expect(component).toContain("bellLeaving ? 'desk-leaving' : 'desk-entering'");
     expect(css).toContain('clip-path: inset(12% 36% 75% 39%)');
     expect(css).toContain('@keyframes call-bell-ring');
     expect(css).toContain('@keyframes call-bell-switch-press');
@@ -104,28 +106,9 @@ describe('ambient coffee cup interaction', () => {
     expect(audio).toMatch(/deskCheck:\s+\{[^}]*dur:\s*1\.05/s);
   });
 
-  it('offers a rare refill encounter only while the persistent cup is empty', () => {
-    expect(component).toContain('const REFILL_CHANCE = 0.12');
-    expect(component).toContain('if (cup && cupEmpty && Math.random() < REFILL_CHANCE)');
-    expect(component).toContain("kind: 'refill'");
-    expect(component).toContain("sfx: 'deskPour'");
-    expect(component).toContain('side: cup.side');
-    expect(component).toContain("import coffeePot from '../assets/desk-coffee-pot.png'");
-  });
-
-  it('pours coffee back into the empty cup before only the pot exits', () => {
-    expect(component).toContain('setCupRefilling(true)');
-    expect(component).toContain('setCupEmpty(false)');
-    expect(component).toContain('setCupRefilling(false)');
-    expect(component).toContain('later(finishEncounter, 1640)');
-    expect(component).toContain('setEncounterLeaving(true)');
-    expect(css).toContain('@keyframes coffee-fill');
-    expect(css).toContain('@keyframes coffee-pot-pour');
-    expect(css).toContain('@keyframes coffee-pour-stream');
-    expect(css).toContain('@keyframes coffee-pour-droplets');
-    expect(css).toContain('@keyframes coffee-cup-splash');
-    expect(css).toContain('.desk-pour-stream::before');
-    expect(css).toContain('.desk-pour-stream::after');
-    expect(audio).toMatch(/deskPour:\s+\{[^}]*dur:\s*1\.08/s);
+  it('does not keep the retired empty-cup refill loop', () => {
+    expect(component).not.toContain('REFILL_CHANCE');
+    expect(component).not.toContain('cupEmpty');
+    expect(component).not.toContain('coffeePot');
   });
 });

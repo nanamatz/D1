@@ -4,7 +4,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { materialGlyph } from '../src/ui/game';
+import { materialGlyph, materialIcon } from '../src/ui/game';
 import { BALANCE } from '../src/engine/balance';
 import type { Tile, TileMaterial } from '../src/engine/types';
 
@@ -19,9 +19,9 @@ const tile = (material: TileMaterial, extra: Partial<Tile> = {}): Tile => ({
 describe('materialGlyph (B-1)', () => {
   it('shows a corner glyph only for conditional materials', () => {
     expect(materialGlyph(tile('glass'))).not.toBeNull();
-    expect(materialGlyph(tile('leadPlate'))).not.toBeNull();
+    expect(materialIcon(tile('leadPlate'))).toBe('dice');
     expect(materialGlyph(tile('ivory'))).toBe('$');
-    expect(materialGlyph(tile('brass'))).not.toBeNull();
+    expect(materialIcon(tile('brass'))).toBe('heldHand');
   });
 
   it('returns null for base and flat materials (no condition to advertise)', () => {

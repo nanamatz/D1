@@ -5,7 +5,7 @@ import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { patternLevelBus, type PatternLevelEvent } from '../patternLevel';
 import { CardArt } from './CardArt';
-import { patternSymbol } from '../patternSymbols';
+import { PatternIcon } from './UiIcon';
 
 const PATTERN_LEVEL_DURATION_MS = 3500;
 
@@ -54,7 +54,7 @@ export function PatternLevelUp() {
         </div>
         <div className="plu-score">
           <div className="plu-name">
-            <span className="pattern-symbol" aria-hidden>{patternSymbol(evt.pattern)}</span>
+            <PatternIcon pattern={evt.pattern} />
             {t(`pattern.${evt.pattern}`)}
           </div>
           <div className="plu-levels">

@@ -89,6 +89,25 @@ describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', 
   });
 });
 
+describe('settleDurationMs — enhanced Emoji Tile beats stay readable', () => {
+  it('holds a Joker edition trigger longer than an ordinary scoring beat', () => {
+    const base = [joker('j0'), settle()];
+    const enhanced: ScoreEvent[] = [
+      {
+        kind: 'edition',
+        edition: 'gray',
+        jokerId: 'j0',
+        chipsDelta: 20,
+        multDelta: 0,
+      },
+      settle(),
+    ];
+    expect(settleDurationMs(enhanced, 1, false)).toBeGreaterThan(
+      settleDurationMs(base, 1, false),
+    );
+  });
+});
+
 /**
  * The critical bug: a `material` event with a nonzero multDelta (Polished,
  * Glass, mult-rolling Lead plate) lands in the log BEFORE `suit`, because

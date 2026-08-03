@@ -16,6 +16,7 @@ import { TiltCard } from './TiltCard';
 import { isImmediateSkipReward, isNextShopSkipReward } from '../../engine/skipRewards';
 import type { SkipRewardOffer } from '../../engine/types';
 import { motionOff } from '../motion';
+import { UiIcon } from './UiIcon';
 
 type Status = 'defeated' | 'skipped' | 'current' | 'upcoming';
 type DisplaySkipTag = {
@@ -95,11 +96,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
               )}
               {kind === 'boss' && boss && (
                 <div className="bs-boss">
-                  {BOSS_ART[boss.id] ? (
-                    <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
-                  ) : (
-                    <span className="e">{boss.emoji}</span>
-                  )}
+                  <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
                   <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
                   <span className="be">{richText(t(bossDescKey(boss.id)))}</span>
                 </div>
@@ -114,7 +111,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
               <div className="bs-reward">
                 <span className="label">{t('blindselect.reward')}</span>
                 <span className="r">
-                  🪙 <b>${reward}</b>
+                  <UiIcon name="coin" className="inline-ui-icon" /> <b>${reward}</b>
                 </span>
               </div>
               {skipOffer && (

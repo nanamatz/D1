@@ -7,6 +7,7 @@ import {
   inkClass,
   materialClass,
   materialGlyph,
+  materialIcon,
   tileGlyph,
   tileValue,
   type TileEnhancementAxis,
@@ -16,6 +17,7 @@ import { usePointerTilt } from '../hooks';
 import { stripRichText } from '../richtext';
 import { useSettleView } from '../settle';
 import { Tooltip, type TooltipDetail, type TooltipTag } from './Tooltip';
+import { UiIcon } from './UiIcon';
 
 interface Props {
   tile: Tile;
@@ -86,6 +88,7 @@ function TileViewImpl({
   const draggable = !mini && !!zone && !disabled;
   // Conditional-material corner glyph (B-1) — hidden face-down (identity hidden).
   const matGlyph = faceDown ? null : materialGlyph(tile);
+  const matIcon = faceDown ? null : materialIcon(tile);
   const rootRef = useRef<HTMLDivElement>(null);
   usePointerTilt(rootRef, tilt && !mini && !disabled);
   const previousAxes = useRef({
@@ -211,6 +214,7 @@ function TileViewImpl({
               {matGlyph}
             </span>
           )}
+          {matIcon && <UiIcon name={matIcon} className="mat-glyph mat-glyph-icon" />}
           {invalid && <span className="boss-invalid-tag">{t('boss.notAllowed')}</span>}
           {forced && <span className="boss-forced-tag">{t('boss.forced')}</span>}
           {enhancementFx.map((axis) => (

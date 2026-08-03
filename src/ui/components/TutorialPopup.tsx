@@ -5,6 +5,7 @@ import { richText } from '../richtext';
 import { tutorialBus, hasSeen, markSeen, hasSeenIntro, ENCOUNTERS, type EncounterId } from '../tutorial';
 import { SpotlightBubble } from './SpotlightBubble';
 import { mascotSrc, voicedKeys } from '../mascots';
+import { UiIcon } from './UiIcon';
 
 /**
  * Layer-2 encounter popup host (work order A-2). Mounted once in App. Subscribes
@@ -44,7 +45,7 @@ export function TutorialHost() {
   const body = (
     <>
       <div className="tut-head">
-        <span className="tut-icon">{enc?.icon}</span>
+        {enc && <UiIcon name={enc.icon} className="tut-icon" />}
         <span className="tut-title">{t(`tutorial.${active}.title`)}</span>
       </div>
       <p className="tut-body">{richText(t(voicedKeys(`enc.${active}`, role)))}</p>

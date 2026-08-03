@@ -49,12 +49,14 @@ import { useEntering } from './ScreenTransition';
 import { packFableFxBus } from '../packFableFx';
 import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
+import { UiIcon } from './UiIcon';
+import type { UiIconId } from '../uiIcons';
 
-const CONSUMABLE_EMOJI: Partial<Record<ConsumableId, string>> = { magnifier: '🔍' };
+const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
 
-/** Glyph fallback for an option with no card art — only the stationery items. */
-const optionEmoji = (option: PackOption): string =>
-  option.kind === 'consumable' ? (CONSUMABLE_EMOJI[option.id] ?? '📄') : '📄';
+/** Local image fallback for an option with no card art — only stationery items. */
+const optionIcon = (option: PackOption): UiIconId =>
+  option.kind === 'consumable' ? (CONSUMABLE_ICON[option.id] ?? 'document') : 'document';
 
 interface Tip {
   title: string;
@@ -158,7 +160,7 @@ function OptionCard({
             title={name}
           />
         ) : (
-          <span className="e">{optionEmoji(option)}</span>
+          <UiIcon name={optionIcon(option)} className="object-ui-icon" />
         )}
       </div>
       {edition !== 'base' && option.kind !== 'joker' && (

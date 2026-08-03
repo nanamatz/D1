@@ -76,6 +76,8 @@ export interface SettleView {
   } | null;
   /** joker currently wiggling */
   activeJokerId: string | null;
+  /** Edition enhancement beat on an Emoji Tile; held longer than its base trigger. */
+  activeJokerEnhanced: boolean;
   /** the firing joker's contribution, for its popup */
   jokerPop: {
     jokerId: string;
@@ -101,6 +103,7 @@ const IDLE: SettleView = {
   tilePops: {},
   tileEffectPop: null,
   activeJokerId: null,
+  activeJokerEnhanced: false,
   jokerPop: null,
   stamp: null,
   scorePop: null,
@@ -117,8 +120,12 @@ export const useSettleView = (): SettleView => useContext(SettleCtx);
 // next tile/effect fires. 600ms at 1× keeps the sequence readable; game speed
 // still scales this single timing source to 2×/4×.
 const BASE_STEP = 600;
+const ENHANCED_JOKER_STEP = 1000;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
+
+const beatDurationMs = (event: ScoreEvent): number =>
+  event.kind === 'edition' && event.jokerId ? ENHANCED_JOKER_STEP : BASE_STEP;
 
 /**
  * Pure fold of one ScoreEvent into the running chips/mult tally — the single
@@ -179,7 +186,9 @@ export function settleDurationMs(
   if (reduce) return REDUCED_HOLD;
   const beats = events.filter((e) => e.kind !== 'settle').length;
   if (beats === 0) return 0;
-  return (beats * BASE_STEP + FINAL_HOLD) / speed;
+  return (events
+    .filter((event) => event.kind !== 'settle')
+    .reduce((total, event) => total + beatDurationMs(event), 0) + FINAL_HOLD) / speed;
 }
 
 /**
@@ -235,14 +244,16 @@ export function SettleProvider({
       return () => clearTimeout(off);
     }
 
-    const step = BASE_STEP / speed;
     const timers: ReturnType<typeof setTimeout>[] = [];
     let chips = 0;
     let mult = 0;
     const pops: Record<string, number> = {};
     let tickStep = 0;
 
+    let elapsed = 0;
     beats.forEach((e, i) => {
+      const startsAt = elapsed / speed;
+      elapsed += beatDurationMs(e);
       timers.push(
         setTimeout(() => {
           const prevChips = chips;
@@ -305,6 +316,7 @@ export function SettleProvider({
             tilePops: { ...pops },
             tileEffectPop: null,
             activeJokerId: null,
+            activeJokerEnhanced: false,
             jokerPop: null,
             stamp: null,
             scorePop,
@@ -343,6 +355,7 @@ export function SettleProvider({
               tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId,
+              activeJokerEnhanced: false,
               jokerPop: {
                 jokerId: e.jokerId,
                 chips: e.chipsDelta,
@@ -406,6 +419,7 @@ export function SettleProvider({
               tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId ?? null,
+              activeJokerEnhanced: e.jokerId !== undefined,
               jokerPop: e.jokerId
                 ? {
                     jokerId: e.jokerId,
@@ -429,7 +443,7 @@ export function SettleProvider({
                 : null,
             });
           }
-        }, i * step),
+        }, startsAt),
       );
     });
 

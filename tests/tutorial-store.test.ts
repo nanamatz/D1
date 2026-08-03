@@ -28,8 +28,8 @@ describe('tutorial seen-flags store', () => {
   });
 
   it('markSeen is idempotent (no double count)', () => {
-    markSeen('firstPack');
-    markSeen('firstPack');
+    markSeen('firstVoucher');
+    markSeen('firstVoucher');
     expect(seenCount()).toBe(1);
   });
 
@@ -46,10 +46,10 @@ describe('tutorial seen-flags store', () => {
     expect(loadTutorial()['firstJoker']).toBe(1000);
   });
 
-  it('registry has all 13 encounters with unique ids and a group', () => {
-    expect(ENCOUNTERS.length).toBe(13);
+  it('registry has all 12 encounters with unique ids and a group', () => {
+    expect(ENCOUNTERS.length).toBe(12);
     const ids = new Set(ENCOUNTERS.map((e) => e.id));
-    expect(ids.size).toBe(13);
+    expect(ids.size).toBe(12);
     for (const e of ENCOUNTERS) expect(e.group).toBeTruthy();
   });
 });
@@ -61,7 +61,7 @@ describe('tutorialBus', () => {
     tutorialBus.fire('firstGibberish');
     expect(seen).toEqual(['firstGibberish']);
     off();
-    tutorialBus.fire('firstPack');
+    tutorialBus.fire('firstVoucher');
     expect(seen).toEqual(['firstGibberish']); // no longer receiving
   });
 });

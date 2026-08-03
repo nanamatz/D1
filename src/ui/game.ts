@@ -17,6 +17,7 @@ import type {
   Tile,
   WordSubmission,
 } from '../engine/types';
+import type { UiIconId } from './uiIcons';
 
 export type Phase = 'blindselect' | 'playing' | 'cashout' | 'shop' | 'gameover';
 
@@ -93,7 +94,7 @@ export function stagePreview(
 export function posLabel(sub: WordSubmission, lexicon: Lexicon, t: PosTranslate): string {
   if (sub.isGibberish) return t('pos.gibberish');
   const entry = lexicon.lookup(sub.text);
-  if (!entry || entry.pos.length === 0) return '—';
+  if (!entry || entry.pos.length === 0) return t('pos.unknown');
   return entry.pos.map((p) => t(`pos.${p}`)).join(' / ');
 }
 
@@ -173,17 +174,20 @@ export function materialGlyph(tile: Tile): string | null {
   switch (tile.material) {
     case 'glass':
       return '✕'; // crack / 1-in-4 destroy risk
-    case 'leadPlate':
-      return '⚄'; // dice pip — the Lucky rolls
     case 'ivory':
       return '$'; // pays at blind end if held
-    case 'brass':
-      return '☞'; // hand — ×1.5 while held
     case 'wood':
       return `+${tile.woodBonusChips ?? BALANCE.materials.wood.baseChips}`;
     default:
       return null;
   }
+}
+
+/** Material condition icons that must not depend on an OS Unicode glyph. */
+export function materialIcon(tile: Tile): UiIconId | null {
+  if (tile.material === 'leadPlate') return 'dice';
+  if (tile.material === 'brass') return 'heldHand';
+  return null;
 }
 
 /** Font edition → css class ('' for the medium base). */

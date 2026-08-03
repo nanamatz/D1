@@ -167,6 +167,27 @@
   --focus-ring: 2px solid var(--gold);
 }
 
+/* Bundled pixel icons replace OS-dependent emoji glyphs. */
+.ui-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  vertical-align: middle;
+}
+.ui-icon {
+  width: 1.35em;
+  height: 1.35em;
+}
+.inline-ui-icon {
+  width: 1.2em;
+  height: 1.2em;
+  margin-inline-end: .12em;
+}
+.object-ui-icon {
+  width: 68%;
+  height: 68%;
+}
 /* feature-02 C-3: chromatic unlocks restore the true grouped colours (classes
    toggled on <html> by unlocks.applyPresentation). Each colour word brings back
    every hue in its group, so the world re-colours progressively. */

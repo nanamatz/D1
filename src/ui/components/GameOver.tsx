@@ -3,11 +3,11 @@ import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART } from '../bossArt';
 import type { PatternId } from '../../engine/types';
 import { useI18n } from '../i18n';
-import { patternSymbol } from '../patternSymbols';
 import type { UseGame } from '../useGame';
 import { WooDakMascot } from './WooDakMascot';
 import { UNLOCKS } from '../unlocks';
 import { formatScore } from '../formatScore';
+import { PatternIcon, UiIcon } from './UiIcon';
 
 /** The most-frequent finalized sentence pattern this run, with its count. */
 function topPattern(counts: Partial<Record<PatternId, number>>): { id: PatternId; n: number } | null {
@@ -72,11 +72,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
         <div className="go-defeat-row">
           {boss ? (
             <span className="go-boss">
-              {BOSS_ART[boss.id] ? (
-                <img className="go-boss-art" src={BOSS_ART[boss.id]} alt="" />
-              ) : (
-                boss.emoji
-              )}{' '}
+              <img className="go-boss-art" src={BOSS_ART[boss.id]} alt="" />{' '}
               {lang === 'ko' ? boss.nameKo : boss.nameEn}
             </span>
           ) : (
@@ -103,8 +99,9 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
             {unlocks.map((u) => (
               <div key={u.id} className={['go-unlock-card', `unlock-${u.effect.kind}`].join(' ')}>
                 <div className={['go-unlock-swatch', u.effect.kind === 'color' ? `sw-${u.effect.group}` : ''].filter(Boolean).join(' ')}>
-                  {u.effect.kind === 'audio' ? (u.effect.bus === 'music' ? '♪' : '🔊')
-                    : u.effect.kind === 'mascot' ? '★' : ''}
+                  {u.effect.kind === 'audio' ? (
+                    <UiIcon name={u.effect.bus === 'music' ? 'music' : 'speaker'} />
+                  ) : u.effect.kind === 'mascot' ? <UiIcon name="star" /> : null}
                 </div>
                 <span className="go-unlock-word">{u.word}</span>
               </div>
@@ -131,7 +128,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
           <span className="v">
             {top ? (
               <>
-                <span className="pattern-symbol" aria-hidden>{patternSymbol(top.id)}</span>
+                <PatternIcon pattern={top.id} />
                 {t(`pattern.${top.id}`)} ({top.n})
               </>
             ) : '—'}

@@ -46,7 +46,7 @@ describe('feedback 5 UI regressions', () => {
   });
 
   it('raises the stage heading above the emphasized Revision card', () => {
-    expect(screens).toMatch(/\.bs-head\s*\{[^}]*transform:\s*translateY\(-28px\)/s);
+    expect(screens).toMatch(/\.bs-head\s*\{[^}]*margin-bottom:\s*28px[^}]*transform:\s*none/s);
     expect(screens).toMatch(/\.bs-head \.label\s*\{[^}]*font-size:\s*var\(--ds-xs\)/s);
   });
 

@@ -11,7 +11,7 @@ import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
-import { patternSymbol } from '../patternSymbols';
+import { PatternIcon } from './UiIcon';
 import { richText } from '../richtext';
 
 interface Props {
@@ -209,10 +209,8 @@ export function Sidebar({
               kind art (bossArt.ts). Falls back to the kind emoji if art is missing.
               The kind name still reads off the badge heading above. */}
           <div className="bb-emblem">
-            {blindEmblem(blind.kind, blind.bossId) ? (
+            {blindEmblem(blind.kind, blind.bossId) && (
               <img className="bb-art" src={blindEmblem(blind.kind, blind.bossId)} alt="" />
-            ) : (
-              boss && <span className="bb-emoji">{boss.emoji}</span>
             )}
           </div>
           <div className="bb-stats">
@@ -258,7 +256,7 @@ export function Sidebar({
         </div>
         {mode === 'blind' && !blind.previewHidden && currentPattern && (
           <div className="round-pattern">
-            <span className="pattern-symbol" aria-hidden>{patternSymbol(currentPattern)}</span>
+            <PatternIcon pattern={currentPattern} />
             {t('sidebar.currentPattern', {
               pattern: t(`pattern.${currentPattern}`),
               score: formatScore(Math.max(0, blind.projectedScore - blind.committedScore)),
@@ -338,9 +336,7 @@ export function Sidebar({
           {bonusActive && (
             <span className="bonus-stamp">
               {sentenceBonus!.pattern && (
-                <span className="pattern-symbol" aria-hidden>
-                  {patternSymbol(sentenceBonus!.pattern)}
-                </span>
+                <PatternIcon pattern={sentenceBonus!.pattern} />
               )}
               {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
               {sentenceBonus!.level != null && (
