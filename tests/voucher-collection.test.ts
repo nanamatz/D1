@@ -18,7 +18,7 @@ describe('Voucher Collection disclosure', () => {
 
       expect(copy).toEqual({
         name: '발견되지 않음',
-        body: '시드되지 않은 런에서 이 바우처를 교환하여 기능을 알아보세요.',
+        body: '시드되지 않은 런에서 이 바우처를 교환하여 기능을 알아보세요',
       });
       expect(copy.name).not.toBe(voucher.nameKo);
       expect(copy.body).not.toContain(t(voucherDescKey(rule.id)));

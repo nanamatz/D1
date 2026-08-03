@@ -12,6 +12,7 @@ import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
 import { PatternIcon } from './UiIcon';
+import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 
 interface Props {
@@ -236,7 +237,7 @@ export function Sidebar({
       <div className="panel round-panel">
         <div className="round-row">
           <span className="label">{t('sidebar.round')}</span>
-          <span className="round-num">
+            <span className="round-num">
             {/* The anchor owns layout; only its child moves. Keeping those layers
                 separate prevents a score beat from making the tomato jump to a new
                 containing-block origin when animation transforms begin. */}
@@ -251,7 +252,7 @@ export function Sidebar({
                 <span className="tomato-icon" key={settle.scorePop?.id ?? 'idle'} aria-hidden />
               </span>
             </span>{' '}
-            {formatScore(round)}
+            <span className="round-score-value">{formatScore(round)}</span>
           </span>
         </div>
         {mode === 'blind' && !blind.previewHidden && currentPattern && (
@@ -319,7 +320,11 @@ export function Sidebar({
             {Math.round(chips)}
             {settle.scorePop && settle.scorePop.chips !== 0 && (
               <span key={`c${settle.scorePop.id}`} className="box-pop chip">
-                <span className="chip-diamond" aria-hidden />+{Math.round(settle.scorePop.chips)}
+                <span className="chip-diamond" aria-hidden />
+                {settle.scorePop.chipsOp === 'mul' ? '×' : '+'}
+                {settle.scorePop.chipsOp === 'mul'
+                  ? fmtMult(settle.scorePop.chips)
+                  : Math.round(settle.scorePop.chips)}
               </span>
             )}
           </span>
@@ -340,7 +345,9 @@ export function Sidebar({
               )}
               {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
               {sentenceBonus!.level != null && (
-                <span className="bonus-lvl">{t('sidebar.patternLevel', { n: sentenceBonus!.level })}</span>
+                <span className={['bonus-lvl', patternLevelClass(sentenceBonus!.level)].join(' ')}>
+                  {t('sidebar.patternLevel', { n: sentenceBonus!.level })}
+                </span>
               )}
             </span>
           )}

@@ -1,5 +1,5 @@
 /**
- * Gambler cards (GDD §10.3) + the Ink Pack (§9.3) — the twelve confirmed effects,
+ * Gambler cards (GDD §10.3) + the Ink Pack (§9.3) — all fourteen effects,
  * their acquisition routes, and the cross-family rolls.
  */
 import { describe, expect, it } from 'vitest';
@@ -49,10 +49,10 @@ const firstRng: Rng = {
 };
 
 describe('registry — GDD §10.3', () => {
-  it('ships the twelve confirmed cards and leaves Rainman / Sake Cup pending', () => {
-    expect(GAMBLER_IDS).toHaveLength(12);
-    expect(isGamblerId('rainman' as ConsumableId)).toBe(false);
-    expect(isGamblerId('sakeCup' as ConsumableId)).toBe(false);
+  it('ships all fourteen supplied cards', () => {
+    expect(GAMBLER_IDS).toHaveLength(14);
+    expect(isGamblerId('rainman')).toBe(true);
+    expect(isGamblerId('sakeCup')).toBe(true);
   });
 
   it('names and describes every card in both locales', () => {
@@ -64,6 +64,14 @@ describe('registry — GDD §10.3', () => {
       expect(enKeys[`consumabledesc.${id}`], id).toBeTruthy();
       expect(koKeys[`consumabledesc.${id}`], id).toBeTruthy();
     }
+    expect(koKeys['consumabledesc.rainman']).toBe(
+      '무작위 이모지 타일 하나에 [w:화이트]를 추가합니다\n[n:-1 핸드 크기]',
+    );
+    expect(koKeys['consumabledesc.sakeCup']).toBe(
+      '무작위 이모지 타일 하나에 [r:레인보우]를 추가하고 다른 모든 이모지 타일을 파괴합니다',
+    );
+    expect(koKeys['consumabledesc.rainman']).not.toContain('.');
+    expect(koKeys['consumabledesc.sakeCup']).not.toContain('.');
   });
 
   it('asks for a target only on the font cards and Curtain', () => {
@@ -243,6 +251,42 @@ describe('#8 Curtain / #9 Deer', () => {
     for (const pattern of patterns) {
       expect(result.run.patternLevels[pattern]).toBe(run.patternLevels[pattern] + 1);
     }
+  });
+});
+
+describe('#13 Rainman / #14 Sake Cup — Emoji Tile editions', () => {
+  const jokers: RunState['jokers'] = [
+    { defId: 'stargazer', edition: 'base', state: { factor: 1.3 } },
+    { defId: 'hypocrite', edition: 'violet', state: {} },
+    { defId: 'dadaist', edition: 'white', state: {} },
+  ];
+
+  it('Rainman adds White to one random Emoji Tile and permanently loses one hand size', () => {
+    const { run, blind } = setup('rainman', { jokers });
+    const result = useGambler('rainman', run, blind, [], [], firstRng);
+    expect(result.ok).toBe(true);
+    expect(result.run.jokers).toHaveLength(3);
+    expect(result.run.jokers[0]).toMatchObject({ edition: 'white', state: { factor: 1.3 } });
+    expect(result.run.jokers[1]?.edition).toBe('violet');
+    expect(result.run.handSize).toBe(run.handSize - BALANCE.gambler.rainmanHandSizeLoss);
+    expect(result.run.consumables).not.toContain('rainman');
+  });
+
+  it('requires an Emoji Tile and will not reduce hand size below one', () => {
+    const empty = setup('rainman', { jokers: [] });
+    expect(canUseGambler('rainman', empty.run, empty.blind.hand, [])).toBe(false);
+    const floor = setup('rainman', { jokers, handSize: 1 });
+    expect(canUseGambler('rainman', floor.run, floor.blind.hand, [])).toBe(false);
+  });
+
+  it('Sake Cup adds Rainbow to one random Emoji Tile and destroys every other one', () => {
+    const { run, blind } = setup('sakeCup', { jokers });
+    const result = useGambler('sakeCup', run, blind, [], [], firstRng);
+    expect(result.ok).toBe(true);
+    expect(result.run.jokers).toEqual([
+      { defId: 'stargazer', edition: 'rainbow', state: { factor: 1.3 } },
+    ]);
+    expect(result.run.consumables).not.toContain('sakeCup');
   });
 });
 

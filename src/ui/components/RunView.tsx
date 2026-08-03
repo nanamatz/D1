@@ -174,7 +174,6 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   return (
     <>
       <div
-        key={boardKey}
         className={[
           'frame',
           'persistent-run',
@@ -208,6 +207,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           <JokerShelf
             run={run}
             pouchRemaining={phase === 'shop' ? run.bag.length : blind.bag.length}
+            {...(!g.state.settleComplete ? { animatedGrowthEvents: g.state.lastEvents } : {})}
             onUseConsumable={(id) => {
               if (fablePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 g.useHeldPackFable(id, packCandidateIds);
@@ -224,8 +224,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}
             jokersFaceDown={!!blind.jokersFaceDown}
+            settleComplete={g.state.settleComplete}
           />
-          <section className="phase-workspace">
+          <section className="phase-workspace" key={boardKey}>
             {notAllowedNotice !== null && (
               <div
                 key={notAllowedNotice}
@@ -238,7 +239,12 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             )}
             {boardVisible && (
               <div className="blind-workspace">
-                <SentenceTray blind={blind} judgment={judgment} lexicon={lexicon} />
+                <SentenceTray
+                  blind={blind}
+                  judgment={judgment}
+                  lexicon={lexicon}
+                  patternLevels={run.patternLevels}
+                />
                 <StagePanel
                   g={g}
                   preview={preview}

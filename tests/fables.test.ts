@@ -22,6 +22,11 @@ const zeroRng: Rng = {
   int: () => 0,
   shuffle: <T>(items: readonly T[]) => items.slice(),
 };
+const highRng: Rng = {
+  next: () => 0.99,
+  int: () => 0,
+  shuffle: <T>(items: readonly T[]) => items.slice(),
+};
 
 function setup(id: (typeof FABLE_IDS)[number]): { run: RunState; blind: BlindState } {
   const run = { ...newRun('fables'), consumables: [id] };
@@ -158,6 +163,21 @@ describe('Fable registry', () => {
       zeroRng,
     );
     expect(editioned.run.jokers[0]?.edition).toBe('gray');
+    expect(editioned.chanceResults).toEqual([{
+      chance: BALANCE.fables.cowherdEditionChance,
+      label: 'edition',
+      outcome: 'success',
+    }]);
+
+    const missed = useFable(
+      'fable15',
+      { ...edition.run, jokers: [{ defId: 'carteBlanche', edition: 'base', state: {} }] },
+      edition.blind,
+      [],
+      highRng,
+    );
+    expect(missed.run.jokers[0]?.edition).toBe('base');
+    expect(missed.chanceResults[0]?.outcome).toBe('failure');
   });
 
   it('creates only an unowned Charm by default; Copy Editor reopens duplicates', () => {

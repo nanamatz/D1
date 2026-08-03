@@ -26,13 +26,14 @@ const args = Object.fromEntries(
 const WORDS_PATH = args.words ?? 'data/curated.txt';
 const OUT_PATH = args.out ?? 'data/lexicon.json';
 const OVERRIDES_PATH = args.overrides ?? 'lexicon-pipeline/register-overrides.json';
+const MAX_WORD_LENGTH = 18;
 
 const readLines = (p) =>
   fs.existsSync(p)
     ? fs.readFileSync(p, 'utf8').split('\n').map((w) => w.trim().toLowerCase()).filter(Boolean)
     : [];
 
-const words = [...new Set(readLines(WORDS_PATH))];
+const words = [...new Set(readLines(WORDS_PATH).filter((word) => word.length <= MAX_WORD_LENGTH))];
 if (words.length === 0) {
   console.error(`No words found at ${WORDS_PATH}. Point --words at your curated word list.`);
   process.exit(1);

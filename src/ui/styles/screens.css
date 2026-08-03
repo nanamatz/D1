@@ -386,14 +386,15 @@
 }
 .hl-edition-white {
   color: #fff;
-  -webkit-text-stroke: 1px #4b555b;
+  -webkit-text-stroke: 2px #27313a;
   paint-order: stroke fill;
 }
 /* Badges beneath the description plate: joker rarity, or pack grade. */
 .tt-rarity,
 .tt-grade,
 .tt-classification,
-.tt-enhancement-tag {
+.tt-enhancement-tag,
+.tt-status {
   box-sizing: border-box;
   width: var(--tt-tag-w);
   align-self: center;
@@ -408,6 +409,7 @@
   line-height: 1.15;
   text-align: center;
   text-shadow: 0 1px 0 rgba(0, 0, 0, .72);
+  white-space: nowrap;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, .12),
     inset 0 -2px 0 rgba(0, 0, 0, .18);
@@ -464,6 +466,11 @@
   background: #f4f4f0;
   color: #30343a;
   text-shadow: none;
+}
+.tt-status.disabled,
+.tt-status.debuffed {
+  background: #762f35;
+  border-color: #dc6c73;
 }
 
 /* Letter tiles use one stable compact frame. Standard tooltip type sizes fill
@@ -2641,7 +2648,6 @@ body.cb-safe .tile.hint {
   align-items: center;
   gap: 14px;
   overflow-y: auto;
-  scrollbar-gutter: stable;
 }
 .register-score-view {
   width: 100%;
@@ -4168,7 +4174,7 @@ body.cb-safe .tile.hint {
   font-family: 'Jersey 10';
   font-size: var(--ds-xs);
   line-height: 1;
-  color: var(--gold);
+  color: var(--pattern-level-color, var(--gold));
   margin-left: 12px;
 }
 /* Shared [Chips × Mult] axis readout for sentence patterns and Letter Hands. */
@@ -4649,6 +4655,95 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-xl);
   animation: cfx-stat-in .4s ease .9s both;
 }
+.chance-results {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 4px 0;
+}
+.chance-result {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  background: var(--inset);
+  color: var(--ink-dim);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, .4);
+  animation: chance-result-in .4s steps(4, end) .48s both;
+}
+.chance-result small { font-size: .68em; color: var(--ink); }
+.chance-result b { color: var(--gold); font-weight: 400; }
+.chance-success,
+.chance-survived { color: var(--btn-green-hi); }
+.chance-failure { color: var(--ink-dim); }
+.chance-destroyed { color: var(--mult); }
+.tile-effect-pop .chance-results { margin: 0; gap: 3px; }
+.tile-effect-pop .chance-result {
+  padding: 2px 4px;
+  border-width: 1px;
+  font-size: .52em;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, .45);
+}
+@keyframes chance-result-in {
+  from { opacity: 0; transform: scale(.55) rotate(-3deg); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Round-end chance objects need a source ghost because a failed destruction
+   roll may remove the owned Emoji Tile before the next screen renders. */
+.joker-chance-effect {
+  position: fixed;
+  inset: 0;
+  z-index: 72;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgba(3, 9, 13, .38);
+  animation: cfx-overlay 2.4s ease forwards;
+}
+.joker-chance-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 22px 26px;
+  border: 3px solid var(--gold);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, .45);
+}
+.joker-chance-entry {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 150px;
+  color: var(--gold);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-xl);
+}
+.joker-chance-source {
+  width: 100px;
+  height: 133px;
+  pointer-events: auto;
+  animation: cfx-change 1.1s cubic-bezier(.34, 1.7, .5, 1) both;
+}
+.joker-chance-entry.chance-destroyed .joker-chance-source {
+  animation: cfx-destroy 1.15s ease .35s both;
+}
+.joker-chance-source img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 @keyframes cfx-overlay {
   0%, 86% { opacity: 1; }
   100% { opacity: 0; }
@@ -4697,7 +4792,9 @@ body.cb-safe .tile.hint {
   .cfx-stage,
   .cfx-source,
   .cfx-object,
-  .cfx-stats span {
+  .cfx-stats span,
+  .chance-result,
+  .joker-chance-source {
     animation-duration: .01ms !important;
     animation-delay: 0ms !important;
   }
@@ -4723,8 +4820,8 @@ body.cb-safe .tile.hint {
   padding: 26px 32px;
   border-radius: var(--r-lg);
   background: var(--panel);
-  border: 3px solid var(--panel-edge);
-  box-shadow: 0 12px 0 rgba(0, 0, 0, .45), 0 0 32px rgba(55, 171, 220, .28);
+  border: 3px solid var(--pattern-level-color, var(--panel-edge));
+  box-shadow: 0 12px 0 rgba(0, 0, 0, .45), 0 0 32px color-mix(in srgb, var(--pattern-level-color, var(--chips)) 42%, transparent);
   animation: plu-stage-in .28s cubic-bezier(.34, 1.56, .64, 1) both;
 }
 .plu-source {
@@ -4745,7 +4842,7 @@ body.cb-safe .tile.hint {
   inset: 0;
   opacity: 0;
   background:
-    radial-gradient(circle, var(--gold) 0 2px, transparent 3px) 8% 15% / 19px 23px,
+    radial-gradient(circle, var(--pattern-level-color, var(--gold)) 0 2px, transparent 3px) 8% 15% / 19px 23px,
     radial-gradient(circle, var(--chips) 0 2px, transparent 3px) 62% 40% / 23px 17px;
   animation: plu-particles .66s steps(6, end) 2.47s both;
 }
@@ -4780,7 +4877,7 @@ body.cb-safe .tile.hint {
   animation: plu-level-new .22s ease 2.06s forwards;
 }
 .plu-to {
-  color: var(--gold);
+  color: var(--pattern-level-color, var(--gold));
   opacity: 0;
   animation: plu-level-new .37s cubic-bezier(.34, 1.8, .5, 1) 2.06s forwards;
 }

@@ -16,6 +16,7 @@ import { usePointerTilt } from '../hooks';
 import { stripRichText } from '../richtext';
 import { useSettleView } from '../settle';
 import { Tooltip, type TooltipDetail, type TooltipTag } from './Tooltip';
+import { ChanceBadges } from './ChanceBadges';
 
 interface Props {
   tile: Tile;
@@ -133,11 +134,11 @@ function TileViewImpl({
     dragging && 'dragging',
     dropTarget && 'drop-target',
     settle.active && settle.activeTileId === tile.id && 'score-current',
-    materialClass(tile.material),
-    fontClass(tile.font),
-    inkClass(tileValue(tile)),
-    faceClass(tile),
-    `edition-${tile.edition ?? 'base'}`,
+    !faceDown && materialClass(tile.material),
+    !faceDown && fontClass(tile.font),
+    !faceDown && inkClass(tileValue(tile)),
+    !faceDown && faceClass(tile),
+    !faceDown && `edition-${tile.edition ?? 'base'}`,
     faceDown && 'facedown',
     disabled && 'locked',
     invalid && 'boss-invalid',
@@ -157,7 +158,7 @@ function TileViewImpl({
       className={className}
       data-flip-id={tile.id}
       data-tile-id={tile.id}
-      data-material={tile.material}
+      data-material={faceDown ? undefined : tile.material}
       // feature-04 D: the spring-drag controller (useStageDrag) owns dragging via
       // pointer events; the home zone is read from here. Native HTML5 drag is off —
       // it can't spring-follow or rotate (the browser owns its drag image).
@@ -226,9 +227,12 @@ function TileViewImpl({
       <span className="tilt-sheen" aria-hidden />
       {effectPop && (
         <span key={effectPop.id} className="trigger-pop tile-effect-pop" aria-hidden>
-          {effectPop.chips !== 0 && (
+          {(effectPop.chips !== 0 || effectPop.chipsFactor !== undefined) && (
             <span className="chip">
-              <span className="chip-diamond" />+{Math.round(effectPop.chips)}
+              <span className="chip-diamond" />
+              {effectPop.chipsFactor !== undefined
+                ? `×${effectPop.chipsFactor}`
+                : `+${Math.round(effectPop.chips)}`}
             </span>
           )}
           {effectPop.multFactor !== undefined ? (
@@ -238,6 +242,7 @@ function TileViewImpl({
           ) : null}
           {effectPop.gold !== 0 && <span className="gold">+${effectPop.gold}</span>}
           {effectPop.retrigger && <span className="retrigger">↻</span>}
+          {effectPop.chanceResults && <ChanceBadges results={effectPop.chanceResults} />}
         </span>
       )}
       </div>
@@ -248,6 +253,7 @@ function TileViewImpl({
           body={tooltip.body}
           tags={tooltip.tags}
           sub={tooltip.sub}
+          status={invalid ? 'debuffed' : disabled ? 'disabled' : undefined}
           compact
         />
       )}

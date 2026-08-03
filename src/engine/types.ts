@@ -92,6 +92,9 @@ export interface WordSubmission {
   tiles: Tile[];
   text: string; // as spelled, original casing
   isGibberish: boolean;
+  /** Register after rule-changing Emoji Tiles resolve. This can contain more
+   * than one entry (Tower of Babel). `suit` remains null for a gibberish hole. */
+  effectiveSuits?: Suit[];
   suit: Suit | null;
   /** the single POS this word occupies in the sequence; null = hole */
   posUsed: POS | null;
@@ -149,6 +152,8 @@ export interface WordScoringContext {
   submission: WordSubmission;
   chips: number;
   mult: number;
+  /** Lexicon register before rule-changing Emoji Tiles rewrite the submission. */
+  baseSuit?: Suit | null;
   /** Gold awarded by per-word Emoji Tile hooks. Applied by the caller after scoring. */
   goldDelta?: number;
   /** Lexicon POS tags for the current valid word; empty for gibberish. */
@@ -157,11 +162,36 @@ export interface WordScoringContext {
   scoringVowels?: Set<Letter>;
   /** Extra full-tile triggers requested by Emoji Tiles, keyed by tile id. */
   tileRetriggers?: Map<string, string[]>;
-  /** Virtual scoring suits supplied by rule-changing Emoji Tiles. The canonical
-   * submission suit stays untouched for bosses, Unison, and sentence history. */
+  /** Final register membership supplied by rule-changing Emoji Tiles. */
   scoringSuits?: Set<Suit>;
   /** Flat committed-score replay, used by Rotary Press. */
   scoreBonus?: number;
+}
+
+/** Final register membership, with a legacy-save fallback to the lexicon suit. */
+export const submissionSuits = (
+  submission: Pick<WordSubmission, 'effectiveSuits' | 'suit'>,
+): readonly Suit[] =>
+  submission.effectiveSuits !== undefined
+    ? submission.effectiveSuits
+    : submission.suit === null
+      ? []
+      : [submission.suit];
+
+export const submissionHasSuit = (
+  submission: Pick<WordSubmission, 'effectiveSuits' | 'suit'>,
+  suit: Suit,
+): boolean => submissionSuits(submission).includes(suit);
+
+/** Seeded pass/fail result exposed to presentation. The engine records the
+ * committed roll; the UI never re-rolls or infers it from the resulting state. */
+export interface ChanceResult {
+  chance: number;
+  outcome: 'success' | 'failure' | 'survived' | 'destroyed';
+  label?: 'mult' | 'gold' | 'edition' | 'destruction';
+  /** Present for object-lifecycle rolls resolved outside the scoring timeline. */
+  sourceId?: string;
+  sourceEdition?: JokerEdition;
 }
 
 /**
@@ -171,14 +201,14 @@ export interface WordScoringContext {
  */
 export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter | null; chips: number }
-  | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number; multFactor?: number }
+  | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number; multFactor?: number; goldDelta?: number; chanceResults?: ChanceResult[] }
   | { kind: 'font'; font: TileFont; effect: FontEffectId; tileId: string; chipsDelta: number; multDelta: number; goldDelta: number }
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string }
-  | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; growthKind?: 'mult' | 'multAdd' | 'chips'; growthDelta?: number }
+  | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
 
@@ -338,7 +368,7 @@ export interface RunState {
   /** Investment Tags stack until the next successfully cleared Deadline. */
   pendingBossReward: number;
   gold: number;
-  handSize: number; // base 11, a balance knob (GDD §6.2)
+  handSize: number; // base 10, a balance knob (GDD §6.2)
   basePhases: number; // base 5
   baseDiscards: number; // base 4
   bag: Tile[]; // the permanent 68-tile (sculpted) asset
@@ -454,11 +484,10 @@ export type ConsumableId =
   | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
   | 'fable7' | 'fable8' | 'fable9' | 'fable10' | 'fable11' | 'fable12'
   | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18'
-  // gambler cards (GDD §10.3). Rainman and Sake Cup stay out until their
-  // effects are designed — art-only ids never reach the engine.
+  // gambler cards (GDD §10.3)
   | 'barnSwallow' | 'boar' | 'bridge' | 'bushWarbler' | 'butterflies'
   | 'craneAndSun' | 'cuckoo' | 'curtain' | 'deer' | 'fullMoon'
-  | 'geese' | 'phoenix';
+  | 'geese' | 'phoenix' | 'rainman' | 'sakeCup';
 
 export type VoucherId =
   | 'storyBook' | 'novel'

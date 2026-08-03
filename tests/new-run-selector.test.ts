@@ -53,7 +53,7 @@ describe('New Run selector presentation', () => {
     expect(css).toMatch(
       /\.collection-pouch-preview \.select-desc\s*\{[^}]*font-size:\s*var\(--fs-xl\);[^}]*font-weight:\s*800;/s,
     );
-    expect(en['pouch.fiveColor.desc']).toContain('[n:+2]');
+    expect(en['pouch.fiveColor.desc']).toContain('[n:+1]');
     expect(en['pouch.military.desc']).toContain('[p:Black & White Photo]');
     expect(ko['pouch.leather.desc']).toContain('[n:−1]');
     expect(ko['pouch.shoppingBasket.desc']).toContain('[p:스토리북]');

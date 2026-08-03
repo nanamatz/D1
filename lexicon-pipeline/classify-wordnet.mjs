@@ -23,6 +23,7 @@ const EXISTING = args.existing ?? '../data/lexicon.json';
 const WORDNET = args.wordnet;
 const MOBY = args.moby;
 const OUT = args.out ?? EXISTING;
+const MAX_WORD_LENGTH = 18;
 
 if (!WORDNET || !MOBY) {
   console.error('usage: add --wordnet /path/to/WordNet-3.0/dict --moby /path/to/mobypos.txt');
@@ -33,9 +34,11 @@ const readLines = (file) => fs.readFileSync(file, 'utf8')
   .split(/\r?\n/)
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
-const dictionary = [...new Set(readLines(WORDS))];
+const eligible = (word) => word.length <= MAX_WORD_LENGTH;
+const dictionary = [...new Set(readLines(WORDS).filter(eligible))];
 const existing = fs.existsSync(EXISTING)
-  ? JSON.parse(fs.readFileSync(EXISTING, 'utf8'))
+  ? Object.fromEntries(Object.entries(JSON.parse(fs.readFileSync(EXISTING, 'utf8')))
+    .filter(([word]) => eligible(word)))
   : {};
 
 const wordnet = new Map();

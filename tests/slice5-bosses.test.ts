@@ -3,6 +3,7 @@ import { newRun } from '../src/engine/run';
 import { startBlind, submitWord } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
+import { BALANCE } from '../src/engine/balance';
 import { drawBoss, CORE_BOSS_IDS } from '../src/engine/bosses';
 import type { BlindState, Letter, RunState, Tile } from '../src/engine/types';
 
@@ -72,7 +73,14 @@ describe('slice5 bosses — scoring effects', () => {
     const r = bossRun();
     // CAT = 15 chips; standard ×1.0 + length 3 => mult 4.0 before Will halves both:
     // chips 15 → 7.5, mult 4.0 → 2.0, total 7.5 × 2.0 = 15
-    expect(play(bossBlind(r, 'will'), r, 'cat').submission.settledScore).toBe(15);
+    const result = play(bossBlind(r, 'will'), r, 'cat');
+    expect(result.submission.settledScore).toBe(15);
+    expect(result.events).toContainEqual(expect.objectContaining({
+      kind: 'boss',
+      bossId: 'will',
+      chipsFactor: BALANCE.boss.willScale,
+      multFactor: BALANCE.boss.willScale,
+    }));
   });
   it('Memoirs (회고록): a word already played this ante scores 0; a fresh one scores', () => {
     const r = { ...bossRun(), wordsThisAnte: ['cat'] };

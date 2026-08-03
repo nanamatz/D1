@@ -23,8 +23,8 @@ interface Props {
  * One surface for every consumable card illustration. Adding a family is a row
  * in `ART`, not another wrapper component.
  *
- * Renders nothing for an id with no art — Rainman and Sake Cup are the reverse
- * case (art without an engine id), but a future id could ship before its art.
+ * Renders nothing for an id with no art, so a future engine id can land safely
+ * before its illustration.
  */
 export function CardArt({ family, id, className, title }: Props) {
   const src = ART[family](id);

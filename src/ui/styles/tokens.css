@@ -326,7 +326,52 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  scrollbar-color: #e7b83f var(--inset);
+  scrollbar-width: auto;
 }
+
+*::-webkit-scrollbar {
+  width: 18px;
+  height: 18px;
+}
+*::-webkit-scrollbar-track {
+  background: repeating-linear-gradient(0deg, #d8cfb8 0 2px, #c3b99f 2px 4px);
+  border: 3px solid var(--panel-edge);
+}
+*::-webkit-scrollbar-thumb {
+  min-width: 48px;
+  min-height: 48px;
+  border: 3px solid #27313a;
+  border-radius: 0;
+}
+*::-webkit-scrollbar-thumb:vertical {
+  background: linear-gradient(to bottom,
+    #27313a 0 5px,
+    #dfbd86 5px 11px,
+    #e7b83f 11px calc(100% - 14px),
+    #9fa3a0 calc(100% - 14px) calc(100% - 8px),
+    #d76879 calc(100% - 8px));
+  box-shadow: inset 3px 0 0 #f7d568, inset -3px 0 0 #ad7620;
+}
+*::-webkit-scrollbar-thumb:horizontal {
+  background: linear-gradient(to right,
+    #27313a 0 5px,
+    #dfbd86 5px 11px,
+    #e7b83f 11px calc(100% - 14px),
+    #9fa3a0 calc(100% - 14px) calc(100% - 8px),
+    #d76879 calc(100% - 8px));
+  box-shadow: inset 0 3px 0 #f7d568, inset 0 -3px 0 #ad7620;
+}
+*::-webkit-scrollbar-thumb:hover { filter: brightness(1.14); }
+*::-webkit-scrollbar-button { display: none; }
+*::-webkit-scrollbar-corner { background: var(--inset); }
+
+.pattern-level-yellow { --pattern-level-color: #f0b23e; }
+.pattern-level-orange { --pattern-level-color: #e97835; }
+.pattern-level-green { --pattern-level-color: #55b867; }
+.pattern-level-blue { --pattern-level-color: #3fa7f5; }
+.pattern-level-purple { --pattern-level-color: #a66cd5; }
+.pattern-level-red { --pattern-level-color: #f5504e; }
 
 /* ---------- controls (playtest-06 #10) ----------
    Two families, one recipe each — loaded first so per-component rules only need

@@ -38,7 +38,7 @@ describe('voucher profile unlock progress', () => {
       recordVoucherProgress({ kind: 'voucherBuy', id: 'storyBook', spent: 10 });
     }
     expect(unlockedVoucherSet()).toContain('papyrus');
-    recordVoucherProgress({ kind: 'newRun', handSize: 11 });
+    recordVoucherProgress({ kind: 'newRun', handSize: 10 });
     expect(loadVoucherProgress().currentRunVoucherUses).toBe(0);
     expect(loadVoucherProgress().maxRunVoucherUses).toBe(10);
   });
@@ -66,7 +66,7 @@ describe('voucher profile unlock progress', () => {
         bossId: null,
         interest: 5,
         interestCap: 5,
-        handSize: 11,
+        handSize: 10,
       });
     }
     expect(unlockedVoucherSet()).not.toContain('householdLedger');
@@ -76,7 +76,7 @@ describe('voucher profile unlock progress', () => {
       bossId: null,
       interest: 4,
       interestCap: 5,
-      handSize: 11,
+      handSize: 10,
     });
     expect(loadVoucherProgress().interestStreak).toBe(0);
     for (let i = 0; i < 10; i++) {
@@ -86,7 +86,7 @@ describe('voucher profile unlock progress', () => {
         bossId: null,
         interest: 5,
         interestCap: 5,
-        handSize: 11,
+        handSize: 10,
       });
     }
     expect(unlockedVoucherSet()).toContain('householdLedger');

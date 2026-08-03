@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Lexicon } from '../../engine/lexicon';
 import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
 import { RECORD_IDS } from '../../engine/records';
-import { loadLifetime } from '../lifetime';
+import { loadLifetime, recordWinCount } from '../lifetime';
 import { useI18n } from '../i18n';
 import {
   PROFILE_NAME_MAX,
@@ -154,7 +154,11 @@ export function Profile({ lexicon, onBack }: Props) {
       have: POUCH_IDS.filter((id) => isPouchUnlocked(id, progress)).length,
       total: POUCH_IDS.length,
     },
-    { key: 'recordWins', have: lifetime.recordWins.length, total: RECORD_IDS.length },
+    {
+      key: 'recordWins',
+      have: recordWinCount(lifetime),
+      total: POUCH_IDS.length * RECORD_IDS.length,
+    },
   ];
   const totalHave = rows.reduce((sum, row) => sum + row.have, 0);
   const totalItems = rows.reduce((sum, row) => sum + row.total, 0);

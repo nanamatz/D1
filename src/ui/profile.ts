@@ -4,7 +4,7 @@ import { POUCH_IDS, isPouchUnlocked } from '../engine/pouches';
 import { RECORD_IDS, isRecordUnlocked } from '../engine/records';
 import { collectionSize, loadCollection } from './collection';
 import { activeProfile, resetProfile, writeProfileValue, type ProfileSlot } from './storage';
-import { loadLifetime, writeLifetime } from './lifetime';
+import { loadLifetime, recordWinsForPouch, writeLifetime } from './lifetime';
 import { UNLOCKS, loadPlayed } from './unlocks';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from './voucherProgress';
 
@@ -41,13 +41,13 @@ export function isProfileWorldComplete(slot: ProfileSlot, lexicon: Lexicon): boo
     pouchWins: new Set(lifetime.pouchWins),
     recordWins: new Set(lifetime.recordWins),
   };
-  const recordWins = new Set(lifetime.recordWins);
   const played = loadPlayed(slot);
   const vouchers = new Set(loadVoucherProgress(slot).unlocked);
   return [...lexicon.words()].every((word) => collection[word] !== undefined)
     && UNLOCKS.every((unlock) => played.has(unlock.id))
     && POUCH_IDS.every((id) => isPouchUnlocked(id, pouchProgress))
-    && RECORD_IDS.every((id) => isRecordUnlocked(id, recordWins))
+    && POUCH_IDS.every((pouchId) =>
+      RECORD_IDS.every((id) => isRecordUnlocked(id, recordWinsForPouch(lifetime, pouchId))))
     && VOUCHER_UNLOCK_RULES.every((rule) => vouchers.has(rule.id));
 }
 
@@ -106,6 +106,9 @@ export function unlockAllProfile(slot: ProfileSlot, lexicon: Lexicon): UnlockAll
     ...lifetime,
     pouchWins: [...POUCH_IDS],
     recordWins: [...RECORD_IDS],
+    recordWinsByPouch: Object.fromEntries(
+      POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]]),
+    ),
     unlockAllApplied: true,
     challengesDisabled: true,
   }, slot);

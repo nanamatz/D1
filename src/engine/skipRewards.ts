@@ -94,16 +94,17 @@ export const EMPTY_NEXT_BLIND_BONUS: NextBlindBonus = {
   startingScore: 0,
 };
 
-/** Two independent, equally weighted offers. Duplicate rewards are allowed. */
+/** Two equally weighted offers without repeating a Tag in the same Chapter. */
 export function rollSkipOffers(run: RunState, rng: Rng): [SkipRewardOffer, SkipRewardOffer] {
   const patterns = Object.keys(run.patternLevels) as PatternId[];
-  const roll = (): SkipRewardOffer => {
-    const id = SKIP_REWARD_IDS[rng.int(SKIP_REWARD_IDS.length)]!;
+  const roll = (ids: readonly SkipRewardId[]): SkipRewardOffer => {
+    const id = ids[rng.int(ids.length)]!;
     return id === 'houseStyle'
       ? { id, pattern: patterns[rng.int(patterns.length)]! }
       : { id };
   };
-  return [roll(), roll()];
+  const first = roll(SKIP_REWARD_IDS);
+  return [first, roll(SKIP_REWARD_IDS.filter((id) => id !== first.id))];
 }
 
 function withBlindBonus(

@@ -16,8 +16,16 @@ export const misbound: JokerDef = {
     wordScoring: ({ ctx }, self) => {
       ctx.mult *= self.state.factor ?? 1;
     },
-    blindEnd: ({ rng }, self) => {
-      if (rng.int(BALANCE.jokers.misbound.destroyDenominator) === 0) {
+    blindEnd: ({ rng, chanceResults }, self) => {
+      const destroyed = rng.int(BALANCE.jokers.misbound.destroyDenominator) === 0;
+      chanceResults.push({
+        chance: 1 / BALANCE.jokers.misbound.destroyDenominator,
+        label: 'destruction',
+        outcome: destroyed ? 'destroyed' : 'survived',
+        sourceId: self.defId,
+        sourceEdition: self.edition ?? 'base',
+      });
+      if (destroyed) {
         self.state.destroyed = 1;
       } else {
         self.state.factor =

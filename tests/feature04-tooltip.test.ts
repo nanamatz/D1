@@ -95,9 +95,9 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
     });
   });
 
-  it('removes description periods without breaking decimal values', () => {
+  it('turns inner periods into line breaks, drops terminal periods, and keeps decimals', () => {
     expect(stripTooltipPeriods('Gain Chips. Current ×1.5.\n끝. 다음。'))
-      .toBe('Gain Chips Current ×1.5\n끝 다음');
+      .toBe('Gain Chips\nCurrent ×1.5\n끝\n다음');
   });
 
   it('sizes supplemental cards from visible text rather than rich-text markup', () => {

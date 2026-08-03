@@ -1,12 +1,27 @@
-import type { BlindState, SentenceJudgment } from '../../engine/types';
+import { useRef } from 'react';
+import {
+  submissionSuits,
+  type BlindState,
+  type PatternId,
+  type SentenceJudgment,
+  type WordSubmission,
+} from '../../engine/types';
 import type { Lexicon } from '../../engine/lexicon';
 import { posLabel, suitClass } from '../game';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
 import { TileView } from './Tile';
 import { PatternIcon } from './UiIcon';
+import { patternLevelClass } from '../patternLevel';
+import { Tooltip } from './Tooltip';
 
-function PatternChip({ judgment }: { judgment: SentenceJudgment }) {
+function PatternChip({
+  judgment,
+  patternLevels,
+}: {
+  judgment: SentenceJudgment;
+  patternLevels: Record<PatternId, number>;
+}) {
   const { t } = useI18n();
   const m = judgment.match;
   const uniSuit = judgment.unison ? t(`suit.${judgment.unison.suit}`) : null;
@@ -19,7 +34,11 @@ function PatternChip({ judgment }: { judgment: SentenceJudgment }) {
       ? t('tray.unison', { suit: uniSuit })
       : t('tray.noPattern');
   return (
-    <div className={['pattern-chip', m ? 'hit' : ''].filter(Boolean).join(' ')}>
+    <div className={[
+      'pattern-chip',
+      m ? 'hit' : '',
+      m ? patternLevelClass(patternLevels[m.pattern]) : '',
+    ].filter(Boolean).join(' ')}>
       <div className="p">
         {m && <PatternIcon pattern={m.pattern} />}
         {p}
@@ -33,6 +52,7 @@ interface Props {
   blind: BlindState;
   judgment: SentenceJudgment;
   lexicon: Lexicon;
+  patternLevels: Record<PatternId, number>;
 }
 
 /** The letter-hand / suit / word-length stamp that lands on the just-scored word (B step 4). */
@@ -51,8 +71,65 @@ function WordStamp() {
   return <span className={['word-stamp', settle.stamp.kind].join(' ')}>{label}</span>;
 }
 
+function SubmittedWord({
+  sub,
+  settling,
+  lexicon,
+}: {
+  sub: WordSubmission;
+  settling: boolean;
+  lexicon: Lexicon;
+}) {
+  const { t } = useI18n();
+  const ref = useRef<HTMLDivElement>(null);
+  const suits = submissionSuits(sub);
+  const suitTags = suits.length > 0 && (
+    <span className="suit-tags">
+      {suits.map((suit) => (
+        <span key={suit} className={`suit-tag ${suit}`}>{t(`suittag.${suit}`)}</span>
+      ))}
+    </span>
+  );
+  const content = sub.isGibberish ? (
+    <div ref={ref} className={['hole', sub.debuffed ? 'boss-debuffed' : ''].filter(Boolean).join(' ')}>
+      {suitTags}
+      {`✷ ${t('tray.gibberish')}`}
+      <span className="pos">{t('tray.hole')}</span>
+      {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
+      {settling && <WordStamp />}
+    </div>
+  ) : (
+    <div
+      ref={ref}
+      className={['word', suitClass(sub.suit), sub.debuffed ? 'boss-debuffed' : '']
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {suitTags}
+      {sub.tiles.map((tile) => <TileView key={tile.id} tile={tile} mini />)}
+      <span className="pos">{posLabel(sub, lexicon, t)}</span>
+      {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
+      {settling && <WordStamp />}
+    </div>
+  );
+  return (
+    <>
+      {content}
+      {sub.debuffed && (
+        <Tooltip
+          anchorRef={ref}
+          title={sub.text.toUpperCase() || t('tray.gibberish')}
+          body={t('tooltip.debuffedWord')}
+          status="debuffed"
+          compact
+        />
+      )}
+    </>
+  );
+}
+
 /** The signature element: played words accumulating as a sentence (UI_DESIGN §2). */
-export function SentenceTray({ blind, judgment, lexicon }: Props) {
+export function SentenceTray({ blind, judgment, lexicon, patternLevels }: Props) {
   const { t } = useI18n();
   const settle = useSettleView();
   const last = blind.sequence.length - 1;
@@ -60,30 +137,17 @@ export function SentenceTray({ blind, judgment, lexicon }: Props) {
     <div className="tray">
       <div className="label">{t('tray.title')}</div>
       {blind.sequence.length === 0 && <span className="empty">{t('tray.empty')}</span>}
-      {blind.sequence.map((sub, i) => {
-        const settling = settle.active && i === last;
-        return sub.isGibberish ? (
-          <div key={i} className="hole">
-            {`✷ ${t('tray.gibberish')}`}
-            <span className="pos">{t('tray.hole')}</span>
-            {settling && <WordStamp />}
-          </div>
-        ) : (
-          <div
-            key={i}
-            className={['word', suitClass(sub.suit), sub.debuffed ? 'boss-debuffed' : '']
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <span className="suit-tag">{sub.suit ? t(`suittag.${sub.suit}`) : ''}</span>
-            {sub.tiles.map((tile) => <TileView key={tile.id} tile={tile} mini />)}
-            <span className="pos">{posLabel(sub, lexicon, t)}</span>
-            {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
-            {settling && <WordStamp />}
-          </div>
-        );
-      })}
-      {blind.sequence.length > 0 && <PatternChip judgment={judgment} />}
+      {blind.sequence.map((sub, i) => (
+        <SubmittedWord
+          key={`${sub.text}-${i}`}
+          sub={sub}
+          settling={settle.active && i === last}
+          lexicon={lexicon}
+        />
+      ))}
+      {blind.sequence.length > 0 && (
+        <PatternChip judgment={judgment} patternLevels={patternLevels} />
+      )}
     </div>
   );
 }

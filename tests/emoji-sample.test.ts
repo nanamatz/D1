@@ -13,6 +13,7 @@ import { startBlind } from '../src/engine/loop';
 import { makeRng, type Rng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import type {
+  ChanceResult,
   Letter,
   OwnedJoker,
   RunState,
@@ -60,6 +61,7 @@ const ctxFor = (word: WordSubmission): WordScoringContext => ({
   submission: word,
   chips: 10,
   mult: 1,
+  baseSuit: word.suit,
   scoringSuits: new Set(word.suit ? [word.suit] : []),
   scoreBonus: 0,
 });
@@ -119,7 +121,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(ctx.mult).toBeCloseTo(1 + BALANCE.jokers.stargazer.factorPerCard);
   });
 
-  it('Dadaist makes gibberish virtual Slang without changing its canonical suit', () => {
+  it('Dadaist gives a gibberish hole the effective Slang register', () => {
     const run = runWith('dadaist');
     const blind = startBlind(run, makeRng('dada'));
     const ctx = ctxFor(submission('zzq', null, true));
@@ -160,7 +162,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(run.jokers[0]?.state.factor).toBe(2.25);
   });
 
-  it('Tower of Babel makes valid words virtual members of all four registers', () => {
+  it('Tower of Babel makes valid words members of all four final registers', () => {
     const run = runWith('towerOfBabel');
     const blind = startBlind(run, makeRng('babel'));
     const ctx = ctxFor(submission('plain', 'standard'));
@@ -176,9 +178,13 @@ describe('Emoji Tile sample 10 — mechanics', () => {
   it('Misbound grows on survival and removes itself on the seeded failure', () => {
     const run = runWith('misbound');
     const blind = startBlind(run, makeRng('misbound'));
-    const survived = onBlindEnded(run, blind, fixedRng(1));
-    expect(survived.jokers[0]?.state.factor).toBe(1.3);
-    expect(onBlindEnded(survived, blind, fixedRng(0)).jokers).toHaveLength(0);
+    const survivedResults: ChanceResult[] = [];
+    const survived = onBlindEnded(run, blind, fixedRng(1), survivedResults);
+    expect(survived.jokers[0]?.state.factor).toBe(1.8);
+    expect(survivedResults[0]).toMatchObject({ sourceId: 'misbound', outcome: 'survived' });
+    const destroyedResults: ChanceResult[] = [];
+    expect(onBlindEnded(survived, blind, fixedRng(0), destroyedResults).jokers).toHaveLength(0);
+    expect(destroyedResults[0]).toMatchObject({ sourceId: 'misbound', outcome: 'destroyed' });
   });
 });
 

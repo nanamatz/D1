@@ -34,7 +34,10 @@ export interface Lifetime {
   bestWord: string;
   mostGold: number;
   pouchWins: PouchId[];
+  /** Aggregate wins used by Starting Pouch unlock conditions. */
   recordWins: RecordId[];
+  /** Record ladder progress is independent for every Starting Pouch. */
+  recordWinsByPouch: Partial<Record<PouchId, RecordId[]>>;
   balance: BalanceTelemetry;
 }
 
@@ -62,6 +65,7 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   mostGold: 0,
   pouchWins: [],
   recordWins: [],
+  recordWinsByPouch: {},
   balance: {
     version: 1,
     runs: 0,
@@ -95,6 +99,40 @@ function normalizeBalance(value: unknown): BalanceTelemetry {
   };
 }
 
+function normalizeRecordWins(value: unknown): RecordId[] {
+  return Array.isArray(value)
+    ? value.filter((id): id is RecordId => RECORD_IDS.includes(id as RecordId))
+    : [];
+}
+
+function normalizeRecordWinsByPouch(
+  value: unknown,
+): Partial<Record<PouchId, RecordId[]>> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const normalized: Partial<Record<PouchId, RecordId[]>> = {};
+  for (const pouchId of POUCH_IDS) {
+    const wins = normalizeRecordWins((value as Partial<Record<PouchId, unknown>>)[pouchId]);
+    if (wins.length > 0) normalized[pouchId] = wins;
+  }
+  return normalized;
+}
+
+export function recordWinsForPouch(
+  lifetime: Pick<Lifetime, 'recordWinsByPouch'>,
+  pouchId: PouchId,
+): ReadonlySet<RecordId> {
+  return new Set(lifetime.recordWinsByPouch[pouchId] ?? []);
+}
+
+export function recordWinCount(
+  lifetime: Pick<Lifetime, 'recordWinsByPouch'>,
+): number {
+  return POUCH_IDS.reduce(
+    (total, pouchId) => total + new Set(lifetime.recordWinsByPouch[pouchId] ?? []).size,
+    0,
+  );
+}
+
 export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
   const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
   const empty = emptyLifetime(slot);
@@ -111,6 +149,10 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
   const storedBestWord = typeof stored.bestWord === 'string' ? stored.bestWord : '';
   const collectionBest = collectionHighlights(loadCollection(slot)).highestScore;
   const bestWord = collectionBest?.word ?? storedBestWord;
+  const recordWins = normalizeRecordWins(stored.recordWins);
+  const recordWinsByPouch = stored.recordWinsByPouch === undefined
+    ? (recordWins.length > 0 ? { yellow: recordWins } : {})
+    : normalizeRecordWinsByPouch(stored.recordWinsByPouch);
   return {
     ...empty,
     ...stored,
@@ -124,9 +166,8 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
     pouchWins: Array.isArray(stored.pouchWins)
       ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId))
       : [],
-    recordWins: Array.isArray(stored.recordWins)
-      ? stored.recordWins.filter((id): id is RecordId => RECORD_IDS.includes(id as RecordId))
-      : [],
+    recordWins,
+    recordWinsByPouch,
     balance: normalizeBalance(stored.balance),
   };
 }
@@ -150,9 +191,15 @@ export function recordRunEnd(r: RunResult): void {
   const lt = loadLifetime();
   const pouchWins = new Set(lt.pouchWins);
   const recordWins = new Set(lt.recordWins);
+  const recordWinsByPouch = { ...lt.recordWinsByPouch };
   if (r.won && !r.customSeed) {
     if (r.pouchId) pouchWins.add(r.pouchId);
     if (r.recordId) recordWins.add(r.recordId);
+    if (r.pouchId && r.recordId) {
+      recordWinsByPouch[r.pouchId] = [
+        ...new Set([...(recordWinsByPouch[r.pouchId] ?? []), r.recordId]),
+      ];
+    }
   }
   const balance = { ...lt.balance, lossesByChapter: { ...lt.balance.lossesByChapter } };
   if (!r.customSeed) {
@@ -173,6 +220,7 @@ export function recordRunEnd(r: RunResult): void {
     mostGold: Math.max(lt.mostGold, r.gold),
     pouchWins: [...pouchWins],
     recordWins: [...recordWins],
+    recordWinsByPouch,
     balance,
   };
   writeLifetime(next);

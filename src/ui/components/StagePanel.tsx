@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { isVowel, type Tile } from '../../engine/types';
+import { fontEffectOf } from '../../engine/fonts';
 import type { SortMode, StagePreview } from '../game';
 import {
   SORT_MODES,
@@ -40,7 +41,14 @@ export function StagePanel({
   const [discardMarks, setDiscardMarks] = useState<string[]>([]);
   // item 4 (discard half): short-lived fly-out ghosts for discarded tiles, captured
   // relative to `.stage` so they land correctly regardless of board scale/zoom.
-  const [flying, setFlying] = useState<{ tile: Tile; x: number; y: number; w: number; h: number }[]>([]);
+  const [flying, setFlying] = useState<{
+    tile: Tile;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    triggered: boolean;
+  }[]>([]);
   const [bossFlying, setBossFlying] = useState<
     { tile: Tile; x: number; y: number; w: number; h: number }[]
   >([]);
@@ -210,11 +218,18 @@ export function StagePanel({
           const tile = blind.hand.find((tl) => tl.id === id);
           if (!el || !tile || !stageRect) return null;
           const r = el.getBoundingClientRect();
-          return { tile, x: r.left - stageRect.left, y: r.top - stageRect.top, w: r.width, h: r.height };
+          return {
+            tile,
+            x: r.left - stageRect.left,
+            y: r.top - stageRect.top,
+            w: r.width,
+            h: r.height,
+            triggered: fontEffectOf(tile.font) === 'discardGain',
+          };
         })
-        .filter(Boolean) as { tile: Tile; x: number; y: number; w: number; h: number }[];
+        .filter(Boolean) as typeof flying;
       setFlying(ghosts);
-      setTimeout(() => setFlying([]), 340);
+      setTimeout(() => setFlying([]), 760);
     }
     g.discard(validMarks);
     setDiscardMarks([]);
@@ -322,7 +337,9 @@ export function StagePanel({
           {flying.map((f, i) => (
             <span
               key={`${f.tile.id}-${i}`}
-              className="discard-ghost"
+              className={['discard-ghost', f.triggered ? 'discard-triggered' : '']
+                .filter(Boolean)
+                .join(' ')}
               style={{ left: f.x, top: f.y, width: f.w, height: f.h }}
             >
               <TileView tile={f.tile} />

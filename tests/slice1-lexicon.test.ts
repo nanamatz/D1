@@ -34,12 +34,25 @@ describe('slice1 lexicon — validity + baked lookup (GDD §3.2, §4.2)', () => 
   it('returns null when looking up a non-word', () => {
     expect(lex.lookup('zzzzz')).toBeNull();
   });
+
+  it('excludes words longer than the playable 18-letter ceiling', () => {
+    const capped = makeLexicon(['abcdefghijklmnopqr', 'abcdefghijklmnopqrs'], {
+      abcdefghijklmnopqrs: { suit: 'standard', pos: ['noun'] },
+    });
+    expect(capped.isWord('abcdefghijklmnopqr')).toBe(true);
+    expect(capped.isWord('abcdefghijklmnopqrs')).toBe(false);
+  });
 });
 
 describe('slice1 lexicon — parsers', () => {
   it('parseDictionary lowercases, trims, and drops blanks/comments', () => {
     const words = parseDictionary('Cat\n\n  RUN  \n# a comment\npizza\n');
     expect(words).toEqual(['cat', 'run', 'pizza']);
+  });
+
+  it('parseDictionary drops words longer than 18 letters', () => {
+    expect(parseDictionary('abcdefghijklmnopqr\nabcdefghijklmnopqrs\n'))
+      .toEqual(['abcdefghijklmnopqr']);
   });
 
   it('parseLexiconTable reads the baked {word:{suit,pos}} JSON', () => {

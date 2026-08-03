@@ -49,7 +49,6 @@ import { FABLE_DEFS } from '../../engine/fables';
 import { CONSTELLATION_DEFS } from '../../engine/constellations';
 import { voucherCollectionCopy } from '../voucherCollection';
 import { GAMBLER_CARDS } from '../gamblerArt';
-import { GAMBLER_IDS } from '../../engine/gamblers';
 import { CardArt, type CardFamily } from './CardArt';
 import { TiltCard } from './TiltCard';
 import { useSettings } from '../settings';
@@ -1024,13 +1023,7 @@ function GamblerCardsView() {
       family="gambler"
       items={GAMBLER_CARDS}
       name={(card) => (lang === 'ko' ? card.nameKo : card.nameEn)}
-      // Rainman and Sake Cup have art but no engine definition — their effects
-      // stay pending in GDD §10.3, so they keep the placeholder line.
-      body={(card) =>
-        (GAMBLER_IDS as readonly string[]).includes(card.id)
-          ? t(consumableDescKey(card.id))
-          : t('collection.gambler.effectPending')
-      }
+      body={(card) => t(consumableDescKey(card.id))}
     />
   );
 }

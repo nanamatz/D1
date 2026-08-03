@@ -8,6 +8,7 @@ import { sellValue } from './economy';
 import { ALL_JOKERS, JOKER_REGISTRY, onTilesDestroyed } from './jokers';
 import type {
   BlindState,
+  ChanceResult,
   ConsumableId,
   JokerEdition,
   Letter,
@@ -346,6 +347,7 @@ export interface UseFableResult {
   run: RunState;
   blind: BlindState;
   requestHint: boolean;
+  chanceResults: ChanceResult[];
 }
 
 export function useFable(
@@ -356,7 +358,7 @@ export function useFable(
   rng: Rng,
 ): UseFableResult {
   if (!canUseFable(id, run, blind, selectedIds)) {
-    return { ok: false, run, blind, requestHint: false };
+    return { ok: false, run, blind, requestHint: false, chanceResults: [] };
   }
   const effect = FABLE_REGISTRY.get(id)!.effect;
   const index = run.consumables.indexOf(id);
@@ -369,6 +371,7 @@ export function useFable(
   };
   let nextBlind = blind;
   let requestHint = false;
+  const chanceResults: ChanceResult[] = [];
 
   if (effect.kind === 'hint') requestHint = true;
   else if (effect.kind === 'copyLast') {
@@ -398,7 +401,10 @@ export function useFable(
     const eligible = nextRun.jokers
       .map((joker, index) => ({ joker, index }))
       .filter(({ joker }) => (joker.edition ?? 'base') === 'base');
-    if (rng.next() < 0.25) {
+    const chance = BALANCE.fables.cowherdEditionChance;
+    const success = rng.next() < chance;
+    chanceResults.push({ chance, label: 'edition', outcome: success ? 'success' : 'failure' });
+    if (success) {
       const target = eligible[rng.int(eligible.length)]!;
       const editions: readonly JokerEdition[] = ['gray', 'violet', 'rainbow'];
       const jokers = nextRun.jokers.slice();
@@ -419,5 +425,5 @@ export function useFable(
     nextRun = onTilesDestroyed(nextRun, selectedIds.length);
   }
 
-  return { ok: true, run: nextRun, blind: nextBlind, requestHint };
+  return { ok: true, run: nextRun, blind: nextBlind, requestHint, chanceResults };
 }

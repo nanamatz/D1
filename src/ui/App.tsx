@@ -10,6 +10,7 @@ import { CrtOverlay } from './components/CrtOverlay';
 import { LoadingScreen } from './components/LoadingScreen';
 import { PatternLevelUp } from './components/PatternLevelUp';
 import { ConsumableEffect } from './components/ConsumableEffect';
+import { JokerChanceEffect } from './components/JokerChanceEffect';
 import { SaveHealthNotice } from './components/SaveHealthNotice';
 import type { Lexicon } from '../engine/lexicon';
 
@@ -189,6 +190,7 @@ export function App() {
           <ChromaticReveal />
           <PatternLevelUp />
           <ConsumableEffect />
+          <JokerChanceEffect />
         </>
       )}
       {/* Emoji Tile art chroma gate — applyPresentation (unlocks.ts) rewrites the

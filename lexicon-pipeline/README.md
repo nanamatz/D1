@@ -26,7 +26,7 @@ node lexicon-pipeline/classify-registers.mjs
 npm run check:data
 ```
 
-`dictionary.txt` contains every ENABLE word plus apostrophe-free tile-grammar
+`dictionary.txt` contains every ENABLE word of 18 letters or fewer plus apostrophe-free tile-grammar
 exceptions. `classify-wordnet.mjs` preserves every existing non-empty entry,
 then fills missing words from Moby and WordNet. WordNet morphology handles
 inflections and verb frames distinguish transitive, intransitive, and linking
@@ -34,10 +34,10 @@ uses. A deterministic suffix fallback gives the remaining obscure forms a
 non-empty POS. Register classification is a separate pass, so the POS builder
 defaults newly added words to Standard rather than applying legacy suit seeds.
 
-Current complete build: 172,836 dictionary words, 172,859 lexicon entries
+Current playable build: 172,228 dictionary words, 172,251 lexicon entries
 (23 retained pre-existing entries sit outside the dictionary). `check:data`
-rejects missing or empty POS and register-audit drift.
-Register distribution: Standard 169,065; Formal 2,675; Slang 879; Vulgar 240.
+rejects words over 18 letters, missing or empty POS, and register-audit drift.
+Register distribution: Standard 168,463; Formal 2,669; Slang 879; Vulgar 240.
 
 The authoritative rules and boundary examples live in
 `docs/# 영단어 레지스터 분류 기준.md`; `register-overrides.json` mirrors only

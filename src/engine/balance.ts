@@ -11,7 +11,7 @@ import type { FontEffectId, Letter, PackSize, PackType, TileFont } from './types
 
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
-  handSize: 11,
+  handSize: 10,
   basePhases: 5,
   discardsPerBlind: 4, // per-blind count; no per-use tile cap (playtest-04 D-4)
 
@@ -21,7 +21,7 @@ export const BALANCE = {
     blue: { phases: 1 },
     green: { gold: 10 },
     purple: { phaseGold: 2, discardGold: 1 },
-    fiveColor: { handSize: 2, jokerSlots: -1 },
+    fiveColor: { handSize: 1, jokerSlots: -1 },
     leather: { jokerSlots: 1, phases: -1 },
     military: { consumableSlots: -1 },
     lunchBag: { targetMult: 2 },
@@ -66,7 +66,7 @@ export const BALANCE = {
   //       Additive keeps the suit multiplier weighty instead of swamped. Valid words
   //       only (§6.4). The Longword letter hand (§5.5) is the Chips side of the same
   //       idea, so the two are not duplicates. Sim: src/sim/length-mult.ts. -----
-  wordLength: { multPerLetter: 1 },
+  wordLength: { multPerLetter: 1, maxLetters: 18 },
 
   // ----- Gibberish (GDD §6.4, decision b-2) -----
   gibberish: { mult: 1.0 }, // letter chips × 1.0; no suit, no POS, leaves a hole
@@ -106,26 +106,27 @@ export const BALANCE = {
   } as Record<Exclude<TileFont, 'medium'>, FontEffectId>,
 
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
-  //       Every pattern owns a base [chips × mult]; leveling raises both by
-  //       [levelChips, levelMult] per level above 1. The sentence bonus is a
+  //       Every pattern owns a base [chips × mult]; each level's increment
+  //       grows geometrically by patternLevelGrowthFactor. The sentence bonus is a
   //       self-contained (chips × mult) value ADDED to the blind score — patterns
   //       no longer multiply the running word total (the old add/multiply op split
   //       is retired). Chant additionally adds `repeatChips` per repeat beyond the
   //       2nd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
   patterns: {
-    outcry:       { rank: 1, baseChips: 15, baseMult: 2, levelChips: 10, levelMult: 0.5 },
-    imperative:   { rank: 2, baseChips: 25, baseMult: 3, levelChips: 10, levelMult: 0.5 },
-    chant:        { rank: 3, baseChips: 25, baseMult: 3, levelChips: 10, levelMult: 0.5, repeatChips: 10, repeatLevelChips: 5, repeatFloor: 2 },
+    outcry:       { rank: 1, baseChips: 15, baseMult: 2, levelChips: 10, levelMult: 1 },
+    imperative:   { rank: 2, baseChips: 25, baseMult: 3, levelChips: 10, levelMult: 1 },
+    chant:        { rank: 3, baseChips: 25, baseMult: 3, levelChips: 10, levelMult: 1, repeatChips: 10, repeatLevelChips: 5, repeatFloor: 2 },
     simple:       { rank: 4, baseChips: 40, baseMult: 3, levelChips: 15, levelMult: 1 },
     descriptive:  { rank: 5, baseChips: 45, baseMult: 4, levelChips: 15, levelMult: 1 },
     transitive:   { rank: 6, baseChips: 60, baseMult: 4, levelChips: 20, levelMult: 1 },
-    ditransitive: { rank: 7, baseChips: 75, baseMult: 5, levelChips: 25, levelMult: 1.5 },
-    compound:     { rank: 8, baseChips: 90, baseMult: 5, levelChips: 30, levelMult: 1.5 },
+    ditransitive: { rank: 7, baseChips: 75, baseMult: 5, levelChips: 25, levelMult: 2 },
+    compound:     { rank: 8, baseChips: 90, baseMult: 5, levelChips: 30, levelMult: 2 },
     objectComplement: { rank: 9, baseChips: 115, baseMult: 6, levelChips: 35, levelMult: 2 },
     interrogative:    { rank: 10, baseChips: 135, baseMult: 6, levelChips: 40, levelMult: 2 },
-    negative:         { rank: 11, baseChips: 165, baseMult: 7, levelChips: 45, levelMult: 2.5 },
-    complex:          { rank: 12, baseChips: 195, baseMult: 7, levelChips: 50, levelMult: 2.5 },
+    negative:         { rank: 11, baseChips: 165, baseMult: 7, levelChips: 45, levelMult: 3 },
+    complex:          { rank: 12, baseChips: 195, baseMult: 7, levelChips: 50, levelMult: 3 },
   },
+  patternLevelGrowthFactor: 1.25,
 
   /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
    *  uniform on the Chips side for every pattern (the old multiply-pattern variant is gone). */
@@ -195,7 +196,7 @@ export const BALANCE = {
     investmentReward: 25,
     handyGoldPerHand: 1,
     garbageGoldPerDiscard: 1,
-    jugglerHandSize: 3,
+    jugglerHandSize: 1,
     economyGoldMultiplier: 2,
   },
 
@@ -282,15 +283,15 @@ export const BALANCE = {
     ceramicArtisan: { chips: 7 },
     longWordFan: { minLength: 5, chips: 80 },
     shortAndSharp: { maxLength: 3, mult: 10 },
-    alphabeticalOrder: { mult: 19 },
+    alphabeticalOrder: { mult: 15 },
     miser: { goldPer: 5, mult: 2 },
     alphabetSoup: { chipsPerDistinctLetter: 4 },
     redPencil: { chips: 23 },
     pocketDictionary: { mult: 7 },
     tongueTwister: { minLength: 6, mult: 10 },
     stenographer: { mult: 4 },
-    fillInTheBlank: { chips: 32 },
-    leftMargin: { chips: 19 },
+    fillInTheBlank: { chips: 80 },
+    leftMargin: { chips: 50 },
     rightMargin: { mult: 5 },
     pageNumber: { mult: 8 },
     bookmark: { chips: 25 },
@@ -322,7 +323,7 @@ export const BALANCE = {
     syllableScale: { difference: 1, chips: 100, mult: 5 },
     glassInsurance: { preventsPerBlind: 1 },
     growthRings: { chipsPerStep: 15, multPerStep: 4 },
-    materialSampler: { chipsPerMaterial: 25 },
+    materialSampler: { chipsPerMaterial: 30 },
     monomaterial: { mult: 10 },
     scrapDealer: { goldPerTile: 4 },
     lightTouch: { goldPerTile: 2 },
@@ -392,12 +393,12 @@ export const BALANCE = {
     dryingInk: { mult: 15, multLostPerVowelWord: 1 },
     proofEraser: { discards: 1 },
     spareDrawer: { handSize: 1 },
-    foldingManuscript: { handSize: 5, handSizeLostPerBlind: 1 },
+    foldingManuscript: { handSize: 2, handSizeLostPerBlind: 1 },
     // Legendary (§11.5)
     bookOfMargins: { slots: 3, factorPerEmptySlot: 2 },
     tyrant: { vulgarFactor: 2 },
     typeFoundry: { factorPerTile: 1.5 },
-    misbound: { destroyDenominator: 24, factorPerSurvival: 0.3 },
+    misbound: { destroyDenominator: 100, factorPerSurvival: 0.8 },
   },
   /** Q·Z·X·J — the Rare Earth (U3) letter set. */
   rareLetters: ['Q', 'Z', 'X', 'J'] as readonly Letter[],
@@ -412,11 +413,13 @@ export const BALANCE = {
     curtainCopies: 2,
     fullMoonDestroy: 1,
     fullMoonVowels: 3,
+    rainmanHandSizeLoss: 1,
   },
 
   // ----- Consumables (GDD §10) -----
   consumableSlots: 2,
   piggyBankCap: 20,
+  fables: { cowherdEditionChance: 0.25 },
 
   // ----- Boss effects (GDD §8.3) — per-boss knobs -----
   boss: {

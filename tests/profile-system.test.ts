@@ -82,6 +82,7 @@ describe('profile-scoped unlock all', () => {
     expect(readProfileValue('wj.vouchers', 1)).toBeNull();
     expect(loadLifetime(1).pouchWins).toEqual([]);
     expect(loadLifetime(1).recordWins).toEqual([]);
+    expect(loadLifetime(1).recordWinsByPouch).toEqual({});
 
     expect(loadLifetime(2)).toMatchObject({
       profileName: 'Second',
@@ -105,6 +106,9 @@ describe('profile-scoped unlock all', () => {
     );
     expect(loadLifetime(1).pouchWins).toEqual([...POUCH_IDS]);
     expect(loadLifetime(1).recordWins).toEqual([...RECORD_IDS]);
+    expect(loadLifetime(1).recordWinsByPouch).toEqual(
+      Object.fromEntries(POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]])),
+    );
     expect(loadLifetime(1).unlockAllApplied).toBe(true);
     expect(loadLifetime(1).challengesDisabled).toBe(true);
 
@@ -115,6 +119,7 @@ describe('profile-scoped unlock all', () => {
       profileName: 'Second',
       pouchWins: [],
       recordWins: [],
+      recordWinsByPouch: {},
       unlockAllWarned: false,
       unlockAllApplied: false,
       challengesDisabled: false,
@@ -144,6 +149,9 @@ describe('profile completion status', () => {
       ...loadLifetime(1),
       pouchWins: [...POUCH_IDS],
       recordWins: [...RECORD_IDS],
+      recordWinsByPouch: Object.fromEntries(
+        POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]]),
+      ),
     }, 1);
 
     expect(isProfileWorldComplete(1, completeLexicon)).toBe(true);

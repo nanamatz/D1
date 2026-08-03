@@ -12,7 +12,7 @@
  */
 
 import type {
-  BlindState, JokerRarity, Letter, LexiconEntry, OwnedJoker, RunState,
+  BlindState, ChanceResult, JokerRarity, Letter, LexiconEntry, OwnedJoker, RunState,
   SentenceScoringContext, Tile, WordScoringContext,
 } from './types';
 import type { Rng } from './rng';
@@ -26,8 +26,8 @@ export interface EngineEvents {
   /** mutable spelling projection before lexicon lookup; scoring still uses every submitted tile */
   wordPrepare: { run: RunState; blind: BlindState; tiles: readonly Tile[]; spellingTiles: Tile[] };
 
-  /** rule-changing pass before shelf-ordered scoring hooks. It may extend
-   *  ctx.scoringSuits, but never mutates submission.suit/POS. */
+  /** Rule-changing pass before shelf-ordered scoring hooks. It may rewrite
+   * submission.suit/scoringSuits; gibberish still keeps suit/POS null. */
   wordRules: { run: RunState; blind: BlindState; ctx: WordScoringContext };
 
   /** a word's chips/mult are being computed — THE main scoring hook.
@@ -110,13 +110,19 @@ export interface EngineEvents {
   tilesCreated: { run: RunState; count: number };
 
   /** blind ended. early=true when ended via the projected≥target trigger */
-  blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number; rng: Rng };
+  blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number; rng: Rng; chanceResults: ChanceResult[] };
 
   /** shop entered / left — for economy jokers */
   shopEnter: { run: RunState };
 }
 
 export type EngineEventName = keyof EngineEvents;
+
+export interface JokerGrowthTrigger {
+  jokerId: string;
+  kind: 'mult' | 'multAdd' | 'chips';
+  delta: number;
+}
 
 export type JokerHandler<E extends EngineEventName> = (
   payload: EngineEvents[E],
@@ -139,9 +145,12 @@ export interface JokerDef {
   layer: 1 | 2 | 3;
   price: number; // placeholder, see balance.ts
   scalingAxis?: keyof RunState['counters'];
-  /** Preserve multiplicative Mult semantics in the settle log so the UI can
-   *  present ×factor instead of flattening the effect into an additive delta. */
+  /** Preserve multiplicative scoring semantics in the settle log so the UI can
+   * present ×factor instead of flattening the effect into an additive delta. */
+  chipsOperation?: 'multiply';
+  chipsDisplayFactor?: number;
   multOperation?: 'multiply';
+  multDisplayFactor?: number;
   /** Optional live-value row for scaling Emoji Tile tooltips.
    *  `mult` = a ×factor, `multAdd` = an additive +Mult, `chips` = additive +Chips. */
   growthDisplay?: {
@@ -182,7 +191,8 @@ export class JokerBus {
     event: E,
     payload: EngineEvents[E],
     owned: OwnedJoker[],
-  ): void {
+  ): JokerGrowthTrigger[] {
+    const growth: JokerGrowthTrigger[] = [];
     for (let index = 0; index < owned.length; index++) {
       const joker = owned[index]!;
       // Generic boss debuff marker. The owner stays in place, but every hook and
@@ -190,7 +200,15 @@ export class JokerBus {
       if (joker.state.bossDisabled === 1) continue;
       const def = this.defs.get(joker.defId);
       const handler = def?.hooks[event];
-      if (handler) handler(payload, joker, { index, lookup: (id) => this.defs.get(id) });
+      if (!handler) continue;
+      const display = def?.growthDisplay;
+      const before = display ? joker.state[display.stateKey] ?? display.initial : 0;
+      handler(payload, joker, { index, lookup: (id) => this.defs.get(id) });
+      if (display) {
+        const delta = (joker.state[display.stateKey] ?? display.initial) - before;
+        if (delta > 0) growth.push({ jokerId: joker.defId, kind: display.kind, delta });
+      }
     }
+    return growth;
   }
 }

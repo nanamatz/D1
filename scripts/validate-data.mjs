@@ -17,8 +17,9 @@ const dictionary = readFileSync(resolve(root, 'data/dictionary.txt'), 'utf8')
   .split(/\r?\n/)
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
-const dictionaryTarget = 172836; // ENABLE 172,823 + 13 tile-grammar exceptions
-const lexiconTarget = 172859; // dictionary + 23 retained pre-existing entries
+const maxWordLength = 18;
+const dictionaryTarget = 172228; // eligible ENABLE words + 13 tile-grammar exceptions
+const lexiconTarget = 172251; // dictionary + 23 retained pre-existing entries
 const suits = new Set(['standard', 'formal', 'slang', 'vulgar']);
 const parts = new Set([
   'noun',
@@ -46,6 +47,9 @@ if (new Set(dictionary).size !== dictionary.length) {
 if (dictionary.some((word) => !/^[a-z]+$/.test(word))) {
   errors.push('dictionary: invalid word');
 }
+if (dictionary.some((word) => word.length > maxWordLength)) {
+  errors.push(`dictionary: word exceeds ${maxWordLength} letters`);
+}
 if (dictionary.some((word, index) => index > 0 && dictionary[index - 1].localeCompare(word) > 0)) {
   errors.push('dictionary: words are not sorted');
 }
@@ -54,6 +58,7 @@ for (const word of dictionary) {
 }
 for (const [word, entry] of Object.entries(table)) {
   if (!/^[a-z]+$/.test(word)) errors.push(`${word}: invalid key`);
+  if (word.length > maxWordLength) errors.push(`${word}: exceeds ${maxWordLength} letters`);
   if (!entry || typeof entry !== 'object') {
     errors.push(`${word}: invalid entry`);
     continue;

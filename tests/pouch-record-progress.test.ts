@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { loadLifetime, recordRunEnd } from '../src/ui/lifetime';
+import { isRecordUnlocked } from '../src/engine/records';
+import { loadLifetime, recordRunEnd, recordWinsForPouch } from '../src/ui/lifetime';
 
 class MemStorage {
   private store = new Map<string, string>();
@@ -41,6 +42,7 @@ describe('pouch and Record profile progress', () => {
     });
     expect(loadLifetime().pouchWins).toEqual(['yellow']);
     expect(loadLifetime().recordWins).toEqual(['whiteLp']);
+    expect(loadLifetime().recordWinsByPouch).toEqual({ yellow: ['whiteLp'] });
     expect(loadLifetime().wins).toBe(2);
     expect(loadLifetime().balance).toEqual({
       version: 1,
@@ -71,6 +73,7 @@ describe('pouch and Record profile progress', () => {
     });
     expect(loadLifetime().pouchWins).toEqual([]);
     expect(loadLifetime().recordWins).toEqual([]);
+    expect(loadLifetime().recordWinsByPouch).toEqual({});
     expect(loadLifetime().wins).toBe(1);
     expect(loadLifetime().balance).toEqual({
       version: 1,
@@ -88,8 +91,39 @@ describe('pouch and Record profile progress', () => {
       mostGold: 12,
       pouchWins: [],
       recordWins: [],
+      recordWinsByPouch: {},
       balance: { version: 1, runs: 0, wins: 0, lossesByChapter: {} },
     });
+  });
+
+  it('keeps the Record ladder independent for every pouch', () => {
+    recordRunEnd({
+      ante: 8,
+      gold: 20,
+      bestWord: null,
+      won: true,
+      pouchId: 'yellow',
+      recordId: 'whiteLp',
+      customSeed: false,
+    });
+
+    const lifetime = loadLifetime();
+    const yellowWins = recordWinsForPouch(lifetime, 'yellow');
+    const blueWins = recordWinsForPouch(lifetime, 'blue');
+    expect([...yellowWins]).toEqual(['whiteLp']);
+    expect([...blueWins]).toEqual([]);
+    expect(isRecordUnlocked('redLp', yellowWins)).toBe(true);
+    expect(isRecordUnlocked('redLp', blueWins)).toBe(false);
+  });
+
+  it('migrates legacy global Record wins to Yellow Pouch only', () => {
+    localStorage.setItem('wj.lifetime', JSON.stringify({
+      recordWins: ['whiteLp', 'redLp'],
+    }));
+
+    const lifetime = loadLifetime();
+    expect([...recordWinsForPouch(lifetime, 'yellow')]).toEqual(['whiteLp', 'redLp']);
+    expect([...recordWinsForPouch(lifetime, 'blue')]).toEqual([]);
   });
 
   it('recomputes a legacy best-word score from intrinsic letter chips', () => {

@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
+import { submissionHasSuit } from '../types';
 
 export const civilTongue: JokerDef = {
   id: 'civilTongue', gddNumber: 14, nameKo: '정중한 입', nameEn: 'Civil Tongue',
@@ -8,7 +9,7 @@ export const civilTongue: JokerDef = {
   hooks: {
     wordScoring: ({ ctx }, self) => { ctx.mult += self.state.mult ?? 0; },
     blindEnd: ({ blind }, self) => {
-      if (!blind.sequence.some((word) => word.suit === 'vulgar')) {
+      if (!blind.sequence.some((word) => submissionHasSuit(word, 'vulgar'))) {
         self.state.mult = (self.state.mult ?? 0) + BALANCE.jokers.civilTongue.multPerBlind;
       }
     },

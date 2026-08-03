@@ -73,8 +73,9 @@ export function consumableTooltipExtra(
 export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
-const TILE_FONTS: readonly TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
-const TILE_MATERIALS: readonly TileMaterial[] = ['ceramic', ...MATERIAL_REGISTRY.keys()];
+const TILE_FONTS: readonly TileFont[] = ['lightItalic', 'bold', 'inline', 'black'];
+const TILE_MATERIALS: readonly TileMaterial[] = [...MATERIAL_REGISTRY.keys()]
+  .filter((material): material is Exclude<TileMaterial, 'ceramic'> => material !== 'ceramic');
 const REFERENCED_EDITIONS = [
   ['gray', 'G'],
   ['violet', 'v'],
@@ -137,7 +138,7 @@ export function consumableAxisTip(
 ): { title: string; body: string; kind: 'material' } | null {
   if (!isFableId(id)) return null;
   const effect = FABLE_REGISTRY.get(id)?.effect;
-  if (effect?.kind === 'material') {
+  if (effect?.kind === 'material' && effect.material !== 'ceramic') {
     return {
       title: t(`material.${effect.material}`),
       body: t(`materialdesc.${effect.material}`),

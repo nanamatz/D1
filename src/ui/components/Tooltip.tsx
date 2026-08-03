@@ -35,6 +35,8 @@ interface Props {
   sub?: TooltipDetail | readonly TooltipDetail[] | undefined;
   /** Compact letter-tile shape. */
   compact?: boolean;
+  /** Gameplay state stamped into the tooltip as well as the object itself. */
+  status?: 'disabled' | 'debuffed' | undefined;
   /** Use an existing DOM node without adding a layout wrapper. */
   anchorRef?: RefObject<HTMLElement | null>;
   disabled?: boolean;
@@ -88,7 +90,10 @@ export function splitTooltipDetails(details: readonly TooltipDetail[]): {
 }
 
 export const stripTooltipPeriods = (text: string): string =>
-  text.replace(/\.(?!\d)|。/g, '');
+  text
+    .replace(/(?:\.(?!\d)|。)[ \t]*/g, (match, offset: number, source: string) =>
+      source.slice(offset + match.length).trim().length > 0 ? '\n' : '')
+    .replace(/\n{2,}/g, '\n');
 
 /** Size supplemental cards from visible copy, not rich-text control markup. */
 export function supplementalTooltipWidth(detail: TooltipDetail): number {
@@ -174,6 +179,7 @@ export function Tooltip({
   down,
   sub,
   compact,
+  status,
   anchorRef: externalAnchorRef,
   disabled = false,
   children,
@@ -325,6 +331,9 @@ export function Tooltip({
         <span className={['tt-classification', classification].join(' ')}>
           {t(`tooltip.classification.${classification}`)}
         </span>
+      )}
+      {status && (
+        <span className={['tt-status', status].join(' ')}>{t(`tooltip.status.${status}`)}</span>
       )}
       {tags?.map((tag, index) => (
         <span

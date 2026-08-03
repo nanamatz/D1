@@ -5,13 +5,15 @@ const sidebar = readFileSync('src/ui/components/Sidebar.tsx', 'utf8');
 const css = readFileSync('src/ui/styles/play.css', 'utf8');
 
 describe('tomato motion anchoring', () => {
-  it('separates the fixed panel anchor from the animated motion layer', () => {
+  it('keeps the animated tomato in score flow so long values cannot overlap it', () => {
     expect(sidebar).toContain('className="tomato-anchor"');
     expect(sidebar).toContain("!settle.active && !bonusActive && 'idle'");
     expect(sidebar).toContain("hop && !settle.active && !bonusActive && 'hop'");
     expect(css).toContain('.tomato-motion.idle');
     expect(css).toContain('.tomato-motion.hop');
-    expect(css).toMatch(/\.round-panel \.tomato-anchor\s*\{[^}]*position:\s*absolute/s);
+    expect(sidebar).toContain('className="round-score-value"');
+    expect(css).toMatch(/\.round-num\s*\{[^}]*display:\s*inline-flex/s);
+    expect(css).toMatch(/\.round-panel \.tomato-anchor\s*\{[^}]*position:\s*static/s);
     expect(css).toMatch(/\.round-panel \.tomato-icon\s*\{[^}]*position:\s*static/s);
   });
 

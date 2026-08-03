@@ -13,7 +13,7 @@ export const dadaist: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     wordRules: ({ ctx }) => {
-      if (ctx.submission.isGibberish) ctx.scoringSuits?.add('slang');
+      if (ctx.submission.isGibberish) ctx.scoringSuits = new Set(['slang']);
     },
     wordScoring: ({ ctx }) => {
       if (ctx.submission.isGibberish) ctx.mult *= BALANCE.jokers.dadaist.factor;

@@ -301,8 +301,9 @@ export function PackOpening({
     setPicking(key);
     window.setTimeout(() => {
       if (pack.picksLeft <= 1) {
-        setClosing(true);
-        window.setTimeout(resolvePick, 360);
+        // Resolve first: result vignettes live above the pack and must begin before
+        // the final pick removes this screen. The former close-first delay hid them.
+        resolvePick();
       } else {
         resolvePick();
       }
@@ -336,8 +337,7 @@ export function PackOpening({
       // Hold the completed result for half a second before the pack begins closing.
       window.setTimeout(() => {
         if (pack.picksLeft <= 1) {
-          setClosing(true);
-          window.setTimeout(resolvePick, 360);
+          resolvePick();
         } else {
           resolvePick();
           // The committed candidate state replaces the preview in this render.

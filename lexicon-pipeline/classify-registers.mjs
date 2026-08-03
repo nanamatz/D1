@@ -18,15 +18,20 @@ const PRIMARY = args.primary ?? 'lexicon-pipeline/wiktionary-primary-registers.j
 const OVERRIDES = args.overrides ?? 'lexicon-pipeline/register-overrides.json';
 const OUT = args.out ?? LEXICON;
 const AUDIT = args.audit ?? 'data/register-audit.json';
+const MAX_WORD_LENGTH = 18;
 const SUITS = ['standard', 'formal', 'slang', 'vulgar'];
 const STRENGTH = Object.fromEntries(SUITS.map((suit, index) => [suit, index]));
 
-const lexicon = JSON.parse(fs.readFileSync(LEXICON, 'utf8'));
+const lexicon = Object.fromEntries(
+  Object.entries(JSON.parse(fs.readFileSync(LEXICON, 'utf8')))
+    .filter(([word]) => word.length <= MAX_WORD_LENGTH),
+);
 const primary = JSON.parse(fs.readFileSync(PRIMARY, 'utf8'));
 const overrides = JSON.parse(fs.readFileSync(OVERRIDES, 'utf8'));
 const decisions = new Map();
 
 for (const [word, entry] of Object.entries(primary.words)) {
+  if (word.length > MAX_WORD_LENGTH) continue;
   decisions.set(word, {
     suit: entry.register,
     assignment: 'primary-sense',

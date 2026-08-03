@@ -3,7 +3,7 @@ import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
 import { RECORD_IDS, isRecordUnlocked } from '../../engine/records';
 import type { BlindKind, PouchId, RecordId } from '../../engine/types';
 import { useI18n } from '../i18n';
-import { loadLifetime } from '../lifetime';
+import { loadLifetime, recordWinsForPouch } from '../lifetime';
 import { pouchUnlockWordCount } from '../profile';
 import { pouchArt } from '../pouchArt';
 import { recordArt } from '../recordArt';
@@ -205,10 +205,11 @@ function NewRunBody({
       discoveredWords: pouchUnlockWordCount(),
       pouchWins: new Set(lifetime.pouchWins),
       recordWins: new Set(lifetime.recordWins),
+      recordWinsByPouch: lifetime.recordWinsByPouch,
     };
   }, []);
   const pouchUnlocked = isPouchUnlocked(pouchId, progress);
-  const recordUnlocked = isRecordUnlocked(recordId, progress.recordWins);
+  const recordUnlocked = isRecordUnlocked(recordId, recordWinsForPouch(progress, pouchId));
   const canStart = pouchUnlocked && recordUnlocked && (!seeded || seed.trim().length > 0);
 
   const choice = (

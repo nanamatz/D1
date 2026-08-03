@@ -1,7 +1,7 @@
 # Runtime lexicon data
 
-`dictionary.txt` contains all 172,823 ENABLE words plus 13 apostrophe-free
-tile-grammar exceptions. `lexicon.json` gives every dictionary word a non-empty
+`dictionary.txt` contains every ENABLE word of 18 letters or fewer plus 13
+apostrophe-free tile-grammar exceptions (172,228 total). `lexicon.json` gives every dictionary word a non-empty
 POS list: existing curated tags stay authoritative, then public-domain Moby POS
 and Princeton WordNet 3.0 fill the expanded pool; a deterministic suffix fallback
 covers remaining obscure forms.
@@ -15,8 +15,9 @@ non-standard lemma. All other and ambiguous words deliberately default to
 Standard. `register-audit.json` records the full review counts and the evidence
 path for every non-standard assignment.
 
-Current 172,859-entry distribution: Standard 169,065; Formal 2,675; Slang 879;
-Vulgar 240.
+The current lexicon contains 172,251 entries, including 23 retained entries
+outside the dictionary. No playable entry exceeds 18 letters. Distribution:
+Standard 168,463; Formal 2,669; Slang 879; Vulgar 240.
 
 Moby Part-of-Speech II is public domain. WordNet-derived data retains Princeton's
 notice in `WORDNET_LICENSE.txt`. Wiktionary-derived register data retains source,

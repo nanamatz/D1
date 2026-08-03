@@ -111,7 +111,7 @@ After each slice, write a tiny scenario in `src/sim/` exercising it headlessly.
 
 ## Data files (`data/`)
 
-- `dictionary.txt` — complete lowercase ENABLE pool plus documented tile-grammar exceptions (GDD §3.2).
+- `dictionary.txt` — lowercase ENABLE words up to 18 letters plus documented tile-grammar exceptions (GDD §3.2).
 - `lexicon.json` — complete baked `{ word: { suit, pos[] } }` table. Register classification follows `docs/# 영단어 레지스터 분류 기준.md`; every entry has non-empty POS.
 - The reproducible POS/register pipeline lives in `lexicon-pipeline/` and runs offline only. Never fetch or classify words in the game runtime.
 

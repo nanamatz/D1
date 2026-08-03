@@ -41,6 +41,7 @@ describe('starting pouches', () => {
     const out = resolveBlind(purple, blind, 1);
     expect(out.earned).toEqual({
       reward: BALANCE.clearReward.small,
+      tagReward: 0,
       phaseCount: 2,
       phases: 4,
       discardCount: 2,
@@ -52,7 +53,8 @@ describe('starting pouches', () => {
 
   it('applies slots, hand size, phase penalties, materials, vouchers, and cards', () => {
     const five = runWith('fiveColor');
-    expect(five.handSize).toBe(BALANCE.handSize + 2);
+    expect(BALANCE.handSize).toBe(10);
+    expect(five.handSize).toBe(BALANCE.handSize + 1);
     expect(five.jokerSlots).toBe(BALANCE.jokerSlots - 1);
 
     const leather = runWith('leather');
@@ -87,7 +89,7 @@ describe('starting pouches', () => {
   it('composes pouch bonuses with cumulative Record penalties before resource floors', () => {
     expect(runWith('yellow', 'yellowLp').baseDiscards).toBe(BALANCE.discardsPerBlind);
     expect(runWith('blue', 'clearLp').basePhases).toBe(BALANCE.basePhases);
-    expect(runWith('fiveColor', 'blueLp').handSize).toBe(BALANCE.handSize + 1);
+    expect(runWith('fiveColor', 'blueLp').handSize).toBe(BALANCE.handSize);
     expect(runWith('fiveColor', 'cd').jokerSlots).toBe(BALANCE.jokerSlots - 2);
     expect(runWith('leather', 'cd').jokerSlots).toBe(BALANCE.jokerSlots);
   });

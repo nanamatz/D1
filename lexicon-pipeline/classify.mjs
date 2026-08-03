@@ -39,6 +39,7 @@ const OVERRIDES_PATH = args.overrides ?? 'lexicon-pipeline/register-overrides.js
 const LIMIT = args.limit ? parseInt(args.limit, 10) : Infinity;
 const MODEL = args.model ?? 'claude-haiku-4-5-20251001'; // classification task — no need for Sonnet/Opus
 const BATCH_SIZE = args.batch ? parseInt(args.batch, 10) : 100;
+const MAX_WORD_LENGTH = 18;
 
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 if (!API_KEY) {
@@ -52,7 +53,8 @@ const readLines = (p) =>
     ? fs.readFileSync(p, 'utf8').split('\n').map((w) => w.trim().toLowerCase()).filter(Boolean)
     : [];
 
-const words = [...new Set(readLines(WORDS_PATH))].slice(0, LIMIT);
+const words = [...new Set(readLines(WORDS_PATH).filter((word) => word.length <= MAX_WORD_LENGTH))]
+  .slice(0, LIMIT);
 
 const SUITS = ['standard', 'formal', 'slang', 'vulgar'];
 const overrides = JSON.parse(fs.readFileSync(OVERRIDES_PATH, 'utf8'));
@@ -66,6 +68,9 @@ let lexicon = {};
 if (fs.existsSync(OUT_PATH)) {
   try { lexicon = JSON.parse(fs.readFileSync(OUT_PATH, 'utf8')); } catch { lexicon = {}; }
 }
+lexicon = Object.fromEntries(
+  Object.entries(lexicon).filter(([word]) => word.length <= MAX_WORD_LENGTH),
+);
 
 const POS_VALUES = [
   'noun', 'verbIntransitive', 'verbTransitive', 'verbLinking',

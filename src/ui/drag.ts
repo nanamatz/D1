@@ -104,11 +104,28 @@ export function useStageDrag(
     };
 
     // The tile the cursor is BEFORE within a zone (null → append past the last).
-    const targetAt = (container: HTMLElement | null, clientX: number): string | null => {
+    const targetAt = (
+      container: HTMLElement | null,
+      clientX: number,
+      clientY: number,
+    ): string | null => {
       if (!container) return null;
-      for (const c of Array.from(container.querySelectorAll<HTMLElement>('[data-tile-id]'))) {
+      const candidates = Array.from(container.querySelectorAll<HTMLElement>('[data-tile-id]'))
+        .filter((candidate) => candidate !== el)
+        .map((candidate) => ({ candidate, rect: candidate.getBoundingClientRect() }));
+      if (candidates.length === 0) return null;
+      const nearestY = Math.min(...candidates.map(({ rect }) =>
+        clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0));
+      const row = candidates.filter(({ rect }) => {
+        const distance = clientY < rect.top
+          ? rect.top - clientY
+          : clientY > rect.bottom
+            ? clientY - rect.bottom
+            : 0;
+        return Math.abs(distance - nearestY) < 2;
+      });
+      for (const { candidate: c, rect: r } of row) {
         if (c === el) continue; // ignore the card being dragged
-        const r = c.getBoundingClientRect();
         if (clientX < r.left + r.width / 2) return c.dataset.tileId ?? null;
       }
       return null;
@@ -154,10 +171,10 @@ export function useStageDrag(
 
     // Spring siblings aside to open the gap at the current insertion point (transform
     // only — no React). Cards from the insertion index onward shift right by a card.
-    const layoutNeighbours = (dropZone: 'hand' | 'staged', clientX: number) => {
+    const layoutNeighbours = (dropZone: 'hand' | 'staged', clientX: number, clientY: number) => {
       const container = dropZone === 'staged' ? stagedRef.current : handRef.current;
       if (!container) return;
-      insertBefore = targetAt(container, clientX);
+      insertBefore = targetAt(container, clientX, clientY);
       let passedGap = false;
       for (const c of Array.from(container.querySelectorAll<HTMLElement>('[data-tile-id]'))) {
         if (c === el) continue;
@@ -244,7 +261,7 @@ export function useStageDrag(
       if (reduced() && el) {
         el.style.transform = `translate(${(targetX - homeX) / scale}px, ${(targetY - homeY) / scale}px)`;
       }
-      layoutNeighbours(zoneAt(e.clientY), e.clientX);
+      layoutNeighbours(zoneAt(e.clientY), e.clientX, e.clientY);
     };
 
     const finishDrop = (clientY: number) => {

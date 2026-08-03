@@ -50,15 +50,17 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.shop-sale-region > \.panel\s*\{[^}]*min-height:\s*var\(--shop-lower-panel-h\)/s);
   });
 
-  it('distinguishes additive from multiplicative Mult popups', () => {
+  it('distinguishes additive from multiplicative Chips and Mult popups', () => {
     const tile = source('src/ui/components/Tile.tsx');
     const settle = source('src/ui/settle.tsx');
     expect(tile).toContain(
       '<span className="mult">+{Number.isInteger(effectPop.mult)',
     );
     expect(tile).toContain('effectPop.multFactor !== undefined');
-    expect(settle).toMatch(/e\.kind === 'joker' \|\| e\.kind === 'edition' \|\| e\.kind === 'material'/);
-    expect(settle).toMatch(/e\.kind === 'material'[\s\S]*multFactor: e\.multFactor/);
+    expect(tile).toContain('effectPop.chipsFactor !== undefined');
+    expect(settle).toContain("'chipsFactor' in e");
+    expect(settle).toContain("'multFactor' in e");
+    expect(settle).toContain("chipsOp: chipsFactor !== undefined ? 'mul'");
     const shelf = source('src/ui/components/JokerShelf.tsx');
     expect(shelf).toContain('multFactor !== undefined ? `×${fmtMult(multFactor)}` : signed(mult)');
     expect(shelf).not.toContain('+×');
@@ -99,6 +101,15 @@ describe('latest feedback regressions', () => {
     const screens = source('src/ui/styles/screens.css');
     expect(collection).toContain('className="word-tab-panel"');
     expect(screens).toMatch(/\.word-tab-panel\s*\{[^}]*height:\s*300px;[^}]*overflow-y:\s*auto;/s);
+  });
+
+  it('uses pixel-pencil scrollbars only for genuine overflow', () => {
+    const tokens = source('src/ui/styles/tokens.css');
+    const screens = source('src/ui/styles/screens.css');
+    expect(tokens).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*linear-gradient\(to bottom,[^}]*#d76879/s);
+    expect(tokens).toMatch(/::-webkit-scrollbar-thumb:horizontal\s*\{[^}]*linear-gradient\(to right,[^}]*#d76879/s);
+    expect(`${tokens}\n${screens}\n${play}`).not.toMatch(/overflow(?:-[xy])?:\s*scroll[;\s]/);
+    expect(screens).not.toContain('scrollbar-gutter: stable');
   });
 
   it('animates only the Main Menu title and disables it for reduced motion', () => {

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { patternChipsMult } from '../../engine/patterns';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
-import { patternLevelBus, type PatternLevelEvent } from '../patternLevel';
+import { patternLevelBus, patternLevelClass, type PatternLevelEvent } from '../patternLevel';
 import { CardArt } from './CardArt';
 import { PatternIcon } from './UiIcon';
 
@@ -43,10 +43,14 @@ export function PatternLevelUp() {
   if (!evt) return null;
   const before = patternChipsMult(evt.pattern, evt.from);
   const after = patternChipsMult(evt.pattern, evt.to);
-  const fmt = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(1);
+  const fmt = String;
 
   return createPortal(
-    <div className="pattern-levelup" key={evt.id} aria-live="polite">
+    <div
+      className={['pattern-levelup', patternLevelClass(evt.to)].join(' ')}
+      key={evt.id}
+      aria-live="polite"
+    >
       <div className="plu-stage">
         <div className="plu-source">
           <CardArt family="constellation" id={evt.cardId} className="plu-source-art" />
@@ -58,9 +62,13 @@ export function PatternLevelUp() {
             {t(`pattern.${evt.pattern}`)}
           </div>
           <div className="plu-levels">
-            <span className="plu-from">{t('sidebar.patternLevel', { n: evt.from })}</span>
+            <span className={['plu-from', patternLevelClass(evt.from)].join(' ')}>
+              {t('sidebar.patternLevel', { n: evt.from })}
+            </span>
             <span className="plu-arrow">→</span>
-            <span className="plu-to">{t('sidebar.patternLevel', { n: evt.to })}</span>
+            <span className={['plu-to', patternLevelClass(evt.to)].join(' ')}>
+              {t('sidebar.patternLevel', { n: evt.to })}
+            </span>
           </div>
           <div className="plu-values">
             <div className="plu-value chips">

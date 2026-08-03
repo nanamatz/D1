@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeLexicon } from '../src/engine/lexicon';
+import { BALANCE } from '../src/engine/balance';
 import { loadStubLexicon } from '../src/sim/stub-lexicon';
 
 describe('P0-1 — real validity dictionary', () => {
@@ -17,8 +18,9 @@ describe('P0-1 — real validity dictionary', () => {
     }
   });
 
-  it('contains complete ENABLE plus tile-grammar exceptions', () => {
-    expect(lex.size).toBeGreaterThanOrEqual(172836);
+  it('contains the 18-letter ENABLE pool plus tile-grammar exceptions', () => {
+    expect(lex.size).toBe(172251);
+    expect([...lex.words()].every((word) => word.length <= BALANCE.wordLength.maxLetters)).toBe(true);
   });
 
   it('includes UREMIA with its noun POS', () => {

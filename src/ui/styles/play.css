@@ -2264,7 +2264,7 @@
   padding: 0 5px;
   border-radius: 6px;
   background: rgba(23, 50, 38, 0.28);
-  color: #173226;
+  color: var(--pattern-level-color, #173226);
   font-size: 0.82em;
   font-weight: 800;
 }
@@ -2466,7 +2466,6 @@
   filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
 }
 .joker.firing.enhanced-firing {
-  animation-duration: .9s;
   filter: brightness(1.38) drop-shadow(0 0 12px rgba(255, 255, 255, .82));
 }
 @keyframes jokerWiggle {
@@ -2498,9 +2497,6 @@
   top: calc(100% + 10px);
   animation: triggerPopBelow 0.55s ease-out forwards;
   z-index: 5;
-}
-.joker-slot:has(.joker.enhanced-firing) .joker-pop {
-  animation-duration: .95s;
 }
 @keyframes triggerPopBelow {
   0% { transform: translate(-50%, -8px) scale(.72); opacity: 0; }
@@ -2762,10 +2758,16 @@
   padding: 0 8px;
   white-space: nowrap;
 }
-.word .suit-tag {
+.word .suit-tags,
+.hole .suit-tags {
   position: absolute;
   top: -10px;
   left: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+}
+.suit-tag {
   font-size: var(--fs-2xs);
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -2774,13 +2776,13 @@
   border-radius: 6px;
   padding: 0 6px;
 }
-.word.formal .suit-tag {
+.suit-tag.formal {
   background: var(--suit-formal);
 }
-.word.slang .suit-tag {
+.suit-tag.slang {
   background: var(--suit-slang);
 }
-.word.vulgar .suit-tag {
+.suit-tag.vulgar {
   background: var(--suit-vulgar);
 }
 .word.absorbed {
@@ -3571,11 +3573,22 @@
   position: absolute;
   animation: discard-fly 0.32s ease-in forwards;
 }
+.discard-ghost.discard-triggered {
+  animation: discard-trigger-fly .72s ease-in forwards;
+}
+.discard-ghost.discard-triggered > .tile {
+  animation: mat-flash .55s ease, jokerWiggle .32s ease-in-out;
+  filter: brightness(1.3) drop-shadow(0 0 9px rgba(255, 255, 255, .72));
+}
 @keyframes discard-fly {
   to {
     transform: translate(24px, 120px) scale(0.7) rotate(8deg);
     opacity: 0;
   }
+}
+@keyframes discard-trigger-fly {
+  0%, 54% { transform: none; opacity: 1; }
+  100% { transform: translate(24px, 120px) scale(.7) rotate(8deg); opacity: 0; }
 }
 .boss-discard-ghosts {
   position: absolute;
@@ -3718,9 +3731,10 @@
 }
 .hand {
   display: flex;
-  gap: 10px;
+  width: 100%;
+  gap: 7px;
   justify-content: center;
-  padding: 6px 0 2px;
+  padding: 6px 16px 2px;
   flex-wrap: wrap;
 }
 /* Fresh draws are animated exactly once by useFlip from the live pouch origin.
@@ -4085,6 +4099,10 @@
   left: calc(100% + var(--menu-offset));
   transform: translateY(-50%);
 }
+.consumable-slot:nth-child(n + 2) .consumable-object > .consumable-menu.bare button.sell {
+  left: auto;
+  right: calc(100% + var(--menu-offset));
+}
 .consumable-object > .consumable-menu.bare button.use {
   top: calc(100% + 8px);
   left: 50%;
@@ -4256,9 +4274,10 @@
 }
 .round-num {
   color: var(--ink);
-  /* The number stays centred (via .round-row); the tomato is positioned against
-     the PANEL below, not the number. */
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
 }
 /* Tomato: vertically centred in the panel, left-aligned to the panel's padding
    edge — independent of the centred number (its 1.7em size is unchanged). */
@@ -4266,15 +4285,31 @@
   position: relative;
 }
 .round-panel .tomato-anchor {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  transform: none;
   line-height: 0;
 }
 .round-panel .tomato-icon {
   position: static;
+  width: 1.7em;
+  height: 1.7em;
   vertical-align: middle;
+}
+.round-score-value { flex: none; }
+
+.joker.boss-disabled-entering {
+  animation: ultrasound-disable-in .68s steps(6, end) both;
+}
+@keyframes ultrasound-disable-in {
+  0% { filter: none; transform: translateY(-4px) scale(1); }
+  24% { filter: brightness(2) contrast(1.5); transform: translateY(-8px) translateX(-4px); }
+  48% { filter: hue-rotate(150deg) brightness(1.6); transform: translateY(-5px) translateX(4px); }
+  100% { filter: grayscale(1) brightness(.45); transform: translateY(-4px); }
+}
+
+.pattern-chip.hit .p,
+.pattern-chip.hit .s {
+  color: var(--pattern-level-color, var(--gold));
 }
 /* Current pattern and its live sentence-bonus score. */
 .round-pattern {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { sellValue } from '../../engine/economy';
-import type { ConsumableId, RunState } from '../../engine/types';
+import type { ConsumableId, RunState, ScoreEvent } from '../../engine/types';
 import {
   consumableAxisTip,
   consumableTooltipBody,
@@ -29,12 +29,15 @@ import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 
 const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
+const GROWTH_POP_MS = 600;
+const NO_GROWTH_EVENTS: readonly ScoreEvent[] = [];
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 
 /** The firing joker's contribution popup during settle (B step 3). */
 export function JokerPop({
   chips,
+  chipsFactor,
   mult,
   multFactor,
   score = 0,
@@ -42,6 +45,7 @@ export function JokerPop({
   applied,
 }: {
   chips: number;
+  chipsFactor?: number | undefined;
   mult: number;
   multFactor?: number | undefined;
   score?: number;
@@ -50,11 +54,14 @@ export function JokerPop({
 }) {
   const signed = (value: number) => `${value > 0 ? '+' : ''}${fmtMult(value)}`;
   const money = gold > 0 ? `+$${gold}` : `-$${Math.abs(gold)}`;
-  const hasValue = chips !== 0 || mult !== 0 || multFactor !== undefined || score !== 0 || gold !== 0;
+  const hasValue = chips !== 0 || chipsFactor !== undefined || mult !== 0 || multFactor !== undefined || score !== 0 || gold !== 0;
   return (
     <span className="trigger-pop joker-pop" aria-hidden>
-      {chips !== 0 && (
-        <span className="chip"><span className="chip-diamond" />{signed(chips)}</span>
+      {(chips !== 0 || chipsFactor !== undefined) && (
+        <span className="chip">
+          <span className="chip-diamond" />
+          {chipsFactor !== undefined ? `×${fmtMult(chipsFactor)}` : signed(chips)}
+        </span>
       )}
       {(mult !== 0 || multFactor !== undefined) && (
         <span className="mult">
@@ -84,6 +91,10 @@ interface Props {
   deferTargetFableUse?: boolean;
   /** Blueprint: hide every Emoji Tile behind the selected WooDak skin. */
   jokersFaceDown?: boolean;
+  /** Growth already choreographed by the current scoring timeline. */
+  animatedGrowthEvents?: readonly ScoreEvent[];
+  /** Ultrasound rotation is revealed only after the scoring timeline completes. */
+  settleComplete?: boolean;
 }
 
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
@@ -97,12 +108,91 @@ export function JokerShelf({
   onReorderJoker,
   deferTargetFableUse = false,
   jokersFaceDown = false,
+  animatedGrowthEvents = NO_GROWTH_EVENTS,
+  settleComplete = true,
 }: Props) {
   const { t, lang } = useI18n();
   const settle = useSettleView();
   const emojiSlotLimit = jokerSlotLimit(run);
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
   const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
+  const disabledIndex = run.jokers.findIndex((owned) => owned.state.bossDisabled === 1);
+  const [visibleDisabledIndex, setVisibleDisabledIndex] = useState(disabledIndex);
+  const [disabledEnteringIndex, setDisabledEnteringIndex] = useState<number | null>(null);
+  const wasSettling = useRef(false);
+  useEffect(() => {
+    if (!settleComplete) {
+      wasSettling.current = true;
+      return;
+    }
+    if (visibleDisabledIndex !== disabledIndex) {
+      setVisibleDisabledIndex(disabledIndex);
+      if (wasSettling.current && disabledIndex >= 0) setDisabledEnteringIndex(disabledIndex);
+    }
+    wasSettling.current = false;
+  }, [disabledIndex, settleComplete, visibleDisabledIndex]);
+  useEffect(() => {
+    if (disabledEnteringIndex === null) return;
+    const timer = setTimeout(() => setDisabledEnteringIndex(null), 720);
+    return () => clearTimeout(timer);
+  }, [disabledEnteringIndex]);
+  const growthSnapshot = (source: RunState): Map<string, number> => new Map<string, number>(
+    source.jokers.flatMap((owned, index) => {
+      const display = JOKER_REGISTRY.get(owned.defId)?.growthDisplay;
+      return display
+        ? [[`${index}:${owned.defId}:${display.stateKey}`, owned.state[display.stateKey] ?? display.initial] as const]
+        : [];
+    }),
+  );
+  const previousGrowth = useRef(growthSnapshot(run));
+  const growthTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const growthId = useRef(0);
+  const [growthPops, setGrowthPops] = useState<Array<{
+    index: number;
+    jokerId: string;
+    chips: number;
+    mult: number;
+    id: number;
+  }>>([]);
+  useEffect(() => {
+    const next = growthSnapshot(run);
+    const covered = new Map<string, number>();
+    for (const event of animatedGrowthEvents) {
+      if (event.kind !== 'joker' || !event.growthKind || !event.growthDelta) continue;
+      const key = `${event.jokerId}:${event.growthKind}`;
+      covered.set(key, (covered.get(key) ?? 0) + event.growthDelta);
+    }
+    const pops: typeof growthPops = [];
+    run.jokers.forEach((owned, index) => {
+      const display = JOKER_REGISTRY.get(owned.defId)?.growthDisplay;
+      if (!display) return;
+      const snapshotKey = `${index}:${owned.defId}:${display.stateKey}`;
+      const before = previousGrowth.current.get(snapshotKey);
+      const after = next.get(snapshotKey)!;
+      if (before === undefined || after <= before) return;
+      const coverageKey = `${owned.defId}:${display.kind}`;
+      const hidden = Math.min(after - before, covered.get(coverageKey) ?? 0);
+      covered.set(coverageKey, Math.max(0, (covered.get(coverageKey) ?? 0) - hidden));
+      const delta = after - before - hidden;
+      if (delta <= 1e-9) return;
+      pops.push({
+        index,
+        jokerId: owned.defId,
+        chips: display.kind === 'chips' ? delta : 0,
+        mult: display.kind === 'chips' ? 0 : delta,
+        id: growthId.current++,
+      });
+    });
+    previousGrowth.current = next;
+    if (pops.length === 0) return;
+    if (growthTimer.current) clearTimeout(growthTimer.current);
+    setGrowthPops(pops);
+    audio.play('jokerBlip');
+    growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
+  }, [run.jokers, animatedGrowthEvents]);
+  useEffect(() => () => {
+    if (growthTimer.current) clearTimeout(growthTimer.current);
+  }, []);
   // A-3: pair every object action with a brief on-object animation before it resolves
   // — pop/dissolve when consumed, slide-away when sold — so it never looks like nothing
   // happened. The state change is delayed one beat so the animation is seen.
@@ -158,14 +248,18 @@ export function JokerShelf({
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
             const art = jokerArt(def.id);
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
-            const firing = settle.active && settle.activeJokerId === def.id;
-            const enhancedFiring = firing && settle.activeJokerEnhanced;
+            const growthPop = growthPops.find((pop) => pop.index === i && pop.jokerId === def.id);
+            const settleFiring = settle.active && settle.activeJokerId === def.id;
+            const firing = settleFiring || growthPop !== undefined;
+            const enhancedFiring = settleFiring && settle.activeJokerEnhanced;
+            const bossDisabled = visibleDisabledIndex === i;
             const className = [
               'joker',
               'emoji-tile-image-only',
               `edition-${owned.edition ?? 'base'}`,
               jokersFaceDown ? 'face-down' : '',
-              owned.state.bossDisabled === 1 ? 'boss-disabled' : '',
+              bossDisabled ? 'boss-disabled' : '',
+              disabledEnteringIndex === i ? 'boss-disabled-entering' : '',
               firing ? 'firing' : '',
               enhancedFiring ? 'enhanced-firing' : '',
             ].filter(Boolean).join(' ');
@@ -195,8 +289,10 @@ export function JokerShelf({
                       }
                     : {})}
                   down
+                  status={bossDisabled ? 'disabled' : undefined}
                 >
                   <TiltCard
+                    key={growthPop?.id ?? (settleFiring ? settle.jokerPop?.id : 'idle')}
                     idle
                     className={className}
                   >
@@ -232,13 +328,19 @@ export function JokerShelf({
                     )}
                   </TiltCard>
                 </Tooltip>
-                {firing && settle.jokerPop && (
+                {firing && (growthPop || settle.jokerPop) && (
                   <JokerPop
-                    chips={settle.jokerPop.chips}
-                    mult={settle.jokerPop.mult}
-                    multFactor={settle.jokerPop.multFactor}
-                    score={settle.jokerPop.score}
-                    gold={settle.jokerPop.gold}
+                    key={growthPop?.id ?? settle.jokerPop?.id}
+                    chips={growthPop?.chips ?? settle.jokerPop?.chips ?? 0}
+                    {...(!growthPop && settle.jokerPop?.chipsFactor !== undefined
+                      ? { chipsFactor: settle.jokerPop.chipsFactor }
+                      : {})}
+                    mult={growthPop?.mult ?? settle.jokerPop?.mult ?? 0}
+                    {...(!growthPop && settle.jokerPop?.multFactor !== undefined
+                      ? { multFactor: settle.jokerPop.multFactor }
+                      : {})}
+                    score={growthPop ? 0 : settle.jokerPop?.score ?? 0}
+                    gold={growthPop ? 0 : settle.jokerPop?.gold ?? 0}
                     applied={t('settle.applied')}
                   />
                 )}

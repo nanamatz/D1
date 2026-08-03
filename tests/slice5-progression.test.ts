@@ -10,7 +10,7 @@ const blindWith = (over: Partial<BlindState>): BlindState => ({
   kind: 'small',
   bossId: null,
   target: 100,
-  handSizeTotal: 11,
+  handSizeTotal: 10,
   phasesTotal: 4,
   phasesUsed: 0,
   discardsLeft: 3,
@@ -60,6 +60,7 @@ describe('slice5 progression — resolveBlind gold & advancement (GDD §9.1)', (
     // reward 3 + phases 2 + interest(10)=2 → 7
     expect(out.earned).toEqual({
       reward: 3,
+      tagReward: 0,
       phaseCount: 2,
       phases: 2,
       discardCount: 3,

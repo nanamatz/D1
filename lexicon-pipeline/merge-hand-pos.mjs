@@ -23,8 +23,12 @@ const args = Object.fromEntries(
 const BASE = args.base ?? 'data/lexicon.json';
 const HAND = args.hand ?? 'data/lexicon.curated.bak.json';
 const OUT = args.out ?? 'data/lexicon.json';
+const MAX_WORD_LENGTH = 18;
 
-const base = JSON.parse(fs.readFileSync(BASE, 'utf8'));
+const base = Object.fromEntries(
+  Object.entries(JSON.parse(fs.readFileSync(BASE, 'utf8')))
+    .filter(([word]) => word.length <= MAX_WORD_LENGTH),
+);
 const hand = JSON.parse(fs.readFileSync(HAND, 'utf8'));
 
 let posOverlaid = 0;

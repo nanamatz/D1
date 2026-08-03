@@ -12,6 +12,7 @@
  *   - not a word       → null  (caller routes to the gibberish path, §6.4)
  */
 
+import { BALANCE } from './balance';
 import type { LexiconEntry, POS, Suit } from './types';
 
 /** The baked-table shape (a LexiconEntry without the redundant `word` key). */
@@ -31,6 +32,9 @@ export interface Lexicon {
 }
 
 const norm = (text: string): string => text.trim().toLowerCase();
+const withinWordLength = (word: string): boolean => (
+  word.length > 0 && word.length <= BALANCE.wordLength.maxLetters
+);
 
 /**
  * Inflection → lemma inheritance (playtest-01 P0-2). Inflected forms are valid
@@ -91,11 +95,15 @@ export function makeLexicon(
   entries: Record<string, LexiconEntryData>,
 ): Lexicon {
   const valid = new Set<string>();
-  for (const w of words) valid.add(norm(w));
+  for (const w of words) {
+    const key = norm(w);
+    if (withinWordLength(key)) valid.add(key);
+  }
 
   const tagged = new Map<string, LexiconEntryData>();
   for (const [w, data] of Object.entries(entries)) {
     const key = norm(w);
+    if (!withinWordLength(key)) continue;
     tagged.set(key, data);
     valid.add(key); // a tagged word is always valid
   }
@@ -130,7 +138,7 @@ export function parseDictionary(text: string): string[] {
   return text
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith('#'))
+    .filter((line) => withinWordLength(line) && !line.startsWith('#'))
     .map((line) => line.toLowerCase());
 }
 

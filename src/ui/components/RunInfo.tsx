@@ -11,6 +11,7 @@ import { BALANCE } from '../../engine/balance';
 import { LETTER_HAND_REGISTRY } from '../../engine/letterHands';
 import { bossDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
+import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
 import { VoucherCard } from './VoucherCard';
@@ -85,7 +86,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 const cm = patternChipsMult(p, run.patternLevels[p]);
                 return (
                   <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
-                    <div className="ri-pat">
+                    <div className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}>
                       <PatternIcon pattern={p} />
                       <span className="pn">{t(`pattern.${p}`)}</span>
                       <span className="pl">Lv {run.patternLevels[p]}</span>

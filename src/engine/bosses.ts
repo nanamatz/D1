@@ -20,7 +20,7 @@
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
 import type { Rng } from './rng';
-import { isVerb } from './types';
+import { isVerb, submissionHasSuit, submissionSuits } from './types';
 import type {
   BlindState,
   RunState,
@@ -55,6 +55,8 @@ export interface BossDef {
   /** Reconcile hand-bound state after a consumable changes the hand. */
   handChanged?: (run: RunState, blind: BlindState, rng: Rng) => BlindState;
   wordScoring?: (ctx: WordScoringContext, env: BossScoringEnv) => void;
+  /** Presentation-only factors for hooks implemented as equivalent deltas. */
+  scoreFactors?: { chips?: number; mult?: number };
   sentenceScoring?: (ctx: SentenceScoringContext) => void;
   /** true → the submission is allowed but its word score is reduced to 0 */
   debuffs?: (
@@ -96,9 +98,10 @@ const BOSSES: readonly BossDef[] = [
   {
     id: 'forbiddenPaper', nameEn: 'Forbidden Paper', nameKo: '금서', emoji: '🔥',
     voids: (submission, prior) => {
-      if (submission.suit === null) return false; // gibberish always plays (GDD §6.4)
-      const established = prior.find((w) => w.suit !== null)?.suit ?? null;
-      return established !== null && submission.suit !== established;
+      const current = submissionSuits(submission);
+      if (current.length === 0) return false; // gibberish always plays (GDD §6.4)
+      const established = prior.map(submissionSuits).find((suits) => suits.length > 0);
+      return established !== undefined && !current.some((suit) => established.includes(suit));
     },
   },
   // 5. Bond (채권): −$1 per tile played this blind.
@@ -145,11 +148,12 @@ const BOSSES: readonly BossDef[] = [
   // 11. White Paper (백지): all vulgar words debuffed (score 0).
   {
     id: 'whitePaper', nameEn: 'White Paper', nameKo: '백지', emoji: '📄',
-    debuffs: (submission) => submission.suit === 'vulgar',
+    debuffs: (submission) => submissionHasSuit(submission, 'vulgar'),
   },
   // 12. Will (유서): base chips and mult halved.
   {
     id: 'will', nameEn: 'Will', nameKo: '유서', emoji: '🪦',
+    scoreFactors: { chips: BALANCE.boss.willScale, mult: BALANCE.boss.willScale },
     wordScoring: (ctx) => {
       ctx.chips *= BALANCE.boss.willScale;
       ctx.mult *= BALANCE.boss.willScale;

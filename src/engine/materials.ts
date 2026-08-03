@@ -15,7 +15,7 @@
 
 import { BALANCE } from './balance';
 import type { Rng } from './rng';
-import type { Tile, TileMaterial, WordScoringContext } from './types';
+import type { ChanceResult, Tile, TileMaterial, WordScoringContext } from './types';
 
 /** Outcomes a material can produce beyond chips/mult. */
 export interface MaterialSideEffects {
@@ -25,6 +25,8 @@ export interface MaterialSideEffects {
   destroy?: boolean;
   /** Wood grows once per play, after its current bonus scores. */
   growWood?: boolean;
+  /** Actual seeded outcomes, replayed verbatim by the UI. */
+  chanceResults?: ChanceResult[];
 }
 
 export interface MaterialDef {
@@ -73,8 +75,16 @@ const leadPlate: MaterialDef = {
   // The two rolls are INDEPENDENT (Balatro Lucky): one tile can hit both.
   onTileScored: (ctx, _tile, rng) => {
     const cfg = BALANCE.materials.leadPlate;
-    if (rng.next() < cfg.multChance) ctx.mult += cfg.mult;
-    return rng.next() < cfg.goldChance ? { goldDelta: cfg.gold } : {};
+    const multHit = rng.next() < cfg.multChance;
+    const goldHit = rng.next() < cfg.goldChance;
+    if (multHit) ctx.mult += cfg.mult;
+    return {
+      ...(goldHit ? { goldDelta: cfg.gold } : {}),
+      chanceResults: [
+        { chance: cfg.multChance, label: 'mult', outcome: multHit ? 'success' : 'failure' },
+        { chance: cfg.goldChance, label: 'gold', outcome: goldHit ? 'success' : 'failure' },
+      ],
+    };
   },
 };
 
@@ -86,7 +96,15 @@ const glass: MaterialDef = {
   onTileScored: (ctx, _tile, rng) => {
     const cfg = BALANCE.materials.glass;
     ctx.mult *= cfg.multFactor;
-    return rng.next() < cfg.destroyChance ? { destroy: true } : {};
+    const destroy = rng.next() < cfg.destroyChance;
+    return {
+      ...(destroy ? { destroy: true } : {}),
+      chanceResults: [{
+        chance: cfg.destroyChance,
+        label: 'destruction',
+        outcome: destroy ? 'destroyed' : 'survived',
+      }],
+    };
   },
 };
 

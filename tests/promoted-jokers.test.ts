@@ -130,7 +130,7 @@ describe('promoted Emoji Tile hooks', () => {
     run.jokers = [owned('discardedDraft')];
     const blind = startBlind(run, makeRng('discarded-draft'));
     const discarded = blind.hand.slice(0, 3);
-    bus.emit('discardUsed', {
+    const growth = bus.emit('discardUsed', {
       run,
       blind: { ...blind, discardedThisBlind: discarded },
       tiles: discarded,
@@ -139,6 +139,11 @@ describe('promoted Emoji Tile hooks', () => {
     }, run.jokers);
     expect(run.jokers[0]?.state.chips)
       .toBe(3 * BALANCE.jokers.discardedDraft.chipsPerTile);
+    expect(growth).toEqual([{
+      jokerId: 'discardedDraft',
+      kind: 'chips',
+      delta: 3 * BALANCE.jokers.discardedDraft.chipsPerTile,
+    }]);
   });
 
   it('Bad Review never subtracts another effect Mult', () => {

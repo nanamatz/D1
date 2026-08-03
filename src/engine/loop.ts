@@ -28,6 +28,7 @@ import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
 import { balancePouchAxes } from './pouches';
 import { EMPTY_NEXT_BLIND_BONUS } from './skipRewards';
+import type { JokerGrowthTrigger } from './events';
 import type {
   BlindKind,
   BlindState,
@@ -281,21 +282,50 @@ function scoreSubmission(
   destroyedTileIds: string[];
   grownWoodTileIds: string[];
 } {
-  const jokerMultFactor = (jokerId: string, before: number, after: number) =>
-    JOKER_REGISTRY.get(jokerId)?.multOperation === 'multiply' && before !== 0 && before !== after
-      ? { multFactor: after / before }
-      : {};
+  const pushGrowthEvents = (
+    target: ScoreEvent[],
+    growth: readonly JokerGrowthTrigger[],
+  ) => {
+    for (const trigger of growth) {
+      target.push({
+        kind: 'joker',
+        jokerId: trigger.jokerId,
+        chipsDelta: 0,
+        multDelta: 0,
+        growthKind: trigger.kind,
+        growthDelta: trigger.delta,
+      });
+    }
+  };
+  const jokerScoreFactors = (
+    jokerId: string,
+    beforeChips: number,
+    afterChips: number,
+    beforeMult: number,
+    afterMult: number,
+  ) => {
+    const def = JOKER_REGISTRY.get(jokerId);
+    return {
+      ...(def?.chipsOperation === 'multiply' && beforeChips !== afterChips
+        ? { chipsFactor: def.chipsDisplayFactor ?? afterChips / beforeChips }
+        : {}),
+      ...(def?.multOperation === 'multiply' && beforeMult !== 0 && beforeMult !== afterMult
+        ? { multFactor: def.multDisplayFactor ?? afterMult / beforeMult }
+        : {}),
+    };
+  };
   const ruleEvents: Extract<ScoreEvent, { kind: 'joker' }>[] = [];
   const events: ScoreEvent[] = [];
   const prepared = { run, blind, tiles, spellingTiles: tiles.slice() };
   for (const joker of run.jokers) {
     const before = prepared.spellingTiles.map((tile) => tile.id).join('\0');
-    defaultJokerBus.emit('wordPrepare', prepared, [joker]);
+    const growth = defaultJokerBus.emit('wordPrepare', prepared, [joker]);
     if (prepared.spellingTiles.map((tile) => tile.id).join('\0') !== before) {
       ruleEvents.push({
         kind: 'joker', jokerId: joker.defId, chipsDelta: 0, multDelta: 0,
       });
     }
+    pushGrowthEvents(ruleEvents, growth);
   }
   const b = baseScore(prepared.spellingTiles, lexicon);
   const submission: WordSubmission = {
@@ -310,6 +340,7 @@ function scoreSubmission(
     submission,
     chips: 0,
     mult: b.mult,
+    baseSuit: b.suit,
     goldDelta: 0,
     posTags: b.isGibberish ? [] : (lexicon.lookup(b.text)?.pos ?? []),
     scoringVowels: new Set(VOWELS),
@@ -319,12 +350,14 @@ function scoreSubmission(
   };
   for (const joker of run.jokers) {
     const before = JSON.stringify([
+      ctx.submission.suit,
       [...(ctx.scoringVowels ?? [])],
       [...(ctx.scoringSuits ?? [])],
       [...(ctx.tileRetriggers ?? [])],
     ]);
-    defaultJokerBus.emit('wordRules', { run, blind, ctx }, [joker]);
+    const growth = defaultJokerBus.emit('wordRules', { run, blind, ctx }, [joker]);
     const after = JSON.stringify([
+      ctx.submission.suit,
       [...(ctx.scoringVowels ?? [])],
       [...(ctx.scoringSuits ?? [])],
       [...(ctx.tileRetriggers ?? [])],
@@ -334,7 +367,9 @@ function scoreSubmission(
         kind: 'joker', jokerId: joker.defId, chipsDelta: 0, multDelta: 0,
       });
     }
+    pushGrowthEvents(ruleEvents, growth);
   }
+  submission.effectiveSuits = [...(ctx.scoringSuits ?? [])];
   let materialGold = 0;
   const destroyedTileIds: string[] = [];
   const grownWoodTileIds: string[] = [];
@@ -396,7 +431,7 @@ function scoreSubmission(
             const beforeChips = ctx.chips;
             const beforeMult = ctx.mult;
             const beforeCancelled = destroying.cancelled;
-            defaultJokerBus.emit('tileDestroying', destroying, [joker]);
+            const growth = defaultJokerBus.emit('tileDestroying', destroying, [joker]);
             if (
               ctx.chips !== beforeChips ||
               ctx.mult !== beforeMult ||
@@ -408,14 +443,25 @@ function scoreSubmission(
                 tileId: t.id,
                 chipsDelta: ctx.chips - beforeChips,
                 multDelta: ctx.mult - beforeMult,
-                ...jokerMultFactor(joker.defId, beforeMult, ctx.mult),
+                ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
               });
             }
+            pushGrowthEvents(events, growth);
           }
           if (!destroying.cancelled) destroyedTileIds.push(t.id);
+          else if (mat.side.chanceResults) {
+            mat.side.chanceResults = mat.side.chanceResults.map((result) =>
+              result.label === 'destruction' ? { ...result, outcome: 'survived' } : result,
+            );
+          }
         }
         if (mat.side.growWood && !grownWoodTileIds.includes(t.id)) grownWoodTileIds.push(t.id);
-        if (mat.chipsDelta !== 0 || mat.multDelta !== 0) {
+        if (
+          mat.chipsDelta !== 0 ||
+          mat.multDelta !== 0 ||
+          (mat.side.goldDelta ?? 0) !== 0 ||
+          (mat.side.chanceResults?.length ?? 0) > 0
+        ) {
           events.push({
             kind: 'material',
             material: t.material,
@@ -423,9 +469,11 @@ function scoreSubmission(
             chipsDelta: mat.chipsDelta,
             multDelta: mat.multDelta,
             ...(mat.multFactor !== undefined ? { multFactor: mat.multFactor } : {}),
+            ...(mat.side.goldDelta !== undefined ? { goldDelta: mat.side.goldDelta } : {}),
+            ...(mat.side.chanceResults ? { chanceResults: mat.side.chanceResults } : {}),
           });
         }
-        defaultJokerBus.emit('materialScored', {
+        const materialGrowth = defaultJokerBus.emit('materialScored', {
           run,
           blind,
           ctx,
@@ -436,11 +484,12 @@ function scoreSubmission(
           goldDelta: mat.side.goldDelta ?? 0,
           grewWood: mat.side.growWood ?? false,
         }, run.jokers);
+        pushGrowthEvents(events, materialGrowth);
         if ((mat.side.goldDelta ?? 0) > 0) {
           for (const joker of run.jokers) {
             const beforeChips = ctx.chips;
             const beforeMult = ctx.mult;
-            defaultJokerBus.emit('tileGold', {
+            const growth = defaultJokerBus.emit('tileGold', {
               run, blind, ctx, tile: t, gold: mat.side.goldDelta!,
             }, [joker]);
             if (ctx.chips !== beforeChips || ctx.mult !== beforeMult) {
@@ -450,9 +499,10 @@ function scoreSubmission(
                 tileId: t.id,
                 chipsDelta: ctx.chips - beforeChips,
                 multDelta: ctx.mult - beforeMult,
-                ...jokerMultFactor(joker.defId, beforeMult, ctx.mult),
+                ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
               });
             }
+            pushGrowthEvents(events, growth);
           }
         }
       }
@@ -465,7 +515,7 @@ function scoreSubmission(
         for (const joker of run.jokers) {
           const beforeChips = ctx.chips;
           const beforeMult = ctx.mult;
-          defaultJokerBus.emit('tileGold', { run, blind, ctx, tile: t, gold }, [joker]);
+          const growth = defaultJokerBus.emit('tileGold', { run, blind, ctx, tile: t, gold }, [joker]);
           if (ctx.chips !== beforeChips || ctx.mult !== beforeMult) {
             events.push({
               kind: 'joker',
@@ -473,9 +523,10 @@ function scoreSubmission(
               tileId: t.id,
               chipsDelta: ctx.chips - beforeChips,
               multDelta: ctx.mult - beforeMult,
-              ...jokerMultFactor(joker.defId, beforeMult, ctx.mult),
+              ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
             });
           }
+          pushGrowthEvents(events, growth);
         }
         events.push({
           kind: 'font', font: t.font, effect: 'goldPlay', tileId: t.id,
@@ -497,7 +548,7 @@ function scoreSubmission(
         const beforeChips = ctx.chips;
         const beforeMult = ctx.mult;
         const beforeGold = ctx.goldDelta ?? 0;
-        defaultJokerBus.emit('tileScoring', { run, blind, ctx, tile: t }, [joker]);
+        const growth = defaultJokerBus.emit('tileScoring', { run, blind, ctx, tile: t }, [joker]);
         const chipsDelta = ctx.chips - beforeChips;
         const multDelta = ctx.mult - beforeMult;
         const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
@@ -507,11 +558,12 @@ function scoreSubmission(
             jokerId: joker.defId,
             chipsDelta,
             multDelta,
-            ...jokerMultFactor(joker.defId, beforeMult, ctx.mult),
+            ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
             tileId: t.id,
             ...(goldDelta !== 0 ? { goldDelta } : {}),
           });
         }
+        pushGrowthEvents(events, growth);
       }
     }
   }
@@ -564,7 +616,7 @@ function scoreSubmission(
     const beforeMult = ctx.mult;
     const beforeScore = ctx.scoreBonus ?? 0;
     const beforeGold = ctx.goldDelta ?? 0;
-    defaultJokerBus.emit('wordScoring', { run, blind, ctx }, [joker]);
+    const growth = defaultJokerBus.emit('wordScoring', { run, blind, ctx }, [joker]);
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     const scoreDelta = (ctx.scoreBonus ?? 0) - beforeScore;
@@ -575,11 +627,12 @@ function scoreSubmission(
         jokerId: joker.defId,
         chipsDelta,
         multDelta,
-        ...jokerMultFactor(joker.defId, beforeMult, ctx.mult),
+        ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
         ...(scoreDelta !== 0 ? { scoreDelta } : {}),
         ...(goldDelta !== 0 ? { goldDelta } : {}),
       });
     }
+    pushGrowthEvents(events, growth);
     const jokerEdition = joker.edition ?? 'base';
     const jokerEditionDelta = applyEdition(ctx, jokerEdition);
     if (jokerEditionDelta) {
@@ -601,7 +654,18 @@ function scoreSubmission(
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     if (chipsDelta !== 0 || multDelta !== 0) {
-      events.push({ kind: 'boss', bossId: blind.bossId!, chipsDelta, multDelta });
+      events.push({
+        kind: 'boss',
+        bossId: blind.bossId!,
+        chipsDelta,
+        multDelta,
+        ...(chipsDelta !== 0 && boss.scoreFactors?.chips !== undefined
+          ? { chipsFactor: boss.scoreFactors.chips }
+          : {}),
+        ...(multDelta !== 0 && boss.scoreFactors?.mult !== undefined
+          ? { multFactor: boss.scoreFactors.mult }
+          : {}),
+      });
     }
   }
 
@@ -612,7 +676,7 @@ function scoreSubmission(
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
     const beforeGold = ctx.goldDelta ?? 0;
-    defaultJokerBus.emit('wordChecked', { run, blind, ctx, debuffed }, [joker]);
+    const growth = defaultJokerBus.emit('wordChecked', { run, blind, ctx, debuffed }, [joker]);
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
@@ -622,10 +686,11 @@ function scoreSubmission(
         jokerId: joker.defId,
         chipsDelta,
         multDelta,
-        ...jokerMultFactor(joker.defId, beforeMult, ctx.mult),
+        ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
         ...(goldDelta !== 0 ? { goldDelta } : {}),
       });
     }
+    pushGrowthEvents(events, growth);
   }
 
   const balanced = balancePouchAxes(run, ctx.chips, ctx.mult);

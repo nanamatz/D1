@@ -15,6 +15,8 @@ export const rareEarth: JokerDef = {
   rarity: 'uncommon',
   layer: 1,
   price: BALANCE.jokerPrice.uncommon,
+  chipsOperation: 'multiply',
+  chipsDisplayFactor: BALANCE.jokers.rareEarth.factor,
   hooks: {
     tileScoring: ({ ctx, tile }) => {
       if (tile.letter === null || !RARE.has(tile.letter)) return;

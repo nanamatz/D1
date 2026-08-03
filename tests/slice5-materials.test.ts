@@ -3,7 +3,7 @@ import { scoreWord, spell, letterChips, letterString, NO_LETTER } from '../src/e
 import { makeLexicon } from '../src/engine/lexicon';
 import { isVowel, isConsonant } from '../src/engine/types';
 import type { Letter, Tile, TileMaterial } from '../src/engine/types';
-import { makeRng } from '../src/engine/rng';
+import { makeRng, type Rng } from '../src/engine/rng';
 import { startBlind, submitWord, endBlind } from '../src/engine/loop';
 import { newRun } from '../src/engine/run';
 import { BALANCE } from '../src/engine/balance';
@@ -19,6 +19,11 @@ const tiles = (word: string, material: TileMaterial = 'ceramic'): Tile[] =>
   }));
 
 const lex = makeLexicon(['cat'], {});
+const fixedRng = (value: number): Rng => ({
+  next: () => value,
+  int: (max) => Math.min(max - 1, Math.floor(value * max)),
+  shuffle: <T>(items: readonly T[]) => [...items],
+});
 
 describe('slice5 — letterless tiles (GDD §2.2 Stone)', () => {
   it('spells a stone tile as the sentinel, never a lexicon word', () => {
@@ -113,6 +118,20 @@ describe('slice5 — Lead plate (GDD §2.2, Balatro Lucky)', () => {
     });
   });
 
+  it('records both independent rolls even when they fail', () => {
+    const run = newRun('lead-chance-fx');
+    const hand = tiles('a', 'leadPlate');
+    const play = (value: number) => submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      makeLexicon(['a'], {}),
+      [hand[0]!.id],
+      fixedRng(value),
+    ).events.find((event) => event.kind === 'material');
+    expect(play(0)?.chanceResults?.map((result) => result.outcome)).toEqual(['success', 'success']);
+    expect(play(0.99)?.chanceResults?.map((result) => result.outcome)).toEqual(['failure', 'failure']);
+  });
+
   it('is reproducible: the same seed gives the same outcome', () => {
     const build = () => {
       const run = { ...newRun('mat-seed'), bag: tiles('cat', 'leadPlate') };
@@ -182,6 +201,34 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
         e.kind === 'material' && e.material === 'glass',
     );
     expect(glassBeat?.multFactor).toBe(BALANCE.materials.glass.multFactor);
+  });
+
+  it('records actual survival or destruction, including insurance prevention', () => {
+    const hand = tiles('cat');
+    hand[0]!.material = 'glass';
+    const play = (run: ReturnType<typeof newRun>, value: number) => submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      lex,
+      hand.map((tile) => tile.id),
+      fixedRng(value),
+    );
+    const outcome = (result: ReturnType<typeof submitWord>) => result.events.find(
+      (event): event is Extract<typeof event, { kind: 'material' }> =>
+        event.kind === 'material' && event.tileId === hand[0]!.id,
+    )?.chanceResults?.[0]?.outcome;
+
+    const destroyed = play(newRun('glass-destroy-fx'), 0);
+    expect(destroyed.destroyedTileIds).toContain(hand[0]!.id);
+    expect(outcome(destroyed)).toBe('destroyed');
+
+    expect(outcome(play(newRun('glass-survive-fx'), 0.99))).toBe('survived');
+
+    const insuredRun = newRun('glass-insured-fx');
+    insuredRun.jokers = [{ defId: 'glassInsurance', state: {} }];
+    const insured = play(insuredRun, 0);
+    expect(insured.destroyedTileIds).not.toContain(hand[0]!.id);
+    expect(outcome(insured)).toBe('survived');
   });
 
   it('doubles the mult on the word it is played in', () => {

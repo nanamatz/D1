@@ -1,5 +1,5 @@
 /**
- * Build the complete ENABLE validity dictionary plus tile-grammar exceptions.
+ * Build the playable ENABLE validity dictionary plus tile-grammar exceptions.
  *
  * Usage: node scripts/build-dictionary.mjs <enable.txt> <out.txt>
  */
@@ -12,11 +12,12 @@ if (!enablePath || !outPath) {
 }
 
 const isWord = (word) => /^[a-z]+$/.test(word);
+const MAX_WORD_LENGTH = 18;
 const words = new Set(
   readFileSync(enablePath, 'utf8')
     .split(/\r?\n/)
     .map((word) => word.trim().toLowerCase())
-    .filter(isWord),
+    .filter((word) => isWord(word) && word.length <= MAX_WORD_LENGTH),
 );
 
 // Apostrophe-free grammar forms accepted by letter tiles even when ENABLE omits one.
@@ -24,12 +25,12 @@ for (const word of [
   'arent', 'cant', 'couldnt', 'didnt', 'doesnt', 'dont', 'hadnt', 'hasnt',
   'havent', 'isnt', 'shouldnt', 'wasnt', 'werent', 'wouldnt',
 ]) {
-  words.add(word);
+  if (word.length <= MAX_WORD_LENGTH) words.add(word);
 }
 
 const sorted = [...words].sort();
 const header = [
-  '# Complete ENABLE word list plus apostrophe-free tile-grammar exceptions.',
+  `# ENABLE words up to ${MAX_WORD_LENGTH} letters plus apostrophe-free tile-grammar exceptions.`,
   '# Source: ENABLE (dolph/dictionary). See data/README.md.',
   '# Regenerate: node scripts/build-dictionary.mjs <enable.txt> <out.txt>',
   '',

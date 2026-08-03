@@ -21,6 +21,7 @@ import { checkWordPlayed, unlockBus } from './unlocks';
 import type {
   BlindKind,
   BlindState,
+  ChanceResult,
   ConsumableId,
   Letter,
   PatternId,
@@ -78,6 +79,7 @@ import {
 } from '../engine/gamblers';
 import { packFableFxBus } from './packFableFx';
 import { consumableEffectBus } from './consumableEffect';
+import { jokerChanceEffectBus } from './jokerChanceEffect';
 import {
   bossRerollLimit,
   bossRerollPrice,
@@ -512,11 +514,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             },
           }
         : runWithMaterialGold;
+      const chanceResults: ChanceResult[] = [];
       const runAfterJokers = onBlindEnded(
         runWithPattern,
         s.blind,
         makeRng(`${s.seed}#joker-end-${s.run.ante}-${s.run.blindIndex}`),
+        chanceResults,
       );
+      jokerChanceEffectBus.emit(chanceResults);
       const outcome = resolveBlind(runAfterJokers, s.blind, final.finalScore);
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
@@ -1015,6 +1020,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const stagedRun = { ...prev.run, consumables: [...prev.run.consumables, id] };
       let run: RunState;
       let blind = prev.blind;
+      let chanceResults: ChanceResult[] = [];
       if (fableTargetsTiles(id)) {
         const result = useFableOnPouch(id, stagedRun, tileIds);
         if (!result.ok) return prev;
@@ -1030,11 +1036,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         if (!result.ok) return prev;
         run = result.run;
         blind = result.blind;
+        chanceResults = result.chanceResults;
       }
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
       recordEditionedJokers(run);
-      if (!fableTargetsTiles(id)) consumableEffectBus.emit(id, prev.run, run);
+      if (!fableTargetsTiles(id)) consumableEffectBus.emit(id, prev.run, run, chanceResults);
       return finish(run, blind, 1);
     });
   }, []);
@@ -1173,7 +1180,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
 
   const toggleTile = useCallback((id: string) => {
     setState((prev) => {
-      if (prev.phase !== 'playing' || prev.pendingEnd || !prev.blind.hand.some((t) => t.id === id))
+      if (prev.phase !== 'playing' || prev.pendingEnd || !prev.settleComplete || !prev.blind.hand.some((t) => t.id === id))
         return prev;
       if (id === prev.blind.forcedTileId && prev.selected.includes(id)) return prev;
       const selected = prev.selected.includes(id)
@@ -1258,6 +1265,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         const blind = reconcileBossHand(result.run, result.blind, rng);
         audio.play('consumableUse');
         recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+        recordEditionedJokers(result.run);
         consumableEffectBus.emit(id, prev.run, result.run);
         return {
           ...prev,
@@ -1282,7 +1290,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         audio.play('consumableUse'); // A-3: object actions are audible
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
         recordEditionedJokers(result.run);
-        consumableEffectBus.emit(id, prev.run, result.run);
+        consumableEffectBus.emit(id, prev.run, result.run, result.chanceResults);
         const hint = result.requestHint
           ? findSpellableWords(blind.hand, getLexicon(), 3)
           : prev.hint;
@@ -1391,7 +1399,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
 
   const playWord = useCallback((heldOrder?: string[]) => {
     setState((prev) => {
-      if (prev.phase !== 'playing' || prev.selected.length === 0) return prev;
+      if (prev.phase !== 'playing' || !prev.settleComplete || prev.selected.length === 0) return prev;
       if (prev.blind.phasesUsed >= prev.blind.phasesTotal) return prev;
       let result;
       try {
@@ -1598,7 +1606,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // the rng is used only for discardGain font seal rolls, GDD §2.3).
   const discard = useCallback((ids: string[]) => {
     setState((prev) => {
-      if (prev.phase !== 'playing' || prev.pendingEnd) return prev;
+      if (prev.phase !== 'playing' || prev.pendingEnd || !prev.settleComplete) return prev;
       if (prev.blind.discardsLeft <= 0) return prev;
       const staged = new Set(prev.selected);
       const valid = ids.filter((id) => !staged.has(id) && prev.blind.hand.some((t) => t.id === id));
@@ -1688,9 +1696,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     canPlay:
       state.phase === 'playing' &&
       !state.pendingEnd &&
+      state.settleComplete &&
       state.selected.length > 0 &&
       state.blind.phasesUsed < state.blind.phasesTotal,
-    canDiscard: state.phase === 'playing' && !state.pendingEnd && state.blind.discardsLeft > 0,
+    canDiscard:
+      state.phase === 'playing' &&
+      !state.pendingEnd &&
+      state.settleComplete &&
+      state.blind.discardsLeft > 0,
     toggleTile,
     reorderHand,
     reorderJokers,

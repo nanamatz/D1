@@ -15,6 +15,7 @@ import { useI18n } from '../i18n';
 import { jokerArt } from '../jokerArt';
 import { richText } from '../richtext';
 import { CardArt, type CardFamily } from './CardArt';
+import { ChanceBadges } from './ChanceBadges';
 import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
 
@@ -53,7 +54,8 @@ export function ConsumableEffect() {
     active.addedConsumables.length > 0 ||
     active.goldDelta !== 0 ||
     active.handSizeDelta !== 0 ||
-    active.patternLevelsGained > 0;
+    active.patternLevelsGained > 0 ||
+    active.chanceResults.length > 0;
 
   const tileObject = (tile: Tile, mode: 'destroyed' | 'changed' | 'created') => (
     <div key={`${mode}-${tile.id}`} className={`cfx-object cfx-${mode}`}>
@@ -119,6 +121,7 @@ export function ConsumableEffect() {
         <div className="cfx-copy">
           <strong>{t(`consumable.${active.id}`)}</strong>
           <p>{richText(consumableTooltipBody(active.id, t))}</p>
+          <ChanceBadges results={active.chanceResults} />
           <div className="cfx-results">
             {active.removedTiles.map((tile) => tileObject(tile, 'destroyed'))}
             {active.removedJokers.map((joker, index) => jokerObject(joker, 'destroyed', index))}

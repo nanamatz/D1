@@ -36,7 +36,8 @@ export function CashOut({ g }: { g: UseGame }) {
   const noInterest =
     pouchDisablesInterest(g.state.run) || recordDisablesInterest(g.state.run);
   const lines: Line[] = [
-    { key: 'cashout.reward', amount: e.reward },
+    { key: 'cashout.reward', amount: e.reward - e.tagReward },
+    ...(e.tagReward > 0 ? [{ key: 'cashout.tagReward', amount: e.tagReward }] : []),
     { key: 'cashout.phases', params: { n: e.phaseCount }, amount: e.phases },
     ...(g.state.run.pouchId === 'purple'
       ? [{ key: 'cashout.discards', params: { n: e.discardCount }, amount: e.discards }]

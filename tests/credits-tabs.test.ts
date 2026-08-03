@@ -14,7 +14,7 @@ describe('Credits tabs', () => {
     expect(component).toContain('role="tabpanel"');
     expect(component).toContain('Ben Kim');
     expect(en['credits.aiTools']).toContain('ChatGPT by OpenAI · Claude by Anthropic');
-    expect(ko['credits.audioSource']).toContain('외부 샘플이나 제3자 오디오 파일은 사용하지 않았습니다.');
+    expect(ko['credits.audioSource']).toContain('외부 샘플이나 제3자 오디오 파일은 사용하지 않았습니다');
     expect(en['credits.fontSource']).toContain('SIL Open Font License 1.1');
   });
 });

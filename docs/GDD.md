@@ -12,10 +12,9 @@ Version 0.2 — systems expansion
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 26 Editorial Perks now ship (§8.2, changed 2026-07-31; Lead Story retired).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
-- Changed 2026-07-26: **Consumables** now use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 artworks; 12 effects implemented 2026-07-30, 2 deliberately pending). The former Stationery/Punctuation display names and Forbidden Books placeholders are retired (§10).
+- Changed 2026-08-03: **Consumables** use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 implemented). Rainman and Sake Cup complete the supplied Gambler roster (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
-- Changed 2026-07-30: the twelve confirmed Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls in the shop;
-  Rainman and Sake Cup have art but no engine id.
+- Changed 2026-08-03: all fourteen Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls them in the shop.
 - Changed 2026-08-02: Full Moon's three created vowels now each receive one seeded-random non-base enhancement axis (material, font, or letter-tile edition), rather than always receiving a material (§10.3).
 - Changed 2026-07-30: the deferred starting-deck and stake/Ink concepts are
   retired. Runs now choose one of **14 Starting Pouches** and one of **8
@@ -27,8 +26,8 @@ Version 0.2 — systems expansion
   remains `lunchBag`. Pouch object art also removes the pencils from Pencil
   Case and the coins from Coin Purse, while Lucky Pouch gains a centred gold
   circular emblem (§12.2).
-- Changed 2026-07-29: twelve Gambler-card effects are confirmed; Rainman and Sake Cup remain pending until the Emoji Tile roster is selected. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Deer may rarely appear in Constellation Packs, and Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3).
-- Changed 2026-07-29: Emoji Tiles now have profile unlocks. A starter subset is available immediately; every other tile needs its own condition completed in an unseeded run, and locked tiles are absent from every acquisition pool (§9.2, §11).
+- Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, Deer may rarely appear in Constellation Packs, and Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3).
+- Changed 2026-08-03: the planned Emoji Tile profile-unlock filter remains postponed. No active Emoji Tile currently has an unlock gate; all Common/Uncommon/Rare entries remain visible and eligible (§9.2, §11).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
   Legendary roster by Book of Margins, Tyrant, Type Foundry, Tower of Babel, and
   Misbound. Common 32 and Uncommon 35 remain a review baseline with additional
@@ -89,7 +88,7 @@ Version 0.2 — systems expansion
 | Ante | Ante | 3 blinds; base target rises per ante |
 | Tarot cards | Fable Cards | 18 one-shot tile/economy/tool effects |
 | Planet cards | Constellation Cards | Sentence-pattern level-up consumables |
-| Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); 12 implemented, 2 pending |
+| Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); 14 implemented |
 | Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
 | Stakes / difficulty | Records | 8 cumulative levels: five LPs, Clear LP, CD, DVD (§12.3) |
 | Blind skip / Tags | Skip / Editorial Perks | Draft and Revision may be traded for one disclosed publishing-world reward; Deadline is mandatory (§8.2) |
@@ -162,7 +161,7 @@ Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE
 | 30 pt | Q×2, Z×2 | 4 |
 | **Total** | — | **68** |
 
-**Why (sim, 4000 hands @ hand 11):** vs. the old 98-tile bag, rare letters now appear **~2× as often** per hand (1.24 → 2.57), so deck-building and rare-letter payoffs gain traction; the longest makeable word stays healthy (6.9 → 6.2 letters) and the gibberish-forced rate stays near zero (0.1% → 0.3%). Connected knobs (hand size, target curve, Epic-Poet/pouch-depletion cap) get retuned against sim drift as needed.
+**Historical pool sim (4000 hands @ the then-current hand 11):** vs. the old 98-tile bag, rare letters appeared **~2× as often** per hand (1.24 → 2.57), the longest makeable word stayed healthy (6.9 → 6.2 letters), and the gibberish-forced rate stayed near zero (0.1% → 0.3%). The live baseline is now 10; re-run this sim when retuning the pool.
 
 **Note.** Y is treated as a consonant under the traditional classification (vowel/consonant axis). Room is left to handle it as a semivowel exception in specific emoji tiles or sentence judgments.
 
@@ -186,7 +185,7 @@ Effects are **per tile** and stack: three Porcelain tiles in one word give +90 C
 
 **Risk budget: Glass only.** Every other material is pure upside. Stone's letter loss is a trade-off known at the moment it is applied, not a gamble, so it does not break this rule. A destroyed Glass tile leaves the run permanently.
 
-**Numbers started from Balatro's reference values, then follow playtest tuning.** Wood uses its custom growth curve and Lead plate's $20 chance was raised from 1/15 to 1/5 on 2026-07-30. They remain values to verify against our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 11 tiles against Balatro's 8, so per-tile effects amplify far harder here. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
+**Numbers started from Balatro's reference values, then follow playtest tuning.** Wood uses its custom growth curve and Lead plate's $20 chance was raised from 1/15 to 1/5 on 2026-07-30. They remain values to verify against our scale — our letter chips are Scrabble values × 3 ("TASTE" = 15 Chips) and our hand is 10 tiles against Balatro's 8, so per-tile effects amplify harder here. See `docs/superpowers/specs/2026-07-17-tile-materials-design.md`.
 
 **Names follow the ids (changed 2026-07-30).** The display names used to be
 inverted against the engine identifiers — id `porcelain` was shown as "Ceramic /
@@ -288,8 +287,8 @@ A "clean English word set with register labels" does not exist. So this is a pro
 - **Representative meaning only.** Wiktionary usage categories locate candidate words, then the first English dictionary definition's usage label is checked—not every sense on the page. The mapping is Vulgar = vulgar/taboo/obscene/offensive/slur; Slang = slang/internet slang/AAVE/dialect slang; Formal = formal/literary/archaic/technical/legal/poetic/officialese. Informal, colloquial, pejorative, rare, difficult, dialectal, or unmarked alone remain Standard. Explicit boundary examples in the criteria document override source disagreement. Only POS-compatible inflections inherit a non-standard lemma tag, and every non-standard evidence path is baked into `data/register-audit.json`.
 - **Precedence applies after representative-meaning selection.** If that one meaning matches multiple classes, resolve **Vulgar > Slang > Formal > Standard**. Do not promote a common Standard meaning because a secondary sense is slang, vulgar, or technical.
 - **Bake public lexical sources offline.** Moby POS supplies broad POS labels and Princeton WordNet 3.0 supplies complementary POS plus verb frames; curated/LLM corrections override them. Bake the merged result into a table rather than doing any classification at runtime.
-- **Use complete ENABLE (changed 2026-08-03).** The validity pool contains all 172,823 ENABLE words plus 13 apostrophe-free tile-grammar exceptions (172,836 total). The former 50k frequency cutoff was retired after it excluded valid base words such as `uremia` while retaining derivatives such as `uremic`.
-- **Inflected forms are IN; every baked word has POS (playtest-01 P0; completed 2026-08-03).** Plurals, past tense, -ing, and comparatives all validate (ENABLE already contains them; do not lemmatize them away). Existing curated tags stay authoritative; public-domain Moby POS and Princeton WordNet 3.0 fill the complete ENABLE pool, including transitive/intransitive verb frames, with deterministic morphology/fallback for obscure residual forms. Register words without a non-standard tag still default to Standard; production data validation forbids an empty POS list.
+- **Use the playable ENABLE subset (changed 2026-08-03).** The validity pool contains every ENABLE word of **18 letters or fewer** plus 13 apostrophe-free tile-grammar exceptions (172,228 dictionary words; 172,251 baked lexicon entries including 23 retained entries outside ENABLE). The 608 longer ENABLE words are excluded because 18 is the designed playable-word ceiling after Copy Editor is considered. The former 50k frequency cutoff remains retired; it excluded valid base words such as `uremia` while retaining derivatives such as `uremic`.
+- **Inflected forms are IN; every baked word has POS (playtest-01 P0; completed 2026-08-03).** Plurals, past tense, -ing, and comparatives validate when they remain within the 18-letter ceiling (do not lemmatize eligible forms away). Existing curated tags stay authoritative; public-domain Moby POS and Princeton WordNet 3.0 fill the playable ENABLE subset, including transitive/intransitive verb frames, with deterministic morphology/fallback for obscure residual forms. Register words without a non-standard tag still default to Standard; production data validation forbids an empty POS list.
 
 > **One word = one suit.** Choose the word's most frequent/representative meaning; if that cannot be determined reliably, use the general dictionary's first sense. Classify only that meaning in the numbered order Vulgar → Slang → Formal → Standard, and fall back to Standard when ambiguous. Thus `sick` (ill) and `lit` (set alight) remain Standard even though each has a Slang secondary sense.
 
@@ -331,7 +330,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired. Pattern levels grow exponentially: the first level-up adds the table's listed Chips and Mult, and each later level-up's increment is ×1.25 larger than the previous one (`BALANCE.patternLevelGrowthFactor`). After accumulated growth, both axes are rounded to the nearest positive integer; therefore the current Chips/Mult and every displayed level-up delta are always natural numbers.
 
 ```
 sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
@@ -346,18 +345,18 @@ folded invisibly into the pattern label.
 
 | # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|
-| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 2 | +10, +0.5 |
-| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 3 | +10, +0.5 |
-| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 3, **+10 Chips per repeat beyond the 2nd** | +10, +0.5 (repeat bonus +5/level) |
+| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 2 | +10, +1 |
+| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 3 | +10, +1 |
+| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 3, **+10 Chips per repeat beyond the 2nd** | +10, +1 (repeat bonus +5/level) |
 | 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | 40 × 3 | +15, +1 |
 | 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 4 | +15, +1 |
 | 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | 60 × 4 | +20, +1 |
-| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 5 | +25, +1.5 |
-| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 5 | +30, +1.5 |
+| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 5 | +25, +2 |
+| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 5 | +30, +2 |
 | 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 6 | +35, +2 |
 | 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 6 | +40, +2 |
-| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 7 | +45, +2.5 |
-| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 7 | +50, +2.5 |
+| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 7 | +45, +3 |
+| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 7 | +50, +3 |
 
 (Values live in `balance.ts` under `patterns`; the 2026-08-02 ease pass raised all base Chips and Mult while preserving the rank hierarchy.)
 
@@ -385,7 +384,7 @@ Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional 
 
 ### 5.4 Constellation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises that pattern's base by its `+Chips, +Mult` per-level values (the §5.2 right column) — the old multiplier-only vs flat-only split is gone.
+Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises both axes; the first increment is the §5.2 right-column `+Chips, +Mult`, and later increments grow geometrically by ×1.25 — the old multiplier-only vs flat-only split is gone.
 
 **Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
 engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
@@ -394,20 +393,20 @@ engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
 status, preview, Run Info, settlement, run summary, and Constellation tooltips
 all show this same mark, so the mapping is readable before effect prose.
 
-| Constellation | Levels up | Per level (placeholder) |
+| Constellation | Levels up | First level-up increment (later ×1.25 each) |
 |---|---|---|
-| Libra / 천칭자리 | Outcry | +10 Chips, +0.5 Mult |
-| Leo / 사자자리 | Imperative | +10 Chips, +0.5 Mult |
-| Aquarius / 물병자리 | Chant | +10 Chips, +0.5 Mult (repeat bonus +5 Chips/level) |
+| Libra / 천칭자리 | Outcry | +10 Chips, +1 Mult |
+| Leo / 사자자리 | Imperative | +10 Chips, +1 Mult |
+| Aquarius / 물병자리 | Chant | +10 Chips, +1 Mult (repeat bonus +5 Chips/level) |
 | Aries / 양자리 | Simple | +15 Chips, +1 Mult |
 | Taurus / 황소자리 | Descriptive | +15 Chips, +1 Mult |
 | Gemini / 쌍둥이자리 | Transitive | +20 Chips, +1 Mult |
-| Cancer / 게자리 | Ditransitive | +25 Chips, +1.5 Mult |
-| Virgo / 처녀자리 | Compound | +30 Chips, +1.5 Mult |
+| Cancer / 게자리 | Ditransitive | +25 Chips, +2 Mult |
+| Virgo / 처녀자리 | Compound | +30 Chips, +2 Mult |
 | Scorpio / 전갈자리 | Object Complement | +35 Chips, +2 Mult |
 | Sagittarius / 궁수자리 | Interrogative | +40 Chips, +2 Mult |
-| Capricorn / 염소자리 | Negative | +45 Chips, +2.5 Mult |
-| Pisces / 물고기자리 | Complex | +50 Chips, +2.5 Mult |
+| Capricorn / 염소자리 | Negative | +45 Chips, +3 Mult |
+| Pisces / 물고기자리 | Complex | +50 Chips, +3 Mult |
 
 ### 5.5 Letter Hands (글자 족보) — per-word structure bonuses (playtest-02 A-2)
 
@@ -438,20 +437,26 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 
 ### 6.1 Loop Skeleton (one blind)
 
-Blind starts → shuffle the bag (68-tile deck) → fill the hand (e.g. 11 tiles) → **[Phase: spell a word from hand tiles → submit → settle → draw back up by the number of tiles used]** repeat → early end or phases exhausted → blind ends; all used tiles return to the bag.
+Blind starts → shuffle the bag (68-tile deck) → fill the hand (e.g. 10 tiles) → **[Phase: spell a word from hand tiles → submit → settle → draw back up by the number of tiles used]** repeat → early end or phases exhausted → blind ends; all used tiles return to the bag.
 
 This parallels Balatro exactly: cards played within a blind do not return until the blind ends; the deck (bag) is a permanent, sculptable asset (§2, §9–10).
 
-### 6.2 Hand Size — 11 (a balance knob)
+### 6.2 Hand Size — 10 (a balance knob)
 
-Baseline hand size **11** (placeholder within the 10–12 band). Larger than
+Baseline hand size **10** (placeholder within the 10–12 band). Larger than
 Balatro's 8 because poker *selects* from a hand while this game must *spell* —
 more degrees of freedom are needed; larger than Scrabble's 7 because Scrabble
 extends existing board letters while this game builds standalone words. Hand
-size is an adjustable resource: Five-Color Lucky Pouch +2, Blue LP −1, vouchers
-may add 1, and boss hooks may reduce it, with a final minimum of 1 (§12). This single
+size is an adjustable resource: Five-Color Lucky Pouch +1, Four-cut Photo and
+Picture Diary +1 each, and boss hooks may reduce it, with a final minimum of 1 (§12). This single
 number is a primary difficulty lever; tune against “average word length
 achieved” in playtests.
+
+The normal unique-source ceiling is **17**: `10 + 1 + 1 + 1 + 1 + 1 + 2`, from
+the base, Five-Color Lucky Pouch, Four-cut Photo, Picture Diary, Juggler Tag,
+Spare Drawer, and Folding Manuscript. Copy Editor is accounted for by a designed
+**18-letter validity ceiling**: longer strings always follow the gibberish path,
+even if an exceptional combination produces a hand larger than 18.
 
 ### 6.3 Discard — per-blind budget (Balatro-aligned; playtest-02 A-1)
 
@@ -477,7 +482,7 @@ Letter scores are intrinsic tile value, so they must be recoverable regardless o
   gibberish hook, it balances those final `Chips × 1.0` axes per §12.2.
 - **Sequence effect (b-2):** the gibberish entry is recorded as a **hole** in the sentence sequence. Under whole-sequence matching (§5.1) a hole voids all pattern matches. Correction Tape removes a hole.
 - **Letter hands (§5.5):** even as a hole, a gibberish submission can still score the gibberish-eligible letter hands — **Vowel Flush** and **Straight**. The Straight jackpot (dumping Q-R-S-T-U-V) is the headline case; suit/POS stay null and the hole is still recorded.
-- **Emoji tile interaction:** layer-1 (letter-level) emoji tiles fire on gibberish; layer-2/3 naturally cannot because suit and POS are null. R9 Dadaist is the explicit exception: it supplies Slang only for word scoring and applies ×2 Mult, while POS remains null and the sentence hole remains. No other rule is silently restored.
+- **Emoji tile interaction:** layer-1 (letter-level) emoji tiles fire on gibberish; layer-2/3 naturally cannot because suit and POS are null. R9 Dadaist is the explicit exception: it supplies final Slang membership, shows the Slang tag, and applies ×2.5 Mult, while `suit`/POS remain null and the sentence hole remains. No other rule is silently restored.
 - **UI note:** after a gibberish word is submitted, the current sentence-pattern label disappears because the sequence no longer matches — the rule explains itself without warning dialogs.
 - **UX surfacing (playtest-01 P0-3):** when staged tiles are not a valid word, the staged preview must say so explicitly (e.g. *"Not a word — submit as gibberish: +N chips, breaks the sentence"*) and the play button relabels to *Submit gibberish*. With the escape valve visible, the "my phase was wasted" complaint becomes impossible.
 
@@ -530,6 +535,15 @@ Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(p
 
 ### 7.4 Final Pipeline Summary
 
+**Probability-result presentation (changed 2026-08-03).** Any player-facing
+object effect that makes a seeded success/failure or survive/destroy roll during
+card use, scoring, or blind-end resolution must return that actual result to the
+UI. The result appears on the same object's effect beat with its exact chance and
+an explicit Success/Failure or Survived/Destroyed verdict. This applies to The
+Cowherd and the Weaver Girl, Lead Plate, Glass, Misbound, and future trigger
+rolls. Shop/pack generation and random target selection show their generated or
+selected object directly and do not add a redundant probability verdict.
+
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
 **On ending (early/final):** finalize the sentence bonus from the sequence —
@@ -580,8 +594,9 @@ Phase/Discard rewards, interest, word/pattern and Emoji Tile growth triggers, Fe
 Settlement, and the following Stationery Shop visit. The Chapter and scheduled
 Deadline boss do not change.
 
-Each Chapter rolls one seeded offer for Draft and one for Revision. The 26
-rewards below are independently and uniformly selected, so duplicates are valid.
+Each Chapter rolls one seeded offer for Draft and one for Revision. The Draft
+offer is uniform across all 26 rewards; the Revision offer is uniform across the
+remaining 25, so the same Tag never repeats within one Chapter.
 The complete reward—including House Style's exact pattern—is disclosed on Blind
 Select before the player chooses. There is no post-choice failure roll and no
 Chapter gating in this first balance slice.
@@ -612,7 +627,7 @@ Chapter gating in this first balance slice.
 | Garbage Tag · 쓰레기 태그 | Gain **$1 per unused Discard banked on successful blind clears this run** |
 | Ink Tag · 잉크 태그 | Immediately open a free **Basic Ink Pack** |
 | Coupon Tag · 쿠폰 태그 | The next shop's **initial item stock and card packs are free**; rerolled stock is normally priced |
-| Juggler Tag · 저글러 태그 | The next blind actually played gets **+3 hand size** |
+| Juggler Tag · 저글러 태그 | The next blind actually played gets **+1 hand size** |
 | Economy Tag · 경제 태그 | Immediately **double current gold** |
 
 Next-blind effects stack and survive another skip; they are consumed only when
@@ -627,7 +642,11 @@ and burst away; only after that sequence completes does the existing skip-reward
 path mutate the run. Free-pack Tags enter the ordinary Pack Opening flow after the
 burst and still resolve **before** the next blind is constructed, so every pouch
 mutation is present when that blind draws. Reduced motion commits without the beat.
-`src/engine/skipRewards.ts` is the headless source of truth,
+Delayed clear-reward Tags remain numerically distinct in the headless earnings
+breakdown. Fee Settlement renders their money as an **Editorial Perk bonus** line
+instead of silently folding it into the ordinary clear reward.
+The two offers rolled for a Chapter must have different Tag ids; the same Tag
+can never appear on both Draft and Revision. `src/engine/skipRewards.ts` is the headless source of truth,
 all values live in `BALANCE.skipRewards`, and `RunState.skipOffers` persists the
 Chapter's disclosed offers for seeded reproducibility. *(Changed 2026-07-31:
 feedback expanded the original eight-entry publishing pool, then retired Lead
@@ -648,7 +667,7 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 |---|---|---|
 | Wanted · 수배 전단 (`wanted`) | Extra-large blind — target ×2 | Raw check on total scoring throughput; a pressure blind |
 | Will · 유서 (`will`) | Base Chips **and** Mult halved (×0.5 each) | Attacks every build's base output; rewards patterns/multipliers |
-| Forbidden Paper · 금서 (`forbiddenPaper`) | Only one suit may be played this blind — once a suit is established, words of any other suit void to 0 (gibberish exempt) | Forces original-suit unison; Tower of Babel cannot bypass legality |
+| Forbidden Paper · 금서 (`forbiddenPaper`) | Only one suit may be played this blind — once a suit is established, a word sharing none of its final register tags voids to 0 (gibberish exempt) | Forces register overlap; Tower of Babel can supply one through its four final tags |
 
 **Suit / POS attacks**
 
@@ -688,7 +707,7 @@ data predicate is the source of truth for both scoring and preview UI.
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| Ancient Paper · 고대 문서 (`ancientPaper`) | All vowel tiles are dealt **face-down** — identity hidden until played; they score normally | Info-denial; spelling by feel — the face-down archetype (Balatro's face-down cards) |
+| Ancient Paper · 고대 문서 (`ancientPaper`) | All vowel tiles are dealt **face-down** — letter, value, material, font, and edition are hidden behind one identical back until played; they score normally | Info-denial; spelling by feel — the face-down archetype (Balatro's face-down cards) |
 
 **Economy attack**
 
@@ -705,7 +724,7 @@ data predicate is the source of truth for both scoring and preview UI.
 | Nokdo Script · 녹도 문자 (`nokdoScript`) | One random letter tile must remain selected and must be included in the next submitted word. It cannot be deselected or discarded. Consumables may still transform it—including changing it to Stone—or destroy it. If it leaves the hand, another random hand tile becomes forced; an empty hand has none. | A parchment bearing deer-track-like glyphs; build or consume around the forced tile. |
 | Blueprint · 블루프린트 (`blueprint`) | On Deadline entry, shuffle the owned Emoji Tiles once and deal every one face-down. Their order and hidden faces then remain fixed for the blind; all effects stay active. | Every back is black and displays `mascotSrc('woodak')`, so it always follows the player's currently selected WooDak skin. |
 | Vital Sign · 바이탈 사인 (`vitalSign`) | Target is ×3 the ordinary boss Deadline target (therefore base Chapter target ×6 before Pouch/Record modifiers). | Vital-sign monitor emblem; pure throughput check. |
-| Ultrasound Photo · 초음파 사진 (`ultrasound`) | On entry, disable one random owned Emoji Tile. After every played word, clear that marker and randomly disable one for the next play. With no Emoji Tiles, nothing is disabled. | Ultrasound-photo emblem; the disabled tile stays in its slot, visibly darkened and marked. |
+| Ultrasound Photo · 초음파 사진 (`ultrasound`) | On entry, disable one random owned Emoji Tile. After every played word, clear that marker and randomly disable one for the next play. The new marker is presented only after the complete score/trigger timeline lands. A disabled tile contributes no hook or Emoji-Tile edition effect. With no Emoji Tiles, nothing is disabled. | Ultrasound-photo emblem; the disabled tile stays in its slot, visibly darkened and marked after a short disable beat. |
 
 **Scheduled-blind invariant.** History Book or Old Book can lower Chapter 8 to
 7 after its finisher has already been scheduled. The existing `chapterBossId`
@@ -815,7 +834,7 @@ one Constellation choice at **1% per pack**, also capped at one. These rolls use
 the seeded RNG and their values live in `balance.ts`
 (`pack.gamblerInFableChance`, `pack.deerInConstellationChance`).
 
-> **Impl note (updated 2026-07-30).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains the 18 implemented cards in §10.1; Constellation offers the 12 zodiac pattern cards; the **Ink Pack** offers the 12 implemented Gambler cards (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Comic Book is required before a Gambler can rarely replace a Fable-Pack choice; Deer may very rarely replace a Constellation-Pack choice. *(Changed 2026-07-30: Comic Book previously mixed **Constellation** cards into Fable packs — a placeholder while the Gambler registry was missing. It now does what §9.4 says: adds Gambler cards.)* Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
+> **Impl note (updated 2026-08-03).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers all 14 implemented Gambler cards (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Comic Book is required before a Gambler can rarely replace a Fable-Pack choice; Deer may very rarely replace a Constellation-Pack choice. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -893,7 +912,7 @@ also available through the surrounding tooltip and accessible label.
 | 4 | The Golden Axe and the Silver Axe | Turn 2 selected tiles into Lead Plate |
 | 5 | The Fox and the Crane | Turn 1 selected tile into Stone |
 | 6 | The Tortoise and the Hare | Turn 2 selected tiles into Polished |
-| 7 | The Fox and the Sour Grapes | Turn 2 selected tiles into Ceramic (+30 Chips) |
+| 7 | The Fox and the Sour Grapes | Turn 2 selected tiles into Porcelain (+30 Chips) |
 | 8 | The Lion and the Mouse | Turn 1 selected tile into Glass |
 | 9 | The Goose That Laid the Golden Eggs | Gain gold equal to current gold, capped at +$20 |
 | 10 | The Town Mouse and the Country Mouse | Create up to 2 random Constellation cards while slots are available |
@@ -908,7 +927,7 @@ also available through the surrounding tooltip and accessible label.
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
-One per sentence pattern, 1:1 (full mapping and per-level effects in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult by its per-level values (§5.2) — Balatro Planet behavior. Specializing into the most-played patterns is the intended play.
+One per sentence pattern, 1:1 (full mapping and first-level increments in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult, with each successive increment ×1.25 larger than the last (§5.2). Specializing into the most-played patterns is the intended play.
 
 **Use sequence (changed 2026-07-29).** The used card shakes while the score
 panel presents the pattern's current Mult and Chips. The green `+Mult` increment
@@ -925,7 +944,7 @@ held-card surfaces use its pixel-identical PNG runtime derivative in the same
 shared SVG frame component as Fable and Gambler cards (changed 2026-07-31).
 The correctly spelled `Aquarius.svg` / `aquarius` mapping is retained.
 
-### 10.3 Gambler Cards — 12 implemented, 2 pending
+### 10.3 Gambler Cards — 14 implemented
 
 **Gambler cards / 노름꾼 카드** are the third card family (renamed from "Ink
 Cards / 잉크 카드", 2026-07-27) and already have a Collection category. Their
@@ -937,11 +956,9 @@ Sake Cup (a hwatu/화투 motif set — hence the gambler framing). Each source P
 is traced into the same 32-color, path-only SVG master standard as Fable and
 Constellation cards: `500×700`, fixed 5:7 ratio, and a `250×350` logical pixel
 grid. Runtime uses the trace's pixel-identical PNG derivative inside the shared
-SVG frame (changed 2026-07-31). Twelve effects were confirmed on 2026-07-29 and
-**ship as of 2026-07-30** in `src/engine/gamblers.ts`
-with every acquisition route wired (§9.3). Rainman and Sake Cup stay deliberately
-pending until the Emoji Tile roster is selected: they have art in the UI-only
-gallery but **no engine id**, so they can never be drawn. The former Forbidden Books/Spectral placeholder
+SVG frame (changed 2026-07-31). All fourteen effects
+**ship as of 2026-08-03** in `src/engine/gamblers.ts`
+with every acquisition route wired (§9.3). The former Forbidden Books/Spectral placeholder
 roster stays retired — the Ink name now belongs to the pack, not to a card
 family. The Collection key stays `inkCards` (display-only rename).
 
@@ -982,10 +999,10 @@ receive new ids and enter the run's pouch permanently.
 | 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U. Each created tile receives one seeded-random non-base enhancement from material, font, or letter-tile edition; Stone is excluded because it would erase the promised vowel. |
 | 11 | Geese / 기러기 | Change one selected letter tile's font to **Void** (`bold` internally). Preserve material and edition. |
 | 12 | Phoenix / 봉황 | Create one seeded-random unowned Legendary Emoji Tile. Unusable without an eligible tile or free slot. This is the normal-play Legendary acquisition route. |
-| 13 | Rainman / 우중인 | **Effect pending** until the Emoji Tile roster and its scaling/decay coverage are selected. |
-| 14 | Sake Cup / 사케 잔 | **Effect pending** until the Emoji Tile roster and its probability/duplication coverage are selected. |
+| 13 | Rainman / 우중인 | Give one seeded-random owned Emoji Tile the **White** edition, then permanently reduce hand size by 1. Unusable without an owned Emoji Tile or at the hand-size floor of 1. |
+| 14 | Sake Cup / 사케 잔 | Give one seeded-random owned Emoji Tile the **Rainbow** edition, then destroy every other owned Emoji Tile. Unusable without an owned Emoji Tile. |
 
-**Implementation notes (2026-07-30).** The registry is data + a single
+**Implementation notes (updated 2026-08-03).** The registry is data + a single
 `useGambler(id, run, blind, field, selectedIds, rng)` entry point. `field` is the
 **active tile field**: the live hand during a blind, the pack's seeded pouch
 candidates inside an opened pack — one code path for both, since tile edits are
@@ -1040,8 +1057,8 @@ around the emit and re-announces the shrink as `tilesDestroyed`, so Type
 Foundry (L3) and any future destruction-fed tile see it generically rather than
 by special case. **Tyrant (L2)** applies its Vulgar rewrite as an additive delta
 from the word's own suit multiplier to `suitMult.vulgar × 2`, which keeps it
-independent of shelf order; `submission.suit` stays canonical for bosses,
-Unison, and sentence history.
+independent of shelf order; the submitted word's final register and visible tag
+become Vulgar, so bosses, Unison, and sentence-history effects see the rewrite.
 
 **Unlock model (design retained; implementation pending).** The achievement
 conditions listed in the idea bank remain future profile progression. Until
@@ -1104,10 +1121,10 @@ the active 120-entry roster.
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
-| C6 | Ceramic Artisan | +7 Chips per unenhanced base Ceramic tile | 1 | — |
+| C6 | Ceramic Artisan | +7 Chips per unenhanced base tile | 1 | — |
 | C7 | Long-Word Fan | +80 Chips if word is 5+ letters | 1 | — |
 | C8 | Short & Sharp | +10 Mult if word is 3 letters or fewer | 1 | — |
-| C9 | Alphabetical Order | +19 Mult if the word contains consecutive letters | 1 | — |
+| C9 | Alphabetical Order | +15 Mult if the word contains consecutive letters | 1 | — |
 | C10 | Miser | +2 Mult per 5 gold held | 1 | — |
 
 ### 11.3 Uncommon — active 44
@@ -1136,7 +1153,7 @@ the active 120-entry roster.
 | R6 | Fable Hoard | ×1.25 Mult per currently held consumable; zero consumables means ×1 | 3 | End 5 rounds with consumable slots full |
 | R7 | Anonymous | ×3 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
 | R8 | Censor's Bane | ×3 Mult during Deadline/boss blinds | 3 | Clear all 12 bosses |
-| R9 | Dadaist | Treat gibberish as Slang for word scoring and apply ×2.5 Mult; POS remains null and the sentence hole remains | 2 | Clear a blind using only gibberish |
+| R9 | Dadaist | Give gibberish final Slang membership and its visible tag, then apply ×2.5 Mult; `suit`/POS remain null and the sentence hole remains | 2 | Clear a blind using only gibberish |
 | R10 | Interest Glutton | For every $1 interest received at round end, gain +5 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
 
@@ -1151,8 +1168,8 @@ all five unowned definitions.
 | L1 | Book of Margins | +3 Emoji Tile slots; after all slot modifiers, this tile applies ×2 per empty effective slot | 3 | dynamic exponential |
 | L2 | Tyrant | Treat every valid word as Vulgar and double every Vulgar ×Mult effect | 2 | — |
 | L3 | Type Foundry | Starts at ×1; whenever a letter tile is permanently destroyed, compound this tile's factor ×1.5 for the rest of the run | 1 | ★ exponential |
-| L4 | Tower of Babel | Each valid word counts as all four suits for suit-trigger conditions. Boss legality and Unison continue to use the word's original suit | 2 | — |
-| L5 | Misbound | Starts at ×1. At round end, 1/24 chance to self-destruct; if it survives, permanently gain +0.3 ×Mult | 3 | ★ |
+| L4 | Tower of Babel | Each valid submitted word gains all four final register tags; register conditions, boss legality, Unison, and sentence-history effects use that membership | 2 | — |
+| L5 | Misbound | Starts at ×1. At round end, 1/100 chance to self-destruct; if it survives, permanently gain +0.8 ×Mult | 3 | ★ |
 
 ### 11.6 Scaling Axis Distribution
 
@@ -1180,13 +1197,13 @@ Common/Uncommon additions may expand the table after their review.
   Shredder, Butterflies, Full Moon, and future permanent destruction into
   exponential growth. The shrinking 68-tile pouch is its natural cost; verify
   that it is enough.
-- **One suit ↔ every suit.** Unison rewards original-suit commitment. Tower of
-  Babel (L4) broadens suit-trigger conditions but explicitly cannot forge
-  Unison or bypass boss legality.
+- **One suit ↔ every suit.** Unison rewards shared final-register membership.
+  Tower of Babel (L4) supplies all four tags, so it can bridge an Unison or the
+  Forbidden Paper lock, at the cost of also satisfying every hostile register check.
 - **Rhyme streak.** Rhyme Chain (R3) is a blind-only combo, not a growth tile. It depends on real lexicon clusters and
   draw odds. Measure actual same-suffix streaks rather than balancing from a
   theoretical maximum.
-- **Misbound lifetime.** Its +0.2 growth and 1/12 self-destruction must be tuned
+- **Misbound lifetime.** Its +0.8 growth and 1/100 self-destruction must be tuned
   together from expected rounds survived.
 
 ### 11.8 Editions (implemented)
@@ -1253,7 +1270,10 @@ numbers in reducers or components.
   does not set `voucherLocked`. It is a starting grant, not a redemption, so it
   does not increment redemption-based profile progress. A profile-unlocked
   upgrade may still appear because its base is already owned.
-- **Unlock persistence.** Pouch and Record unlocks are profile-scoped. A word
+- **Unlock persistence.** Pouch and Record unlocks are profile-scoped. The
+  Record ladder is tracked independently for each Starting Pouch: winning a
+  Record with one Pouch unlocks the next Record only for that same Pouch and
+  never advances another Pouch's ladder. A word
   threshold counts distinct valid words in the Collection; gibberish and repeat
   plays do not increase it. A “win” means clearing the Chapter 8 Deadline.
   Persistence goes through `src/ui/storage.ts`, never direct `localStorage`; if
@@ -1271,7 +1291,7 @@ Useful composition checks:
 
 - Yellow Pouch + Yellow LP: `4 + 1 − 1 = 4` discards.
 - Blue Pouch + Clear LP: `5 + 1 − 1 = 5` phases.
-- Five-Color Lucky Pouch + Blue LP: `11 + 2 − 1 = 12` hand size.
+- Five-Color Lucky Pouch + Blue LP: `10 + 1 − 1 = 10` hand size.
 - Five-Color Lucky Pouch + CD: `5 − 1 − 1 = 3` Emoji Tile slots.
 - Leather Pouch + CD: `5 + 1 − 1 = 5` Emoji Tile slots.
 
@@ -1284,7 +1304,7 @@ Useful composition checks:
 | 3 | **초록 주머니 / Green Pouch** | Start with an additional **$10** | Discover 50 distinct valid words |
 | 4 | **보라 주머니 / Purple Pouch** | On a clear, gain **$2 per remaining phase** and **$1 per remaining discard**; **interest is always $0** | Discover 100 distinct valid words |
 | 5 | **복주머니 / Lucky Pouch** | Gambler Cards may roll in ordinary shop item slots; start with one seeded-random implemented Gambler Card | Win with Yellow Pouch |
-| 6 | **오색 복주머니 / Five-Color Lucky Pouch** | Hand size +2; Emoji Tile slots −1 | Win with Blue Pouch |
+| 6 | **오색 복주머니 / Five-Color Lucky Pouch** | Hand size +1; Emoji Tile slots −1 | Win with Blue Pouch |
 | 7 | **황금 복주머니 / Golden Lucky Pouch** | Every starting A/E/I/O/U tile begins with the Brass material; Y remains a consonant | Win with Green Pouch |
 | 8 | **가죽 파우치 / Leather Pouch** | Emoji Tile slots +1; phases per round −1 | Win with Purple Pouch |
 | 9 | **밀리터리 파우치 / Military Pouch** | Start owning B&W Photo; consumable slots −1 | Win on White LP |
@@ -1303,9 +1323,8 @@ Purple's remaining-resource lines still pay on a cleared Draft.
 **Lucky Pouch shop route.** This is an explicit acquisition-route exception:
 implemented Gambler Cards become eligible in ordinary shop item slots under a
 data-defined shop weight, in addition to their Ink Pack and Comic Book routes.
-The starting card is chosen uniformly from the 12 implemented definitions and
-occupies one held-consumable slot. Rainman and Sake Cup have no engine id and
-cannot be selected.
+The starting card is chosen uniformly from the 14 implemented definitions and
+occupies one held-consumable slot.
 
 **Briefcase balance transform.** Resolve one individual word through every normal
 base, letter, material, font, edition, Letter Hand, suit, Emoji Tile, voucher,
@@ -1361,8 +1380,9 @@ locked Pouches only.
 ### 12.3 Records — 8 cumulative difficulty levels
 
 Records are the run difficulty system: a Slay-the-Spire-style ascending ladder
-whose penalties accumulate from LP through DVD. White LP is available by default;
-winning the highest unlocked level unlocks the next row. The table's “adds”
+whose penalties accumulate from LP through DVD. Every Starting Pouch owns a
+separate copy of this ladder. White LP is available by default for each Pouch;
+winning the highest unlocked level unlocks the next row for that Pouch only. The table's “adds”
 column describes the new penalty at that level—every earlier penalty remains
 active.
 
@@ -1421,8 +1441,6 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   adding early-Chapter exclusions, a chaining reward, or skip-synergy Emoji Tiles.
 - **Acronyms in the lexicon.** MVP/VIP-class abbreviations need a separate curated
   list feeding §3.2; uppercase tiles already support them mechanically.
-- **Final two Gambler effects.** Rainman and Sake Cup retain art but no engine id
-  until their effects are approved (§10.3).
 - **Register/POS dataset refresh.** The complete baked table and reproducible
   register audit exist (§3.2, §4.2); refresh the licensed offline snapshots when
   source dictionaries or the authoritative classification criteria change.

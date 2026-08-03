@@ -28,6 +28,8 @@ export function currentTarget(run: RunState): number {
 
 export interface BlindEarnings {
   reward: number;
+  /** Delayed Editorial Perks included in reward, shown as their own line item. */
+  tagReward: number;
   phaseCount: number;
   phases: number;
   discardCount: number;
@@ -51,6 +53,7 @@ export interface BlindOutcome {
 
 const NO_EARNINGS: BlindEarnings = {
   reward: 0,
+  tagReward: 0,
   phaseCount: 0,
   phases: 0,
   discardCount: 0,
@@ -81,6 +84,8 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
     };
   }
   const reward = effectiveClearReward(run, blind.kind, blind.bossId);
+  const tagReward = run.pendingClearReward
+    + (blind.kind === 'boss' ? (run.pendingBossReward ?? 0) : 0);
   const phaseCount = blind.phasesTotal - blind.phasesUsed;
   const phases = remainingPhaseGold(run, phaseCount);
   const discardCount = blind.discardsLeft;
@@ -103,6 +108,7 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
     endlessComplete,
     earned: {
       reward,
+      tagReward,
       phaseCount,
       phases,
       discardCount,

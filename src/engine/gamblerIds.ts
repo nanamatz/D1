@@ -16,20 +16,19 @@
  * one of them was the first module loaded. Splitting the ids out is the smallest
  * cut that removes both cycles; `scripts/check-engine-cycles.mjs` keeps them gone.
  *
- * Rainman and Sake Cup are deliberately absent — their effects are still pending
- * in the GDD, and an id here would let them roll (see `gamblers.ts`).
+ * Every id here is implemented and may roll through the shared acquisition paths.
  */
 import type { ConsumableId } from './types';
 
 export type GamblerId =
   | 'barnSwallow' | 'boar' | 'bridge' | 'bushWarbler' | 'butterflies'
   | 'craneAndSun' | 'cuckoo' | 'curtain' | 'deer' | 'fullMoon'
-  | 'geese' | 'phoenix';
+  | 'geese' | 'phoenix' | 'rainman' | 'sakeCup';
 
 export const GAMBLER_IDS: readonly GamblerId[] = [
   'barnSwallow', 'boar', 'bridge', 'bushWarbler', 'butterflies',
   'craneAndSun', 'cuckoo', 'curtain', 'deer', 'fullMoon',
-  'geese', 'phoenix',
+  'geese', 'phoenix', 'rainman', 'sakeCup',
 ];
 
 export const isGamblerId = (id: ConsumableId): id is GamblerId =>

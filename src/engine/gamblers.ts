@@ -3,9 +3,7 @@
  * double-edged. Native source is the Ink Pack (§9.3); Comic Book lets one
  * replace a Fable-Pack choice, and Deer may replace a Constellation-Pack choice.
  *
- * Twelve effects are confirmed. Rainman and Sake Cup stay PENDING in the GDD and
- * are therefore absent from this registry — art for them exists in the UI-only
- * gallery (`src/ui/gamblerArt.ts`) and stays there until their effects land.
+ * All fourteen supplied effects are implemented through this registry.
  *
  * Headless, like every other engine module: the caller supplies the active tile
  * field (the live hand during a blind, the pack's seeded pouch candidates inside
@@ -19,6 +17,7 @@ import type { Rng } from './rng';
 import type {
   BlindState,
   ConsumableId,
+  JokerEdition,
   JokerRarity,
   Letter,
   PatternId,
@@ -51,7 +50,15 @@ type GamblerEffect =
   /** #9 Deer — every sentence pattern +1 level. */
   | { kind: 'levelAllPatterns' }
   /** #10 Full Moon — destroy one random field tile, create enhanced vowels. */
-  | { kind: 'moonVowels' };
+  | { kind: 'moonVowels' }
+  /** #13/#14 — apply an Emoji Tile edition, optionally paying a permanent cost
+   *  or destroying every other Emoji Tile. */
+  | {
+      kind: 'jokerEdition';
+      edition: Exclude<JokerEdition, 'base'>;
+      handSizeLoss?: number;
+      destroyOthers?: true;
+    };
 
 export interface GamblerDef {
   id: GamblerId;
@@ -73,6 +80,20 @@ export const GAMBLER_DEFS: readonly GamblerDef[] = [
   { id: 'fullMoon', number: 10, effect: { kind: 'moonVowels' } },
   { id: 'geese', number: 11, effect: { kind: 'font', font: 'bold' } },
   { id: 'phoenix', number: 12, effect: { kind: 'createJoker', rarity: 'legendary' } },
+  {
+    id: 'rainman',
+    number: 13,
+    effect: {
+      kind: 'jokerEdition',
+      edition: 'white',
+      handSizeLoss: BALANCE.gambler.rainmanHandSizeLoss,
+    },
+  },
+  {
+    id: 'sakeCup',
+    number: 14,
+    effect: { kind: 'jokerEdition', edition: 'rainbow', destroyOthers: true },
+  },
 ];
 
 export const GAMBLER_REGISTRY: ReadonlyMap<GamblerId, GamblerDef> = new Map(
@@ -134,6 +155,8 @@ export function canUseGambler(
       return selected.length === 1;
     case 'copyJoker':
       return run.jokers.length > 0;
+    case 'jokerEdition':
+      return run.jokers.length > 0 && (!effect.handSizeLoss || run.handSize > 1);
     case 'unifyLetters':
       return field.length > 0 && run.handSize > BALANCE.gambler.bridgeHandSizeFloor;
     case 'destroyForGold':
@@ -222,6 +245,20 @@ export function useGambler(
         state: { ...kept.state },
       };
       nextRun = { ...nextRun, jokers: [kept, copy] };
+      break;
+    }
+    case 'jokerEdition': {
+      const chosen = rng.int(nextRun.jokers.length);
+      const enhanced = { ...nextRun.jokers[chosen]!, edition: effect.edition };
+      nextRun = {
+        ...nextRun,
+        jokers: effect.destroyOthers
+          ? [enhanced]
+          : nextRun.jokers.map((joker, index) => index === chosen ? enhanced : joker),
+        handSize: effect.handSizeLoss
+          ? Math.max(1, nextRun.handSize - effect.handSizeLoss)
+          : nextRun.handSize,
+      };
       break;
     }
     case 'unifyLetters': {

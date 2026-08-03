@@ -22,12 +22,15 @@ const BATCH_SIZE = Number.parseInt(args.batch ?? '50', 10);
 const WORKERS = Number.parseInt(args.workers ?? '2', 10);
 const API = 'https://en.wiktionary.org/w/api.php';
 const USER_AGENT = 'Play-the-World lexicon audit/2.0 (offline data build)';
+const MAX_WORD_LENGTH = 18;
 
 const snapshot = JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8'));
 const lexicon = JSON.parse(fs.readFileSync(LEXICON, 'utf8'));
 const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, 'utf8')) : {};
 const candidates = [...new Set(
-  Object.values(snapshot.terms).flat().filter((word) => Object.hasOwn(lexicon, word)),
+  Object.values(snapshot.terms).flat().filter((word) => (
+    word.length <= MAX_WORD_LENGTH && Object.hasOwn(lexicon, word)
+  )),
 )].sort((a, b) => a.localeCompare(b));
 
 function saveCache() {

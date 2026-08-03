@@ -16,7 +16,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { ScoreEvent } from '../engine/types';
+import type { ChanceResult, ScoreEvent } from '../engine/types';
 import { audio } from './audio';
 import { motionOff as reducedMotion } from './motion';
 
@@ -70,19 +70,23 @@ export interface SettleView {
     chips: number;
     mult: number;
     gold: number;
+    chipsFactor?: number | undefined;
     multFactor?: number | undefined;
     retrigger: boolean;
+    chanceResults?: ChanceResult[];
     id: number;
   } | null;
   /** joker currently wiggling */
   activeJokerId: string | null;
-  /** Edition enhancement beat on an Emoji Tile; held longer than its base trigger. */
+  /** Edition enhancement beat on an Emoji Tile; its timeline slot leaves a readable gap. */
   activeJokerEnhanced: boolean;
   /** the firing joker's contribution, for its popup */
   jokerPop: {
     jokerId: string;
+    id: number;
     chips: number;
     mult: number;
+    chipsFactor?: number;
     multFactor?: number;
     score: number;
     gold: number;
@@ -91,8 +95,14 @@ export interface SettleView {
   stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch'; label: string } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
    *  (item 6). `id` is the beat index so each pop re-mounts and replays its rise.
-   *  `multOp` is 'add' for the additive settle beats; reserved 'mul' would render ×. */
-  scorePop: { chips: number; mult: number; multOp: 'add' | 'mul'; id: number } | null;
+   * `chipsOp`/`multOp` preserve whether the source displayed +delta or ×factor. */
+  scorePop: {
+    chips: number;
+    mult: number;
+    chipsOp: 'add' | 'mul';
+    multOp: 'add' | 'mul';
+    id: number;
+  } | null;
 }
 
 const IDLE: SettleView = {
@@ -120,6 +130,8 @@ export const useSettleView = (): SettleView => useContext(SettleCtx);
 // next tile/effect fires. 600ms at 1× keeps the sequence readable; game speed
 // still scales this single timing source to 2×/4×.
 const BASE_STEP = 600;
+// The visible trigger keeps the ordinary duration; the unused remainder is
+// separation before the next score beat, so adjacent effects do not blur together.
 const ENHANCED_JOKER_STEP = 1000;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
@@ -291,19 +303,16 @@ export function SettleProvider({
             // feedback #2/#3: flash + a single upward bounce on the triggering tile.
             triggerTile(e.tileId);
           }
-          // Preserve the source operation in both the score-box and Emoji Tile
-          // readouts: additive Mult shows +N, multiplicative Mult shows ×factor.
-          const multFactor =
-            e.kind === 'joker' || e.kind === 'edition' || e.kind === 'material'
-              ? e.multFactor
-              : undefined;
-          const multiplied = multFactor !== undefined;
+          // Preserve the source operation in both score-box and source-object readouts.
+          const chipsFactor = 'chipsFactor' in e ? e.chipsFactor : undefined;
+          const multFactor = 'multFactor' in e ? e.multFactor : undefined;
           const scorePop =
             chips !== prevChips || mult !== prevMult
               ? {
-                  chips: chips - prevChips,
-                  mult: multiplied ? multFactor : mult - prevMult,
-                  multOp: multiplied ? 'mul' as const : 'add' as const,
+                  chips: chipsFactor ?? chips - prevChips,
+                  mult: multFactor ?? mult - prevMult,
+                  chipsOp: chipsFactor !== undefined ? 'mul' as const : 'add' as const,
+                  multOp: multFactor !== undefined ? 'mul' as const : 'add' as const,
                   id: i,
                 }
               : null;
@@ -358,9 +367,17 @@ export function SettleProvider({
               activeJokerEnhanced: false,
               jokerPop: {
                 jokerId: e.jokerId,
-                chips: e.chipsDelta,
-                mult: e.multDelta,
-                ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
+                id: i,
+                chips: e.growthKind === 'chips' ? e.growthDelta ?? 0 : e.chipsDelta,
+                mult: e.growthKind && e.growthKind !== 'chips'
+                  ? e.growthDelta ?? 0
+                  : e.multDelta,
+                ...(e.growthKind === undefined && e.chipsFactor !== undefined
+                  ? { chipsFactor: e.chipsFactor }
+                  : {}),
+                ...(e.growthKind === undefined && e.multFactor !== undefined
+                  ? { multFactor: e.multFactor }
+                  : {}),
                 score: e.scoreDelta ?? 0,
                 gold: e.goldDelta ?? 0,
               },
@@ -369,6 +386,8 @@ export function SettleProvider({
                     tileId: e.tileId,
                     chips: e.chipsDelta,
                     mult: e.multDelta,
+                    ...(e.chipsFactor !== undefined ? { chipsFactor: e.chipsFactor } : {}),
+                    ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
                     gold: 0,
                     retrigger: false,
                     id: i,
@@ -388,7 +407,8 @@ export function SettleProvider({
                 chips: e.chipsDelta,
                 mult: e.multDelta,
                 ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
-                gold: 0,
+                gold: e.goldDelta ?? 0,
+                ...(e.chanceResults ? { chanceResults: e.chanceResults } : {}),
                 retrigger: false,
                 id: i,
               },
@@ -423,6 +443,7 @@ export function SettleProvider({
               jokerPop: e.jokerId
                 ? {
                     jokerId: e.jokerId,
+                    id: i,
                     chips: e.chipsDelta,
                     mult: e.multDelta,
                     ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),

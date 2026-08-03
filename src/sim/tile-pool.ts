@@ -7,7 +7,7 @@
  *
  * Run: `npx tsx src/sim/tile-pool.ts`
  *
- * Metrics per candidate, over many random hands at hand size 11:
+ * Metrics per candidate, over many random hands at hand size 10:
  *  - avgMaxLen      average length of the LONGEST makeable word
  *  - avgMakeable    average count of makeable words
  *  - zeroWordRate   % of hands with NO makeable word (gibberish-forced)
@@ -23,7 +23,7 @@ import type { Letter, Tile } from '../engine/types';
 type Comp = Record<string, number>;
 
 const RARE = new Set(['J', 'K', 'Q', 'V', 'W', 'X', 'Y', 'Z']);
-const HAND = BALANCE.handSize; // 11
+const HAND = BALANCE.handSize; // 10
 const HANDS = 4000;
 
 // Current Scrabble-derived distribution (baseline, 98 tiles).

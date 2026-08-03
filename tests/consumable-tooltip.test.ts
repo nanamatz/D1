@@ -66,9 +66,10 @@ describe('shared consumable tooltip copy', () => {
     expect(referencedMaterialTips(ko['jokerdesc.woodblockPress'], koT)).toEqual([{
       title: ko['material.wood'], body: ko['materialdesc.wood'], kind: 'material',
     }]);
-    expect(referencedMaterialTips(ko['jokerdesc.ceramicArtisan'], koT)).toEqual([{
-      title: ko['material.ceramic'], body: ko['materialdesc.ceramic'], kind: 'material',
-    }]);
+    expect(referencedMaterialTips(ko['jokerdesc.ceramicArtisan'], koT)).toEqual([]);
+    expect(consumableAxisTip('fable7', enT)).toEqual({
+      title: en['material.porcelain'], body: en['materialdesc.porcelain'], kind: 'material',
+    });
     expect(readFileSync('src/ui/components/Tooltip.tsx', 'utf8'))
       .toContain('referencedMaterialTips');
   });

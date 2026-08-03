@@ -1,4 +1,4 @@
-import type { ConsumableId, OwnedJoker, RunState, Tile } from '../engine/types';
+import type { ChanceResult, ConsumableId, OwnedJoker, RunState, Tile } from '../engine/types';
 
 export interface ConsumableEffectEvent {
   id: ConsumableId;
@@ -11,6 +11,7 @@ export interface ConsumableEffectEvent {
   goldDelta: number;
   handSizeDelta: number;
   patternLevelsGained: number;
+  chanceResults: ChanceResult[];
 }
 
 const jokerKey = (joker: OwnedJoker): string => JSON.stringify([
@@ -34,6 +35,7 @@ export function buildConsumableEffect(
   id: ConsumableId,
   before: RunState,
   after: RunState,
+  chanceResults: readonly ChanceResult[] = [],
 ): ConsumableEffectEvent {
   const beforeTiles = new Map(before.bag.map((tile) => [tile.id, tile]));
   const afterTiles = new Map(after.bag.map((tile) => [tile.id, tile]));
@@ -55,6 +57,7 @@ export function buildConsumableEffect(
         sum + Math.max(0, level - (before.patternLevels[pattern as keyof typeof before.patternLevels] ?? 0)),
       0,
     ),
+    chanceResults: [...chanceResults],
   };
 }
 
@@ -68,8 +71,13 @@ class ConsumableEffectBus {
     return () => this.listeners.delete(listener);
   }
 
-  emit(id: ConsumableId, before: RunState, after: RunState): void {
-    const event = buildConsumableEffect(id, before, after);
+  emit(
+    id: ConsumableId,
+    before: RunState,
+    after: RunState,
+    chanceResults: readonly ChanceResult[] = [],
+  ): void {
+    const event = buildConsumableEffect(id, before, after, chanceResults);
     this.listeners.forEach((listener) => listener(event));
   }
 }

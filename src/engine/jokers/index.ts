@@ -128,7 +128,7 @@ import { tyrant } from './tyrant';
 import { typeFoundry } from './typeFoundry';
 import { towerOfBabel } from './towerOfBabel';
 import { misbound } from './misbound';
-import type { BlindState, RunState } from '../types';
+import type { BlindState, ChanceResult, RunState } from '../types';
 import type { Rng } from '../rng';
 import { clearBossJokerDebuffs } from '../bosses';
 
@@ -300,7 +300,12 @@ export function onTilesCreated(run: RunState, count: number): RunState {
   return next;
 }
 
-export function onBlindEnded(run: RunState, blind: BlindState, rng: Rng): RunState {
+export function onBlindEnded(
+  run: RunState,
+  blind: BlindState,
+  rng: Rng,
+  chanceResults: ChanceResult[] = [],
+): RunState {
   const next = mutableRun(run);
   const bagBefore = next.bag.length;
   defaultJokerBus.emit('blindEnd', {
@@ -309,6 +314,7 @@ export function onBlindEnded(run: RunState, blind: BlindState, rng: Rng): RunSta
     early: blind.phasesUsed < blind.phasesTotal,
     phasesLeft: blind.phasesTotal - blind.phasesUsed,
     rng,
+    chanceResults,
   }, next.jokers);
   // A blindEnd hook may shrink the permanent pouch (Glasswork U4). Re-announce it
   // generically so destruction-fed tiles (Type Foundry L3) see it like any other.

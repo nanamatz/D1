@@ -16,9 +16,7 @@ import sakeCup from '../../docs/Arts/Cards/Gambler/Vector/SakeCup-preview.png';
 /**
  * Art registry for the supplied Gambler card illustrations.
  *
- * This list is the COLLECTION gallery and holds all fourteen supplied cards,
- * including Rainman and Sake Cup — whose effects are still pending, so they have
- * no engine definition (`src/engine/gamblers.ts` ships the confirmed twelve).
+ * This list is the Collection gallery for all fourteen implemented cards.
  * Effects and acquisition live in the engine; this file stays presentation-only.
  */
 export const GAMBLER_CARDS = [

@@ -17,13 +17,17 @@ import {
 } from '../src/engine/skipRewards';
 
 describe('blind skip rewards', () => {
-  it('rolls two reproducible offers from the twenty-six-entry uniform pool', () => {
+  it('rolls two reproducible, distinct offers from the twenty-six-entry uniform pool', () => {
     const run = newRun('skip-roll');
     expect(new Set(SKIP_REWARD_IDS).size).toBe(26);
     expect(SKIP_REWARD_IDS).not.toContain('leadStory');
-    expect(rollSkipOffers(run, makeRng('offers'))).toEqual(
-      rollSkipOffers(run, makeRng('offers')),
-    );
+    const offers = rollSkipOffers(run, makeRng('offers'));
+    expect(offers).toEqual(rollSkipOffers(run, makeRng('offers')));
+    expect(offers[0].id).not.toBe(offers[1].id);
+    for (let i = 0; i < 100; i++) {
+      const rolled = rollSkipOffers(run, makeRng(`offers-${i}`));
+      expect(rolled[0].id).not.toBe(rolled[1].id);
+    }
   });
 
   it('classifies skip-time rewards for the auto-redemption sequence', () => {

@@ -15,7 +15,7 @@
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
-import { isModifier, isVerb } from './types';
+import { isModifier, isVerb, submissionSuits } from './types';
 import type {
   PatternId,
   PatternMatch,
@@ -230,12 +230,16 @@ function candidates(words: readonly POSWord[]): Candidate[] {
   return out;
 }
 
-/** Unison (§5.3): 2+ words, all the same non-null suit. */
+/** Unison (§5.3): 2+ words sharing at least one final non-null register. */
 function judgeUnison(sequence: readonly WordSubmission[]): UnisonResult | null {
   if (sequence.length < BALANCE.unison.minWords) return null;
-  const first = sequence[0]!.suit;
-  if (first === null) return null;
-  return sequence.every((w) => w.suit === first) ? { suit: first as Suit } : null;
+  const common = new Set(submissionSuits(sequence[0]!));
+  for (const word of sequence.slice(1)) {
+    const suits = new Set(submissionSuits(word));
+    for (const suit of common) if (!suits.has(suit)) common.delete(suit);
+  }
+  const first = common.values().next().value as Suit | undefined;
+  return first === undefined ? null : { suit: first };
 }
 
 /** Judge the whole sequence: best pattern (highest rank) + unison. */
@@ -279,12 +283,24 @@ interface PatternBalance {
   repeatFloor?: number;
 }
 
+/** Sum of the geometrically growing level increments above level 1. */
+function patternLevelGrowth(level: number): number {
+  const steps = Math.max(0, level - 1);
+  const growth: number = BALANCE.patternLevelGrowthFactor;
+  return growth === 1
+    ? steps
+    : (Math.pow(growth, steps) - 1) / (growth - 1);
+}
+
+const naturalScore = (value: number): number => Math.max(1, Math.round(value));
+
 /** A pattern's current [chips × mult] at a given level (feature-02 A-3, Run Info). */
 export function patternChipsMult(id: PatternId, level: number): { chips: number; mult: number } {
   const P = BALANCE.patterns[id] as PatternBalance;
+  const accumulatedGrowth = patternLevelGrowth(level);
   return {
-    chips: P.baseChips + (level - 1) * P.levelChips,
-    mult: P.baseMult + (level - 1) * P.levelMult,
+    chips: naturalScore(P.baseChips + accumulatedGrowth * P.levelChips),
+    mult: naturalScore(P.baseMult + accumulatedGrowth * P.levelMult),
   };
 }
 
@@ -326,7 +342,9 @@ export function finalizeScore(
     // Chant: +repeatChips per repeat beyond the floor (each +repeatLevelChips/level).
     if (m.pattern === 'chant' && m.repeats !== undefined) {
       const extra = Math.max(0, m.repeats - (P.repeatFloor ?? 2));
-      chips += extra * ((P.repeatChips ?? 0) + (lvl - 1) * (P.repeatLevelChips ?? 0));
+      chips += extra * naturalScore(
+        (P.repeatChips ?? 0) + patternLevelGrowth(lvl) * (P.repeatLevelChips ?? 0),
+      );
     }
     chips += BALANCE.modifierAbsorption.chips * m.absorbedModifiers;
   }

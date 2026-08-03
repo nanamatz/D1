@@ -118,11 +118,13 @@ describe('new blind-skip tags: immediate and blind-delayed effects', () => {
     const afterBoss = resolveBlind(bossRun, bossBlind, bossBlind.target);
 
     expect(afterBoss.earned.reward).toBe(baselineReward + invested.pendingBossReward);
+    expect(afterBoss.earned.tagReward).toBe(invested.pendingBossReward);
     expect(afterBoss.run.pendingBossReward).toBe(0);
     expect(afterBoss.run.counters.unusedDiscards).toBe(5);
   });
 
   it('applies Juggler to the next played blind and Economy doubles current gold', () => {
+    expect(BALANCE.skipRewards.jugglerHandSize).toBe(1);
     const juggler = skipCurrentBlind(withDraftTag('jugglerTag'), makeRng('juggler')).run;
     const economy = skipCurrentBlind(
       withDraftTag('economyTag', { gold: 13 }),

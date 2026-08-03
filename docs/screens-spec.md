@@ -96,7 +96,9 @@ save store through preload IPC; web health comes from caught localStorage writes
   effect plus that condition. Play stays disabled while one is selected, and
   the Record row's navigation dims until an unlocked Pouch is selected. The
   selected art becomes the persistent in-run pouch widget.
-- **Record** carousel: all 8 GDD §12.3 levels in ladder order. Locked levels are
+- **Record** carousel: all 8 GDD §12.3 levels in ladder order. Each Starting
+  Pouch has an independent Record ladder; changing Pouches immediately resolves
+  lock state from that Pouch's wins without sharing progress. Locked levels are
   visible and inspectable, but disable Play. The title, added penalty, ordered
   dots, and lock state communicate the sequential ladder; **no Record unlock
   condition is written in the panel, tooltip, or Collection**. Non-base
@@ -191,8 +193,8 @@ Every definition left after the shared count-aware fold is an independent framed
 Effect-description money values always use the shared gold `$` highlight. Any
 description that mentions **Gibberish / 횡설수설** emphasizes that term in red
 with a dotted underline and adds the shared secondary definition tooltip.
-All localized effect/tooltip descriptions omit period punctuation while
-preserving decimal points, and tag every numeric value for emphasis. English and Korean keys, interpolation
+All localized effect/tooltip descriptions replace non-terminal periods with line
+breaks and omit terminal periods while preserving decimal points. Every numeric value is tagged for emphasis. English and Korean keys, interpolation
 variables, and highlight-axis counts must remain paired; the build-time locale
 lint rejects drift.
 For additive Chips/Mult values, only the numeric portion uses the axis colour.
@@ -263,7 +265,7 @@ surface.
 | **Tags** | all 26 Editorial Perks | two-page 5×3 pixel-icon gallery (15 per page); every effect-specific image uses the same idle/cursor tilt and shared tooltip as Blind Select; Tags are a complete rules reference and have no discovery lock |
 | **Fable Cards** | 18 implemented cards | supplied pixel art keeps a path-only SVG master and uses its pixel-identical `500×700` PNG runtime derivative in a 5-column, 10-per-page gallery; hover shows the full effect |
 | **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; hover shows the mapped sentence pattern |
-| **Gambler Cards** | 14 artworks; 12 implemented effects, 2 pending | supplied artwork uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; Rainman and Sake Cup remain art-only and show Pending, while the other 12 use live runtime tooltips |
+| **Gambler Cards** | 14 implemented cards | supplied artwork uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; every card uses its live runtime tooltip |
 | Card Packs | Tile 8 · Charm 4 · Fable 8 · Constellation 8 · Ink 4 | four-page image-only gallery: Tile, combined Charm + Ink, Fable, Constellation; every page contains eight cards and therefore shares the same two-row height; all 32 supplied artworks keep a shared `244×400` path-only SVG master and use its pixel-identical PNG runtime derivative plus the common idle and cursor tilt/sheen, with no persistent type/grade/coming-soon labels; hover or keyboard focus restores the shared type/description/grade tooltip |
 | **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
 | Mascots | WooDak skin roster | **primary skin picker** (moved from Settings 2026-07-29): one horizontal, centred, non-wrapping card row; discovered tooltip-wrapped cards and undiscovered raw cards share the same 150px basis width; locked skins use non-selectable silhouettes; unlocked cards select on click/keyboard and mark the equipped skin with a gold outline and Selected label |
@@ -271,9 +273,9 @@ surface.
 | **Blinds** | left: Chapter → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Draft/Revision badges + 12 boss chips (undiscovered = `?`) | doubles as the player-facing target-curve reference; boss cards retain their tooltip and use shared cursor tilt/sheen |
 
 Fable reports `18/18`, Constellation reports `12/12`, and Gambler reports `14/14`
-supplied artworks. Twelve Gambler effects and their Ink Pack,
+supplied artworks. All fourteen Gambler effects and their Ink Pack,
 Comic-Book-gated Fable mixing, and Deer-in-Constellation routes ship per GDD
-§10.3; Rainman and Sake Cup remain art-only and pending.
+§10.3.
 
 **Omitted by design (no equivalent — do not add):** Seals as a separate category (their roles are absorbed into the font layer — GDD §2.3 seal-port).
 
@@ -295,7 +297,8 @@ Tabs — trimmed for a web game:
 ### 2.12 Statistics
 Left column: Best word intrinsic letter-chip score · Highest ante/blind reached · Most played pattern · Most gold held · Wins/streak.
 Right column: overall progress % — Collection %, Challenges **[PLACEHOLDER 0/0,
-hidden until challenges exist]**, and Records won. Custom-seeded wins are
+hidden until challenges exist]**, and Records won summed across all 14 independent
+Pouch ladders. Custom-seeded wins are
 excluded from Pouch/Record unlock progress and balance telemetry. Until the
 dedicated Statistics screen ships, Profile exposes completed balance-run count,
 win rate, and the most common loss Chapter; the profile save retains the full

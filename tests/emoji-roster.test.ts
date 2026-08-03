@@ -63,6 +63,7 @@ const ctxFor = (word: WordSubmission, mult = 1): WordScoringContext => ({
   submission: word,
   chips: 0,
   mult,
+  baseSuit: word.suit,
   scoringSuits: new Set(word.suit ? [word.suit] : []),
   scoreBonus: 0,
 });
@@ -143,6 +144,13 @@ describe('Common — §11.2', () => {
     expect(play(run, blindFor(run), submission('cat', { material: 'glass' })).chips).toBe(0);
   });
 
+  it('Porcelain Cat pays when the word contains Porcelain, never base Ceramic', () => {
+    const run = runWith('porcelainCat');
+    expect(play(run, blindFor(run), submission('cat')).mult).toBe(1);
+    expect(play(run, blindFor(run), submission('cat', { material: 'porcelain' })).mult)
+      .toBe(1 + BALANCE.jokers.porcelainCat.mult);
+  });
+
   it('Long-Word Fan and Short & Sharp split at the length thresholds', () => {
     const long = runWith('longWordFan');
     expect(play(long, blindFor(long), submission('paper')).chips).toBe(BALANCE.jokers.longWordFan.chips);
@@ -196,8 +204,9 @@ describe('Uncommon — §11.3', () => {
     expect(run.jokers[0]?.state).toMatchObject({ mult: 0, destroyed: 1 });
   });
 
-  it('Folding Manuscript starts at +5 hand size then shrinks each blind', () => {
+  it('Folding Manuscript starts at +2 hand size then shrinks each blind', () => {
     const run = runWith('foldingManuscript');
+    expect(BALANCE.jokers.foldingManuscript.handSize).toBe(2);
     const first = blindFor(run);
     expect(first.handSizeTotal).toBe(run.handSize + BALANCE.jokers.foldingManuscript.handSize);
     const after = onBlindEnded(run, first, fixedRng(1));
@@ -297,6 +306,30 @@ describe('Uncommon — §11.3', () => {
     expect(play(run, hole, submission('cat')).mult).toBe(1);
   });
 
+  it('Correction Mark needs a shared final register; bare gibberish has none', () => {
+    const run = runWith('correctionMark');
+    const base = blindFor(run);
+    const same = { ...base, sequence: [submission('know')] };
+    expect(play(run, same, submission('word')).mult).toBe(
+      1 + BALANCE.jokers.correctionMark.mult,
+    );
+    const different = {
+      ...base,
+      sequence: [submission('yo', { suit: 'slang' })],
+    };
+    expect(play(run, different, submission('word')).mult).toBe(1);
+    const hole = {
+      ...base,
+      sequence: [submission('whno', { gibberish: true })],
+    };
+    expect(play(run, hole, submission('word')).mult).toBe(1);
+    const rewrittenHole = submission('whno', { gibberish: true });
+    rewrittenHole.effectiveSuits = ['standard'];
+    expect(play(run, same, rewrittenHole).mult).toBe(
+      1 + BALANCE.jokers.correctionMark.mult,
+    );
+  });
+
   it('Vowel Magnet and Equilibrist count vowels against consonants', () => {
     const magnet = runWith('vowelMagnet');
     const mb = blindFor(magnet);
@@ -363,15 +396,15 @@ describe('Legendary — §11.5', () => {
     expect(BALANCE.jokers.bookOfMargins).toEqual({ slots: 3, factorPerEmptySlot: 2 });
     expect(BALANCE.jokers.tyrant).toEqual({ vulgarFactor: 2 });
     expect(BALANCE.jokers.typeFoundry).toEqual({ factorPerTile: 1.5 });
-    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 24, factorPerSurvival: 0.3 });
+    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 100, factorPerSurvival: 0.8 });
   });
 
-  it('Tyrant makes every valid word a doubled Vulgar without rewriting its suit', () => {
+  it('Tyrant rewrites every valid word to doubled Vulgar', () => {
     const run = runWith('tyrant');
     const blind = blindFor(run);
     const standard = play(run, blind, submission('cat'), BALANCE.suitMult.standard);
     expect(standard.mult).toBe(BALANCE.suitMult.vulgar * 2);
-    expect(standard.submission.suit).toBe('standard');
+    expect(standard.submission.suit).toBe('vulgar');
     expect(standard.scoringSuits?.has('vulgar')).toBe(true);
 
     const formal = play(run, blind, submission('edict', { suit: 'formal' }), BALANCE.suitMult.formal);

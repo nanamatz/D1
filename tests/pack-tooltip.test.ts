@@ -166,7 +166,9 @@ describe('richText — pack highlight tags', () => {
     expect(css).toMatch(/\.hl-edition-gray\s*\{[^}]*color:\s*#718185/s);
     expect(css).toMatch(/\.hl-edition-violet\s*\{[^}]*color:\s*#875b91/s);
     expect(css).toMatch(/\.hl-edition-rainbow\s*\{[^}]*background:\s*linear-gradient/s);
-    expect(css).toMatch(/\.hl-edition-white\s*\{[^}]*color:\s*#fff/s);
+    expect(css).toMatch(
+      /\.hl-edition-white\s*\{[^}]*color:\s*#fff[^}]*-webkit-text-stroke:\s*2px #27313a/s,
+    );
   });
 
   it('leaves untagged prose untouched', () => {

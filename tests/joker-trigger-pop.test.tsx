@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { makeLexicon } from '../src/engine/lexicon';
 import { BALANCE } from '../src/engine/balance';
 import { startBlind, submitWord } from '../src/engine/loop';
+import { judgeSentence } from '../src/engine/patterns';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import type { Letter, ScoreEvent, Tile } from '../src/engine/types';
 import { JokerPop } from '../src/ui/components/JokerShelf';
+import { SentenceTray } from '../src/ui/components/SentenceTray';
+import { I18nProvider } from '../src/ui/i18n';
 
 const tilesFor = (word: string): Tile[] => [...word.toUpperCase()].map((letter, index) => ({
   id: `joker-pop-${index}`,
@@ -37,7 +40,31 @@ describe('Emoji Tile trigger popup', () => {
     expect(jokerEvent('alphabetPress', 'abc').multFactor).toBeCloseTo(
       BALANCE.jokers.alphabetPress.factorPerPair ** 2,
     );
+    expect(jokerEvent('tyrant', 'cat').multFactor).toBe(BALANCE.jokers.tyrant.vulgarFactor);
+    expect(jokerEvent('rareEarth', 'q').chipsFactor).toBe(BALANCE.jokers.rareEarth.factor);
     expect(jokerEvent('equilibrist', 'at').multFactor).toBeUndefined();
+  });
+
+  it('records scaling growth as its own trigger beat', () => {
+    const run = newRun('joker-growth-word-hunter');
+    run.jokers = [{ defId: 'wordHunter', state: {} }];
+    const hand = tilesFor('cat');
+    const result = submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      hand.map((tile) => tile.id),
+      makeRng('joker-growth'),
+    );
+    const growth = result.events.find((event) => event.kind === 'joker' && event.growthDelta);
+    expect(growth).toMatchObject({
+      jokerId: 'wordHunter',
+      chipsDelta: 0,
+      multDelta: 0,
+      growthKind: 'mult',
+    });
+    expect(growth?.kind === 'joker' ? growth.growthDelta : undefined)
+      .toBeCloseTo(BALANCE.jokers.wordHunter.factorPerNewWord);
   });
 
   it('renders symbolic values and the Applied fallback', () => {
@@ -48,6 +75,12 @@ describe('Emoji Tile trigger popup', () => {
     expect(effect).toContain('×2');
     expect(effect).toContain('tomato-icon');
     expect(effect).toContain('+$4');
+
+    const chipFactor = renderToStaticMarkup(
+      <JokerPop chips={60} chipsFactor={3} mult={0} applied="Applied" />,
+    );
+    expect(chipFactor).toContain('×3');
+    expect(chipFactor).not.toContain('+60');
 
     expect(renderToStaticMarkup(
       <JokerPop chips={0} mult={0} applied="Applied" />,
@@ -64,12 +97,73 @@ describe('Emoji Tile trigger popup', () => {
     const tile = readFileSync('src/ui/components/Tile.tsx', 'utf8');
     const css = readFileSync('src/ui/styles/play.css', 'utf8');
 
-    expect(shelf.indexOf('</Tooltip>')).toBeLessThan(shelf.indexOf('{firing && settle.jokerPop'));
+    expect(shelf.indexOf('</Tooltip>')).toBeLessThan(shelf.indexOf('{firing && (growthPop || settle.jokerPop)'));
+    expect(shelf).toContain('animatedGrowthEvents');
     expect(tile).toContain('className="trigger-pop tile-effect-pop"');
     expect(tile).toContain('className="chip-diamond"');
     expect(css).toMatch(/\.trigger-pop\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);
     expect(css).toMatch(/\.joker-pop\s*\{[^}]*top:\s*calc\(100% \+ 10px\)[^}]*triggerPopBelow/s);
     expect(css).toMatch(/\.tile-effect-pop\s*\{[^}]*bottom:\s*calc\(100% \+ 10px\)[^}]*triggerPopAbove/s);
     expect(css).toMatch(/\.hand \.tile\.trig-bounce\s*\{[^}]*jokerWiggle/s);
+  });
+});
+
+describe('register-changing Emoji Tile triggers', () => {
+  const playRegister = (jokerId: string, word: string, valid: boolean) => {
+    const run = newRun(`register-${jokerId}`);
+    run.jokers = [{ defId: jokerId, state: {} }];
+    const hand = tilesFor(word);
+    const lexicon = makeLexicon(
+      [],
+      valid ? { [word]: { suit: 'standard', pos: ['noun'] } } : {},
+    );
+    const result = submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      lexicon,
+      hand.map((tile) => tile.id),
+      makeRng(`register-${jokerId}-play`),
+    );
+    return { lexicon, result, run };
+  };
+
+  it('stores the final registers and emits a visible trigger beat on Play', () => {
+    const dadaist = playRegister('dadaist', 'zzq', false).result;
+    expect(dadaist.submission).toMatchObject({ suit: null, effectiveSuits: ['slang'] });
+    expect(dadaist.events).toContainEqual(expect.objectContaining({ kind: 'joker', jokerId: 'dadaist' }));
+
+    const tyrant = playRegister('tyrant', 'cat', true).result;
+    expect(tyrant.submission).toMatchObject({ suit: 'vulgar', effectiveSuits: ['vulgar'] });
+    expect(tyrant.events).toContainEqual(expect.objectContaining({ kind: 'joker', jokerId: 'tyrant' }));
+
+    const babel = playRegister('towerOfBabel', 'cat', true).result;
+    expect(babel.submission.effectiveSuits).toEqual(['standard', 'formal', 'slang', 'vulgar']);
+    expect(babel.events).toContainEqual(expect.objectContaining({ kind: 'joker', jokerId: 'towerOfBabel' }));
+  });
+
+  it('renders every final register tag, including Slang on a gibberish hole', () => {
+    const renderPlay = (jokerId: string, word: string, valid: boolean) => {
+      const { lexicon, result, run } = playRegister(jokerId, word, valid);
+      return renderToStaticMarkup(
+        <I18nProvider>
+          <SentenceTray
+            blind={result.blind}
+            judgment={judgeSentence(result.blind.sequence, lexicon)}
+            lexicon={lexicon}
+            patternLevels={run.patternLevels}
+          />
+        </I18nProvider>,
+      );
+    };
+
+    expect(renderPlay('dadaist', 'zzq', false)).toContain('class="suit-tag slang">SLG');
+    expect(renderPlay('tyrant', 'cat', true)).toContain('class="suit-tag vulgar">VLG');
+    const babel = renderPlay('towerOfBabel', 'cat', true);
+    for (const [suit, tag] of [
+      ['standard', 'STD'],
+      ['formal', 'FRM'],
+      ['slang', 'SLG'],
+      ['vulgar', 'VLG'],
+    ]) expect(babel).toContain(`class="suit-tag ${suit}">${tag}`);
   });
 });
