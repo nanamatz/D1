@@ -191,9 +191,7 @@ export const jokerSlotLimit = (run: RunState): number =>
   run.jokers.reduce(
     (sum, joker) =>
       sum +
-      (joker.defId === 'carteBlanche'
-        ? BALANCE.jokers.carteBlanche.slots
-        : joker.defId === 'bookOfMargins'
+      (joker.defId === 'bookOfMargins'
           ? BALANCE.jokers.bookOfMargins.slots
           : 0),
     0,

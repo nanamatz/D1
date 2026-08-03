@@ -2529,10 +2529,6 @@
   margin-right: 3px;
   vertical-align: middle;
 }
-.mat-glyph-icon {
-  width: 18px;
-  height: 18px;
-}
 .coins .coin-icon {
   width: 25px;
   height: 25px;
@@ -3307,8 +3303,8 @@
   inset: 5px;
   border: 1px solid rgba(55, 111, 143, .52);
   background:
-    radial-gradient(circle at 0 0, transparent 0 7px, #4f91b1 8px 9px, transparent 10px),
-    radial-gradient(circle at 100% 100%, transparent 0 7px, #4f91b1 8px 9px, transparent 10px);
+    radial-gradient(circle at 0 100%, transparent 0 7px, #4f91b1 8px 9px, transparent 10px),
+    radial-gradient(circle at 100% 0, transparent 0 7px, #4f91b1 8px 9px, transparent 10px);
 }
 .tile.polished .tile-material-texture {
   background:
@@ -3317,12 +3313,7 @@
 }
 .tile.leadPlate .tile-material-texture {
   inset: 5px;
-  background:
-    radial-gradient(circle at 3px 3px, #d1d4d5 0 2px, #25292b 3px, transparent 4px),
-    radial-gradient(circle at calc(100% - 3px) 3px, #d1d4d5 0 2px, #25292b 3px, transparent 4px),
-    radial-gradient(circle at 3px calc(100% - 3px), #d1d4d5 0 2px, #25292b 3px, transparent 4px),
-    radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #d1d4d5 0 2px, #25292b 3px, transparent 4px),
-    repeating-linear-gradient(165deg, transparent 0 8px, rgba(20,24,26,.22) 9px 10px);
+  background: repeating-linear-gradient(165deg, transparent 0 8px, rgba(20,24,26,.22) 9px 10px);
 }
 .tile.ivory .tile-material-texture {
   inset: 4px;
@@ -3456,15 +3447,14 @@
   24% { opacity: 1; }
   100% { opacity: 0; translate: 150px; }
 }
-/* B-2 · per-material ink contrast (UI_DESIGN §3.1 ③): dark faces flip letter +
-   value + corner glyph to a light ink, overriding the value-tier ink so a
+/* Per-material ink contrast: dark faces flip letter + value to a light ink,
+   overriding the value-tier ink so a
    high-value letter on a dark plate can never stay dark-on-dark. Specificity
    (0,2,0) and later source order beat the .tile.ink-* tiers above. Accessibility
    floor — holds in both the monochrome start and the full palette (the face and
    the light ink are both fixed literals, not palette tokens). */
 .tile.leadPlate,
-.tile.leadPlate .val,
-.tile.leadPlate .mat-glyph {
+.tile.leadPlate .val {
   color: var(--tile-ink-light, #f4f0e7);
 }
 
@@ -3511,10 +3501,7 @@
   display: none;
 }
 
-/* B-1 · conditional-material corner glyph — the "why is this tile special" read
-   without a tooltip. Top-left so it never collides with the .val badge (bottom-
-   right). Inherits the tile's letter color (currentColor) so it auto-flips light
-   on dark faces via the rule above. Non-interactive; hidden on mini/face-down. */
+/* Wood live-growth value. Other materials use texture plus tooltip only. */
 .tile .mat-glyph {
   position: absolute;
   left: 5px;
@@ -3532,7 +3519,7 @@
   opacity: 0.92;
   left: 4px;
   font-size: var(--fs-2xs);
-  color: #2d190d;
+  color: var(--chips);
 }
 .tile.mini .mat-glyph {
   display: none; /* 36px face has no room; mini tiles rely on their tooltip */

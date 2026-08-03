@@ -1,6 +1,6 @@
 /**
  * Joker registry (GDD §11). One joker per file, grouped by rarity here.
- * Promoted roster: Common 24 + Uncommon 42 + Rare 45 + Legendary 5.
+ * Active roster: Common 27 + Uncommon 44 + Rare 44 + Legendary 5.
  */
 
 import { JokerBus, type JokerDef } from '../events';
@@ -29,6 +29,9 @@ import { assonance } from './assonance';
 import { porcelainCat } from './porcelainCat';
 import { woodpecker } from './woodpecker';
 import { letterLadderBadge } from './letterLadderBadge';
+import { dullingPencil } from './dullingPencil';
+import { proofEraser } from './proofEraser';
+import { spareDrawer } from './spareDrawer';
 // Uncommon (§11.3)
 import { literaryJudge } from './literaryJudge';
 import { rareEarth } from './rareEarth';
@@ -72,6 +75,8 @@ import { verbEngine } from './verbEngine';
 import { modifierStack } from './modifierStack';
 import { correctionMark } from './correctionMark';
 import { serial } from './serial';
+import { dryingInk } from './dryingInk';
+import { foldingManuscript } from './foldingManuscript';
 // Rare (§11.4)
 import { carteBlanche } from './carteBlanche';
 import { hypocrite } from './hypocrite';
@@ -109,7 +114,6 @@ import { hotOffThePress } from './hotOffThePress';
 import { nightOwl } from './nightOwl';
 import { livingType } from './livingType';
 import { typesettingMachine } from './typesettingMachine';
-import { synesthete } from './synesthete';
 import { royalWe } from './royalWe';
 import { brokenSentence } from './brokenSentence';
 import { holePunch } from './holePunch';
@@ -153,6 +157,9 @@ export const COMMON_JOKERS: readonly JokerDef[] = [
   porcelainCat,
   woodpecker,
   letterLadderBadge,
+  dullingPencil,
+  proofEraser,
+  spareDrawer,
 ];
 export const UNCOMMON_JOKERS: readonly JokerDef[] = [
   literaryJudge,
@@ -197,6 +204,8 @@ export const UNCOMMON_JOKERS: readonly JokerDef[] = [
   modifierStack,
   correctionMark,
   serial,
+  dryingInk,
+  foldingManuscript,
 ];
 export const RARE_JOKERS: readonly JokerDef[] = [
   carteBlanche,
@@ -235,7 +244,6 @@ export const RARE_JOKERS: readonly JokerDef[] = [
   nightOwl,
   livingType,
   typesettingMachine,
-  synesthete,
   royalWe,
   brokenSentence,
   holePunch,

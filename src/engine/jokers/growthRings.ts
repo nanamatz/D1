@@ -9,8 +9,8 @@ export const growthRings: JokerDef = {
       if (tile.material === 'wood') {
         ctx.mult += Math.floor(
           (tile.woodBonusChips ?? BALANCE.materials.wood.baseChips) /
-          BALANCE.jokers.growthRings.chipsPerMult,
-        );
+          BALANCE.jokers.growthRings.chipsPerStep,
+        ) * BALANCE.jokers.growthRings.multPerStep;
       }
     },
   },

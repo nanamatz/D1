@@ -261,7 +261,7 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 |---|---|---|---|---|
 | Standard | Everyday vocabulary | Overwhelming majority | ×1.0 | Safe main line |
 | Formal | Academic / literary | Fewer than majority | ×1.5 | Mid-game main candidate |
-| Slang | Colloquial / informal | Few | ×2.0 | Strong when combined with emoji tiles |
+| Slang | Generation/group/era-limited nonstandard speech | Few | ×2.0 | Strong when combined with emoji tiles |
 | Vulgar | Profanity / taboo | Fewest | ×3.0 | High-risk jackpot |
 
 > **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in *how easy they are to make* (Standard common → Vulgar rare). Treating this asymmetry as a resource rather than a defect, harder-to-make suits get higher base multipliers, embedding a risk-reward curve into the suit structure itself. On top of that, "suit-pushing emoji tiles" (layer 2) recreate Balatro-style build bias.
@@ -281,16 +281,17 @@ adding a save key; old settled-score records are recomputed from the word on rea
 
 ### 3.2 Register Data Acquisition Pipeline
 
-A "clean English word set with register labels" does not exist. So this is a problem of *assembly*, not download. Target precision is set to a casual "roughly correct" level.
+A "clean English word set with register labels" does not exist. So this is a problem of *assembly*, not download. The authoritative decision rules are `docs/# 영단어 레지스터 분류 기준.md`.
 
-- **Standard is a default, not a label.** Do not classify the whole dictionary. Pick out only the non-standard (Formal, Slang, Vulgar) and drop everything else into Standard, cutting the workload by tens of times.
+- **Standard is the maximum/default set.** Every baked word receives a suit and is counted in the audit. Semantic source inspection is concentrated on non-standard candidates; entries with no qualifying evidence, and ambiguous entries, resolve to Standard.
 - **Separate validity (layer 1) from suit (layer 2).** Valid-word judgment is solved via an open word-list HashSet (ENABLE/TWL, etc.). Suit lookup is a separate table above it.
-- **Sources differ per suit.** Vulgar = public profanity filter lists (LDNOOBW, etc.; easy) · Formal = Academic Word List (AWL) seed + low-frequency/Latinate signals (medium) · Slang = Wiktionary usage-label parsing ((slang)/(informal), etc.; hard).
-- **Fill gaps with offline LLM batch.** Run the curated list through an LLM once during development to classify, cross-validating against the seed lists. Bake the result into a table rather than doing it at runtime.
-- **Do not use the entire dictionary.** Curate a 50k pool by frequency, including explicit tile-grammar exceptions. The 2026-08-01 expansion from 30k improves valid-word coverage while retaining a recognizable frequency cutoff (frequency: SUBTLEX-US, COCA, etc.).
-- **Inflected forms are IN; tag at the lemma (playtest-01 P0).** Plurals, past tense, -ing, and comparatives all validate (Scrabble convention — ENABLE already contains them; do not lemmatize them away). Suit + POS are tagged at the *lemma* and inherited by inflections via rule-based reduction (-s/-es/-ies/-ed/-ing/-er/-est) plus a small irregular table (ran→run, ate→eat…). Untagged words still default to Standard.
+- **Representative meaning only.** Wiktionary usage categories locate candidate words, then the first English dictionary definition's usage label is checked—not every sense on the page. The mapping is Vulgar = vulgar/taboo/obscene/offensive/slur; Slang = slang/internet slang/AAVE/dialect slang; Formal = formal/literary/archaic/technical/legal/poetic/officialese. Informal, colloquial, pejorative, rare, difficult, dialectal, or unmarked alone remain Standard. Explicit boundary examples in the criteria document override source disagreement. Only POS-compatible inflections inherit a non-standard lemma tag, and every non-standard evidence path is baked into `data/register-audit.json`.
+- **Precedence applies after representative-meaning selection.** If that one meaning matches multiple classes, resolve **Vulgar > Slang > Formal > Standard**. Do not promote a common Standard meaning because a secondary sense is slang, vulgar, or technical.
+- **Bake public lexical sources offline.** Moby POS supplies broad POS labels and Princeton WordNet 3.0 supplies complementary POS plus verb frames; curated/LLM corrections override them. Bake the merged result into a table rather than doing any classification at runtime.
+- **Use complete ENABLE (changed 2026-08-03).** The validity pool contains all 172,823 ENABLE words plus 13 apostrophe-free tile-grammar exceptions (172,836 total). The former 50k frequency cutoff was retired after it excluded valid base words such as `uremia` while retaining derivatives such as `uremic`.
+- **Inflected forms are IN; every baked word has POS (playtest-01 P0; completed 2026-08-03).** Plurals, past tense, -ing, and comparatives all validate (ENABLE already contains them; do not lemmatize them away). Existing curated tags stay authoritative; public-domain Moby POS and Princeton WordNet 3.0 fill the complete ENABLE pool, including transitive/intransitive verb frames, with deterministic morphology/fallback for obscure residual forms. Register words without a non-standard tag still default to Standard; production data validation forbids an empty POS list.
 
-> **Must-decide rule — "one word = one suit" resolution.** Register attaches to a *meaning*, not a word (e.g. "sick" = Standard "ill" + Slang "cool"). A game tile must have a single suit, so a resolution rule is needed. Recommended: "adopt the strongest register" (if any Slang/Vulgar sense exists, use that suit) — simple, clear, and reliably filters risky words.
+> **One word = one suit.** Choose the word's most frequent/representative meaning; if that cannot be determined reliably, use the general dictionary's first sense. Classify only that meaning in the numbered order Vulgar → Slang → Formal → Standard, and fall back to Standard when ambiguous. Thus `sick` (ill) and `lit` (set alight) remain Standard even though each has a Slang secondary sense.
 
 ---
 
@@ -772,7 +773,7 @@ individual unlock conditions. Only an **unseeded** run advances or earns those
 unlocks. A locked non-Legendary tile is excluded from shop stock, Charm Packs,
 Fable creation, Crane-and-Sun random creation, and every future non-Legendary
 acquisition route. Legendary has no unlock gate: Phoenix always draws from all
-five unowned Legendary definitions. The 116-tile roster is fixed; starter
+five unowned Legendary definitions. The 120-tile roster is fixed; starter
 membership and persistent achievement tracking remain pending.
 
 **No duplicate Emoji Tiles (rule, expanded 2026-07-29).** A run cannot acquire
@@ -1008,16 +1009,16 @@ until it is moved into §11.
 > The engine identifier stays `joker` (`JokerDef`, `src/engine/jokers/`,
 > `BALANCE.jokerSlots`) — display terms never rename engine identifiers.
 
-**Roster status (updated 2026-07-30).** The active roster contains **116 authored
-definitions**: Common 24 + Uncommon 42 + Rare 45 + Legendary 5. This promotes
-the idea bank's 19 Common, 33 Uncommon, and 34 Rare alternatives without
+**Roster status (updated 2026-08-03).** The active roster contains **120 authored
+definitions**: Common 27 + Uncommon 44 + Rare 44 + Legendary 5. This promotes
+the idea bank's 22 Common, 35 Uncommon, and 33 active Rare alternatives without
 replacing the earlier 30 entries. The separate 97-tile redesign in
 `docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md` remains
 postponed and is not an implementation source.
 
-**Implementation status (roster complete, 2026-07-30).** All 116 definitions
+**Implementation status (roster complete, 2026-08-03).** All 120 active definitions
 ship as data + event hooks, one file each under `src/engine/jokers/`.
-**Art is complete:** all 116 definitions have 84×112 pixel
+**Art is complete:** all 120 active definitions have 84×112 pixel
 masters registered through the shared resolver. The shared 124×165 runtime
 frame is wired to the owned shelf, shop,
 opened Charm Pack, held-consumable shelf, and Collection.
@@ -1095,48 +1096,48 @@ the complete permanent `run.bag` in the Shop.
 | Rare | Multiplication (×Mult) appears + full scaling — acceleration engine | 2–3 |
 | Legendary | Rule-breaking — redefines the run (5 total) | 3 |
 
-The compact tables below retain the original 30 entries. The promoted 86 rows
+The compact tables below retain the original 30 entries. The promoted 90 rows
 in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 are equally normative and complete
-the active 116-entry roster.
+the active 120-entry roster.
 
-### 11.2 Common — active 24
+### 11.2 Common — active 27
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
 | C6 | Ceramic Artisan | +7 Chips per unenhanced base Ceramic tile | 1 | — |
-| C7 | Long-Word Fan | +38 Chips if word is 5+ letters | 1 | — |
+| C7 | Long-Word Fan | +80 Chips if word is 5+ letters | 1 | — |
 | C8 | Short & Sharp | +10 Mult if word is 3 letters or fewer | 1 | — |
 | C9 | Alphabetical Order | +19 Mult if the word contains consecutive letters | 1 | — |
 | C10 | Miser | +2 Mult per 5 gold held | 1 | — |
 
-### 11.3 Uncommon — active 42
+### 11.3 Uncommon — active 44
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
-| U1 | Literary Judge | +63 Chips if word is Formal suit | 1–2 | — |
-| U3 | Rare Earth | ×3.5 Chips on that letter when using Q·Z·X·J | 1 | — |
+| U1 | Literary Judge | +69 Chips if word is Formal suit | 1–2 | — |
+| U3 | Rare Earth | ×3 Chips on that letter when using Q·Z·X·J | 1 | — |
 | U4 | Glasswork | +7 Mult per glass tile; 1 glass tile is lost each round | 1 | — |
-| U5 | Voracious Reader | +2 Chips per total words made so far, accumulating | 1 | ★ |
-| U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +2 | 2 | ★ |
-| U7 | Street Cred | Each Slang word made permanently raises Chips by +10 | 2 | ★ |
+| U5 | Voracious Reader | +5 Chips per total words made so far, accumulating | 1 | ★ |
+| U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +8 | 2 | ★ |
+| U7 | Street Cred | Each Slang word made permanently raises Chips by +30 | 2 | ★ |
 | U8 | Combo Artist | +8 Mult if different suit from the previous phase | 2 | — |
-| U9 | Vowel Magnet | ×1.63 Mult if word has more vowels than consonants | 1 | — |
+| U9 | Vowel Magnet | ×1.75 Mult if word has more vowels than consonants | 1 | — |
 | U10 | Equilibrist | +50 Chips & +5 Mult if vowel and consonant counts are equal | 1 | — |
 
-### 11.4 Rare — active 45
+### 11.4 Rare — active 44
 
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
-| R1 | Carte Blanche | +1 Emoji Tile slot and Emoji Tile shop prices −$3 | 3 | Buy 40 Emoji Tiles from shops |
-| R2 | Hypocrite | ×2.25 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
-| R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×1.63; a miss resets the streak | 3 | Start |
-| R4 | Out of Print | Whenever one alphabet letter has no copies left in the permanent pouch, permanently gain +32 Chips and +4 Mult | 1 | ★ · Remove every copy of one letter |
-| R5 | Stargazer | Starts at ×1; permanently gain +0.19 ×Mult whenever a Constellation card is used | 3 | ★ · Use 30 Constellation cards |
-| R6 | Fable Hoard | ×1.31 Mult per currently held consumable | 3 | End 5 rounds with consumable slots full |
-| R7 | Anonymous | ×2.88 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
-| R8 | Censor's Bane | ×2.88 Mult during Deadline/boss blinds | 3 | Clear all 12 bosses |
-| R9 | Dadaist | Treat gibberish as Slang for word scoring and apply ×2.25 Mult; POS remains null and the sentence hole remains | 2 | Clear a blind using only gibberish |
-| R10 | Interest Glutton | For every $1 interest received at round end, gain +3 Mult during the next round | 3 | Hold $100 in one run |
+| R1 | Carte Blanche | Emoji Tile shop prices −$3 | 3 | Buy 40 Emoji Tiles from shops |
+| R2 | Hypocrite | ×5 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
+| R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×3; a miss resets the streak | 3 | Start |
+| R4 | Out of Print | Gain +50 Chips and +8 Mult for each alphabet letter with no copies left in the permanent pouch; its current totals are displayed | 1 | dynamic · Remove every copy of one letter |
+| R5 | Stargazer | Starts at ×1; permanently gain +0.1 ×Mult whenever a Constellation card is used | 3 | ★ · Use 30 Constellation cards |
+| R6 | Fable Hoard | ×1.25 Mult per currently held consumable; zero consumables means ×1 | 3 | End 5 rounds with consumable slots full |
+| R7 | Anonymous | ×3 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
+| R8 | Censor's Bane | ×3 Mult during Deadline/boss blinds | 3 | Clear all 12 bosses |
+| R9 | Dadaist | Treat gibberish as Slang for word scoring and apply ×2.5 Mult; POS remains null and the sentence hole remains | 2 | Clear a blind using only gibberish |
+| R10 | Interest Glutton | For every $1 interest received at round end, gain +5 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
 
 ### 11.5 Legendary — confirmed 5
@@ -1151,7 +1152,7 @@ all five unowned definitions.
 | L2 | Tyrant | Treat every valid word as Vulgar and double every Vulgar ×Mult effect | 2 | — |
 | L3 | Type Foundry | Starts at ×1; whenever a letter tile is permanently destroyed, compound this tile's factor ×1.5 for the rest of the run | 1 | ★ exponential |
 | L4 | Tower of Babel | Each valid word counts as all four suits for suit-trigger conditions. Boss legality and Unison continue to use the word's original suit | 2 | — |
-| L5 | Misbound | Starts at ×1. At round end, 1/12 chance to self-destruct; if it survives, permanently gain +0.2 ×Mult | 3 | ★ |
+| L5 | Misbound | Starts at ×1. At round end, 1/24 chance to self-destruct; if it survives, permanently gain +0.3 ×Mult | 3 | ★ |
 
 ### 11.6 Scaling Axis Distribution
 
@@ -1422,12 +1423,13 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   list feeding §3.2; uppercase tiles already support them mechanically.
 - **Final two Gambler effects.** Rainman and Sake Cup retain art but no engine id
   until their effects are approved (§10.3).
-- **Register/POS dataset build.** Frequency-top curation → seed lists + LLM batch
-  classification → baked table (§3.2, §4.2).
+- **Register/POS dataset refresh.** The complete baked table and reproducible
+  register audit exist (§3.2, §4.2); refresh the licensed offline snapshots when
+  source dictionaries or the authoritative classification criteria change.
 - **Emoji Tiles keyed to Letter Hands (§5.5).** Letter Hands currently ship
   without a dedicated Emoji Tile family.
 - **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
-  the active 116-tile roster; the separate 97-tile redesign remains postponed.
+  the active 120-tile roster; the separate 97-tile redesign remains postponed.
 - **Emoji Tile profile unlock implementation.** The unseeded-only unlock rule and
   locked-pool exclusion are confirmed (§9.2, §11), but remaining profile work
   must keep `src/ui/storage.ts` and `desktop/save-store.js` in sync.
@@ -1435,9 +1437,9 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   only; whether Letter Hands should ever level remains deferred.
 - **Touch long-press marking (playtest-03 F).** Right-click discard marking still
   needs a touch equivalent.
-- **Suit dataset batch (playtest-03 F).** The validity pool is 50k; suit/POS
-  classification beyond the existing tagged subset stays an offline task, and the
-  baked loader format remains stable.
+- **Lexicon audit sampling.** Full ENABLE POS coverage shipped 2026-08-03. Future
+  work is quality sampling/correction of obscure fallback entries; authoritative
+  corrections remain baked data and the loader format stays stable.
 
 ---
 

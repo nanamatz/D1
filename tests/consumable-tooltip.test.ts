@@ -9,6 +9,7 @@ import {
   consumableTooltipExtra,
   referencedEditionTips,
   referencedFontTips,
+  referencedMaterialTips,
 } from '../src/ui/descriptions';
 
 const t = (key: string | string[], params?: Record<string, string | number>): string => {
@@ -51,6 +52,25 @@ describe('shared consumable tooltip copy', () => {
     }]);
     expect(referencedFontTips(en['pouch.military.desc'], enT)).toEqual([]);
     expect(readFileSync('src/ui/components/Tooltip.tsx', 'utf8')).toContain('referencedFontTips');
+  });
+
+  it('derives every named material tooltip without matching Korean substrings', () => {
+    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    const enT = translate(en);
+    const koT = translate(ko);
+
+    expect(referencedMaterialTips(en['jokerdesc.loadedLeadDice'], enT)).toEqual([{
+      title: en['material.leadPlate'], body: en['materialdesc.leadPlate'], kind: 'material',
+    }]);
+    expect(referencedMaterialTips(ko['jokerdesc.woodblockPress'], koT)).toEqual([{
+      title: ko['material.wood'], body: ko['materialdesc.wood'], kind: 'material',
+    }]);
+    expect(referencedMaterialTips(ko['jokerdesc.ceramicArtisan'], koT)).toEqual([{
+      title: ko['material.ceramic'], body: ko['materialdesc.ceramic'], kind: 'material',
+    }]);
+    expect(readFileSync('src/ui/components/Tooltip.tsx', 'utf8'))
+      .toContain('referencedMaterialTips');
   });
 
   it('derives edition sub-tooltips only from explicitly marked edition names', () => {

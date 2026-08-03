@@ -5,7 +5,7 @@ Balatro-inspired word-building roguelite for the web. **The full design document
 ## Architecture principles (non-negotiable)
 
 1. **Headless engine.** All game logic lives in `src/engine/` and must never import DOM, React, or browser APIs. The engine must run in Node so `src/sim/` can autoplay thousands of runs for balance verification. UI (`src/ui/`) imports the engine, never the reverse.
-2. **Jokers are data + hooks.** Every implemented joker (GDD §11) is a `JokerDef` object registering handlers on the event bus in `src/engine/events.ts`. Never hard-code a joker's effect inside pipeline code. If the pipeline lacks an event a joker needs, add the event. The active roster is Common 24 / Uncommon 42 / Rare 45 / Legendary 5 (116 total); the separate 97-tile redesign remains postponed.
+2. **Jokers are data + hooks.** Every implemented joker (GDD §11) is a `JokerDef` object registering handlers on the event bus in `src/engine/events.ts`. Never hard-code a joker's effect inside pipeline code. If the pipeline lacks an event a joker needs, add the event. The active roster is Common 27 / Uncommon 44 / Rare 44 / Legendary 5 (120 total); Synesthete is retired, and the separate 97-tile redesign remains postponed.
 3. **No magic numbers.** Every tunable value lives in `src/engine/balance.ts`, keyed to GDD tables. New numbers go there first.
 4. **Seeded RNG.** All randomness (bag shuffle, shop stock, packs, boss draw) flows through one seeded RNG (`src/engine/rng.ts`, to be written — use a small PRNG like mulberry32/xoshiro). A run is fully reproducible from `RunState.seed`. Never call `Math.random()` in the engine.
 5. **TypeScript strict mode.** The types in `src/engine/types.ts` encode GDD decisions (e.g. gibberish = `suit: null, posUsed: null`); keep them authoritative.
@@ -111,9 +111,9 @@ After each slice, write a tiny scenario in `src/sim/` exercising it headlessly.
 
 ## Data files (`data/`)
 
-- `dictionary.txt` — curated word list (one word per line, lowercase). Until the real pipeline (GDD §3.2) runs, generate a dev stub of ~2k common words so slices ①–③ are testable.
-- `lexicon.json` — `{ word: { suit, pos[] } }` baked table. Dev stub: mark everything `standard` except a small hand-tagged set covering all suits and all POS (needed for pattern tests).
-- Real pipeline (frequency curation → seed lists → LLM batch classification) is a separate offline task; do not build it into the game runtime.
+- `dictionary.txt` — complete lowercase ENABLE pool plus documented tile-grammar exceptions (GDD §3.2).
+- `lexicon.json` — complete baked `{ word: { suit, pos[] } }` table. Register classification follows `docs/# 영단어 레지스터 분류 기준.md`; every entry has non-empty POS.
+- The reproducible POS/register pipeline lives in `lexicon-pipeline/` and runs offline only. Never fetch or classify words in the game runtime.
 
 ## Stack
 

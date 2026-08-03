@@ -8,10 +8,6 @@ export const badReview: JokerDef = {
     wordScoring: ({ ctx }) => {
       if (!ctx.submission.isGibberish) return;
       ctx.goldDelta = (ctx.goldDelta ?? 0) + BALANCE.jokers.badReview.gold;
-      ctx.mult = Math.max(
-        BALANCE.jokers.badReview.minMult,
-        ctx.mult - BALANCE.jokers.badReview.multPenalty,
-      );
     },
   },
 };

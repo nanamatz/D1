@@ -2,7 +2,7 @@
  * Per-hand word solver (playtest-01 P2-1, the Magnifier consumable). Scans the
  * curated dictionary and returns up to `max` valid words spellable from the
  * hand's letters (multiset subset), best-scoring first. Duplicate-letter safe.
- * A 50k scan per use is trivial — no DAWG needed yet.
+ * A 173k scan per use remains small enough — no DAWG needed yet.
  */
 
 import { BALANCE } from './balance';

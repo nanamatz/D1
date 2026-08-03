@@ -1,10 +1,9 @@
 /**
- * feature-03 B-1 — conditional-material corner glyph + Wood live growth counter.
- * The glyph is the "why is this tile special" read without a tooltip (UI_DESIGN §3.1 ②).
+ * Material face details + Wood live growth counter.
  */
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { materialGlyph, materialIcon } from '../src/ui/game';
+import { materialGlyph } from '../src/ui/game';
 import { BALANCE } from '../src/engine/balance';
 import type { Tile, TileMaterial } from '../src/engine/types';
 
@@ -17,15 +16,8 @@ const tile = (material: TileMaterial, extra: Partial<Tile> = {}): Tile => ({
 });
 
 describe('materialGlyph (B-1)', () => {
-  it('shows a corner glyph only for conditional materials', () => {
-    expect(materialGlyph(tile('glass'))).not.toBeNull();
-    expect(materialIcon(tile('leadPlate'))).toBe('dice');
-    expect(materialGlyph(tile('ivory'))).toBe('$');
-    expect(materialIcon(tile('brass'))).toBe('heldHand');
-  });
-
-  it('returns null for base and flat materials (no condition to advertise)', () => {
-    for (const m of ['ceramic', 'porcelain', 'polished', 'stone'] as const) {
+  it('omits corner symbols from every material except Wood', () => {
+    for (const m of ['ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass'] as const) {
       expect(materialGlyph(tile(m))).toBeNull();
     }
   });
@@ -46,5 +38,12 @@ describe('material tile silhouette', () => {
       const block = css.match(new RegExp(`\\.tile\\.${material}\\s*\\{([^}]*)}`))?.[1] ?? '';
       expect(block, material).not.toMatch(/\bborder(?:-radius)?:/);
     }
+  });
+
+  it('keeps score corners clear and colours Wood growth as Chips', () => {
+    const lead = css.match(/\.tile\.leadPlate \.tile-material-texture\s*\{([^}]*)}/s)?.[1] ?? '';
+    expect(lead).not.toContain('radial-gradient');
+    expect(css).toMatch(/\.tile\.porcelain \.tile-material-texture\s*\{[^}]*circle at 0 100%[^}]*circle at 100% 0/s);
+    expect(css).toMatch(/\.mat-glyph\.mat-glyph-wood\s*\{[^}]*color:\s*var\(--chips\)/s);
   });
 });

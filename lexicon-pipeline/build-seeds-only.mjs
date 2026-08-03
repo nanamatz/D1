@@ -1,19 +1,17 @@
 #!/usr/bin/env node
 /**
- * Seeds-only lexicon builder (no API call, no cost).
+ * Criteria-examples-only lexicon builder (no API call, no cost).
  *
- * Applies the hand-written seed lists to the curated word list and defaults
- * everything else to 'standard'. This is step ① of the pipeline on its own —
- * a fast, free way to relieve the "everything is Standard" playtest complaint
- * before spending anything on the LLM batch (classify.mjs).
+ * Applies the classification document's explicit examples to a word list and
+ * defaults everything else to Standard. This is a legacy scratch-table helper;
+ * it is not the canonical full audit.
  *
- * POS is not known for non-seeded words in this mode; they get a best-effort
+ * POS is not known for non-example words in this mode; they get a best-effort
  * guess (see guessPos below) so pattern matching has something to work with.
- * Re-run classify.mjs later to replace these with real LLM tagging — seeds
- * always win either way, so nothing here needs to be redone.
+ * Re-run the canonical register pipeline later to replace the fallback table.
  *
  * Usage:
- *   node build-seeds-only.mjs --words data/curated.txt --out data/lexicon.json --seeds seeds
+ *   node build-seeds-only.mjs --words data/curated.txt --out data/lexicon.json
  */
 
 import fs from 'node:fs';
@@ -27,7 +25,7 @@ const args = Object.fromEntries(
 );
 const WORDS_PATH = args.words ?? 'data/curated.txt';
 const OUT_PATH = args.out ?? 'data/lexicon.json';
-const SEED_DIR = args.seeds ?? 'seeds';
+const OVERRIDES_PATH = args.overrides ?? 'lexicon-pipeline/register-overrides.json';
 
 const readLines = (p) =>
   fs.existsSync(p)
@@ -40,15 +38,15 @@ if (words.length === 0) {
   process.exit(1);
 }
 
-const SUITS = ['formal', 'slang', 'vulgar']; // loaded in this order; later entries win on overlap
-const seedMap = new Map();
+const SUITS = ['standard', 'formal', 'slang', 'vulgar'];
+const criteriaMap = new Map();
+const overrides = JSON.parse(fs.readFileSync(OVERRIDES_PATH, 'utf8'));
 for (const suit of SUITS) {
-  const list = readLines(path.join(SEED_DIR, `${suit}.txt`));
-  for (const w of list) seedMap.set(w, suit);
+  for (const word of overrides[suit] ?? []) criteriaMap.set(word, suit);
 }
 
-// crude best-effort POS guess for un-seeded words, so the sentence system has
-// *something* to match against until the real classify.mjs run replaces it.
+// Crude best-effort POS guess so the sentence system has something to match
+// until the canonical POS builder replaces it.
 function guessPos(word) {
   if (/(ly)$/.test(word)) return ['adverb'];
   if (/(ing|ate|ize|ify|ed)$/.test(word)) return ['verbTransitive', 'verbIntransitive'];
@@ -57,15 +55,11 @@ function guessPos(word) {
 }
 
 const lexicon = {};
-let seededHits = 0;
+let exampleHits = 0;
 for (const w of words) {
-  const suit = seedMap.get(w) ?? 'standard';
-  if (seedMap.has(w)) seededHits++;
+  const suit = criteriaMap.get(w) ?? 'standard';
+  if (criteriaMap.has(w)) exampleHits++;
   lexicon[w] = { suit, pos: guessPos(w) };
-}
-// fold in seed words not present in the curated list (rare, but keep them available)
-for (const [w, suit] of seedMap) {
-  if (!(w in lexicon)) lexicon[w] = { suit, pos: guessPos(w) };
 }
 
 fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
@@ -75,9 +69,9 @@ const counts = { standard: 0, formal: 0, slang: 0, vulgar: 0 };
 for (const { suit } of Object.values(lexicon)) counts[suit]++;
 const total = Object.values(lexicon).length;
 
-console.log(`Wrote ${OUT_PATH} — ${total} entries (${seededHits} matched a seed, ${total - seededHits} defaulted to standard).`);
+console.log(`Wrote ${OUT_PATH} — ${total} entries (${exampleHits} matched a criteria example, ${total - exampleHits} defaulted to Standard).`);
 console.log('Suit distribution:');
 for (const s of ['standard', 'formal', 'slang', 'vulgar']) {
   console.log(`  ${s.padEnd(9)} ${String(counts[s]).padStart(6)}  (${((counts[s] / total) * 100).toFixed(1)}%)`);
 }
-console.log('\nNo API calls made — this is free. Re-run classify.mjs later for full LLM tagging (seeds are preserved either way).');
+console.log('\nNo API calls made. Re-run the canonical Wiktionary register pipeline for the full audit.');

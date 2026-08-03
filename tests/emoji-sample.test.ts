@@ -71,9 +71,9 @@ const fixedRng = (value: number): Rng => ({
 });
 
 describe('Emoji Tile sample 10 — mechanics', () => {
-  it('Carte Blanche adds a slot and discounts Emoji Tile shop prices', () => {
+  it('Carte Blanche discounts Emoji Tile shop prices without adding a slot', () => {
     const run = runWith('carteBlanche');
-    expect(jokerSlotLimit(run)).toBe(BALANCE.jokerSlots + 1);
+    expect(jokerSlotLimit(run)).toBe(BALANCE.jokerSlots);
     expect(emojiTileShopPrice(run, 7)).toBe(7 - BALANCE.jokers.carteBlanche.shopDiscount);
   });
 
@@ -177,7 +177,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     const run = runWith('misbound');
     const blind = startBlind(run, makeRng('misbound'));
     const survived = onBlindEnded(run, blind, fixedRng(1));
-    expect(survived.jokers[0]?.state.factor).toBe(1.2);
+    expect(survived.jokers[0]?.state.factor).toBe(1.3);
     expect(onBlindEnded(survived, blind, fixedRng(0)).jokers).toHaveLength(0);
   });
 });

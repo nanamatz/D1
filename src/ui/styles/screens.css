@@ -644,13 +644,10 @@
   z-index: 2;
 }
 .blindselect .bs-card {
-  height: 342px;
-}
-.blindselect .bs-card.current {
-  height: 386px;
+  min-height: 386px;
 }
 .blindselect .bs-card.current.boss {
-  height: 450px;
+  min-height: 450px;
 }
 .blindselect .bs-card:not(.boss) {
   gap: 8px;

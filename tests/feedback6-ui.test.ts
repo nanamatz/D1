@@ -103,7 +103,7 @@ describe('latest feedback UI regressions', () => {
   it('keeps instant use right of its card and reserves boss-reroll space', () => {
     expect(play).toContain('left: calc(100% + 12px)');
     expect(play).not.toContain('left: calc(50% + 38px)');
-    expect(screens).toMatch(/\.blindselect \.bs-card\.current\.boss\s*\{[^}]*height:\s*450px/s);
+    expect(screens).toMatch(/\.blindselect \.bs-card\.current\.boss\s*\{[^}]*min-height:\s*450px/s);
   });
 
   it('keeps non-target Fables off candidate tiles and shows live pack tooltip values', () => {

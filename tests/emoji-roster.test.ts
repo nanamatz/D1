@@ -1,7 +1,6 @@
 /**
- * GDD §11 — the full authored Emoji Tile roster (Common 5 / Uncommon 9 /
- * Rare 11 / Legendary 5) as data + event hooks. Art assets are deliberately not
- * covered here: they land separately (§11 art canvas note).
+ * GDD §11 — the full authored Emoji Tile roster as data + event hooks.
+ * Art registration and dimensions are covered in emoji-sample.test.ts.
  */
 import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
@@ -92,12 +91,12 @@ const fixedRng = (value: number): Rng => ({
 });
 
 describe('GDD §11 roster shape', () => {
-  it('registers Common 24 / Uncommon 42 / Rare 45 / Legendary 5', () => {
-    expect(COMMON_JOKERS).toHaveLength(24);
-    expect(UNCOMMON_JOKERS).toHaveLength(42);
-    expect(RARE_JOKERS).toHaveLength(45);
+  it('registers Common 27 / Uncommon 44 / Rare 44 / Legendary 5', () => {
+    expect(COMMON_JOKERS).toHaveLength(27);
+    expect(UNCOMMON_JOKERS).toHaveLength(44);
+    expect(RARE_JOKERS).toHaveLength(44);
     expect(LEGENDARY_JOKERS).toHaveLength(5);
-    expect(ALL_JOKERS).toHaveLength(116);
+    expect(ALL_JOKERS).toHaveLength(120);
     expect(JOKER_REGISTRY.size).toBe(ALL_JOKERS.length);
   });
 
@@ -114,6 +113,30 @@ describe('GDD §11 roster shape', () => {
 });
 
 describe('Common — §11.2', () => {
+  it('applies blind-start discard and hand-size bonuses', () => {
+    const run = newRun('blind-start-jokers');
+    run.jokers = [
+      { defId: 'proofEraser', state: {} },
+      { defId: 'spareDrawer', state: {} },
+    ];
+    const blind = blindFor(run);
+    expect(blind.discardsLeft).toBe(run.baseDiscards + BALANCE.jokers.proofEraser.discards);
+    expect(blind.handSizeTotal).toBe(run.handSize + BALANCE.jokers.spareDrawer.handSize);
+    expect(blind.hand).toHaveLength(blind.handSizeTotal);
+  });
+
+  it('Dulling Pencil loses Chips after each played hand', () => {
+    const run = runWith('dullingPencil');
+    const blind = blindFor(run);
+    expect(play(run, blind, submission('cat')).chips).toBe(BALANCE.jokers.dullingPencil.chips);
+    expect(run.jokers[0]?.state.chips).toBe(
+      BALANCE.jokers.dullingPencil.chips - BALANCE.jokers.dullingPencil.chipsLostPerHand,
+    );
+    run.jokers[0]!.state.chips = BALANCE.jokers.dullingPencil.chipsLostPerHand;
+    play(run, blind, submission('cat'));
+    expect(run.jokers[0]?.state).toMatchObject({ chips: 0, destroyed: 1 });
+  });
+
   it('Ceramic Artisan pays only on un-enhanced base tiles', () => {
     const run = runWith('ceramicArtisan');
     expect(play(run, blindFor(run), submission('cat')).chips).toBe(3 * BALANCE.jokers.ceramicArtisan.chips);
@@ -156,6 +179,38 @@ describe('Common — §11.2', () => {
 });
 
 describe('Uncommon — §11.3', () => {
+  it('Drying Ink loses Mult after a vowel word', () => {
+    const run = runWith('dryingInk');
+    const blind = blindFor(run);
+    const ctx = ctxFor(submission('cat'));
+    ctx.scoringVowels = new Set(['A', 'E', 'I', 'O', 'U']);
+    bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.mult).toBe(1 + BALANCE.jokers.dryingInk.mult);
+    expect(run.jokers[0]?.state.mult).toBe(
+      BALANCE.jokers.dryingInk.mult - BALANCE.jokers.dryingInk.multLostPerVowelWord,
+    );
+    run.jokers[0]!.state.mult = BALANCE.jokers.dryingInk.multLostPerVowelWord;
+    const expiringCtx = ctxFor(submission('cat'));
+    expiringCtx.scoringVowels = new Set(['A', 'E', 'I', 'O', 'U']);
+    bus.emit('wordScoring', { run, blind, ctx: expiringCtx }, run.jokers);
+    expect(run.jokers[0]?.state).toMatchObject({ mult: 0, destroyed: 1 });
+  });
+
+  it('Folding Manuscript starts at +5 hand size then shrinks each blind', () => {
+    const run = runWith('foldingManuscript');
+    const first = blindFor(run);
+    expect(first.handSizeTotal).toBe(run.handSize + BALANCE.jokers.foldingManuscript.handSize);
+    const after = onBlindEnded(run, first, fixedRng(1));
+    const second = blindFor(after, 'folding-two');
+    expect(second.handSizeTotal).toBe(
+      run.handSize
+      + BALANCE.jokers.foldingManuscript.handSize
+      - BALANCE.jokers.foldingManuscript.handSizeLostPerBlind,
+    );
+    run.jokers[0]!.state.handSize = BALANCE.jokers.foldingManuscript.handSizeLostPerBlind;
+    expect(onBlindEnded(run, first, fixedRng(1)).jokers).toHaveLength(0);
+  });
+
   it('Hollow Promise pays per Inline discard blocked by full slots', () => {
     const run = runWith('hollowPromise', { gold: 0 });
     const blind = blindFor(run);
@@ -304,11 +359,11 @@ describe('Rare — §11.4', () => {
 });
 
 describe('Legendary — §11.5', () => {
-  it('keeps all Legendary balance values unchanged by the ease pass', () => {
+  it('keeps the configured Legendary balance values', () => {
     expect(BALANCE.jokers.bookOfMargins).toEqual({ slots: 3, factorPerEmptySlot: 2 });
     expect(BALANCE.jokers.tyrant).toEqual({ vulgarFactor: 2 });
     expect(BALANCE.jokers.typeFoundry).toEqual({ factorPerTile: 1.5 });
-    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 12, factorPerSurvival: 0.2 });
+    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 24, factorPerSurvival: 0.3 });
   });
 
   it('Tyrant makes every valid word a doubled Vulgar without rewriting its suit', () => {

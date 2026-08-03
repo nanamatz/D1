@@ -40,9 +40,8 @@ describe('feedback 5 UI regressions', () => {
     expect(source('src/ui/settle.tsx')).toContain('const BASE_STEP = 600');
   });
 
-  it('keeps non-current blind cards equal and reserves a taller current card', () => {
-    expect(screens).toMatch(/\.blindselect \.bs-card\s*\{[^}]*height:\s*342px/s);
-    expect(screens).toMatch(/\.blindselect \.bs-card\.current\s*\{[^}]*height:\s*386px/s);
+  it('uses the current-card height as every blind card minimum', () => {
+    expect(screens).toMatch(/\.blindselect \.bs-card\s*\{[^}]*min-height:\s*386px/s);
   });
 
   it('raises the stage heading above the emphasized Revision card', () => {

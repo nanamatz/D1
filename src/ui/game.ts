@@ -17,7 +17,6 @@ import type {
   Tile,
   WordSubmission,
 } from '../engine/types';
-import type { UiIconId } from './uiIcons';
 
 export type Phase = 'blindselect' | 'playing' | 'cashout' | 'shop' | 'gameover';
 
@@ -162,32 +161,11 @@ export function tileTooltip(tile: Tile, t: TFull) {
   return { title, body: t('tile.chips', { n: tileValue(tile) }), tags, sub };
 }
 
-/**
- * Corner glyph for a material whose effect fires on a *condition* (UI_DESIGN §3.1
- * ②) — the "why is this tile special" read without a tooltip. Monochrome text
- * glyphs only, so they survive the desaturated start (§13). Wood shows its LIVE
- * growth counter (its current +Chips, which climbs +10 per play). Flat/base
- * materials (Ceramic base, Porcelain, Polished, Stone) return null — Stone is
- * already unique by having no letter, the flat ones need no condition cue.
- */
+/** Wood alone shows its live +Chips growth; other materials rely on texture and tooltip. */
 export function materialGlyph(tile: Tile): string | null {
-  switch (tile.material) {
-    case 'glass':
-      return '✕'; // crack / 1-in-4 destroy risk
-    case 'ivory':
-      return '$'; // pays at blind end if held
-    case 'wood':
-      return `+${tile.woodBonusChips ?? BALANCE.materials.wood.baseChips}`;
-    default:
-      return null;
-  }
-}
-
-/** Material condition icons that must not depend on an OS Unicode glyph. */
-export function materialIcon(tile: Tile): UiIconId | null {
-  if (tile.material === 'leadPlate') return 'dice';
-  if (tile.material === 'brass') return 'heldHand';
-  return null;
+  return tile.material === 'wood'
+    ? `+${tile.woodBonusChips ?? BALANCE.materials.wood.baseChips}`
+    : null;
 }
 
 /** Font edition → css class ('' for the medium base). */

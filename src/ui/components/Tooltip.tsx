@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { JokerRarity, PackSize } from '../../engine/types';
-import { referencedEditionTips, referencedFontTips } from '../descriptions';
+import { referencedEditionTips, referencedFontTips, referencedMaterialTips } from '../descriptions';
 import { useI18n } from '../i18n';
 import { richText } from '../richtext';
 
@@ -104,17 +104,19 @@ export function TooltipSupplement({ body, sub }: SupplementProps) {
   const { t } = useI18n();
   const details = sub ? (Array.isArray(sub) ? sub : [sub]) : [];
   const copy = [body, ...details.map((detail) => detail.body)];
+  const materialTips = referencedMaterialTips(copy.join('\n'), t);
   const fontTips = referencedFontTips(copy.join('\n'), t);
   const editionTips = referencedEditionTips(copy.join('\n'), t);
   const explainsGibberish = copy
     .some((copy) => copy.includes('[g:'));
   if (
     details.length === 0 &&
+    materialTips.length === 0 &&
     fontTips.length === 0 &&
     editionTips.length === 0 &&
     !explainsGibberish
   ) return null;
-  const supplements = [...details, ...fontTips, ...editionTips];
+  const supplements = [...details, ...materialTips, ...fontTips, ...editionTips];
   if (explainsGibberish) {
     supplements.push({
         title: t('tooltip.gibberish.title'),
@@ -189,6 +191,7 @@ export function Tooltip({
   const hasSupplement = subDetails.length > 0
     || body.includes('[g:')
     || subDetails.some((detail) => detail.body.includes('[g:'))
+    || referencedMaterialTips(supplementCopy, t).length > 0
     || referencedFontTips(supplementCopy, t).length > 0
     || referencedEditionTips(supplementCopy, t).length > 0;
 

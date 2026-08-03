@@ -188,7 +188,7 @@ export function JokerShelf({
                     : tip.body}
                   {...(!jokersFaceDown
                     ? {
-                        extra: grownValue(def, owned, t, pouchRemaining),
+                        extra: grownValue(def, owned, t, pouchRemaining, run),
                         rarity: def.rarity,
                         tags: tip.tags,
                         sub: tip.sub,

@@ -21,8 +21,6 @@ import palette from './assets/icons/ui/palette.png';
 import unknown from './assets/icons/ui/unknown.png';
 import star from './assets/icons/ui/star.png';
 import close from './assets/icons/ui/close.png';
-import dice from './assets/icons/ui/dice.png';
-import heldHand from './assets/icons/ui/held-hand.png';
 
 export const UI_ICONS = {
   speechBurst,
@@ -48,8 +46,6 @@ export const UI_ICONS = {
   unknown,
   star,
   close,
-  dice,
-  heldHand,
 } as const;
 
 export type UiIconId = keyof typeof UI_ICONS;

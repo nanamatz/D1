@@ -76,7 +76,7 @@ export const isModifier = (p: POS): boolean =>
 export interface LexiconEntry {
   /** lowercase canonical spelling */
   word: string;
-  /** resolved via "adopt the strongest register" rule (GDD §3.2) */
+  /** resolved from one representative meaning under the GDD §3.2 precedence */
   suit: Suit;
   /** multi-POS allowed; the slot it is played into resolves which applies (GDD §4.2) */
   pos: POS[];

@@ -1,64 +1,67 @@
-# Lexicon Pipeline (offline)
+# Lexicon pipeline (offline)
 
-Turns a plain word list into the game's `lexicon.json` (`{ word: { suit, pos[] } }`).
-This is the real version of GDD §3.2's suit/POS tagging — the offline task that
-playtest-01..03 kept deferring. **Runtime never touches this; it consumes the baked output.**
+Builds the complete baked validity/POS data consumed by browser, desktop, and
+Node simulations. Runtime never fetches or classifies words.
 
-## Contents
+## Canonical rebuild
 
-- `seeds/formal.txt` · `seeds/slang.txt` · `seeds/vulgar.txt` — 516 hand-written seed words.
-  These are **authoritative**: the classifier never overrides them. Standard is the default,
-  so there is no standard seed file — anything not caught by seeds or the LLM stays standard.
-- `classify.mjs` — batch classifier. Applies seeds first, sends the rest to Claude, writes `lexicon.json`.
+Sources:
 
-## Two ways to run this
+- ENABLE: <https://raw.githubusercontent.com/dolph/dictionary/master/enable1.txt>
+- Princeton WordNet 3.0: <https://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz>
+- Moby Part-of-Speech II: <https://www.gutenberg.org/files/3203/files/mobypos.txt>
+- English Wiktionary usage categories: <https://en.wiktionary.org/wiki/Category:English_terms_by_usage>
 
-### A. Seeds-only (free, no API key, do this first)
-
+```sh
+node scripts/build-dictionary.mjs /path/to/enable1.txt data/dictionary.txt
+node lexicon-pipeline/classify-wordnet.mjs \
+  --words data/dictionary.txt \
+  --existing data/lexicon.json \
+  --wordnet /path/to/WordNet-3.0/dict \
+  --moby /path/to/mobypos.txt \
+  --out data/lexicon.json
+node lexicon-pipeline/fetch-wiktionary-registers.mjs
+node lexicon-pipeline/fetch-wiktionary-primary-registers.mjs
+node lexicon-pipeline/classify-registers.mjs
+npm run check:data
 ```
-node build-seeds-only.mjs --words data/curated.txt --out data/lexicon.json
-```
 
-Applies the 516 hand-written seeds; everything else defaults to `standard`
-(POS is a crude suffix-based guess for non-seeded words — good enough for the
-sentence system to function, not linguistically precise). **No cost, instant.**
-This alone should noticeably relieve the "everything is Standard" complaint,
-since it guarantees several hundred formal/slang/vulgar words are tagged.
+`dictionary.txt` contains every ENABLE word plus apostrophe-free tile-grammar
+exceptions. `classify-wordnet.mjs` preserves every existing non-empty entry,
+then fills missing words from Moby and WordNet. WordNet morphology handles
+inflections and verb frames distinguish transitive, intransitive, and linking
+uses. A deterministic suffix fallback gives the remaining obscure forms a
+non-empty POS. Register classification is a separate pass, so the POS builder
+defaults newly added words to Standard rather than applying legacy suit seeds.
 
-Re-running `classify.mjs` later is non-destructive: seeds always win, so any
-words it re-tags that aren't in the seed files just get upgraded from the
-guessed POS / default-standard to real LLM tagging.
+Current complete build: 172,836 dictionary words, 172,859 lexicon entries
+(23 retained pre-existing entries sit outside the dictionary). `check:data`
+rejects missing or empty POS and register-audit drift.
+Register distribution: Standard 169,065; Formal 2,675; Slang 879; Vulgar 240.
 
-### B. Full LLM batch (costs a few dollars, do this if seeds-only isn't enough)
+The authoritative rules and boundary examples live in
+`docs/# 영단어 레지스터 분류 기준.md`; `register-overrides.json` mirrors only
+those examples. `fetch-wiktionary-registers.mjs` recursively captures explicit
+Formal/higher-register/literary/poetic/officialese/technical, Slang, Vulgar, and
+slur categories as a candidate index. Informal and colloquial categories are
+intentionally excluded because the criteria map those labels to Standard.
+`fetch-wiktionary-primary-registers.mjs` then checks the usage label attached to
+each candidate's first English definition and stores only labels/revision ids,
+not definition text. `classify-registers.mjs` applies explicit examples, inherits
+non-standard register only across POS-compatible inflections, and defaults the
+rest to Standard. Precedence Vulgar > Slang > Formal > Standard is applied only
+to the selected representative meaning, never across unrelated secondary senses.
+The exact evidence path for every non-standard result is baked into
+`data/register-audit.json`.
 
-1. Provide a curated word list (frequency-topped, one lowercase word per line) at `data/curated.txt`.
-   - Source it from an open list (ENABLE etc.) intersected with a frequency list (SUBTLEX-US/COCA),
-     cut to ~50k. Use the game's validity list as this input so a completed full batch tags the same pool.
-2. `export ANTHROPIC_API_KEY=sk-ant-...`
-3. `node classify.mjs --words data/curated.txt --out data/lexicon.json --model claude-haiku-4-5-20251001`
-   - Optional: `--limit 3000` (test on a slice), `--batch 100`.
-   - Cost estimate at Haiku 4.5 rates (~$1/$5 per MTok): roughly **$8–12 for 50k words** at
-     standard rates, or about half that using Anthropic's Batch API if you adapt the script
-     to it. Sonnet-tier models cost several times more for the same job with no accuracy
-     benefit for a tagging task like this — Haiku is the right tier here.
-4. It prints a suit-distribution report at the end and is **resumable** (writes every batch).
-5. Commit `data/lexicon.json`. Point the game's lexicon loader at it.
+## Optional LLM fill pass
 
-## Cost & tuning
+`classify.mjs` remains a resumable missing-entry classifier for a scratch or
+partial table; it uses the same representative-meaning prompt and deliberately
+does not overwrite existing entries.
+`build-seeds-only.mjs` and `merge-hand-pos.mjs` remain legacy recovery tools,
+not the canonical full build.
 
-- ~50k words at batch 100 ≈ 500 API calls, temperature 0. Cheap; run once per word-list change.
-- The prompt tells the model Standard is the default and to only surface formal/slang/vulgar,
-  which keeps it conservative and cheap. Seeds act as the ground-truth anchor.
-
-## Inflection inheritance (optional follow-up)
-
-If the curated list contains inflected forms (plurals, tenses — which it should, per the
-"inflections are IN" decision), you can either (a) let the classifier tag them directly, or
-(b) tag lemmas only and map inflections to their lemma's tags in a small post-step. (b) is
-cheaper and more consistent; (a) is simpler. Either is fine for the "roughly correct" target.
-
-## Spot-check before shipping
-
-After baking, eyeball a few hundred high-frequency entries — the classifier is good but not
-perfect, and the most-played words matter most. Fix by adding to the seed files (authoritative)
-and re-running; seeds always win, so corrections are permanent.
+Moby data is public domain. WordNet 3.0 permits use, modification, and
+distribution under its bundled license; preserve its notice when redistributing
+the source database. Only derived POS tags are committed here.

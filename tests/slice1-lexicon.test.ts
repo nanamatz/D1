@@ -24,7 +24,7 @@ describe('slice1 lexicon — validity + baked lookup (GDD §3.2, §4.2)', () => 
     expect(e!.pos).toEqual(['verbIntransitive', 'noun']);
   });
 
-  it('defaults an untagged-but-valid word to standard suit with no POS', () => {
+  it('keeps a defensive fallback for partial test fixtures', () => {
     const e = lex.lookup('cat');
     expect(e).not.toBeNull();
     expect(e!.suit).toBe('standard');

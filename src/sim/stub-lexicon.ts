@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * Node-side loader for the dev-stub lexicon files (data/dictionary.txt,
+ * Node-side loader for the baked lexicon files (data/dictionary.txt,
  * data/lexicon.json). Kept OUT of src/engine so the engine stays free of fs
  * (the browser UI will bundle the same data via Vite `?raw` imports instead).
  *

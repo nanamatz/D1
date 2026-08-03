@@ -88,7 +88,6 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   );
   const shuffled = rng.shuffle(run.bag);
   const ordered = opts.openingLetters ? frontLoadLetters(shuffled, opts.openingLetters) : shuffled;
-  const { drawn: hand, bag } = drawTiles(ordered, effHandSize);
   const targetMult = boss?.targetMult ?? 1; // Wanted ×2
 
   let blind: BlindState = {
@@ -105,8 +104,8 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     committedScore: nextBonus.startingScore,
     projectedScore: nextBonus.startingScore,
     sequence: [],
-    bag,
-    hand,
+    bag: ordered,
+    hand: [],
     discardedThisBlind: [],
     earlyEndDisabled: false,
     previewHidden: false,
@@ -117,7 +116,15 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
 
   // Apply the boss's setup effect (phases, discards, flags — GDD §8.3).
   if (boss?.setup) blind = boss.setup(blind);
-  return blind;
+  defaultJokerBus.emit(
+    'blindStart',
+    { run, blind },
+    run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  );
+  blind.handSizeTotal = Math.max(1, blind.handSizeTotal);
+  blind.discardsLeft = Math.max(0, blind.discardsLeft);
+  const opening = drawTiles(blind.bag, blind.handSizeTotal);
+  return { ...blind, hand: opening.drawn, bag: opening.bag };
 }
 
 /**

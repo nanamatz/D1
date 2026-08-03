@@ -2,15 +2,14 @@
 /**
  * Offline lexicon batch classifier for Play the Wor!d.
  *
- * Pipeline stage (GDD §3.2): curated word list -> seed lists + LLM batch -> baked lexicon.json
- * This is a DEV/OFFLINE tool. It is not part of the game runtime. Run it once (or when the
- * curated word list changes) and commit the resulting lexicon.json.
+ * Optional fill stage (GDD §3.2): missing subset -> LLM batch -> baked lexicon.json
+ * This is a DEV/OFFLINE tool. It is not part of the game runtime.
  *
  * What it does:
- *   1. Loads the curated word list (frequency-topped; one word per line).
- *   2. Applies the hand-written seed lists first (authoritative — never overridden by the LLM).
+ *   1. Loads a missing word subset (one word per line).
+ *   2. Applies the criteria document's explicit examples first.
  *   3. Sends the REMAINING words to Claude in batches, asking for {suit, pos[]} per word.
- *   4. Cross-checks: if the model tags something the seeds already decided, seeds win.
+ *   4. Cross-checks: explicit criteria examples always win.
  *   5. Writes lexicon.json = { word: { suit, pos[] } }.
  *
  * Usage:
@@ -26,7 +25,6 @@
  */
 
 import fs from 'node:fs';
-import path from 'node:path';
 
 // ---------- arg parsing ----------
 const args = Object.fromEntries(
@@ -37,7 +35,7 @@ const args = Object.fromEntries(
 );
 const WORDS_PATH = args.words ?? 'data/curated.txt';
 const OUT_PATH = args.out ?? 'data/lexicon.json';
-const SEED_DIR = args.seeds ?? 'seeds';
+const OVERRIDES_PATH = args.overrides ?? 'lexicon-pipeline/register-overrides.json';
 const LIMIT = args.limit ? parseInt(args.limit, 10) : Infinity;
 const MODEL = args.model ?? 'claude-haiku-4-5-20251001'; // classification task — no need for Sonnet/Opus
 const BATCH_SIZE = args.batch ? parseInt(args.batch, 10) : 100;
@@ -56,12 +54,11 @@ const readLines = (p) =>
 
 const words = [...new Set(readLines(WORDS_PATH))].slice(0, LIMIT);
 
-const SUITS = ['formal', 'slang', 'vulgar'];
-const seedMap = new Map(); // word -> suit
+const SUITS = ['standard', 'formal', 'slang', 'vulgar'];
+const overrides = JSON.parse(fs.readFileSync(OVERRIDES_PATH, 'utf8'));
+const overrideMap = new Map();
 for (const suit of SUITS) {
-  for (const w of readLines(path.join(SEED_DIR, `${suit}.txt`))) {
-    seedMap.set(w, suit); // last write wins; order formal->slang->vulgar means vulgar overrides
-  }
+  for (const word of overrides[suit] ?? []) overrideMap.set(word, suit);
 }
 
 // resume from an existing partial output
@@ -76,15 +73,18 @@ const POS_VALUES = [
 ];
 
 // ---------- prompt ----------
-const SYSTEM = `You are a lexicographer tagging English words for a word game.
+const SYSTEM = `You are a conservative lexicographer tagging English words for a word game.
 For each word return its register SUIT and its parts of speech.
 
-SUIT — choose exactly one, using the "strongest register wins" rule:
-- "vulgar": profanity, crude insults, or taboo words (even mild ones like "crap", "idiot").
-- "slang": informal/colloquial words fine among friends but not in formal writing (e.g. "cool", "legit", "dude").
-- "formal": academic, literary, or elevated words (e.g. "ubiquitous", "eschew").
-- "standard": everything else — ordinary everyday vocabulary. This is the DEFAULT; most words are standard.
-If a word has multiple registers, pick the strongest non-standard one that a typical speaker would recognize (vulgar > slang > formal > standard).
+First choose ONE representative meaning: the word's most frequent ordinary meaning. Ignore secondary meanings. If the representative meaning is genuinely unclear, use a general dictionary's first sense.
+
+Classify that one meaning in this order and stop at the first match:
+- "vulgar": directly sexual, excretory, blasphemous, or group-targeting taboo language that is commonly censored. Mere insults such as "stupid", "idiot", "jerk", and "ugly" are standard. Mild censored profanity such as "damn", "hell", and "crap" is vulgar.
+- "slang": nonstandard speech restricted to a generation, subgroup, region, or era. It should satisfy at least two of: historically unintelligible in this sense, absurd/unintelligible in academic prose, signals subgroup membership, or likely to become dated within 20 years. Broad informal words such as "kid", "guy", "cool", "okay", "stuff", and "gonna" are standard.
+- "formal": mainly academic, legal, administrative, literary, archaic, or technical language that sounds conspicuously elevated in everyday conversation. Rarity or difficulty alone is insufficient; "onomatopoeia" is standard.
+- "standard": all remaining, unmarked, informal, colloquial, or ambiguous words. This is the DEFAULT and largest class.
+
+Dictionary-label mapping: vulgar/taboo/obscene/offensive/slur -> vulgar; slang/internet slang/dialect slang/AAVE -> slang; formal/literary/archaic/technical/legal -> formal; informal/colloquial/unmarked -> standard. If the selected meaning fits multiple labels, use vulgar > slang > formal > standard.
 
 POS — list ALL that commonly apply, from this exact set:
 ${POS_VALUES.join(', ')}.
@@ -138,7 +138,7 @@ const validPos = (arr) =>
 
 // ---------- main ----------
 const todo = words.filter((w) => !(w in lexicon));
-console.log(`Words: ${words.length} | already done: ${words.length - todo.length} | seeds: ${seedMap.size}`);
+console.log(`Words: ${words.length} | already done: ${words.length - todo.length} | criteria examples: ${overrideMap.size}`);
 console.log(`Classifying ${todo.length} words in batches of ${BATCH_SIZE} with ${MODEL}...`);
 
 let processed = 0;
@@ -156,10 +156,8 @@ for (let i = 0; i < todo.length; i += BATCH_SIZE) {
   const byWord = new Map(tagged.map((t) => [String(t.word).toLowerCase(), t]));
   for (const w of batch) {
     const t = byWord.get(w);
-    const suit = seedMap.get(w) // seeds are authoritative
-      ?? (t && SUITS.includes(t.suit) ? t.suit
-        : t && t.suit === 'standard' ? 'standard'
-        : 'standard');
+    const suit = overrideMap.get(w)
+      ?? (t && SUITS.includes(t.suit) ? t.suit : 'standard');
     lexicon[w] = { suit, pos: validPos(t?.pos) };
   }
 
@@ -169,10 +167,6 @@ for (let i = 0; i < todo.length; i += BATCH_SIZE) {
   process.stdout.write(`\r  ${processed}/${todo.length} (${pct}%)   `);
 }
 
-// ---------- fold in any seed words not in the curated list ----------
-for (const [w, suit] of seedMap) {
-  if (!(w in lexicon)) lexicon[w] = { suit, pos: ['noun'] }; // pos unknown; default noun
-}
 fs.writeFileSync(OUT_PATH, JSON.stringify(lexicon, null, 0));
 
 // ---------- report ----------

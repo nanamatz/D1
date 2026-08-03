@@ -4,17 +4,17 @@
  * Two inputs, kept as pure strings so the engine stays Node/browser-agnostic
  * (the caller reads the files):
  *   - dictionary.txt  → the set of valid words (one lowercase word per line)
- *   - lexicon.json    → { word: { suit, pos[] } } hand-tagged table
+ *   - lexicon.json    → { word: { suit, pos[] } } baked offline table
  *
  * Lookup policy (GDD §3.2 "everything standard except a tagged set"):
  *   - tagged word      → its baked entry
- *   - valid, untagged  → { suit: 'standard', pos: [] }
+ *   - valid, untagged  → defensive partial-data fallback; production data validation forbids it
  *   - not a word       → null  (caller routes to the gibberish path, §6.4)
  */
 
 import type { LexiconEntry, POS, Suit } from './types';
 
-/** The tagged-table shape (a LexiconEntry without the redundant `word` key). */
+/** The baked-table shape (a LexiconEntry without the redundant `word` key). */
 export interface LexiconEntryData {
   suit: Suit;
   pos: POS[];
@@ -34,7 +34,7 @@ const norm = (text: string): string => text.trim().toLowerCase();
 
 /**
  * Inflection → lemma inheritance (playtest-01 P0-2). Inflected forms are valid
- * (Scrabble convention) but usually untagged; they inherit their lemma's
+ * (Scrabble convention); partial fixtures can inherit their lemma's
  * suit/POS. Irregulars come from a small exceptions table; regulars from a few
  * suffix rules. Candidates are tried in order; the first that is tagged wins.
  */

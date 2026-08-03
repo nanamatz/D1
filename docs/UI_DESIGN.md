@@ -230,23 +230,23 @@ Nine materials (GDD §2.2) cannot be separated by face tint alone at 64px — es
 
 **① Every material gets a texture/detail cue, not just a hue.** Texture must survive desaturation (the game may be running fully monochrome, §13). **All nine materials share Ceramic's exact outer border, 10px radius, and rounded silhouette (changed 2026-07-30); material identity must stay inside that common edge.**
 
-**② Materials whose effect fires on a *condition* wear that condition as a corner glyph.** The player must be able to read "why is this tile special" without opening a tooltip — this is the single biggest clarity win.
+**② Material identity stays in the face treatment and shared tooltip (changed 2026-08-03).** Persistent condition symbols were retired because they competed with the letter score. Wood alone keeps its live +Chips growth value, coloured with the Chips ink. Porcelain rosettes sit bottom-left and top-right so the bottom-right score stays clear.
 
-| Material | Face treatment | Corner glyph |
+| Material | Face treatment | Extra face value |
 |---|---|---|
 | Ceramic (base) | warm face, quiet inset rim and corner dimples | — |
-| Porcelain | bright glaze, cobalt inset ring and opposite-corner rosettes | — (flat +Chips) |
+| Porcelain | bright glaze, cobalt inset ring and bottom-left/top-right rosettes | — (flat +Chips) |
 | Polished | warm base face, fixed diagonal buff band + animated pixel shine sweep | — (flat +Mult) |
-| Glass | translucent facets, inner glow and crossed crack lines | **crack/risk mark** (1/4 destroy) |
+| Glass | translucent facets, inner glow and crossed crack lines | — |
 | Stone | heavy internal bevel and high-contrast pits, **no letter** | — |
-| Lead plate | dark type-metal face, four rivets and diagonal wear scratches | **dice pip** (Lucky rolls) |
-| Ivory | cream face, gold inset ridge and curved Schreger-line grain | **$** (pays at blind end *if held*) |
-| Brass | engraved face, double inset edge, etched ring and corner screws | **hand icon** (×1.5 *while held*) |
+| Lead plate | dark type-metal face and diagonal wear scratches | — |
+| Ivory | cream face, gold inset ridge and curved Schreger-line grain | — |
+| Brass | engraved face, double inset edge, etched ring and corner screws | — |
 | Wood | strong grain and a visible knot | **live growth counter** — the tile's current +Chips, since it permanently grows +10 per play; a Wood tile that has grown must *look* grown |
 
 **③ Ink contrast is per-material.** `--tile-ink` gets a light variant for dark faces (Lead plate, Stone, and any future dark material); the letter and chip value switch to it automatically. Never let a dark face keep the default dark ink — this is an accessibility floor, not a preference.
 
-Font and edition sit *on top of* material, so a tile can show all three at once: read font from the glyph's weight/style, edition from its overlay (gray sheen / violet shimmer / rainbow cycle), material from face + glyph. Keep the three visual languages non-overlapping.
+Font and edition sit *on top of* material, so a tile can show all three at once: read font from the letter's weight/style, edition from its overlay (gray sheen / violet shimmer / rainbow cycle), and material from face texture plus tooltip. Keep the three visual languages non-overlapping.
 
 **Enhancement application motion (changed 2026-07-30).** `TileView` compares the
 same tile id's three axes and plays a distinct application beat whenever one is

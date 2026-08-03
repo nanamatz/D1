@@ -105,7 +105,6 @@ import hotOffThePress from './assets/jokers/hot-off-the-press.png';
 import nightOwl from './assets/jokers/night-owl.png';
 import livingType from './assets/jokers/living-type.png';
 import typesettingMachine from './assets/jokers/typesetting-machine.png';
-import synesthete from './assets/jokers/synesthete.png';
 import royalWe from './assets/jokers/royal-we.png';
 import brokenSentence from './assets/jokers/broken-sentence.png';
 import holePunch from './assets/jokers/hole-punch.png';
@@ -114,6 +113,11 @@ import goldenType from './assets/jokers/golden-type.png';
 import deadlineAuction from './assets/jokers/deadline-auction.png';
 import termInsurance from './assets/jokers/term-insurance.png';
 import exactingCritic from './assets/jokers/exacting-critic.png';
+import dullingPencil from './assets/jokers/dulling-pencil.png';
+import dryingInk from './assets/jokers/drying-ink.png';
+import proofEraser from './assets/jokers/proof-eraser.png';
+import spareDrawer from './assets/jokers/spare-drawer.png';
+import foldingManuscript from './assets/jokers/folding-manuscript.png';
 
 const ART: Readonly<Record<string, string>> = {
   alphabeticalOrder,
@@ -223,7 +227,6 @@ const ART: Readonly<Record<string, string>> = {
   nightOwl,
   livingType,
   typesettingMachine,
-  synesthete,
   royalWe,
   brokenSentence,
   holePunch,
@@ -232,6 +235,11 @@ const ART: Readonly<Record<string, string>> = {
   deadlineAuction,
   termInsurance,
   exactingCritic,
+  dullingPencil,
+  dryingInk,
+  proofEraser,
+  spareDrawer,
+  foldingManuscript,
 };
 
 /** One 84×112 pixel master scaled into the shared 124×165 runtime frame. */

@@ -19,9 +19,9 @@ describe('slice1 stub data — real dictionary.txt + lexicon.json load correctly
     expect(lex.isWord('xqzptv')).toBe(false);
   });
 
-  it('carries the hand-tagged suits (GDD §3.1 registers)', () => {
-    expect(lex.lookup('purchase')!.suit).toBe('formal');
-    expect(lex.lookup('buddy')!.suit).toBe('slang');
+  it('carries the audited suits (GDD §3.1 registers)', () => {
+    expect(lex.lookup('commence')!.suit).toBe('formal');
+    expect(lex.lookup('gnarly')!.suit).toBe('slang');
     expect(lex.lookup('damn')!.suit).toBe('vulgar');
     expect(lex.lookup('pizza')!.suit).toBe('standard');
   });

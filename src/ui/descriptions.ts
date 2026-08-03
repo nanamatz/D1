@@ -5,6 +5,8 @@
  */
 import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';
+import { MATERIAL_REGISTRY } from '../engine/materials';
+import { extinctLetterCount } from '../engine/jokers/outOfPrint';
 import { pouchTagChips } from '../engine/jokers/pouchTag';
 import type {
   ConsumableId,
@@ -12,6 +14,7 @@ import type {
   OwnedJoker,
   RunState,
   TileFont,
+  TileMaterial,
 } from '../engine/types';
 import { FABLE_REGISTRY, isFableId, jokerSellGoldValue } from '../engine/fables';
 import { CONSTELLATION_PATTERN } from '../engine/constellations';
@@ -71,6 +74,7 @@ export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
 const TILE_FONTS: readonly TileFont[] = ['medium', 'lightItalic', 'bold', 'inline', 'black'];
+const TILE_MATERIALS: readonly TileMaterial[] = ['ceramic', ...MATERIAL_REGISTRY.keys()];
 const REFERENCED_EDITIONS = [
   ['gray', 'G'],
   ['violet', 'v'],
@@ -89,6 +93,21 @@ export function referencedFontTips(
   return TILE_FONTS.flatMap((font) => {
     const title = t(`font.${font}`);
     return effectCopy.includes(title) ? [{ title, body: t(fontDescKey(font)), kind: 'font' }] : [];
+  });
+}
+
+/** Material names mentioned in effect copy get their canonical definition card. */
+export function referencedMaterialTips(
+  copy: string,
+  t: Translate,
+): { title: string; body: string; kind: 'material' }[] {
+  const effectCopy = copy.replace(/\[p:[^\]]*\]/g, '');
+  return TILE_MATERIALS.flatMap((material) => {
+    const title = t(`material.${material}`);
+    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const named = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu')
+      .test(effectCopy);
+    return named ? [{ title, body: t(`materialdesc.${material}`), kind: 'material' }] : [];
   });
 }
 
@@ -138,9 +157,17 @@ export function grownValue(
   owned: OwnedJoker | undefined,
   t: Translate,
   pouchRemaining?: number,
+  run?: RunState,
 ): string | null {
   if (def.id === 'pouchTag' && pouchRemaining !== undefined) {
     return t('joker.currentChips', { value: pouchTagChips(pouchRemaining) });
+  }
+  if (def.id === 'outOfPrint' && run) {
+    const gone = extinctLetterCount(run.bag);
+    return t('joker.currentChipsMult', {
+      chips: gone * BALANCE.jokers.outOfPrint.chipsPerLetter,
+      mult: gone * BALANCE.jokers.outOfPrint.multPerLetter,
+    });
   }
   const display = def.growthDisplay;
   if (!display) return null;

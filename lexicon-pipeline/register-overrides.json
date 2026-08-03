@@ -1,0 +1,21 @@
+{
+  "criteria": "docs/# 영단어 레지스터 분류 기준.md",
+  "standard": [
+    "sick", "lit", "stupid", "idiot", "jerk", "ugly",
+    "kid", "guy", "cool", "okay", "stuff", "gonna",
+    "water", "decide", "quickly", "house", "think", "problem",
+    "onomatopoeia"
+  ],
+  "formal": [
+    "notwithstanding", "henceforth", "aforementioned", "pursuant",
+    "ascertain", "commence", "procure", "deem", "whereby", "heretofore"
+  ],
+  "slang": [
+    "rizz", "yeet", "dope", "salty", "bogus", "gnarly", "bloke",
+    "bail", "ghost", "flex"
+  ],
+  "vulgar": [
+    "fuck", "shit", "cunt", "bitch", "piss", "arse", "prick", "whore",
+    "damn", "hell", "crap"
+  ]
+}

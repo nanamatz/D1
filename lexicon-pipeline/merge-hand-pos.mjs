@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 /**
- * Merge hand-curated POS onto a seeds-only lexicon (playtest follow-up).
+ * Merge hand-curated POS onto a scratch lexicon (legacy helper).
  *
- * `build-seeds-only.mjs` gives broad SUIT coverage (516 seeds) but only crude,
- * suffix-guessed POS. This overlays a hand-curated table's precise POS (and its
- * hand-tagged suits where the seed pass left a word `standard`) so the
- * pattern-example words spell out real parts of speech, while the seeds stay
- * authoritative for any non-standard suit they already assigned.
+ * `build-seeds-only.mjs` gives criteria-example SUIT coverage but only crude,
+ * suffix-guessed POS. This overlays a hand-curated table's precise POS without
+ * changing the register audit or adding words outside the active pool.
  *
- * Non-destructive and idempotent: seeds win on suit; hand table wins on POS.
- * A later `classify.mjs` run replaces the remaining crude guesses.
+ * Non-destructive and idempotent: the hand table wins only on POS.
  *
  * Usage:
  *   node merge-hand-pos.mjs --base data/lexicon.json --hand data/lexicon.curated.bak.json --out data/lexicon.json
@@ -31,27 +28,12 @@ const base = JSON.parse(fs.readFileSync(BASE, 'utf8'));
 const hand = JSON.parse(fs.readFileSync(HAND, 'utf8'));
 
 let posOverlaid = 0;
-let suitAdded = 0;
-let addedWords = 0;
-
 for (const [w, h] of Object.entries(hand)) {
   if (w.startsWith('_')) continue; // skip `_comment` etc.
   const b = base[w];
-  if (b) {
-    // POS: the hand table is authoritative (precise, multi-POS).
-    if (Array.isArray(h.pos) && h.pos.length) {
-      b.pos = h.pos;
-      posOverlaid++;
-    }
-    // Suit: seeds win on non-standard; only fill in where seeds left it standard.
-    if (b.suit === 'standard' && h.suit && h.suit !== 'standard') {
-      b.suit = h.suit;
-      suitAdded++;
-    }
-  } else {
-    // Hand word not in the base dictionary — keep it available (seeds-only did too).
-    base[w] = { suit: h.suit ?? 'standard', pos: h.pos ?? ['noun'] };
-    addedWords++;
+  if (b && Array.isArray(h.pos) && h.pos.length) {
+    b.pos = h.pos;
+    posOverlaid++;
   }
 }
 
@@ -62,8 +44,7 @@ for (const { suit } of Object.values(base)) counts[suit] = (counts[suit] ?? 0) +
 const total = Object.values(base).length;
 
 console.log(
-  `Merged ${OUT} — ${total} entries · POS overlaid on ${posOverlaid} words · ` +
-    `${suitAdded} hand suits filled in · ${addedWords} hand-only words added.`,
+  `Merged ${OUT} — ${total} entries · POS overlaid on ${posOverlaid} words.`,
 );
 console.log('Suit distribution:');
 for (const s of ['standard', 'formal', 'slang', 'vulgar']) {

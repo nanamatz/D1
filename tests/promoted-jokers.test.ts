@@ -111,4 +111,71 @@ describe('promoted Emoji Tile hooks', () => {
     run.jokers.push(owned('copyEditor'));
     expect(canOwnJoker(run, 'miser')).toBe(true);
   });
+
+  it('Clean Copy checks remaining discards at scoring time', () => {
+    const run = newRun('clean-copy');
+    run.jokers = [owned('cleanCopy')];
+    const blind = startBlind(run, makeRng('clean-copy'));
+    const active = wordCtx(word('CAT'));
+    bus.emit('wordScoring', { run, blind: { ...blind, discardsLeft: 4 }, ctx: active }, run.jokers);
+    expect(active.mult).toBe(1 + BALANCE.jokers.cleanCopy.mult);
+
+    const spent = wordCtx(word('CAT'));
+    bus.emit('wordScoring', { run, blind: { ...blind, discardsLeft: 3 }, ctx: spent }, run.jokers);
+    expect(spent.mult).toBe(1);
+  });
+
+  it('Discarded Draft stores its live Chips for the tooltip', () => {
+    const run = newRun('discarded-draft');
+    run.jokers = [owned('discardedDraft')];
+    const blind = startBlind(run, makeRng('discarded-draft'));
+    const discarded = blind.hand.slice(0, 3);
+    bus.emit('discardUsed', {
+      run,
+      blind: { ...blind, discardedThisBlind: discarded },
+      tiles: discarded,
+      gained: 0,
+      slotsBlocked: 0,
+    }, run.jokers);
+    expect(run.jokers[0]?.state.chips)
+      .toBe(3 * BALANCE.jokers.discardedDraft.chipsPerTile);
+  });
+
+  it('Bad Review never subtracts another effect Mult', () => {
+    const run = newRun('bad-review');
+    run.jokers = [owned('badReview')];
+    const blind = startBlind(run, makeRng('bad-review'));
+    const gibberish = word('ZZZ');
+    gibberish.isGibberish = true;
+    gibberish.suit = null;
+    const ctx = { ...wordCtx(gibberish), mult: 9 };
+    bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.mult).toBe(9);
+    expect(ctx.goldDelta).toBe(BALANCE.jokers.badReview.gold);
+  });
+
+  it('Exacting Critic counts owned Uncommon Emoji Tiles regardless of side', () => {
+    const run = newRun('exacting-critic');
+    run.jokers = [
+      owned('formalInvitation'),
+      owned('exactingCritic'),
+      owned('slangDictionary'),
+      owned('miser'),
+    ];
+    const blind = startBlind(run, makeRng('exacting-critic'));
+    const ctx = wordCtx(word('CAT'));
+    bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.mult).toBe(BALANCE.jokers.exactingCritic.factorPerUncommon ** 2);
+  });
+
+  it('Word Hunter starts at its configured base and grows on a new word', () => {
+    const run = newRun('word-hunter');
+    run.jokers = [owned('wordHunter')];
+    const blind = startBlind(run, makeRng('word-hunter'));
+    const ctx = wordCtx(word('CAT'));
+    bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.mult).toBeCloseTo(
+      BALANCE.jokers.wordHunter.baseFactor + BALANCE.jokers.wordHunter.factorPerNewWord,
+    );
+  });
 });

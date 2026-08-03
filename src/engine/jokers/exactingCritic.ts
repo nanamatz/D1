@@ -6,11 +6,10 @@ export const exactingCritic: JokerDef = {
   emoji: '🧐', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ run, ctx }, self, env) => {
-      const index = run.jokers.indexOf(self);
-      const rareLeft = run.jokers.slice(0, Math.max(0, index))
-        .filter((joker) => env.lookup(joker.defId)?.rarity === 'rare').length;
-      ctx.mult *= BALANCE.jokers.exactingCritic.factorPerRareLeft ** rareLeft;
+    wordScoring: ({ run, ctx }, _self, env) => {
+      const uncommons = run.jokers
+        .filter((joker) => env.lookup(joker.defId)?.rarity === 'uncommon').length;
+      ctx.mult *= BALANCE.jokers.exactingCritic.factorPerUncommon ** uncommons;
     },
   },
 };

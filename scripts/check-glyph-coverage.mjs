@@ -45,8 +45,8 @@ const BLOCKS = [
   { name: 'Hangul jamo (compatibility)', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x3130, 0x318f]] },
   { name: 'Hangul jamo', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x1100, 0x11ff]] },
   { name: 'CJK punctuation', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x3000, 0x303f]] },
-  // Geometric/technical glyphs the UI draws itself (material corner glyphs,
-  // the letterless-Stone sentinel). These are NOT in any imported subset and
+  // Geometric/technical glyphs the UI draws itself (including the
+  // letterless-Stone sentinel). These are NOT in any imported subset and
   // fall back to the OS symbol font by design — `tokens.css` sets an explicit
   // symbol stack for them. Listed so the check stays honest about it.
   { name: 'UI symbol glyphs (OS fallback by design)', via: 'Arial Unicode MS / Segoe UI Symbol stack', ranges: [
@@ -69,11 +69,10 @@ function displayedCharacters() {
     const table = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
     for (const [key, value] of Object.entries(table)) add(value, `${locale}.json:${key}`);
   }
-  // Glyphs drawn from code rather than copy: tile letters, the letterless-Stone
-  // sentinel (scoring.ts NO_LETTER), and the material corner glyphs (game.ts).
+  // Glyphs drawn from code rather than copy: tile letters and the letterless-Stone
+  // sentinel (scoring.ts NO_LETTER).
   add('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 'tile letters');
   add('□', 'scoring.ts NO_LETTER');
-  add('✕⚄$☞+', 'game.ts materialGlyph');
   return chars;
 }
 

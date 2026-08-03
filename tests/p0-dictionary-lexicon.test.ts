@@ -17,8 +17,32 @@ describe('P0-1 — real validity dictionary', () => {
     }
   });
 
-  it('contains the expanded 50k validity pool', () => {
-    expect(lex.size).toBeGreaterThanOrEqual(50000);
+  it('contains complete ENABLE plus tile-grammar exceptions', () => {
+    expect(lex.size).toBeGreaterThanOrEqual(172836);
+  });
+
+  it('includes UREMIA with its noun POS', () => {
+    expect(lex.lookup('uremia')).toMatchObject({ suit: 'standard', pos: ['noun'] });
+  });
+
+  it('keeps the documented register boundary examples stable', () => {
+    const examples = {
+      standard: [
+        'sick', 'lit', 'stupid', 'idiot', 'jerk', 'ugly', 'kid', 'guy',
+        'cool', 'okay', 'stuff', 'gonna', 'water', 'decide', 'quickly',
+        'house', 'think', 'problem', 'onomatopoeia',
+      ],
+      formal: [
+        'notwithstanding', 'henceforth', 'aforementioned', 'pursuant',
+        'ascertain', 'commence', 'procure', 'deem', 'whereby', 'heretofore',
+      ],
+      slang: ['dope', 'salty', 'bogus', 'gnarly', 'bloke', 'bail', 'ghost', 'flex'],
+      vulgar: ['fuck', 'shit', 'cunt', 'bitch', 'piss', 'arse', 'prick', 'whore', 'damn', 'hell', 'crap'],
+    } as const;
+
+    for (const [suit, words] of Object.entries(examples)) {
+      for (const word of words) expect(lex.lookup(word)?.suit, word).toBe(suit);
+    }
   });
 
   it('still rejects non-words', () => {
@@ -56,7 +80,7 @@ describe('P0-2 — suit/POS inherited by lemma', () => {
     expect(lex.lookup('run')?.suit).toBe('slang');
   });
 
-  it('a valid word with no tagged lemma stays standard with no POS (GDD §3.2)', () => {
+  it('a partial fixture with no tagged lemma stays standard with no POS', () => {
     expect(lex.lookup('table')).toEqual({ word: 'table', suit: 'standard', pos: [] });
   });
 });
