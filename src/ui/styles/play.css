@@ -4,12 +4,14 @@
   display: grid;
   /* Wider rail (playtest-06): 250px → --rail-w (400px); contents scale to match.
      The board widened with it so the shelves still fit beside a 400px rail. */
-  grid-template-columns: var(--rail-w) 1fr;
+  /* A bare 1fr keeps its min-content floor. Six fixed-width Emoji Tiles would
+     therefore widen the whole main track and push every panel past the board. */
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
   gap: var(--rail-gap);
   max-width: var(--board-max);
   margin: 0 auto;
   padding: var(--board-pad);
-  min-height: 100vh;
+  min-height: var(--board-h);
   position: relative;
   background: none;
 }
@@ -19,7 +21,7 @@
   overflow: hidden;
 }
 .persistent-run .main {
-  min-height: calc(100vh - var(--board-pad) * 2);
+  min-height: calc(var(--board-h) - var(--board-pad) * 2);
 }
 .phase-workspace {
   position: relative;
@@ -580,7 +582,8 @@
   background-image: linear-gradient(120deg, rgba(255, 64, 96, 0.32), rgba(255, 225, 66, 0.26), rgba(75, 224, 160, 0.28), rgba(93, 135, 255, 0.34));
 }
 .edition-white:not(.tile) {
-  filter: invert(0.88) hue-rotate(180deg);
+  --emoji-edition-filter: invert(0.88) hue-rotate(180deg);
+  filter: var(--emoji-edition-filter);
 }
 /* Emoji Tile editions use one image-only language: background colour, never
    badges or symbol prefixes. The tint overlays the opaque pixel-art master. */
@@ -637,6 +640,8 @@
 }
 .emoji-tile-image-only.face-down {
   background: #000;
+  box-shadow: none;
+  filter: none;
 }
 .emoji-tile-image-only.face-down::after {
   display: none;
@@ -2399,8 +2404,19 @@
   justify-content: center;
   gap: 12px;
 }
-/* Wrappers shrink evenly when a fixed-width panel fills, so cards progressively
-   overlap without changing their 124×165 footprint. */
+/* Five cards keep their normal spacing. Beyond five, the final wrapper reserves
+   one full card while all preceding wrappers split the remaining width evenly;
+   their fixed 124x165 cards therefore overlap by one consistent step. */
+.jokers.jokers-overlap {
+  gap: 0;
+}
+.jokers.jokers-overlap .joker-slot {
+  flex: 1 1 0;
+  width: auto;
+}
+.jokers.jokers-overlap .joker-slot:last-child {
+  flex: 0 0 var(--shop-card-w);
+}
 .jokers .joker-slot:hover,
 .jokers .joker-slot:focus-within,
 .consumables .consumable-slot:hover,
@@ -2463,10 +2479,12 @@
 /* Joker trigger animation (B step 3): wiggle + contribution popup. */
 .joker.firing {
   animation: jokerWiggle 0.32s ease-in-out;
-  filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
+  filter: var(--emoji-edition-filter, brightness(1)) brightness(1.25)
+    drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
 }
 .joker.firing.enhanced-firing {
-  filter: brightness(1.38) drop-shadow(0 0 12px rgba(255, 255, 255, .82));
+  filter: var(--emoji-edition-filter, brightness(1)) brightness(1.38)
+    drop-shadow(0 0 12px rgba(255, 255, 255, .82));
 }
 @keyframes jokerWiggle {
   0%, 100% { transform: translateY(-4px) rotate(0deg); }
@@ -2502,6 +2520,32 @@
   0% { transform: translate(-50%, -8px) scale(.72); opacity: 0; }
   38% { transform: translate(-50%, 0) scale(1.12); opacity: 1; }
   100% { transform: translate(-50%, 8px) scale(1); opacity: 0; }
+}
+.joker-chance-pop {
+  position: fixed;
+  z-index: 72;
+}
+.joker-chance-pop.below {
+  animation: triggerPopBelow 0.55s ease-out forwards;
+}
+.joker-chance-pop.above {
+  transform: translate(-50%, -100%);
+  animation: jokerChancePopAbove 0.55s ease-out forwards;
+}
+.joker-chance-pop .chance-results {
+  margin: 0;
+  gap: 3px;
+}
+.joker-chance-pop .chance-result {
+  padding: 2px 4px;
+  border-width: 1px;
+  font-size: .72em;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, .45);
+}
+@keyframes jokerChancePopAbove {
+  0% { transform: translate(-50%, calc(-100% + 8px)) scale(.72); opacity: 0; }
+  38% { transform: translate(-50%, -100%) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, calc(-100% - 8px)) scale(1); opacity: 0; }
 }
 .trigger-pop .chip {
   display: inline-flex;
@@ -3520,7 +3564,7 @@
   /* the live growth counter reads as a value, so give it full contrast */
   opacity: 0.92;
   left: 4px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-md);
   color: var(--chips);
 }
 .tile.mini .mat-glyph {

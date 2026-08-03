@@ -164,7 +164,7 @@ function OptionCard({
         )}
       </div>
       {edition !== 'base' && option.kind !== 'joker' && (
-        <span className="edition-badge">{edition}</span>
+        <span className="edition-badge">{t(`edition.${edition}`)}</span>
       )}
     </TiltCard>
   );

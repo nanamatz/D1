@@ -15,7 +15,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function run() {
   const win = new BrowserWindow({
     width: 1440,
-    height: 965,
+    height: 966,
     show: false,
     webPreferences: {
       contextIsolation: true,
@@ -48,6 +48,31 @@ async function run() {
       return true;
     })()`);
     if (!clicked) throw new Error(`Missing clickable element: ${selector}`);
+  }
+
+  async function assertNoDocumentScroll(label) {
+    const dimensions = await evaluate(`({
+      viewport: document.documentElement.clientHeight,
+      content: document.documentElement.scrollHeight,
+    })`);
+    if (dimensions.content > dimensions.viewport) {
+      throw new Error(`${label} scrolled: ${dimensions.content}px > ${dimensions.viewport}px`);
+    }
+  }
+
+  async function assertContained(selector, containerSelector, label) {
+    const bounds = await evaluate(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      const container = document.querySelector(${JSON.stringify(containerSelector)});
+      if (!(element instanceof HTMLElement) || !(container instanceof HTMLElement)) return null;
+      const inner = element.getBoundingClientRect();
+      const outer = container.getBoundingClientRect();
+      return { inner: { left: inner.left, right: inner.right }, outer: { left: outer.left, right: outer.right } };
+    })()`);
+    if (!bounds) throw new Error(`${label}: missing layout element`);
+    if (bounds.inner.left < bounds.outer.left - 1 || bounds.inner.right > bounds.outer.right + 1) {
+      throw new Error(`${label}: ${JSON.stringify(bounds)}`);
+    }
   }
 
   try {
@@ -99,6 +124,12 @@ async function run() {
     await waitFor(`document.querySelector('.bs-select')`, 'Blind Select');
     await click('.bs-select');
     await waitFor(`document.querySelector('.hand [data-tile-id]')`, 'playing hand');
+    win.setContentSize(1366, 768);
+    await delay(200);
+    await assertNoDocumentScroll('Playing board at 100% UI scale');
+    await evaluate(`document.documentElement.style.setProperty('--ui-scale', '1.2')`);
+    await assertNoDocumentScroll('Playing board at 120% UI scale');
+    await evaluate(`document.documentElement.style.setProperty('--ui-scale', '1')`);
     const scoreBefore = await evaluate(`document.querySelector('.round-num')?.textContent`);
     await click('.hand [data-tile-id]');
     await waitFor(`document.querySelector('.play-btn:not(:disabled)')`, 'enabled Play');
@@ -108,14 +139,56 @@ async function run() {
       'score settlement',
     );
     await waitFor(`localStorage.getItem('wj.run')?.includes('"runStarted":true')`, 'run save');
+    await evaluate(`(() => {
+      const envelope = JSON.parse(localStorage.getItem('wj.run'));
+      const ids = ['alphabetSoup', 'acrosticPoet', 'alliterationSticker', 'alphabetPress',
+        'alphabeticalOrder', 'anonymous', 'assonance', 'badReview'];
+      const editions = ['base', 'gray', 'violet', 'rainbow', 'white'];
+      envelope.state.run.jokers = ids.map((defId, index) => ({
+        defId,
+        edition: editions[index % editions.length],
+        state: {}
+      }));
+      envelope.state.run.jokerSlots = ids.length;
+      envelope.state.blind.jokersFaceDown = true;
+      localStorage.setItem('wj.run', JSON.stringify(envelope));
+    })()`);
 
-    // Reload -> Continue restores same run.
+    // Reload -> Continue restores an over-five shelf without widening the board.
     await page.reload();
     await waitFor(`document.querySelector('.menu-play')`, 'menu after reload');
     await click('.menu-play');
     await waitFor(`document.querySelector('.continue-card')`, 'Continue card');
     await click('.newrun .play-run');
     await waitFor(`document.querySelector('.hand [data-tile-id]')`, 'restored run');
+    await waitFor(`document.querySelectorAll('.joker.face-down').length === 8`, 'eight face-down Emoji Tiles');
+    await waitFor(`document.querySelector('.jokers.jokers-overlap')`, 'overlapping Emoji Tile shelf');
+    const uniformCardBacks = await evaluate(`(() => {
+      const cards = [...document.querySelectorAll('.joker.face-down')];
+      return cards.length === 8
+        && cards.every((card) => ![...card.classList].some((name) => name.startsWith('edition-')))
+        && new Set(cards.map((card) => card.querySelector('.joker-back-mascot')?.getAttribute('src'))).size === 1;
+    })()`);
+    if (!uniformCardBacks) throw new Error('Face-down Emoji Tiles retained edition-specific presentation');
+    const overlapLayout = await evaluate(`(() => {
+      const shelf = document.querySelector('.jokers.jokers-overlap');
+      const cards = [...document.querySelectorAll('.jokers.jokers-overlap .joker')];
+      if (!(shelf instanceof HTMLElement) || cards.length !== 8) return null;
+      const outer = shelf.getBoundingClientRect();
+      const rects = cards.map((card) => card.getBoundingClientRect());
+      const steps = rects.slice(1).map((rect, index) => rect.left - rects[index].left);
+      return {
+        contained: rects[0].left >= outer.left - 1 && rects.at(-1).right <= outer.right + 1,
+        fixedWidth: Math.max(...rects.map((rect) => rect.width)) - Math.min(...rects.map((rect) => rect.width)) < 1,
+        overlapping: steps.every((step) => step > 0 && step < rects[0].width),
+        even: Math.max(...steps) - Math.min(...steps) < 1
+      };
+    })()`);
+    if (!overlapLayout || Object.values(overlapLayout).some((value) => !value)) {
+      throw new Error(`Emoji Tile overlap layout failed: ${JSON.stringify(overlapLayout)}`);
+    }
+    await assertContained('.main', '.frame', 'Eight-card main column');
+    await assertContained('.consumables-col', '.frame', 'Eight-card consumable shelf');
 
     // Promote saved resting state to a valid settlement fixture. This isolates UI
     // navigation from balance numbers while still exercising real persistence.
@@ -149,6 +222,7 @@ async function run() {
     await waitFor(`document.querySelector('.cashout-overlay')`, 'Fee Settlement');
     await click('.cashout .btn.cash');
     await waitFor(`document.querySelector('.shop2')`, 'shop');
+    await assertContained('.shop2', '.frame', 'Eight-card shop panel');
 
     // Shop -> buy/open one real pack.
     await evaluate(`document.querySelector('.shop2 .pack-img')

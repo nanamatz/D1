@@ -106,6 +106,25 @@ describe('Emoji Tile trigger popup', () => {
     expect(css).toMatch(/\.tile-effect-pop\s*\{[^}]*bottom:\s*calc\(100% \+ 10px\)[^}]*triggerPopAbove/s);
     expect(css).toMatch(/\.hand \.tile\.trig-bounce\s*\{[^}]*jokerWiggle/s);
   });
+
+  it('keeps the White edition filter while its Emoji Tile fires', () => {
+    const css = readFileSync('src/ui/styles/play.css', 'utf8');
+
+    expect(css).toMatch(
+      /\.edition-white:not\(\.tile\)\s*\{[^}]*--emoji-edition-filter:\s*invert\(0\.88\) hue-rotate\(180deg\)/s,
+    );
+    expect(css).toMatch(
+      /\.joker\.firing\s*\{[^}]*filter:\s*var\(--emoji-edition-filter, brightness\(1\)\) brightness\(1\.25\)/s,
+    );
+  });
+
+  it('removes every edition treatment from face-down Emoji Tiles', () => {
+    const shelf = readFileSync('src/ui/components/JokerShelf.tsx', 'utf8');
+    const css = readFileSync('src/ui/styles/play.css', 'utf8');
+
+    expect(shelf).toContain("jokersFaceDown ? '' : `edition-${owned.edition ?? 'base'}`");
+    expect(css).toMatch(/\.emoji-tile-image-only\.face-down\s*\{[^}]*box-shadow:\s*none;[^}]*filter:\s*none;/s);
+  });
 });
 
 describe('register-changing Emoji Tile triggers', () => {

@@ -241,7 +241,10 @@ export function JokerShelf({
           height is the joker tile's alone (playtest-06 #1–2). */}
       <div className="shelf-col jokers-col">
         <div className="shelf-group jokers-group">
-          <div className="jokers" ref={jokersRef}>
+          <div
+            className={`jokers${run.jokers.length > 5 ? ' jokers-overlap' : ''}`}
+            ref={jokersRef}
+          >
           {run.jokers.map((owned, i) => {
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
@@ -256,7 +259,7 @@ export function JokerShelf({
             const className = [
               'joker',
               'emoji-tile-image-only',
-              `edition-${owned.edition ?? 'base'}`,
+              jokersFaceDown ? '' : `edition-${owned.edition ?? 'base'}`,
               jokersFaceDown ? 'face-down' : '',
               bossDisabled ? 'boss-disabled' : '',
               disabledEnteringIndex === i ? 'boss-disabled-entering' : '',
@@ -267,6 +270,7 @@ export function JokerShelf({
             return (
               <div
                 key={i}
+                data-joker-id={owned.defId}
                 className={[
                   'joker-slot',
                   jokerMenuIdx === i && 'menu-open',

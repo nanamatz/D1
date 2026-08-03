@@ -44,6 +44,6 @@ describe('material tile silhouette', () => {
     const lead = css.match(/\.tile\.leadPlate \.tile-material-texture\s*\{([^}]*)}/s)?.[1] ?? '';
     expect(lead).not.toContain('radial-gradient');
     expect(css).toMatch(/\.tile\.porcelain \.tile-material-texture\s*\{[^}]*circle at 0 100%[^}]*circle at 100% 0/s);
-    expect(css).toMatch(/\.mat-glyph\.mat-glyph-wood\s*\{[^}]*color:\s*var\(--chips\)/s);
+    expect(css).toMatch(/\.mat-glyph\.mat-glyph-wood\s*\{[^}]*font-size:\s*var\(--fs-md\)[^}]*color:\s*var\(--chips\)/s);
   });
 });

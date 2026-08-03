@@ -1375,9 +1375,9 @@
 }
 
 /* ---------- UI scale + accessibility toggles (spec §2.11) ---------- */
-/* The user's UI-scale setting × the viewport fit-scale (tokens.css, item 9). */
+/* UI scale may use available headroom, but viewport fit always wins in-run. */
 #root {
-  zoom: calc(var(--ui-scale, 1) * var(--fit-scale, 1));
+  zoom: min(var(--ui-scale, 1), var(--fit-scale, 1));
 }
 body.force-reduced-motion * {
   animation: none !important;
@@ -1807,10 +1807,15 @@ body.cb-safe .tile.hint {
   width: 100%;
   max-width: none;
 }
+.profile-dashboard > .back-bar {
+  align-self: end;
+}
 .profile-empty-box {
   display: grid;
   place-items: center;
-  min-height: 220px;
+  align-self: start;
+  min-height: 300px;
+  padding: 16px 20px;
   color: var(--ink-dim);
   background: var(--inset);
   border-radius: var(--r-md);
@@ -1893,21 +1898,26 @@ body.cb-safe .tile.hint {
   justify-content: center;
   gap: 12px;
 }
+.profile-dashboard:has(.profile-empty-box) .profile-actions {
+  justify-content: flex-start;
+}
 .profile-actions .btn {
   width: 100%;
 }
 .profile-actions .profile-primary {
   height: 42px;
 }
-.profile-actions .profile-delete {
-  width: 74%;
+.profile-actions .profile-delete,
+.profile-actions .profile-unlock {
   height: 34px;
   padding: 8px 18px;
-  align-self: center;
   font-size: var(--fs-md);
 }
+.profile-actions .profile-delete {
+  width: 74%;
+  align-self: center;
+}
 .profile-unlock {
-  padding-block: 10.5px;
   background: #728887;
   border-color: #607776;
 }
@@ -1955,9 +1965,6 @@ body.cb-safe .tile.hint {
     grid-template-columns: 1fr;
     gap: 16px;
     height: auto;
-  }
-  .profile-empty-box {
-    min-height: 150px;
   }
   .profile-progress-row {
     grid-template-columns: 105px 1fr;
@@ -4697,53 +4704,6 @@ body.cb-safe .tile.hint {
   to { opacity: 1; transform: none; }
 }
 
-/* Round-end chance objects need a source ghost because a failed destruction
-   roll may remove the owned Emoji Tile before the next screen renders. */
-.joker-chance-effect {
-  position: fixed;
-  inset: 0;
-  z-index: 72;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  background: rgba(3, 9, 13, .38);
-  animation: cfx-overlay 2.4s ease forwards;
-}
-.joker-chance-stage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: 22px 26px;
-  border: 3px solid var(--gold);
-  border-radius: var(--r-lg);
-  background: var(--panel);
-  box-shadow: 0 10px 0 rgba(0, 0, 0, .45);
-}
-.joker-chance-entry {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  min-width: 150px;
-  color: var(--gold);
-  font-family: 'Jersey 10', var(--ctl-font);
-  font-size: var(--fs-xl);
-}
-.joker-chance-source {
-  width: 100px;
-  height: 133px;
-  pointer-events: auto;
-  animation: cfx-change 1.1s cubic-bezier(.34, 1.7, .5, 1) both;
-}
-.joker-chance-entry.chance-destroyed .joker-chance-source {
-  animation: cfx-destroy 1.15s ease .35s both;
-}
-.joker-chance-source img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
 @keyframes cfx-overlay {
   0%, 86% { opacity: 1; }
   100% { opacity: 0; }
@@ -4793,8 +4753,7 @@ body.cb-safe .tile.hint {
   .cfx-source,
   .cfx-object,
   .cfx-stats span,
-  .chance-result,
-  .joker-chance-source {
+  .chance-result {
     animation-duration: .01ms !important;
     animation-delay: 0ms !important;
   }

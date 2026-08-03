@@ -7,6 +7,7 @@ const pack = readFileSync('src/ui/components/PackOpening.tsx', 'utf8');
 const sidebar = readFileSync('src/ui/components/Sidebar.tsx', 'utf8');
 const playCss = readFileSync('src/ui/styles/play.css', 'utf8');
 const screenCss = readFileSync('src/ui/styles/screens.css', 'utf8');
+const tokensCss = readFileSync('src/ui/styles/tokens.css', 'utf8');
 
 describe('persistent Balatro-style run table', () => {
   it('keeps sidebar, shelves and pouch in one frame without an in-run ScreenTransition', () => {
@@ -47,5 +48,13 @@ describe('persistent Balatro-style run table', () => {
     expect(sidebar).toContain('blindselect-prompt');
     expect(playCss).toMatch(/\.shop-phase-panel\s*\{[^}]*overflow:\s*visible/s);
     expect(playCss).toContain('@keyframes shop-sign-idle');
+  });
+
+  it('caps UI scale to a fixed-height board that cannot scroll the viewport', () => {
+    expect(tokensCss).toContain('--board-h: 966px');
+    expect(tokensCss).toContain('--fit-safe-y: 4px');
+    expect(playCss).toMatch(/\.frame\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
+    expect(playCss).toMatch(/\.persistent-run \.main\s*\{[^}]*min-height:\s*calc\(var\(--board-h\)/s);
+    expect(screenCss).toContain('zoom: min(var(--ui-scale, 1), var(--fit-scale, 1))');
   });
 });

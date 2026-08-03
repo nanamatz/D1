@@ -535,11 +535,12 @@ Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(p
 
 ### 7.4 Final Pipeline Summary
 
-**Probability-result presentation (changed 2026-08-03).** Any player-facing
+**Probability-result presentation (changed 2026-08-04).** Any player-facing
 object effect that makes a seeded success/failure or survive/destroy roll during
 card use, scoring, or blind-end resolution must return that actual result to the
-UI. The result appears on the same object's effect beat with its exact chance and
-an explicit Success/Failure or Survived/Destroyed verdict. This applies to The
+UI. The result appears as a compact trigger popup anchored immediately above or
+below the same letter tile or Emoji Tile — never as a centred modal — with its
+exact chance and an explicit Success/Failure or Survived/Destroyed verdict. This applies to The
 Cowherd and the Weaver Girl, Lead Plate, Glass, Misbound, and future trigger
 rolls. Shop/pack generation and random target selection show their generated or
 selected object directly and do not add a redundant probability verdict.

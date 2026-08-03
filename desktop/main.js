@@ -6,7 +6,7 @@
  * and UI policy do not belong here.
  *
  * The board scales itself: src/ui/styles/tokens.css computes --fit-scale from
- * the viewport against a 1440x965 design board, capped at 1. So this file only
+ * the viewport against a 1440x966 design board. So this file only
  * chooses window sizes; it never touches layout.
  */
 import { app, BrowserWindow, Menu, globalShortcut, ipcMain, screen } from 'electron';

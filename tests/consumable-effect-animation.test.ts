@@ -76,12 +76,20 @@ describe('shared consumable result animation', () => {
     expect(game).toContain("GAMBLER_REGISTRY.get(id)?.effect.kind !== 'font'");
   });
 
-  it('mounts chance results for score tiles and round-end Emoji Tiles', () => {
+  it('anchors chance results to score tiles and round-end Emoji Tiles without a modal', () => {
     const app = source('../src/ui/App.tsx');
     const tile = source('../src/ui/components/Tile.tsx');
+    const jokerShelf = source('../src/ui/components/JokerShelf.tsx');
+    const jokerChance = source('../src/ui/components/JokerChanceEffect.tsx');
+    const screens = source('../src/ui/styles/screens.css');
     const game = source('../src/ui/useGame.ts');
     expect(app).toContain('<JokerChanceEffect />');
     expect(tile).toContain('<ChanceBadges results={effectPop.chanceResults}');
+    expect(jokerShelf).toContain('data-joker-id={owned.defId}');
+    expect(jokerChance).toContain("querySelectorAll<HTMLElement>('.joker-slot[data-joker-id]')");
+    expect(jokerChance).toContain('className={`trigger-pop joker-chance-pop');
+    expect(jokerChance).not.toContain('className="joker-chance-effect"');
+    expect(screens).not.toContain('.joker-chance-effect');
     expect(game).toContain('jokerChanceEffectBus.emit(chanceResults)');
   });
 });

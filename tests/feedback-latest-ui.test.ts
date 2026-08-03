@@ -71,6 +71,8 @@ describe('latest feedback regressions', () => {
     expect(shelf).not.toContain('emojiPanelWidth');
     expect(shelf).not.toContain('className="joker empty"');
     expect(shelf).not.toContain('className="consumable empty"');
+    expect(shelf).toContain("run.jokers.length > 5 ? ' jokers-overlap' : ''");
+    expect(play).toMatch(/\.frame\s*\{[^}]*grid-template-columns:\s*var\(--rail-w\) minmax\(0,\s*1fr\)/s);
     expect(play).toMatch(/\.joker\s*\{[^}]*width:\s*var\(--shop-card-w\);[^}]*height:\s*var\(--shop-card-h\);/s);
     expect(play).toMatch(/\.shelf\s*\{[^}]*gap:\s*10px;/s);
     expect(play).toMatch(/\.jokers-col\s*\{[^}]*flex:\s*1 1 auto;/s);
@@ -78,6 +80,9 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.consumables-group\s*\{[^}]*width:\s*286px;/s);
     expect(play).toMatch(/\.joker-slot\s*\{[^}]*flex:\s*0 1 var\(--shop-card-w\)/s);
     expect(play).toMatch(/\.jokers\s*\{[^}]*justify-content:\s*center;[^}]*gap:\s*12px;/s);
+    expect(play).toMatch(/\.jokers\.jokers-overlap\s*\{[^}]*gap:\s*0;/s);
+    expect(play).toMatch(/\.jokers\.jokers-overlap \.joker-slot\s*\{[^}]*flex:\s*1 1 0;[^}]*width:\s*auto;/s);
+    expect(play).toMatch(/\.jokers\.jokers-overlap \.joker-slot:last-child\s*\{[^}]*flex:\s*0 0 var\(--shop-card-w\)/s);
   });
 
   it('portals enlarged shared tooltips above every product panel', () => {

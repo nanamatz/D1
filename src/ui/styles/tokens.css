@@ -63,17 +63,18 @@
   /* Consumables keep their 286px width. Emoji Tiles fill remaining shelf width
      with exactly 10px between panels; cards overlap when needed. */
   --board-max: 1440px;
-  /* The board's design height — the sidebar column is the tallest thing on it
-     (874px) plus --board-pad top and bottom. --fit-scale keeps the board inside
+  /* The board's design height — the live play rail needs 966px including board
+     padding. --fit-scale keeps the board inside
      the viewport vertically as well as horizontally, so it never scrolls.
      Keep this in step with the rail: understate it and --fit-scale reads 1 on a
      viewport the board does not actually fit, which is a scrollbar. It read 790
      while the rail was already ~870, so a boss blind (the taller badge, before the
      reserved effect slot evened the two out) scrolled on a 900px-tall viewport.
-     The former 912px baseline grew by the shelf's 53px height increase; `zoom`
-     still rounds the scaled layout to device pixels, so the fit calculation owns
-     the final viewport alignment. */
-  --board-h: 965px;
+     The former 912px baseline grew with the shelf; `zoom` still rounds the scaled
+     layout to device pixels, so the fit calculation keeps a small physical-pixel
+     safety gutter at the viewport edge. */
+  --board-h: 966px;
+  --fit-safe-y: 4px;
   --board-pad: 16px;
   /* The Use/Sell menu opens --menu-offset to the right of a consumable card.
      --menu-reserve is the room kept clear for it: an upper bound on the natural
@@ -285,11 +286,12 @@
 }
 .force-reduced-motion .crt-scan { animation: none; }
 
-/* Item 9: the board is laid out at a fixed design size (--board-max wide, 965px
+/* Item 9: the board is laid out at a fixed design size (--board-max wide, 966px
    tall) and scaled to fit — it is a single-screen board, so it must never scroll.
    Stepped via media queries because `zoom` needs a unitless number and CSS cannot
    derive one from vw/vh (calc(100vw / 1440) is a length, not a ratio). Composes
-   with the user's UI-scale setting rather than replacing it.
+   The user's UI-scale setting is the requested scale; the viewport fit is its
+   upper bound, so 120% can use real headroom without ever creating scrollbars.
 
    BOTH axes matter. Width alone is not enough: the board is ~1.8:1 while a 16:9
    screen minus browser chrome is more like 16:10.5, so HEIGHT is usually what
@@ -299,7 +301,7 @@
    short laptop; the `and (max-width)` pairs cover windows that are narrow AND
    short, where width would otherwise be the tighter of the two. */
 :root {
-  /* Fallback for engines without CSS trig (below): no scaling. */
+  /* Fallback for engines without CSS trig (below): no viewport scaling. */
   --fit-scale: 1;
 
   /* `zoom` needs a unitless ratio and CSS has no direct length→number cast:
@@ -312,11 +314,11 @@
      guarantee this (a 1152×540 window needs 0.68 for height but 0.80 for width,
      and no fixed step lands on both). */
   --vw-n: tan(atan2(100vw, 1px));
-  --vh-n: tan(atan2(100vh, 1px));
+  /* Reserve four physical CSS pixels for Chrome zoom/device-pixel rounding. */
+  --vh-n: tan(atan2(calc(100vh - var(--fit-safe-y)), 1px));
   --board-w-n: tan(atan2(var(--board-max), 1px));
   --board-h-n: tan(atan2(var(--board-h), 1px));
   --fit-scale: min(
-    1,
     calc(var(--vw-n) / var(--board-w-n)),
     calc(var(--vh-n) / var(--board-h-n))
   );
