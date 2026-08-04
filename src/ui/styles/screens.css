@@ -115,6 +115,12 @@
 /* Shared tooltips live under <body>, outside every panel overflow and stacking
    context. Track the hovered object in viewport coordinates and stay above the
    app and CRT layers; tooltip content must never be clipped by its subject. */
+.tt-card.tt-portal,
+.select-desc,
+.pouch-selected-info p {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
 .tt-card.tt-portal {
   position: fixed;
   bottom: auto;

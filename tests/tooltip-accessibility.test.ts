@@ -27,6 +27,13 @@ describe('shared tooltip accessibility', () => {
     expect(pouch).toContain('<Tooltip');
   });
 
+  it('wraps every tooltip and pouch description at word boundaries', () => {
+    const css = source('src/ui/styles/screens.css');
+    expect(css).toMatch(
+      /\.tt-card\.tt-portal,\s*\.select-desc,\s*\.pouch-selected-info p\s*\{[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*break-word;/s,
+    );
+  });
+
   it('clears stale hover and focus when a tooltip is disabled', () => {
     const tooltip = source('src/ui/components/Tooltip.tsx');
     expect(tooltip).toMatch(

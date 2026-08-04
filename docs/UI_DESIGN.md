@@ -178,7 +178,9 @@ copy, clamped to the shared 150–280px range and the viewport. Supplemental hei
 follows wrapped content, with the same 7px top / 6px bottom shell padding as the
 main tooltip. Bottom tags remain 72% of their main card.
 
-All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
+All tooltip copy wraps at word boundaries (`word-break: keep-all`), with emergency
+wrapping only for an unbroken token; Pouch selection and clicked-open Pouch
+descriptions use the same rule. All tooltip copy uses the enlarged readability scale: 18px title, 15px body,
 13px live-value row, and a 280px maximum card width. Shared tooltips are rendered
 through a `document.body` portal above the CRT and every product panel, so their
 layout is never clipped or covered by the hovered surface.

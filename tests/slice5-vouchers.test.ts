@@ -65,6 +65,13 @@ describe('two-tier vouchers — derived economy effects', () => {
     expect(rerollCost(0, rerollDiscount(run))).toBe(1);
   });
 
+  it('excludes Newspaper and Papyrus from reroll discounts', () => {
+    const newspaper = applyVoucher(newRun('v'), 'newspaper');
+    const papyrus = applyVoucher(newspaper, 'papyrus');
+    expect(rerollCost(0, rerollDiscount(newspaper))).toBe(BALANCE.shop.rerollBase);
+    expect(rerollCost(0, rerollDiscount(papyrus))).toBe(BALANCE.shop.rerollBase);
+  });
+
   it('uses the strongest interest and shop-discount tier', () => {
     let run = applyVoucher(newRun('v'), 'receipt');
     expect(interest(100, interestCap(run))).toBe(10);
