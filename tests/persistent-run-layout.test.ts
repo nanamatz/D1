@@ -57,10 +57,16 @@ describe('persistent Balatro-style run table', () => {
   });
 
   it('caps UI scale to a fixed-height board that cannot scroll the viewport', () => {
-    expect(tokensCss).toContain('--board-h: 966px');
+    expect(tokensCss).toContain('--board-h: 988px');
     expect(tokensCss).toContain('--fit-safe-y: 4px');
     expect(playCss).toMatch(/\.frame\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
     expect(playCss).toMatch(/\.persistent-run \.main\s*\{[^}]*min-height:\s*calc\(var\(--board-h\)/s);
     expect(screenCss).toContain('zoom: min(var(--ui-scale, 1), var(--fit-scale, 1))');
+  });
+
+  it('reserves the live pattern line before the second word completes a pattern', () => {
+    expect(sidebar).toContain('className="round-pattern"');
+    expect(playCss).toMatch(/\.round-panel\s*\{[^}]*flex:\s*0 0 148px[^}]*height:\s*148px/s);
+    expect(playCss).toMatch(/\.score-panel\s*\{[^}]*height:\s*136px/s);
   });
 });

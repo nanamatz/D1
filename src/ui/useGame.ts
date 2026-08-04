@@ -841,7 +841,6 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             };
           })()
         : null;
-      audio.play('voucherRedeem');
       return {
         ...prev,
         run,
@@ -945,7 +944,6 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const offer = rollPack(slot, prev.run, rng);
       const packs = prev.shop.packs.slice();
       packs[index] = null;
-      audio.play('packOpen');
       recordVoucherProgress({ kind: 'packBuy', spent: price });
       return {
         ...prev,

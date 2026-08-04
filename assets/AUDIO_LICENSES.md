@@ -8,7 +8,7 @@ so there is nothing third-party to attribute.
 | Sound id | Source | License |
 |---|---|---|
 | all SFX (`SFX_NAMES` in `src/ui/audio.ts`) | Original synthesis, no sample | CC0 / original |
-| all BGM tracks (`MUSIC_TRACKS`: menu / play / shop / boss) | Original synthesis, no sample | CC0 / original |
+| all BGM tracks (`MUSIC_TRACKS`: menu / play) | Original synthesis, no sample | CC0 / original |
 
 When real chiptune samples replace synthesis (phase 2+), add each file here with
 its source URL and license BEFORE committing the asset. The `audio.play(name)` /

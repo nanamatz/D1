@@ -24,10 +24,10 @@ describe('feature-04 A-2 — per-material tile voices', () => {
   });
 
   it('distinguishes the materials the playtest called out', () => {
-    // Glass rings, Stone knocks, Brass rings bright, Wood is its own knock — not all
-    // collapsed onto one sample. Ceramic/Porcelain intentionally share the clink.
-    expect(new Set(MATERIALS.map((m) => MATERIAL_SFX[m])).size).toBeGreaterThanOrEqual(7);
-    expect(MATERIAL_SFX.ceramic).toBe(MATERIAL_SFX.porcelain);
+    // Every material gets its own physical voice: even Ceramic and Porcelain use
+    // different body/resonance rather than collapsing onto one generic click.
+    expect(new Set(MATERIALS.map((m) => MATERIAL_SFX[m])).size).toBe(MATERIALS.length);
+    expect(MATERIAL_SFX.ceramic).not.toBe(MATERIAL_SFX.porcelain);
   });
 });
 

@@ -17,6 +17,7 @@ import { isImmediateSkipReward, isNextShopSkipReward } from '../../engine/skipRe
 import type { SkipRewardOffer } from '../../engine/types';
 import { motionOff } from '../motion';
 import { UiIcon } from './UiIcon';
+import { audio } from '../audio';
 
 type Status = 'defeated' | 'skipped' | 'current' | 'upcoming';
 type DisplaySkipTag = {
@@ -145,6 +146,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
                         disabled={status !== 'current' || busy}
                         onClick={() => {
                           if (busy) return;
+                          audio.play('tagSpawn');
                           if (isImmediateSkipReward(skipOffer.id) && !motionOff()) {
                             setAutoRedeeming(skipOffer);
                             return;

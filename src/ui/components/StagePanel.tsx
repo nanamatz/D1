@@ -76,6 +76,17 @@ export function StagePanel({
   // useFlip captures the empty→full change and flies the tiles in from the pouch.
   const entering = useEntering();
   const shownHand = entering ? [] : hand;
+  const seenRainbowTiles = useRef(new Set<string>());
+  useEffect(() => {
+    if (entering) return;
+    const encountered = blind.hand.some((tile) =>
+      (tile.edition ?? 'base') === 'rainbow' && !seenRainbowTiles.current.has(tile.id),
+    );
+    for (const tile of blind.hand) {
+      if ((tile.edition ?? 'base') === 'rainbow') seenRainbowTiles.current.add(tile.id);
+    }
+    if (encountered) audio.play('rainbowShimmer');
+  }, [entering, blind.hand]);
   // A4/A5: freshly drawn tiles fly in from the pouch dock, staggered, each with a
   // per-tile draw sound on the same 60ms cadence. The staged row keeps plain FLIP.
   const pouchOrigin = () => {
@@ -151,22 +162,21 @@ export function StagePanel({
 
   const handIds = new Set(hand.map((tl) => tl.id));
   const validMarks = discardMarks.filter((id) => handIds.has(id));
+  const playTileVoice = (id: string) => {
+    const tile = blind.hand.find((candidate) => candidate.id === id);
+    if (!tile) return;
+    const step = tile.material === 'wood'
+      ? Math.max(0, Math.round(((tile.woodBonusChips ?? 15) - 15) / 10))
+      : undefined;
+    audio.material(tile.material, step !== undefined ? { step } : undefined);
+  };
   const toggleMark = (id: string) => {
     if (lock) return; // discard is disabled during the lesson lock
+    playTileVoice(id);
     setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
   };
   const selectTile = (id: string) => {
-    // A-2: an enhanced tile speaks in its own material voice on selection; a plain
-    // tile keeps the default select click. Wood's knock climbs with its growth.
-    const tile = blind.hand.find((tl) => tl.id === id);
-    if (tile && tile.material !== 'ceramic') {
-      const step = tile.material === 'wood'
-        ? Math.max(0, Math.round(((tile.woodBonusChips ?? 15) - 15) / 10))
-        : undefined;
-      audio.material(tile.material, step !== undefined ? { step } : undefined);
-    } else {
-      audio.play('tileSelect');
-    }
+    playTileVoice(id);
     g.toggleTile(id);
   };
   // Ancient Paper (고대 문서): vowel tiles stay face-down (identity hidden) until

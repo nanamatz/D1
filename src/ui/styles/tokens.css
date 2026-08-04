@@ -63,7 +63,7 @@
   /* Consumables keep their 286px width. Emoji Tiles fill remaining shelf width
      with exactly 10px between panels; cards overlap when needed. */
   --board-max: 1440px;
-  /* The board's design height — the live play rail needs 966px including board
+  /* The board's design height — the live play rail needs 988px including board
      padding. --fit-scale keeps the board inside
      the viewport vertically as well as horizontally, so it never scrolls.
      Keep this in step with the rail: understate it and --fit-scale reads 1 on a
@@ -73,7 +73,7 @@
      The former 912px baseline grew with the shelf; `zoom` still rounds the scaled
      layout to device pixels, so the fit calculation keeps a small physical-pixel
      safety gutter at the viewport edge. */
-  --board-h: 966px;
+  --board-h: 988px;
   --fit-safe-y: 4px;
   --board-pad: 16px;
   /* The Use/Sell menu opens --menu-offset to the right of a consumable card.

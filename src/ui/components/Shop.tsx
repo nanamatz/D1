@@ -47,6 +47,7 @@ import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
+import { audio } from '../audio';
 
 interface ShopOfferProps {
   label: string;
@@ -142,7 +143,21 @@ export function Shop({ g }: { g: UseGame }) {
   const [redeemingVoucher, setRedeemingVoucher] = useState<'base' | 'bonus' | null>(null);
   const redeemTimer = useRef<number | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const rainbowOfferSignature = shop
+    ? `${shop.rerolls}:${shop.items.map((item, index) => {
+        if (item?.kind === 'joker' && (item.edition ?? 'base') === 'rainbow') {
+          return `j:${index}:${item.id}`;
+        }
+        if (item?.kind === 'tile' && (item.tile.edition ?? 'base') === 'rainbow') {
+          return `t:${index}:${item.tile.id}`;
+        }
+        return '';
+      }).filter(Boolean).join('|')}`
+    : '';
   useEffect(() => setSelectedOffer(null), [shop]);
+  useEffect(() => {
+    if (rainbowOfferSignature.split(':').at(-1)) audio.play('rainbowShimmer');
+  }, [rainbowOfferSignature]);
   useEffect(() => () => {
     if (redeemTimer.current !== null) window.clearTimeout(redeemTimer.current);
   }, []);

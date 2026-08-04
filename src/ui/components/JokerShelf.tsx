@@ -187,7 +187,7 @@ export function JokerShelf({
     if (pops.length === 0) return;
     if (growthTimer.current) clearTimeout(growthTimer.current);
     setGrowthPops(pops);
-    audio.play('jokerBlip');
+    audio.play(pops.some((pop) => pop.mult !== 0) ? 'jokerMult' : 'jokerChips');
     growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
   }, [run.jokers, animatedGrowthEvents]);
   useEffect(() => () => {
@@ -201,6 +201,9 @@ export function JokerShelf({
   // shelf contents and screen remounts stay quiet; this is acquisition feedback,
   // not a generic entrance animation.
   const previousCounts = useRef({ jokers: run.jokers.length, consumables: run.consumables.length });
+  const previousJokerEditions = useRef(
+    run.jokers.map((joker) => ({ defId: joker.defId, edition: joker.edition ?? 'base' })),
+  );
   const [arriving, setArriving] = useState<{ zone: 'joker' | 'consumable'; from: number } | null>(null);
   useEffect(() => {
     const prev = previousCounts.current;
@@ -217,6 +220,19 @@ export function JokerShelf({
       if (timer) clearTimeout(timer);
     };
   }, [run.jokers.length, run.consumables.length]);
+  useEffect(() => {
+    const transformedToRainbow = run.jokers.some((joker, index) => {
+      const previous = previousJokerEditions.current[index];
+      return previous?.defId === joker.defId
+        && previous.edition !== 'rainbow'
+        && (joker.edition ?? 'base') === 'rainbow';
+    });
+    previousJokerEditions.current = run.jokers.map((joker) => ({
+      defId: joker.defId,
+      edition: joker.edition ?? 'base',
+    }));
+    if (transformedToRainbow) audio.play('rainbowShimmer');
+  }, [run.jokers]);
   const beginLeave = (
     zone: 'consumable' | 'joker',
     index: number,

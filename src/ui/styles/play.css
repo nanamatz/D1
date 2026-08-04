@@ -4321,7 +4321,10 @@
   letter-spacing: -2px;
 }
 .round-panel {
+  flex: 0 0 148px;
+  height: 148px;
   padding: 8px 12px;
+  position: relative;
 }
 .round-row {
   display: flex;
@@ -4344,9 +4347,6 @@
 }
 /* Tomato: vertically centred in the panel, left-aligned to the panel's padding
    edge — independent of the centred number (its 1.7em size is unchanged). */
-.round-panel {
-  position: relative;
-}
 .round-panel .tomato-anchor {
   position: static;
   transform: none;
@@ -4374,7 +4374,8 @@
 .pattern-chip.hit .s {
   color: var(--pattern-level-color, var(--gold));
 }
-/* Current pattern and its live sentence-bonus score. */
+/* Current pattern and its live sentence-bonus score. The parent reserves this
+   line before a pattern exists so the second submitted word cannot grow the rail. */
 .round-pattern {
   margin-top: 3px;
   display: flex;

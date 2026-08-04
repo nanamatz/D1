@@ -83,23 +83,17 @@ export function App() {
     g.state.runStarted &&
     (g.state.phase !== 'gameover' || !!g.state.gameover?.won);
 
-  // BGM (work order B-2): one place picks the loop for the current context — menu
-  // track off-run, the shop lounge in the Stationery Shop, and the play track
-  // (its tenser Deadline variant on a boss blind) on the board. `playMusic`
-  // no-ops when the track is unchanged and defers until the audio gesture-unlock.
+  // Menu and run each own one loop. Shop/Deadline never swap composition: shop
+  // muffles the shared run bus, while a boss keeps the ordinary run music.
   const track: MusicTrack =
-    screen !== 'run'
-      ? 'menu'
-      : g.state.phase === 'shop'
-        ? 'shop'
-        : g.state.phase === 'gameover'
-          ? 'menu'
-          : g.state.blind.kind === 'boss'
-            ? 'boss'
-            : 'play';
+    screen !== 'run' || g.state.phase === 'gameover' ? 'menu' : 'play';
+  const musicMuffled = screen === 'run' && g.state.phase === 'shop';
   useEffect(() => {
     audio.playMusic(track);
   }, [track]);
+  useEffect(() => {
+    audio.setMusicMuffled(musicMuffled);
+  }, [musicMuffled]);
 
   // One delegated listener covers every native and ARIA button, including future
   // screens. audio.play() still respects the SOUND palette unlock and SFX slider.

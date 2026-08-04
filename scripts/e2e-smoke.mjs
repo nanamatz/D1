@@ -130,14 +130,51 @@ async function run() {
     await evaluate(`document.documentElement.style.setProperty('--ui-scale', '1.2')`);
     await assertNoDocumentScroll('Playing board at 120% UI scale');
     await evaluate(`document.documentElement.style.setProperty('--ui-scale', '1')`);
+
+    // Force a reproducible two-word Simple pattern. The live pattern line appears
+    // only after RUN and must not make the fixed board taller or add a scrollbar.
+    await evaluate(`(() => {
+      const envelope = JSON.parse(localStorage.getItem('wj.run'));
+      const letters = ['I', 'R', 'U', 'N'];
+      envelope.state.blind.hand = envelope.state.blind.hand.map((tile, index) => {
+        if (index >= letters.length) return tile;
+        const next = {
+          ...tile,
+          id: 'smoke-' + letters[index].toLowerCase(),
+          letter: letters[index],
+          material: 'ceramic',
+          font: 'medium',
+          edition: 'base'
+        };
+        delete next.storedLetter;
+        return next;
+      });
+      localStorage.setItem('wj.run', JSON.stringify(envelope));
+    })()`);
+    await page.reload();
+    await waitFor(`document.querySelector('.menu-play')`, 'menu after pattern fixture');
+    await click('.menu-play');
+    await waitFor(`document.querySelector('.continue-card')`, 'pattern fixture Continue card');
+    await click('.newrun .play-run');
+    await waitFor(`document.querySelector('[data-tile-id="smoke-i"]')`, 'pattern fixture hand');
+
     const scoreBefore = await evaluate(`document.querySelector('.round-num')?.textContent`);
-    await click('.hand [data-tile-id]');
+    await click('[data-tile-id="smoke-i"]');
     await waitFor(`document.querySelector('.play-btn:not(:disabled)')`, 'enabled Play');
     await click('.play-btn');
     await waitFor(
       `document.querySelector('.round-num')?.textContent !== ${JSON.stringify(scoreBefore)}`,
       'score settlement',
     );
+    await waitFor(`document.querySelector('.scorebox:not(.settling)')`, 'first settlement complete');
+
+    await click('[data-tile-id="smoke-r"]');
+    await click('[data-tile-id="smoke-u"]');
+    await click('[data-tile-id="smoke-n"]');
+    await waitFor(`document.querySelector('.play-btn:not(:disabled)')`, 'enabled second Play');
+    await click('.play-btn');
+    await waitFor(`document.querySelector('.round-pattern')`, 'live Simple pattern');
+    await assertNoDocumentScroll('Playing board after second word forms a pattern');
     await waitFor(`localStorage.getItem('wj.run')?.includes('"runStarted":true')`, 'run save');
     await evaluate(`(() => {
       const envelope = JSON.parse(localStorage.getItem('wj.run'));
@@ -236,7 +273,7 @@ async function run() {
     await click('.shop2 .shop-offer.selected .shop-offer-action button');
     await waitFor(`document.querySelector('.pack-phase-panel')`, 'opened pack');
 
-    console.log('E2E smoke OK: Collection -> New Run -> Play -> reload -> Settlement -> Shop -> Pack');
+    console.log('E2E smoke OK: Collection -> New Run -> I/RUN pattern -> reload -> Settlement -> Shop -> Pack');
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

@@ -128,8 +128,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       tutorialBus.fire('shopFirstVisit');
     }
     else if (phase === 'cashout') audio.play('clearFanfare');
-    else if (phase === 'gameover') audio.play('failSting');
-  }, [phase]);
+    else if (phase === 'gameover') {
+      const cleared = !!g.state.gameover?.won || !!g.state.gameover?.endlessComplete;
+      audio.play(cleared ? 'gameClear' : 'gameOver');
+    }
+  }, [phase, g.state.gameover?.won, g.state.gameover?.endlessComplete]);
 
   // First-encounter tutorials for jokers/consumables/boss blinds: fire once per
   // blind entry (phase transitions to 'playing'), not mid-blind when jokers or

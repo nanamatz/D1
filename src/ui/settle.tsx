@@ -17,7 +17,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { ChanceResult, ScoreEvent } from '../engine/types';
-import { audio } from './audio';
+import { audio, type SfxName } from './audio';
 import { motionOff as reducedMotion } from './motion';
 
 /**
@@ -194,6 +194,29 @@ export function accumulate(
   return { chips, mult };
 }
 
+/** Emoji Tile triggers speak by the operation they actually performed. A mixed
+ * chips+Mult trigger uses the heavier Mult voice so it remains legible. */
+export function emojiTriggerSfx(
+  event:
+    | Extract<ScoreEvent, { kind: 'joker' }>
+    | Extract<ScoreEvent, { kind: 'edition' }>,
+): SfxName {
+  const growthKind = 'growthKind' in event ? event.growthKind : undefined;
+  const chipsFactor = 'chipsFactor' in event ? event.chipsFactor : undefined;
+  if (
+    event.multDelta !== 0 ||
+    event.multFactor !== undefined ||
+    growthKind === 'mult' ||
+    growthKind === 'multAdd'
+  ) return 'jokerMult';
+  if (
+    event.chipsDelta !== 0 ||
+    chipsFactor !== undefined ||
+    growthKind === 'chips'
+  ) return 'jokerChips';
+  return 'jokerEffect';
+}
+
 /**
  * Total time (ms) the settle timeline runs for `events` at `speed`× — the single
  * source of truth for "settle complete". The round-clear / game-over UI is gated
@@ -297,13 +320,13 @@ export function SettleProvider({
           ) {
             audio.play('stamp');
           } else if (e.kind === 'joker') {
-            audio.play('jokerBlip');
+            audio.play(emojiTriggerSfx(e));
             if (e.tileId) triggerTile(e.tileId);
           } else if (e.kind === 'font') {
             audio.play('jokerBlip');
             triggerTile(e.tileId); // feedback #3: font trigger bounces its tile
           } else if (e.kind === 'edition') {
-            audio.play('jokerBlip');
+            audio.play(e.jokerId ? emojiTriggerSfx(e) : 'jokerBlip');
             if (e.tileId) triggerTile(e.tileId); // feedback #3: edition trigger bounces the tile
           } else if (e.kind === 'material') {
             // A-2: the material's own voice when it triggers during scoring (Brass ring,

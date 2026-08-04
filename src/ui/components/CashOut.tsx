@@ -48,13 +48,12 @@ export function CashOut({ g }: { g: UseGame }) {
   const shown = useReveal(lines.length);
   const total = useCountUp(shown >= lines.length ? e.total : 0, 500);
 
-  // A polish: each settlement line lands on a pitch-escalating tick (like the chip
-  // counter), then a coin flourish when the total rolls — the count-up isn't silent.
+  // Each payout line lands with the rising coin voice used by real gold gains,
+  // so the Fee Settlement presentation is audibly monetary too.
   const lastShown = useRef(0);
   useEffect(() => {
     if (shown > lastShown.current) {
-      audio.play('countTick', { step: (shown - 1) * 3 });
-      if (shown >= lines.length) audio.play('coinGain');
+      audio.play('coinGain', { step: (shown - 1) * 3 });
       lastShown.current = shown;
     }
   }, [shown, lines.length]);

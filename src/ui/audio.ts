@@ -20,6 +20,8 @@ export type SfxName =
   | 'tilePick' | 'tilePlace' | 'tileSelect' | 'tileDeal' | 'dragSnap' | 'discardSwoosh'
   | 'submitThock' | 'buttonPress' | 'transitionWhoosh'
   | 'purchase' | 'sell' | 'reroll' | 'packOpen' | 'voucherRedeem' | 'catMeow'
+  | 'tagSpawn' | 'gameOver' | 'gameClear' | 'rainbowShimmer'
+  | 'jokerChips' | 'jokerMult' | 'jokerEffect'
   // D-3 ambient desk objects (feature-03): each click plays its own small sound.
   | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour'
   // feature-04 A-1 · money is never silent — a rising coin gain / falling coin loss,
@@ -29,10 +31,34 @@ export type SfxName =
   | 'consumableUse' | 'packPick'
   // feature-04 A-2 · per-material tile voices (played on selection AND when the tile
   // triggers during scoring). Mapped from TileMaterial via MATERIAL_SFX below.
-  | 'matCeramic' | 'matChime' | 'matGlass' | 'matGlassBreak' | 'matStone'
+  | 'matCeramic' | 'matPorcelain' | 'matChime' | 'matGlass' | 'matGlassBreak' | 'matStone'
   | 'matThunk' | 'matTock' | 'matRing' | 'matWood' | 'matDiceRattle';
 
 type Wave = OscillatorType; // 'sine' | 'square' | 'sawtooth' | 'triangle'
+
+interface ToneLayer {
+  wave: Wave;
+  from: number;
+  to?: number;
+  delay?: number;
+  detune?: number;
+  sub?: boolean;
+  gain?: number;
+  dur?: number;
+  attack?: number;
+}
+
+interface NoiseLayer {
+  cutoff: number;
+  to?: number;
+  filter?: BiquadFilterType;
+  q?: number;
+  delay?: number;
+  gain?: number;
+  dur?: number;
+  attack?: number;
+  color?: 'white' | 'brown';
+}
 
 interface Recipe {
   /** base loudness 0..1, before master/sfx scaling */
@@ -44,8 +70,12 @@ interface Recipe {
    *  omitted = starts at the recipe onset like before. */
   /** `detune` (cents) spawns a ±-detuned twin pair for chorus/body; `sub` adds a
    *  quiet sine one octave below for warmth. Both optional; omitted = single tone. */
-  tones?: { wave: Wave; from: number; to?: number; delay?: number; detune?: number; sub?: boolean }[];
-  noise?: { cutoff: number };
+  tones?: ToneLayer[];
+  noise?: NoiseLayer | NoiseLayer[];
+  /** Physical one-shot renderer: per-layer envelopes, resonances and filtered
+   * noise bursts instead of one shared chiptune envelope. */
+  textured?: boolean;
+  cutoff?: number;
   /** 'music' routes through the music bus (none in phase 1) */
   bus?: 'sfx' | 'music';
 }
@@ -70,12 +100,99 @@ const RECIPES: Record<SfxName, Recipe> = {
   submitThock:      { gain: 0.30, dur: 0.10, tones: [{ wave: 'square', from: 160, to: 90 }], noise: { cutoff: 700 } },
   buttonPress:      { gain: 0.18, dur: 0.05, tones: [{ wave: 'square', from: 380, to: 300 }] },
   transitionWhoosh: { gain: 0.20, dur: 0.22, noise: { cutoff: 1200 } },
-  purchase:         { gain: 0.26, dur: 0.22, tones: [{ wave: 'triangle', from: 784, detune: 6 }, { wave: 'triangle', from: 1046, delay: 0.05, detune: 6 }, { wave: 'triangle', from: 1318, delay: 0.10, detune: 6 }], noise: { cutoff: 2200 } },
-  sell:             { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 988, detune: 6 }, { wave: 'triangle', from: 1318, delay: 0.05, detune: 6 }], noise: { cutoff: 2000 } },
-  reroll:           { gain: 0.22, dur: 0.12, tones: [{ wave: 'sawtooth', from: 300, to: 600 }] },
-  packOpen:         { gain: 0.30, dur: 0.30, tones: [{ wave: 'square', from: 440, to: 880 }], noise: { cutoff: 2000 } },
+  purchase: {
+    gain: 0.28, dur: 0.30, textured: true, cutoff: 7600,
+    tones: [
+      { wave: 'sine', from: 105, to: 72, gain: 0.7, dur: 0.16, sub: true },
+      { wave: 'sine', from: 310, to: 250, gain: 0.22, delay: 0.015, dur: 0.09 },
+    ],
+    noise: [
+      { cutoff: 2400, to: 900, filter: 'bandpass', gain: 0.42, dur: 0.08 },
+      { cutoff: 4200, to: 1800, filter: 'highpass', gain: 0.18, delay: 0.11, dur: 0.13 },
+    ],
+  },
+  sell: {
+    gain: 0.25, dur: 0.28, textured: true, cutoff: 8000,
+    tones: [{ wave: 'sine', from: 82, to: 108, gain: 0.55, delay: 0.08, dur: 0.16, sub: true }],
+    noise: [
+      { cutoff: 1800, to: 5200, filter: 'bandpass', gain: 0.34, dur: 0.15, attack: 0.01 },
+      { cutoff: 700, to: 350, filter: 'lowpass', color: 'brown', gain: 0.28, delay: 0.08, dur: 0.15 },
+    ],
+  },
+  reroll: {
+    gain: 0.24, dur: 0.30, textured: true, cutoff: 8500,
+    tones: [{ wave: 'sine', from: 118, to: 92, gain: 0.34, delay: 0.18, dur: 0.10 }],
+    noise: [
+      { cutoff: 2700, to: 900, filter: 'bandpass', gain: 0.38, dur: 0.07 },
+      { cutoff: 3100, to: 1000, filter: 'bandpass', gain: 0.34, delay: 0.055, dur: 0.07 },
+      { cutoff: 2500, to: 800, filter: 'bandpass', gain: 0.36, delay: 0.11, dur: 0.08 },
+      { cutoff: 650, filter: 'lowpass', color: 'brown', gain: 0.22, delay: 0.18, dur: 0.10 },
+    ],
+  },
+  packOpen: {
+    gain: 0.32, dur: 0.48, textured: true, cutoff: 11000,
+    tones: [{ wave: 'sine', from: 92, to: 62, gain: 0.32, delay: 0.30, dur: 0.14, sub: true }],
+    noise: [
+      { cutoff: 1300, to: 6400, filter: 'highpass', gain: 0.62, dur: 0.31, attack: 0.012 },
+      { cutoff: 2300, to: 850, filter: 'bandpass', gain: 0.32, delay: 0.27, dur: 0.08 },
+      { cutoff: 2600, to: 900, filter: 'bandpass', gain: 0.28, delay: 0.33, dur: 0.08 },
+      { cutoff: 2100, to: 700, filter: 'bandpass', gain: 0.24, delay: 0.39, dur: 0.08 },
+    ],
+  },
   voucherRedeem:    { gain: 0.28, dur: 0.24, tones: [{ wave: 'triangle', from: 660 }, { wave: 'triangle', from: 990 }] },
   catMeow:          { gain: 0.30, dur: 0.30, tones: [{ wave: 'sawtooth', from: 620, to: 780 }] },
+  tagSpawn: {
+    gain: 0.30, dur: 0.42, textured: true, cutoff: 8500,
+    tones: [
+      { wave: 'sine', from: 78, to: 48, gain: 0.8, dur: 0.18, sub: true },
+      { wave: 'sine', from: 620, to: 590, gain: 0.18, delay: 0.12, dur: 0.22 },
+    ],
+    noise: [
+      { cutoff: 520, to: 260, filter: 'lowpass', color: 'brown', gain: 0.65, dur: 0.16 },
+      { cutoff: 1800, to: 5200, filter: 'bandpass', gain: 0.22, delay: 0.12, dur: 0.20, attack: 0.008 },
+    ],
+  },
+  gameOver:         { gain: 0.34, dur: 0.72, tones: [{ wave: 'sawtooth', from: 330, to: 82 }, { wave: 'triangle', from: 220, to: 110, delay: 0.18, sub: true }], noise: { cutoff: 700 } },
+  gameClear:        { gain: 0.34, dur: 0.78, tones: [{ wave: 'triangle', from: 523, detune: 6 }, { wave: 'triangle', from: 659, delay: 0.12, detune: 6 }, { wave: 'triangle', from: 784, delay: 0.24, detune: 6 }, { wave: 'sine', from: 1046, delay: 0.38 }] },
+  rainbowShimmer: {
+    gain: 0.26, dur: 0.82, textured: true, cutoff: 12000,
+    tones: [
+      { wave: 'sine', from: 1174, to: 1148, gain: 0.42, dur: 0.58, detune: 5 },
+      { wave: 'sine', from: 1763, to: 1728, gain: 0.30, delay: 0.07, dur: 0.62, detune: 7 },
+      { wave: 'sine', from: 2637, to: 2580, gain: 0.22, delay: 0.16, dur: 0.60 },
+      { wave: 'sine', from: 3520, to: 3450, gain: 0.13, delay: 0.25, dur: 0.50 },
+    ],
+    noise: { cutoff: 5200, to: 10000, filter: 'highpass', gain: 0.07, dur: 0.48, attack: 0.08 },
+  },
+  jokerChips: {
+    gain: 0.29, dur: 0.22, textured: true, cutoff: 9000,
+    tones: [
+      { wave: 'sine', from: 720, to: 660, gain: 0.55, dur: 0.075 },
+      { wave: 'sine', from: 1260, to: 1160, gain: 0.26, dur: 0.065 },
+      { wave: 'sine', from: 680, to: 620, gain: 0.48, delay: 0.075, dur: 0.085 },
+      { wave: 'sine', from: 1190, to: 1080, gain: 0.22, delay: 0.075, dur: 0.075 },
+    ],
+    noise: [
+      { cutoff: 2400, filter: 'bandpass', gain: 0.24, dur: 0.045 },
+      { cutoff: 2100, filter: 'bandpass', gain: 0.20, delay: 0.075, dur: 0.05 },
+    ],
+  },
+  jokerMult: {
+    gain: 0.32, dur: 0.34, textured: true, cutoff: 3200,
+    tones: [
+      { wave: 'sine', from: 74, to: 42, gain: 0.9, dur: 0.30, sub: true },
+      { wave: 'triangle', from: 148, to: 82, gain: 0.28, dur: 0.18 },
+    ],
+    noise: { cutoff: 460, to: 180, filter: 'lowpass', color: 'brown', gain: 0.58, dur: 0.24 },
+  },
+  jokerEffect: {
+    gain: 0.24, dur: 0.13, textured: true, cutoff: 10000,
+    tones: [{ wave: 'sine', from: 290, to: 210, gain: 0.28, dur: 0.055 }],
+    noise: [
+      { cutoff: 3200, filter: 'highpass', gain: 0.55, dur: 0.025 },
+      { cutoff: 2300, filter: 'bandpass', gain: 0.30, delay: 0.038, dur: 0.04 },
+    ],
+  },
   // D-3 desk objects: a gulp/drain glug (cup) and a bright hotel-bell ding.
   // Cosmetic, so kept soft — they never step on gameplay beats.
   deskCup:          { gain: 0.24, dur: 0.68, tones: [{ wave: 'sine', from: 340, to: 165, sub: true }, { wave: 'triangle', from: 520, to: 210, delay: 0.12 }, { wave: 'sine', from: 250, to: 120, delay: 0.28, sub: true }], noise: { cutoff: 850 } },
@@ -85,26 +202,145 @@ const RECIPES: Record<SfxName, Recipe> = {
   deskBell:         { gain: 0.28, dur: 0.92, tones: [{ wave: 'sine', from: 1568, to: 1535, detune: 7 }, { wave: 'sine', from: 2350, to: 2260, delay: 0.008, detune: 5 }, { wave: 'triangle', from: 784, to: 760, delay: 0.018, sub: true }], noise: { cutoff: 5200 } },
   deskCheck:        { gain: 0.18, dur: 1.05, tones: [{ wave: 'triangle', from: 310, to: 260, delay: 0.04 }, { wave: 'triangle', from: 360, to: 290, delay: 0.38 }, { wave: 'triangle', from: 330, to: 250, delay: 0.7 }], noise: { cutoff: 3200 } },
   deskPour:         { gain: 0.19, dur: 1.08, tones: [{ wave: 'sine', from: 205, to: 145, delay: 0.08, sub: true }, { wave: 'triangle', from: 290, to: 190, delay: 0.42 }], noise: { cutoff: 1050 } },
-  // A-1 money: gain RISES, loss FALLS — distinguishable by contour (playtest 9, 15).
-  coinGain:         { gain: 0.24, dur: 0.16, tones: [{ wave: 'triangle', from: 784, detune: 5 }, { wave: 'triangle', from: 1175, delay: 0.06, detune: 5 }], noise: { cutoff: 2200 } },
-  coinLoss:         { gain: 0.22, dur: 0.16, tones: [{ wave: 'triangle', from: 660, to: 392 }] },
+  // Struck-metal partials plus a tiny contact transient: coins, not UI notes.
+  coinGain: {
+    gain: 0.27, dur: 0.38, textured: true, cutoff: 11000,
+    tones: [
+      { wave: 'sine', from: 1320, to: 1275, gain: 0.54, dur: 0.24, detune: 3 },
+      { wave: 'sine', from: 2245, to: 2170, gain: 0.24, dur: 0.19 },
+      { wave: 'sine', from: 1580, to: 1520, gain: 0.48, delay: 0.075, dur: 0.25, detune: 3 },
+      { wave: 'sine', from: 2680, to: 2570, gain: 0.20, delay: 0.075, dur: 0.20 },
+    ],
+    noise: [
+      { cutoff: 5200, filter: 'highpass', gain: 0.17, dur: 0.025 },
+      { cutoff: 5600, filter: 'highpass', gain: 0.14, delay: 0.075, dur: 0.025 },
+    ],
+  },
+  coinLoss: {
+    gain: 0.25, dur: 0.38, textured: true, cutoff: 10500,
+    tones: [
+      { wave: 'sine', from: 1510, to: 1430, gain: 0.50, dur: 0.23, detune: 3 },
+      { wave: 'sine', from: 2550, to: 2380, gain: 0.22, dur: 0.18 },
+      { wave: 'sine', from: 1120, to: 1010, gain: 0.46, delay: 0.085, dur: 0.24, detune: 3 },
+      { wave: 'sine', from: 1900, to: 1720, gain: 0.18, delay: 0.085, dur: 0.18 },
+    ],
+    noise: [
+      { cutoff: 5200, filter: 'highpass', gain: 0.16, dur: 0.025 },
+      { cutoff: 4700, filter: 'highpass', gain: 0.13, delay: 0.085, dur: 0.025 },
+    ],
+  },
   // A-3 object actions.
   consumableUse:    { gain: 0.26, dur: 0.22, tones: [{ wave: 'triangle', from: 523 }, { wave: 'triangle', from: 784, delay: 0.06 }, { wave: 'sine', from: 1046, delay: 0.12 }] },
   packPick:         { gain: 0.24, dur: 0.12, tones: [{ wave: 'square', from: 660, to: 990 }] },
-  // A-2 per-material tile voices — each matches the material's physicality (playtest 16).
-  matCeramic:       { gain: 0.20, dur: 0.06, tones: [{ wave: 'triangle', from: 900, to: 1100 }] },        // light ceramic clink
-  matChime:         { gain: 0.20, dur: 0.16, tones: [{ wave: 'sine', from: 1046, detune: 4 }] },          // smooth glassy chime (Polished)
-  matGlass:         { gain: 0.20, dur: 0.20, tones: [{ wave: 'sine', from: 1318, detune: 3 }] },          // bright ring (Glass)
-  matGlassBreak:    { gain: 0.30, dur: 0.22, tones: [{ wave: 'square', from: 1400, to: 300 }], noise: { cutoff: 5000 } }, // sharp shatter
-  matStone:         { gain: 0.26, dur: 0.10, tones: [{ wave: 'square', from: 150, to: 90, sub: true }], noise: { cutoff: 500 } }, // dull heavy knock
-  matThunk:         { gain: 0.26, dur: 0.10, tones: [{ wave: 'triangle', from: 200, to: 130 }], noise: { cutoff: 900 } },        // metallic dull thunk (Lead plate)
-  matTock:          { gain: 0.20, dur: 0.10, tones: [{ wave: 'sine', from: 420, to: 360, sub: true }] },  // warm hollow tock (Ivory)
-  matRing:          { gain: 0.20, dur: 0.20, tones: [{ wave: 'triangle', from: 988, to: 1245, detune: 6 }] }, // bright metallic ring (Brass)
-  matWood:          { gain: 0.22, dur: 0.09, tones: [{ wave: 'triangle', from: 300, to: 240 }], noise: { cutoff: 1100 } },       // dry woody knock (rises via `step`)
-  matDiceRattle:    { gain: 0.24, dur: 0.20, tones: [{ wave: 'square', from: 900, to: 500 }], noise: { cutoff: 3500 } },        // Lead plate's Lucky roll
+  // Each material is an impact model: contact noise + its own damped resonances.
+  matCeramic: {
+    gain: 0.23, dur: 0.20, textured: true, cutoff: 8500,
+    tones: [
+      { wave: 'sine', from: 930, to: 875, gain: 0.55, dur: 0.16 },
+      { wave: 'sine', from: 1620, to: 1510, gain: 0.24, dur: 0.12 },
+    ],
+    noise: { cutoff: 2600, filter: 'bandpass', gain: 0.25, dur: 0.035 },
+  },
+  matPorcelain: {
+    gain: 0.22, dur: 0.30, textured: true, cutoff: 10500,
+    tones: [
+      { wave: 'sine', from: 1360, to: 1310, gain: 0.52, dur: 0.25, detune: 2 },
+      { wave: 'sine', from: 2380, to: 2290, gain: 0.23, dur: 0.20 },
+    ],
+    noise: { cutoff: 4100, filter: 'bandpass', gain: 0.17, dur: 0.028 },
+  },
+  matChime: {
+    gain: 0.21, dur: 0.34, textured: true, cutoff: 10000,
+    tones: [
+      { wave: 'sine', from: 820, to: 800, gain: 0.42, dur: 0.30, detune: 4 },
+      { wave: 'sine', from: 1480, to: 1440, gain: 0.17, dur: 0.24 },
+    ],
+    noise: { cutoff: 3600, to: 6200, filter: 'highpass', gain: 0.10, dur: 0.10, attack: 0.015 },
+  },
+  matGlass: {
+    gain: 0.22, dur: 0.48, textured: true, cutoff: 12000,
+    tones: [
+      { wave: 'sine', from: 1480, to: 1450, gain: 0.42, dur: 0.42, detune: 2 },
+      { wave: 'sine', from: 2370, to: 2320, gain: 0.25, dur: 0.36 },
+      { wave: 'sine', from: 3610, to: 3520, gain: 0.12, dur: 0.27 },
+    ],
+    noise: { cutoff: 6200, filter: 'highpass', gain: 0.12, dur: 0.025 },
+  },
+  matGlassBreak: {
+    gain: 0.33, dur: 0.52, textured: true, cutoff: 13000,
+    tones: [
+      { wave: 'sine', from: 3100, to: 1450, gain: 0.18, delay: 0.03, dur: 0.18 },
+      { wave: 'sine', from: 4200, to: 1800, gain: 0.13, delay: 0.11, dur: 0.16 },
+      { wave: 'sine', from: 2700, to: 1200, gain: 0.11, delay: 0.19, dur: 0.14 },
+    ],
+    noise: [
+      { cutoff: 1800, to: 8500, filter: 'highpass', gain: 0.65, dur: 0.22 },
+      { cutoff: 5400, to: 2400, filter: 'bandpass', gain: 0.28, delay: 0.16, dur: 0.20 },
+      { cutoff: 4200, to: 1800, filter: 'bandpass', gain: 0.20, delay: 0.29, dur: 0.16 },
+    ],
+  },
+  matStone: {
+    gain: 0.30, dur: 0.30, textured: true, cutoff: 2200,
+    tones: [{ wave: 'sine', from: 92, to: 48, gain: 0.75, dur: 0.27, sub: true }],
+    noise: [
+      { cutoff: 420, to: 170, filter: 'lowpass', color: 'brown', gain: 0.72, dur: 0.22 },
+      { cutoff: 1100, to: 480, filter: 'bandpass', gain: 0.20, dur: 0.08 },
+    ],
+  },
+  matThunk: {
+    gain: 0.31, dur: 0.34, textured: true, cutoff: 3000,
+    tones: [
+      { wave: 'sine', from: 68, to: 38, gain: 0.82, dur: 0.31, sub: true },
+      { wave: 'sine', from: 285, to: 210, gain: 0.20, dur: 0.16 },
+    ],
+    noise: { cutoff: 620, to: 260, filter: 'lowpass', color: 'brown', gain: 0.58, dur: 0.24 },
+  },
+  matTock: {
+    gain: 0.24, dur: 0.24, textured: true, cutoff: 6400,
+    tones: [
+      { wave: 'sine', from: 460, to: 390, gain: 0.55, dur: 0.19 },
+      { wave: 'sine', from: 760, to: 650, gain: 0.20, dur: 0.14 },
+    ],
+    noise: { cutoff: 1800, filter: 'bandpass', gain: 0.30, dur: 0.045 },
+  },
+  matRing: {
+    gain: 0.24, dur: 0.58, textured: true, cutoff: 11000,
+    tones: [
+      { wave: 'sine', from: 730, to: 710, gain: 0.48, dur: 0.52, detune: 3 },
+      { wave: 'sine', from: 1170, to: 1135, gain: 0.27, dur: 0.44 },
+      { wave: 'sine', from: 1910, to: 1840, gain: 0.15, dur: 0.34 },
+    ],
+    noise: { cutoff: 4600, filter: 'highpass', gain: 0.12, dur: 0.03 },
+  },
+  matWood: {
+    gain: 0.27, dur: 0.22, textured: true, cutoff: 4200,
+    tones: [
+      { wave: 'sine', from: 280, to: 210, gain: 0.55, dur: 0.16 },
+      { wave: 'sine', from: 510, to: 390, gain: 0.16, dur: 0.11 },
+    ],
+    noise: { cutoff: 980, to: 420, filter: 'bandpass', color: 'brown', gain: 0.48, dur: 0.10 },
+  },
+  matDiceRattle: {
+    gain: 0.27, dur: 0.38, textured: true, cutoff: 9000,
+    tones: [
+      { wave: 'sine', from: 720, to: 590, gain: 0.22, dur: 0.05 },
+      { wave: 'sine', from: 920, to: 710, gain: 0.20, delay: 0.07, dur: 0.05 },
+      { wave: 'sine', from: 650, to: 520, gain: 0.20, delay: 0.14, dur: 0.05 },
+      { wave: 'sine', from: 830, to: 630, gain: 0.18, delay: 0.21, dur: 0.06 },
+    ],
+    noise: [
+      { cutoff: 2800, filter: 'bandpass', gain: 0.28, dur: 0.04 },
+      { cutoff: 3400, filter: 'bandpass', gain: 0.25, delay: 0.07, dur: 0.04 },
+      { cutoff: 2500, filter: 'bandpass', gain: 0.24, delay: 0.14, dur: 0.04 },
+      { cutoff: 3100, filter: 'bandpass', gain: 0.22, delay: 0.21, dur: 0.05 },
+    ],
+  },
 };
 
 export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];
+export const TEXTURED_SFX_NAMES = Object.entries(RECIPES)
+  .filter(([, recipe]) => recipe.textured)
+  .map(([name]) => name as SfxName);
 
 /**
  * feature-04 A-2 · TileMaterial → its voice. The map lives in the facade (never
@@ -114,7 +350,7 @@ export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];
  */
 export const MATERIAL_SFX: Record<string, SfxName> = {
   ceramic: 'matCeramic',
-  porcelain: 'matCeramic',
+  porcelain: 'matPorcelain',
   polished: 'matChime',
   glass: 'matGlass',
   stone: 'matStone',
@@ -126,16 +362,18 @@ export const MATERIAL_SFX: Record<string, SfxName> = {
 
 
 // ---------------------------------------------------------------------------
-// BGM (work order B phase 2) — a tiny looping chiptune SEQUENCER, same synth-only
-// philosophy as the SFX above (no asset files → swappable for bespoke tracks
-// later, see assets/AUDIO_LICENSES.md). Four loop-safe tracks; the Deadline/boss
-// blind swaps to a tenser variant of the play track (faster, minor, sawtooth).
+// BGM (work order B phase 2) — a tiny looping chiptune sequencer. Menu and run
+// each keep one loop. The shop keeps the run loop playing through a low-pass;
+// Deadline/boss blinds deliberately keep the ordinary run music.
 // ---------------------------------------------------------------------------
 
-export type MusicTrack = 'menu' | 'play' | 'shop' | 'boss';
+export type MusicTrack = 'menu' | 'play';
 
 /** BGM sits UNDER the SFX in the mix; this scales the whole music bus. */
 const MUSIC_HEADROOM = 0.5;
+const MUSIC_FILTER_OPEN_HZ = 5000;
+const MUSIC_FILTER_MUFFLED_HZ = 560;
+const MUSIC_FILTER_RAMP_SECONDS = 0.08;
 
 /** Note name ("C3", "F#4") → frequency in Hz. Rests are represented as null. Exposed for tests. */
 const SEMI: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -162,7 +400,7 @@ interface TrackDef {
 // 16-step (one-bar) loops. Placeholder chiptune — bass + lead, key of C/Am.
 // `_` reads as a rest for legibility; expanded to null below.
 const R = null;
-export const MUSIC_TRACKS = ['menu', 'play', 'shop', 'boss'] as const;
+export const MUSIC_TRACKS = ['menu', 'play'] as const;
 export const MUSIC: Record<MusicTrack, TrackDef> = {
   // Calm major arpeggio — title/menu.
   menu: {
@@ -180,23 +418,6 @@ export const MUSIC: Record<MusicTrack, TrackDef> = {
       { wave: 'triangle', gain: 0.15, detune: 7, steps: ['C4', R, 'E4', 'G4', R, 'E4', 'C4', R, 'D4', R, 'F4', 'A4', R, 'G4', 'E4', R] },
       { wave: 'square',   gain: 0.10, steps: ['C2', R, R, R, 'A1', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
       { wave: 'sine',     gain: 0.06, steps: ['C3', R, R, R, 'A2', R, R, R, 'F2', R, R, R, 'G2', R, R, R] },
-    ],
-  },
-  // Relaxed shop lounge — the Stationery Shop.
-  shop: {
-    bpm: 100,
-    voices: [
-      { wave: 'triangle', gain: 0.16, detune: 7, steps: ['E4', R, 'G4', 'A4', R, 'G4', 'E4', R, 'D4', R, 'E4', 'G4', R, 'D4', 'C4', R] },
-      { wave: 'square',   gain: 0.09, steps: ['A1', R, R, R, 'E2', R, R, R, 'F1', R, R, R, 'G1', R, R, R] },
-      { wave: 'sine',     gain: 0.06, steps: ['A2', R, R, R, 'E3', R, R, R, 'F2', R, R, R, 'G2', R, R, R] },
-    ],
-  },
-  // Tenser variant of `play`: minor, faster, sawtooth lead — the Deadline (boss).
-  boss: {
-    bpm: 140,
-    voices: [
-      { wave: 'sawtooth', gain: 0.13, steps: ['A3', 'C4', 'E4', 'C4', 'F4', 'E4', 'C4', 'A3', 'B3', 'D4', 'F4', 'D4', 'E4', 'C4', 'B3', 'E4'] },
-      { wave: 'square',   gain: 0.11, steps: ['A1', R, 'A1', R, 'F1', R, 'F1', R, 'D1', R, 'D1', R, 'E1', R, 'E1', R] },
     ],
   },
 };
@@ -248,6 +469,8 @@ class Audio {
   // BGM state (phase 2). The music bus is a single gain node all notes route
   // through; a lookahead scheduler retriggers the current track's loop.
   private musicGain: GainNode | null = null;
+  private musicFilter: BiquadFilterNode | null = null;
+  private musicMuffled = false;
   private currentTrack: MusicTrack | null = null;
   private pendingTrack: MusicTrack | null = null; // requested before the gesture unlock
   private schedTimer: ReturnType<typeof setInterval> | null = null;
@@ -330,12 +553,29 @@ class Audio {
     if (!this.ctx) return;
     if (!this.musicGain) {
       this.musicGain = this.ctx.createGain();
-      const warm = this.ctx.createBiquadFilter();
-      warm.type = 'lowpass';
-      warm.frequency.value = 5000;
-      this.musicGain.connect(warm).connect(this.ctx.destination);
+      this.musicFilter = this.ctx.createBiquadFilter();
+      this.musicFilter.type = 'lowpass';
+      this.musicFilter.Q.value = 0.9;
+      this.musicGain.connect(this.musicFilter).connect(this.ctx.destination);
     }
+    this.updateMusicFilter();
     this.updateMusicGain();
+  }
+
+  /** Keep the current track running while smoothly closing/opening the music
+   * low-pass. Shop entry owns this flag; it never swaps the composition. */
+  setMusicMuffled(muffled: boolean): void {
+    this.musicMuffled = muffled;
+    this.updateMusicFilter();
+  }
+
+  private updateMusicFilter(): void {
+    if (!this.ctx || !this.musicFilter) return;
+    this.musicFilter.frequency.setTargetAtTime(
+      this.musicMuffled ? MUSIC_FILTER_MUFFLED_HZ : MUSIC_FILTER_OPEN_HZ,
+      this.ctx.currentTime,
+      MUSIC_FILTER_RAMP_SECONDS,
+    );
   }
 
   private updateMusicGain(): void {
@@ -446,13 +686,23 @@ class Audio {
   }
 
   play(name: SfxName, opts?: { step?: number }): void {
-    if (!this.busEnabled.sfx) return; // bus gated off until SOUND is unlocked (C-6)
+    this.playRecipe(name, opts);
+  }
+
+  private playRecipe(name: SfxName, opts: { step?: number } | undefined): void {
+    if (!this.busEnabled.sfx) return; // gated until SOUND is unlocked (C-6)
     if (!this.ctx || !this.unlocked) return; // pre-gesture / no Web Audio → drop
     const g = effectiveGain(name, this.vol);
     if (g <= 0) return;
     const r = RECIPES[name];
     const ctx = this.ctx;
     const now = ctx.currentTime;
+    const semis = opts?.step ? Math.min(opts.step, 24) : 0;
+    const bend = Math.pow(2, semis / 12);
+    if (r.textured) {
+      this.playTexturedRecipe(ctx, r, now, g, bend);
+      return;
+    }
     const out = ctx.createGain();
     // Percussive envelope: softened 12ms attack (was 6ms — removes the tinny click),
     // exponential decay across the recipe dur.
@@ -467,11 +717,6 @@ class Audio {
     warm.frequency.value = 3000;
     warm.Q.value = 0.7;
     out.connect(warm).connect(ctx.destination);
-
-    // Rising count-up tick: each consecutive tick steps the pitch up, resetting
-    // per word (the caller passes an incrementing `step`, cleared between words).
-    const semis = opts?.step ? Math.min(opts.step, 24) : 0;
-    const bend = Math.pow(2, semis / 12);
 
     for (const t of r.tones ?? []) {
       const start = now + (t.delay ?? 0);
@@ -507,7 +752,7 @@ class Audio {
         osc.stop(now + r.dur);
       }
     }
-    if (r.noise) {
+    if (r.noise && !Array.isArray(r.noise)) {
       const frames = Math.floor(ctx.sampleRate * r.dur);
       const buf = ctx.createBuffer(1, frames, ctx.sampleRate);
       const data = buf.getChannelData(0);
@@ -520,6 +765,100 @@ class Audio {
       src.connect(lp).connect(out);
       src.start(now);
       src.stop(now + r.dur);
+    }
+  }
+
+  private playTexturedRecipe(
+    ctx: AudioContext,
+    recipe: Recipe,
+    now: number,
+    gain: number,
+    bend: number,
+  ): void {
+    const out = ctx.createGain();
+    out.gain.value = gain;
+    const toneColor = ctx.createBiquadFilter();
+    toneColor.type = 'lowpass';
+    toneColor.frequency.value = recipe.cutoff ?? 7200;
+    toneColor.Q.value = 0.35;
+    out.connect(toneColor).connect(ctx.destination);
+
+    const envelope = (
+      node: GainNode,
+      start: number,
+      dur: number,
+      peak: number,
+      attack: number,
+    ) => {
+      const top = Math.max(0.0001, peak);
+      node.gain.setValueAtTime(0.0001, start);
+      node.gain.exponentialRampToValueAtTime(top, start + Math.min(attack, dur * 0.45));
+      node.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    };
+
+    for (const tone of recipe.tones ?? []) {
+      const start = now + (tone.delay ?? 0);
+      const dur = tone.dur ?? Math.max(0.025, recipe.dur - (tone.delay ?? 0));
+      const hit = ctx.createGain();
+      envelope(hit, start, dur, tone.gain ?? 1, tone.attack ?? 0.003);
+      hit.connect(out);
+      const voices: { frequency: number; detune: number; wave: Wave; weight: number }[] = [
+        { frequency: 1, detune: 0, wave: tone.wave, weight: 1 },
+      ];
+      if (tone.detune) {
+        voices.push({ frequency: 1, detune: tone.detune, wave: tone.wave, weight: 0.65 });
+        voices.push({ frequency: 1, detune: -tone.detune, wave: tone.wave, weight: 0.65 });
+      }
+      if (tone.sub) voices.push({ frequency: 0.5, detune: 0, wave: 'sine', weight: 0.45 });
+      const weight = voices.reduce((sum, voice) => sum + voice.weight, 0);
+      for (const voice of voices) {
+        const osc = ctx.createOscillator();
+        osc.type = voice.wave;
+        osc.frequency.setValueAtTime(tone.from * bend * voice.frequency, start);
+        if (tone.to !== undefined) {
+          osc.frequency.exponentialRampToValueAtTime(
+            tone.to * bend * voice.frequency,
+            start + dur,
+          );
+        }
+        if (voice.detune) osc.detune.setValueAtTime(voice.detune, start);
+        const level = ctx.createGain();
+        level.gain.value = voice.weight / weight;
+        osc.connect(level).connect(hit);
+        osc.start(start);
+        osc.stop(start + dur);
+      }
+    }
+
+    const noiseLayers = !recipe.noise
+      ? []
+      : Array.isArray(recipe.noise) ? recipe.noise : [recipe.noise];
+    for (const noise of noiseLayers) {
+      const start = now + (noise.delay ?? 0);
+      const dur = noise.dur ?? Math.max(0.025, recipe.dur - (noise.delay ?? 0));
+      const frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
+      const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let brown = 0;
+      for (let i = 0; i < frames; i += 1) {
+        const white = Math.random() * 2 - 1;
+        brown = (brown + 0.02 * white) / 1.02;
+        data[i] = noise.color === 'brown' ? brown * 3.5 : white;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = noise.filter ?? 'bandpass';
+      filter.frequency.setValueAtTime(noise.cutoff, start);
+      if (noise.to !== undefined) {
+        filter.frequency.exponentialRampToValueAtTime(noise.to, start + dur);
+      }
+      filter.Q.value = noise.q ?? 0.8;
+      const hit = ctx.createGain();
+      envelope(hit, start, dur, noise.gain ?? 0.5, noise.attack ?? 0.002);
+      source.connect(filter).connect(hit).connect(out);
+      source.start(start);
+      source.stop(start + dur);
     }
   }
 }

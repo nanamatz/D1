@@ -246,9 +246,24 @@ export function PackOpening({
   useEffect(() => {
     if (entering || started) return;
     setStarted(true);
+    audio.play('packOpen');
     if (motionOff()) return;
     setOpening(true);
   }, [entering, started]);
+
+  const hasRainbowOption = !!pack?.offer.options.some((option) =>
+    option.kind === 'joker'
+      ? option.edition === 'rainbow'
+      : option.kind === 'tile' && (option.tile.edition ?? 'base') === 'rainbow',
+  );
+  useEffect(() => {
+    if (entering || !started || !hasRainbowOption) return;
+    const timer = window.setTimeout(
+      () => audio.play('rainbowShimmer'),
+      motionOff() ? 0 : BURST_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [entering, started, hasRainbowOption]);
 
   useEffect(() => {
     if (!opening) return;
