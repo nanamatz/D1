@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { TiltCard } from '../src/ui/components/TiltCard';
 import { VoucherCard } from '../src/ui/components/VoucherCard';
+import { uiIcon } from '../src/ui/uiIcons';
 
 describe('shared card motion', () => {
   it('adds idle motion and cursor sheen without dropping caller classes', () => {
@@ -44,6 +45,15 @@ describe('shared card motion', () => {
     expect(resting).not.toContain('voucher-card__shred');
     expect(redeeming).toContain('voucher-card redeeming');
     expect(redeeming).toContain('voucher-card__shred');
+  });
+
+  it('uses the unknown image for an undiscovered voucher', () => {
+    const markup = renderToStaticMarkup(createElement(VoucherCard, {
+      name: 'Undiscovered',
+      muted: true,
+      motion: false,
+    }));
+    expect(markup).toContain(`src="${uiIcon('unknown')}"`);
   });
 
   it('defines idle, pointer tilt, sheen, and reduced-motion fallbacks', () => {

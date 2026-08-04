@@ -240,7 +240,7 @@ export const BALANCE = {
     upgradedInterestCap: 20,
     baseShopDiscount: 0.25,
     upgradedShopDiscount: 0.5,
-    baseShopWeightMultiplier: 2.4,
+    baseShopWeightMultiplier: 2,
     upgradedShopWeightMultiplier: 8,
     bossRerollPrice: 10,
   },

@@ -7,7 +7,9 @@ import {
   BASE_VOUCHER_IDS,
   applyVoucher,
   availableVoucherIds,
+  constellationShopWeight,
   discountedPrice,
+  fableShopWeight,
   hasVoucher,
   interestCap,
   rerollDiscount,
@@ -80,6 +82,13 @@ describe('two-tier vouchers — derived economy effects', () => {
     expect(shopItemSlots(run)).toBe(3);
     run = applyVoucher(run, 'couponBook');
     expect(shopItemSlots(run)).toBe(4);
+  });
+
+  it('uses 2× base and 8× upgraded card-family shop weights', () => {
+    expect(fableShopWeight(applyVoucher(newRun('v'), 'storyBook'))).toBe(2);
+    expect(fableShopWeight(applyVoucher(newRun('v'), 'novel'))).toBe(8);
+    expect(constellationShopWeight(applyVoucher(newRun('v'), 'bible'))).toBe(2);
+    expect(constellationShopWeight(applyVoucher(newRun('v'), 'theLaw'))).toBe(8);
   });
 });
 

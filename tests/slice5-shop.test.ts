@@ -225,4 +225,22 @@ describe('slice5 shop — sell & reroll', () => {
     expect(res.run.handSize).toBe(BALANCE.handSize + 1);
     expect(res.shop.voucher).toBeNull();
   });
+
+  it('reprices displayed stock immediately when a shop discount is bought', () => {
+    const items: ShopItem[] = [
+      { kind: 'joker', id: 'miser', edition: 'base', price: 4 },
+      { kind: 'consumable', id: 'fable1', price: 3 },
+      { kind: 'punctuation', id: 'libra', pattern: 'simple', price: 3 },
+      { kind: 'tile', tile: run().bag[0]!, price: 1 },
+      { kind: 'joker', id: 'copyEditor', edition: 'base', price: 0 },
+    ];
+    const newspaper = buyVoucher(run({ gold: 30 }), shopWith(items, 0, 'newspaper'));
+    expect(newspaper.shop.items.map((item) => item?.price)).toEqual([3, 2, 2, 1, 0]);
+
+    const papyrus = buyVoucher(
+      { ...newspaper.run, voucherLocked: false },
+      { ...newspaper.shop, voucher: 'papyrus' },
+    );
+    expect(papyrus.shop.items.map((item) => item?.price)).toEqual([2, 1, 1, 1, 0]);
+  });
 });

@@ -34,7 +34,7 @@ export function VoucherCard({
       {artSrc ? (
         <img className="voucher-card__art" src={artSrc} alt="" />
       ) : (
-        <UiIcon name="document" className="voucher-card__icon" />
+        <UiIcon name={muted ? 'unknown' : 'document'} className="voucher-card__icon" />
       )}
       <span className="voucher-card__side voucher-card__side--right" aria-hidden="true">
         VOUCHER

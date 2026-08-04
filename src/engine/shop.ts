@@ -360,6 +360,22 @@ export interface BuyResult {
   appliedTags?: SkipRewardId[];
 }
 
+const repriceShopItem = (run: RunState, item: ShopItem): ShopItem => {
+  if (item.price === 0) return item;
+  if (item.kind === 'joker') {
+    const def = JOKER_REGISTRY.get(item.id);
+    return def
+      ? { ...item, price: emojiTileBuyPrice(run, BALANCE.jokerPrice[def.rarity], item.edition) }
+      : item;
+  }
+  return {
+    ...item,
+    price: item.kind === 'tile'
+      ? tileBuyPrice(run, item.tile)
+      : consumableBuyPrice(run, item.id),
+  };
+};
+
 /** Buy the item in slot `index`, respecting gold and joker/consumable slot caps. */
 export function buyItem(run: RunState, shop: ShopState, index: number): BuyResult {
   const item = shop.items[index];
@@ -442,11 +458,14 @@ export function buyVoucher(
       def.tier === 'base' && !boughtBases.includes(id) ? [...boughtBases, id] : boughtBases,
   }, id);
   const remaining = slot === 'base' ? shop.bonusVoucher : shop.voucher;
+  const items = id === 'newspaper' || id === 'papyrus'
+    ? shop.items.map((item) => item ? repriceShopItem(nextRun, item) : null)
+    : shop.items;
   return {
     run: nextRun,
     // Always keep a tagged pair's survivor in the bonus slot. That single shape
     // lets the shared gate distinguish it from a forged ordinary locked offer.
-    shop: { ...shop, voucher: null, bonusVoucher: remaining },
+    shop: { ...shop, items, voucher: null, bonusVoucher: remaining },
     ok: true,
   };
 }
