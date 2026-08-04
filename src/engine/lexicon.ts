@@ -101,7 +101,9 @@ export function makeLexicon(
   }
 
   const tagged = new Map<string, LexiconEntryData>();
-  for (const [w, data] of Object.entries(entries)) {
+  for (const w in entries) {
+    const data = entries[w];
+    if (!data) continue;
     const key = norm(w);
     if (!withinWordLength(key)) continue;
     tagged.set(key, data);
@@ -135,11 +137,12 @@ export function makeLexicon(
 
 /** Parse dictionary.txt: one lowercase word per line; blanks and `#` comments dropped. */
 export function parseDictionary(text: string): string[] {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => withinWordLength(line) && !line.startsWith('#'))
-    .map((line) => line.toLowerCase());
+  const words: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const word = norm(line);
+    if (withinWordLength(word) && !word.startsWith('#')) words.push(word);
+  }
+  return words;
 }
 
 /** Parse lexicon.json into the tagged table. */

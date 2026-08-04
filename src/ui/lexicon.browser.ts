@@ -9,13 +9,8 @@ import { makeLexicon, parseDictionary, type Lexicon, type LexiconEntryData } fro
 
 export function loadBrowserLexicon(): Lexicon {
   const words = parseDictionary(dictText);
-  const table: Record<string, LexiconEntryData> = {};
-  for (const [key, value] of Object.entries(rawTable as Record<string, unknown>)) {
-    if (key.startsWith('_')) continue; // drop `_comment`
-    table[key] = value as LexiconEntryData;
-  }
-  const lexicon = makeLexicon(words, table);
+  const lexicon = makeLexicon(words, rawTable as Record<string, LexiconEntryData>);
   // P0-1 acceptance: dictionary loads as a Set at startup; size logged.
-  console.info(`[lexicon] ${lexicon.size} valid words loaded (${Object.keys(table).length} tagged)`);
+  console.info(`[lexicon] ${lexicon.size} valid words loaded`);
   return lexicon;
 }

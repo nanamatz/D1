@@ -70,6 +70,10 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('menu');
   const openScreen = useCallback(
     (next: Exclude<Screen, 'menu'>) => {
+      if (next === 'newrun') {
+        setScreen(next);
+        return;
+      }
       void ensureLexicon()
         .then(() => setScreen(next))
         .catch((error: unknown) => console.error('[lexicon] load failed', error));
@@ -131,8 +135,12 @@ export function App() {
         return (
           <NewRun
             onStart={(config) => {
-              g.startRun(config);
-              setScreen('run');
+              void ensureLexicon()
+                .then(() => {
+                  g.startRun(config);
+                  setScreen('run');
+                })
+                .catch((error: unknown) => console.error('[lexicon] load failed', error));
             }}
             onBack={() => setScreen('menu')}
             continueInfo={
@@ -145,7 +153,11 @@ export function App() {
                   }
                 : undefined
             }
-            onContinue={canContinue ? () => setScreen('run') : undefined}
+            onContinue={canContinue ? () => {
+              void ensureLexicon()
+                .then(() => setScreen('run'))
+                .catch((error: unknown) => console.error('[lexicon] load failed', error));
+            } : undefined}
           />
         );
       case 'run':

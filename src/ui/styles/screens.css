@@ -4252,6 +4252,14 @@ body.cb-safe .tile.hint {
   overflow: hidden;
   pointer-events: none;
 }
+/* The outgoing tree stays mounted for the wipe, but none of its decorative
+   motion needs to keep consuming frames behind the incoming screen. */
+.screen-pane.screen-out,
+.screen-pane.screen-out *,
+.screen-pane.screen-out *::before,
+.screen-pane.screen-out *::after {
+  animation-play-state: paused !important;
+}
 .screen-pane.screen-in {
   position: relative;
 }
