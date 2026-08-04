@@ -7,7 +7,14 @@
  * GDD section references are noted per block.
  */
 
-import type { FontEffectId, Letter, PackSize, PackType, TileFont } from './types';
+import type {
+  FontEffectId,
+  JokerEdition,
+  Letter,
+  PackSize,
+  PackType,
+  TileFont,
+} from './types';
 
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
@@ -213,12 +220,16 @@ export const BALANCE = {
     packSlots: 2,
     rerollBase: 5,
     rerollIncrement: 1,
-    itemWeights: { joker: 80, tile: 10, consumable: 5, punctuation: 5 },
+    // Balatro reference: Joker 20, Tarot/Planet 4 each; the voucher-gated
+    // letter-tile family adds 4 and Lucky Pouch's Gambler family adds 2.
+    itemWeights: { joker: 20, tile: 4, consumable: 4, punctuation: 4, gambler: 2 },
   },
-  jokerPrice: { common: 5, uncommon: 7, rare: 9, legendary: 20 },
+  jokerPrice: { common: 4, uncommon: 6, rare: 9, legendary: 15 },
+  jokerEditionPrice: { base: 0, gray: 2, violet: 3, rainbow: 5, white: 5 } as Record<JokerEdition, number>,
   jokerSlots: 5,
-  consumablePrice: 3, // flat consumable price (placeholder, GDD §9.2)
-  tilePrice: 3,
+  consumablePrice: 3,
+  gamblerPrice: 4,
+  tilePrice: 1,
 
   // ----- Vouchers (GDD §9.4) — 16 base + 16 unlocked upgrades -----
   voucherPrice: 10,
@@ -228,12 +239,27 @@ export const BALANCE = {
     upgradedInterestCap: 20,
     baseShopDiscount: 0.25,
     upgradedShopDiscount: 0.5,
+    baseShopWeightMultiplier: 2.4,
+    upgradedShopWeightMultiplier: 8,
     bossRerollPrice: 10,
-    editionChance: 0.08,
   },
   edition: { grayChips: 50, violetMult: 10, rainbowFactor: 1.5 },
+  editionRates: {
+    joker: {
+      base: { gray: 0.02, violet: 0.014, rainbow: 0.003, white: 0.003 },
+      flyer: { gray: 0.04, violet: 0.028, rainbow: 0.009, white: 0.003 },
+      wantedPoster: { gray: 0.08, violet: 0.056, rainbow: 0.021, white: 0.003 },
+    },
+    tile: {
+      base: { gray: 0.04, violet: 0.028, rainbow: 0.012 },
+      flyer: { gray: 0.08, violet: 0.056, rainbow: 0.024 },
+      wantedPoster: { gray: 0.16, violet: 0.112, rainbow: 0.048 },
+    },
+    // Encyclopedia's Balatro-Illusion analog: fixed 20%, unaffected by Flyer.
+    shopTile: { gray: 0.10, violet: 0.07, rainbow: 0.03 },
+  },
 
-  // ----- Packs (GDD §9.3) — 4 types × 3 sizes -----
+  // ----- Packs (GDD §9.3) — 5 types × 3 sizes -----
   pack: {
     // size governs how many are shown / picked, and the price (Balatro 4/6/8).
     size: {
@@ -245,14 +271,16 @@ export const BALANCE = {
     // Display names (GDD §9.3): consumable=Fable, pattern=Constellation, tile=Tile,
     // joker=Charm, ink=Ink. Ink is the rare thrill (Spectral's role) and rolls
     // now that the Gambler registry ships (src/engine/gamblers.ts).
-    typeWeights: { consumable: 4, pattern: 4, tile: 4, joker: 2, ink: 0.6 } as Record<string, number>,
+    typeWeights: { consumable: 4, pattern: 4, tile: 4, joker: 1.2, ink: 0.6 } as Record<string, number>,
     /** Comic Book only (GDD §9.3): per-choice chance a Fable Pack option becomes a
      *  Gambler card, capped at one per pack. Without the voucher it is exactly 0. */
     gamblerInFableChance: 0.05,
-    /** Deer's cross-family exception: chance one Constellation-Pack choice becomes
-     *  Deer, capped at one per pack (GDD §9.3, §10.3 #9). */
-    deerInConstellationChance: 0.01,
-    sizeWeights: { normal: 8, jumbo: 3, mega: 1 } as Record<string, number>,
+    /** Per-choice jackpot chance for Phoenix in Fable Packs and Deer in
+     *  Constellation Packs; both share the Ink Pack jackpot rate. */
+    jackpotChance: 0.003,
+    sizeWeights: { normal: 8, jumbo: 4, mega: 1 } as Record<string, number>,
+    scarceShow: { normal: 2, jumbo: 4, mega: 4 } as Record<PackSize, number>,
+    tileModifiers: { materialChance: 0.4, fontChance: 0.2 },
     // how many cosmetic art variants exist per (type, size) (== the art count in
     // packArt.ts); the seeded RNG picks one at stock time.
     artVariants: {
@@ -263,12 +291,8 @@ export const BALANCE = {
       ink: { normal: 2, jumbo: 1, mega: 1 },
     } as Record<PackType, Record<PackSize, number>>,
   },
-  packEnhanceChance: { base: 0.15 }, // material/font pre-attach rate
-
   // ----- Emoji Tiles / Charm (GDD §9.2) — rarity offer weights. Legendary is
-  //       OMITTED on purpose: it has no acquisition route yet (§12 open), so an
-  //       absent weight (→ 0) means it NEVER rolls in the shop or a Charm Pack,
-  //       rather than silently appearing. Adding a route = add its weight here. -----
+  //       omitted from ordinary rolls and appears only through jackpot routes. -----
   emoji: {
     rarityWeights: { common: 70, uncommon: 25, rare: 5 } as Record<string, number>,
   },
@@ -433,3 +457,13 @@ export const BALANCE = {
     vitalSignTargetMult: 3,
   },
 } as const;
+
+export function packSizeRules(type: PackType, size: PackSize) {
+  const base = BALANCE.pack.size[size];
+  return {
+    ...base,
+    show: type === 'joker' || type === 'ink'
+      ? BALANCE.pack.scarceShow[size]
+      : base.show,
+  };
+}

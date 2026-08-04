@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
-import { BALANCE } from '../src/engine/balance';
+import { BALANCE, packSizeRules } from '../src/engine/balance';
 import { packTooltip } from '../src/ui/packTooltip';
 import { richText, stripRichText } from '../src/ui/richtext';
 import type { PackSize, PackType } from '../src/engine/types';
@@ -34,7 +34,7 @@ describe('packTooltip — size-aware pack copy', () => {
       const t = makeT(dict);
       for (const type of TYPES) {
         for (const size of SIZES) {
-          const { show, pick } = BALANCE.pack.size[size];
+          const { show, pick } = packSizeRules(type, size);
           const { body } = packTooltip(type, size, t);
           expect(body, `${name}/${type}/${size} show`).toContain(`[n:${show}]`);
           expect(body, `${name}/${type}/${size} pick`).toContain(`[n:${pick}]`);

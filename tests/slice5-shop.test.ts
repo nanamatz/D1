@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { rollShopStock, buyItem, sellJoker, rerollShop, buyVoucher } from '../src/engine/shop';
+import {
+  rollShopStock,
+  buyItem,
+  sellJoker,
+  rerollShop,
+  buyVoucher,
+  prepareShop,
+} from '../src/engine/shop';
 import { newRun } from '../src/engine/run';
 import { makeRng } from '../src/engine/rng';
 import { BALANCE } from '../src/engine/balance';
@@ -15,28 +22,45 @@ const dummyJokers = (n: number): OwnedJoker[] =>
   Array.from({ length: n }, (_, i) => ({ defId: `d${i}`, state: {} }));
 
 describe('slice5 shop — stock roll (GDD §9.2)', () => {
-  it('uses the 80:10:5:5 item-type weights', () => {
+  it('uses the Balatro-derived item-family weights', () => {
     expect(BALANCE.shop.itemWeights).toEqual({
-      joker: 80,
-      tile: 10,
-      consumable: 5,
-      punctuation: 5,
+      joker: 20,
+      tile: 4,
+      consumable: 4,
+      punctuation: 4,
+      gambler: 2,
     });
   });
 
   it('rolls those weights when all four item types are unlocked', () => {
     const counts = { joker: 0, tile: 0, consumable: 0, punctuation: 0 };
-    const unlocked = run({ vouchers: ['enKoDictionary'] });
+    const unlocked = run({ vouchers: ['enKoDictionary'], shopsVisited: 1 });
     for (let i = 0; i < 5_000; i++) {
       for (const item of rollShopStock(unlocked, makeRng(`weights-${i}`)).items) {
         if (item) counts[item.kind]++;
       }
     }
     const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-    expect(counts.joker / total).toBeCloseTo(0.8, 1);
-    expect(counts.tile / total).toBeCloseTo(0.1, 1);
-    expect(counts.consumable / total).toBeCloseTo(0.05, 1);
-    expect(counts.punctuation / total).toBeCloseTo(0.05, 1);
+    expect(counts.joker / total).toBeCloseTo(20 / 32, 1);
+    expect(counts.tile / total).toBeCloseTo(4 / 32, 1);
+    expect(counts.consumable / total).toBeCloseTo(4 / 32, 1);
+    expect(counts.punctuation / total).toBeCloseTo(4 / 32, 1);
+  });
+
+  it('guarantees a Basic Charm Pack only in the first real Stationery Shop', () => {
+    const first = prepareShop(run(), makeRng('first-shop'));
+    expect(first.shop.packs).toContainEqual(expect.objectContaining({
+      type: 'joker',
+      size: 'normal',
+    }));
+    expect(first.run.shopsVisited).toBe(1);
+
+    const laterCanMiss = Array.from({ length: 30 }, (_, i) =>
+      rollShopStock(first.run, makeRng(`later-shop-${i}`)),
+    ).some((stock) => !stock.packs.some((pack) =>
+      pack?.type === 'joker' && pack.size === 'normal',
+    ));
+    expect(laterCanMiss).toBe(true);
   });
 
   it('fills the item slots and is deterministic per seed', () => {

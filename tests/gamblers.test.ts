@@ -302,31 +302,33 @@ describe('acquisition — GDD §9.3', () => {
     }
   });
 
-  it('a Fable Pack holds no Gambler card without Comic Book', () => {
+  it('a Fable Pack can only roll the Phoenix jackpot without Comic Book', () => {
     const run = newRun('fable-pack');
     for (let i = 0; i < 40; i++) {
       const offer = rollPack(slot('consumable'), run, makeRng(`fable-${i}`));
       for (const option of offer.options) {
-        expect(isGamblerId((option as { id: ConsumableId }).id)).toBe(false);
+        const id = (option as { id: ConsumableId }).id;
+        expect(!isGamblerId(id) || id === 'phoenix').toBe(true);
       }
     }
   });
 
-  it('Comic Book lets at most one Fable choice become a Gambler card', () => {
+  it('Comic Book lets at most one non-jackpot Fable choice become a Gambler card', () => {
     const run: RunState = { ...newRun('comic'), vouchers: ['comicBook'] };
     let seen = 0;
     for (let i = 0; i < 200; i++) {
       const offer = rollPack(slot('consumable'), run, makeRng(`comic-${i}`));
-      const gamblers = offer.options.filter((option) =>
-        isGamblerId((option as { id: ConsumableId }).id),
-      );
+      const gamblers = offer.options.filter((option) => {
+        const id = (option as { id: ConsumableId }).id;
+        return isGamblerId(id) && id !== 'phoenix';
+      });
       expect(gamblers.length).toBeLessThanOrEqual(1);
       seen += gamblers.length;
     }
     expect(seen).toBeGreaterThan(0); // ~5% per choice over 200 packs
   });
 
-  it('Deer may replace at most one Constellation choice', () => {
+  it('Deer rolls independently for each Constellation choice', () => {
     const run = newRun('deer-pack');
     let seen = 0;
     for (let i = 0; i < 400; i++) {
@@ -334,9 +336,8 @@ describe('acquisition — GDD §9.3', () => {
       const deer = offer.options.filter(
         (option) => (option as { id: ConsumableId }).id === 'deer',
       );
-      expect(deer.length).toBeLessThanOrEqual(1);
       seen += deer.length;
     }
-    expect(seen).toBeGreaterThan(0); // ~1% per pack over 400 packs
+    expect(seen).toBeGreaterThan(0); // 0.3% per choice over 400 packs
   });
 });

@@ -4,7 +4,7 @@
  */
 import { BALANCE } from './balance';
 import { CONSTELLATION_IDS } from './constellations';
-import { sellValue } from './economy';
+import { emojiTileSellValue } from './economy';
 import { ALL_JOKERS, JOKER_REGISTRY, onTilesDestroyed } from './jokers';
 import type {
   BlindState,
@@ -119,7 +119,9 @@ export const jokerSellGoldValue = (run: RunState): number =>
   Math.min(
     run.jokers.reduce((sum, owned) => {
       const def = JOKER_REGISTRY.get(owned.defId);
-      return sum + sellValue(def ? BALANCE.jokerPrice[def.rarity] : 0);
+      return sum + (def
+        ? emojiTileSellValue(run, BALANCE.jokerPrice[def.rarity], owned.edition ?? 'base')
+        : 1);
     }, 0),
     50,
   );

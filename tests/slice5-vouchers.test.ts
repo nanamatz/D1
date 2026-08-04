@@ -70,6 +70,7 @@ describe('two-tier vouchers — derived economy effects', () => {
     expect(interestCap(run)).toBe(20);
     run = applyVoucher(run, 'newspaper');
     expect(discountedPrice(run, 8)).toBe(6);
+    expect(discountedPrice(run, 9)).toBe(6);
     run = applyVoucher(run, 'papyrus');
     expect(discountedPrice(run, 8)).toBe(4);
   });

@@ -26,7 +26,7 @@ import { applyPackPick, rollPack, type PackOption } from '../engine/packs';
 import { resolveBlind } from '../engine/progression';
 import { makeRng } from '../engine/rng';
 import { newRun } from '../engine/run';
-import { buyItem, buyVoucher, rollShopStock, rollVoucherOffer } from '../engine/shop';
+import { buyItem, buyVoucher, prepareShop, rollVoucherOffer } from '../engine/shop';
 import type { Lexicon } from '../engine/lexicon';
 import type {
   BlindState,
@@ -329,7 +329,9 @@ function visitShop(
   acquired: Set<TileMaterial>,
 ): RunState {
   let run = runAtStart;
-  let shop: ShopState = rollShopStock(run, makeRng(`${seed}#shop-${shopIndex}`));
+  const prepared = prepareShop(run, makeRng(`${seed}#shop-${shopIndex}`));
+  run = prepared.run;
+  let shop: ShopState = prepared.shop;
   cohort.shops += 1;
 
   const itemOrder = shop.items

@@ -12,6 +12,7 @@ Version 0.2 — systems expansion
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 26 Editorial Perks now ship (§8.2, changed 2026-07-31; Lead Story retired).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
+- Changed 2026-08-04: the Stationery Shop and pack economy adopt the Balatro-reference probability and price policy. Item weights are Emoji Tile 20 / Fable 4 / Constellation 4, voucher-gated letter tile 4, and Lucky-Pouch Gambler 2; pack type weights are 4/4/4/1.2/0.6 and sizes 8/4/1. Emoji Tile prices are the project override **$4/$6/$9/$15** by rarity (§9.2–§9.3, §11.8).
 - Changed 2026-08-03: **Consumables** use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 implemented). Rainman and Sake Cup complete the supplied Gambler roster (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
 - Changed 2026-08-03: all fourteen Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls them in the shop.
@@ -750,7 +751,7 @@ the old Proofreader/Babel finishers remain retired.
 | Blind clear reward | Small 3 / Big 4 / ordinary Boss 5 / Finisher Boss 8 gold |
 | Remaining phases on blind end | 1 gold per phase |
 | Interest | 1 gold per 5 held, **cap 5** (max interest from 25 gold) |
-| Selling emoji tiles | Half of purchase price |
+| Selling Emoji Tiles/cards | Half of the currently recalculated shop price, rounded down (minimum $1) |
 
 > **Interest is the heart** (adopted as-is): the cap creates the "save to 25, spend above it" rhythm and the early-game conflict between buying Emoji Tiles and building an interest base. Miser converts held gold into current Mult, while R10 Interest Glutton converts interest actually received into next-round Mult; Bond (§8.3) pressures both economies.
 
@@ -761,7 +762,7 @@ These are explicit line-item overrides; all unaffected income streams remain.
 
 ### 9.2 Shop Layout — five stalls
 
-Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. Voucher Tag may add one temporary second Voucher choice, and rarity tags may append their guaranteed free Emoji Tile; these are disclosed reward exceptions, not changes to ordinary stock counts. Item-slot base type weights are **Emoji Tile 80 · letter tile 10 · Fable 5 · Constellation 5** (`balance.ts` `shop.itemWeights`). Unavailable types are removed and the remaining weights are normalized: letter tiles still require EN-KO Dictionary, and Encyclopedia still enables their modifiers. Story Book/Novel and Bible/The Law retain their ×2/×4 multipliers on the corresponding base weight. Gambler cards ordinarily do not enter item slots; **Lucky Pouch is the explicit exception** and adds implemented Gambler Cards as a data-weighted item family (§12.2). Their Comic Book-gated Fable-Pack route remains unchanged. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only.
+Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. The first Stationery Shop actually entered in a run guarantees one **Basic Charm Pack**; skipped blinds do not consume this guarantee. Voucher Tag may add one temporary second Voucher choice, and rarity tags may append their guaranteed free Emoji Tile; these are disclosed reward exceptions, not changes to ordinary stock counts. Available item-family weights are **Emoji Tile 20 · Fable 4 · Constellation 4** (`balance.ts` `shop.itemWeights`). EN-KO Dictionary adds letter tiles at weight **4**; Encyclopedia lets those shop tiles roll material and edition, but no font. **Lucky Pouch** adds implemented Gambler Cards as a separate weight-**2** family (§12.2). Unavailable families are removed and the remaining weights normalize automatically. Story Book/Novel and Bible/The Law multiply the corresponding base weight by **×2.4/×8**. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only; packs and the Voucher are unchanged.
 
 **Offer interaction (pack rollback 2026-07-30).** Shop stalls are image-first. Emoji Tiles, consumables, and the vertical voucher use the shared rounded `124×165px` stage. Sale packs use the requested older `131×229px` foreground with square corners. Their row slots match the 131px art width, preserving the normal 12px gap between packs, and the pack panel reserves enough lower space for the attached Open button to remain inside the persistent run layer. The price tag shares one foreground layer with the product and action. Selecting an offer raises that complete layer by 59px — the 15px base lift plus the 44px action-button height — and reveals the attached action: **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs. This does not reflow the stall layout. When an instant-use option exists, Buy remains below while **Use now** appears vertically centred outside the product's right edge. Product animation is never clipped. Voucher and pack background panels retain a `273px` minimum height. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
 
@@ -783,9 +784,9 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
   actions are briefly locked so the visual delay cannot double-buy or leave the
   shop midway. Reduced motion commits immediately.
 
-**Emoji tile pricing (placeholder):** Common 4–5 / Uncommon 6–7 / Rare 8–10 / Legendary 20.
+**Price policy (changed 2026-08-04):** Emoji Tiles use fixed rarity prices **Common $4 · Uncommon $6 · Rare $9 · Legendary $15**. Letter tiles cost $1; Fable/Constellation cards $3; Gambler cards $4; Basic/Classic/Premium packs $4/$6/$8; Vouchers $10. Gray/Violet/Rainbow/White editions add **$2/$3/$5/$5** to an Emoji Tile, and letter-tile editions use the same applicable surcharge. Newspaper/Papyrus apply 25%/50% after the surcharge, round down, and enforce a $1 minimum; Coupon Tag's explicit free stock remains $0. Selling recalculates that item's **current** discounted, edition-adjusted price, halves it, rounds down, and enforces a $1 minimum. Consequently, buying a discount Voucher can lower the sale value of already-owned objects.
 
-**Emoji tile appearance rates by rarity (placeholder → `balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution, adopted as the tuning start point: **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs.** Its designed acquisition route is the Phoenix Gambler card (§10.3), which creates one random unowned Legendary. Until the Gambler registry is implemented, Legendary tiles remain unobtainable in runtime play.
+**Emoji tile appearance rates by rarity (`balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution is **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs.** Its implemented acquisition route is the Phoenix Gambler card (§10.3), available as the Fable/Ink jackpot, which creates one random unowned Legendary.
 
 **Profile lock filter (design confirmed 2026-07-29; implementation pending).**
 Common, Uncommon, and Rare use an immediately available starter subset plus
@@ -811,31 +812,27 @@ directly; every ordinary acquisition path still uses the shared ownership gate.
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
-Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows individual letter tiles to appear in shop card slots; **Encyclopedia** lets those shop tiles roll material, font, and edition modifiers.
+Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows individual letter tiles to appear in shop card slots; **Encyclopedia** lets those shop tiles roll material and edition modifiers. Shop tiles never roll a font.
 
 **Five pack types in the design** (publishing-world names; Balatro analogs in parentheses), each rolling at one of **three sizes**. *(Changed 2026-07-27: the third consumable pack returns as the **Ink Pack** — the source of the Gambler cards (§10.3) — so the consumable packs are Fable / Ink / Constellation. The older Forbidden Stacks / Spectral naming stays retired. All five packs below now roll in the shop.)*
 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
-| 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity. Deer may replace a choice at a very low rate once the Gambler registry lands (§10.3). | Celestial |
+| 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity. Each choice has a 0.3% Deer jackpot (§10.3). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Comic Book can add Gambler cards once that content pool lands | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Phoenix is a 0.3% per-choice jackpot; Comic Book may additionally add one ordinary Gambler card. | Arcana |
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes (all types):** **Normal** — 3 shown, pick up to 1 · **Jumbo** — 5 shown, pick up to 1 · **Mega** — 5 shown, pick up to 2 (Balatro's exact structure). Prices placeholder **4 / 6 / 8** by size (`balance.ts` `pack.size`). Shop pack slots roll any type × size; Mega/Jumbo are rarer (weights in `balance.ts` `pack.typeWeights` / `pack.sizeWeights`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence: the illustrated pack top tears away along a jagged seam, pixel card backs and hard-edged ink debris pour out, then the real choices settle into their fan (changed 2026-08-02).
+**Sizes:** Tile/Fable/Constellation Packs show **3/5/5** choices at Basic/Classic/Premium; Charm/Ink Packs show **2/4/4**. The player may take up to **1/1/2**, respectively. Prices are **$4/$6/$8** by size (`balance.ts` `pack.size`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence: the illustrated pack top tears away along a jagged seam, pixel card backs and hard-edged ink debris pour out, then the real choices settle into their fan (changed 2026-08-02).
 
-**Appearance weights (placeholder → `balance.ts`).** Balatro's shape, mapped onto our five families. Type weights (`pack.typeWeights`): **Fable 4 · Constellation 4 · Tile 4 · Charm 2 · Ink 0.6** — the two consumable staples and tiles are the common backbone, Charm (emoji tiles) is deliberately scarcer because each pull is a build decision, and Ink is the rare thrill (Spectral's role). Size weights (`pack.sizeWeights`): **Normal 8 · Jumbo 3 · Mega 1**. Type/size pair weights are their product and shop pack slots draw those pairs without replacement, so duplicate packs cannot appear together. All values are tuning starts for `src/sim`, not claims of balance.
+**Appearance weights (changed 2026-08-04).** Type weights (`pack.typeWeights`) are **Fable 4 · Constellation 4 · Tile 4 · Charm 1.2 · Ink 0.6**. Size weights (`pack.sizeWeights`) are **Basic 8 · Classic 4 · Premium 1**. A type/size pair's weight is their product; the two shop pack slots draw without replacement, so duplicate pairs cannot appear together.
 
-**Cross-family Gambler rolls (design confirmed 2026-07-29; values B0 placeholders).**
-Without Comic Book, a Fable Pack has exactly **0%** chance to contain a Gambler
-card. With Comic Book owned, each Fable choice has a **5%** replacement chance,
-capped at one Gambler card per pack. Deer is a separate exception that may replace
-one Constellation choice at **1% per pack**, also capped at one. These rolls use
-the seeded RNG and their values live in `balance.ts`
-(`pack.gamblerInFableChance`, `pack.deerInConstellationChance`).
+**Tile modifiers.** Every Tile-Pack choice rolls its three axes independently: non-base material **40%**, non-base font **20%**, and edition **8%** (Gray 4% / Violet 2.8% / Rainbow 1.2%). Flyer/Wanted Poster raise only that edition table to 16%/32%. An Encyclopedia shop tile instead rolls material 40%, no font, and a fixed edition table totaling 20% (Gray 10% / Violet 7% / Rainbow 3%), unaffected by Flyer/Wanted Poster.
 
-> **Impl note (updated 2026-08-03).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers all 14 implemented Gambler cards (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Comic Book is required before a Gambler can rarely replace a Fable-Pack choice; Deer may very rarely replace a Constellation-Pack choice. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
+**Jackpot and cross-family rolls (changed 2026-08-04).** Every Fable choice independently has a **0.3%** chance to become Phoenix, and every Constellation choice independently has a **0.3%** chance to become Deer. An Ink choice independently rolls Phoenix at **0.3%** and Deer at **0.3%**; its ordinary uniform pool excludes those two jackpot cards. Multiple jackpots may therefore appear in one pack. Comic Book additionally gives each non-jackpot Fable choice a **5%** chance to become an ordinary Gambler card, capped at one Comic-Book replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.jackpotChance`, `pack.gamblerInFableChance`).
+
+> **Impl note (updated 2026-08-04).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -848,15 +845,15 @@ progress remain hidden until the profile unlock is earned.
 
 | Base → Upgrade | Base effect → upgraded effect | Upgrade unlock |
 |---|---|---|
-| Story Book → Novel | Fable shop weight ×2 → ×4 | Buy 50 Fable cards from shops |
-| Bible → The Law | Constellation shop weight ×2 → ×4 | Buy 50 Constellation cards from shops |
+| Story Book → Novel | Fable shop weight ×2.4 → ×8 | Buy 50 Fable cards from shops |
+| Bible → The Law | Constellation shop weight ×2.4 → ×8 | Buy 50 Constellation cards from shops |
 | Fashion Book → Fashion Magazine | Reroll −$2 → an additional −$2 | 100 shop rerolls |
 | Newspaper → Papyrus | Shop cards/packs 25% off → 50% off | Use 10 vouchers in one run |
-| Flyer → Wanted Poster | Gray/Violet/Rainbow rate ×2 → ×4 on letter tiles and Emoji Tiles | Own 5 editioned Emoji Tiles at once |
+| Flyer → Wanted Poster | Use the Flyer → Wanted Poster Gray/Violet/Rainbow probability tables in §11.8; White remains 0.3% | Own 5 editioned Emoji Tiles at once |
 | Memo → Notebook | +1 phase per round → another +1 | Play 5,000 tiles |
 | Poetry Book → Sheet Music | +1 discard per round → another +1 | Discard 5,000 tiles |
 | Four-cut Photo → Picture Diary | Hand size +1 → another +1 | Reduce hand size to 8 |
-| EN-KO Dictionary → Encyclopedia | Shop may sell plain tiles → shop tiles may carry material/font/edition | Buy 20 shop tiles |
+| EN-KO Dictionary → Encyclopedia | Shop may sell plain tiles → shop tiles may carry material/edition (never font) | Buy 20 shop tiles |
 | Receipt → Household Ledger | Interest cap $10 → $20 | Hit the interest cap 10 rounds consecutively |
 | Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls; the control is available only on Blind Select when the current blind is the Deadline, never while it is merely upcoming | Discover all 12 regular bosses (finishers do not substitute) |
 | Catalog → Coupon Book | Shop card slots 3 → 4 | Spend $2,500 in shops |
@@ -973,10 +970,11 @@ the framing — these are gambles.
 **Ink Pack naming: settled.** The pack is the **Ink Pack / 잉크 팩** and the Gambler cards are its contents. The "Forbidden Books / 금서 팩" line stays **deferred** — not revived as a separate sixth pack, not used as an alternate name for this one. Revisit only if a concrete need appears that the five existing families cannot cover.
 
 **Acquisition routing (confirmed 2026-07-29).** Ink Packs are the native route.
-A Fable Pack can contain a Gambler card only while Comic Book is owned; without
-that voucher the chance is 0 (§9.3 B0: 5% per choice, maximum one per pack).
-Deer alone may also very rarely replace a Constellation-Pack choice (§9.3 B0:
-1% per pack, maximum one). All rolls use the seeded RNG.
+A Fable choice has a 0.3% Phoenix jackpot regardless of Comic Book. Comic Book
+additionally enables an ordinary Gambler replacement at 5% per eligible choice,
+maximum one per pack. Deer has an independent 0.3% chance per Constellation
+choice, and both Phoenix and Deer have independent 0.3% bands in each Ink-Pack
+choice (§9.3). All rolls use the seeded RNG.
 
 **Target field.** A held Gambler card used during a blind targets the current
 hand. A tile-targeting Gambler used directly from a pack instead targets that
@@ -1211,6 +1209,7 @@ Common/Uncommon additions may expand the table after their review.
 
 Changed 2026-07-26 for the Flyer voucher pair: letter tiles and Emoji Tiles each carry a dedicated edition field. `TileEdition` and `JokerEdition` are separate type unions; neither replaces a letter tile's material/font, and Emoji Tiles still never receive letter material/font modifiers.
 Changed 2026-07-30: the shared edition vocabulary and serialized ids are Gray, Violet, and Rainbow; `JokerEdition` additionally owns the Emoji-Tile-only White edition.
+Changed 2026-08-04: random edition rolls adopt weighted Balatro-reference bands. Emoji Tiles roll Gray/Violet/Rainbow/White at **2%/1.4%/0.3%/0.3%**; Flyer changes them to **4%/2.8%/0.9%/0.3%**, and Wanted Poster to **8%/5.6%/2.1%/0.3%**. White stays fixed at 0.3%. Tile-Pack letters roll Gray/Violet/Rainbow at **4%/2.8%/1.2%**, raised to **8%/5.6%/2.4%** and **16%/11.2%/4.8%**. Encyclopedia shop tiles use the separate fixed **10%/7%/3%** table and never roll White.
 
 | Edition | Effect | Letter tile display | Emoji Tile display |
 |---|---|---|---|
@@ -1224,7 +1223,7 @@ Changed 2026-07-30: the shared edition vocabulary and serialized ids are Gray, V
   Five-Color Lucky Pouch and CD each subtract 1; Leather Pouch and Kung Fu
   Manual each add 1 (§12); each White Emoji Tile raises effective capacity by 1.
   Signed baseline modifiers compose before the zero floor.
-- **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster multiply Gray/Violet/Rainbow odds.
+- **Acquisition:** editions may pre-attach to letter tiles and Emoji Tiles in packs, and to shop tiles unlocked by Encyclopedia. Flyer/Wanted Poster select the higher Gray/Violet/Rainbow tables above; Encyclopedia shop tiles ignore them.
 - **Letter-tile presentation (changed 2026-07-31):** colour is the canonical edition indicator, matching the Emoji Tile palette. Its translucent, luminance-preserving layer sits beneath the material texture so material identity remains readable. White is not a `TileEdition` and never appears on a letter tile.
 - **Emoji Tile presentation (changed 2026-07-30):** background colour is the canonical edition indicator. The rejected alternative (`@`, `#`, `*`, `~`) is not rendered; it would violate the image-only Emoji Tile rule. Tooltips always name the edition and spell out its effect.
 - **Collection reference (changed 2026-07-31):** Collection → Editions shows Base, Gray, White, Rainbow, and Violet on five runtime-size Emoji Tile samples with the live overlays and canonical effect tooltips. White remains Emoji-Tile-only.

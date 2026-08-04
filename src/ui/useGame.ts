@@ -43,7 +43,7 @@ import {
   rollVoucherOffer,
   rollExtraItem,
 } from '../engine/shop';
-import { rerollCost, sellValue } from '../engine/economy';
+import { consumableSellValue, rerollCost } from '../engine/economy';
 import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
 import { BALANCE } from '../engine/balance';
 import { letterChips } from '../engine/scoring';
@@ -1648,7 +1648,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (!c) return prev;
       const consumables = prev.run.consumables.slice();
       consumables.splice(index, 1);
-      const gold = prev.run.gold + sellValue(BALANCE.consumablePrice);
+      const gold = prev.run.gold + consumableSellValue(prev.run, c);
       return { ...prev, run: { ...prev.run, consumables, gold } };
     });
   }, []);

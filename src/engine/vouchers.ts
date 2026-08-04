@@ -150,18 +150,25 @@ export const shopDiscount = (run: RunState): number =>
       : 0;
 
 export const discountedPrice = (run: RunState, price: number): number =>
-  Math.max(0, Math.ceil(price * (1 - shopDiscount(run))));
+  Math.max(1, Math.floor(price * (1 - shopDiscount(run))));
 
 export const fableShopWeight = (run: RunState): number =>
-  hasVoucher(run, 'novel') ? 4 : hasVoucher(run, 'storyBook') ? 2 : 1;
+  hasVoucher(run, 'novel')
+    ? BALANCE.voucher.upgradedShopWeightMultiplier
+    : hasVoucher(run, 'storyBook')
+      ? BALANCE.voucher.baseShopWeightMultiplier
+      : 1;
 
 export const constellationShopWeight = (run: RunState): number =>
-  hasVoucher(run, 'theLaw') ? 4 : hasVoucher(run, 'bible') ? 2 : 1;
+  hasVoucher(run, 'theLaw')
+    ? BALANCE.voucher.upgradedShopWeightMultiplier
+    : hasVoucher(run, 'bible')
+      ? BALANCE.voucher.baseShopWeightMultiplier
+      : 1;
 
 export const editionRateMultiplier = (run: RunState): number =>
   hasVoucher(run, 'wantedPoster') ? 4 : hasVoucher(run, 'flyer') ? 2 : 1;
 
-export const packEnhanceChance = (_run: RunState): number => BALANCE.packEnhanceChance.base;
 export const shopSellsTiles = (run: RunState): boolean => hasVoucher(run, 'enKoDictionary');
 export const shopTilesCanBeEnhanced = (run: RunState): boolean => hasVoucher(run, 'encyclopedia');
 export const fablePacksContainInk = (run: RunState): boolean => hasVoucher(run, 'comicBook');

@@ -6,6 +6,7 @@
 
 import { BALANCE } from './balance';
 import { BOSS_REGISTRY } from './bosses';
+import { isGamblerId } from './gamblerIds';
 import {
   pouchDiscardGoldRate,
   pouchDisablesInterest,
@@ -17,8 +18,8 @@ import {
   recordRemovesDraftReward,
   recordTargetMultiplier,
 } from './records';
-import { interestCap } from './vouchers';
-import type { BlindKind, RunState } from './types';
+import { discountedPrice, emojiTileShopPrice, interestCap } from './vouchers';
+import type { BlindKind, ConsumableId, JokerEdition, RunState, Tile } from './types';
 
 /**
  * The score needed to clear a blind (GDD §8.2): per-ante base × kind multiplier
@@ -122,7 +123,40 @@ export function rerollCost(rerollsDone: number, discount = 0): number {
   return Math.max(0, BALANCE.shop.rerollBase + BALANCE.shop.rerollIncrement * rerollsDone - discount);
 }
 
-/** Sell value of an owned item: half its purchase price, rounded down (GDD §9.1). */
+/** Half the supplied current price, rounded down, with the shared $1 floor. */
 export function sellValue(purchasePrice: number): number {
-  return Math.floor(purchasePrice * BALANCE.sellRatio);
+  return Math.max(1, Math.floor(purchasePrice * BALANCE.sellRatio));
 }
+
+export const editionSurcharge = (edition: JokerEdition = 'base'): number =>
+  BALANCE.jokerEditionPrice[edition];
+
+/** Current shop price, including edition, active discounts, and Carte Blanche. */
+export function emojiTileBuyPrice(
+  run: RunState,
+  basePrice: number,
+  edition: JokerEdition = 'base',
+): number {
+  return emojiTileShopPrice(
+    run,
+    discountedPrice(run, basePrice + editionSurcharge(edition)),
+  );
+}
+
+export const tileBuyPrice = (run: RunState, tile: Tile): number =>
+  discountedPrice(run, BALANCE.tilePrice + editionSurcharge(tile.edition ?? 'base'));
+
+export const consumableBasePrice = (id: ConsumableId): number =>
+  isGamblerId(id) ? BALANCE.gamblerPrice : BALANCE.consumablePrice;
+
+export const consumableBuyPrice = (run: RunState, id: ConsumableId): number =>
+  discountedPrice(run, consumableBasePrice(id));
+
+export const emojiTileSellValue = (
+  run: RunState,
+  basePrice: number,
+  edition: JokerEdition = 'base',
+): number => sellValue(emojiTileBuyPrice(run, basePrice, edition));
+
+export const consumableSellValue = (run: RunState, id: ConsumableId): number =>
+  sellValue(consumableBuyPrice(run, id));

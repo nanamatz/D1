@@ -1,7 +1,8 @@
 import { BALANCE } from '../engine/balance';
 import { onConstellationUsed, onTilesDestroyed } from '../engine/jokers';
 import { newRun } from '../engine/run';
-import { emojiTileShopPrice, jokerSlotLimit } from '../engine/vouchers';
+import { jokerSlotLimit } from '../engine/vouchers';
+import { emojiTileBuyPrice } from '../engine/economy';
 
 const run = newRun('emoji-sample');
 run.jokers = [
@@ -14,7 +15,7 @@ const grown = onTilesDestroyed(onConstellationUsed(run), 2);
 
 console.log({
   slots: jokerSlotLimit(grown),
-  rareShopPrice: emojiTileShopPrice(grown, BALANCE.jokerPrice.rare),
+  rareShopPrice: emojiTileBuyPrice(grown, BALANCE.jokerPrice.rare),
   stargazer: grown.jokers.find((joker) => joker.defId === 'stargazer')?.state.factor,
   typeFoundry: grown.jokers.find((joker) => joker.defId === 'typeFoundry')?.state.factor,
 });

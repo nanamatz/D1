@@ -7,7 +7,13 @@
 import { BALANCE } from './balance';
 import { JOKER_REGISTRY } from './jokers';
 import { availableJokerDefs, sampleJokerDefs } from './offers';
-import { rerollCost, sellValue } from './economy';
+import {
+  consumableBuyPrice,
+  emojiTileBuyPrice,
+  emojiTileSellValue,
+  rerollCost,
+  tileBuyPrice,
+} from './economy';
 import { rollJokerEdition } from './editions';
 import { CONSTELLATION_POOL, rollTile, FABLE_POOL } from './packs';
 import { GAMBLER_IDS } from './gamblers';
@@ -19,8 +25,6 @@ import {
   availableVoucherIds,
   canAddJoker,
   constellationShopWeight,
-  discountedPrice,
-  emojiTileShopPrice,
   fableShopWeight,
   rerollDiscount,
   shopSellsTiles,
@@ -57,7 +61,8 @@ const EDITION_TAGS: Partial<Record<SkipRewardId, JokerEdition>> = {
 };
 
 type ItemKind = ShopItem['kind'];
-type ItemPools = Record<ItemKind, ShopItem[]>;
+type PoolKind = ItemKind | 'gambler';
+type ItemPools = Record<PoolKind, ShopItem[]>;
 
 /** All items the shop could offer this run, grouped so pool size cannot skew type odds. */
 function buildPools(run: RunState, rng: Rng): ItemPools {
@@ -67,37 +72,41 @@ function buildPools(run: RunState, rng: Rng): ItemPools {
   // rarity odds — listing every joker once would both ignore rarity and flood the
   // pool. Legendary never appears (weight 0); a fully-owned pool yields none.
   const jokerCount = shopItemSlots(run) + 2;
-  const jokers: ShopItem[] = sampleJokerDefs(run, jokerCount, rng).map((j) => ({
-    kind: 'joker',
-    id: j.id,
-    edition: rollJokerEdition(run, rng),
-    price: emojiTileShopPrice(run, discountedPrice(run, BALANCE.jokerPrice[j.rarity])),
-  }));
-  const consumableIds = pouchAllowsGamblerShop(run)
-    ? [...FABLE_POOL, ...GAMBLER_IDS]
-    : FABLE_POOL;
-  const consumables: ShopItem[] = consumableIds.map((id) => ({
+  const jokers: ShopItem[] = sampleJokerDefs(run, jokerCount, rng).map((j) => {
+    const edition = rollJokerEdition(run, rng);
+    return {
+      kind: 'joker',
+      id: j.id,
+      edition,
+      price: emojiTileBuyPrice(run, BALANCE.jokerPrice[j.rarity], edition),
+    };
+  });
+  const consumables: ShopItem[] = FABLE_POOL.map((id) => ({
     kind: 'consumable',
     id,
-    price: discountedPrice(run, BALANCE.consumablePrice),
+    price: consumableBuyPrice(run, id),
+  }));
+  const gamblers: ShopItem[] = (pouchAllowsGamblerShop(run) ? GAMBLER_IDS : []).map((id) => ({
+    kind: 'consumable',
+    id,
+    price: consumableBuyPrice(run, id),
   }));
   const punctuation: ShopItem[] = CONSTELLATION_POOL.map((id) => ({
     kind: 'punctuation',
     id,
     pattern: CONSUMABLE_PATTERN[id]!,
-    price: discountedPrice(run, BALANCE.consumablePrice),
+    price: consumableBuyPrice(run, id),
   }));
   const tiles: ShopItem[] = shopSellsTiles(run)
-    ? Array.from({ length: 4 }, (_, i) => ({
-        kind: 'tile' as const,
-        tile: rollTile(run, rng, i, shopTilesCanBeEnhanced(run)),
-        price: discountedPrice(run, BALANCE.tilePrice),
-      }))
+    ? Array.from({ length: 4 }, (_, i) => {
+        const tile = rollTile(run, rng, i, shopTilesCanBeEnhanced(run) ? 'shop' : 'none');
+        return { kind: 'tile' as const, tile, price: tileBuyPrice(run, tile) };
+      })
     : [];
-  return { joker: jokers, tile: tiles, consumable: consumables, punctuation };
+  return { joker: jokers, tile: tiles, consumable: consumables, punctuation, gambler: gamblers };
 }
 
-function kindWeight(run: RunState, kind: ItemKind): number {
+function kindWeight(run: RunState, kind: PoolKind): number {
   const base = BALANCE.shop.itemWeights[kind];
   if (kind === 'consumable') return base * fableShopWeight(run);
   if (kind === 'punctuation') return base * constellationShopWeight(run);
@@ -105,7 +114,7 @@ function kindWeight(run: RunState, kind: ItemKind): number {
 }
 
 function drawItem(run: RunState, pools: ItemPools, rng: Rng): ShopItem | null {
-  const kinds = (Object.keys(pools) as ItemKind[]).filter((kind) => pools[kind].length > 0);
+  const kinds = (Object.keys(pools) as PoolKind[]).filter((kind) => pools[kind].length > 0);
   let roll = rng.next() * kinds.reduce((sum, kind) => sum + kindWeight(run, kind), 0);
   let kind = kinds.at(-1);
   for (const candidate of kinds) {
@@ -148,7 +157,7 @@ export function rollExtraItem(
     it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`,
   ));
   const pools = buildPools(run, rng);
-  for (const kind of Object.keys(pools) as ItemKind[]) {
+  for (const kind of Object.keys(pools) as PoolKind[]) {
     pools[kind] = pools[kind].filter((it) => {
       const key = it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`;
       return !shown.has(key);
@@ -173,7 +182,7 @@ export function rollVoucherOffer(
 
 /** Each pack slot rolls an independent type × size (Mega/Jumbo rarer). */
 // Weighted type/size draws without replacement; Mega/Jumbo remain rarer.
-function rollPacks(rng: Rng): (PackSlot | null)[] {
+function rollPacks(rng: Rng, guaranteeBasicCharm = false): (PackSlot | null)[] {
   const pool = PACK_TYPES.flatMap((type) =>
     PACK_SIZES.map((size) => ({
       type,
@@ -182,7 +191,16 @@ function rollPacks(rng: Rng): (PackSlot | null)[] {
     })),
   );
   const packs: (PackSlot | null)[] = [];
-  for (let i = 0; i < BALANCE.shop.packSlots; i++) {
+  if (guaranteeBasicCharm) {
+    const index = pool.findIndex((entry) => entry.type === 'joker' && entry.size === 'normal');
+    const { type, size } = pool.splice(index, 1)[0]!;
+    packs.push({
+      type,
+      size,
+      artVariant: rng.int(BALANCE.pack.artVariants[type][size]),
+    });
+  }
+  while (packs.length < BALANCE.shop.packSlots) {
     const total = pool.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = rng.next() * total;
     let index = pool.length - 1;
@@ -214,7 +232,7 @@ export function rollShopStock(run: RunState, rng: Rng): ShopState {
     items: rollItems(run, rng),
     voucher: run.voucherLocked ? null : run.voucherOffer,
     bonusVoucher: null,
-    packs: rollPacks(rng),
+    packs: rollPacks(rng, (run.shopsVisited ?? 0) === 0),
     rerolls: 0,
   };
 }
@@ -314,7 +332,11 @@ export function prepareShop(
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
 ): PreparedShop {
-  return applyPendingShopTags(run, rollShopStock(run, rng), rng, profileUnlocked);
+  const prepared = applyPendingShopTags(run, rollShopStock(run, rng), rng, profileUnlocked);
+  return {
+    ...prepared,
+    run: { ...prepared.run, shopsVisited: (run.shopsVisited ?? 0) + 1 },
+  };
 }
 
 export interface BuyResult {
@@ -361,7 +383,9 @@ export function sellJoker(run: RunState, index: number): SellResult {
   const owned: OwnedJoker | undefined = run.jokers[index];
   if (!owned) return { run, ok: false };
   const def = JOKER_REGISTRY.get(owned.defId);
-  const value = sellValue(def ? BALANCE.jokerPrice[def.rarity] : 0);
+  const value = def
+    ? emojiTileSellValue(run, BALANCE.jokerPrice[def.rarity], owned.edition ?? 'base')
+    : 1;
   const jokers = run.jokers.filter((_, i) => i !== index);
   return { run: { ...run, gold: run.gold + value, jokers }, ok: true };
 }

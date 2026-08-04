@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
-import { sellValue } from '../../engine/economy';
+import { consumableSellValue, emojiTileSellValue } from '../../engine/economy';
 import type { ConsumableId, RunState, ScoreEvent } from '../../engine/types';
 import {
   consumableAxisTip,
@@ -326,7 +326,13 @@ export function JokerShelf({
                             beginLeave('joker', i, 'sell', () => onSellJoker(i));
                           }}
                         >
-                          {t('shop.sell', { value: sellValue(BALANCE.jokerPrice[def.rarity]) })}
+                          {t('shop.sell', {
+                            value: emojiTileSellValue(
+                              run,
+                              BALANCE.jokerPrice[def.rarity],
+                              owned.edition ?? 'base',
+                            ),
+                          })}
                         </button>
                       </div>
                     )}
@@ -434,7 +440,7 @@ export function JokerShelf({
                         beginLeave('consumable', i, 'sell', () => onSellConsumable?.(i));
                       }}
                     >
-                      {t('consumable.sellAction', { value: sellValue(BALANCE.consumablePrice) })}
+                      {t('consumable.sellAction', { value: consumableSellValue(run, c) })}
                     </button>
                     {onUseConsumable && (
                       <button

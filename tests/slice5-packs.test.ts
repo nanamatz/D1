@@ -1,14 +1,31 @@
 import { describe, it, expect } from 'vitest';
-import { rollPack, applyPackPick } from '../src/engine/packs';
+import { rollPack, applyPackPick, rollTile } from '../src/engine/packs';
 import { newRun } from '../src/engine/run';
 import { makeRng } from '../src/engine/rng';
-import { BALANCE } from '../src/engine/balance';
+import { BALANCE, packSizeRules } from '../src/engine/balance';
+import type { Rng } from '../src/engine/rng';
 import type { PackSize, PackSlot, PackType, RunState } from '../src/engine/types';
 
 const run = (over: Partial<RunState> = {}): RunState => ({ ...newRun('pack'), ...over });
 const slot = (type: PackType, size: PackSize = 'normal'): PackSlot => ({ type, size, artVariant: 0 });
+const fixedRng = (...values: number[]): Rng => ({
+  next: () => values.shift() ?? 1,
+  int: () => 0,
+  shuffle: <T>(items: readonly T[]) => [...items],
+});
 
 describe('slice5 packs — sizes (feature-02 B)', () => {
+  it('uses the adopted type and size weights', () => {
+    expect(BALANCE.pack.typeWeights).toEqual({
+      consumable: 4,
+      pattern: 4,
+      tile: 4,
+      joker: 1.2,
+      ink: 0.6,
+    });
+    expect(BALANCE.pack.sizeWeights).toEqual({ normal: 8, jumbo: 4, mega: 1 });
+  });
+
   it('Normal shows 3 / picks 1; Jumbo 5 / 1; Mega 5 / 2', () => {
     expect(BALANCE.pack.size.normal).toMatchObject({ show: 3, pick: 1 });
     expect(BALANCE.pack.size.jumbo).toMatchObject({ show: 5, pick: 1 });
@@ -23,13 +40,24 @@ describe('slice5 packs — sizes (feature-02 B)', () => {
     expect(offer.options.length).toBe(5);
     for (const o of offer.options) expect(o.kind).toBe('tile');
   });
+
+  it('Charm and Ink packs show 2/4/4 while the other families show 3/5/5', () => {
+    for (const type of ['joker', 'ink'] as const) {
+      expect(packSizeRules(type, 'normal').show).toBe(2);
+      expect(packSizeRules(type, 'jumbo').show).toBe(4);
+      expect(packSizeRules(type, 'mega').show).toBe(4);
+    }
+    expect(packSizeRules('tile', 'normal').show).toBe(3);
+    expect(packSizeRules('consumable', 'jumbo').show).toBe(5);
+    expect(packSizeRules('pattern', 'mega').show).toBe(5);
+  });
 });
 
 describe('slice5 packs — roll by type (GDD §9.3)', () => {
   it('Sticker (joker) pack offers not-owned jokers to choose', () => {
     const offer = rollPack(slot('joker'), run(), makeRng('e'));
     expect(offer.type).toBe('joker');
-    expect(offer.options.length).toBeLessThanOrEqual(BALANCE.pack.size.normal.show);
+    expect(offer.options.length).toBeLessThanOrEqual(packSizeRules('joker', 'normal').show);
     for (const o of offer.options) expect(o.kind).toBe('joker');
   });
 
@@ -54,6 +82,35 @@ describe('slice5 packs — roll by type (GDD §9.3)', () => {
 
   it('is deterministic per seed', () => {
     expect(rollPack(slot('tile'), run(), makeRng('s'))).toEqual(rollPack(slot('tile'), run(), makeRng('s')));
+  });
+});
+
+describe('slice5 packs — jackpot and modifier policy', () => {
+  it('rolls Phoenix/Deer jackpots independently per eligible choice', () => {
+    const fable = rollPack(slot('consumable'), run(), fixedRng(0, 0, 1));
+    expect(fable.options.map((option) => option.kind === 'consumable' ? option.id : null))
+      .toEqual(['phoenix', 'phoenix', 'fable3']);
+
+    const constellation = rollPack(slot('pattern'), run(), fixedRng(0, 0, 1));
+    expect(constellation.options.filter((option) =>
+      option.kind === 'consumable' && option.id === 'deer',
+    )).toHaveLength(2);
+
+    const ink = rollPack(slot('ink'), run(), fixedRng(0.001, 0.004));
+    expect(ink.options.map((option) => option.kind === 'consumable' ? option.id : null))
+      .toEqual(['phoenix', 'deer']);
+  });
+
+  it('pack material and font rolls are independent; shop tiles never gain a font', () => {
+    const packed = rollTile(run(), fixedRng(0, 0, 1), 0, 'pack');
+    expect(packed.material).not.toBe('ceramic');
+    expect(packed.font).not.toBe('medium');
+    expect(packed.edition).toBe('base');
+
+    const shopped = rollTile(run(), fixedRng(0, 1), 0, 'shop');
+    expect(shopped.material).not.toBe('ceramic');
+    expect(shopped.font).toBe('medium');
+    expect(shopped.edition).toBe('base');
   });
 });
 
@@ -109,8 +166,10 @@ describe('slice5 — Type packs stock every non-base material (GDD §9.3)', () =
         if (o.kind !== 'tile') continue;
         seen.add(o.tile.material);
         // The invariant that makes Stone work (GDD §2.2)
-        if (o.tile.material === 'stone') expect(o.tile.letter).toBeNull();
-        else expect(o.tile.letter).not.toBeNull();
+        if (o.tile.material === 'stone') {
+          expect(o.tile.letter).toBeNull();
+          expect(o.tile.letterBeforeStone).toMatch(/^[A-Z]$/);
+        } else expect(o.tile.letter).not.toBeNull();
       }
     }
     for (const m of ['porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass']) {

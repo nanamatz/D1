@@ -2,11 +2,15 @@ import { describe, it, expect } from 'vitest';
 import {
   blindTarget,
   clearReward,
+  consumableBuyPrice,
+  emojiTileBuyPrice,
+  emojiTileSellValue,
   interest,
   rerollCost,
   sellValue,
 } from '../src/engine/economy';
 import { BALANCE } from '../src/engine/balance';
+import { newRun } from '../src/engine/run';
 
 describe('slice5 economy — blind target curve (GDD §8.2)', () => {
   it('ante 1: small ×1, big ×1.5, boss ×2', () => {
@@ -55,8 +59,20 @@ describe('slice5 economy — shop costs (GDD §9.2)', () => {
   });
 
   it('selling returns half the purchase price, rounded down', () => {
-    expect(sellValue(BALANCE.jokerPrice.common)).toBe(2); // 5 → 2
+    expect(sellValue(BALANCE.jokerPrice.common)).toBe(2); // 4 → 2
     expect(sellValue(BALANCE.jokerPrice.rare)).toBe(4); // 9 → 4
-    expect(sellValue(BALANCE.jokerPrice.legendary)).toBe(10); // 20 → 10
+    expect(sellValue(BALANCE.jokerPrice.legendary)).toBe(7); // 15 → 7
+    expect(sellValue(1)).toBe(1);
+  });
+
+  it('prices Emoji editions and Gambler cards, then recalculates sales at current discounts', () => {
+    const fresh = newRun('prices');
+    const discounted = { ...fresh, vouchers: ['newspaper' as const] };
+    expect(BALANCE.jokerPrice).toEqual({ common: 4, uncommon: 6, rare: 9, legendary: 15 });
+    expect(emojiTileBuyPrice(fresh, BALANCE.jokerPrice.common, 'rainbow')).toBe(9);
+    expect(emojiTileBuyPrice(discounted, BALANCE.jokerPrice.rare)).toBe(6);
+    expect(emojiTileSellValue(discounted, BALANCE.jokerPrice.rare)).toBe(3);
+    expect(consumableBuyPrice(fresh, 'fable1')).toBe(3);
+    expect(consumableBuyPrice(fresh, 'phoenix')).toBe(4);
   });
 });

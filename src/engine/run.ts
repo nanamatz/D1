@@ -65,6 +65,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     skipOffers: [{ id: 'advancePayment' }, { id: 'advancePayment' }],
     skippedThisChapter: [],
     skippedBlinds: 0,
+    shopsVisited: 0,
     nextBlindBonus: { ...EMPTY_NEXT_BLIND_BONUS },
     pendingClearReward: 0,
     pendingShopTags: [],

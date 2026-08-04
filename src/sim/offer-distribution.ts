@@ -53,6 +53,7 @@ function shrinkingPool() {
       // Own the first `owned` jokers (deterministic subset is enough for the rate).
       const run: RunState = {
         ...newRun(`np${owned}-${i}`),
+        shopsVisited: 1,
         jokers: ALL_JOKERS.slice(0, owned).map((j) => ({ defId: j.id, edition: 'base', state: {} })),
       };
       const hasJoker = rollShopStock(run, makeRng(`s${owned}-${i}`)).items.some((it) => it?.kind === 'joker');
@@ -68,18 +69,19 @@ function packDistribution() {
   const sizes: Record<string, number> = {};
   let total = 0;
   for (let i = 0; i < TRIALS; i++) {
-    for (const p of rollShopStock(newRun(`pk${i}`), makeRng(`ps${i}`)).packs) {
+    const run = { ...newRun(`pk${i}`), shopsVisited: 1 };
+    for (const p of rollShopStock(run, makeRng(`ps${i}`)).packs) {
       if (!p) continue;
       types[p.type] = (types[p.type] ?? 0) + 1;
       sizes[p.size] = (sizes[p.size] ?? 0) + 1;
       total++;
     }
   }
-  console.log('\n3. Pack type distribution  (weights consumable/pattern/tile 4, joker 2, ink 0.6-gated):');
+  console.log('\n3. Pack type distribution  (weights consumable/pattern/tile 4, joker 1.2, ink 0.6):');
   for (const tp of ['consumable', 'pattern', 'tile', 'joker', 'ink'] as PackType[]) {
     console.log(`   ${tp.padEnd(11)} ${pct(types[tp] ?? 0, total)}`);
   }
-  console.log('   Pack size distribution  (weights normal 8 / jumbo 3 / mega 1):');
+  console.log('   Pack size distribution  (weights normal 8 / jumbo 4 / mega 1):');
   for (const sz of ['normal', 'jumbo', 'mega'] as PackSize[]) {
     console.log(`   ${sz.padEnd(11)} ${pct(sizes[sz] ?? 0, total)}`);
   }

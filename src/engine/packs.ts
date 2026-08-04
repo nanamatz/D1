@@ -8,10 +8,10 @@
  * fold used by tiles, jokers, Constellations, and blind-only Fables.
  */
 
-import { BALANCE } from './balance';
+import { BALANCE, packSizeRules } from './balance';
 import { CONSTELLATION_IDS, CONSTELLATION_PATTERN } from './constellations';
 import { sampleJokerDefs } from './offers';
-import { rollJokerEdition, rollTileEdition } from './editions';
+import { rollJokerEdition, rollShopTileEdition, rollTileEdition } from './editions';
 import { FABLE_IDS } from './fables';
 import { GAMBLER_IDS } from './gamblers';
 import {
@@ -19,7 +19,6 @@ import {
   fablePacksContainInk,
   hasVoucher,
   mostPlayedPattern,
-  packEnhanceChance,
   PATTERN_CONSUMABLE,
 } from './vouchers';
 import type { Rng } from './rng';
@@ -44,6 +43,7 @@ export const CONSTELLATION_POOL: readonly ConsumableId[] = CONSTELLATION_IDS;
 
 /** Gambler-card pool — the Ink Pack's contents (GDD §9.3, §10.3). */
 export const GAMBLER_POOL: readonly ConsumableId[] = GAMBLER_IDS;
+const INK_BASE_POOL = GAMBLER_IDS.filter((id) => id !== 'phoenix' && id !== 'deer');
 
 const MATERIALS: readonly TileMaterial[] = [
   'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
@@ -71,21 +71,33 @@ export interface PackOffer {
   pick: number;
 }
 
-export function rollTile(run: RunState, rng: Rng, index: number, enhance = true): Tile {
+export function rollTile(
+  run: RunState,
+  rng: Rng,
+  index: number,
+  source: 'pack' | 'shop' | 'none' = 'pack',
+): Tile {
   const letter = WEIGHTED_LETTERS[rng.int(WEIGHTED_LETTERS.length)]!;
   let material: TileMaterial = 'ceramic';
   let font: TileFont = 'medium';
-  if (enhance && rng.next() < packEnhanceChance(run)) {
-    if (rng.next() < 0.5) material = MATERIALS[rng.int(MATERIALS.length)]!;
-    else font = FONTS[rng.int(FONTS.length)]!;
+  if (source !== 'none' && rng.next() < BALANCE.pack.tileModifiers.materialChance) {
+    material = MATERIALS[rng.int(MATERIALS.length)]!;
+  }
+  if (source === 'pack' && rng.next() < BALANCE.pack.tileModifiers.fontChance) {
+    font = FONTS[rng.int(FONTS.length)]!;
   }
   return {
     id: `pk${rng.int(1_000_000)}-${index}`,
     // Stone carries no letter — the invariant that forces gibberish (GDD §2.2)
     letter: material === 'stone' ? null : letter,
+    ...(material === 'stone' ? { letterBeforeStone: letter } : {}),
     material,
     font,
-    edition: enhance ? rollTileEdition(run, rng) : 'base',
+    edition: source === 'pack'
+      ? rollTileEdition(run, rng)
+      : source === 'shop'
+        ? rollShopTileEdition(rng)
+        : 'base',
   };
 }
 
@@ -100,7 +112,7 @@ function drawConsumables(
 }
 
 export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
-  const { show, pick } = BALANCE.pack.size[slot.size];
+  const { show, pick } = packSizeRules(slot.type, slot.size);
   let options: PackOption[];
   switch (slot.type) {
     case 'joker': {
@@ -119,13 +131,22 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
     }
     case 'consumable': {
       options = drawConsumables(FABLE_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
-      // Comic Book (GDD §9.3): each choice rolls to become a Gambler card, capped
-      // at one per pack. Without the voucher the chance is exactly 0 — the roll is
-      // skipped entirely so the seeded stream is unchanged for runs without it.
+      options = options.map((option) =>
+        rng.next() < BALANCE.pack.jackpotChance
+          ? { kind: 'consumable', id: 'phoenix' }
+          : option,
+      );
+      // Comic Book adds an ordinary Gambler replacement, capped at one per pack.
+      // Phoenix above is the separate voucher-free jackpot route.
       if (fablePacksContainInk(run)) {
         for (let i = 0; i < options.length; i++) {
-          if (rng.next() < BALANCE.pack.gamblerInFableChance) {
-            options[i] = { kind: 'consumable', id: GAMBLER_IDS[rng.int(GAMBLER_IDS.length)]! };
+          const option = options[i];
+          if (option?.kind === 'consumable' && option.id !== 'phoenix' &&
+              rng.next() < BALANCE.pack.gamblerInFableChance) {
+            options[i] = {
+              kind: 'consumable',
+              id: INK_BASE_POOL[rng.int(INK_BASE_POOL.length)]!,
+            };
             break;
           }
         }
@@ -133,11 +154,22 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'ink': {
-      options = drawConsumables(GAMBLER_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
+      const ordinary = rng.shuffle([...INK_BASE_POOL]);
+      options = Array.from({ length: show }, (_, index) => {
+        const roll = rng.next();
+        const id = roll < BALANCE.pack.jackpotChance
+          ? 'phoenix'
+          : roll < BALANCE.pack.jackpotChance * 2
+            ? 'deer'
+            : ordinary[index % ordinary.length]!;
+        return { kind: 'consumable' as const, id };
+      });
       break;
     }
     case 'pattern': {
-      options = drawConsumables(CONSTELLATION_POOL, show, rng, (id) => ({
+      const held = new Set(run.consumables);
+      const pool = CONSTELLATION_POOL.filter((id) => !held.has(id));
+      options = drawConsumables(pool, show, rng, (id) => ({
         kind: 'punctuation',
         id,
         pattern: CONSTELLATION_PATTERN[id]!,
@@ -149,11 +181,12 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
           options[options.length - 1] = { kind: 'punctuation', id, pattern: favorite };
         }
       }
-      // Deer's cross-family exception (GDD §10.3 #9): one Constellation choice may
-      // very rarely be replaced, at most once per pack.
-      if (rng.next() < BALANCE.pack.deerInConstellationChance && options.length > 0) {
-        options[rng.int(options.length)] = { kind: 'consumable', id: 'deer' };
-      }
+      // Deer is an independent jackpot roll for every Constellation choice.
+      options = options.map((option) =>
+        rng.next() < BALANCE.pack.jackpotChance
+          ? { kind: 'consumable', id: 'deer' }
+          : option,
+      );
       break;
     }
   }

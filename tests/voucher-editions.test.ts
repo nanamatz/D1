@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { applyEdition } from '../src/engine/editions';
+import {
+  applyEdition,
+  rollJokerEdition,
+  rollShopTileEdition,
+  rollTileEdition,
+} from '../src/engine/editions';
 import { newRun } from '../src/engine/run';
 import type { WordScoringContext, WordSubmission } from '../src/engine/types';
 import { canAddJoker, editionRateMultiplier, jokerSlotLimit } from '../src/engine/vouchers';
@@ -30,10 +35,26 @@ describe('tile and Charm editions', () => {
     expect(rainbow.mult).toBe(3);
   });
 
-  it('Flyer/Wanted Poster use strongest-tier 2×/4× odds', () => {
+  it('Flyer/Wanted Poster expose the strongest owned edition-rate tier', () => {
     expect(editionRateMultiplier(newRun('e'))).toBe(1);
     expect(editionRateMultiplier({ ...newRun('e'), vouchers: ['flyer'] })).toBe(2);
     expect(editionRateMultiplier({ ...newRun('e'), vouchers: ['flyer', 'wantedPoster'] })).toBe(4);
+  });
+
+  it('uses exact weighted edition bands and keeps White at its fixed rate', () => {
+    const at = (value: number) => ({ next: () => value });
+    const fresh = newRun('edition-rates');
+    expect(rollJokerEdition(fresh, at(0.001))).toBe('gray');
+    expect(rollJokerEdition(fresh, at(0.025))).toBe('violet');
+    expect(rollJokerEdition(fresh, at(0.035))).toBe('rainbow');
+    expect(rollJokerEdition(fresh, at(0.039))).toBe('white');
+    expect(rollJokerEdition(fresh, at(0.041))).toBe('base');
+
+    const flyer = { ...fresh, vouchers: ['flyer' as const] };
+    expect(rollJokerEdition(flyer, at(0.078))).toBe('white');
+    expect(rollTileEdition(flyer, at(0.10))).toBe('violet');
+    expect(rollShopTileEdition(at(0.18))).toBe('rainbow');
+    expect(rollShopTileEdition(at(0.21))).toBe('base');
   });
 
   it('a White Emoji Tile does not consume the base slot', () => {

@@ -359,6 +359,8 @@ export interface RunState {
   skippedThisChapter: (0 | 1)[];
   /** Lifetime count within this run; balance telemetry and future hooks read it. */
   skippedBlinds: number;
+  /** Real Stationery Shops entered; absent legacy values mean none visited yet. */
+  shopsVisited?: number;
   /** Stacks across consecutive skips and is consumed only when Play is chosen. */
   nextBlindBonus: NextBlindBonus;
   /** Stacks across skips and is consumed by the next successfully cleared blind. */
