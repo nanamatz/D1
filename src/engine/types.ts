@@ -206,7 +206,7 @@ export type ScoreEvent =
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
-  | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number }
+  | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number; multFactor: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; growthKind?: 'mult' | 'multAdd' | 'chips'; growthDelta?: number }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
@@ -216,11 +216,11 @@ export interface SentenceScoringContext {
   sequence: WordSubmission[];
   match: PatternMatch | null;
   unison: UnisonResult | null;
-  /** running blind total before the sentence bonus is applied */
+  /** running blind total used as the sentence settlement's current Chips axis */
   totalBefore: number;
-  /** the sentence bonus' Chips side: patternChips + 15·absorbedModifiers + unisonChips (GDD §5.2) */
+  /** Chips added to totalBefore: patternChips + 15·absorbedModifiers + unisonChips (GDD §5.2) */
   sentenceChips: number;
-  /** the sentence bonus' Mult side: patternMult × unisonMult (GDD §5.2) */
+  /** Mult factor applied to the combined Chips axis: patternMult × unisonMult (GDD §5.2) */
   sentenceMult: number;
 }
 

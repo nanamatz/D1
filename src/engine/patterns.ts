@@ -303,24 +303,28 @@ export function patternChipsMult(id: PatternId, level: number): { chips: number;
 }
 
 export interface FinalScore {
-  /** the sentence bonus' Chips side: patternChips + 15·mods + unisonChips */
+  /** Chips added to the committed blind score: patternChips + 15·mods + unisonChips */
   sentenceChips: number;
-  /** the sentence bonus' Mult side: patternMult × unisonMult */
+  /** Mult applied to the combined committed + sentence Chips axis */
   sentenceMult: number;
-  /** the sentence bonus itself: sentenceChips × sentenceMult */
+  /** score gained over totalBefore */
   bonus: number;
-  /** totalBefore + bonus */
+  /** (totalBefore + sentenceChips) × sentenceMult */
   total: number;
 }
+
+/** Apply sentence axes to the committed blind score (GDD §5.2). */
+export const sentenceTotal = (totalBefore: number, chips: number, mult: number): number =>
+  (totalBefore + chips) * mult;
 
 /**
  * Compute the sentence bonus (GDD §5.2, feature-02 A). Every pattern owns a base
  * [Chips × Mult]; modifiers add +15 to the Chips side each and Unison folds in
- * (Standard on Chips, register mults on Mult). The result is a SELF-CONTAINED
- * bonus — `sentenceChips × sentenceMult` — ADDED to the committed total. Patterns
- * no longer multiply the running word score (the old add/multiply split is gone).
+ * (Standard on Chips, register mults on Mult). At settlement, Chips add to the
+ * committed blind score and Mult multiplies the combined Chips axis.
  *
- *   sentence bonus = (patternChips + 15·mods + unisonChips) × (patternMult × unisonMult)
+ *   final = (committed + patternChips + 15·mods + unisonChips)
+ *         × (patternMult × unisonMult)
  */
 export function finalizeScore(
   totalBefore: number,
@@ -354,6 +358,6 @@ export function finalizeScore(
     if (U.mult !== undefined) mult *= U.mult;
   }
 
-  const bonus = chips * mult;
-  return { sentenceChips: chips, sentenceMult: mult, bonus, total: totalBefore + bonus };
+  const total = sentenceTotal(totalBefore, chips, mult);
+  return { sentenceChips: chips, sentenceMult: mult, bonus: total - totalBefore, total };
 }

@@ -331,11 +331,13 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired. Pattern levels grow exponentially: the first level-up adds the table's listed Chips and Mult, and each later level-up's increment is ×1.5 larger than the previous one (`BALANCE.patternLevelGrowthFactor`). After accumulated growth, both axes are rounded to the nearest positive integer; therefore the current Chips/Mult and every displayed level-up delta are always natural numbers.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, Unison, and post-pattern Chips add to it, then pattern, Unison, and post-pattern Mult multiply the combined axis. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Pattern levels grow exponentially: the first level-up adds the table's listed Chips and Mult, and each later level-up's increment is ×1.5 larger than the previous one (`BALANCE.patternLevelGrowthFactor`). After accumulated growth, both axes are rounded to the nearest positive integer; therefore the current Chips/Mult and every displayed level-up delta are always natural numbers.
 
 ```
-sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
-              × (patternMult × unisonMult)
+sentenceChips = patternChips + 15 × absorbedModifiers + unisonChips
+sentenceMult  = patternMult × unisonMult
+final score   = (committedScore + sentenceChips) × sentenceMult
+sentence gain = final score − committedScore
 ```
 
 At finalization the gold pattern/level stamp remains the primary beat and reads
@@ -367,7 +369,7 @@ Design intent:
 - **Outcry** gives vowel-less interjections (shh, brr) a home in the pattern table.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, which now starts at two consecutive copies of the same verb.
 - **Simple, Transitive, and Ditransitive accept any verb subtype** (ease pass 2026-08-04). Their word count and order stay fixed; Descriptive and Object Complement retain their specialized verb checks.
-- **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences (higher Mult) reward suit/emoji tile Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
+- **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences add more Chips and apply a stronger factor to the committed blind score. The "structural sentences pay off big" principle from §7.3 lives directly in both axes.
 - **#7–12 are tight-to-impossible in the base 5 phases** — the reason to seek future phase-extension effects is built into the table itself.
 - **Object Complement uses a controlled verb family** (`MAKE/CALL/FIND/NAME/KEEP/CONSIDER/ELECT/PAINT` and inflections), because POS alone cannot distinguish `I GIVE HIM FISH` (Ditransitive) from `I MADE HIM HAPPY` (Object Complement).
 - **Interrogative does not require a Question Mark tile.** An interrogative word or auxiliary opener is sufficient. This preserves the alphabet-only pouch rule (§2.1).
@@ -381,7 +383,7 @@ One rule replaces the v0.1 tone-overlay table:
 
 > **Unison.** If the sequence has 2+ words and *all* words share one suit, a bonus applies, sized by suit rarity: **Standard +50 Chips · Formal ×1.25 · Slang ×1.5 · Vulgar ×2** (placeholders).
 
-Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). It therefore amplifies the pattern's Chips — a register-mult Unison with *no* pattern (no Chips to multiply) contributes nothing, unlike the retired scheme where Unison multiplied the whole committed total. This preserves the flush role ("commit to one suit across phases → reward") within one bonus. All richer combination rules (Hypocrite, etc.) live in emoji tiles.
+Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). A register-mult Unison therefore scales the committed blind score even when no sentence pattern matches. This preserves the flush role ("commit to one suit across phases → reward") while keeping all richer combination rules (Hypocrite, etc.) in emoji tiles.
 
 Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity), with the ladder deliberately gentler than the v0.1 Tirade (×3) draft. Exact values are playtest material.
 
@@ -415,21 +417,21 @@ all show this same mark, so the mapping is readable before effect prose.
 
 Sentence patterns are the *run-level* payoff (evaluated across the whole sequence at blind end). **Word Hands** supply the *word-level* dopamine — a per-word "hand type" (Balatro's poker hands, transposed to letter structure) evaluated at submission. Engine ids remain `letterHands` / `LetterHandId`; this is a display-term change only.
 
-- **Scoring placement.** The matched hand's `+Chips` / `+Mult` fold into the word's scoring context **before the suit multiplier settles** (inside `WordScoringContext`, layer 1). Values are placeholders in `balance.ts`. The length multiplier (§3.1) folds in just before this, on the Mult side; Longword is the Chips side of the same idea, so the two stack rather than duplicating.
+- **Scoring placement.** The matched hand's Chips add to the current word Chips and its Mult multiplies the current word Mult inside `WordScoringContext`, layer 1: `wordScore = (currentWordChips + handChips) × (currentWordMult × handMult)`. Values are placeholders in `balance.ts`. The length multiplier (§3.1) folds in just before this, on the Mult side; Longword is the Chips side of the same idea, so the two stack rather than duplicating.
 - **Highest single hand only** (consistent with the sentence-pattern rule, §5.1 rule 2).
 - **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); Twin, Triplet, Longword and Palindrome are valid-words-only. See §6.4.
 
 | Rank | Hand | Condition | Example | Bonus (placeholder) | Gibberish |
 |---|---|---|---|---|---|
-| 1 | Twin | two identical letters adjacent | b**OO**k | +15 Chips, +1 Mult | no |
-| 2 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +30 Chips, +2 Mult | no |
-| 3 | Longword | 6+ letters | LETTER | +45 Chips, +2 Mult | no |
-| 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +45 Chips, +3 Mult | no |
-| 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +75 Chips, +4 Mult | **yes** |
-| 6 | Straight | 5 consecutive alphabet values (any order) | Q-R-S-T-U | +90 Chips, +5 Mult | **yes** |
+| 1 | Twin | two identical letters adjacent | b**OO**k | +15 Chips, ×1 Mult | no |
+| 2 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +30 Chips, ×2 Mult | no |
+| 3 | Longword | 6+ letters | LETTER | +45 Chips, ×2 Mult | no |
+| 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +45 Chips, ×3 Mult | no |
+| 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +75 Chips, ×4 Mult | **yes** |
+| 6 | Straight | 5 consecutive alphabet values (any order) | Q-R-S-T-U | +90 Chips, ×5 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-04).** Run Info → Word Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. A positive added Mult renders as `+Chips ×Mult`: Chips keeps its additive `+`, but Mult has no `+` after `×`. A 0 added Mult omits the Mult axis entirely and renders only `+Chips`.
+- **In-game reference (changed 2026-08-04).** Run Info → Word Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor.
 - **Out of scope (for now):** leveling Word Hands (Constellation Cards level
   sentence patterns only) and dedicated Emoji Tiles keyed to Word Hands—see
   §12.4.
@@ -530,11 +532,11 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). A 1-phase clear of a 5-phase blind still pays more remaining-phase gold than a last-phase clear; the confirmed Rare/Legendary roster no longer adds the retired Rush Specialist or Loan Shark bonuses.
 - **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 12-boss roster (§8.3, 2026-07-21) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
-### 7.3 Sentence Bonus = base Chips × Mult (unified)
+### 7.3 Sentence Pattern = add Chips, then multiply Mult
 
-Every pattern owns a base **[Chips × Mult]** (§5.2); the sentence bonus is `(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)`, **added** to the committed total at finalization. There is no per-pattern "+ vs ×" operation — the strong/structural patterns simply carry a higher Mult (and Chips). This replaces the v0.2 add/multiply split.
+Every pattern owns a base **[Chips × Mult]** (§5.2). At finalization, the Chips side adds to the committed score and the Mult side multiplies the combined result: `final = (committedScore + sentenceChips) × sentenceMult`. There is no per-pattern operation split; every pattern uses the same axis rule.
 
-> **Balance warning — high-Mult sentences.** Because the bonus's Mult amplifies its own Chips (pattern base + modifiers + Standard Unison), high-Mult patterns still spike hard when the player also stacks Chips. The exact projection is intentionally hidden during play, so pattern frequency and final landing clarity are the primary playtest observation points.
+> **Balance warning — high-Mult sentences.** Sentence Mult now amplifies the whole committed blind score as well as pattern/modifier/Standard-Unison Chips. High-Mult patterns therefore scale strongly with late-game word builds; target curves and pattern levels must be verified together.
 
 ### 7.4 Final Pipeline Summary
 
@@ -550,9 +552,9 @@ selected object directly and do not add a redundant probability verdict.
 
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
-**On ending (early/final):** finalize the sentence bonus from the sequence —
-`(patternChips + 15×modifiers + unisonChips) × (patternMult × unisonMult)` per
-§5.2, Unison folded in (§5.3) — add it to the committed total → grant the
+**On ending (early/final):** finalize the sentence axes from the sequence — add
+pattern/modifier/Unison Chips to the committed score, then multiply by the
+pattern/Unison Mult per §5.2–§5.3 → grant the
 selected Pouch/Record's Fee Settlement lines (§9.1, §12) → end blind.
 
 **Briefcase insertion point (§12.2):** after all hooks have finalized a word's
@@ -730,7 +732,7 @@ data predicate is the source of truth for both scoring and preview UI.
 | Finisher | Effect | Presentation / counterplay |
 |---|---|---|
 | Nokdo Script · 녹도 문자 (`nokdoScript`) | One random letter tile must remain selected and must be included in the next submitted word. It cannot be deselected or discarded. Consumables may still transform it—including changing it to Stone—or destroy it. If it leaves the hand, another random hand tile becomes forced; an empty hand has none. | A parchment bearing deer-track-like glyphs; build or consume around the forced tile. |
-| Blueprint · 블루프린트 (`blueprint`) | On Deadline entry, shuffle the owned Emoji Tiles once and deal every one face-down. Their order and hidden faces then remain fixed for the blind; all effects stay active. | Every back is black and displays `mascotSrc('woodak')`, so it always follows the player's currently selected WooDak skin. |
+| Blueprint · 블루프린트 (`blueprint`) | On Deadline entry, shuffle the owned Emoji Tiles once and deal every one face-down. Their order and hidden faces then remain fixed for the blind; all effects stay active. Every face is restored as soon as the blind ends. | Every back is black and displays `mascotSrc('woodak')`, so it always follows the player's currently selected WooDak skin. |
 | Vital Sign · 바이탈 사인 (`vitalSign`) | Target is ×3 the ordinary boss Deadline target (therefore base Chapter target ×6 before Pouch/Record modifiers). | Vital-sign monitor emblem; pure throughput check. |
 | Ultrasound Photo · 초음파 사진 (`ultrasound`) | On entry, disable one random owned Emoji Tile. After every played word, clear that marker and randomly disable one for the next play. The new marker is presented only after the complete score/trigger timeline lands. A disabled tile contributes no hook or Emoji-Tile edition effect. With no Emoji Tiles, nothing is disabled. | Ultrasound-photo emblem; the disabled tile stays in its slot, visibly darkened and marked after a short disable beat. |
 
@@ -1348,10 +1350,10 @@ axes with:
 
 `wordScore = mean × mean`
 
-Do the same **independently** for the sentence bonus after pattern, modifier,
-Unison, Emoji Tile, voucher, and boss hooks, immediately before the sentence
-product. Do not average the already-committed word total with the sentence
-bonus. Keep the arithmetic mean at full precision—no floor, ceiling, or nearest
+Do the same **independently** for the sentence contribution axes after pattern,
+modifier, Unison, Emoji Tile, voucher, and boss hooks, immediately before adding
+sentence Chips to the committed score and applying sentence Mult. Do not include
+the already-committed word total in the mean. Keep the arithmetic mean at full precision—no floor, ceiling, or nearest
 integer step in the transform. The UI may format a value without mutating the
 headless value. Thus `100 × 50` becomes `75 × 75 = 5,625`. Gibberish participates
 as its final `Chips × 1.0` axes; this Pouch is the explicit exception to the

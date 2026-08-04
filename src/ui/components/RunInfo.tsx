@@ -91,7 +91,7 @@ export function RunInfo({ run, blind, onClose }: Props) {
                       <PatternIcon pattern={p} />
                       <span className="pn">{t(`pattern.${p}`)}</span>
                       <span className="pcm">
-                        <b className="chips">{cm.chips}</b>
+                        <b className="chips">+{cm.chips}</b>
                         <span className="times">×</span>
                         <b className="mult">{cm.mult}</b>
                       </span>

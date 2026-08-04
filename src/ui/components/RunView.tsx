@@ -226,7 +226,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}
-            jokersFaceDown={!!blind.jokersFaceDown}
+            jokersFaceDown={phase === 'playing' && !!blind.jokersFaceDown}
             settleComplete={g.state.settleComplete}
           />
           <section className="phase-workspace" key={boardKey}>

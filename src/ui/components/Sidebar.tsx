@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import type { BlindState, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { effectiveClearReward } from '../../engine/economy';
+import { sentenceTotal } from '../../engine/patterns';
 import type { StagePreview } from '../game';
 import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
@@ -87,7 +88,7 @@ export function Sidebar({
   // more per-beat stepping. While a word's settle animates the scorebox, the round
   // holds at the pre-word committed (committedBefore); when the settle lands it eases
   // up to the new committed, and at blind end it eases on to the finalized score
-  // (committed + sentence bonus, 06 #1). The forecast stays separate and is never
+  // ((committed + sentence Chips) × sentence Mult, 06 #1). The forecast stays separate and is never
   // folded into this number (that's the 04-A "score drops" bug).
   //
   // The hold is gated on `settleComplete`, NOT settle.active: both settleComplete and
@@ -103,17 +104,24 @@ export function Sidebar({
   // previous blind. Snap the reset so entering the shop cannot replay the final
   // score as a count-down/count-up animation.
   const round = useCountUp(roundTarget, BONUS_LAND_MS, mode !== 'blind');
-  // The sentence bonus as a forecast — "if the sentence ends like this: +N".
-  // Sentence-bonus beat (item 2): when the bonus lands, the scorebox fills to the
-  // bonus' chips × mult over the same BONUS_LAND_MS the round number rolls over, so
-  // the player sees the round box's chips and mult climb by the bonus.
+  // The sentence result as a forecast — "if the sentence ends like this: +N".
+  // At blind end, the scorebox shows the committed score plus sentence Chips on
+  // the Chips axis and the sentence Mult factor on the Mult axis.
   const bonusActive = mode === 'blind' && sentenceBonus !== null;
   // The bonus is LANDING (round is rolling) once finalScore is published — the box
   // is full and its product flies onto the round total. During BUILD (finalScore
   // still null) the box is filling and the round holds.
   const landing = bonusActive && finalScore !== null;
-  const bonusTotal = bonusActive ? Math.round(sentenceBonus!.chips * sentenceBonus!.mult) : 0;
-  const bonusChips = useCountUp(bonusActive ? sentenceBonus!.chips : 0, BONUS_LAND_MS);
+  const bonusTotal = bonusActive
+    ? Math.round(
+        sentenceTotal(blind.committedScore, sentenceBonus!.chips, sentenceBonus!.mult)
+          - blind.committedScore,
+      )
+    : 0;
+  const bonusChips = useCountUp(
+    bonusActive ? blind.committedScore + sentenceBonus!.chips : 0,
+    BONUS_LAND_MS,
+  );
   const bonusMult = useCountUp(bonusActive ? sentenceBonus!.mult : 0, BONUS_LAND_MS);
   // Idle is 0 × 0; the box fills only during settle (or the bonus beat), then resets
   // (UI_DESIGN §4.1, B).
@@ -128,7 +136,7 @@ export function Sidebar({
   // + this word's chips×mult during settle; the finalized round total while the bonus
   // lands. Flame size scales with the overshoot (0 at target … 1 at ≥3×).
   const liveTotal = bonusActive
-    ? roundTarget
+    ? bonusChips * bonusMult
     : settle.active
       ? committedBefore + settle.chips * settle.mult
       : blind.committedScore;

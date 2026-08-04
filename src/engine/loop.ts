@@ -18,7 +18,7 @@ import type { Lexicon } from './lexicon';
 import { baseScore, spell, letterString, wordLengthMult } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { applyEdition } from './editions';
-import { finalizeScore, judgeSentence } from './patterns';
+import { finalizeScore, judgeSentence, sentenceTotal } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus, JOKER_REGISTRY } from './jokers';
@@ -594,18 +594,20 @@ function scoreSubmission(
     events.push({ kind: 'material', ...beat });
   }
 
-  // Word Hand (A-2): highest single per-word structure bonus, folded in before
-  // the suit multiplier settles. Vowel Flush / Straight also fire on gibberish.
+  // Word Hand (A-2): highest single per-word structure bonus. Its Chips add to
+  // the current word and its Mult multiplies the current word Mult.
   const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, submission.isGibberish);
   if (letterHand && (letterHand.chips !== 0 || letterHand.mult !== 0)) {
+    const beforeMult = ctx.mult;
     ctx.chips += letterHand.chips;
-    ctx.mult += letterHand.mult;
+    ctx.mult *= letterHand.mult;
     events.push({
       kind: 'letterHand',
       hand: letterHand.id,
       chipsDelta: letterHand.chips,
-      multDelta: letterHand.mult,
+      multDelta: ctx.mult - beforeMult,
+      multFactor: letterHand.mult,
     });
   }
 
@@ -821,7 +823,7 @@ function scoreSentence(
     ? BALANCE.unison[judgment.unison.suit] as { chips?: number; mult?: number }
     : null;
   return {
-    total: ctx.totalBefore + ctx.sentenceChips * ctx.sentenceMult,
+    total: sentenceTotal(ctx.totalBefore, ctx.sentenceChips, ctx.sentenceMult),
     sentenceChips: ctx.sentenceChips,
     sentenceMult: ctx.sentenceMult,
     breakdown: {
@@ -982,7 +984,7 @@ export interface EndBlindResult {
   sentenceChips: number;
   /** the sentence bonus' Mult side, post joker/boss hooks (item 2 animation) */
   sentenceMult: number;
-  /** the bonus itself: sentenceChips × sentenceMult */
+  /** score gained by applying the sentence Chips and Mult to the committed score */
   bonus: number;
   /** visual source rows for modifiers, Unison, and post-pattern effects */
   breakdown: SentenceBonusBreakdown;
@@ -994,8 +996,8 @@ export interface EndBlindResult {
 }
 
 /**
- * Finalize the blind (GDD §7.4): judge the final sequence and fold the sentence
- * bonus into the committed total. Tiles need no explicit return — each blind
+ * Finalize the blind (GDD §7.4): judge the final sequence, add its Chips to the
+ * committed score, and apply its Mult. Tiles need no explicit return — each blind
  * reshuffles the run's permanent bag from scratch, so used tiles are back next
  * blind automatically (§6.1, §6.6).
  */
@@ -1007,7 +1009,7 @@ export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): En
     finalScore: scored.total,
     sentenceChips: scored.sentenceChips,
     sentenceMult: scored.sentenceMult,
-    bonus: scored.sentenceChips * scored.sentenceMult,
+    bonus: scored.total - blind.committedScore,
     breakdown: scored.breakdown,
     phasesLeft: blind.phasesTotal - blind.phasesUsed,
     materialGold: collectBlindEndMaterials(blind.hand),

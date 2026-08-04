@@ -3,8 +3,8 @@
  * evaluated at submission. They supply the word-level dopamine (Balatro's poker
  * hands) while sentence patterns remain the run-level payoff.
  *
- * Scoring placement: the matched hand's +Chips / +Mult are folded into the
- * WordScoringContext before the suit multiplier settles (see loop.ts). Highest
+ * Scoring placement: the matched hand adds Chips and multiplies Mult in the
+ * WordScoringContext before the word settles (see loop.ts). Highest
  * single hand only (consistent with the sentence-pattern rule, GDD §5.1).
  *
  * Gibberish eligibility (A-2): Vowel Flush and Straight fire on gibberish too

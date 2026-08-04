@@ -84,27 +84,33 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     return { run, blind: { ...blind, hand: [...letters.map(tile), ...blind.hand] } };
   };
 
-  it('BOOK (valid word) adds the Twin bonus before the suit multiplier', () => {
+  it('BOOK adds Twin Chips and multiplies the current word Mult', () => {
     const lex = makeLexicon(['book'], {});
     const { run, blind } = handOf(['B', 'O', 'O', 'K']);
     const ids = blind.hand.slice(0, 4).map((t) => t.id);
-    const { submission } = submitWord(blind, run, lex, ids, makeRng('test'));
+    const { submission, events } = submitWord(blind, run, lex, ids, makeRng('test'));
     // chips: B9+O3+O3+K15 = 30, +Twin 15 = 45
-    // mult: standard 1.0 + length 4 + Twin 1 = 6.0 => 45 × 6.0 = 270
+    // mult: (standard 1.0 + length 4) × Twin 1 = 5.0 => 45 × 5.0 = 225
     expect(submission.text).toBe('BOOK');
     expect(submission.isGibberish).toBe(false);
-    expect(submission.settledScore).toBe(270);
+    expect(submission.settledScore).toBe(225);
+    expect(events).toContainEqual({
+      kind: 'letterHand', hand: 'twin', chipsDelta: 15, multDelta: 0, multFactor: 1,
+    });
   });
 
   it('gibberish QRSTU fires Straight, stays a hole (suit/POS null)', () => {
     const lex = makeLexicon(['book'], {}); // QRSTU is not a word
     const { run, blind } = handOf(['Q', 'R', 'S', 'T', 'U']);
     const ids = blind.hand.slice(0, 5).map((t) => t.id);
-    const { submission } = submitWord(blind, run, lex, ids, makeRng('test'));
-    // chips: Q30+R3+S3+T3+U3 = 42, +Straight 90 = 132; mult: gibberish 1.0 +5 = 6
+    const { submission, events } = submitWord(blind, run, lex, ids, makeRng('test'));
+    // chips: Q30+R3+S3+T3+U3 = 42, +Straight 90 = 132; mult: gibberish 1.0 ×5 = 5
     expect(submission.isGibberish).toBe(true);
     expect(submission.suit).toBeNull();
     expect(submission.posUsed).toBeNull();
-    expect(submission.settledScore).toBe(792);
+    expect(submission.settledScore).toBe(660);
+    expect(events).toContainEqual({
+      kind: 'letterHand', hand: 'straight', chipsDelta: 90, multDelta: 4, multFactor: 5,
+    });
   });
 });

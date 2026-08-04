@@ -22,37 +22,38 @@ const jm = (
   unison: opts.unison ? { suit: opts.unison } : null,
 });
 
-// feature-02 A: every pattern is a self-contained [base Chips × Mult] bonus ADDED
-// to the committed total — patterns no longer multiply the running word score.
-//   sentence bonus = (patternChips + 15·mods + unisonChips) × (patternMult × unisonMult)
+// Every sentence adds its Chips to the committed blind score, then multiplies
+// that combined axis by sentence Mult.
+//   final = (committed + patternChips + 15·mods + unisonChips)
+//         × (patternMult × unisonMult)
 
-describe('slice3 scoring — base pattern Chips × Mult, added to the total (GDD §5.2)', () => {
+describe('slice3 scoring — pattern Chips add, then pattern Mult multiplies (GDD §5.2)', () => {
   it('Outcry: 15 × 2 = +30', () => {
     expect(finalizeScore(0, jm('outcry'), LV()).total).toBe(30);
   });
 
-  it('Imperative: 25 × 3 = +75 (added onto totalBefore)', () => {
-    expect(finalizeScore(10, jm('imperative'), LV()).total).toBe(10 + 75);
+  it('Imperative: (10 + 25) × 3 = 105', () => {
+    expect(finalizeScore(10, jm('imperative'), LV()).total).toBe(105);
   });
 
-  it('Simple: 40 × 3 = +120', () => {
-    expect(finalizeScore(50, jm('simple'), LV()).total).toBe(50 + 120);
+  it('Simple: (50 + 40) × 3 = 270', () => {
+    expect(finalizeScore(50, jm('simple'), LV()).total).toBe(270);
   });
 
-  it('Transitive: 60 × 4 = +240', () => {
-    expect(finalizeScore(100, jm('transitive'), LV()).total).toBe(100 + 240);
+  it('Transitive: (100 + 60) × 4 = 640', () => {
+    expect(finalizeScore(100, jm('transitive'), LV()).total).toBe(640);
   });
 
-  it('Descriptive: 45 × 4 = +180', () => {
-    expect(finalizeScore(100, jm('descriptive'), LV()).total).toBe(100 + 180);
+  it('Descriptive: (100 + 45) × 4 = 580', () => {
+    expect(finalizeScore(100, jm('descriptive'), LV()).total).toBe(580);
   });
 
-  it('Ditransitive: 75 × 5 = +375', () => {
-    expect(finalizeScore(100, jm('ditransitive'), LV()).total).toBe(100 + 375);
+  it('Ditransitive: (100 + 75) × 5 = 875', () => {
+    expect(finalizeScore(100, jm('ditransitive'), LV()).total).toBe(875);
   });
 
-  it('Compound: 90 × 5 = +450', () => {
-    expect(finalizeScore(100, jm('compound'), LV()).total).toBe(100 + 450);
+  it('Compound: (100 + 90) × 5 = 950', () => {
+    expect(finalizeScore(100, jm('compound'), LV()).total).toBe(950);
   });
 
   it('Object Complement: 115 × 6 = +690', () => {
@@ -97,14 +98,14 @@ describe('slice3 scoring — Unison folds into the formula (GDD §5.3)', () => {
     expect(finalizeScore(100, { match: null, unison: { suit: 'standard' } }, LV()).total).toBe(150);
   });
 
-  it('Slang unison alone (no pattern chips to multiply) adds nothing', () => {
-    // (0) × 1.5 = 0 — register mults only amplify the Chips side (changed from the
-    // old scheme where unison multiplied the whole committed total).
-    expect(finalizeScore(100, { match: null, unison: { suit: 'slang' } }, LV()).total).toBe(100);
+  it('Slang unison alone multiplies the committed score', () => {
+    const result = finalizeScore(100, { match: null, unison: { suit: 'slang' } }, LV());
+    expect(result.total).toBe(150);
+    expect(result.bonus).toBe(50);
   });
 
-  it('Transitive × Slang unison: 60 × (4 × 1.5) = 360', () => {
-    expect(finalizeScore(100, jm('transitive', { unison: 'slang' }), LV()).total).toBe(100 + 360);
+  it('Transitive × Slang unison: (100 + 60) × (4 × 1.5) = 960', () => {
+    expect(finalizeScore(100, jm('transitive', { unison: 'slang' }), LV()).total).toBe(960);
   });
 
   it('Imperative + Standard unison: (25 + 50) × 3 = 225', () => {
@@ -117,8 +118,8 @@ describe('slice3 scoring — leveling raises both Chips and Mult (GDD §5.4)', (
     expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(225);
   });
 
-  it('Descriptive at level 2: (45+30) × (4+2) = 450', () => {
-    expect(finalizeScore(100, jm('descriptive'), LV({ descriptive: 2 })).total).toBe(100 + 450);
+  it('Descriptive at level 2: (100 + 45+30) × (4+2) = 1050', () => {
+    expect(finalizeScore(100, jm('descriptive'), LV({ descriptive: 2 })).total).toBe(1050);
   });
 
   it('no pattern and no unison leaves the total unchanged', () => {

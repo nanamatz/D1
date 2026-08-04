@@ -11,10 +11,11 @@ describe('Run Info Word Hands reference', () => {
     expect(source).toContain('LETTER_HAND_REGISTRY.map');
   });
 
-  it('shows unsigned Mult only when the hand adds one', () => {
+  it('shows Word Hand Chips as additive and Mult as multiplicative', () => {
     const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
     const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
     expect(source).toContain('className="ri-hand-score pcm"');
+    expect(source).toContain('<b className="chips">+{cm.chips}</b>');
     expect(source).toContain('<b className="chips">+{bonus.chips}</b>');
     expect(source).toContain('{bonus.mult > 0 && (');
     expect(source).toContain('<span className="times">×</span>');

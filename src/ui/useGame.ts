@@ -196,7 +196,7 @@ export interface GameState {
    */
   settleComplete: boolean;
   /**
-   * The blind's finalized score (committed + the sentence bonus), set once the
+   * The blind's finalized score ((committed + sentence Chips) × sentence Mult), set once the
    * last settle lands. Non-null means the SENTENCE BONUS IS LANDING on the round
    * number right now (playtest-06 item 1): the bonus is only finalized at blind
    * end (GDD §7.1), so without this beat the clear screen arrived while the round
@@ -228,7 +228,9 @@ export interface GameState {
 }
 
 export interface SentenceBonusDisplay extends SentenceBonusBreakdown {
+  /** Sentence Chips added to the committed blind score. */
   chips: number;
+  /** Sentence Mult applied after that Chips addition. */
   mult: number;
   pattern: PatternId | null;
   level: number | null;
@@ -1516,7 +1518,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         rngCounter: prev.rngCounter + 1,
       };
       // Auto-settle (playtest-03 B): the blind ends the moment the projected
-      // total (committed + sentence bonus) reaches the target — no manual button.
+      // total ((committed + sentence Chips) × sentence Mult) reaches the target.
       // The Perfectionist disables it (settles only when phases run out). Either
       // way the board stays visible so the full settle + sentence-finalize plays
       // before Fee Settlement; a timer runs finalize.
@@ -1537,7 +1539,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // signal already tracks the variable settle length (long words settle longer).
   //
   // The bonus lands as a distinct climax in three beats (2026-07-22): BUILD fills
-  // the scorebox to the bonus' chips × mult while the round HOLDS at committed;
+  // the scorebox to (committed + sentence Chips) × sentence Mult while the round HOLDS;
   // LAND then rolls the round up; RESOLVE holds a verdict beat and auto-resolves.
   // Both sources — the OS setting AND the in-game Options toggle. Reading only
   // the media query here is what let the blind-end bonus keep animating with
@@ -1545,7 +1547,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const prefersReduce = motionOff;
 
   // BUILD — the last word's settle has landed. Publish the sentence bonus so the
-  // scorebox fills to its chips × mult, but HOLD the round number at committed
+  // scorebox fills to its combined Chips × Mult, but HOLD the round number at committed
   // (finalScore stays null → Sidebar's round target falls back to committedScore).
   // Reduced motion collapses build+land: set finalScore now too. A zero bonus
   // (no pattern, no unison) skips the build entirely — just set finalScore.

@@ -164,7 +164,9 @@ const scaledBeatDurationMs = (event: ScoreEvent, speed: number): number => {
  * log; three materials (polished/glass/leadPlate) mutate `ctx.mult` in the
  * per-tile loop that runs BEFORE `suit` is pushed, so their `material`
  * events now precede `suit` and an overwrite wipes their contribution.
- * Addition is order-independent and correct either way.
+ * Addition is order-independent and correct either way. Multiplicative sources
+ * such as Word Hands carry their equivalent delta for this fold plus a factor
+ * solely for the ×N readout.
  */
 export function accumulate(
   chips: number,

@@ -189,13 +189,23 @@ const heroMeta = heroSrc
   .map(inline)
   .join('<br>');
 
+// Optional hero overrides, so one renderer serves several documents:
+// `<!-- kicker: … -->`, `<!-- title: … -->`, and one `<!-- lead: … -->` per paragraph.
+const directive = (name) =>
+  [...md.matchAll(new RegExp(`<!--\\s*${name}:\\s*([\\s\\S]*?)-->`, 'g'))].map((m) => m[1].trim());
+const [kicker = 'GAME PITCH / 2026'] = directive('kicker');
+const [title = 'Play the Wor!d'] = directive('title');
+const leads = directive('lead');
+const leadHtml = leads.length
+  ? leads.map((l) => `<p>${l}</p>`).join('\n  ')
+  : '<p>알파벳 타일로 <strong>단어</strong>를 만들고, 그 단어들이 순서대로 쌓여 <strong>문장</strong>이 되면 폭발적인 보너스를 받는 로그라이트.</p>\n  <p>당신은 마감에 쫓기는 <strong>작가</strong>다.</p>';
+
 const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<title>Play the Wor!d — 게임 기획안</title><style>${CSS}</style></head><body>
+<title>${esc(title)}</title><style>${CSS}</style></head><body>
 <div class="hero">
-  <p class="kicker">GAME PITCH / 2026</p>
-  <h1>Play the Wor!d</h1>
-  <p>알파벳 타일로 <strong>단어</strong>를 만들고, 그 단어들이 순서대로 쌓여 <strong>문장</strong>이 되면 폭발적인 보너스를 받는 로그라이트.</p>
-  <p>당신은 마감에 쫓기는 <strong>작가</strong>다.</p>
+  <p class="kicker">${esc(kicker)}</p>
+  <h1>${esc(title)}</h1>
+  ${leadHtml}
   <div class="meta">${heroMeta}</div>
 </div>
 <div class="body">${mdToHtml(bodySrc)}</div>

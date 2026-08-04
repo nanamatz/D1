@@ -115,10 +115,9 @@ export const BALANCE = {
 
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
   //       Every pattern owns a base [chips × mult]; each level's increment
-  //       grows geometrically by patternLevelGrowthFactor. The sentence bonus is a
-  //       self-contained (chips × mult) value ADDED to the blind score — patterns
-  //       no longer multiply the running word total (the old add/multiply op split
-  //       is retired). Chant additionally adds `repeatChips` per repeat beyond the
+  //       grows geometrically by patternLevelGrowthFactor. At sentence settlement,
+  //       Chips add to the committed blind score and Mult multiplies that combined
+  //       Chips axis. Chant additionally adds `repeatChips` per repeat beyond the
   //       2nd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
   patterns: {
     outcry:       { rank: 1, baseChips: 15, baseMult: 2, levelChips: 20, levelMult: 2 },
@@ -141,8 +140,8 @@ export const BALANCE = {
   modifierAbsorption: { chips: 15 },
 
   // ----- Word Hands (playtest-02 A-2) — per-word structure bonuses, applied
-  //       inside WordScoringContext before the suit multiplier settles. Highest
-  //       single hand only. rank 1 (weakest) .. 6 (strongest). -----
+  //       inside WordScoringContext: Chips add and Mult multiplies. Highest single
+  //       hand only. rank 1 (weakest) .. 6 (strongest). -----
   letterHands: {
     twin:       { rank: 1, chips: 15, mult: 1 },
     triplet:    { rank: 2, chips: 30, mult: 2 },
