@@ -106,6 +106,13 @@ describe('ambient coffee cup interaction', () => {
     expect(audio).toMatch(/deskCheck:\s+\{[^}]*dur:\s*1\.05/s);
   });
 
+  it('adds a subtle localized signature hint that clears while drawing', () => {
+    expect(component).toContain("t('desk.check.sign')");
+    expect(component).toContain('className="desk-check-guide"');
+    expect(css).toMatch(/\.desk-check-guide\s*\{[^}]*opacity:\s*0\.28/s);
+    expect(css).toContain('.desk-check.desk-drawing .desk-check-guide');
+  });
+
   it('does not keep the retired empty-cup refill loop', () => {
     expect(component).not.toContain('REFILL_CHANCE');
     expect(component).not.toContain('cupEmpty');

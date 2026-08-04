@@ -2049,7 +2049,6 @@ body.cb-safe .tile.hint {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   writing-mode: vertical-rl;
-  transform: rotate(180deg);
 }
 .car-arrow {
   align-self: stretch;
@@ -4469,7 +4468,7 @@ body.cb-safe .tile.hint {
 }
 .palette-section-title {
   font-weight: 700;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-xl);
   color: var(--ink-dim, #cdbfa0);
   text-align: left;
   padding-bottom: 4px;
@@ -4480,6 +4479,7 @@ body.cb-safe .tile.hint {
    hint; unlocked = the word in its group color. */
 .palette-card .cc-name {
   font-family: 'Jersey 10';
+  font-size: 26px;
   letter-spacing: 0.01em;
 }
 .palette-card.locked {

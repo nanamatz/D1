@@ -5,6 +5,7 @@
   "system.saveErrorTitle": "Progress could not be saved",
   "system.saveErrorBody": "Check available storage and file permissions Recent progress may be lost",
   "settle.applied": "Applied",
+  "desk.check.sign": "Sign here",
   "consumableFx.handSize": "Hand size {n}",
   "consumableFx.patternLevels": "+{n} pattern levels",
   "chance.label.mult": "Mult",

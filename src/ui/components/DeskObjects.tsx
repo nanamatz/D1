@@ -8,6 +8,7 @@ import coffeeCup from '../assets/desk-coffee-cup.png';
 import callBell from '../assets/desk-call-bell.png';
 import blankCheck from '../assets/desk-blank-check.png';
 import { clamp } from '../math';
+import { useI18n } from '../i18n';
 
 /**
  * D-3 ambient side interactions (UI_DESIGN §4.8). One-shot cup, bell, and cheque
@@ -43,6 +44,7 @@ interface SignaturePoint {
 const reduced = motionOff;
 
 export function DeskObjects({ active }: { active: boolean }) {
+  const { t } = useI18n();
   const [cup, setCup] = useState<DeskObj | null>(null);
   const [bell, setBell] = useState<DeskObj | null>(null);
   const [encounter, setEncounter] = useState<DeskObj | null>(null);
@@ -368,6 +370,7 @@ export function DeskObjects({ active }: { active: boolean }) {
               onPointerUp={endSignature}
               onPointerCancel={cancelSignature}
             >
+              <span className="desk-check-guide">{t('desk.check.sign')}</span>
               <svg
                 className="desk-check-signature"
                 viewBox="0 0 100 40"

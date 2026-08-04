@@ -1983,6 +1983,25 @@
   touch-action: none;
   user-select: none;
 }
+.desk-check-guide {
+  position: absolute;
+  left: 61%;
+  top: 58%;
+  color: #17291d;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(8px, 0.7vw, 11px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.28;
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  pointer-events: none;
+  transition: opacity 0.12s steps(2, end);
+}
+.desk-check.desk-drawing .desk-check-guide,
+.desk-check.desk-signing .desk-check-guide {
+  opacity: 0;
+}
 .desk-check-signature {
   position: absolute;
   inset: 0;

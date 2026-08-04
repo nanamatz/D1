@@ -18,6 +18,12 @@ describe('persistent Balatro-style run table', () => {
     expect(runView).not.toContain('<ScreenTransition');
   });
 
+  it('shows prepared phase and discard counts during Blind Select', () => {
+    expect(sidebar).toContain("const showBlindResources = mode !== 'shop';");
+    expect(sidebar).toContain('showBlindResources ? blind.phasesTotal - blind.phasesUsed : 0');
+    expect(sidebar).toContain('showBlindResources ? blind.discardsLeft : 0');
+  });
+
   it('allows use-now when only the consumable slot cap is full', () => {
     expect(shop).toContain('action2Disabled: run.gold < item.price');
   });

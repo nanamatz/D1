@@ -78,7 +78,8 @@ export function Sidebar({
   mode = 'blind',
 }: Props) {
   const { t, lang } = useI18n();
-  const phasesLeft = mode === 'blind' ? blind.phasesTotal - blind.phasesUsed : 0;
+  const showBlindResources = mode !== 'shop';
+  const phasesLeft = showBlindResources ? blind.phasesTotal - blind.phasesUsed : 0;
   const settle = useSettleView();
   const reward = effectiveClearReward(run, blind.kind);
   // A (playtest-04) + item 7: the ROUND score is committed ONLY and never decreases,
@@ -376,7 +377,7 @@ export function Sidebar({
         </div>
         <div className="sb-cell">
           <span className="label">{t('sidebar.discards')}</span>
-          <span className="cnum red">{mode === 'blind' ? blind.discardsLeft : 0}</span>
+          <span className="cnum red">{showBlindResources ? blind.discardsLeft : 0}</span>
         </div>
         <div className="sb-cell money-cell">
           <MoneyValue value={run.gold} />
