@@ -1,5 +1,5 @@
 /**
- * Letter Hands (playtest-02 A-2) — per-word letter-structure "hand types",
+ * Word Hands (playtest-02 A-2) — per-word letter-structure "hand types",
  * evaluated at submission. They supply the word-level dopamine (Balatro's poker
  * hands) while sentence patterns remain the run-level payoff.
  *
@@ -86,7 +86,7 @@ export const LETTER_HAND_REGISTRY: readonly LetterHandDef[] = [
 ];
 
 /**
- * The highest-rank letter hand for an uppercase A–Z string, or null. When
+ * The highest-rank Word Hand for an uppercase A–Z string, or null. When
  * `isGibberish`, only gibberish-eligible hands are considered.
  */
 export function evaluateLetterHand(letters: string, isGibberish: boolean): LetterHandMatch | null {

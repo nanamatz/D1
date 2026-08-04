@@ -96,9 +96,29 @@ describe('slice5 packs — jackpot and modifier policy', () => {
       option.kind === 'consumable' && option.id === 'deer',
     )).toHaveLength(2);
 
-    const ink = rollPack(slot('ink'), run(), fixedRng(0.001, 0.004));
+    const ink = rollPack(slot('ink'), run(), fixedRng(0, 0.001));
     expect(ink.options.map((option) => option.kind === 'consumable' ? option.id : null))
       .toEqual(['phoenix', 'deer']);
+  });
+
+  it('makes Phoenix far rarer and downweights Rainman/Sake Cup in Ink Packs', () => {
+    expect(BALANCE.pack.phoenixChance).toBe(0.0005);
+    expect(BALANCE.pack.deerChance).toBe(0.003);
+    expect(BALANCE.pack.inkGamblerWeights.rainman).toBe(0.4);
+    expect(BALANCE.pack.inkGamblerWeights.sakeCup).toBe(0.4);
+
+    const counts = new Map<string, number>();
+    for (let seed = 0; seed < 4_000; seed += 1) {
+      for (const option of rollPack(slot('ink'), run(), makeRng(`ink-weight-${seed}`)).options) {
+        if (option.kind === 'consumable') counts.set(option.id, (counts.get(option.id) ?? 0) + 1);
+      }
+    }
+    const common = ['barnSwallow', 'boar', 'bridge', 'bushWarbler', 'butterflies',
+      'craneAndSun', 'cuckoo', 'curtain', 'fullMoon', 'geese'];
+    const commonAverage = common.reduce((sum, id) => sum + (counts.get(id) ?? 0), 0) / common.length;
+    expect(counts.get('rainman') ?? 0).toBeLessThan(commonAverage * 0.6);
+    expect(counts.get('sakeCup') ?? 0).toBeLessThan(commonAverage * 0.6);
+    expect(counts.get('phoenix') ?? 0).toBeLessThan(counts.get('deer') ?? 0);
   });
 
   it('pack material and font rolls are independent; shop tiles never gain a font', () => {

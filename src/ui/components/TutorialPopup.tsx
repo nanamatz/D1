@@ -21,7 +21,7 @@ export function TutorialHost() {
     return tutorialBus.subscribe((id) => {
       if (!readTips()) return;
       // Don't overlap encounter popups with the guided first-run lesson — YELLOW's Twin (LL)
-      // would otherwise pop the Letter Hand card mid-lesson. Encounters begin once it's done.
+      // would otherwise pop the Word Hand card mid-lesson. Encounters begin once it's done.
       if (!hasSeenIntro()) return;
       if (hasSeen(id)) return;
       // Defer past the firing component's render (fires happen inside setState

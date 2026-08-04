@@ -116,6 +116,12 @@ describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
     expect(pattern(['I', 'GIVE', 'HIM', 'FISH'])).toBe('ditransitive');
   });
 
+  it('eases the base skeletons by accepting any verb subtype', () => {
+    expect(pattern(['CAT', 'EATS'])).toBe('simple');
+    expect(pattern(['CAT', 'FLY', 'FISH'])).toBe('transitive');
+    expect(pattern(['I', 'FLY', 'HIM', 'FISH'])).toBe('ditransitive');
+  });
+
   it('Compound: clause + conjunction + clause (CATS RUN AND DOGS SLEEP)', () => {
     expect(pattern(['CATS', 'RUN', 'AND', 'DOGS', 'SLEEP'])).toBe('compound');
   });

@@ -11,7 +11,7 @@ import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import {
   bossPoolForAnte,
   bossPoolForId,
-  drawBoss,
+  drawBossFromCycle,
   enterBossBlind,
   reconcileBossHand,
 } from '../engine/bosses';
@@ -331,10 +331,12 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     customSeed: options.customSeed ?? false,
   });
   // Chapter 1's voucher offer + Deadline boss (fixed per chapter; playtest-03 C, 04 D-6).
+  const bossDraw = drawBossFromCycle(makeRng(`${seed}#boss-1`), bossPoolForAnte(1));
   const run: RunState = {
     ...base,
     voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`), unlockedVoucherSet()),
-    chapterBossId: drawBoss(makeRng(`${seed}#boss-1`), bossPoolForAnte(1)),
+    chapterBossId: bossDraw.bossId,
+    bossHistory: bossDraw.history,
   };
   // First-run lesson (2026-07-21): rig the opening hand to contain YELLOW so the guided
   // steps can teach build → submit. The target is NOT lowered — it stays the normal ante-1
@@ -595,6 +597,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // Clearing the Deadline (boss) restocks the voucher for the next chapter
       // and unlocks the one-purchase-per-chapter slot (playtest-03 C).
       if (runWithMaterialGold.blindIndex === 2) {
+        const bossDraw = drawBossFromCycle(
+          makeRng(`${s.seed}#boss-${advancedRun.ante}`),
+          bossPoolForAnte(advancedRun.ante),
+          advancedRun.bossHistory,
+        );
         const chapterRun: RunState = {
           ...advancedRun,
           voucherOffer: rollVoucherOffer(
@@ -604,10 +611,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           ),
           voucherLocked: false,
           bossRerollsUsed: 0,
-          chapterBossId: drawBoss(
-            makeRng(`${s.seed}#boss-${advancedRun.ante}`),
-            bossPoolForAnte(advancedRun.ante),
-          ),
+          chapterBossId: bossDraw.bossId,
+          bossHistory: bossDraw.history,
           wordsThisAnte: [], // new ante → Memoirs' pool resets (회고록)
           skippedThisChapter: [],
         };
@@ -1458,7 +1463,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         }
       }
       // A-2: a per-word structure bonus (Twin/Vowel Flush/Straight…) landed —
-      // explain Letter Hands the first time one actually scores. The event is
+      // explain Word Hands the first time one actually scores. The event is
       // only present when a hand triggered (loop.ts), so its presence is the signal.
       if (events.some((e) => e.kind === 'letterHand')) tutorialBus.fire('firstLetterHand');
       const nextRun = onTilesDestroyed({
@@ -1665,11 +1670,18 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         : bossPoolForAnte(prev.run.ante);
       // Exclude the current boss from the pool rather than re-drawing on a
       // match: two draws could both land on it, and the player paid for a change.
-      const bossId = drawBoss(rng, pool, prev.run.chapterBossId);
+      const bossDraw = drawBossFromCycle(
+        rng,
+        pool,
+        prev.run.bossHistory,
+        prev.run.chapterBossId,
+      );
+      const bossId = bossDraw.bossId;
       const run = {
         ...prev.run,
         gold: prev.run.gold - bossRerollPrice(),
         chapterBossId: bossId,
+        bossHistory: bossDraw.history,
         bossRerollsUsed: prev.run.bossRerollsUsed + 1,
       };
       const blind = prev.run.blindIndex === 2

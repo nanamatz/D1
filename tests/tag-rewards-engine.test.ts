@@ -68,6 +68,7 @@ describe('new blind-skip tags: immediate and blind-delayed effects', () => {
 
     expect(a.chapterBossId).toBe(b.chapterBossId);
     expect(a.chapterBossId).not.toBe('wanted');
+    expect(a.bossHistory).toEqual(expect.arrayContaining(['wanted', a.chapterBossId]));
   });
 
   it('uses the live run counters for Handy and Garbage payouts', () => {
@@ -209,24 +210,36 @@ describe('new blind-skip tags: next-shop effects', () => {
     expect(prepared.appliedTags).toEqual([]);
   });
 
-  it('adds one bonus voucher choice while either purchase locks both choices', () => {
-    const run = withDraftTag('voucherTag', {
-      gold: 99,
-      voucherOffer: 'memo',
-      pendingShopTags: ['voucherTag'],
-    });
-    const prepared = prepareShop(run, makeRng('voucher-tag'));
+  it.each(['base', 'bonus'] as const)(
+    'lets Voucher Tag buy both choices when the %s choice is bought first',
+    (firstSlot) => {
+      const run = withDraftTag('voucherTag', {
+        gold: 99,
+        voucherOffer: 'memo',
+        pendingShopTags: ['voucherTag'],
+      });
+      const prepared = prepareShop(run, makeRng('voucher-tag'));
 
-    expect(prepared.shop.voucher).toBe('memo');
-    expect(prepared.shop.bonusVoucher).not.toBeNull();
-    expect(prepared.shop.bonusVoucher).not.toBe(prepared.shop.voucher);
-    expect(prepared.appliedTags).toEqual(['voucherTag']);
-    const bought = buyVoucher(prepared.run, prepared.shop, 'bonus');
-    expect(bought.ok).toBe(true);
-    expect(bought.run.voucherLocked).toBe(true);
-    expect(bought.shop.voucher).toBeNull();
-    expect(bought.shop.bonusVoucher).toBeNull();
-  });
+      expect(prepared.shop.voucher).toBe('memo');
+      expect(prepared.shop.bonusVoucher).not.toBeNull();
+      expect(prepared.shop.bonusVoucher).not.toBe(prepared.shop.voucher);
+      expect(prepared.appliedTags).toEqual(['voucherTag']);
+      const offered = [prepared.shop.voucher, prepared.shop.bonusVoucher];
+
+      const first = buyVoucher(prepared.run, prepared.shop, firstSlot);
+      expect(first.ok).toBe(true);
+      expect(first.run.voucherLocked).toBe(true);
+      expect(first.shop.voucher).toBeNull();
+      expect(first.shop.bonusVoucher).not.toBeNull();
+
+      const second = buyVoucher(first.run, first.shop, 'bonus');
+      expect(second.ok).toBe(true);
+      expect(second.shop.voucher).toBeNull();
+      expect(second.shop.bonusVoucher).toBeNull();
+      expect(second.run.vouchers).toEqual(expect.arrayContaining(offered));
+      expect(buyVoucher(second.run, prepared.shop, 'base').ok).toBe(false);
+    },
+  );
 
   it('keeps Voucher Tag pending until a shop where its choice can be purchased', () => {
     const run = withDraftTag('voucherTag', {

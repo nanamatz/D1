@@ -5,7 +5,7 @@
  */
 
 import { BALANCE } from './balance';
-import { bossPoolForId, drawBoss } from './bosses';
+import { bossPoolForId, drawBossFromCycle } from './bosses';
 import type { Rng } from './rng';
 import type {
   NextBlindBonus,
@@ -217,16 +217,20 @@ export function skipCurrentBlind(run: RunState, rng: Rng): SkipRewardResult {
           (next.pendingBossReward ?? 0) + BALANCE.skipRewards.investmentReward,
       };
       break;
-    case 'bossTag':
+    case 'bossTag': {
+      const bossDraw = drawBossFromCycle(
+        rng,
+        bossPoolForId(next.chapterBossId),
+        next.bossHistory,
+        next.chapterBossId,
+      );
       next = {
         ...next,
-        chapterBossId: drawBoss(
-          rng,
-          bossPoolForId(next.chapterBossId),
-          next.chapterBossId,
-        ),
+        chapterBossId: bossDraw.bossId,
+        bossHistory: bossDraw.history,
       };
       break;
+    }
     case 'tileTag':
       awardedPack = freePack('tile', 'mega', rng);
       break;

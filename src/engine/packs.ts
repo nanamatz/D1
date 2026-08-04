@@ -111,6 +111,21 @@ function drawConsumables(
   return rng.shuffle([...pool]).slice(0, show).map(make);
 }
 
+/** Take one weighted id without replacement from the remaining Ink pool. */
+function takeWeightedInk(remaining: ConsumableId[], rng: Rng): ConsumableId {
+  const weight = (id: ConsumableId) => BALANCE.pack.inkGamblerWeights[id] ?? 1;
+  let roll = rng.next() * remaining.reduce((sum, id) => sum + weight(id), 0);
+  let picked = remaining.length - 1;
+  for (let index = 0; index < remaining.length; index += 1) {
+    roll -= weight(remaining[index]!);
+    if (roll < 0) {
+      picked = index;
+      break;
+    }
+  }
+  return remaining.splice(picked, 1)[0]!;
+}
+
 export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
   const { show, pick } = packSizeRules(slot.type, slot.size);
   let options: PackOption[];
@@ -132,7 +147,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
     case 'consumable': {
       options = drawConsumables(FABLE_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
       options = options.map((option) =>
-        rng.next() < BALANCE.pack.jackpotChance
+        rng.next() < BALANCE.pack.phoenixChance
           ? { kind: 'consumable', id: 'phoenix' }
           : option,
       );
@@ -154,14 +169,14 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'ink': {
-      const ordinary = rng.shuffle([...INK_BASE_POOL]);
-      options = Array.from({ length: show }, (_, index) => {
+      const ordinary = [...INK_BASE_POOL];
+      options = Array.from({ length: show }, () => {
         const roll = rng.next();
-        const id = roll < BALANCE.pack.jackpotChance
+        const id = roll < BALANCE.pack.phoenixChance
           ? 'phoenix'
-          : roll < BALANCE.pack.jackpotChance * 2
+          : roll < BALANCE.pack.phoenixChance + BALANCE.pack.deerChance
             ? 'deer'
-            : ordinary[index % ordinary.length]!;
+            : takeWeightedInk(ordinary, rng);
         return { kind: 'consumable' as const, id };
       });
       break;
@@ -183,7 +198,7 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       }
       // Deer is an independent jackpot roll for every Constellation choice.
       options = options.map((option) =>
-        rng.next() < BALANCE.pack.jackpotChance
+        rng.next() < BALANCE.pack.deerChance
           ? { kind: 'consumable', id: 'deer' }
           : option,
       );

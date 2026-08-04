@@ -149,7 +149,7 @@ headless mutation rule and is skipped under reduced motion.
 
 ### 2.1 Per-Letter Score & Count (rebalanced — diverges from Scrabble on purpose)
 
-Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE.letterChips`): the base floor was raised so tiles feel more impactful, while the ratios that reward rare letters are preserved exactly. Pattern/unison/letter-hand/material constants are untouched by this scaling — only the per-tile letter chip does. `src/sim/feel-chip-scale.ts` confirms the ante curve (§8.2) isn't trivialized by the change (left unscaled). The **counts** were separately rebalanced (playtest-04 C-2, chosen by `src/sim/tile-pool.ts`): the bag shrank **98 → 68** and its extremes were **compressed** — the E-glut cut (12 → 6) and rare letters raised (1 → 2). Scrabble's distribution assumes board-adjacency; standalone-word spelling wants a flatter curve. Blanks excluded.
+Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE.letterChips`): the base floor was raised so tiles feel more impactful, while the ratios that reward rare letters are preserved exactly. Pattern/unison/Word-Hand/material constants are untouched by this scaling — only the per-tile letter chip does. `src/sim/feel-chip-scale.ts` confirms the ante curve (§8.2) isn't trivialized by the change (left unscaled). The **counts** were separately rebalanced (playtest-04 C-2, chosen by `src/sim/tile-pool.ts`): the bag shrank **98 → 68** and its extremes were **compressed** — the E-glut cut (12 → 6) and rare letters raised (1 → 2). Scrabble's distribution assumes board-adjacency; standalone-word spelling wants a flatter curve. Blanks excluded.
 
 | Score | Letters (count) | Tiles |
 |---|---|---|
@@ -313,7 +313,7 @@ In each phase the player makes one word. As phases accumulate, the words line up
 
 **Noun (incl. pronoun) · Verb (subtypes: intransitive / transitive / linking) · Adjective · Adverb · Article/Determiner · Conjunction · Preposition · Interjection.**
 
-Verb subtypes are required because they distinguish Descriptive from Transitive patterns (the "pizza tastes good" problem).
+Verb subtypes remain in the lexicon for Descriptive and Object Complement judgment, but the Simple, Transitive, and Ditransitive base skeletons accept any verb subtype (ease pass 2026-08-04).
 
 > **Data note — POS tags are nearly free.** The cost of adding POS tags to the register pipeline is low. POS has many clean sources (Wiktionary, WordNet), making it easier than register. The "one word, multiple POS" problem (taste = noun/verb, sick = adjective/noun) has the same structure as suit resolution, and in a game it is actually an opportunity — let the same tile take a different POS depending on which slot it is placed in, adding a strategic axis.
 
@@ -331,7 +331,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired. Pattern levels grow exponentially: the first level-up adds the table's listed Chips and Mult, and each later level-up's increment is ×1.25 larger than the previous one (`BALANCE.patternLevelGrowthFactor`). After accumulated growth, both axes are rounded to the nearest positive integer; therefore the current Chips/Mult and every displayed level-up delta are always natural numbers.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). The sentence bonus is a *self-contained* value — computed from the pattern's Chips×Mult, modifiers, and Unison — and **added** to the blind's committed score at finalization. Patterns no longer "add flat" vs "multiply the running total"; that op split (v0.2) is retired. Pattern levels grow exponentially: the first level-up adds the table's listed Chips and Mult, and each later level-up's increment is ×1.5 larger than the previous one (`BALANCE.patternLevelGrowthFactor`). After accumulated growth, both axes are rounded to the nearest positive integer; therefore the current Chips/Mult and every displayed level-up delta are always natural numbers.
 
 ```
 sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
@@ -346,18 +346,18 @@ folded invisibly into the pattern label.
 
 | # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|
-| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 2 | +10, +1 |
-| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 3 | +10, +1 |
-| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 3, **+10 Chips per repeat beyond the 2nd** | +10, +1 (repeat bonus +5/level) |
-| 4 | Simple | Noun + intransitive V | BIRDS FLY | 2 | 40 × 3 | +15, +1 |
-| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 4 | +15, +1 |
-| 6 | Transitive | Noun + transitive V + Noun | CAT EATS FISH | 3 | 60 × 4 | +20, +1 |
-| 7 | Ditransitive | Noun + TV + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 5 | +25, +2 |
-| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 5 | +30, +2 |
-| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 6 | +35, +2 |
-| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 6 | +40, +2 |
-| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 7 | +45, +3 |
-| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 7 | +50, +3 |
+| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 2 | +20, +2 |
+| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 3 | +20, +2 |
+| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 3, **+10 Chips per repeat beyond the 2nd** | +20, +2 (repeat bonus +10/level) |
+| 4 | Simple | Noun + Verb | BIRDS FLY | 2 | 40 × 3 | +30, +2 |
+| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 4 | +30, +2 |
+| 6 | Transitive | Noun + Verb + Noun | CAT EATS FISH | 3 | 60 × 4 | +40, +2 |
+| 7 | Ditransitive | Noun + Verb + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 5 | +50, +4 |
+| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 5 | +60, +4 |
+| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 6 | +70, +4 |
+| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 6 | +80, +4 |
+| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 7 | +90, +6 |
+| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 7 | +100, +6 |
 
 (Values live in `balance.ts` under `patterns`; the 2026-08-02 ease pass raised all base Chips and Mult while preserving the rank hierarchy.)
 
@@ -365,6 +365,7 @@ Design intent:
 
 - **Outcry** gives vowel-less interjections (shh, brr) a home in the pattern table.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, which now starts at two consecutive copies of the same verb.
+- **Simple, Transitive, and Ditransitive accept any verb subtype** (ease pass 2026-08-04). Their word count and order stay fixed; Descriptive and Object Complement retain their specialized verb checks.
 - **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences (higher Mult) reward suit/emoji tile Chips investment more. The "structural sentences pay off big" principle from §7.3 now lives in the Mult column rather than a separate multiply-the-total op.
 - **#7–12 are tight-to-impossible in the base 5 phases** — the reason to seek future phase-extension effects is built into the table itself.
 - **Object Complement uses a controlled verb family** (`MAKE/CALL/FIND/NAME/KEEP/CONSIDER/ELECT/PAINT` and inflections), because POS alone cannot distinguish `I GIVE HIM FISH` (Ditransitive) from `I MADE HIM HAPPY` (Object Complement).
@@ -385,7 +386,7 @@ Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional 
 
 ### 5.4 Constellation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises both axes; the first increment is the §5.2 right-column `+Chips, +Mult`, and later increments grow geometrically by ×1.25 — the old multiplier-only vs flat-only split is gone.
+Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises both axes; the first increment is the §5.2 right-column `+Chips, +Mult`, and later increments grow geometrically by ×1.5 — the old multiplier-only vs flat-only split is gone.
 
 **Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
 engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
@@ -394,24 +395,24 @@ engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
 status, preview, Run Info, settlement, run summary, and Constellation tooltips
 all show this same mark, so the mapping is readable before effect prose.
 
-| Constellation | Levels up | First level-up increment (later ×1.25 each) |
+| Constellation | Levels up | First level-up increment (later ×1.5 each) |
 |---|---|---|
-| Libra / 천칭자리 | Outcry | +10 Chips, +1 Mult |
-| Leo / 사자자리 | Imperative | +10 Chips, +1 Mult |
-| Aquarius / 물병자리 | Chant | +10 Chips, +1 Mult (repeat bonus +5 Chips/level) |
-| Aries / 양자리 | Simple | +15 Chips, +1 Mult |
-| Taurus / 황소자리 | Descriptive | +15 Chips, +1 Mult |
-| Gemini / 쌍둥이자리 | Transitive | +20 Chips, +1 Mult |
-| Cancer / 게자리 | Ditransitive | +25 Chips, +2 Mult |
-| Virgo / 처녀자리 | Compound | +30 Chips, +2 Mult |
-| Scorpio / 전갈자리 | Object Complement | +35 Chips, +2 Mult |
-| Sagittarius / 궁수자리 | Interrogative | +40 Chips, +2 Mult |
-| Capricorn / 염소자리 | Negative | +45 Chips, +3 Mult |
-| Pisces / 물고기자리 | Complex | +50 Chips, +3 Mult |
+| Libra / 천칭자리 | Outcry | +20 Chips, +2 Mult |
+| Leo / 사자자리 | Imperative | +20 Chips, +2 Mult |
+| Aquarius / 물병자리 | Chant | +20 Chips, +2 Mult (repeat bonus +10 Chips/level) |
+| Aries / 양자리 | Simple | +30 Chips, +2 Mult |
+| Taurus / 황소자리 | Descriptive | +30 Chips, +2 Mult |
+| Gemini / 쌍둥이자리 | Transitive | +40 Chips, +2 Mult |
+| Cancer / 게자리 | Ditransitive | +50 Chips, +4 Mult |
+| Virgo / 처녀자리 | Compound | +60 Chips, +4 Mult |
+| Scorpio / 전갈자리 | Object Complement | +70 Chips, +4 Mult |
+| Sagittarius / 궁수자리 | Interrogative | +80 Chips, +4 Mult |
+| Capricorn / 염소자리 | Negative | +90 Chips, +6 Mult |
+| Pisces / 물고기자리 | Complex | +100 Chips, +6 Mult |
 
-### 5.5 Letter Hands (글자 족보) — per-word structure bonuses (playtest-02 A-2)
+### 5.5 Word Hands (단어 족보) — per-word structure bonuses (playtest-02 A-2)
 
-Sentence patterns are the *run-level* payoff (evaluated across the whole sequence at blind end). **Letter Hands** supply the *word-level* dopamine — a per-word "hand type" (Balatro's poker hands, transposed to letter structure) evaluated at submission.
+Sentence patterns are the *run-level* payoff (evaluated across the whole sequence at blind end). **Word Hands** supply the *word-level* dopamine — a per-word "hand type" (Balatro's poker hands, transposed to letter structure) evaluated at submission. Engine ids remain `letterHands` / `LetterHandId`; this is a display-term change only.
 
 - **Scoring placement.** The matched hand's `+Chips` / `+Mult` fold into the word's scoring context **before the suit multiplier settles** (inside `WordScoringContext`, layer 1). Values are placeholders in `balance.ts`. The length multiplier (§3.1) folds in just before this, on the Mult side; Longword is the Chips side of the same idea, so the two stack rather than duplicating.
 - **Highest single hand only** (consistent with the sentence-pattern rule, §5.1 rule 2).
@@ -421,15 +422,15 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 |---|---|---|---|---|---|
 | 1 | Twin | two identical letters adjacent | b**OO**k | +15 Chips, +1 Mult | no |
 | 2 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +30 Chips, +2 Mult | no |
-| 3 | Longword | 7+ letters | LETTERS | +45 Chips, +2 Mult | no |
+| 3 | Longword | 6+ letters | LETTER | +45 Chips, +2 Mult | no |
 | 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +45 Chips, +3 Mult | no |
 | 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +75 Chips, +4 Mult | **yes** |
-| 6 | Straight | 6 consecutive alphabet values (any order) | Q-R-S-T-U-V | +90 Chips, +5 Mult | **yes** |
+| 6 | Straight | 5 consecutive alphabet values (any order) | Q-R-S-T-U | +90 Chips, +5 Mult | **yes** |
 
 - **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-02).** Run Info → Letter Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. A positive added Mult renders as `+Chips ×Mult`: Chips keeps its additive `+`, but Mult has no `+` after `×`. A 0 added Mult omits the Mult axis entirely and renders only `+Chips`.
-- **Out of scope (for now):** leveling Letter Hands (Constellation Cards level
-  sentence patterns only) and dedicated Emoji Tiles keyed to Letter Hands—see
+- **In-game reference (changed 2026-08-04).** Run Info → Word Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, and gibberish eligibility. A positive added Mult renders as `+Chips ×Mult`: Chips keeps its additive `+`, but Mult has no `+` after `×`. A 0 added Mult omits the Mult axis entirely and renders only `+Chips`.
+- **Out of scope (for now):** leveling Word Hands (Constellation Cards level
+  sentence patterns only) and dedicated Emoji Tiles keyed to Word Hands—see
   §12.4.
 
 ---
@@ -482,7 +483,7 @@ Letter scores are intrinsic tile value, so they must be recoverable regardless o
   POS. **Briefcase is the sole Starting-Pouch exception:** after every ordinary
   gibberish hook, it balances those final `Chips × 1.0` axes per §12.2.
 - **Sequence effect (b-2):** the gibberish entry is recorded as a **hole** in the sentence sequence. Under whole-sequence matching (§5.1) a hole voids all pattern matches. Correction Tape removes a hole.
-- **Letter hands (§5.5):** even as a hole, a gibberish submission can still score the gibberish-eligible letter hands — **Vowel Flush** and **Straight**. The Straight jackpot (dumping Q-R-S-T-U-V) is the headline case; suit/POS stay null and the hole is still recorded.
+- **Word Hands (§5.5):** even as a hole, a gibberish submission can still score the gibberish-eligible Word Hands — **Vowel Flush** and **Straight**. The Straight jackpot (dumping Q-R-S-T-U) is the headline case; suit/POS stay null and the hole is still recorded.
 - **Emoji tile interaction:** layer-1 (letter-level) emoji tiles fire on gibberish; layer-2/3 naturally cannot because suit and POS are null. R9 Dadaist is the explicit exception: it supplies final Slang membership, shows the Slang tag, and applies ×2.5 Mult, while `suit`/POS remain null and the sentence hole remains. No other rule is silently restored.
 - **UI note:** after a gibberish word is submitted, the current sentence-pattern label disappears because the sequence no longer matches — the rule explains itself without warning dialogs.
 - **UX surfacing (playtest-01 P0-3):** when staged tiles are not a valid word, the staged preview must say so explicitly (e.g. *"Not a word — submit as gibberish: +N chips, breaks the sentence"*) and the play button relabels to *Submit gibberish*. With the escape valve visible, the "my phase was wasted" complaint becomes impossible.
@@ -521,7 +522,7 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 
 The old "cash-out button unlocks at projected ≥ target" was a fake choice: surplus score is worthless and remaining phases pay gold, so continuing past the target was always wrong. **Auto-settle** removes the non-choice.
 
-- **Trigger.** After a submission's **full settle sequence** (word settle → letter-hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
+- **Trigger.** After a submission's **full settle sequence** (word settle → Word-Hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
 - **Remaining phases = money.** Normally 1 gold per remaining phase, paid as a
   Fee Settlement line item (§9.1). Purple Pouch replaces this with $2 per phase
   and adds $1 per remaining discard (§12.2).
@@ -583,7 +584,7 @@ Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**.
 
 **Endless curve (implemented 2026-07-31).** For Chapter `a ≥ 9`, let `c = a − 8`. The base target is `105000 × (1.6 + (0.75c)^(1+0.2c))^c`, truncated downward to two significant digits before blind, Pouch, Record, and boss multipliers apply. This double-exponential curve deliberately outruns slot-limited scaling. Chapter 38 is the explicit finite-number endpoint: clearing its Deadline ends the endless run; Chapter 39 is never created. UI score text switches to compact scientific notation at one billion. Lifetime statistics separately track the highest Endless Chapter and best finalized Endless blind score.
 
-**Curve re-tuned 2026-07-30** for the word-length Mult bonus (§3.1): `anteBaseTargets` scaled to hold the shape `src/sim/feel-chip-scale.ts` recorded (ante 1 ~77.5% clear, antes 2–4 falling off sharply), verified with `src/sim/length-mult.ts`. Pattern, Unison, letter-hand and material constants were **not** scaled with it, so they are relatively weaker than before this pass — a known follow-up, not an oversight.
+**Curve re-tuned 2026-07-30** for the word-length Mult bonus (§3.1): `anteBaseTargets` scaled to hold the shape `src/sim/feel-chip-scale.ts` recorded (ante 1 ~77.5% clear, antes 2–4 falling off sharply), verified with `src/sim/length-mult.ts`. Pattern, Unison, Word-Hand and material constants were **not** scaled with it, so they are relatively weaker than before this pass — a known follow-up, not an oversight.
 
 **Record/Pouch target modifiers (changed 2026-07-30).** Green LP adds
 `×1.15^(Chapter−1)` and Briefcase adds ×2. They multiply the ordinary
@@ -619,7 +620,7 @@ Chapter gating in this first balance slice.
 | Rainbow Tag · 레인보우 태그 | The next base-edition shop Emoji Tile becomes **free + Rainbow** |
 | Gray Tag · 그레이 태그 | The next base-edition shop Emoji Tile becomes **free + Gray** |
 | Investment Tag · 투자 태그 | Add **$25** to the next successfully cleared Deadline reward |
-| Voucher Tag · 바우처 태그 | Add one extra Voucher choice to the next shop; the Chapter still permits one purchase total |
+| Voucher Tag · 바우처 태그 | Add one extra Voucher choice to the next shop; both choices may be purchased in that shop |
 | Boss Tag · 보스 태그 | Immediately reroll the scheduled Deadline from its correct regular/finisher pool |
 | Tile Tag · 타일 태그 | Immediately open a free **Premium Tile Pack** |
 | Fable Tag · 우화 태그 | Immediately open a free **Premium Fable Pack** |
@@ -734,6 +735,12 @@ and blind kind/index are preserved, so that Deadline remains the same finisher.
 Deadline-only boss rerolls also stay within the finisher pool by deriving the
 pool from the scheduled boss id, not the lowered Chapter number.
 
+**No-repeat cycles (changed 2026-08-04).** The 12 ordinary bosses and four
+finishers each keep an independent seeded draw history. A boss cannot appear
+again until every boss in its own pool has appeared once; the pool then starts
+a new cycle. Chapter previews, Sketch Book rerolls, and Boss Tags all consume
+the same cycle, so rerolling never bypasses the rule.
+
 **Pool intent:** the 12 regular bosses cover each system roughly once, while the
 four finishers are periodic build checks. Memoirs remains scoped to the chapter;
 the old Proofreader/Babel finishers remain retired.
@@ -775,7 +782,7 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
 - **One voucher purchase per chapter (ante)**; only an effect that explicitly grants extra purchases can exceed this. Buying greys the slot for the rest of the chapter.
-- **Voucher Tag adds a choice, not a purchase.** It may show a second, distinct Voucher in the next shop, but redeeming either clears both choices and consumes the same one-purchase Chapter lock.
+- **Voucher Tag adds one extra purchase.** It shows a second, distinct Voucher in the next shop, and both choices may be redeemed there. The first redemption still sets the Chapter lock; the tagged survivor is the sole exception and disappears after its second redemption or on leaving the shop.
 - **Restock timing:** the voucher slot restocks when the Deadline (boss blind) ends — the *next* chapter's shop carries the new voucher. Within a chapter, the same voucher persists across the Draft/Revision/Deadline shops.
 - **Reappearance (Balatro-style):** purchased vouchers never reappear this run; **unpurchased** vouchers stay in the pool and may reappear in a later chapter (preserves "buy now or gamble on later").
 - **Redemption presentation (changed 2026-07-30):** Redeem shreds the voucher
@@ -820,7 +827,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 |---|---|---|
 | 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity. Each choice has a 0.3% Deer jackpot (§10.3). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Phoenix is a 0.3% per-choice jackpot; Comic Book may additionally add one ordinary Gambler card. | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Phoenix is a 0.05% per-choice jackpot; Comic Book may additionally add one ordinary Gambler card. | Arcana |
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
@@ -830,7 +837,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Tile modifiers.** Every Tile-Pack choice rolls its three axes independently: non-base material **40%**, non-base font **20%**, and edition **8%** (Gray 4% / Violet 2.8% / Rainbow 1.2%). Flyer/Wanted Poster raise only that edition table to 16%/32%. An Encyclopedia shop tile instead rolls material 40%, no font, and a fixed edition table totaling 20% (Gray 10% / Violet 7% / Rainbow 3%), unaffected by Flyer/Wanted Poster.
 
-**Jackpot and cross-family rolls (changed 2026-08-04).** Every Fable choice independently has a **0.3%** chance to become Phoenix, and every Constellation choice independently has a **0.3%** chance to become Deer. An Ink choice independently rolls Phoenix at **0.3%** and Deer at **0.3%**; its ordinary uniform pool excludes those two jackpot cards. Multiple jackpots may therefore appear in one pack. Comic Book additionally gives each non-jackpot Fable choice a **5%** chance to become an ordinary Gambler card, capped at one Comic-Book replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.jackpotChance`, `pack.gamblerInFableChance`).
+**Jackpot and cross-family rolls (changed 2026-08-04).** Every Fable choice independently has a **0.05%** chance to become Phoenix, and every Constellation choice independently has a **0.3%** chance to become Deer. An Ink choice independently rolls Phoenix at **0.05%** and Deer at **0.3%**. Its ordinary pool excludes those jackpots and uses relative weights **1** for ten standard cards versus **0.4** each for Rainman and Sake Cup; choices are drawn without replacement inside one pack. Multiple jackpots may therefore appear in one pack. Comic Book additionally gives each non-jackpot Fable choice a **5%** chance to become an ordinary Gambler card, capped at one Comic-Book replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.phoenixChance`, `pack.deerChance`, `pack.inkGamblerWeights`, `pack.gamblerInFableChance`).
 
 > **Impl note (updated 2026-08-04).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
@@ -925,7 +932,7 @@ also available through the surrounding tooltip and accessible label.
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
-One per sentence pattern, 1:1 (full mapping and first-level increments in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult, with each successive increment ×1.25 larger than the last (§5.2). Specializing into the most-played patterns is the intended play.
+One per sentence pattern, 1:1 (full mapping and first-level increments in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult, with each successive increment ×1.5 larger than the last (§5.2). Specializing into the most-played patterns is the intended play.
 
 **Use sequence (changed 2026-07-29).** The used card shakes while the score
 panel presents the pattern's current Mult and Chips. The green `+Mult` increment
@@ -970,11 +977,12 @@ the framing — these are gambles.
 **Ink Pack naming: settled.** The pack is the **Ink Pack / 잉크 팩** and the Gambler cards are its contents. The "Forbidden Books / 금서 팩" line stays **deferred** — not revived as a separate sixth pack, not used as an alternate name for this one. Revisit only if a concrete need appears that the five existing families cannot cover.
 
 **Acquisition routing (confirmed 2026-07-29).** Ink Packs are the native route.
-A Fable choice has a 0.3% Phoenix jackpot regardless of Comic Book. Comic Book
+A Fable choice has a 0.05% Phoenix jackpot regardless of Comic Book. Comic Book
 additionally enables an ordinary Gambler replacement at 5% per eligible choice,
 maximum one per pack. Deer has an independent 0.3% chance per Constellation
-choice, and both Phoenix and Deer have independent 0.3% bands in each Ink-Pack
-choice (§9.3). All rolls use the seeded RNG.
+choice. Ink-Pack choices have independent 0.05% Phoenix and 0.3% Deer bands;
+ordinary Rainman and Sake Cup each have 0.4 relative weight against every other
+ordinary card's 1.0 (§9.3). All rolls use the seeded RNG.
 
 **Target field.** A held Gambler card used during a blind targets the current
 hand. A tile-targeting Gambler used directly from a pack instead targets that
@@ -1327,7 +1335,7 @@ The starting card is chosen uniformly from the 14 implemented definitions and
 occupies one held-consumable slot.
 
 **Briefcase balance transform.** Resolve one individual word through every normal
-base, letter, material, font, edition, Letter Hand, suit, Emoji Tile, voucher,
+base, letter, material, font, edition, Word Hand, suit, Emoji Tile, voucher,
 and boss hook. Then, immediately before that word's final product, replace its
 axes with:
 
@@ -1444,7 +1452,7 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 - **Register/POS dataset refresh.** The complete baked table and reproducible
   register audit exist (§3.2, §4.2); refresh the licensed offline snapshots when
   source dictionaries or the authoritative classification criteria change.
-- **Emoji Tiles keyed to Letter Hands (§5.5).** Letter Hands currently ship
+- **Emoji Tiles keyed to Word Hands (§5.5).** Word Hands currently ship
   without a dedicated Emoji Tile family.
 - **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
   the active 120-tile roster; the separate 97-tile redesign remains postponed.
@@ -1452,7 +1460,7 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   locked-pool exclusion are confirmed (§9.2, §11), but remaining profile work
   must keep `src/ui/storage.ts` and `desktop/save-store.js` in sync.
 - **Letter-Hand leveling (if ever).** Constellation Cards level sentence patterns
-  only; whether Letter Hands should ever level remains deferred.
+  only; whether Word Hands should ever level remains deferred.
 - **Touch long-press marking (playtest-03 F).** Right-click discard marking still
   needs a touch equivalent.
 - **Lexicon audit sampling.** Full ENABLE POS coverage shipped 2026-08-03. Future

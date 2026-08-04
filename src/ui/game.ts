@@ -43,7 +43,7 @@ export interface StagePreview {
   suitMult: number;
   /** POS of the staged word (item 6) — its tagged set, shown before submitting */
   pos: string | null;
-  /** the letter hand this word matches (A-2), if any */
+  /** the Word Hand this word matches (A-2), if any */
   letterHand: { id: LetterHandId; chips: number; mult: number } | null;
   /** true if the active boss forbids this word (The Noun Lock) */
   blocked: boolean;
@@ -54,7 +54,7 @@ export interface StagePreview {
 /** A translate fn (i18n `t`) — POS keys carry no params, so a key→string is enough. */
 export type PosTranslate = (key: string) => string;
 
-/** Preview the staged word: validity, suit, chips, POS, and letter hand. */
+/** Preview the staged word: validity, suit, chips, POS, and Word Hand. */
 export function stagePreview(
   blind: BlindState,
   run: RunState,

@@ -17,7 +17,7 @@
  */
 
 import { BALANCE } from '../engine/balance';
-import { bossPoolForAnte, drawBoss, enterBossBlind } from '../engine/bosses';
+import { bossPoolForAnte, drawBossFromCycle, enterBossBlind } from '../engine/bosses';
 import { discountedPrice, VOUCHER_REGISTRY } from '../engine/vouchers';
 import { blindExhausted, canEndEarly, discardTiles, endBlind, startBlind, submitWord } from '../engine/loop';
 import { onBlindEnded, onTilesDestroyed } from '../engine/jokers';
@@ -422,10 +422,12 @@ function simulateRun(
   cohort: Cohort,
 ): void {
   const base = newRun(seed);
+  const firstBoss = drawBossFromCycle(makeRng(`${seed}#boss-1`), bossPoolForAnte(1));
   let run: RunState = {
     ...base,
     voucherOffer: rollVoucherOffer(base, makeRng(`${seed}#voucher-1`)),
-    chapterBossId: drawBoss(makeRng(`${seed}#boss-1`), bossPoolForAnte(1)),
+    chapterBossId: firstBoss.bossId,
+    bossHistory: firstBoss.history,
   };
   const reached = new Set<number>();
   const offered = new Set<TileMaterial>();
@@ -491,14 +493,20 @@ function simulateRun(
     }
     if (blindIndex === 2) {
       if (naturallyCleared) cohort.deadlinesCleared[chapter]! += 1;
+      const nextBoss = run.ante <= CHAPTERS
+        ? drawBossFromCycle(
+            makeRng(`${seed}#boss-${run.ante}`),
+            bossPoolForAnte(run.ante),
+            run.bossHistory,
+          )
+        : null;
       run = {
         ...run,
         voucherOffer: rollVoucherOffer(run, makeRng(`${seed}#voucher-${run.ante}`)),
         voucherLocked: false,
         bossRerollsUsed: 0,
-        chapterBossId: run.ante <= CHAPTERS
-          ? drawBoss(makeRng(`${seed}#boss-${run.ante}`), bossPoolForAnte(run.ante))
-          : null,
+        chapterBossId: nextBoss?.bossId ?? null,
+        bossHistory: nextBoss?.history ?? run.bossHistory ?? [],
         wordsThisAnte: [],
       };
     }

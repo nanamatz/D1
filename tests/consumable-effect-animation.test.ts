@@ -69,6 +69,12 @@ describe('shared consumable result animation', () => {
     );
   });
 
+  it('wraps Fable effect copy at word boundaries', () => {
+    const styles = source('../src/ui/styles/screens.css');
+    expect(styles).toMatch(/\.cfx-copy > p\s*\{[^}]*word-break:\s*keep-all;/s);
+    expect(styles).toMatch(/\.cfx-copy > p\s*\{[^}]*overflow-wrap:\s*break-word;/s);
+  });
+
   it('wires held, shop, and non-target pack consumables to the shared effect bus', () => {
     const game = source('../src/ui/useGame.ts');
     expect(game.match(/consumableEffectBus\.emit/g)?.length).toBeGreaterThanOrEqual(5);

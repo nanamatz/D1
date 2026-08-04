@@ -39,8 +39,6 @@ const canMod = (w: POSWord): boolean => w.pos.some(isModifier);
 type Slot = (w: POSWord) => boolean;
 const NOUN: Slot = (w) => can(w, 'noun');
 const ADJ: Slot = (w) => can(w, 'adjective');
-const INTRANS: Slot = (w) => can(w, 'verbIntransitive');
-const TRANS: Slot = (w) => can(w, 'verbTransitive');
 const LINKING: Slot = (w) => can(w, 'verbLinking');
 const INTERJECTION: Slot = (w) => can(w, 'interjection');
 const ANYVERB: Slot = (w) => canVerb(w);
@@ -107,10 +105,10 @@ function matchSkeleton(words: readonly POSWord[], skeleton: readonly Slot[]): nu
 const CLAUSE_SKELETONS: readonly Slot[][] = [
   [ANYVERB, NOUN], // imperative (verb + noun)
   [ANYVERB], // imperative (bare verb)
-  [NOUN, INTRANS], // simple
+  [NOUN, ANYVERB], // simple
   [NOUN, LINKING, ADJ], // descriptive
-  [NOUN, TRANS, NOUN], // transitive
-  [NOUN, TRANS, NOUN, NOUN], // ditransitive
+  [NOUN, ANYVERB, NOUN], // transitive
+  [NOUN, ANYVERB, NOUN, NOUN], // ditransitive
   [NOUN, ANYVERB, ANYVERB], // auxiliary + lexical verb
 ];
 
@@ -211,10 +209,10 @@ function candidates(words: readonly POSWord[]): Candidate[] {
   // matching a lone verb spiked the projection off a single tile (changed from
   // the original "RUN alone counts" design; GDD §5.2 note).
   push('imperative', matchSkeleton(words, [ANYVERB, NOUN]));
-  push('simple', matchSkeleton(words, [NOUN, INTRANS]));
+  push('simple', matchSkeleton(words, [NOUN, ANYVERB]));
   push('descriptive', matchSkeleton(words, [NOUN, LINKING, ADJ]));
-  push('transitive', matchSkeleton(words, [NOUN, TRANS, NOUN]));
-  push('ditransitive', matchSkeleton(words, [NOUN, TRANS, NOUN, NOUN]));
+  push('transitive', matchSkeleton(words, [NOUN, ANYVERB, NOUN]));
+  push('ditransitive', matchSkeleton(words, [NOUN, ANYVERB, NOUN, NOUN]));
 
   const chant = matchChant(words);
   if (chant !== null) push('chant', 0, chant);

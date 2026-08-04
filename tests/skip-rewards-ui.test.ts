@@ -113,10 +113,11 @@ describe('Blind Select skip presentation', () => {
     expect(game).not.toContain('if (!state.pendingBlindAfterPack || state.pack) return;');
   });
 
-  it('renders Voucher Tag as an extra choice and Coupon packs at zero price', () => {
+  it('renders Voucher Tag as a shared-gated extra purchase and Coupon packs at zero price', () => {
     const shop = source('src/ui/components/Shop.tsx');
     expect(shop).toContain("['bonus', shop.bonusVoucher]");
     expect(shop).toContain('g.buyVoucher(slot)');
+    expect(shop).toContain('canBuyVoucher(run, shop, slot)');
     expect(shop).toMatch(/const price = p\.free\s*\? 0/s);
   });
 });

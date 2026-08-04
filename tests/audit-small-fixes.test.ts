@@ -4,7 +4,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { catchUpSequencer } from '../src/ui/audio';
-import { CORE_BOSS_IDS, FINISHER_BOSS_IDS, drawBoss } from '../src/engine/bosses';
+import {
+  CORE_BOSS_IDS,
+  FINISHER_BOSS_IDS,
+  drawBoss,
+  drawBossFromCycle,
+} from '../src/engine/bosses';
 import { makeRng } from '../src/engine/rng';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
@@ -41,6 +46,21 @@ describe('boss reroll never returns the boss it replaced (BALANCE-03 / U-8)', ()
     const drawn = drawBoss(makeRng('x'), 'finisher', 'not-a-real-boss');
     expect(FINISHER_BOSS_IDS).toContain(drawn);
     expect(typeof only).toBe('string');
+  });
+
+  it('does not repeat a boss until its pool is exhausted', () => {
+    for (const [pool, ids] of [['core', CORE_BOSS_IDS], ['finisher', FINISHER_BOSS_IDS]] as const) {
+      let history: string[] = [];
+      const draws: string[] = [];
+      const rng = makeRng(`boss-cycle-${pool}`);
+      for (let index = 0; index < ids.length * 2; index += 1) {
+        const result = drawBossFromCycle(rng, pool, history);
+        draws.push(result.bossId);
+        history = result.history;
+      }
+      expect(new Set(draws.slice(0, ids.length)).size).toBe(ids.length);
+      expect(new Set(draws.slice(ids.length)).size).toBe(ids.length);
+    }
   });
 });
 

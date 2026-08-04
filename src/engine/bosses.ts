@@ -250,12 +250,33 @@ export const bossPoolForId = (id: string | null): BossPool =>
 export function drawBoss(
   rng: { int: (n: number) => number },
   pool: BossPool = 'core',
-  exclude?: string | null,
+  exclude?: string | readonly string[] | null,
 ): string {
   const all = pool === 'finisher' ? FINISHER_BOSS_IDS : CORE_BOSS_IDS;
-  const ids = exclude ? all.filter((id) => id !== exclude) : all;
+  const excluded = new Set(Array.isArray(exclude) ? exclude : exclude ? [exclude] : []);
+  const ids = all.filter((id) => !excluded.has(id));
   const from = ids.length > 0 ? ids : all;
   return from[rng.int(from.length)]!;
+}
+
+/** Draw without repeats until the selected pool is exhausted, then start a new cycle. */
+export function drawBossFromCycle(
+  rng: { int: (n: number) => number },
+  pool: BossPool = 'core',
+  history: readonly string[] = [],
+  exclude?: string | null,
+): { bossId: string; history: string[] } {
+  const all = pool === 'finisher' ? FINISHER_BOSS_IDS : CORE_BOSS_IDS;
+  const poolIds = new Set(all);
+  const seededHistory = [...history];
+  if (exclude && poolIds.has(exclude) && !seededHistory.includes(exclude)) {
+    seededHistory.push(exclude);
+  }
+  const exhausted = new Set(seededHistory.filter((id) => poolIds.has(id))).size >= all.length;
+  const retained = exhausted ? seededHistory.filter((id) => !poolIds.has(id)) : seededHistory;
+  const blocked = [...retained, ...(exclude ? [exclude] : [])];
+  const bossId = drawBoss(rng, pool, blocked);
+  return { bossId, history: [...retained, bossId] };
 }
 
 export function enterBossBlind(

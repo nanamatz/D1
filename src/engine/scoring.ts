@@ -32,7 +32,7 @@ export function spell(tiles: readonly Tile[]): string {
  * vanishes from the string (which would corrupt straight/flush detection).
  *
  * Kept separate from `spell()` because it is the explicit structural input for
- * letter-hand matching, even though both currently return the same uppercase
+ * Word-Hand matching, even though both currently return the same uppercase
  * string.
  */
 export function letterString(tiles: readonly Tile[]): string {

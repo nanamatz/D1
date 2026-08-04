@@ -15,24 +15,25 @@ describe('A-2 letter hands — matching + highest-only rule', () => {
     expect(hand('LEVEL')?.id).toBe('palindrome');
   });
 
-  it('BANANA → Triplet (A ×3)', () => {
-    expect(hand('BANANA')?.id).toBe('triplet');
+  it('MAMMA → Triplet (M ×3)', () => {
+    expect(hand('MAMMA')?.id).toBe('triplet');
   });
 
   it('BOOK → Twin (adjacent OO, valid word)', () => {
     expect(hand('BOOK')?.id).toBe('twin');
   });
 
-  it('LETTERS → Longword beats the adjacent-TT Twin (highest only)', () => {
-    expect(hand('LETTERS')?.id).toBe('longword');
+  it('LETTER → Longword at 6 letters beats the adjacent-TT Twin (highest only)', () => {
+    expect(hand('LETTER')?.id).toBe('longword');
+    expect(hand('PLANE')).toBeNull();
   });
 
   it('EDUCATION → Vowel Flush beats Longword (highest only)', () => {
     expect(hand('EDUCATION')?.id).toBe('vowelFlush');
   });
 
-  it('QRSTUV → Straight (6 consecutive alphabet values)', () => {
-    expect(hand('QRSTUV')?.id).toBe('straight');
+  it('QRSTU → Straight (5 consecutive alphabet values)', () => {
+    expect(hand('QRSTU')?.id).toBe('straight');
   });
 
   it('a plain short word matches nothing', () => {
@@ -42,7 +43,7 @@ describe('A-2 letter hands — matching + highest-only rule', () => {
 
 describe('A-2 letter hands — gibberish eligibility', () => {
   it('Vowel Flush and Straight fire on gibberish', () => {
-    expect(hand('QRSTUV', true)?.id).toBe('straight');
+    expect(hand('QRSTU', true)?.id).toBe('straight');
     expect(hand('AEIOU', true)?.id).toBe('vowelFlush');
   });
 
@@ -95,15 +96,15 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     expect(submission.settledScore).toBe(270);
   });
 
-  it('gibberish QRSTUV fires Straight, stays a hole (suit/POS null)', () => {
-    const lex = makeLexicon(['book'], {}); // QRSTUV is not a word
-    const { run, blind } = handOf(['Q', 'R', 'S', 'T', 'U', 'V']);
-    const ids = blind.hand.slice(0, 6).map((t) => t.id);
+  it('gibberish QRSTU fires Straight, stays a hole (suit/POS null)', () => {
+    const lex = makeLexicon(['book'], {}); // QRSTU is not a word
+    const { run, blind } = handOf(['Q', 'R', 'S', 'T', 'U']);
+    const ids = blind.hand.slice(0, 5).map((t) => t.id);
     const { submission } = submitWord(blind, run, lex, ids, makeRng('test'));
-    // chips: Q30+R3+S3+T3+U3+V12 = 54, +Straight 60 = 114 · mult: gibberish 1.0 +4 = 5 → 570
+    // chips: Q30+R3+S3+T3+U3 = 42, +Straight 90 = 132; mult: gibberish 1.0 +5 = 6
     expect(submission.isGibberish).toBe(true);
     expect(submission.suit).toBeNull();
     expect(submission.posUsed).toBeNull();
-    expect(submission.settledScore).toBe(864);
+    expect(submission.settledScore).toBe(792);
   });
 });

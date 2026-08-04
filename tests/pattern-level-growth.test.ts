@@ -4,6 +4,12 @@ import { patternChipsMult } from '../src/engine/patterns';
 import { patternLevelTone } from '../src/ui/patternLevel';
 
 describe('sentence-pattern level growth', () => {
+  it('uses the stronger 2× first increments and 1.5× follow-up growth', () => {
+    expect(BALANCE.patternLevelGrowthFactor).toBe(1.5);
+    expect(BALANCE.patterns.simple).toMatchObject({ levelChips: 30, levelMult: 2 });
+    expect(patternChipsMult('simple', 3)).toEqual({ chips: 115, mult: 8 });
+  });
+
   it('keeps every level value and level-up delta a natural number', () => {
     const base = BALANCE.patterns.simple;
     const one = patternChipsMult('simple', 1);

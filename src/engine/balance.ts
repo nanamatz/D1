@@ -8,6 +8,7 @@
  */
 
 import type {
+  ConsumableId,
   FontEffectId,
   JokerEdition,
   Letter,
@@ -71,7 +72,7 @@ export const BALANCE = {
   // ----- Word length (GDD §3.1, 2026-07-30) — length ADDS to Mult, it does not
   //       multiply the suit multiplier: `chips × (suitMult + length × multPerLetter)`.
   //       Additive keeps the suit multiplier weighty instead of swamped. Valid words
-  //       only (§6.4). The Longword letter hand (§5.5) is the Chips side of the same
+  //       only (§6.4). The Longword Word Hand (§5.5) is the Chips side of the same
   //       idea, so the two are not duplicates. Sim: src/sim/length-mult.ts. -----
   wordLength: { multPerLetter: 1, maxLetters: 18 },
 
@@ -120,26 +121,26 @@ export const BALANCE = {
   //       is retired). Chant additionally adds `repeatChips` per repeat beyond the
   //       2nd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
   patterns: {
-    outcry:       { rank: 1, baseChips: 15, baseMult: 2, levelChips: 10, levelMult: 1 },
-    imperative:   { rank: 2, baseChips: 25, baseMult: 3, levelChips: 10, levelMult: 1 },
-    chant:        { rank: 3, baseChips: 25, baseMult: 3, levelChips: 10, levelMult: 1, repeatChips: 10, repeatLevelChips: 5, repeatFloor: 2 },
-    simple:       { rank: 4, baseChips: 40, baseMult: 3, levelChips: 15, levelMult: 1 },
-    descriptive:  { rank: 5, baseChips: 45, baseMult: 4, levelChips: 15, levelMult: 1 },
-    transitive:   { rank: 6, baseChips: 60, baseMult: 4, levelChips: 20, levelMult: 1 },
-    ditransitive: { rank: 7, baseChips: 75, baseMult: 5, levelChips: 25, levelMult: 2 },
-    compound:     { rank: 8, baseChips: 90, baseMult: 5, levelChips: 30, levelMult: 2 },
-    objectComplement: { rank: 9, baseChips: 115, baseMult: 6, levelChips: 35, levelMult: 2 },
-    interrogative:    { rank: 10, baseChips: 135, baseMult: 6, levelChips: 40, levelMult: 2 },
-    negative:         { rank: 11, baseChips: 165, baseMult: 7, levelChips: 45, levelMult: 3 },
-    complex:          { rank: 12, baseChips: 195, baseMult: 7, levelChips: 50, levelMult: 3 },
+    outcry:       { rank: 1, baseChips: 15, baseMult: 2, levelChips: 20, levelMult: 2 },
+    imperative:   { rank: 2, baseChips: 25, baseMult: 3, levelChips: 20, levelMult: 2 },
+    chant:        { rank: 3, baseChips: 25, baseMult: 3, levelChips: 20, levelMult: 2, repeatChips: 10, repeatLevelChips: 10, repeatFloor: 2 },
+    simple:       { rank: 4, baseChips: 40, baseMult: 3, levelChips: 30, levelMult: 2 },
+    descriptive:  { rank: 5, baseChips: 45, baseMult: 4, levelChips: 30, levelMult: 2 },
+    transitive:   { rank: 6, baseChips: 60, baseMult: 4, levelChips: 40, levelMult: 2 },
+    ditransitive: { rank: 7, baseChips: 75, baseMult: 5, levelChips: 50, levelMult: 4 },
+    compound:     { rank: 8, baseChips: 90, baseMult: 5, levelChips: 60, levelMult: 4 },
+    objectComplement: { rank: 9, baseChips: 115, baseMult: 6, levelChips: 70, levelMult: 4 },
+    interrogative:    { rank: 10, baseChips: 135, baseMult: 6, levelChips: 80, levelMult: 4 },
+    negative:         { rank: 11, baseChips: 165, baseMult: 7, levelChips: 90, levelMult: 6 },
+    complex:          { rank: 12, baseChips: 195, baseMult: 7, levelChips: 100, levelMult: 6 },
   },
-  patternLevelGrowthFactor: 1.25,
+  patternLevelGrowthFactor: 1.5,
 
   /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
    *  uniform on the Chips side for every pattern (the old multiply-pattern variant is gone). */
   modifierAbsorption: { chips: 15 },
 
-  // ----- Letter hands (playtest-02 A-2) — per-word structure bonuses, applied
+  // ----- Word Hands (playtest-02 A-2) — per-word structure bonuses, applied
   //       inside WordScoringContext before the suit multiplier settles. Highest
   //       single hand only. rank 1 (weakest) .. 6 (strongest). -----
   letterHands: {
@@ -151,7 +152,7 @@ export const BALANCE = {
     straight:   { rank: 6, chips: 90, mult: 5 },
   },
   /** min word length for the Longword hand, and min length for Palindrome to count */
-  letterHand: { longwordLen: 7, palindromeMinLen: 3, straightRun: 6 },
+  letterHand: { longwordLen: 6, palindromeMinLen: 3, straightRun: 5 },
 
   // Constellation level-ups are uniform per pattern via `patterns.*.levelChips /
   // levelMult` (feature-02 A) — the separate punctuationLevel table is retired.
@@ -275,9 +276,25 @@ export const BALANCE = {
     /** Comic Book only (GDD §9.3): per-choice chance a Fable Pack option becomes a
      *  Gambler card, capped at one per pack. Without the voucher it is exactly 0. */
     gamblerInFableChance: 0.05,
-    /** Per-choice jackpot chance for Phoenix in Fable Packs and Deer in
-     *  Constellation Packs; both share the Ink Pack jackpot rate. */
-    jackpotChance: 0.003,
+    /** Per-choice jackpot bands. Ink rolls both; Fable rolls Phoenix and
+     *  Constellation rolls Deer. */
+    phoenixChance: 0.0005,
+    deerChance: 0.003,
+    /** Relative weights for ordinary Ink Pack Gambler cards. */
+    inkGamblerWeights: {
+      barnSwallow: 1,
+      boar: 1,
+      bridge: 1,
+      bushWarbler: 1,
+      butterflies: 1,
+      craneAndSun: 1,
+      cuckoo: 1,
+      curtain: 1,
+      fullMoon: 1,
+      geese: 1,
+      rainman: 0.4,
+      sakeCup: 0.4,
+    } as Partial<Record<ConsumableId, number>>,
     sizeWeights: { normal: 8, jumbo: 4, mega: 1 } as Record<string, number>,
     scarceShow: { normal: 2, jumbo: 4, mega: 4 } as Record<PackSize, number>,
     tileModifiers: { materialChance: 0.4, fontChance: 0.2 },

@@ -4,7 +4,7 @@ import { LETTER_HAND_REGISTRY } from '../src/engine/letterHands';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 
-describe('Run Info Letter Hands reference', () => {
+describe('Run Info Word Hands reference', () => {
   it('renders a dedicated tab from the headless registry', () => {
     const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
     expect(source).toContain("{ id: 'hands', label: 'runinfo.tabHands' }");

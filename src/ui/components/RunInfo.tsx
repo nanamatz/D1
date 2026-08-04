@@ -48,7 +48,7 @@ const PATTERN_ORDER: PatternId[] = [
   'complex',
 ];
 
-/** Run Info overlay (spec §2.4): Pattern levels · Letter Hands · Blinds · Vouchers. */
+/** Run Info overlay (spec §2.4): Pattern levels · Word Hands · Blinds · Vouchers. */
 export function RunInfo({ run, blind, onClose }: Props) {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>('patterns');

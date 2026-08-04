@@ -86,6 +86,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     voucherOffer: null, // rolled at run start / each new chapter (playtest-03 C)
     voucherLocked: false,
     chapterBossId: null, // drawn at chapter start (playtest-04 D-6)
+    bossHistory: [],
     wordsThisAnte: [], // reset per ante; read by Memoirs (회고록)
     bossRerollsUsed: 0,
     counters: freshCounters(),

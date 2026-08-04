@@ -55,7 +55,7 @@ interface Props {
   patternLevels: Record<PatternId, number>;
 }
 
-/** The letter-hand / suit / word-length stamp that lands on the just-scored word (B step 4). */
+/** The Word-Hand / suit / word-length stamp that lands on the just-scored word (B step 4). */
 function WordStamp() {
   const { t } = useI18n();
   const settle = useSettleView();

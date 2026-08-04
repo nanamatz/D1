@@ -570,7 +570,7 @@ function scoreSubmission(
   events.push({ kind: 'suit', suit: b.suit, mult: b.mult });
 
   // Word length adds Mult (GDD §3.1) — a whole-word stamp landing right after the
-  // suit, so the letter hand below stacks on top of it. Valid words only (§6.4).
+  // suit, so the Word Hand below stacks on top of it. Valid words only (§6.4).
   const lengthMult = wordLengthMult(tiles.length, submission.isGibberish);
   if (lengthMult !== 0) {
     ctx.mult += lengthMult;
@@ -594,7 +594,7 @@ function scoreSubmission(
     events.push({ kind: 'material', ...beat });
   }
 
-  // Letter hand (A-2): highest single per-word structure bonus, folded in before
+  // Word Hand (A-2): highest single per-word structure bonus, folded in before
   // the suit multiplier settles. Vowel Flush / Straight also fire on gibberish.
   const letters = letterString(tiles);
   const letterHand = evaluateLetterHand(letters, submission.isGibberish);

@@ -282,8 +282,8 @@ export function applyPendingShopTags(
     consumed.add(tagIndex);
   });
 
-  // One additional choice only. Locked Chapters cannot redeem either choice,
-  // so the tag waits for the next shop where its reward can actually resolve.
+  // One additional choice. Locked Chapters cannot start a tagged pair, so the
+  // tag waits for the next shop where its reward can actually resolve.
   tags.forEach((tag, tagIndex) => {
     if (tag !== 'voucherTag' || consumed.has(tagIndex) || bonusVoucher || run.voucherLocked) {
       return;
@@ -390,24 +390,38 @@ export function sellJoker(run: RunState, index: number): SellResult {
   return { run: { ...run, gold: run.gold + value, jokers }, ok: true };
 }
 
-/**
- * Buy the offered voucher: apply its effect + record ownership (GDD §9.4). Only
- * ONE voucher purchase per chapter (playtest-03 C) — locks the slot until the
- * next chapter's shop.
- */
+/** Whether the selected slot can be redeemed under the ordinary Chapter lock.
+ * Voucher Tag's surviving choice is normalized into the bonus slot, which is
+ * the one explicit second-purchase exception. */
+export function canBuyVoucher(
+  run: RunState,
+  shop: ShopState,
+  slot: 'base' | 'bonus' = 'base',
+): boolean {
+  const id = slot === 'bonus' ? shop.bonusVoucher : shop.voucher;
+  if (!id) return false;
+  return !run.voucherLocked
+    || (slot === 'bonus' && shop.voucher === null);
+}
+
+/** Buy the offered voucher and apply its effect. Ordinary shops lock after one
+ * purchase; Voucher Tag keeps the other choice as one redeemable bonus slot. */
 export function buyVoucher(
   run: RunState,
   shop: ShopState,
   slot: 'base' | 'bonus' = 'base',
 ): BuyResult {
   const id = slot === 'bonus' ? shop.bonusVoucher : shop.voucher;
-  if (!id || run.voucherLocked) return { run, shop, ok: false };
+  if (!id || !canBuyVoucher(run, shop, slot)) return { run, shop, ok: false };
   const def = VOUCHER_REGISTRY.get(id);
   if (!def || run.gold < def.price) return { run, shop, ok: false };
   const nextRun = applyVoucher({ ...run, gold: run.gold - def.price, voucherLocked: true }, id);
+  const remaining = slot === 'base' ? shop.bonusVoucher : shop.voucher;
   return {
     run: nextRun,
-    shop: { ...shop, voucher: null, bonusVoucher: null },
+    // Always keep a tagged pair's survivor in the bonus slot. That single shape
+    // lets the shared gate distinguish it from a forged ordinary locked offer.
+    shop: { ...shop, voucher: null, bonusVoucher: remaining },
     ok: true,
   };
 }

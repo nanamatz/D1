@@ -3,6 +3,7 @@ import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
+import { canBuyVoucher } from '../../engine/shop';
 import { canAddJoker, discountedPrice, rerollDiscount } from '../../engine/vouchers';
 import { motionOff } from '../motion';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
@@ -221,7 +222,7 @@ export function Shop({ g }: { g: UseGame }) {
 
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
   const redeemVoucher = (slot: 'base' | 'bonus', price: number) => {
-    if (redeemingVoucher || run.voucherLocked || run.gold < price) return;
+    if (redeemingVoucher || !canBuyVoucher(run, shop, slot) || run.gold < price) return;
     setRedeemingVoucher(slot);
     redeemTimer.current = window.setTimeout(() => {
       g.buyVoucher(slot);
@@ -385,7 +386,9 @@ export function Shop({ g }: { g: UseGame }) {
                       actionLabel={t('shop.redeem')}
                       actionClassName="exchange"
                       disabled={
-                        !!redeemingVoucher || run.voucherLocked || run.gold < voucher.price
+                        !!redeemingVoucher
+                        || !canBuyVoucher(run, shop, slot)
+                        || run.gold < voucher.price
                       }
                       onSelect={() => toggleOffer(offerKey)}
                       onAction={() => redeemVoucher(slot, voucher.price)}

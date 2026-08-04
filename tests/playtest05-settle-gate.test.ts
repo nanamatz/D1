@@ -87,6 +87,21 @@ describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', 
     const beats = [tile('t0'), material('t0'), suit(), settle()];
     expect(settleDurationMs(beats, 1, false)).toBeGreaterThan(settleDurationMs(beats, 4, false));
   });
+
+  it('keeps Lead Plate probability results readable at 4×', () => {
+    const lead: ScoreEvent = {
+      kind: 'material',
+      material: 'leadPlate',
+      tileId: 'lead',
+      chipsDelta: 0,
+      multDelta: 0,
+      chanceResults: [{ chance: 0.5, label: 'mult', outcome: 'failure' }],
+    };
+    expect(settleDurationMs([lead, settle()], 4, false)).toBeGreaterThan(
+      settleDurationMs([material('plain'), settle()], 4, false),
+    );
+    expect(settleDurationMs([lead, settle()], 4, false)).toBe(600 + 650 / 4);
+  });
 });
 
 describe('settleDurationMs — enhanced Emoji Tile beats stay readable', () => {

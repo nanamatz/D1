@@ -390,6 +390,8 @@ export interface RunState {
   /** this chapter's Deadline boss, drawn at chapter start so Blind Select can
    *  always show its effect (playtest-04 D-6) */
   chapterBossId: string | null;
+  /** Bosses drawn in each pool's current no-repeat cycle. Optional for legacy saves. */
+  bossHistory?: string[];
   /** lowercased words submitted so far THIS ante (small + big + boss phases).
    *  Reset when a new ante begins; read by the Memoirs boss (회고록) to debuff
    *  any word already played this ante (GDD §8.3). */
@@ -451,7 +453,7 @@ export interface ShopState {
   items: (ShopItem | null)[];
   /** single voucher slot, restocks each ante (GDD §9.2); null when owned/bought */
   voucher: VoucherId | null;
-  /** Voucher Tag adds one extra choice; either purchase still locks the Chapter. */
+  /** Voucher Tag adds one extra choice; both choices may be bought in that shop. */
   bonusVoucher: VoucherId | null;
   /** pack slots (null = bought) */
   packs: (PackSlot | null)[];

@@ -91,7 +91,7 @@ export interface SettleView {
     score: number;
     gold: number;
   } | null;
-  /** a letter-hand / suit / word-length stamp landing this beat */
+  /** a Word-Hand / suit / word-length stamp landing this beat */
   stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch'; label: string } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
    *  (item 6). `id` is the beat index so each pop re-mounts and replays its rise.
@@ -133,11 +133,22 @@ const BASE_STEP = 600;
 // The visible trigger keeps the ordinary duration; the unused remainder is
 // separation before the next score beat, so adjacent effects do not blur together.
 const ENHANCED_JOKER_STEP = 1000;
+// A Lead Plate probability badge otherwise unmounts after 150ms at 4×, before
+// its delayed reveal can be read. Chance-bearing material beats keep this
+// real-time floor; settle completion uses the same duration helper below.
+const CHANCE_MATERIAL_STEP_MIN = 600;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
 
 const beatDurationMs = (event: ScoreEvent): number =>
   event.kind === 'edition' && event.jokerId ? ENHANCED_JOKER_STEP : BASE_STEP;
+
+const scaledBeatDurationMs = (event: ScoreEvent, speed: number): number => {
+  const scaled = beatDurationMs(event) / speed;
+  return event.kind === 'material' && event.chanceResults?.length
+    ? Math.max(scaled, CHANCE_MATERIAL_STEP_MIN)
+    : scaled;
+};
 
 /**
  * Pure fold of one ScoreEvent into the running chips/mult tally — the single
@@ -198,9 +209,9 @@ export function settleDurationMs(
   if (reduce) return REDUCED_HOLD;
   const beats = events.filter((e) => e.kind !== 'settle').length;
   if (beats === 0) return 0;
-  return (events
+  return events
     .filter((event) => event.kind !== 'settle')
-    .reduce((total, event) => total + beatDurationMs(event), 0) + FINAL_HOLD) / speed;
+    .reduce((total, event) => total + scaledBeatDurationMs(event, speed), 0) + FINAL_HOLD / speed;
 }
 
 /**
@@ -264,8 +275,8 @@ export function SettleProvider({
 
     let elapsed = 0;
     beats.forEach((e, i) => {
-      const startsAt = elapsed / speed;
-      elapsed += beatDurationMs(e);
+      const startsAt = elapsed;
+      elapsed += scaledBeatDurationMs(e, speed);
       timers.push(
         setTimeout(() => {
           const prevChips = chips;

@@ -2902,7 +2902,7 @@
   color: #fff;
   font-size: 1.2em;
 }
-/* Letter-hand / suit / word-length stamp landing on the just-scored word (B step 4). */
+/* Word-Hand / suit / word-length stamp landing on the just-scored word (B step 4). */
 .word-stamp {
   position: absolute;
   top: -16px;
@@ -4386,7 +4386,7 @@
   color: var(--gold);
   opacity: 0.9;
 }
-/* FIXED size (playtest-06): the status line's text varies (letter-hand name /
+/* FIXED size (playtest-06): the status line's text varies (Word-Hand name /
    "not a word" / suit) and the 0×0 box only fills during a settle, so a content-
    sized panel made the whole rail reflow mid-play. Locked so nothing below it
    moves; the status clips to one line rather than growing the box. */
