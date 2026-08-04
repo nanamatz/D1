@@ -212,9 +212,8 @@ export const emojiTileShopPrice = (run: RunState, price: number): number =>
         BALANCE.jokers.carteBlanche.shopDiscount,
   );
 
-/** Central duplicate rule. Copy Editor is the explicit persistent exception. */
+/** Central duplicate rule for ordinary offers and acquisitions. */
 export const canOwnJoker = (run: RunState, defId: string): boolean =>
-  run.jokers.some((joker) => joker.defId === 'copyEditor') ||
   !run.jokers.some((joker) => joker.defId === defId);
 
 export const canAddJoker = (

@@ -5,7 +5,7 @@
  */
 
 import { BALANCE } from './balance';
-import { JOKER_REGISTRY } from './jokers';
+import { defaultJokerBus, JOKER_REGISTRY } from './jokers';
 import { availableJokerDefs, sampleJokerDefs } from './offers';
 import {
   consumableBuyPrice,
@@ -176,7 +176,20 @@ export function rollVoucherOffer(
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
 ): VoucherId | null {
-  const available = availableVoucherIds(run, profileUnlocked);
+  const boughtBases = new Set(run.voucherBasesBoughtThisChapter ?? []);
+  // Legacy mid-chapter saves predate the explicit list. Their fixed, now-owned
+  // offer is the one base voucher we can recover without changing save versions.
+  if (
+    run.voucherBasesBoughtThisChapter === undefined &&
+    run.voucherLocked &&
+    run.voucherOffer &&
+    run.vouchers.includes(run.voucherOffer) &&
+    VOUCHER_REGISTRY.get(run.voucherOffer)?.tier === 'base'
+  ) boughtBases.add(run.voucherOffer);
+  const available = availableVoucherIds(run, profileUnlocked).filter((id) => {
+    const baseId = VOUCHER_REGISTRY.get(id)?.baseId;
+    return !baseId || !boughtBases.has(baseId);
+  });
   return available.length ? rng.shuffle(available)[0]! : null;
 }
 
@@ -379,15 +392,20 @@ export interface SellResult {
 }
 
 /** Sell the owned joker at `index` for half its purchase price (GDD §9.1). */
-export function sellJoker(run: RunState, index: number): SellResult {
+export function sellJoker(run: RunState, index: number, rng: Rng): SellResult {
   const owned: OwnedJoker | undefined = run.jokers[index];
   if (!owned) return { run, ok: false };
   const def = JOKER_REGISTRY.get(owned.defId);
   const value = def
     ? emojiTileSellValue(run, BALANCE.jokerPrice[def.rarity], owned.edition ?? 'base')
     : 1;
-  const jokers = run.jokers.filter((_, i) => i !== index);
-  return { run: { ...run, gold: run.gold + value, jokers }, ok: true };
+  const nextRun = {
+    ...run,
+    gold: run.gold + value,
+    jokers: run.jokers.filter((_, i) => i !== index),
+  };
+  defaultJokerBus.emit('selfSold', { run: nextRun, rng }, [owned]);
+  return { run: nextRun, ok: true };
 }
 
 /** Whether the selected slot can be redeemed under the ordinary Chapter lock.
@@ -415,7 +433,14 @@ export function buyVoucher(
   if (!id || !canBuyVoucher(run, shop, slot)) return { run, shop, ok: false };
   const def = VOUCHER_REGISTRY.get(id);
   if (!def || run.gold < def.price) return { run, shop, ok: false };
-  const nextRun = applyVoucher({ ...run, gold: run.gold - def.price, voucherLocked: true }, id);
+  const boughtBases = run.voucherBasesBoughtThisChapter ?? [];
+  const nextRun = applyVoucher({
+    ...run,
+    gold: run.gold - def.price,
+    voucherLocked: true,
+    voucherBasesBoughtThisChapter:
+      def.tier === 'base' && !boughtBases.includes(id) ? [...boughtBases, id] : boughtBases,
+  }, id);
   const remaining = slot === 'base' ? shop.bonusVoucher : shop.voucher;
   return {
     run: nextRun,

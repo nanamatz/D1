@@ -610,6 +610,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             unlockedVoucherSet(),
           ),
           voucherLocked: false,
+          voucherBasesBoughtThisChapter: [],
           bossRerollsUsed: 0,
           chapterBossId: bossDraw.bossId,
           bossHistory: bossDraw.history,
@@ -621,6 +622,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           skipOffers: rollSkipOffers(
             chapterRun,
             makeRng(`${s.seed}#skip-${chapterRun.ante}`),
+            chapterRun.skipOffers,
           ),
         };
       }
@@ -707,10 +709,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const sell = useCallback((index: number) => {
     setState((prev) => {
       if (prev.phase !== 'shop' && prev.phase !== 'playing') return prev;
-      const res = sellJoker(prev.run, index);
+      const res = sellJoker(prev.run, index, makeRng(`${prev.seed}#${prev.rngCounter}`));
       if (!res.ok) return prev;
       audio.play('sell');
-      return { ...prev, run: res.run };
+      return { ...prev, run: res.run, rngCounter: prev.rngCounter + 1 };
     });
   }, []);
 

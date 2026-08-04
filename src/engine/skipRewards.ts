@@ -94,8 +94,12 @@ export const EMPTY_NEXT_BLIND_BONUS: NextBlindBonus = {
   startingScore: 0,
 };
 
-/** Two equally weighted offers without repeating a Tag in the same Chapter. */
-export function rollSkipOffers(run: RunState, rng: Rng): [SkipRewardOffer, SkipRewardOffer] {
+/** Two equally weighted offers without repeating this or the previous Chapter's Tags. */
+export function rollSkipOffers(
+  run: RunState,
+  rng: Rng,
+  previous: readonly SkipRewardOffer[] = [],
+): [SkipRewardOffer, SkipRewardOffer] {
   const patterns = Object.keys(run.patternLevels) as PatternId[];
   const roll = (ids: readonly SkipRewardId[]): SkipRewardOffer => {
     const id = ids[rng.int(ids.length)]!;
@@ -103,8 +107,10 @@ export function rollSkipOffers(run: RunState, rng: Rng): [SkipRewardOffer, SkipR
       ? { id, pattern: patterns[rng.int(patterns.length)]! }
       : { id };
   };
-  const first = roll(SKIP_REWARD_IDS);
-  return [first, roll(SKIP_REWARD_IDS.filter((id) => id !== first.id))];
+  const previousIds = new Set(previous.map((offer) => offer.id));
+  const pool = SKIP_REWARD_IDS.filter((id) => !previousIds.has(id));
+  const first = roll(pool);
+  return [first, roll(pool.filter((id) => id !== first.id))];
 }
 
 function withBlindBonus(

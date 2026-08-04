@@ -35,11 +35,7 @@ import {
   fableTargetsTiles,
   isBlindOnlyConsumable,
   isFableId,
-  type FableId,
 } from '../../engine/fables';
-import { isConstellationId } from '../../engine/constellations';
-import { constellationArt } from '../constellationArt';
-import { FamilyCardArt } from './FamilyCardArt';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { TileView } from './Tile';
@@ -180,9 +176,7 @@ export function Shop({ g }: { g: UseGame }) {
     icon?: UiIconId;
     name: string;
     desc: string;
-    art?: string | undefined;
     jokerArt?: string | undefined;
-    fableId?: FableId | undefined;
     rarity?: JokerRarity | undefined;
     classification?: TooltipClassification | undefined;
     tags?: readonly TooltipTag[];
@@ -220,8 +214,6 @@ export function Shop({ g }: { g: UseGame }) {
       icon: CONSUMABLE_ICON[item.id] ?? 'document',
       name: t(`consumable.${item.id}`),
       desc: consumableTooltipBody(item.id, t),
-      fableId: isFableId(item.id) ? item.id : undefined,
-      art: isConstellationId(item.id) ? constellationArt(item.id) : undefined,
       classification: consumableClassification(item.id),
       sub: consumableAxisTip(item.id, t) ?? undefined,
       extra: consumableTooltipExtra(item.id, run, t) ?? undefined,
@@ -350,15 +342,12 @@ export function Shop({ g }: { g: UseGame }) {
                           `edition-${edition}`,
                         ].filter(Boolean).join(' ')}
                       >
-                        {m.fableId ? (
-                          <CardArt family="fable"
-                            id={m.fableId}
-                            className="shop-consumable-art"
-                            title={m.name}
-                          />
-                        ) : m.art ? (
-                          <FamilyCardArt
-                            src={m.art}
+                        {m.classification === 'fable' ||
+                        m.classification === 'constellation' ||
+                        m.classification === 'gambler' ? (
+                          <CardArt
+                            family={m.classification}
+                            id={item.id}
                             className="shop-consumable-art"
                             title={m.name}
                           />

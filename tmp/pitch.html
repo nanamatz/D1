@@ -1,0 +1,156 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>Play the Wor!d — 게임 기획안</title><style>
+:root{
+  --ink:#1b1d21; --muted:#6b7280; --rule:#e2e4e8;
+  --accent:#e8a33d; --dark:#1b1d21;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Pretendard","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+  color:var(--ink); font-size:9.1pt; line-height:1.52;
+  -webkit-font-smoothing:antialiased;
+}
+.hero{
+  background:var(--dark); color:#fff; padding:24px 26px 22px;
+  border-bottom:4px solid var(--accent); margin-bottom:18px;
+}
+.hero .kicker{
+  color:var(--accent); font-size:7.6pt; letter-spacing:.34em; font-weight:700;
+  margin:0 0 8px;
+}
+.hero h1{font-size:27pt; line-height:1.05; margin:0 0 10px; letter-spacing:-.01em}
+.hero p{margin:0 0 4px; color:#d7dade; font-size:9.3pt}
+.hero .meta{
+  margin-top:14px; padding-top:12px; border-top:1px solid #3a3d44;
+  font-size:8.4pt; color:#b9bec5;
+}
+.hero .meta strong{color:#fff}
+.hero a{color:var(--accent); text-decoration:none}
+.body{padding:0}
+h2{
+  font-size:13pt; margin:20px 0 9px; padding-bottom:5px;
+  border-bottom:2px solid var(--dark); letter-spacing:-.01em;
+}
+h3{
+  font-size:10pt; margin:14px 0 6px; padding-left:8px;
+  border-left:3px solid var(--accent);
+}
+p{margin:0 0 7px}
+ul{margin:0 0 8px; padding-left:17px}
+li{margin:0 0 4px}
+strong{font-weight:700}
+a{color:#a26a13}
+code{
+  font-family:"Cascadia Mono","Consolas",monospace; font-size:8.2pt;
+  background:#f1f2f4; padding:.5px 3.5px; border-radius:2px;
+}
+pre{
+  background:var(--dark); color:#e9ecef; padding:11px 14px; border-radius:3px;
+  font-family:"Cascadia Mono","Consolas",monospace; font-size:8.1pt;
+  line-height:1.6; margin:0 0 9px; white-space:pre-wrap;
+}
+pre code{background:none;padding:0;color:inherit}
+hr{border:0;border-top:1px solid var(--rule);margin:14px 0}
+table{
+  width:100%; border-collapse:collapse; margin:0 0 9px; font-size:8.6pt;
+}
+th{
+  background:var(--dark); color:#fff; text-align:left; font-weight:700;
+  padding:5px 9px; font-size:8.2pt;
+}
+td{padding:5px 9px; border-bottom:1px solid var(--rule); vertical-align:top}
+tbody tr:nth-child(even){background:#f7f8f9}
+.pagebreak{break-after:page}
+h2,h3{break-after:avoid}
+table,pre,ul{break-inside:avoid}
+</style></head><body>
+<div class="hero">
+  <p class="kicker">GAME PITCH / 2026</p>
+  <h1>Play the Wor!d</h1>
+  <p>알파벳 타일로 <strong>단어</strong>를 만들고, 그 단어들이 순서대로 쌓여 <strong>문장</strong>이 되면 폭발적인 보너스를 받는 로그라이트.</p>
+  <p>당신은 마감에 쫓기는 <strong>작가</strong>다.</p>
+  <div class="meta"><strong>장르</strong> 단어 조합 로그라이트 (word-combination roguelite)<br><strong>플랫폼</strong> PC (Windows / Steam 지향), 웹 빌드 병행<br><strong>언어</strong> 영어 플레이 · 한국어/영어 UI<br><strong>아트</strong> 픽셀 아트 + CRT<br><strong>게임 플레이 링크</strong> <a href="https://nanamatz.github.io/D1/">https://nanamatz.github.io/D1/</a></div>
+</div>
+<div class="body"><h2>1. 한 줄 요약</h2>
+<p>알파벳 타일로 <strong>단어</strong>를 만들고, 그 단어들이 순서대로 쌓여 <strong>문장</strong>이 되면 폭발적인 보너스를 받는 로그라이트. 당신은 마감에 쫓기는 <strong>작가</strong>다.</p>
+<hr>
+<h2>2. 핵심 아이디어</h2>
+<p>숫자 대신 <strong>언어</strong>로 점수를 낸다. 세 층이 동시에 굴러간다.</p>
+<table><thead><tr><th>층</th><th>무엇</th><th>언제 정산</th></tr></thead><tbody><tr><td>글자</td><td>알파벳 타일의 고유 점수 + 재질/폰트/에디션 강화</td><td>즉시</td></tr><tr><td>단어</td><td>사전 판정 + <strong>레지스터 슈트</strong>(격식) 배수 + 단어 족보 + 길이 보너스</td><td>제출 즉시</td></tr><tr><td>문장</td><td>라운드 동안 제출한 단어들의 <strong>품사 배열</strong> 패턴</td><td>라운드 종료 시</td></tr></tbody></table>
+<p>단어 점수식은 한 줄이다 — <code>칩 × (슈트 배수 + 글자 수)</code>. 길이는 배수를 <strong>곱하지 않고 더한다</strong>. 덕분에 짧은 Vulgar 단어와 긴 Standard 단어가 같은 표 위에서 경쟁하고, 슈트가 길이에 잡아먹히지 않는다.</p>
+<p>플레이어는 매 페이즈마다 "지금 확실한 점수를 챙길까, 문장을 완성해서 크게 터뜨릴까"를 고른다.</p>
+<hr>
+<h2>3. 왜 재미있나 — 세 가지 차별점</h2>
+<h3>3.1 레지스터 슈트 (Register Suit)</h3>
+<p>단어는 <strong>말투</strong>로 분류된다. 만들기 쉬울수록 배수가 낮다.</p>
+<table><thead><tr><th>슈트</th><th>성격</th><th>어휘 수 (전체 172,251단어 중)</th><th>기본 배수</th></tr></thead><tbody><tr><td>Standard</td><td>일상어</td><td>168,463 (97.8%)</td><td>×1.0</td></tr><tr><td>Formal</td><td>학술/문어</td><td>2,669 (1.55%)</td><td>×1.5</td></tr><tr><td>Slang</td><td>구어/속어</td><td>879 (0.51%)</td><td>×2.0</td></tr><tr><td>Vulgar</td><td>비속어/금기어</td><td>240 (0.14%)</td><td>×3.0</td></tr></tbody></table>
+<p>같은 개수로 나뉜 대칭 슈트가 아니라 <strong>비대칭 슈트</strong>다. 위 숫자는 기획 의도가 아니라 실제 번들된 어휘 테이블의 집계다 — "만들기 어려움" 자체가 리스크-리워드 곡선이 된다. Vulgar는 메인 빌드가 아니라 조건이 맞았을 때 터지는 잭팟이다.</p>
+<h3>3.2 문장 패턴표 (Sentence Pattern Table)</h3>
+<p>한 라운드는 여러 페이즈로 구성되고, 각 페이즈에 만든 단어가 <strong>순서대로 한 줄</strong>에 놓인다. 그 품사 배열이 패턴에 맞으면 라운드 종료 시 문장 보너스가 붙는다. 12개 패턴, 약함 → 강함:</p>
+<pre>Outcry → Imperative → Chant → Simple → Descriptive → Transitive
+→ Ditransitive → Compound → Object Complement → Interrogative → Negative → Complex</pre>
+<ul><li><code>CAT EATS FISH</code> = Transitive (60 × 4)</li><li><code>RUN RUN RUN RUN</code> = Chant (반복마다 추가 칩)</li><li><code>BECAUSE IT RAINED I STAYED HOME</code> = Complex (195 × 7) — 기본 5페이즈로는 거의 불가능. <strong>"페이즈를 늘려라"는 동기가 표 자체에 박혀 있다.</strong></li></ul>
+<p>규칙은 셋뿐이라 외우기 쉽다. <strong>(1)</strong> 전체 배열이 맞아야 한다(부분 매칭 없음). <strong>(2)</strong> 여러 패턴에 걸리면 가장 높은 것 하나만. <strong>(3)</strong> 관사·형용사·부사는 뼈대를 깨지 않고 <strong>살로 흡수</strong>되어 보너스만 더한다 — 문장이 길수록 자연스럽게 비싸진다.</p>
+<p>자연어 이해는 하지 않는다. 태그된 단어를 슬롯에 놓고 <strong>배열을 표와 대조</strong>할 뿐이라, 문제가 유한하고 판정이 항상 즉시·결정적이다. 의미 판정은 일부러 뺐다 — 말도 안 되는 문장으로 점수를 내는 게 이 장르의 재미다.</p>
+<h3>3.3 헛소리(Gibberish)라는 탈출구</h3>
+<p>사전에 없는 글자 뭉치도 <strong>언제나 제출 가능</strong>하다. 글자 칩 ×1.0만 받고, 슈트도 품사도 없다. 대신 문장 배열에 <strong>구멍</strong>이 뚫려 그 라운드의 모든 패턴이 무효가 된다.</p>
+<p>이 하나의 규칙이 두 가지를 동시에 해결한다. <strong>막힌 손패로 페이즈를 날리는 억울함이 사라지고</strong>, 동시에 "구멍을 낼 것인가"라는 진짜 선택이 생긴다. 게다가 A·E·I·O·U를 다 담거나 알파벳 5연속을 뿌리면 헛소리도 단어 족보 잭팟을 터뜨린다. 글자 없는 Stone 타일을 축으로 한 <strong>헛소리 특화 빌드</strong>는 이 규칙에서 저절로 자라 나온 아키타입이다.</p>
+<hr>
+<h2>4. 코어 루프</h2>
+<pre>라운드 시작 → 주머니(68타일) 셔플 → 손패 10장 채움
+   ↓
+[페이즈]  손패로 단어 철자 → 제출 → 정산 → 쓴 만큼 다시 뽑기
+   ↓  (기본 5페이즈, 라운드당 버리기 4회)
+목표 점수 도달 → 자동 정산 → 원고료 정산 → 문방구</pre>
+<p><strong>설계 포인트</strong></p>
+<ul><li><strong>버리기는 라운드 단위 예산</strong>이다(페이즈 단위가 아니다). "지금 태울까, 뒤 페이즈에 남길까"라는 페이즈 간 자원 관리가 생긴다. 버린 타일은 그 라운드 동안 돌아오지 않는다.</li><li><strong>최소 단어 길이 없음.</strong> 페이즈가 희소 자원이라 기회비용이 알아서 규제한다. 덕분에 <code>I</code> + <code>RUN</code> 같은 2페이즈 초고속 문장 빌드가 열리고, 1글자 헛소리는 "버리기 대신 페이즈를 지불하는 미니 버리기"가 된다 — 버리기↔페이즈↔구멍의 3각 화폐.</li><li><strong>주머니는 라운드 중 리필되지 않는다.</strong> 페이즈를 무한히 늘리는 빌드에도 물리적 상한이 존재한다.</li><li><strong>자동 정산.</strong> 목표를 넘기면 알아서 끝난다. 남는 점수는 가치가 없고 남은 페이즈는 돈이 되므로 "더 칠까?"는 가짜 선택이었다. 대신 <strong>문장 보너스가 점수를 목표 위로 밀어 올리는 장면</strong>은 반드시 눈에 보이게 재생된다 — 이 게임의 하이라이트 순간이다.</li></ul>
+<hr>
+<h2>5. 타일 — 빌드의 원자재</h2>
+<p>주머니는 68장. Scrabble식 희소 글자 가중치를 쓰되, 보드 인접이 없는 게임이라 분포를 <strong>평탄하게 압축</strong>했다(E 과잉 삭제, 희귀 글자 증량). 한 타일은 세 축의 강화를 <strong>동시에</strong> 지닌다.</p>
+<ul><li><strong>재질 9종</strong> — 도자기(기본) / 자기(+30 칩) / 광택(+4 Mult) / 유리(×2 Mult, 1/4 확률로 파괴) / 석재(+50 칩, <strong>글자 없음</strong>) / 연판(1/5 확률 +20 Mult, 1/5 확률 $20) / 상아(라운드 종료 시 손에 있으면 $3) / 황동(손에 든 동안 ×1.5 Mult) / 목재(+15 칩에서 시작, 낼 때마다 영구 +10)</li><li><strong>폰트 5종</strong> — 특수효과 슬롯. 낼 때 $3 / 낼 때 +30 칩 / <strong>재발동</strong> / 버릴 때 소모품 1장</li><li><strong>에디션 4종</strong> — 기본 / 그레이 / 바이올렛 / 레인보우</li></ul>
+<p>9 × 5 × 4 조합이 빌드 다양성의 엔진이다. 같은 축에 다시 바르면 <strong>덮어쓰기</strong>(환불 없음), 다른 축끼리는 절대 충돌하지 않는다. 유일한 리스크는 유리뿐 — 나머지는 전부 순수 상승이다.</p>
+<h3>단어 족보 6종</h3>
+<p>철자 자체의 모양에 붙는 보너스. 약함 → 강함으로 <strong>쌍(LL) → 삼중(LLL) → 롱워드(6글자+) → 회문 → 모음 플러시(AEIOU 전부) → 스트레이트(알파벳 5연속)</strong>. 가장 높은 하나만 적용된다. 앞의 넷은 사전에 있는 단어만, <strong>모음 플러시와 스트레이트는 헛소리에도 터진다</strong> — 헛소리 빌드의 잭팟 출구다.</p>
+<hr>
+<h2>6. 진행 구조 — 원고 마감</h2>
+<table><thead><tr><th>구조</th><th>이름</th><th>내용</th></tr></thead><tbody><tr><td>라운드</td><td><strong>초고 / 퇴고 / 마감</strong></td><td>목표 점수를 넘기면 클리어</td></tr><tr><td>챕터(장)</td><td>3라운드 묶음</td><td>장이 오를수록 목표가 가파르게 상승</td></tr><tr><td>승리</td><td><strong>8장 마감 돌파</strong></td><td>이후 <strong>무한 모드</strong> 선택 가능 (38장이 명시적 최종장)</td></tr></tbody></table>
+<p><strong>보스(마감)</strong> — 12종의 출판 소재 보스가 순환하고, 8의 배수 장마다 4종의 <strong>피니셔 보스</strong>가 대신 등장한다. 보스는 전부 데이터 + 훅으로 구현되어 규칙을 직접 비튼다: 특정 슈트 점수 0, 모음 타일 정체 은폐, 제출 시 손패 파괴, 페이즈 수 삭감, 경제 압박 등.</p>
+<p><strong>초고와 퇴고는 건너뛸 수 있다.</strong> 건너뛰면 그 라운드의 모든 산출(클리어 보상·잔여 자원·이자·원고료 정산·다음 문방구)을 포기하는 대신, <strong>미리 공개된</strong> 편집 특전(Editorial Perk) 하나를 받는다. 26종이 있고 — 즉시 현금, 문장 패턴 레벨업, 다음 라운드 +1 페이즈, 무료 팩 개봉, 보스 리롤, 소지금 2배 등 — 정보가 전부 공개된 상태에서 고르는 진짜 선택이다. 마감은 절대 건너뛸 수 없다.</p>
+<hr>
+<h2>7. 경제와 문방구</h2>
+<p>돈줄은 넷: 라운드 클리어 보상 · 남은 페이즈당 1원고료 · <strong>이자(5당 1, 상한 5)</strong> · 이모지 타일 판매.</p>
+<p><strong>이자 상한이 경제의 심장이다.</strong> "25까지 모으고 그 위로만 쓴다"는 리듬이 생기고, 초반에는 "지금 타일을 살까, 이자 기반을 쌓을까"라는 갈등이 매 문방구마다 반복된다.</p>
+<p>문방구는 다섯 매대다. <strong>아이템 2 + 팩 2 + 바우처 1.</strong></p>
+<ul><li><strong>바우처 슬롯은 리롤 면역</strong>이고 <strong>장당 1개만</strong> 구매할 수 있다. 산 바우처는 그 회차에 다시 안 나오고, 안 산 바우처는 나중에 또 나올 수 있다 — "지금 살까, 나중을 걸까"가 유지된다. 16종 기본 + 16종 상위 = <strong>32종</strong>.</li><li><strong>팩 5종 × 3사이즈</strong>(일반 3장 중 1택 / 점보 5장 중 1택 / 메가 5장 중 2택) — 별자리 팩 / 부적 팩 / 우화 팩 / <strong>잉크 팩</strong> / 타일 팩. 재질과 폰트가 경제로 들어오는 통로다. 잉크 팩은 가장 희귀한 매대로, 판을 뒤집는 노름꾼 카드를 직접 판다 — 그 안에서도 불사조(0.05%)와 사슴(0.3%)은 별도 잭팟 밴드로 굴린다.</li></ul>
+<hr>
+<h2>8. 빌드 재료</h2>
+<h3>이모지 타일 (120종)</h3>
+<p>이 게임의 규칙 파괴자. <strong>커먼 27 / 언커먼 44 / 레어 44 / 레전더리 5</strong>, 전부 데이터 + 이벤트 훅으로 구현되고 각각 픽셀 아트 원본을 가진다(120/120 완료). 이모지 슬롯은 기본 5칸이다.</p>
+<p>다른 카드 게임의 조커와 다른 점은 <strong>3개 층에 걸쳐 작동한다</strong>는 것이다 — (1) 글자/타일, (2) 슈트, (3) 문장/페이즈. 커먼은 무조건적 덧셈, 언커먼은 조건부 덧셈과 스케일링의 시작, 레어부터 곱셈이 등장하고, 레전더리 5종은 런의 규칙 자체를 다시 쓴다.</p>
+<p><strong>선반 순서 = 실행 순서</strong>이며 드래그로 재배열된다. 덧셈 타일을 곱셈 타일 앞에 두느냐 뒤에 두느냐가 실제 점수를 바꾸므로, 정렬은 장식이 아니라 결정이다. 한 런에 같은 타일을 중복 보유할 수 없다(명시적 예외 2종 제외).</p>
+<h3>소모품 3계열 (44종)</h3>
+<ul><li><strong>우화 카드 18종</strong> — 타일 변형/경제/도구 (1회용)</li><li><strong>별자리 카드 12종</strong> — 문장 패턴 1:1 레벨업. 각 패턴은 황도 12궁 기호를 픽토그램으로 공유한다</li><li><strong>노름꾼 카드 14종</strong> — 판을 뒤집는 강력한 카드. 화투 그림을 차용한 계열로, 폰트 각인·타일 복제·영구 파괴 후 현금화·손패 전체 글자 통일·레전더리 생성(불사조)·전 패턴 동시 레벨업(사슴)까지 전부 한 진입점(<code>useGambler</code>)으로 해결된다. 소지 슬롯은 2칸</li></ul>
+<hr>
+<h2>9. 메타 진행</h2>
+<h3>시작 주머니 14종</h3>
+<p>런의 출발을 규정하는 선택지. 노란 주머니(+1 버리기)에서 시작해 <strong>발견 단어 수</strong>로 3종이, <strong>주머니별 승리</strong>로 4종이, <strong>음반 단계별 승리</strong>로 6종이 열린다. 뒤로 갈수록 순수 이득이 아니라 <strong>런의 규칙을 바꾸는 선택지</strong>가 된다 — 복주머니는 상점 매대에 노름꾼 카드를 띄우고, 황금 복주머니는 모든 모음을 황동으로 시작하며, 동전 지갑은 68장 전부를 무작위 글자로 재배정하고, 서류 가방은 모든 점수의 칩/Mult 축을 평균으로 <strong>균형화</strong>하는 대신 목표를 2배로 만든다.</p>
+<h3>음반(Record) 8단계</h3>
+<p>누적 난이도 사다리. 흰색 LP(무패널티) → 붉은색 → 초록색 → 파란색 → 노란색 → 투명 LP → CD → DVD. 각 단계는 새 패널티를 <strong>더하고</strong>, 이전 패널티는 전부 유지된다. 초고 보상 삭제 → 목표 지수 상승 → 손패 −1 → 버리기 −1 → 페이즈 −1 → 이모지 슬롯 −1 → 이자 0.</p>
+<h3>색을 되찾기 (Chromatic Unlocks)</h3>
+<p><strong>게임은 완전한 흑백과 완전한 침묵으로 시작한다.</strong> 특정 단어를 실제로 플레이하면 그 연출 층이 영구히 해금된다.</p>
+<table><thead><tr><th>단어</th><th>해금</th></tr></thead><tbody><tr><td>RED</td><td>붉은 계열 — Mult, 레어 프레임</td></tr><tr><td>YELLOW</td><td>금색 계열 — 돈, 골드 UI</td></tr><tr><td>GREEN</td><td>초록 계열 — 책상/라운드 배경</td></tr><tr><td>BLUE</td><td>파랑 계열 — 칩, 파란 버튼</td></tr><tr><td>MUSIC / SOUND</td><td>BGM / 효과음 버스</td></tr><tr><td>ALIEN · GHOST · DOG · TURTLE</td><td>동료 마스코트 스킨</td></tr></tbody></table>
+<p>제목 그대로다 — <strong>당신이 세상을 플레이해서 존재하게 만든다.</strong> 첫 런의 튜토리얼은 이걸 손으로 가르친다: 손패에 Y-E-L-L-O-W가 심어져 있고, 그걸 제출하는 순간 금색이 화면으로 밀려든다. (목표 점수는 낮추지 않는다 — 레슨은 끝나지만 라운드는 계속된다.)</p>
+<hr>
+<h2>10. 연출과 캐릭터</h2>
+<p><strong>픽셀 아트 + CRT.</strong> 화면 전체에 CRT 후처리가 깔리고, 모든 오브젝트는 하드 픽셀 엣지로 그려진다. 이모지 타일 아트는 초창기 미로 아케이드 게임의 시각 문법을 공유한다 — 짙은 남색 판, 흰/빨강/노랑/시안 3~5색, 큰 실루엣 하나.</p>
+<ul><li><strong>삐약이 (Piyak)</strong> — 문방구를 지키는 턱시도 고양이 주인장</li><li><strong>우땅 (WooDak)</strong> — 오랑우탄. 플레이어의 편집자 겸 조력자. 튜토리얼 코치마크와 런 종료 화면을 맡는다. 해금된 스킨으로 갈아입을 수 있고, 스킨마다 대사가 다르다</li></ul>
+<p><strong>보이지 않으면 없는 것과 같다.</strong> 화면에 그려진 모든 오브젝트는 예외 없이 호버 반응과 툴팁을 가진다 — 팩을 열어 방금 나온 아이템까지. 정산 연출은 항상 <strong>신호 기반</strong>으로 진행된다(고정 딜레이 없음): 긴 단어는 길게, 배속에서는 짧게, 언제나 마지막 숫자가 착지한 뒤에 다음 화면이 온다.</p>
+<hr>
+<h2>11. 기술 구조</h2>
+<ul><li><strong>헤드리스 엔진.</strong> <code>src/engine/</code>은 DOM·React·브라우저 API를 일절 import하지 않는다. Node에서 그대로 돌아가므로 <code>src/sim/</code>이 수천 판을 자동 플레이해 밸런스를 검증한다.</li><li><strong>완전 시드 기반.</strong> 셔플·상점 재고·팩·보스 추첨까지 모든 난수가 하나의 시드 RNG를 통과한다. 런은 시드 하나로 완전 재현된다.</li><li><strong>매직 넘버 없음.</strong> 모든 조정값은 <code>balance.ts</code> 한 곳에 산다.</li><li><strong>데이터 + 훅.</strong> 이모지 타일 120종, 보스 16종, 소모품 44종, 바우처 32종, 편집 특전 26종, 주머니 14종, 음반 8종이 전부 데이터 정의다. 파이프라인 코드에 효과를 하드코딩하지 않는다.</li><li><strong>어휘 172,251단어</strong>가 슈트·품사 태깅과 함께 빌드 타임에 번들된다. 런타임 네트워크 호출 0회.</li><li><strong>회귀 테스트 109파일 / 956케이스</strong>가 전부 통과 상태다. 규칙 하나를 바꾸면 그 규칙을 지키던 테스트가 먼저 깨진다.</li><li>TypeScript strict · Vite · Vitest · React. 서버 없음.</li><li>데스크톱은 Electron 셸로 포장되고 <strong>네트워크를 전혀 쓰지 않는다.</strong> 세이브는 3개 프로필 슬롯으로 파일에 기록되며, 웹/데스크톱이 같은 빌드 산출물을 공유한다(Steam 클라우드 동기화 대비 완료).</li></ul>
+<hr>
+<h2>12. 현재 상태</h2>
+<table><thead><tr><th>영역</th><th>상태</th></tr></thead><tbody><tr><td>코어 루프 / 점수 파이프라인</td><td>구현 완료</td></tr><tr><td>문장 패턴 12종 · 단어 족보 6종</td><td>구현 완료</td></tr><tr><td>이모지 타일 120종 (커먼27/언커먼44/레어44/레전더리5)</td><td>구현 + 아트 120/120 완료</td></tr><tr><td>보스 16종 (일반12 + 피니셔4) · 편집 특전 26종</td><td>구현 + 아트 완료</td></tr><tr><td>소모품 44종 (우화18/별자리12/노름꾼14)</td><td><strong>전 종 효과 구현 완료</strong></td></tr><tr><td>바우처 32종 · 팩 5종 × 3사이즈</td><td>구현 + 아트 완료</td></tr><tr><td>시작 주머니 14 · 음반 8단계 · 무한 모드</td><td>구현 완료</td></tr><tr><td>색 해금 · 컬렉션 · 튜토리얼 · 프로필 3슬롯</td><td>구현 완료</td></tr><tr><td>사운드 (BGM / SFX 버스)</td><td>구현 완료</td></tr><tr><td>데스크톱 패키징 (Windows) · 웹 빌드</td><td>양쪽 동작</td></tr><tr><td>자동 테스트</td><td>109파일 / 956케이스 전부 통과</td></tr><tr><td>밸런스</td><td>시뮬레이션 기반 튜닝 진행 중</td></tr></tbody></table>
+<p><strong>다음 마일스톤</strong> — 밸런스 튜닝 마감(시뮬레이터 스윕 기반), 스팀 페이지 준비 및 데모 빌드 확정, 영문 카피 최종 교정.</p></div>
+</body></html>

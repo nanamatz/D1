@@ -87,9 +87,9 @@ export function RunInfo({ run, blind, onClose }: Props) {
                 return (
                   <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
                     <div className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}>
+                      <span className="pl">Lv {run.patternLevels[p]}</span>
                       <PatternIcon pattern={p} />
                       <span className="pn">{t(`pattern.${p}`)}</span>
-                      <span className="pl">Lv {run.patternLevels[p]}</span>
                       <span className="pcm">
                         <b className="chips">{cm.chips}</b>
                         <span className="times">×</span>

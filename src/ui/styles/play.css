@@ -2284,7 +2284,7 @@
 }
 /* Level sub-badge inside the sentence-pattern stamp (2026-07-22 landing beat). */
 .bonus-lvl {
-  margin-left: 6px;
+  margin-right: 6px;
   padding: 0 5px;
   border-radius: 6px;
   background: rgba(23, 50, 38, 0.28);

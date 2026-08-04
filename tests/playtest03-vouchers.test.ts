@@ -2,9 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { newRun } from '../src/engine/run';
 import { rollShopStock, rerollShop, buyVoucher, rollVoucherOffer } from '../src/engine/shop';
 import { makeRng } from '../src/engine/rng';
+import type { Rng } from '../src/engine/rng';
 import type { RunState, VoucherId } from '../src/engine/types';
 
 const richRun = (): RunState => ({ ...newRun('c'), gold: 100 });
+const preferVoucher = (id: VoucherId): Rng => ({
+  next: () => 0,
+  int: () => 0,
+  shuffle: <T>(items: readonly T[]): T[] =>
+    items.slice().sort((a, b) => Number(String(b) === id) - Number(String(a) === id)),
+});
 
 describe('playtest-03 C — voucher shop rules', () => {
   it('rollVoucherOffer never offers an already-owned voucher (reappearance)', () => {
@@ -43,5 +50,19 @@ describe('playtest-03 C — voucher shop rules', () => {
   it('an unlocked chapter shows its fixed offer', () => {
     const run: RunState = { ...richRun(), voucherOffer: 'poetryBook', voucherLocked: false };
     expect(rollShopStock(run, makeRng('s')).voucher).toBe('poetryBook');
+  });
+
+  it('keeps a base voucher upgrade out of the immediately following restock', () => {
+    const run: RunState = { ...richRun(), voucherOffer: 'historyBook' };
+    const bought = buyVoucher(run, rollShopStock(run, makeRng('history-shop')));
+    const unlocked = new Set<VoucherId>(['oldBook']);
+
+    expect(bought.run.voucherBasesBoughtThisChapter).toEqual(['historyBook']);
+    expect(rollVoucherOffer(bought.run, preferVoucher('oldBook'), unlocked)).not.toBe('oldBook');
+    expect(rollVoucherOffer(
+      { ...bought.run, voucherBasesBoughtThisChapter: [] },
+      preferVoucher('oldBook'),
+      unlocked,
+    )).toBe('oldBook');
   });
 });

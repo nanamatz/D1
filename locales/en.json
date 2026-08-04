@@ -526,7 +526,7 @@
   "jokerdesc.royalWe": "Final Mult of a Unison sentence bonus [m:×3.5 Mult]",
   "jokerdesc.brokenSentence": "At blind end with no sentence pattern, add a [c:+125 Chips] [m:×4 Mult] bonus",
   "jokerdesc.holePunch": "Each [g:gibberish] word permanently gains [m:+0.2 Mult]",
-  "jokerdesc.copyEditor": "You may own duplicate Emoji Tiles; the slot limit still applies",
+  "jokerdesc.copyEditor": "When sold, creates a copy of one random remaining Emoji Tile",
   "jokerdesc.goldenType": "When a letter tile produces gold, that tile also gains [c:+50 Chips]",
   "jokerdesc.deadlineAuction": "At boss blind end, pay all gold and permanently gain [m:+0.2 Mult] per [$:$5] paid",
   "jokerdesc.termInsurance": "Cancel the next [n:4] attempts to destroy a letter tile and gain [c:+80 Chips] each time this Emoji Tile is destroyed after the fourth",

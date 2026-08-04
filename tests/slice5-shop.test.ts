@@ -176,10 +176,31 @@ describe('slice5 shop — buy', () => {
 describe('slice5 shop — sell & reroll', () => {
   it('sells a joker for half its price (GDD §9.1)', () => {
     const r = run({ gold: 0, jokers: [{ defId: 'hypocrite', state: {} }] });
-    const res = sellJoker(r, 0);
+    const res = sellJoker(r, 0, makeRng('sell'));
     expect(res.ok).toBe(true);
     expect(res.run.gold).toBe(4); // rare 9 → floor(9·0.5)
     expect(res.run.jokers).toHaveLength(0);
+  });
+
+  it('selling Copy Editor copies one seeded-random remaining Emoji Tile', () => {
+    const r = run({
+      gold: 0,
+      jokers: [
+        { defId: 'miser', edition: 'base', state: {} },
+        { defId: 'copyEditor', edition: 'base', state: {} },
+        { defId: 'hypocrite', edition: 'violet', state: { mult: 7 } },
+      ],
+    });
+    const res = sellJoker(r, 1, {
+      next: () => 0.999,
+      int: (max) => max - 1,
+      shuffle: (items) => items.slice(),
+    });
+    expect(res.run.jokers.map((joker) => joker.defId))
+      .toEqual(['miser', 'hypocrite', 'hypocrite']);
+    expect(res.run.jokers[2]).toEqual(res.run.jokers[1]);
+    expect(res.run.jokers[2]).not.toBe(res.run.jokers[1]);
+    expect(res.run.jokers[2]?.state).not.toBe(res.run.jokers[1]?.state);
   });
 
   it('reroll costs base then escalates, regenerating stock (GDD §9.2)', () => {

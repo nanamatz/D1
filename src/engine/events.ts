@@ -114,6 +114,9 @@ export interface EngineEvents {
 
   /** shop entered / left — for economy jokers */
   shopEnter: { run: RunState };
+
+  /** this Emoji Tile was sold; its hook may resolve against the remaining shelf */
+  selfSold: { run: RunState; rng: Rng };
 }
 
 export type EngineEventName = keyof EngineEvents;

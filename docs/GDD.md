@@ -338,7 +338,8 @@ sentence bonus = (patternChips + 15 × absorbedModifiers + unisonChips)
               × (patternMult × unisonMult)
 ```
 
-At finalization the gold pattern/level stamp remains the primary beat. Every
+At finalization the gold pattern/level stamp remains the primary beat and reads
+**level → zodiac symbol → pattern name** from left to right. Every
 non-pattern contributor is displayed separately beside it: absorbed modifiers
 use a Chips-coloured tag, Unison uses a gold tag, and post-pattern Emoji Tile,
 voucher, or boss adjustments use an effect-coloured tag. They must never be
@@ -597,9 +598,12 @@ Phase/Discard rewards, interest, word/pattern and Emoji Tile growth triggers, Fe
 Settlement, and the following Stationery Shop visit. The Chapter and scheduled
 Deadline boss do not change.
 
-Each Chapter rolls one seeded offer for Draft and one for Revision. The Draft
-offer is uniform across all 26 rewards; the Revision offer is uniform across the
-remaining 25, so the same Tag never repeats within one Chapter.
+Each Chapter rolls one seeded offer for Draft and one for Revision. Chapter 1's
+Draft offer is uniform across all 26 rewards and its Revision offer across the
+remaining 25. On later Chapter rolls, both Tags from the immediately preceding
+Chapter are excluded first, leaving uniform 24/23-entry Draft/Revision pools.
+This also prevents History Book or Old Book from restoring the same Tags when a
+lowered Chapter number advances back to the number that originally rolled them.
 The complete reward—including House Style's exact pattern—is disclosed on Blind
 Select before the player chooses. There is no post-choice failure roll and no
 Chapter gating in this first balance slice.
@@ -648,8 +652,9 @@ mutation is present when that blind draws. Reduced motion commits without the be
 Delayed clear-reward Tags remain numerically distinct in the headless earnings
 breakdown. Fee Settlement renders their money as an **Editorial Perk bonus** line
 instead of silently folding it into the ordinary clear reward.
-The two offers rolled for a Chapter must have different Tag ids; the same Tag
-can never appear on both Draft and Revision. `src/engine/skipRewards.ts` is the headless source of truth,
+The two offers rolled for a Chapter must have different Tag ids, and neither id
+may match either offer from the immediately preceding Chapter.
+`src/engine/skipRewards.ts` is the headless source of truth,
 all values live in `BALANCE.skipRewards`, and `RunState.skipOffers` persists the
 Chapter's disclosed offers for seeded reproducibility. *(Changed 2026-07-31:
 feedback expanded the original eight-entry publishing pool, then retired Lead
@@ -784,6 +789,7 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
 - **One voucher purchase per chapter (ante)**; only an effect that explicitly grants extra purchases can exceed this. Buying greys the slot for the rest of the chapter.
 - **Voucher Tag adds one extra purchase.** It shows a second, distinct Voucher in the next shop, and both choices may be redeemed there. The first redemption still sets the Chapter lock; the tagged survivor is the sole exception and disappears after its second redemption or on leaving the shop.
 - **Restock timing:** the voucher slot restocks when the Deadline (boss blind) ends — the *next* chapter's shop carries the new voucher. Within a chapter, the same voucher persists across the Draft/Revision/Deadline shops.
+- **Base→upgrade cooldown (changed 2026-08-04):** redeeming a base Voucher suppresses its unlocked upgrade from the immediately following Chapter restock. The upgrade returns to the ordinary uniform pool at the next restock after that. Voucher Tag applies this one-restock cooldown to each base it redeems.
 - **Reappearance (Balatro-style):** purchased vouchers never reappear this run; **unpurchased** vouchers stay in the pool and may reappear in a later chapter (preserves "buy now or gamble on later").
 - **Redemption presentation (changed 2026-07-30):** Redeem shreds the voucher
   vertically from top to bottom: a cutter head descends, narrow cut lanes open
@@ -808,14 +814,13 @@ membership and persistent achievement tracking remain pending.
 an Emoji Tile it already owns. This applies to shop stock and purchase, Charm
 Pack offers and picks, Fable-created random tiles, and every other random or
 direct acquisition path. The pool shrinks as a run goes long (intended), and
-selling a tile returns it to the pool. **Copy Editor is the explicit exception:**
-while owned, duplicate offers and acquisitions are allowed, but slot limits
-still apply.
-**Exception — only an explicit effect may break this.** Boar (§10.3) is the
-designed exception: it creates a copy of one random owned Emoji Tile and destroys
-the others. Its copy may duplicate the selected definition; White itself is not
-copied. The implemented Gambler registry performs this one-shot exception
-directly; every ordinary acquisition path still uses the shared ownership gate.
+selling a tile returns it to the pool.
+**Exceptions — only an explicit effect may break this.** Selling Copy Editor
+creates one complete copy of a uniformly random Emoji Tile remaining in the
+shelf; if none remain, it creates nothing. Boar (§10.3) creates a copy of one
+random owned Emoji Tile and destroys the others. These one-shot copies may
+duplicate the selected definition; Boar does not copy White itself. Every
+ordinary acquisition path still uses the shared ownership gate.
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
@@ -843,7 +848,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
-Changed 2026-07-26: the former 9-item single-tier set is retired. Every pair has a base voucher and a profile-unlocked upgrade. An upgrade can enter the run pool only after its profile condition is met **and** its base voucher is owned in that run. One purchase per chapter and fixed chapter offers still apply.
+Changed 2026-07-26: the former 9-item single-tier set is retired. Every pair has a base voucher and a profile-unlocked upgrade. An upgrade can enter the run pool only after its profile condition is met **and** its base voucher is owned in that run. The base's immediately following restock is skipped once before the upgrade becomes eligible. One purchase per chapter and fixed chapter offers still apply.
 
 **Collection disclosure (changed 2026-07-27).** A profile-locked upgrade is
 listed as **Undiscovered / 발견되지 않음**. Its Collection tooltip shows only the

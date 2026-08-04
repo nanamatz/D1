@@ -4181,7 +4181,7 @@ body.cb-safe .tile.hint {
   font-size: var(--ds-xs);
   line-height: 1;
   color: var(--pattern-level-color, var(--gold));
-  margin-left: 12px;
+  margin-right: 8px;
 }
 /* Shared [Chips × Mult] axis readout for sentence patterns and Word Hands. */
 .ri-pat .pcm,

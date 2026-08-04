@@ -89,6 +89,20 @@ describe('feedback 5 UI regressions', () => {
     expect(play).toContain('.bonus-part.effect');
   });
 
+  it('orders sentence-pattern labels as level, symbol, then name', () => {
+    const sidebar = source('src/ui/components/Sidebar.tsx');
+    const runInfo = source('src/ui/components/RunInfo.tsx');
+
+    expect(sidebar.indexOf("['bonus-lvl'"))
+      .toBeLessThan(sidebar.indexOf('<PatternIcon pattern={sentenceBonus!.pattern} />'));
+    expect(sidebar.indexOf('<PatternIcon pattern={sentenceBonus!.pattern} />'))
+      .toBeLessThan(sidebar.indexOf('t(`pattern.${sentenceBonus!.pattern}`)'));
+    expect(runInfo.indexOf('<span className="pl">'))
+      .toBeLessThan(runInfo.indexOf('<PatternIcon pattern={p} />'));
+    expect(runInfo.indexOf('<PatternIcon pattern={p} />'))
+      .toBeLessThan(runInfo.indexOf('<span className="pn">'));
+  });
+
   it('plays the Constellation upgrade 500ms faster', () => {
     const level = source('src/ui/components/PatternLevelUp.tsx');
 

@@ -180,7 +180,7 @@ describe('Fable registry', () => {
     expect(missed.chanceResults[0]?.outcome).toBe('failure');
   });
 
-  it('creates only an unowned Charm by default; Copy Editor reopens duplicates', () => {
+  it('creates only an unowned Charm', () => {
     const create = setup('fable14');
     const owned = {
       ...create.run,
@@ -196,9 +196,10 @@ describe('Fable registry', () => {
       jokerSlots: ALL_JOKERS.length + 1,
       jokers: ALL_JOKERS.map((def) => ({ defId: def.id, edition: 'base' as const, state: {} })),
     };
-    expect(canUseFable('fable14', exhausted, create.blind, [])).toBe(true);
-    const duplicated = useFable('fable14', exhausted, create.blind, [], zeroRng);
-    expect(duplicated.run.jokers).toHaveLength(exhausted.jokers.length + 1);
+    expect(canUseFable('fable14', exhausted, create.blind, [])).toBe(false);
+    const blocked = useFable('fable14', exhausted, create.blind, [], zeroRng);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.run).toBe(exhausted);
   });
 
   it('grants total Charm sell value with a $50 cap', () => {

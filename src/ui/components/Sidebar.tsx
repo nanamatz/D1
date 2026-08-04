@@ -341,15 +341,15 @@ export function Sidebar({
           </span>
           {bonusActive && (
             <span className="bonus-stamp">
-              {sentenceBonus!.pattern && (
-                <PatternIcon pattern={sentenceBonus!.pattern} />
-              )}
-              {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
               {sentenceBonus!.level != null && (
                 <span className={['bonus-lvl', patternLevelClass(sentenceBonus!.level)].join(' ')}>
                   {t('sidebar.patternLevel', { n: sentenceBonus!.level })}
                 </span>
               )}
+              {sentenceBonus!.pattern && (
+                <PatternIcon pattern={sentenceBonus!.pattern} />
+              )}
+              {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
             </span>
           )}
           {landing && bonusTotal > 0 && (

@@ -387,6 +387,9 @@ export interface RunState {
   voucherOffer: VoucherId | null;
   /** a voucher was already bought this chapter — the slot is greyed until next chapter */
   voucherLocked: boolean;
+  /** Base vouchers redeemed this chapter. Their upgrades skip the next restock once.
+   *  Optional only for saves created before the cooldown rule. */
+  voucherBasesBoughtThisChapter?: VoucherId[];
   /** this chapter's Deadline boss, drawn at chapter start so Blind Select can
    *  always show its effect (playtest-04 D-6) */
   chapterBossId: string | null;

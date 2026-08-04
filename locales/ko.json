@@ -526,7 +526,7 @@
   "jokerdesc.royalWe": "유니즌 문장 보너스 [m:×3.5 배수]",
   "jokerdesc.brokenSentence": "블라인드 종료 시 문장 패턴이 없으면 [c:+125 칩] [m:×4 배수]",
   "jokerdesc.holePunch": "[g:횡설수설]을 낼 때마다 영구적으로 [m:+0.2 배수]",
-  "jokerdesc.copyEditor": "같은 이모지 타일을 여러 장 보유할 수 있습니다 슬롯 제한은 유지됩니다",
+  "jokerdesc.copyEditor": "판매하면 남은 이모지 타일 중 하나의 복사본을 무작위로 생성합니다",
   "jokerdesc.goldenType": "문자 타일 효과로 골드를 얻을 때 그 타일에 [c:+50 칩]",
   "jokerdesc.deadlineAuction": "보스 블라인드 종료 시 보유 골드를 전부 지불하고 [$:$5]마다 영구적으로 [m:+0.2 배수]",
   "jokerdesc.termInsurance": "다음 [n:4]번의 문자 타일 파괴 시도를 취소하고 매번 [c:+80 칩] 네 번째 방어 후 이 이모지 타일이 파괴됩니다",

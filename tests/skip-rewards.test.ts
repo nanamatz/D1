@@ -30,6 +30,16 @@ describe('blind skip rewards', () => {
     }
   });
 
+  it('does not repeat either Tag from the immediately previous Chapter', () => {
+    const run = newRun('skip-repeat');
+    const previous = rollSkipOffers(run, makeRng('same-chapter'));
+    const repeatedChapter = rollSkipOffers(run, makeRng('same-chapter'), previous);
+    const previousIds = new Set(previous.map((offer) => offer.id));
+
+    expect(repeatedChapter.every((offer) => !previousIds.has(offer.id))).toBe(true);
+    expect(new Set(repeatedChapter.map((offer) => offer.id)).size).toBe(2);
+  });
+
   it('classifies skip-time rewards for the auto-redemption sequence', () => {
     expect(IMMEDIATE_SKIP_REWARD_IDS).toEqual([
       'advancePayment',

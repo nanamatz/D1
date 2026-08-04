@@ -83,4 +83,11 @@ describe('image-first shop offers', () => {
     expect(shop).not.toContain('<span className="n">');
     expect(shop).not.toContain('<span className="pack-size">');
   });
+
+  it('renders every consumable card family through the shared card art', () => {
+    for (const family of ['fable', 'constellation', 'gambler']) {
+      expect(shop).toContain(`m.classification === '${family}'`);
+    }
+    expect(shop).toContain('family={m.classification}');
+  });
 });

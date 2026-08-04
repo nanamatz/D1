@@ -297,8 +297,9 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
    the ordinary tile face and gains a gold forced-selection tag.
 6. **Tomato reactions** (the score icon, D-5): the tomato has a continuous, restrained pixel-step **Idle** loop (1px lift, tiny alternating tilt/squash), then gives a compact, springy **bounce on every scoring beat** — the scoring reaction temporarily replaces Idle while chips count up. Between beats it also occasionally **hops** on a long random timer (a few times per blind, never rhythmic enough to distract). Its panel-relative anchor is a separate, non-animated layout layer: score and idle motion always begin at the displayed tomato position, stay within roughly 4px vertically, and never replace the anchor transform or jump across the panel. Both OS and in-game reduced-motion settings disable every tomato loop.
 7. **Burning score boxes** (Balatro port; timing clarified 2026-07-28): on the exact settle beat where `committedBefore + current chips × current mult` reaches the blind target, the chips and mult boxes ignite—even while either number is still climbing—and remain lit through the rest of the blind; **flame size scales with the size of the overshoot**. Sentence-bonus landing uses its live finalized total by the same rule. This is not decoration — with auto-settle (GDD §7.2) there is no cash-out button, so the flame *is* the "you've cleared it" signal. Never wait for the settle to finish before ignition.
-   During that sentence-bonus landing, the pattern and level remain on the gold
-   stamp while every other source is split into its own compact tag: modifiers
+   During that sentence-bonus landing, the gold stamp reads **level → zodiac
+   symbol → pattern name** from left to right, while every other source is
+   split into its own compact tag: modifiers
    (Chips colour), Unison (gold), and post-pattern Emoji Tile/voucher/boss
    effects (effect colour). The player must be able to distinguish what the
    pattern supplied from what modified it.

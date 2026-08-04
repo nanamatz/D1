@@ -104,12 +104,12 @@ describe('promoted Emoji Tile hooks', () => {
     expect(run.jokers[0]?.state.destroyed).toBe(1);
   });
 
-  it('Copy Editor alone relaxes the central duplicate gate', () => {
+  it('Copy Editor does not relax the central duplicate gate', () => {
     const run = newRun('copy-editor');
     run.jokers = [owned('miser')];
     expect(canOwnJoker(run, 'miser')).toBe(false);
     run.jokers.push(owned('copyEditor'));
-    expect(canOwnJoker(run, 'miser')).toBe(true);
+    expect(canOwnJoker(run, 'miser')).toBe(false);
   });
 
   it('Clean Copy checks remaining discards at scoring time', () => {
