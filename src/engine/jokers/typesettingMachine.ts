@@ -6,9 +6,8 @@ export const typesettingMachine: JokerDef = {
   emoji: '⌨️', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const count = ctx.submission.tiles.filter((tile) => tile.font !== 'medium').length;
-      ctx.mult *= BALANCE.jokers.typesettingMachine.factorPerTile ** count;
+    tileScoring: ({ ctx, tile }) => {
+      if (tile.font !== 'medium') ctx.mult *= BALANCE.jokers.typesettingMachine.factorPerTile;
     },
   },
 };

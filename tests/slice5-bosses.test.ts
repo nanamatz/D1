@@ -101,9 +101,9 @@ describe('slice5 bosses — void, economy, hand churn', () => {
     expect(second.submission.debuffed).toBe(true);
   });
 
-  it('Bond (채권): each submission drains $1 per tile played (CAT → −3)', () => {
+  it('Bond (채권): each hand played drains exactly $1 regardless of tile count', () => {
     const r = bossRun();
-    expect(play(bossBlind(r, 'bond'), r, 'cat').goldDelta).toBe(-3);
+    expect(play(bossBlind(r, 'bond'), r, 'cat').goldDelta).toBe(-1);
   });
 
   it('Unopened Letter (미개봉 편지): each play dumps up to 4 extra random hand tiles, refilled', () => {
@@ -118,6 +118,28 @@ describe('slice5 bosses — void, economy, hand churn', () => {
       res.blind.discardedThisBlind.some((discarded) => discarded.id === tile.id))).toBe(true);
     // dumped tiles are replaced, so hand size is preserved
     expect(res.blind.hand.length).toBe(b.hand.length);
+  });
+
+  it('Unopened Letter discards grow Discarded Draft without counting played tiles', () => {
+    const r = bossRun();
+    r.jokers = [{ defId: 'discardedDraft', edition: 'base', state: {} }];
+    const b = startBlind(r, makeRng('letter-discarded-draft'), {
+      kind: 'boss', bossId: 'letter', target: 100_000,
+    });
+    const ids = b.hand.slice(0, 3).map((tile) => tile.id);
+    const first = submitWord(b, r, lex, ids, makeRng('letter-discarded-draft-first'));
+
+    expect(first.jokers[0]?.state.chips).toBe(
+      4 * BALANCE.jokers.discardedDraft.chipsPerTile,
+    );
+
+    const secondRun = { ...r, jokers: first.jokers };
+    const second = play(first.blind, secondRun, 'cat');
+    expect(second.events).toContainEqual(expect.objectContaining({
+      kind: 'joker',
+      jokerId: 'discardedDraft',
+      chipsDelta: 4 * BALANCE.jokers.discardedDraft.chipsPerTile,
+    }));
   });
 
   it('no boss → no gold delta', () => {

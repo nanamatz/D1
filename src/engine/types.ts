@@ -100,6 +100,8 @@ export interface WordSubmission {
   posUsed: POS | null;
   /** layer-1 settled score for this word (committed immediately, GDD §7.1) */
   settledScore: number;
+  /** Effective played-word length after rule-changing Emoji Tiles. */
+  scoringLength?: number;
   /** Active boss accepted the play but debuffed it to 0. */
   debuffed?: boolean;
 }
@@ -150,6 +152,8 @@ export interface SentenceJudgment {
  */
 export interface WordScoringContext {
   submission: WordSubmission;
+  /** Tiles used for lexicon spelling after rule effects such as Stone Tongue. */
+  spellingTiles?: readonly Tile[];
   chips: number;
   mult: number;
   /** Lexicon register before rule-changing Emoji Tiles rewrite the submission. */
@@ -167,6 +171,11 @@ export interface WordScoringContext {
   /** Flat committed-score replay, used by Rotary Press. */
   scoreBonus?: number;
 }
+
+/** Played-word length with a legacy-save fallback to the physical tile count. */
+export const submissionLength = (
+  submission: Pick<WordSubmission, 'scoringLength' | 'tiles'>,
+): number => submission.scoringLength ?? submission.tiles.length;
 
 /** Final register membership, with a legacy-save fallback to the lexicon suit. */
 export const submissionSuits = (
@@ -207,7 +216,7 @@ export type ScoreEvent =
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
   | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number; multFactor: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; growthKind?: 'mult' | 'multAdd' | 'chips'; growthDelta?: number }
+  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; retrigger?: boolean; growthKind?: 'mult' | 'multAdd' | 'chips' | 'gold'; growthDelta?: number }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };

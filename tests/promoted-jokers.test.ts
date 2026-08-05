@@ -5,7 +5,7 @@ import {
   JOKER_REGISTRY,
   onTilesCreated,
 } from '../src/engine/jokers';
-import { startBlind } from '../src/engine/loop';
+import { discardTiles, startBlind } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import type {
@@ -104,12 +104,12 @@ describe('promoted Emoji Tile hooks', () => {
     expect(run.jokers[0]?.state.destroyed).toBe(1);
   });
 
-  it('Copy Editor does not relax the central duplicate gate', () => {
+  it('Copy Editor relaxes the central duplicate gate while owned', () => {
     const run = newRun('copy-editor');
     run.jokers = [owned('miser')];
     expect(canOwnJoker(run, 'miser')).toBe(false);
     run.jokers.push(owned('copyEditor'));
-    expect(canOwnJoker(run, 'miser')).toBe(false);
+    expect(canOwnJoker(run, 'miser')).toBe(true);
   });
 
   it('Clean Copy checks remaining discards at scoring time', () => {
@@ -125,25 +125,19 @@ describe('promoted Emoji Tile hooks', () => {
     expect(spent.mult).toBe(1);
   });
 
-  it('Discarded Draft stores its live Chips for the tooltip', () => {
+  it('Discarded Draft grows from tiles actually discarded by the player', () => {
     const run = newRun('discarded-draft');
     run.jokers = [owned('discardedDraft')];
     const blind = startBlind(run, makeRng('discarded-draft'));
     const discarded = blind.hand.slice(0, 3);
-    const growth = bus.emit('discardUsed', {
+    const result = discardTiles(
+      blind,
       run,
-      blind: { ...blind, discardedThisBlind: discarded },
-      tiles: discarded,
-      gained: 0,
-      slotsBlocked: 0,
-    }, run.jokers);
-    expect(run.jokers[0]?.state.chips)
+      discarded.map((entry) => entry.id),
+      makeRng('discarded-draft-use'),
+    );
+    expect(result.jokers[0]?.state.chips)
       .toBe(3 * BALANCE.jokers.discardedDraft.chipsPerTile);
-    expect(growth).toEqual([{
-      jokerId: 'discardedDraft',
-      kind: 'chips',
-      delta: 3 * BALANCE.jokers.discardedDraft.chipsPerTile,
-    }]);
   });
 
   it('Bad Review never subtracts another effect Mult', () => {

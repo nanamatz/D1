@@ -89,11 +89,17 @@ export const LETTER_HAND_REGISTRY: readonly LetterHandDef[] = [
  * The highest-rank Word Hand for an uppercase A–Z string, or null. When
  * `isGibberish`, only gibberish-eligible hands are considered.
  */
-export function evaluateLetterHand(letters: string, isGibberish: boolean): LetterHandMatch | null {
+export function evaluateLetterHand(
+  letters: string,
+  isGibberish: boolean,
+  effectiveLength = letters.length,
+): LetterHandMatch | null {
   let best: LetterHandMatch | null = null;
   for (const def of LETTER_HAND_REGISTRY) {
     if (isGibberish && !def.gibberish) continue;
-    if (!def.test(letters)) continue;
+    if (def.id === 'longword'
+      ? effectiveLength < BALANCE.letterHand.longwordLen
+      : !def.test(letters)) continue;
     if (!best || def.rank > best.rank) {
       const b = BALANCE.letterHands[def.id];
       best = { id: def.id, rank: def.rank, chips: b.chips, mult: b.mult };

@@ -18,9 +18,8 @@ export const glasswork: JokerDef = {
   layer: 1,
   price: BALANCE.jokerPrice.uncommon,
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const glass = ctx.submission.tiles.filter((tile) => tile.material === 'glass').length;
-      ctx.mult += glass * BALANCE.jokers.glasswork.multPerGlass;
+    tileScoring: ({ ctx, tile }) => {
+      if (tile.material === 'glass') ctx.mult += BALANCE.jokers.glasswork.multPerGlass;
     },
     blindEnd: ({ run }) => {
       let left = BALANCE.jokers.glasswork.lostPerBlind;

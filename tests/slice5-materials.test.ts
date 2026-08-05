@@ -291,6 +291,33 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
 });
 
 describe('slice5 — Brass (GDD §2.2, Balatro Steel)', () => {
+  it('multiplies the current total Mult after owned Emoji Tile effects', () => {
+    const word = tiles('cat');
+    const heldBrass = tiles('x', 'brass');
+    const run = newRun('brass-current-total');
+    run.jokers = [{ defId: 'shortAndSharp', state: {} }];
+    const blind = {
+      ...startBlind(run, makeRng(run.seed)),
+      hand: [...word, ...heldBrass],
+      bag: [],
+    };
+    const result = submitWord(
+      blind, run, lex, word.map((tile) => tile.id), makeRng('brass-current-total-score'),
+    );
+    const currentMult = BALANCE.suitMult.standard
+      + word.length * BALANCE.wordLength.multPerLetter
+      + BALANCE.jokers.shortAndSharp.mult;
+
+    expect(result.submission.settledScore).toBe(
+      letterChips(word) * currentMult * BALANCE.materials.brass.multFactor,
+    );
+    expect(result.events.findIndex(
+      (event) => event.kind === 'material' && event.material === 'brass',
+    )).toBeGreaterThan(result.events.findIndex(
+      (event) => event.kind === 'joker' && event.jokerId === 'shortAndSharp',
+    ));
+  });
+
   it('multiplies mult per brass tile left in hand, not per brass tile played', () => {
     const run = { ...newRun('brass-seed'), bag: [...tiles('cat'), ...tiles('do', 'brass')] };
     const blind = startBlind(run, makeRng('brass-seed'));

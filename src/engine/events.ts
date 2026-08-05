@@ -19,9 +19,24 @@ import type { Rng } from './rng';
 
 // ---------- Event payloads ----------
 
+/** Optional hook-authored scoring beats when one Emoji Tile must visibly fire
+ * more than once. Their deltas must sum to that hook's total context change. */
+export interface JokerScoreBeat {
+  chipsDelta: number;
+  multDelta: number;
+  chipsFactor?: number;
+  multFactor?: number;
+  scoreDelta?: number;
+  goldDelta?: number;
+  tileId?: string;
+}
+
 export interface EngineEvents {
   /** blind is being set up; jokers may mutate phase count, discard budget, target */
   blindStart: { run: RunState; blind: BlindState };
+
+  /** Blind Select was confirmed; hooks may permanently mutate the pouch/shelf. */
+  blindSelected: { run: RunState; blind: BlindState; rng: Rng; createdTiles: Tile[] };
 
   /** mutable spelling projection before lexicon lookup; scoring still uses every submitted tile */
   wordPrepare: { run: RunState; blind: BlindState; tiles: readonly Tile[]; spellingTiles: Tile[] };
@@ -33,7 +48,16 @@ export interface EngineEvents {
   /** a word's chips/mult are being computed — THE main scoring hook.
    *  Mutate ctx.chips / ctx.mult. Runs before settlement (GDD §7.1 layer 1).
    *  Use this for per-WORD effects (a flat bonus, a suit-gated bonus). */
-  wordScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext };
+  wordScoring: {
+    run: RunState;
+    blind: BlindState;
+    ctx: WordScoringContext;
+    /** Hooks may split one aggregate effect into ordered presentation beats. */
+    scoreBeats?: JokerScoreBeat[];
+    /** Seeded creation channel for effects that add permanent letter tiles. */
+    rng?: Rng;
+    createdTiles?: Tile[];
+  };
 
   /** boss legality/debuff checks have resolved, but a debuff has not zeroed the word yet */
   wordChecked: {
@@ -46,6 +70,10 @@ export interface EngineEvents {
   /** a SINGLE tile's chips have just been added. Per-letter Emoji Tiles hook here
    *  so their contribution interleaves with tile scoring. */
   tileScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext; tile: Tile };
+
+  /** a SINGLE tile remaining in hand is resolving. Held-tile Emoji Tiles hook
+   * here so every contribution is attributed to that visible tile. */
+  heldTileScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext; tile: Tile };
 
   /** a material resolved for one tile trigger */
   materialScored: {
@@ -91,6 +119,9 @@ export interface EngineEvents {
     slotsBlocked: number;
   };
 
+  /** tiles were actually discarded, whether by the player or an external effect */
+  tilesDiscarded: { run: RunState; blind: BlindState; tiles: Tile[] };
+
   /** sentence bonus is being finalized at blind end (GDD §7.4).
    *  Mutate ctx.sentenceChips / ctx.sentenceMult (the bonus = chips × mult). */
   sentenceScoring: {
@@ -123,7 +154,7 @@ export type EngineEventName = keyof EngineEvents;
 
 export interface JokerGrowthTrigger {
   jokerId: string;
-  kind: 'mult' | 'multAdd' | 'chips';
+  kind: 'mult' | 'multAdd' | 'chips' | 'gold';
   delta: number;
 }
 
@@ -155,9 +186,10 @@ export interface JokerDef {
   multOperation?: 'multiply';
   multDisplayFactor?: number;
   /** Optional live-value row for scaling Emoji Tile tooltips.
-   *  `mult` = a ×factor, `multAdd` = an additive +Mult, `chips` = additive +Chips. */
+   *  `mult` = a ×factor, `multAdd` = additive +Mult, `chips` = additive +Chips,
+   *  `gold` = added sell value. */
   growthDisplay?: {
-    kind: 'mult' | 'multAdd' | 'chips';
+    kind: 'mult' | 'multAdd' | 'chips' | 'gold';
     stateKey: string;
     initial: number;
   };

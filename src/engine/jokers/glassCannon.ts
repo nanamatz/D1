@@ -6,9 +6,8 @@ export const glassCannon: JokerDef = {
   emoji: '💥', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const count = ctx.submission.tiles.filter((tile) => tile.material === 'glass').length;
-      ctx.mult *= BALANCE.jokers.glassCannon.factorPerGlass ** count;
+    tileScoring: ({ ctx, tile }) => {
+      if (tile.material === 'glass') ctx.mult *= BALANCE.jokers.glassCannon.factorPerGlass;
     },
   },
 };

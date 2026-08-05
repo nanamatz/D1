@@ -182,7 +182,7 @@ describe('slice5 shop — sell & reroll', () => {
     expect(res.run.jokers).toHaveLength(0);
   });
 
-  it('selling Copy Editor copies one seeded-random remaining Emoji Tile', () => {
+  it('selling Copy Editor no longer creates a copy', () => {
     const r = run({
       gold: 0,
       jokers: [
@@ -196,11 +196,7 @@ describe('slice5 shop — sell & reroll', () => {
       int: (max) => max - 1,
       shuffle: (items) => items.slice(),
     });
-    expect(res.run.jokers.map((joker) => joker.defId))
-      .toEqual(['miser', 'hypocrite', 'hypocrite']);
-    expect(res.run.jokers[2]).toEqual(res.run.jokers[1]);
-    expect(res.run.jokers[2]).not.toBe(res.run.jokers[1]);
-    expect(res.run.jokers[2]?.state).not.toBe(res.run.jokers[1]?.state);
+    expect(res.run.jokers.map((joker) => joker.defId)).toEqual(['miser', 'hypocrite']);
   });
 
   it('reroll costs base then escalates, regenerating stock (GDD §9.2)', () => {

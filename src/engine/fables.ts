@@ -18,6 +18,7 @@ import type {
 } from './types';
 import { canAddJoker, canOwnJoker } from './vouchers';
 import type { Rng } from './rng';
+import { setTileMaterial } from './materials';
 
 export type FableId =
   | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
@@ -120,7 +121,12 @@ export const jokerSellGoldValue = (run: RunState): number =>
     run.jokers.reduce((sum, owned) => {
       const def = JOKER_REGISTRY.get(owned.defId);
       return sum + (def
-        ? emojiTileSellValue(run, BALANCE.jokerPrice[def.rarity], owned.edition ?? 'base')
+        ? emojiTileSellValue(
+            run,
+            BALANCE.jokerPrice[def.rarity],
+            owned.edition ?? 'base',
+            owned.state.sellBonus ?? 0,
+          )
         : 1);
     }, 0),
     50,
@@ -151,7 +157,7 @@ export function useFableOnPouch(
   });
 
   if (effect.kind === 'material') {
-    return commit(run.bag.map((t) => (ids.has(t.id) ? toMaterial(t, effect.material) : t)));
+    return commit(run.bag.map((t) => (ids.has(t.id) ? setTileMaterial(t, effect.material) : t)));
   }
   if (effect.kind === 'rankUp') {
     return commit(
@@ -276,33 +282,13 @@ export const patchTiles = (
   };
 };
 
-const toMaterial = (tile: Tile, material: TileMaterial): Tile => {
-  const { woodBonusChips: _wood, ...withoutWood } = tile;
-  if (material === 'stone') {
-    const originalLetter = tile.letter ?? tile.letterBeforeStone;
-    return {
-      ...withoutWood,
-      material,
-      letter: null,
-      ...(originalLetter ? { letterBeforeStone: originalLetter } : {}),
-    };
-  }
-  const restored = tile.material === 'stone' ? tile.letterBeforeStone! : tile.letter;
-  return {
-    ...withoutWood,
-    material,
-    letter: restored,
-    ...(material === 'wood' ? { woodBonusChips: BALANCE.materials.wood.baseChips } : {}),
-  };
-};
-
 const nextLetter = (letter: Letter): Letter =>
   String.fromCharCode(letter === 'Z' ? 65 : letter.charCodeAt(0) + 1) as Letter;
 
 /** Presentation preview for a tile-targeting Fable before the mutation commits. */
 export function previewFableTile(id: FableId, tile: Tile): Tile {
   const effect = FABLE_REGISTRY.get(id)?.effect;
-  if (effect?.kind === 'material') return toMaterial(tile, effect.material);
+  if (effect?.kind === 'material') return setTileMaterial(tile, effect.material);
   if (effect?.kind === 'rankUp' && tile.letter !== null) {
     return {
       ...tile,
@@ -388,7 +374,7 @@ export function useFable(
       nextRun,
       nextBlind,
       ids,
-      (tile) => toMaterial(tile, effect.material),
+      (tile) => setTileMaterial(tile, effect.material),
     ));
   } else if (effect.kind === 'doubleGold') {
     nextRun = { ...nextRun, gold: nextRun.gold + Math.min(nextRun.gold, 20) };

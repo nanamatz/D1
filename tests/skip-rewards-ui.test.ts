@@ -84,6 +84,18 @@ describe('Blind Select skip presentation', () => {
     expect(shop).toContain('appliedTags: tags.filter((_, index) => consumed.has(index))');
   });
 
+  it('keeps Investment Tag pending until the Deadline Fee Settlement', () => {
+    const view = source('src/ui/components/BlindSelect.tsx');
+    const css = source('src/ui/styles/screens.css');
+
+    expect(view).toContain("offer.id !== 'investmentTag'");
+    expect(view).toContain('run.pendingBossReward > 0');
+    expect(view).toContain("phase === 'cashout' && blind.kind === 'boss'");
+    expect(view).toContain('...investmentTags');
+    expect(view).toContain("redeeming && 'redeeming'");
+    expect(css).toMatch(/\.run-tag-stack\.redeeming\s*\{[^}]*z-index:\s*54/s);
+  });
+
   it('ships one transparent PNG asset for every Editorial Perk', () => {
     const files = readdirSync(new URL('../src/ui/assets/skip-rewards/', import.meta.url));
     const pngs = files.filter((name) => name.endsWith('.png'));

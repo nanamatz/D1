@@ -1,6 +1,6 @@
 /**
  * Joker registry (GDD §11). One joker per file, grouped by rarity here.
- * Active roster: Common 27 + Uncommon 44 + Rare 44 + Legendary 5.
+ * Active roster: Common 29 + Uncommon 47 + Rare 47 + Legendary 5.
  */
 
 import { JokerBus, type JokerDef } from '../events';
@@ -32,6 +32,8 @@ import { letterLadderBadge } from './letterLadderBadge';
 import { dullingPencil } from './dullingPencil';
 import { proofEraser } from './proofEraser';
 import { spareDrawer } from './spareDrawer';
+import { threeLeafClover } from './threeLeafClover';
+import { megalith } from './megalith';
 // Uncommon (§11.3)
 import { literaryJudge } from './literaryJudge';
 import { rareEarth } from './rareEarth';
@@ -77,6 +79,8 @@ import { correctionMark } from './correctionMark';
 import { serial } from './serial';
 import { dryingInk } from './dryingInk';
 import { foldingManuscript } from './foldingManuscript';
+import { noiseCancelling } from './noiseCancelling';
+import { host } from './host';
 // Rare (§11.4)
 import { carteBlanche } from './carteBlanche';
 import { hypocrite } from './hypocrite';
@@ -122,6 +126,10 @@ import { goldenType } from './goldenType';
 import { deadlineAuction } from './deadlineAuction';
 import { termInsurance } from './termInsurance';
 import { exactingCritic } from './exactingCritic';
+import { counterfeit } from './counterfeit';
+import { twentyFifthBlessing } from './twentyFifthBlessing';
+import { bloodTypeA } from './bloodTypeA';
+import { dummyData } from './dummyData';
 // Legendary (§11.5)
 import { bookOfMargins } from './bookOfMargins';
 import { tyrant } from './tyrant';
@@ -160,6 +168,8 @@ export const COMMON_JOKERS: readonly JokerDef[] = [
   dullingPencil,
   proofEraser,
   spareDrawer,
+  threeLeafClover,
+  megalith,
 ];
 export const UNCOMMON_JOKERS: readonly JokerDef[] = [
   literaryJudge,
@@ -206,13 +216,15 @@ export const UNCOMMON_JOKERS: readonly JokerDef[] = [
   serial,
   dryingInk,
   foldingManuscript,
+  noiseCancelling,
+  stargazer,
+  host,
 ];
 export const RARE_JOKERS: readonly JokerDef[] = [
   carteBlanche,
   hypocrite,
   rhymeChain,
   outOfPrint,
-  stargazer,
   fableHoard,
   anonymous,
   censorsBane,
@@ -252,6 +264,10 @@ export const RARE_JOKERS: readonly JokerDef[] = [
   deadlineAuction,
   termInsurance,
   exactingCritic,
+  counterfeit,
+  twentyFifthBlessing,
+  bloodTypeA,
+  dummyData,
 ];
 export const LEGENDARY_JOKERS: readonly JokerDef[] = [
   bookOfMargins,

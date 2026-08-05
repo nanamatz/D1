@@ -18,6 +18,8 @@ import contract from './assets/bosses/T_Contract.png';
 import burntPaper from './assets/bosses/T_BurntPaper.png';
 import whitePaper from './assets/bosses/T_WhitePaper.png';
 import will from './assets/bosses/T_will.png';
+import cleaningSign from './assets/bosses/T_CleaningSign.png';
+import medusa from './assets/bosses/T_Medusa.png';
 import nokdoScript from './assets/bosses/T_NokdoScript.png';
 import blueprint from './assets/bosses/T_Blueprint.png';
 import vitalSign from './assets/bosses/T_VitalSign.png';
@@ -39,6 +41,8 @@ export const BOSS_ART: Record<string, string> = {
   burntPaper,
   whitePaper,
   will,
+  cleaningSign,
+  medusa,
   nokdoScript,
   blueprint,
   vitalSign,

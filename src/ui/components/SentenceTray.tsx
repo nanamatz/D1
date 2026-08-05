@@ -7,7 +7,7 @@ import {
   type WordSubmission,
 } from '../../engine/types';
 import type { Lexicon } from '../../engine/lexicon';
-import { posLabel, suitClass } from '../game';
+import { posLabel, suitClass, tileTooltip } from '../game';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
 import { TileView } from './Tile';
@@ -90,10 +90,18 @@ function SubmittedWord({
       ))}
     </span>
   );
+  const tiles = (
+    <span className="submitted-tiles">
+      {sub.tiles.map((tile) => (
+        <TileView key={tile.id} tile={tile} mini inspectable tooltip={tileTooltip(tile, t)} />
+      ))}
+    </span>
+  );
   const content = sub.isGibberish ? (
     <div ref={ref} className={['hole', sub.debuffed ? 'boss-debuffed' : ''].filter(Boolean).join(' ')}>
       {suitTags}
-      {`✷ ${t('tray.gibberish')}`}
+      {tiles}
+      <span className="gibberish-tag">{t('tray.gibberish')}</span>
       <span className="pos">{t('tray.hole')}</span>
       {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
       {settling && <WordStamp />}
@@ -106,7 +114,7 @@ function SubmittedWord({
         .join(' ')}
     >
       {suitTags}
-      {sub.tiles.map((tile) => <TileView key={tile.id} tile={tile} mini />)}
+      {tiles}
       <span className="pos">{posLabel(sub, lexicon, t)}</span>
       {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
       {settling && <WordStamp />}

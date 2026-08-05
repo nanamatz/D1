@@ -16,6 +16,8 @@ import { FABLE_IDS } from './fables';
 import { GAMBLER_IDS } from './gamblers';
 import {
   canAddJoker,
+  allowsDuplicateOffers,
+  canOwnConsumable,
   fablePacksContainInk,
   hasVoucher,
   mostPlayedPattern,
@@ -107,12 +109,16 @@ function drawConsumables(
   show: number,
   rng: Rng,
   make: (id: ConsumableId) => PackOption,
+  withReplacement = false,
 ): PackOption[] {
-  return rng.shuffle([...pool]).slice(0, show).map(make);
+  if (!withReplacement) return rng.shuffle([...pool]).slice(0, show).map(make);
+  return pool.length === 0
+    ? []
+    : Array.from({ length: show }, () => make(pool[rng.int(pool.length)]!));
 }
 
 /** Take one weighted id without replacement from the remaining Ink pool. */
-function takeWeightedInk(remaining: ConsumableId[], rng: Rng): ConsumableId {
+function takeWeightedInk(remaining: ConsumableId[], rng: Rng, withReplacement = false): ConsumableId {
   const weight = (id: ConsumableId) => BALANCE.pack.inkGamblerWeights[id] ?? 1;
   let roll = rng.next() * remaining.reduce((sum, id) => sum + weight(id), 0);
   let picked = remaining.length - 1;
@@ -123,11 +129,12 @@ function takeWeightedInk(remaining: ConsumableId[], rng: Rng): ConsumableId {
       break;
     }
   }
-  return remaining.splice(picked, 1)[0]!;
+  return withReplacement ? remaining[picked]! : remaining.splice(picked, 1)[0]!;
 }
 
 export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
   const { show, pick } = packSizeRules(slot.type, slot.size);
+  const withReplacement = allowsDuplicateOffers(run);
   let options: PackOption[];
   switch (slot.type) {
     case 'joker': {
@@ -145,12 +152,15 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'consumable': {
-      options = drawConsumables(FABLE_POOL, show, rng, (id) => ({ kind: 'consumable', id }));
-      options = options.map((option) =>
-        rng.next() < BALANCE.pack.phoenixChance
-          ? { kind: 'consumable', id: 'phoenix' }
-          : option,
-      );
+      const pool = FABLE_POOL.filter((id) => canOwnConsumable(run, id));
+      options = drawConsumables(pool, show, rng, (id) => ({ kind: 'consumable', id }), withReplacement);
+      const phoenixShown = new Set<ConsumableId>();
+      options = options.map((option) => {
+        const replace = rng.next() < BALANCE.pack.phoenixChance &&
+          canOwnConsumable(run, 'phoenix') && (withReplacement || !phoenixShown.has('phoenix'));
+        if (replace) phoenixShown.add('phoenix');
+        return replace ? { kind: 'consumable', id: 'phoenix' } : option;
+      });
       // Comic Book adds an ordinary Gambler replacement, capped at one per pack.
       // Phoenix above is the separate voucher-free jackpot route.
       if (fablePacksContainInk(run)) {
@@ -158,9 +168,11 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
           const option = options[i];
           if (option?.kind === 'consumable' && option.id !== 'phoenix' &&
               rng.next() < BALANCE.pack.gamblerInFableChance) {
-            options[i] = {
+            const candidates = INK_BASE_POOL.filter((id) => canOwnConsumable(run, id) &&
+              (withReplacement || !options.some((entry) => entry.kind === 'consumable' && entry.id === id)));
+            if (candidates.length > 0) options[i] = {
               kind: 'consumable',
-              id: INK_BASE_POOL[rng.int(INK_BASE_POOL.length)]!,
+              id: candidates[rng.int(candidates.length)]!,
             };
             break;
           }
@@ -169,39 +181,45 @@ export function rollPack(slot: PackSlot, run: RunState, rng: Rng): PackOffer {
       break;
     }
     case 'ink': {
-      const ordinary = [...INK_BASE_POOL];
-      options = Array.from({ length: show }, () => {
+      const ordinary = INK_BASE_POOL.filter((id) => canOwnConsumable(run, id));
+      options = [];
+      while (options.length < show && (ordinary.length > 0 || withReplacement)) {
         const roll = rng.next();
-        const id = roll < BALANCE.pack.phoenixChance
+        const shown = new Set(options.flatMap((option) => option.kind === 'consumable' ? [option.id] : []));
+        const phoenixAllowed = canOwnConsumable(run, 'phoenix') && (withReplacement || !shown.has('phoenix'));
+        const deerAllowed = canOwnConsumable(run, 'deer') && (withReplacement || !shown.has('deer'));
+        const id = roll < BALANCE.pack.phoenixChance && phoenixAllowed
           ? 'phoenix'
-          : roll < BALANCE.pack.phoenixChance + BALANCE.pack.deerChance
+          : roll < BALANCE.pack.phoenixChance + BALANCE.pack.deerChance && deerAllowed
             ? 'deer'
-            : takeWeightedInk(ordinary, rng);
-        return { kind: 'consumable' as const, id };
-      });
+            : ordinary.length > 0 ? takeWeightedInk(ordinary, rng, withReplacement) : null;
+        if (!id) break;
+        options.push({ kind: 'consumable', id });
+      }
       break;
     }
     case 'pattern': {
-      const held = new Set(run.consumables);
-      const pool = CONSTELLATION_POOL.filter((id) => !held.has(id));
+      const pool = CONSTELLATION_POOL.filter((id) => canOwnConsumable(run, id));
       options = drawConsumables(pool, show, rng, (id) => ({
         kind: 'punctuation',
         id,
         pattern: CONSTELLATION_PATTERN[id]!,
-      }));
+      }), withReplacement);
       if (hasVoucher(run, 'bwPhoto')) {
         const favorite = mostPlayedPattern(run);
         const id = favorite ? PATTERN_CONSUMABLE[favorite] : null;
-        if (favorite && id && !options.some((o) => o.kind === 'punctuation' && o.pattern === favorite)) {
+        if (favorite && id && canOwnConsumable(run, id) && !options.some((o) => o.kind === 'punctuation' && o.pattern === favorite)) {
           options[options.length - 1] = { kind: 'punctuation', id, pattern: favorite };
         }
       }
       // Deer is an independent jackpot roll for every Constellation choice.
-      options = options.map((option) =>
-        rng.next() < BALANCE.pack.deerChance
-          ? { kind: 'consumable', id: 'deer' }
-          : option,
-      );
+      const deerShown = new Set<ConsumableId>();
+      options = options.map((option) => {
+        const replace = rng.next() < BALANCE.pack.deerChance &&
+          canOwnConsumable(run, 'deer') && (withReplacement || !deerShown.has('deer'));
+        if (replace) deerShown.add('deer');
+        return replace ? { kind: 'consumable', id: 'deer' } : option;
+      });
       break;
     }
   }
@@ -221,9 +239,11 @@ export function applyPackPick(run: RunState, option: PackOption): RunState {
       return { ...run, bag: [...run.bag, option.tile] };
     case 'consumable':
       if (run.consumables.length >= run.consumableSlots) return run;
+      if (!canOwnConsumable(run, option.id)) return run;
       return { ...run, consumables: [...run.consumables, option.id] };
     case 'punctuation':
       if (run.consumables.length >= run.consumableSlots) return run;
+      if (!canOwnConsumable(run, option.id)) return run;
       return { ...run, consumables: [...run.consumables, option.id] };
   }
 }

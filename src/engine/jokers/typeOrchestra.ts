@@ -6,9 +6,10 @@ export const typeOrchestra: JokerDef = {
   emoji: '🎻', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const count = new Set(ctx.submission.tiles.map((tile) => tile.font)).size;
-      ctx.mult *= BALANCE.jokers.typeOrchestra.factorPerFont ** count;
+    tileScoring: ({ ctx, tile }) => {
+      if (ctx.submission.tiles.find((candidate) => candidate.font === tile.font)?.id === tile.id) {
+        ctx.mult *= BALANCE.jokers.typeOrchestra.factorPerFont;
+      }
     },
   },
 };

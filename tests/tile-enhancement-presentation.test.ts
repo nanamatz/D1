@@ -49,4 +49,27 @@ describe('tile enhancement presentation', () => {
     expect(css).toContain('mix-blend-mode: color');
     expect(css).not.toContain('.tile-edition-white');
   });
+
+  it('gives Gray, Polished, and Void G persistent high-contrast identities', () => {
+    const tileView = readFileSync(
+      fileURLToPath(new URL('../src/ui/components/Tile.tsx', import.meta.url)),
+      'utf8',
+    );
+    const css = readFileSync(
+      fileURLToPath(new URL('../src/ui/styles/play.css', import.meta.url)),
+      'utf8',
+    );
+
+    expect(css).toMatch(
+      /\.tile-edition-gray\s*\{[^}]*mix-blend-mode:\s*normal[^}]*border:\s*3px[^}]*repeating-linear-gradient/s,
+    );
+    expect(css).toMatch(/\.tile\.edition-gray:not\(\.stone\)[\s\S]*color:\s*var\(--tile-ink-light/);
+    expect(css).toMatch(
+      /\.tile\.polished \.tile-material-texture\s*\{[^}]*border:\s*2px[^}]*box-shadow:/s,
+    );
+    expect(tileView).toContain('className="tile-letter" data-letter={tileGlyph(tile)}');
+    expect(css).toMatch(
+      /\.tile\.f-bold \.tile-letter\[data-letter='G'\]::after\s*\{[^}]*border-top:[^}]*border-right:/s,
+    );
+  });
 });

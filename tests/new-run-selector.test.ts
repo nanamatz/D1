@@ -4,6 +4,18 @@ import { describe, expect, it } from 'vitest';
 const source = (path: string): string => readFileSync(path, 'utf8');
 
 describe('New Run selector presentation', () => {
+  it('starts on the Pouch and Record used by the current or most recent run', () => {
+    const app = source('src/ui/App.tsx');
+    const component = source('src/ui/components/NewRun.tsx');
+
+    expect(app).toContain('initialPouchId={g.state.run.pouchId}');
+    expect(app).toContain('initialRecordId={g.state.run.recordId}');
+    expect(component).toContain('useState<PouchId>(initialPouchId)');
+    expect(component).toContain('useState<RecordId>(initialRecordId)');
+    expect(component).toContain("initialPouchId = 'yellow'");
+    expect(component).toContain("initialRecordId = 'whiteLp'");
+  });
+
   it('uses stacked arrow-panel-arrow rows with a compact Record tier', () => {
     const component = source('src/ui/components/NewRun.tsx');
     const css = source('src/ui/styles/screens.css');

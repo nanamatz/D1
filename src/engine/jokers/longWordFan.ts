@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
+import { submissionLength } from '../types';
 
 /** C7 (GDD §11.2) — +Chips on long words, layer 1. */
 export const longWordFan: JokerDef = {
@@ -14,7 +15,7 @@ export const longWordFan: JokerDef = {
   hooks: {
     wordScoring: ({ ctx }) => {
       const { minLength, chips } = BALANCE.jokers.longWordFan;
-      if (ctx.submission.tiles.length >= minLength) ctx.chips += chips;
+      if (submissionLength(ctx.submission) >= minLength) ctx.chips += chips;
     },
   },
 };

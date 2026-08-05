@@ -1,7 +1,7 @@
 /**
  * Bosses (GDD §8.3) — data + hooks, like jokers. Each boss attacks one system
  * (readable), is build-dependent (a check), and has counterplay. This is the
- * publishing-frame roster of 12 (수배 전단 … 유서); effects plug in at fixed
+ * publishing-frame roster of 14 (수배 전단 … 메두사); effects plug in at fixed
  * points in the loop pipeline:
  *   handSizeDelta   → shrink the opening draw before the hand is dealt (Budget Book)
  *   targetMult      → scale the blind target (Wanted)
@@ -9,8 +9,8 @@
  *   wordScoring     → mutate chips/mult (after jokers); gets {run, blind, lexicon}
  *   voids           → an allowed-but-zero submission (Forbidden Paper single-suit lock)
  *   blocks          → an illegal submission (unused by the current roster; kept as infra)
- *   goldPerWord     → economy drain per word (unused by the current roster)
- *   goldPerTile     → economy drain per tile played (Bond)
+ *   goldPerWord     → economy drain per hand played (Bond)
+ *   goldPerDiscard  → economy drain per discard action (Cleaning Sign)
  *   discardOnPlay   → discard N random hand tiles after each play (Unopened Letter)
  *
  * Boss art (id → image) lives in the UI (`src/ui/bossArt.ts`) so the engine stays
@@ -18,6 +18,7 @@
  */
 
 import { BALANCE } from './balance';
+import { setTileMaterial } from './materials';
 import type { Lexicon } from './lexicon';
 import type { Rng } from './rng';
 import { isVerb, submissionHasSuit, submissionSuits } from './types';
@@ -27,6 +28,7 @@ import type {
   SentenceScoringContext,
   WordScoringContext,
   WordSubmission,
+  Tile,
 } from './types';
 
 /** Read-only context a boss's wordScoring hook may inspect (GDD §8.3). */
@@ -68,12 +70,14 @@ export interface BossDef {
   blocks?: (word: string, lexicon: Lexicon) => boolean;
   /** true → the submission is allowed but scores 0 */
   voids?: (submission: WordSubmission, priorSequence: readonly WordSubmission[]) => boolean;
-  /** gold removed each time a word is submitted */
+  /** gold removed each time a hand is played */
   goldPerWord?: number;
-  /** gold removed per tile in a submission (Bond) */
-  goldPerTile?: number;
+  /** gold removed each time the player spends a discard */
+  goldPerDiscard?: number;
   /** random hand tiles discarded after each play (Unopened Letter) */
   discardOnPlay?: number;
+  /** Whether a tile may be included in a player discard action. */
+  canDiscardTile?: (tile: Tile) => boolean;
 }
 
 const BOSSES: readonly BossDef[] = [
@@ -104,10 +108,10 @@ const BOSSES: readonly BossDef[] = [
       return established !== undefined && !current.some((suit) => established.includes(suit));
     },
   },
-  // 5. Bond (채권): −$1 per tile played this blind.
+  // 5. Bond (채권): −$1 per hand played this blind.
   {
     id: 'bond', nameEn: 'Bond', nameKo: '채권', emoji: '💵',
-    goldPerTile: BALANCE.boss.bondGoldPerTile,
+    goldPerWord: BALANCE.boss.bondGoldPerPlay,
   },
   // 6. History Book (역사책): this boss blind gets 2 fewer phases.
   {
@@ -157,6 +161,41 @@ const BOSSES: readonly BossDef[] = [
     wordScoring: (ctx) => {
       ctx.chips *= BALANCE.boss.willScale;
       ctx.mult *= BALANCE.boss.willScale;
+    },
+  },
+  // 13. Cleaning Sign: each discard action costs $2.
+  {
+    id: 'cleaningSign',
+    nameEn: 'Cleaning Sign (Cleaning in Progress)',
+    nameKo: '안내표지판 (청소중)',
+    emoji: '⚠️',
+    goldPerDiscard: BALANCE.boss.cleaningSignGoldPerDiscard,
+  },
+  // 14. Medusa: petrifies two random held tiles after every play. Stone cannot
+  //     be discarded for the duration of this boss blind.
+  {
+    id: 'medusa',
+    nameEn: 'Medusa',
+    nameKo: '메두사',
+    emoji: '🐍',
+    canDiscardTile: (tile) => tile.material !== 'stone',
+    afterPlay: (run, blind, rng) => {
+      const targets = rng.shuffle(blind.hand.filter((tile) => tile.material !== 'stone'))
+        .slice(0, BALANCE.boss.medusaStoneTiles);
+      if (targets.length === 0) return { run, blind };
+      const ids = new Set(targets.map((tile) => tile.id));
+      const patch = (tiles: readonly Tile[]) => tiles.map((tile) =>
+        ids.has(tile.id) ? setTileMaterial(tile, 'stone') : tile,
+      );
+      return {
+        run: { ...run, bag: patch(run.bag) },
+        blind: {
+          ...blind,
+          hand: patch(blind.hand),
+          bag: patch(blind.bag),
+          discardedThisBlind: patch(blind.discardedThisBlind),
+        },
+      };
     },
   },
 ];
@@ -240,7 +279,7 @@ export const bossPoolForId = (id: string | null): BossPool =>
  * `exclude` removes an id from the pool BEFORE the draw — that is what makes a
  * paid reroll actually reroll. The UI used to draw once and re-draw only if it
  * matched, which still returns the same boss when both draws land on it: 0.69%
- * on the 12-boss core pool but 6.25% on the 4-boss finisher pool, i.e. one in
+ * on the 14-boss core pool but 6.25% on the 4-boss finisher pool, i.e. one in
  * sixteen $10 rerolls on a final Chapter did nothing at all. Excluding is also
  * one seeded draw instead of two, so the RNG stream stays simple.
  *
@@ -294,6 +333,9 @@ export function afterBossPlay(
 ): { run: RunState; blind: BlindState } {
   return BOSS_REGISTRY.get(blind.bossId ?? '')?.afterPlay?.(run, blind, rng) ?? { run, blind };
 }
+
+export const bossAllowsDiscard = (blind: BlindState, tile: Tile): boolean =>
+  BOSS_REGISTRY.get(blind.bossId ?? '')?.canDiscardTile?.(tile) ?? true;
 
 export function reconcileBossHand(run: RunState, blind: BlindState, rng: Rng): BlindState {
   return BOSS_REGISTRY.get(blind.bossId ?? '')?.handChanged?.(run, blind, rng) ?? blind;

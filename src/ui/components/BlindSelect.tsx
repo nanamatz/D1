@@ -211,10 +211,11 @@ export function pendingSkippedTagIndices(
 /** Tags stay visible until their own next-blind or next-shop resolution point. */
 export function SkippedTagStack({ g }: { g: UseGame }) {
   const { t } = useI18n();
-  const { run, phase, pack, pendingBlindAfterPack, shopTagRedemptions } = g.state;
+  const { run, blind, phase, pack, pendingBlindAfterPack, shopTagRedemptions } = g.state;
   const showNextBlindTags = phase === 'blindselect' || phase === 'playing' || pendingBlindAfterPack;
   const redeemingNextBlind = phase === 'playing';
   const redeemingShop = phase === 'shop' && pack === null;
+  const redeemingInvestment = phase === 'cashout' && blind.kind === 'boss';
   useEffect(() => {
     if (redeemingShop && shopTagRedemptions.length > 0 && motionOff()) {
       g.clearShopTagRedemptions();
@@ -224,6 +225,7 @@ export function SkippedTagStack({ g }: { g: UseGame }) {
     ? pendingSkippedTagIndices(run.blindIndex, run.skippedThisChapter)
       .map((blindIndex) => ({ blindIndex, offer: run.skipOffers[blindIndex] }))
       .filter(({ offer }) => !isImmediateSkipReward(offer.id) && !isNextShopSkipReward(offer.id))
+      .filter(({ offer }) => offer.id !== 'investmentTag')
       .map(({ blindIndex, offer }) => ({
         key: `blind-${blindIndex}`,
         offer,
@@ -237,6 +239,14 @@ export function SkippedTagStack({ g }: { g: UseGame }) {
     redeeming: false,
     shopRedemption: false,
   }));
+  const investmentTags: DisplaySkipTag[] = run.pendingBossReward > 0
+    ? [{
+      key: 'boss-waiting-investment',
+      offer: { id: 'investmentTag' },
+      redeeming: redeemingInvestment,
+      shopRedemption: false,
+    }]
+    : [];
   const appliedShopTags: DisplaySkipTag[] = redeemingShop
     ? shopTagRedemptions.map((id, index) => ({
       key: `shop-redeeming-${id}-${index}`,
@@ -245,13 +255,13 @@ export function SkippedTagStack({ g }: { g: UseGame }) {
       shopRedemption: true,
     }))
     : [];
-  const tags = [...waitingShopTags, ...nextBlindTags, ...appliedShopTags].slice(-2);
+  const tags = [...waitingShopTags, ...nextBlindTags, ...investmentTags, ...appliedShopTags].slice(-2);
   const lastShopRedemptionKey = [...tags].reverse().find((tag) => tag.shopRedemption)?.key;
   const redeeming = tags.some((tag) => tag.redeeming);
   if (tags.length === 0) return null;
 
   return (
-    <div className="run-tag-stack">
+    <div className={['run-tag-stack', redeeming && 'redeeming'].filter(Boolean).join(' ')}>
       {tags.map(({ key, offer, redeeming: tagRedeeming, shopRedemption }) => {
         const patternName = offer.pattern ? t(`pattern.${offer.pattern}`) : '';
         return (

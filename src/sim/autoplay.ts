@@ -53,6 +53,7 @@ function main(): void {
     if (result.destroyedTileIds.length) {
       run.bag = run.bag.filter((t) => !result.destroyedTileIds.includes(t.id));
     }
+    if (result.createdTiles.length) run.bag.push(...result.createdTiles);
     blind = after;
     const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `[${submission.suit} suit]`;
     const judged = judgeSentence(blind.sequence, lex);

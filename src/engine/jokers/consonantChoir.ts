@@ -6,15 +6,12 @@ export const consonantChoir: JokerDef = {
   emoji: '🎼', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const seen = new Set<string>();
-      let duplicates = 0;
-      for (const tile of ctx.submission.tiles) {
-        if (tile.letter === null || isScoringVowel(ctx, tile.letter)) continue;
-        if (seen.has(tile.letter)) duplicates++;
-        else seen.add(tile.letter);
+    tileScoring: ({ ctx, tile }) => {
+      const index = ctx.submission.tiles.findIndex((candidate) => candidate.id === tile.id);
+      if (tile.letter !== null && !isScoringVowel(ctx, tile.letter) &&
+          ctx.submission.tiles.slice(0, index).some((candidate) => candidate.letter === tile.letter)) {
+        ctx.mult *= BALANCE.jokers.consonantChoir.factorPerDuplicate;
       }
-      ctx.mult *= BALANCE.jokers.consonantChoir.factorPerDuplicate ** duplicates;
     },
   },
 };

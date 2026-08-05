@@ -101,6 +101,10 @@ export function posLabel(sub: WordSubmission, lexicon: Lexicon, t: PosTranslate)
 export const tileValue = (t: Tile): number =>
   t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
 
+/** Tooltip total: Stone's material chips replace its missing letter value. */
+export const tileTooltipChips = (t: Tile): number =>
+  t.material === 'stone' ? BALANCE.materials.stone.chips : tileValue(t);
+
 /** First-run lesson lock: the next letter still needed to spell `word`, given the letters
  *  already staged (in order), or null once they spell it. The lock enforces order, so the
  *  staged letters are always a prefix of `word`. Case-insensitive. */
@@ -158,7 +162,7 @@ export function tileTooltip(tile: Tile, t: TFull) {
   }
   // Stone has no glyph — title falls back to its material name so the card is identifiable.
   const title = tileGlyph(tile) || t(`material.${tile.material}`);
-  return { title, body: t('tile.chips', { n: tileValue(tile) }), tags, sub };
+  return { title, body: t('tile.chips', { n: tileTooltipChips(tile) }), tags, sub };
 }
 
 /** Wood alone shows its live +Chips growth; other materials rely on texture and tooltip. */

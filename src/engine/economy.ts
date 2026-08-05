@@ -156,7 +156,8 @@ export const emojiTileSellValue = (
   run: RunState,
   basePrice: number,
   edition: JokerEdition = 'base',
-): number => sellValue(emojiTileBuyPrice(run, basePrice, edition));
+  bonus = 0,
+): number => sellValue(emojiTileBuyPrice(run, basePrice, edition)) + bonus;
 
 export const consumableSellValue = (run: RunState, id: ConsumableId): number =>
   sellValue(consumableBuyPrice(run, id));

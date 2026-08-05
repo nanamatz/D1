@@ -654,7 +654,7 @@ function BossesView() {
       <div className="panel target-table">
         <div className="label">{t('collection.targetCurve')}</div>
         {/* Non-boss blind emblems: Draft (small) / Revision (big). Deadlines are
-            the 12 bosses shown to the right. */}
+            the 14 bosses shown to the right. */}
         <div className="blind-emblems">
           {(['small', 'big'] as const).map(
             (k) =>

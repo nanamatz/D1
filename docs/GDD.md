@@ -10,7 +10,7 @@ Version 0.2 — systems expansion
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
-- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 12 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 26 Editorial Perks now ship (§8.2, changed 2026-07-31; Lead Story retired).
+- New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 14 regular bosses, and a four-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 26 Editorial Perks now ship (§8.2, changed 2026-07-31; Lead Story retired).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
 - Changed 2026-08-04: the Stationery Shop and pack economy adopt the Balatro-reference probability and price policy. Item weights are Emoji Tile 20 / Fable 4 / Constellation 4, voucher-gated letter tile 4, and Lucky-Pouch Gambler 2; pack type weights are 4/4/4/1.2/0.6 and sizes 8/4/1. Emoji Tile prices are the project override **$4/$6/$9/$15** by rarity (§9.2–§9.3, §11.8).
 - Changed 2026-08-03: **Consumables** use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 implemented). Rainman and Sake Cup complete the supplied Gambler roster (§10).
@@ -179,7 +179,7 @@ Letter **scores** are Scrabble-standard **× 3** (feel pass 2026-07-21, `BALANCE
 | Stone | 석재 | **+50 Chips, no letter** (see below) | Stone |
 | Lead plate | 연판 | **1/5 → +20 Mult; 1/5 → $20** (independent rolls) | Lucky, gold chance retuned 2026-07-30 |
 | Ivory | 상아 | **$3** if held in hand at blind end | Gold |
-| Brass | 황동 | **×1.5 Mult** while held in hand | Steel |
+| Brass | 황동 | While held in hand, **×1.5 the current total Mult** after all owned Emoji Tile scoring effects | Steel |
 | Wood | 목재 | Starts at **+15 Chips**; permanently gains **+10 Chips** each time that tile is played during the run | custom |
 
 Effects are **per tile** and stack: three Porcelain tiles in one word give +90 Chips; two Ivory tiles held at blind end pay $6. Wood growth is stored on that individual tile and survives blind transitions for the rest of the run.
@@ -239,7 +239,7 @@ Rules: "scores in a played word" **includes gibberish** (tile-level effects fire
 
 Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. The persisted `bold` id displays as **Void / 보이드** for save compatibility. Reassignment stays a one-line data change.
 
-> **Decision — fonts unified as style variants within the Futura/Jost family (changed 2026-08-01).** A font functions as a visual signal that "this tile has a special effect." Medium 500, Bold 700, and Black 900 were not distinguishable enough on the small tile, while an underline is decoration rather than a font style. The persisted `bold` display is therefore **Void**: a `.48em` same-colour stroke expands the bundled Jost 500 ink until enclosed counters close, then the glyph is scaled to `.61` to retain its tile footprint. Inline empties the body; Void consumes the negative space; Black keeps open counters but uses the natural 900 weight. The internal `bold` id remains for save compatibility. (License note: commercial Futura is not bundled; the shipped Jost files are OFL-1.1.)
+> **Decision — fonts unified as style variants within the Futura/Jost family (changed 2026-08-05).** A font functions as a visual signal that "this tile has a special effect." Medium 500, Bold 700, and Black 900 were not distinguishable enough on the small tile, while an underline is decoration rather than a font style. The persisted `bold` display is therefore **Void**: a `.48em` same-colour stroke expands the bundled Jost 500 ink until enclosed counters close, then the glyph is scaled to `.61` to retain its tile footprint. Inline empties the body; Void consumes the negative space; Black keeps open counters but uses the natural 900 weight. Because the expansion otherwise makes G read as O, Void G restores an exaggerated horizontal bar and terminal outside the bowl. The internal `bold` id remains for save compatibility. (License note: commercial Futura is not bundled; the shipped Jost files are OFL-1.1.)
 
 ### 2.4 Enhancement Stacking & Replacement
 
@@ -530,7 +530,7 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
   Fee Settlement line item (§9.1). Purple Pouch replaces this with $2 per phase
   and adds $1 per remaining discard (§12.2).
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). A 1-phase clear of a 5-phase blind still pays more remaining-phase gold than a last-phase clear; the confirmed Rare/Legendary roster no longer adds the retired Rush Specialist or Loan Shark bonuses.
-- **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 12-boss roster (§8.3, 2026-07-21) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
+- **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 14-boss roster (§8.3, 2026-08-05) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
 ### 7.3 Sentence Pattern = add Chips, then multiply Mult
 
@@ -549,6 +549,15 @@ exact chance and an explicit Success/Failure or Survived/Destroyed verdict. This
 Cowherd and the Weaver Girl, Lead Plate, Glass, Misbound, and future trigger
 rolls. Shop/pack generation and random target selection show their generated or
 selected object directly and do not add a redundant probability verdict.
+
+**Per-tile Emoji effects (changed 2026-08-05).** An effect whose value is
+defined per played or held letter tile resolves through that individual tile's
+scoring hook, not as a word-level count multiplied in one batch. Each actual
+application mutates the running Chips/Mult at that tile, emits its own score
+event with the source tile id, and fires again on a full-tile retrigger. Distinct
+letter/material/font effects attach to the first qualifying tile of each type;
+pair/repetition effects attach to the tile that completes the condition. Held
+tile effects resolve in the frozen visible hand order.
 
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
@@ -625,7 +634,7 @@ Chapter gating in this first balance slice.
 | Violet Tag · 바이올렛 태그 | The next base-edition shop Emoji Tile becomes **free + Violet** |
 | Rainbow Tag · 레인보우 태그 | The next base-edition shop Emoji Tile becomes **free + Rainbow** |
 | Gray Tag · 그레이 태그 | The next base-edition shop Emoji Tile becomes **free + Gray** |
-| Investment Tag · 투자 태그 | Add **$25** to the next successfully cleared Deadline reward |
+| Investment Tag · 투자 태그 | Add **$25** to the next successfully cleared Deadline reward; its held Tag activates and disappears only when that Deadline reaches Fee Settlement |
 | Voucher Tag · 바우처 태그 | Add one extra Voucher choice to the next shop; both choices may be purchased in that shop |
 | Boss Tag · 보스 태그 | Immediately reroll the scheduled Deadline from its correct regular/finisher pool |
 | Tile Tag · 타일 태그 | Immediately open a free **Premium Tile Pack** |
@@ -667,7 +676,7 @@ table edge, then flash `Tag Applied` and burst away as Play enters that blind.
 They do not reappear on later screens; the source card's Tag remains non-interactive.
 The tuning target remains a 20–35% skip rate.
 
-### 8.3 Boss Pool — Design Principles & 12 Bosses
+### 8.3 Boss Pool — Design Principles & 14 Bosses
 
 Balatro bosses work because they (1) attack **one system at a time** (readable), (2) are crippling or harmless **depending on the build** (build check), and (3) always have **counterplay** (jokers/consumables). Applying that to our systems — score output, suits, POS, sentences, phases, discard, hand, preview, economy. The roster is themed to the publishing frame (each boss is a kind of paper/document); its engine ids are the semantic names in parentheses (see `src/engine/bosses.ts`), and each carries a pixel-art emblem in `docs/Arts/`.
 
@@ -712,6 +721,7 @@ data predicate is the source of truth for both scoring and preview UI.
 | Contract · 계약서 (`contract`) | Start with 0 discards | Raw exposure to draw luck; gibberish escape valve appreciates |
 | Budget Book · 가계부 (`budgetBook`) | Hand size −3 | Squeezes word length and options; a smaller build space |
 | Unopened Letter · 미개봉 편지 (`letter`) | Each play discards up to 4 random hand tiles (they exit play, refilled from the bag) | Disrupts planned holds; churns the hand every phase |
+| Medusa · 메두사 (`medusa`) | After each hand, turn 2 seeded-random held non-Stone tiles into Stone; Stone tiles cannot be discarded during this blind | Shrinks discard flexibility while leaving Stone playable as a gibberish escape |
 
 **Information attack**
 
@@ -723,11 +733,12 @@ data predicate is the source of truth for both scoring and preview UI.
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| Bond · 채권 (`bond`) | −$1 per **tile** played this blind | Pressures Miser / Interest Glutton economies (values tied to §9) |
+| Bond · 채권 (`bond`) | −$1 per **hand played** this blind | Pressures Miser / Interest Glutton economies (values tied to §9) |
+| Cleaning Sign · 안내표지판 (청소중) (`cleaningSign`) | −$2 per **discard action**; gold cannot fall below $0 | Pressures discard-scaling builds without disabling their core action |
 
 ### 8.4 Finisher Bosses
 
-**Returned 2026-07-31 as a four-boss tier.** A finisher is drawn only for the Deadline of every Chapter divisible by 8 (8, 16, 24, 32). All other Deadlines use the 12-boss pool in §8.3. Each finisher pays **$8** instead of the ordinary boss reward. The draw and every in-blind random choice use the run's seeded RNG.
+**Returned 2026-07-31 as a four-boss tier.** A finisher is drawn only for the Deadline of every Chapter divisible by 8 (8, 16, 24, 32). All other Deadlines use the 14-boss pool in §8.3. Each finisher pays **$8** instead of the ordinary boss reward. The draw and every in-blind random choice use the run's seeded RNG.
 
 | Finisher | Effect | Presentation / counterplay |
 |---|---|---|
@@ -742,13 +753,13 @@ and blind kind/index are preserved, so that Deadline remains the same finisher.
 Deadline-only boss rerolls also stay within the finisher pool by deriving the
 pool from the scheduled boss id, not the lowered Chapter number.
 
-**No-repeat cycles (changed 2026-08-04).** The 12 ordinary bosses and four
+**No-repeat cycles (changed 2026-08-05).** The 14 ordinary bosses and four
 finishers each keep an independent seeded draw history. A boss cannot appear
 again until every boss in its own pool has appeared once; the pool then starts
 a new cycle. Chapter previews, Sketch Book rerolls, and Boss Tags all consume
 the same cycle, so rerolling never bypasses the rule.
 
-**Pool intent:** the 12 regular bosses cover each system roughly once, while the
+**Pool intent:** the 14 regular bosses cover each system roughly once, while the
 four finishers are periodic build checks. Memoirs remains scoped to the chapter;
 the old Proofreader/Babel finishers remain retired.
 
@@ -782,9 +793,9 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
 
 **Persistent framing (changed 2026-07-31).** The shop is a lower panel on the same run table as the blind. The sidebar resets score/Chips/Mult/hand/discard readouts and displays SHOP; owned Emoji Tiles, consumables and the pouch remain mounted. On the shop's first frame the pouch switches from the completed blind's undrawn remainder to the complete permanent `run.bag`; stale `blind.bag` contents must never remain visible there. Because the sidebar and settlement provider stay mounted, shop entry also consumes the previous blind's UI-only settle log/id and finalized sentence fields before the first shop frame; the zero reset is immediate and must never replay the prior score animation.
 
-**Full consumable slots and shop consumables (changed 2026-07-29).** A full held-consumable zone disables **Buy** for a consumable offer. An affordable shop Constellation still offers **Use now** even when the zone is full: it charges the same price, levels its pattern immediately, and never occupies a resting slot. A shop-offered Fable whose effect targets letter tiles is the exception: it shows **Buy only**, enters a held slot, and may be used only during a blind; it cannot use pouch tiles from the shop and has no Use-now fallback when slots are full. Blind-only Fables follow the same Buy-only presentation.
+**Full consumable slots and shop consumables (changed 2026-08-05).** A full held-consumable zone disables **Buy** for a consumable offer. An affordable shop Constellation still offers **Use now** even when the zone is full: it charges the same price, levels its pattern immediately, and never occupies a resting slot. A shop-offered Fable whose effect targets letter tiles is the exception: it shows **Buy only**, enters a held slot, and may be used only during a blind; it cannot use pouch tiles from the shop and has no Use-now fallback when slots are full. Blind-only Fables follow the same Buy-only presentation. Gambler cards follow their live engine preconditions: a field-free card shows **Use now** only when it can resolve immediately, while every card that needs an active tile field is Buy-only and must be held for a blind.
 
-**No duplicate live offers (changed 2026-07-29).** Item slots cannot show the same item id twice in one stock roll, even when repeated pool entries supply type weights. Pack slots cannot show the same type/size pair twice in one shop.
+**No duplicate live offers (changed 2026-08-05).** Ordinarily, item slots cannot show the same item id twice, and owned Emoji Tiles, Fables, Constellations, and Gambler cards are removed from shop and pack candidate pools. While Copy Editor is owned, those object families draw with replacement: owned ids and repeated ids in one stock/pack may appear. Pack slots themselves still cannot show the same type/size pair twice in one shop.
 
 **Voucher slot rules (playtest-03 C).**
 - **Reroll never refreshes the voucher slot** — it is immune to rerolls.
@@ -809,20 +820,19 @@ individual unlock conditions. Only an **unseeded** run advances or earns those
 unlocks. A locked non-Legendary tile is excluded from shop stock, Charm Packs,
 Fable creation, Crane-and-Sun random creation, and every future non-Legendary
 acquisition route. Legendary has no unlock gate: Phoenix always draws from all
-five unowned Legendary definitions. The 120-tile roster is fixed; starter
+five unowned Legendary definitions. The 128-tile roster is fixed; starter
 membership and persistent achievement tracking remain pending.
 
-**No duplicate Emoji Tiles (rule, expanded 2026-07-29).** A run cannot acquire
-an Emoji Tile it already owns. This applies to shop stock and purchase, Charm
-Pack offers and picks, Fable-created random tiles, and every other random or
-direct acquisition path. The pool shrinks as a run goes long (intended), and
-selling a tile returns it to the pool.
-**Exceptions — only an explicit effect may break this.** Selling Copy Editor
-creates one complete copy of a uniformly random Emoji Tile remaining in the
-shelf; if none remain, it creates nothing. Boar (§10.3) creates a copy of one
-random owned Emoji Tile and destroys the others. These one-shot copies may
-duplicate the selected definition; Boar does not copy White itself. Every
-ordinary acquisition path still uses the shared ownership gate.
+**No duplicate owned objects (rule, expanded 2026-08-05).** Ordinarily, a run
+cannot acquire an Emoji Tile, Fable, Constellation, or Gambler card whose id it
+already owns. The shared gates filter shop stock and purchase, pack offers and
+picks, and direct/random acquisition routes. Selling or consuming an object
+returns its id to the ordinary pool.
+**Exceptions — only an explicit effect may break this.** While Copy Editor is
+owned, shops and packs may offer and acquire duplicate ids from all four object
+families; selling Copy Editor ends that permission and has no copy-on-sell effect.
+Boar (§10.3) remains a one-shot direct-copy exception: it keeps one complete
+copy of a random owned Emoji Tile and destroys the others.
 
 ### 9.3 Packs — where materials & fonts enter the economy
 
@@ -869,7 +879,7 @@ progress remain hidden until the profile unlock is earned.
 | Four-cut Photo → Picture Diary | Hand size +1 → another +1 | Reduce hand size to 8 |
 | EN-KO Dictionary → Encyclopedia | Shop may sell plain tiles → shop tiles may carry material/edition (never font) | Buy 20 shop tiles |
 | Receipt → Household Ledger | Interest cap $10 → $20 | Hit the interest cap 10 rounds consecutively |
-| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls; the control is available only on Blind Select when the current blind is the Deadline, never while it is merely upcoming | Discover all 12 regular bosses (finishers do not substitute) |
+| Sketch Book → Portrait | One boss reroll per chapter for $10 → unlimited $10 rerolls; the control is available only on Blind Select when the current blind is the Deadline, never while it is merely upcoming | Discover all 14 regular bosses (finishers do not substitute) |
 | Catalog → Coupon Book | Shop card slots 3 → 4 | Spend $2,500 in shops |
 | History Book → Old Book | −1 Chapter and −1 hand size → another −1 Chapter and −1 discard/round; each redemption preserves the already-scheduled blind kind/index and boss id | Win by clearing the Chapter-8 Deadline |
 | Blank Paper → Kung Fu Manual | No effect → +1 Emoji Tile slot | Use Blank Paper 10 times |
@@ -1013,8 +1023,8 @@ receive new ids and enter the run's pouch permanently.
 | 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U. Each created tile receives one seeded-random non-base enhancement from material, font, or letter-tile edition; Stone is excluded because it would erase the promised vowel. |
 | 11 | Geese / 기러기 | Change one selected letter tile's font to **Void** (`bold` internally). Preserve material and edition. |
 | 12 | Phoenix / 봉황 | Create one seeded-random unowned Legendary Emoji Tile. Unusable without an eligible tile or free slot. This is the normal-play Legendary acquisition route. |
-| 13 | Rainman / 우중인 | Give one seeded-random owned Emoji Tile the **White** edition, then permanently reduce hand size by 1. Unusable without an owned Emoji Tile or at the hand-size floor of 1. |
-| 14 | Sake Cup / 사케 잔 | Give one seeded-random owned Emoji Tile the **Rainbow** edition, then destroy every other owned Emoji Tile. Unusable without an owned Emoji Tile. |
+| 13 | Rainman / 우중인 | Give one seeded-random owned **non-White** Emoji Tile the **White** edition, then permanently reduce hand size by 1. An already-White tile is never selected; the card is unusable without an eligible tile or at the hand-size floor of 1, so it is never consumed without applying its edition. |
+| 14 | Sake Cup / 사케 잔 | Give one seeded-random owned **non-Rainbow** Emoji Tile the **Rainbow** edition, then destroy every other owned Emoji Tile. Unusable without an eligible tile, so it is never consumed without changing the kept tile's edition. |
 
 **Implementation notes (updated 2026-08-03).** The registry is data + a single
 `useGambler(id, run, blind, field, selectedIds, rng)` entry point. `field` is the
@@ -1022,9 +1032,10 @@ receive new ids and enter the run's pouch permanently.
 candidates inside an opened pack — one code path for both, since tile edits are
 applied by id through the same helpers Fables use. Butterflies and Full Moon
 report their removals through the shared `tilesDestroyed` event, so Type Foundry
-(§11.5 L3) grows off them. A tile-targeting Gambler cannot be used from the shop
-(no field exists there) and must be held for a blind, exactly like a
-tile-targeting Fable. Gambler use counts toward no voucher unlock: Comic Book
+(§11.5 L3) grows off them. The shop has no active tile field, so every
+field-dependent Gambler must be bought and held for a blind, exactly like a
+tile-targeting Fable. A field-free Gambler shows **Use now** only when its other
+preconditions pass. Gambler use counts toward no voucher unlock: Comic Book
 counts Fables and Yearbook counts Constellations (§9.4).
 
 The larger, non-canonical Emoji Tile candidate pool and the design questions left
@@ -1040,16 +1051,16 @@ until it is moved into §11.
 > The engine identifier stays `joker` (`JokerDef`, `src/engine/jokers/`,
 > `BALANCE.jokerSlots`) — display terms never rename engine identifiers.
 
-**Roster status (updated 2026-08-03).** The active roster contains **120 authored
-definitions**: Common 27 + Uncommon 44 + Rare 44 + Legendary 5. This promotes
-the idea bank's 22 Common, 35 Uncommon, and 33 active Rare alternatives without
-replacing the earlier 30 entries. The separate 97-tile redesign in
+**Roster status (updated 2026-08-05).** The active roster contains **128 authored
+definitions**: Common 29 + Uncommon 47 + Rare 47 + Legendary 5. This includes
+the idea bank's 22 Common, 35 Uncommon, and 33 active Rare alternatives plus
+the eight 2026-08-05 additions. The separate 97-tile redesign in
 `docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md` remains
 postponed and is not an implementation source.
 
-**Implementation status (roster complete, 2026-08-03).** All 120 active definitions
+**Implementation status (roster complete, 2026-08-05).** All 128 active definitions
 ship as data + event hooks, one file each under `src/engine/jokers/`.
-**Art is complete:** all 120 active definitions have 84×112 pixel
+**Art is complete:** all 128 active definitions have 84×112 pixel
 masters registered through the shared resolver. The shared 124×165 runtime
 frame is wired to the owned shelf, shop,
 opened Charm Pack, held-consumable shelf, and Collection.
@@ -1128,10 +1139,10 @@ the complete permanent `run.bag` in the Shop.
 | Legendary | Rule-breaking — redefines the run (5 total) | 3 |
 
 The compact tables below retain the original 30 entries. The promoted 90 rows
-in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 are equally normative and complete
-the active 120-entry roster.
+in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 form the active foundation; the eight
+2026-08-05 additions below complete the active 128-entry roster.
 
-### 11.2 Common — active 27
+### 11.2 Common — active 29
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
@@ -1140,8 +1151,10 @@ the active 120-entry roster.
 | C8 | Short & Sharp | +10 Mult if word is 3 letters or fewer | 1 | — |
 | C9 | Alphabetical Order | +15 Mult if the word contains consecutive letters | 1 | — |
 | C10 | Miser | +2 Mult per 5 gold held | 1 | — |
+| C33 | Three-Leaf Clover · 세잎클로버 | At blind end, permanently add $3 to this tile's sell value | 3 | ★ gold |
+| C49 | Megalith · 거석상 | On Blind Select confirmation, permanently add one Stone tile to the pouch and current blind bag | 3 | tile generation |
 
-### 11.3 Uncommon — active 44
+### 11.3 Uncommon — active 47
 
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
@@ -1154,8 +1167,11 @@ the active 120-entry roster.
 | U8 | Combo Artist | +8 Mult if different suit from the previous phase | 2 | — |
 | U9 | Vowel Magnet | ×1.75 Mult if word has more vowels than consonants | 1 | — |
 | U10 | Equilibrist | +50 Chips & +5 Mult if vowel and consonant counts are equal | 1 | — |
+| U45 | Noise Cancelling · 노이즈캔슬링 | Starts at ×1; gain +0.25 ×Mult per blind skipped this run | 1 | dynamic |
+| U5A | Astronomer · 천문학자 (`stargazer`) | Starts at ×1; permanently gain +0.1 ×Mult whenever a Constellation card is used | 3 | ★ |
+| U50 | Host · 숙주 | On Blind Select confirmation, destroy the Emoji Tile immediately to the left and permanently gain +Mult equal to twice its sell value | 1 | ★ Mult |
 
-### 11.4 Rare — active 44
+### 11.4 Rare — active 47
 
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
@@ -1163,13 +1179,17 @@ the active 120-entry roster.
 | R2 | Hypocrite | ×5 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
 | R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×3; a miss resets the streak | 3 | Start |
 | R4 | Out of Print | Gain +50 Chips and +8 Mult for each alphabet letter with no copies left in the permanent pouch; its current totals are displayed | 1 | dynamic · Remove every copy of one letter |
-| R5 | Stargazer | Starts at ×1; permanently gain +0.1 ×Mult whenever a Constellation card is used | 3 | ★ · Use 30 Constellation cards |
 | R6 | Fable Hoard | ×1.25 Mult per currently held consumable; zero consumables means ×1 | 3 | End 5 rounds with consumable slots full |
 | R7 | Anonymous | ×3 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
-| R8 | Censor's Bane | ×3 Mult during Deadline/boss blinds | 3 | Clear all 12 bosses |
+| R8 | Censor's Bane | ×3 Mult during Deadline/boss blinds | 3 | Clear all 14 bosses |
 | R9 | Dadaist | Give gibberish final Slang membership and its visible tag, then apply ×2.5 Mult; `suit`/POS remain null and the sentence hole remains | 2 | Clear a blind using only gibberish |
 | R10 | Interest Glutton | For every $1 interest received at round end, gain +5 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
+| R46 | Counterfeit · 모조품 | If the first hand played in a blind contains exactly one letter tile, create a complete copy in the hand and permanent pouch | 1 | tile generation |
+| R47 | 25th Blessing · 25번째 축복 | Each held Y gives ×1.5 Mult; a played Y is not held | 1 | dynamic exponential |
+| R48 | Blood Type A · 혈액형 A | Each scored A or O tile gives +8 Chips, including retriggers | 1 | — |
+| R41 | Copy Editor · 카피 에디터 | While owned, Emoji Tiles, Fables, Constellations, and Gambler cards may repeat in shops and packs | 3 | rule change |
+| R51 | Dummy Data · 더미 데이터 | Increase the played word's effective length by 2 for length Mult, Longword, and word-length Emoji Tile checks | 1 | rule change |
 
 ### 11.5 Legendary — confirmed 5
 
@@ -1196,7 +1216,7 @@ Common/Uncommon additions may expand the table after their review.
 | Formal suit accumulation | Classicist (U6) |
 | Slang suit accumulation | Street Cred (U7) |
 | Removing a complete alphabet family | Out of Print (R4) |
-| Constellation use | Stargazer (R5) |
+| Constellation use | Astronomer (`stargazer`, U5A) |
 | Interest received | Interest Glutton (R10, next-round additive) |
 | Empty Emoji Tile slots | Book of Margins (L1) |
 | Permanent letter-tile destruction | Type Foundry (L3) |
@@ -1462,7 +1482,7 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 - **Emoji Tiles keyed to Word Hands (§5.5).** Word Hands currently ship
   without a dedicated Emoji Tile family.
 - **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
-  the active 120-tile roster; the separate 97-tile redesign remains postponed.
+  the active 128-tile roster; the separate 97-tile redesign remains postponed.
 - **Emoji Tile profile unlock implementation.** The unseeded-only unlock rule and
   locked-pool exclusion are confirmed (§9.2, §11), but remaining profile work
   must keep `src/ui/storage.ts` and `desktop/save-store.js` in sync.

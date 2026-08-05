@@ -17,6 +17,27 @@ import { BALANCE } from './balance';
 import type { Rng } from './rng';
 import type { ChanceResult, Tile, TileMaterial, WordScoringContext } from './types';
 
+/** Apply one material axis while preserving Stone's hidden letter contract. */
+export const setTileMaterial = (tile: Tile, material: TileMaterial): Tile => {
+  const { woodBonusChips: _wood, ...withoutWood } = tile;
+  if (material === 'stone') {
+    const originalLetter = tile.letter ?? tile.letterBeforeStone;
+    return {
+      ...withoutWood,
+      material,
+      letter: null,
+      ...(originalLetter ? { letterBeforeStone: originalLetter } : {}),
+    };
+  }
+  const restored = tile.material === 'stone' ? tile.letterBeforeStone! : tile.letter;
+  return {
+    ...withoutWood,
+    material,
+    letter: restored,
+    ...(material === 'wood' ? { woodBonusChips: BALANCE.materials.wood.baseChips } : {}),
+  };
+};
+
 /** Outcomes a material can produce beyond chips/mult. */
 export interface MaterialSideEffects {
   /** run gold to add (Ivory, Lead plate) */

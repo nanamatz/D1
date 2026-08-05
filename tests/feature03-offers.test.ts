@@ -48,10 +48,14 @@ describe('feature-03 C-2 — no duplicate Emoji Tiles (single shared filter)', (
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('returns fewer than asked once the pool is exhausted (shrinking pool → "nothing new")', () => {
-    const allOwned = run({ jokers: ALL_JOKERS.map((j) => ({ defId: j.id, edition: 'base' as const, state: {} })) });
-    expect(sampleJokerDefs(allOwned, 5, makeRng('empty'))).toHaveLength(0);
-    expect(availableJokerDefs(allOwned)).toHaveLength(0);
+  it('returns fewer than asked once the ordinary pool is exhausted', () => {
+    const allExceptCopyEditor = run({
+      jokers: ALL_JOKERS.filter((j) => j.id !== 'copyEditor')
+        .map((j) => ({ defId: j.id, edition: 'base' as const, state: {} })),
+    });
+    expect(sampleJokerDefs(allExceptCopyEditor, 5, makeRng('empty')).map((def) => def.id))
+      .toEqual(['copyEditor']);
+    expect(availableJokerDefs(allExceptCopyEditor).map((def) => def.id)).toEqual(['copyEditor']);
   });
 
   it('selling a tile returns it to the pool (it just leaves run.jokers)', () => {
@@ -60,5 +64,22 @@ describe('feature-03 C-2 — no duplicate Emoji Tiles (single shared filter)', (
     expect(availableJokerDefs(withIt).some((d) => d.id === j.id)).toBe(false);
     const afterSell = run({ jokers: [] });
     expect(availableJokerDefs(afterSell).some((d) => d.id === j.id)).toBe(true);
+  });
+
+  it('Copy Editor allows owned and repeated Emoji Tile offers', () => {
+    const r = run({
+      jokers: [
+        { defId: ALL_JOKERS[0]!.id, edition: 'base', state: {} },
+        { defId: 'copyEditor', edition: 'base', state: {} },
+      ],
+    });
+    expect(availableJokerDefs(r).some((def) => def.id === ALL_JOKERS[0]!.id)).toBe(true);
+    const fixed = {
+      next: () => 0,
+      int: () => 0,
+      shuffle: <T>(items: readonly T[]) => items.slice(),
+    };
+    const ids = sampleJokerDefs(r, 2, fixed).map((def) => def.id);
+    expect(ids[0]).toBe(ids[1]);
   });
 });

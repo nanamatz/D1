@@ -28,7 +28,7 @@ describe('voucher profile unlock progress', () => {
     expect(loadVoucherProgress().fableBought).toBe(50);
   });
 
-  it('requires all 12 regular bosses for Portrait', () => {
+  it('requires all 14 regular bosses for Portrait', () => {
     for (const id of CORE_BOSS_IDS) recordVoucherProgress({ kind: 'bossSeen', id });
     expect(unlockedVoucherSet()).toContain('portrait');
   });

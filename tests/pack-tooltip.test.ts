@@ -13,10 +13,9 @@ const TYPES: readonly PackType[] = ['pattern', 'joker', 'consumable', 'tile', 'i
 const SIZES: readonly PackSize[] = ['normal', 'jumbo', 'mega'];
 const LOCALES = { en: en as Record<string, string>, ko: ko as Record<string, string> };
 
-it('localizes the edition badge on enhanced letter-tile pack options', () => {
+it('does not overlay an edition badge on letter-tile pack options', () => {
   const component = readFileSync('src/ui/components/PackOpening.tsx', 'utf8');
-  expect(component).toContain('{t(`edition.${edition}`)}');
-  expect(component).not.toContain('<span className="edition-badge">{edition}</span>');
+  expect(component).not.toContain('edition-badge');
 });
 
 /** Same interpolation the real i18n does (i18n.tsx), so the copy is exercised for real. */

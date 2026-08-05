@@ -163,9 +163,6 @@ function OptionCard({
           <UiIcon name={optionIcon(option)} className="object-ui-icon" />
         )}
       </div>
-      {edition !== 'base' && option.kind !== 'joker' && (
-        <span className="edition-badge">{t(`edition.${edition}`)}</span>
-      )}
     </TiltCard>
   );
   // The tooltip wraps the whole card, so it shows on hover even when the pick is

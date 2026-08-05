@@ -9,6 +9,7 @@ import { BALANCE } from '../src/engine/balance';
 import {
   GAMBLER_IDS,
   canUseGambler,
+  canUseUnheldGambler,
   gamblerTargetsTiles,
   isGamblerId,
   useGambler,
@@ -18,12 +19,14 @@ import { startBlind } from '../src/engine/loop';
 import { rollPack } from '../src/engine/packs';
 import { makeRng, type Rng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
+import { buyItem } from '../src/engine/shop';
 import type {
   BlindState,
   ConsumableId,
   PackSlot,
   PatternId,
   RunState,
+  ShopState,
   Tile,
 } from '../src/engine/types';
 
@@ -65,10 +68,10 @@ describe('registry — GDD §10.3', () => {
       expect(koKeys[`consumabledesc.${id}`], id).toBeTruthy();
     }
     expect(koKeys['consumabledesc.rainman']).toBe(
-      '무작위 이모지 타일 하나에 [w:화이트]를 추가합니다\n[n:-1 핸드 크기]',
+      '[w:화이트]가 아닌 무작위 이모지 타일 하나를 [w:화이트]로 바꿉니다\n[n:-1 핸드 크기]',
     );
     expect(koKeys['consumabledesc.sakeCup']).toBe(
-      '무작위 이모지 타일 하나에 [r:레인보우]를 추가하고 다른 모든 이모지 타일을 파괴합니다',
+      '[r:레인보우]가 아닌 무작위 이모지 타일 하나를 [r:레인보우]로 바꾸고 다른 모든 이모지 타일을 파괴합니다',
     );
     expect(koKeys['consumabledesc.rainman']).not.toContain('.');
     expect(koKeys['consumabledesc.sakeCup']).not.toContain('.');
@@ -79,6 +82,16 @@ describe('registry — GDD §10.3', () => {
     expect([...targeting].sort()).toEqual(
       ['barnSwallow', 'bushWarbler', 'cuckoo', 'curtain', 'geese'],
     );
+  });
+
+  it('allows only field-free, currently valid Gambler cards to resolve in the shop', () => {
+    const run: RunState = {
+      ...newRun('gambler-shop'),
+      jokers: [{ defId: 'stargazer', edition: 'base', state: {} }],
+    };
+    expect(GAMBLER_IDS.filter((id) => canUseUnheldGambler(id, run, [], []))).toEqual([
+      'boar', 'craneAndSun', 'deer', 'phoenix', 'rainman', 'sakeCup',
+    ]);
   });
 });
 
@@ -262,19 +275,56 @@ describe('#13 Rainman / #14 Sake Cup — Emoji Tile editions', () => {
   ];
 
   it('Rainman adds White to one random Emoji Tile and permanently loses one hand size', () => {
-    const { run, blind } = setup('rainman', { jokers });
+    const mixed = [
+      { defId: 'stargazer', edition: 'white' as const, state: { factor: 1.3 } },
+      { defId: 'hypocrite', edition: 'base' as const, state: {} },
+    ];
+    const { run, blind } = setup('rainman', { jokers: mixed });
     const result = useGambler('rainman', run, blind, [], [], firstRng);
     expect(result.ok).toBe(true);
-    expect(result.run.jokers).toHaveLength(3);
-    expect(result.run.jokers[0]).toMatchObject({ edition: 'white', state: { factor: 1.3 } });
-    expect(result.run.jokers[1]?.edition).toBe('violet');
+    expect(result.run.jokers).toHaveLength(2);
+    expect(result.run.jokers.every((joker) => joker.edition === 'white')).toBe(true);
     expect(result.run.handSize).toBe(run.handSize - BALANCE.gambler.rainmanHandSizeLoss);
     expect(result.run.consumables).not.toContain('rainman');
   });
 
-  it('requires an Emoji Tile and will not reduce hand size below one', () => {
+  it('a shop-bought Rainman resolves later through the held-consumable path', () => {
+    const base: RunState = {
+      ...newRun('rainman-shop'),
+      gold: 10,
+      jokers: [
+        { defId: 'stargazer', edition: 'white', state: {} },
+        { defId: 'hypocrite', edition: 'base', state: {} },
+      ],
+    };
+    const shop: ShopState = {
+      items: [{ kind: 'consumable', id: 'rainman', price: BALANCE.gamblerPrice }],
+      voucher: null,
+      bonusVoucher: null,
+      packs: [],
+      rerolls: 0,
+    };
+    const bought = buyItem(base, shop, 0);
+    expect(bought.ok).toBe(true);
+    expect(bought.run.consumables).toContain('rainman');
+
+    const blind = startBlind(bought.run, makeRng('rainman-shop-blind'));
+    const used = useGambler('rainman', bought.run, blind, [], [], firstRng);
+    expect(used.ok).toBe(true);
+    expect(used.run.consumables).not.toContain('rainman');
+    expect(used.run.jokers.every((joker) => joker.edition === 'white')).toBe(true);
+  });
+
+  it('requires a non-White Emoji Tile and will not reduce hand size below one', () => {
     const empty = setup('rainman', { jokers: [] });
     expect(canUseGambler('rainman', empty.run, empty.blind.hand, [])).toBe(false);
+    const allWhite = setup('rainman', {
+      jokers: [{ defId: 'stargazer', edition: 'white', state: {} }],
+    });
+    const failed = useGambler('rainman', allWhite.run, allWhite.blind, [], [], firstRng);
+    expect(failed.ok).toBe(false);
+    expect(failed.run.consumables).toContain('rainman');
+    expect(failed.run.handSize).toBe(allWhite.run.handSize);
     const floor = setup('rainman', { jokers, handSize: 1 });
     expect(canUseGambler('rainman', floor.run, floor.blind.hand, [])).toBe(false);
   });
@@ -287,6 +337,19 @@ describe('#13 Rainman / #14 Sake Cup — Emoji Tile editions', () => {
       { defId: 'stargazer', edition: 'rainbow', state: { factor: 1.3 } },
     ]);
     expect(result.run.consumables).not.toContain('sakeCup');
+  });
+
+  it('Sake Cup cannot consume itself when every Emoji Tile is already Rainbow', () => {
+    const allRainbow: RunState['jokers'] = [
+      { defId: 'stargazer', edition: 'rainbow', state: {} },
+      { defId: 'hypocrite', edition: 'rainbow', state: {} },
+    ];
+    const { run, blind } = setup('sakeCup', { jokers: allRainbow });
+    expect(canUseGambler('sakeCup', run, [], [])).toBe(false);
+    const result = useGambler('sakeCup', run, blind, [], [], firstRng);
+    expect(result.ok).toBe(false);
+    expect(result.run.jokers).toEqual(allRainbow);
+    expect(result.run.consumables).toContain('sakeCup');
   });
 });
 

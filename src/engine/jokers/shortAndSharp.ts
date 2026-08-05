@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
+import { submissionLength } from '../types';
 
 /** C8 (GDD §11.2) — +Mult on short words, layer 1. */
 export const shortAndSharp: JokerDef = {
@@ -14,7 +15,7 @@ export const shortAndSharp: JokerDef = {
   hooks: {
     wordScoring: ({ ctx }) => {
       const { maxLength, mult } = BALANCE.jokers.shortAndSharp;
-      if (ctx.submission.tiles.length <= maxLength) ctx.mult += mult;
+      if (submissionLength(ctx.submission) <= maxLength) ctx.mult += mult;
     },
   },
 };

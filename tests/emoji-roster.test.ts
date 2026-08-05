@@ -92,12 +92,12 @@ const fixedRng = (value: number): Rng => ({
 });
 
 describe('GDD §11 roster shape', () => {
-  it('registers Common 27 / Uncommon 44 / Rare 44 / Legendary 5', () => {
-    expect(COMMON_JOKERS).toHaveLength(27);
-    expect(UNCOMMON_JOKERS).toHaveLength(44);
-    expect(RARE_JOKERS).toHaveLength(44);
+  it('registers Common 29 / Uncommon 47 / Rare 47 / Legendary 5', () => {
+    expect(COMMON_JOKERS).toHaveLength(29);
+    expect(UNCOMMON_JOKERS).toHaveLength(47);
+    expect(RARE_JOKERS).toHaveLength(47);
     expect(LEGENDARY_JOKERS).toHaveLength(5);
-    expect(ALL_JOKERS).toHaveLength(120);
+    expect(ALL_JOKERS).toHaveLength(128);
     expect(JOKER_REGISTRY.size).toBe(ALL_JOKERS.length);
   });
 

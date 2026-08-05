@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { newRun } from '../engine/run';
 import { makeRng } from '../engine/rng';
-import { startBlind, submitWord, discardTiles, endBlind, blindExhausted } from '../engine/loop';
+import { startBlind, enterJokerBlind, submitWord, discardTiles, endBlind, blindExhausted } from '../engine/loop';
 import { resolveBlind, type BlindEarnings } from '../engine/progression';
 import {
   bossPoolForAnte,
@@ -83,6 +83,7 @@ import { jokerChanceEffectBus } from './jokerChanceEffect';
 import {
   bossRerollLimit,
   bossRerollPrice,
+  canOwnConsumable,
   CONSUMABLE_PATTERN,
   discountedPrice,
   interestCap,
@@ -804,9 +805,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const selectBlind = useCallback(() => {
     setState((prev) => {
       if (prev.phase !== 'blindselect') return prev;
+      const rng = makeRng(`${prev.seed}#blind-enter-${prev.run.ante}-${prev.rngCounter}`);
+      const jokerEntered = enterJokerBlind(prev.run, prev.blind, rng);
       const entered = enterBossBlind(
-        prev.run,
-        prev.blind,
+        jokerEntered.run,
+        jokerEntered.blind,
         makeRng(`${prev.seed}#boss-enter-${prev.run.ante}-${prev.rngCounter}`),
       );
       recordVoucherProgress({ kind: 'handSize', size: entered.blind.hand.length });
@@ -1252,16 +1255,17 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         return prev;
       }
       if (prev.phase === 'shop' && (fableTargetsTiles(id) || isBlindOnlyConsumable(id))) return prev;
-      // A tile-targeting Gambler needs an active field; in the shop there is none,
-      // so it must be held for a blind — the same rule tile-targeting Fables follow.
-      if (prev.phase === 'shop' && gamblerTargetsTiles(id)) return prev;
+      // The shop has no active tile field. Only field-free Gambler effects whose
+      // other preconditions pass may resolve there.
+      if (prev.phase === 'shop' && isGamblerId(id) &&
+          !canUseGambler(id, prev.run, [], [])) return prev;
       if (isGamblerId(id)) {
         const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
         const result = useGambler(
           id,
           prev.run,
           prev.blind,
-          prev.blind.hand,
+          prev.phase === 'shop' ? [] : prev.blind.hand,
           prev.selected,
           rng,
         );
@@ -1378,8 +1382,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (!item || (item.kind !== 'consumable' && item.kind !== 'punctuation')) return prev;
       if (prev.run.gold < item.price) return prev;
       const id = item.id;
+      if (!canOwnConsumable(prev.run, id)) return prev;
       if (fableTargetsTiles(id) || isBlindOnlyConsumable(id)) return prev;
       if (isFableId(id) && !canUseUnheldFable(id, prev.run, prev.blind)) return prev;
+      if (isGamblerId(id) && !canUseUnheldGambler(id, prev.run, [], [])) return prev;
       const items = prev.shop.items.slice();
       items[index] = null;
       const paid: GameState = {
@@ -1428,6 +1434,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         goldDelta,
         destroyedTileIds,
         grownWoodTileIds,
+        createdTiles,
         bossDiscardedTiles,
         jokers,
         counters,
@@ -1475,7 +1482,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))
-          .map(growWood),
+          .map(growWood)
+          .concat(createdTiles),
         // Track played words this ante for the Memoirs boss (회고록); gibberish is
         // never tracked. Reset per ante in finalize when the chapter's Deadline clears.
         wordsThisAnte: submission.isGibberish
@@ -1725,14 +1733,18 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     useConsumable,
     buyAndUse,
     canUseConsumable: (id) => {
-      // On the board: tile-targeting Fables need a valid hand selection; others are free.
+      // On the board, both Fables and Gamblers expose their live engine preconditions.
       if (state.phase === 'playing' && !state.pendingEnd) {
+        if (isGamblerId(id)) {
+          return canUseGambler(id, state.run, state.blind.hand, state.selected);
+        }
         return !isFableId(id) || canUseFable(id, state.run, state.blind, state.selected);
       }
       // In the shop (feedback 5): tile-targeting and blind-only Fables must be held
       // for a blind. Non-tile Fables use their own precondition; Constellations level.
       if (state.phase === 'shop') {
         if (isBlindOnlyConsumable(id) || fableTargetsTiles(id)) return false;
+        if (isGamblerId(id)) return canUseGambler(id, state.run, [], []);
         if (!isFableId(id)) return true;
         return canUseFable(id, state.run, state.blind, []);
       }

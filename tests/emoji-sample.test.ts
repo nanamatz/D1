@@ -112,7 +112,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(onBlindEnded(run, blind, fixedRng(1)).jokers[0]?.state.factor).toBe(1);
   });
 
-  it('Stargazer grows when a Constellation card is used', () => {
+  it('Astronomer grows when a Constellation card is used', () => {
     const run = onConstellationUsed(runWith('stargazer'));
     expect(run.jokers[0]?.state.factor).toBe(1 + BALANCE.jokers.stargazer.factorPerCard);
     const blind = startBlind(run, makeRng('stars'));

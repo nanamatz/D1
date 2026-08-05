@@ -10,7 +10,7 @@ import { ALL_JOKERS } from './jokers';
 import type { JokerDef } from './events';
 import type { Rng } from './rng';
 import type { JokerRarity, RunState } from './types';
-import { canOwnJoker } from './vouchers';
+import { allowsDuplicateOffers, canOwnJoker } from './vouchers';
 
 /** Offer weight for a joker by its rarity. 0 = never offered (Legendary, until §12
  *  gives it a route — an absent rarity key resolves to 0 here). */
@@ -40,6 +40,7 @@ export function availableJokerDefs(run: RunState): JokerDef[] {
  * "nothing new" effect, C-4).
  */
 export function sampleJokerDefs(run: RunState, count: number, rng: Rng): JokerDef[] {
+  const withReplacement = allowsDuplicateOffers(run);
   // Grouped ONCE, then drained. A Map keeps first-seen rarity order, which is what
   // the weighted walk below indexes into — so this draws the same sequence from the
   // same seed as regrouping per pick did, without the per-pick rebuild.
@@ -64,9 +65,10 @@ export function sampleJokerDefs(run: RunState, count: number, rng: Rng): JokerDe
       }
     }
     const group = byRarity.get(chosen)!;
-    picked.push(group.splice(rng.int(group.length), 1)[0]!);
+    const index = rng.int(group.length);
+    picked.push(withReplacement ? group[index]! : group.splice(index, 1)[0]!);
     // A drained rarity leaves the pool entirely, so it stops taking weight.
-    if (group.length === 0) byRarity.delete(chosen);
+    if (!withReplacement && group.length === 0) byRarity.delete(chosen);
   }
   return picked;
 }

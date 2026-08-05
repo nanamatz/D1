@@ -27,6 +27,8 @@ export interface StartRunConfig {
 }
 
 interface Props {
+  initialPouchId?: PouchId;
+  initialRecordId?: RecordId;
   onStart: (config: StartRunConfig) => void;
   onBack: () => void;
   continueInfo?: ContinueInfo | undefined;
@@ -113,7 +115,14 @@ function Carousel<T extends string>({
  * New Run. Starting Pouch and cumulative Record difficulty are profile-gated.
  * Profile reads stay in UI; engine helpers only evaluate supplied progress.
  */
-export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
+export function NewRun({
+  initialPouchId = 'yellow',
+  initialRecordId = 'whiteLp',
+  onStart,
+  onBack,
+  continueInfo,
+  onContinue,
+}: Props) {
   const { t } = useI18n();
   const [seeded, setSeeded] = useState(false);
   const [seed, setSeed] = useState('');
@@ -169,6 +178,8 @@ export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
         </>
       ) : (
         <NewRunBody
+          initialPouchId={initialPouchId}
+          initialRecordId={initialRecordId}
           seeded={seeded}
           setSeeded={setSeeded}
           seed={seed}
@@ -182,6 +193,8 @@ export function NewRun({ onStart, onBack, continueInfo, onContinue }: Props) {
 }
 
 function NewRunBody({
+  initialPouchId,
+  initialRecordId,
   seeded,
   setSeeded,
   seed,
@@ -189,6 +202,8 @@ function NewRunBody({
   onStart,
   onBack,
 }: {
+  initialPouchId: PouchId;
+  initialRecordId: RecordId;
   seeded: boolean;
   setSeeded: (value: boolean) => void;
   seed: string;
@@ -197,8 +212,8 @@ function NewRunBody({
   onBack: () => void;
 }) {
   const { t } = useI18n();
-  const [pouchId, setPouchId] = useState<PouchId>('yellow');
-  const [recordId, setRecordId] = useState<RecordId>('whiteLp');
+  const [pouchId, setPouchId] = useState<PouchId>(initialPouchId);
+  const [recordId, setRecordId] = useState<RecordId>(initialRecordId);
   const progress = useMemo(() => {
     const lifetime = loadLifetime();
     return {

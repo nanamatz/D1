@@ -24,6 +24,8 @@ import {
   applyVoucher,
   availableVoucherIds,
   canAddJoker,
+  allowsDuplicateOffers,
+  canOwnConsumable,
   constellationShopWeight,
   fableShopWeight,
   rerollDiscount,
@@ -81,17 +83,18 @@ function buildPools(run: RunState, rng: Rng): ItemPools {
       price: emojiTileBuyPrice(run, BALANCE.jokerPrice[j.rarity], edition),
     };
   });
-  const consumables: ShopItem[] = FABLE_POOL.map((id) => ({
+  const consumables: ShopItem[] = FABLE_POOL.filter((id) => canOwnConsumable(run, id)).map((id) => ({
     kind: 'consumable',
     id,
     price: consumableBuyPrice(run, id),
   }));
-  const gamblers: ShopItem[] = (pouchAllowsGamblerShop(run) ? GAMBLER_IDS : []).map((id) => ({
+  const gamblers: ShopItem[] = (pouchAllowsGamblerShop(run) ? GAMBLER_IDS : [])
+    .filter((id) => canOwnConsumable(run, id)).map((id) => ({
     kind: 'consumable',
     id,
     price: consumableBuyPrice(run, id),
   }));
-  const punctuation: ShopItem[] = CONSTELLATION_POOL.map((id) => ({
+  const punctuation: ShopItem[] = CONSTELLATION_POOL.filter((id) => canOwnConsumable(run, id)).map((id) => ({
     kind: 'punctuation',
     id,
     pattern: CONSUMABLE_PATTERN[id]!,
@@ -126,7 +129,10 @@ function drawItem(run: RunState, pools: ItemPools, rng: Rng): ShopItem | null {
   }
   if (!kind) return null;
   const pool = pools[kind];
-  return pool.splice(rng.int(pool.length), 1)[0] ?? null;
+  const index = rng.int(pool.length);
+  return allowsDuplicateOffers(run) && kind !== 'tile'
+    ? pool[index] ?? null
+    : pool.splice(index, 1)[0] ?? null;
 }
 
 function rollItems(
@@ -158,6 +164,7 @@ export function rollExtraItem(
   ));
   const pools = buildPools(run, rng);
   for (const kind of Object.keys(pools) as PoolKind[]) {
+    if (allowsDuplicateOffers(run) && kind !== 'tile') continue;
     pools[kind] = pools[kind].filter((it) => {
       const key = it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`;
       return !shown.has(key);
@@ -281,7 +288,7 @@ export function applyPendingShopTags(
       items.flatMap((item) => item?.kind === 'joker' ? [item.id] : []),
     );
     const pool = availableJokerDefs(run).filter(
-      (def) => def.rarity === rarity && !shown.has(def.id),
+      (def) => def.rarity === rarity && (allowsDuplicateOffers(run) || !shown.has(def.id)),
     );
     const def = pool.length > 0 ? pool[rng.int(pool.length)] : undefined;
     if (!def) return;
@@ -394,6 +401,7 @@ export function buyItem(run: RunState, shop: ShopState, index: number): BuyResul
     nextRun = { ...run, gold: run.gold - item.price, bag: [...run.bag, item.tile] };
   } else {
     if (run.consumables.length >= run.consumableSlots) return fail;
+    if (!canOwnConsumable(run, item.id)) return fail;
     nextRun = { ...run, gold: run.gold - item.price, consumables: [...run.consumables, item.id] };
   }
 
@@ -413,7 +421,12 @@ export function sellJoker(run: RunState, index: number, rng: Rng): SellResult {
   if (!owned) return { run, ok: false };
   const def = JOKER_REGISTRY.get(owned.defId);
   const value = def
-    ? emojiTileSellValue(run, BALANCE.jokerPrice[def.rarity], owned.edition ?? 'base')
+    ? emojiTileSellValue(
+        run,
+        BALANCE.jokerPrice[def.rarity],
+        owned.edition ?? 'base',
+        owned.state.sellBonus ?? 0,
+      )
     : 1;
   const nextRun = {
     ...run,

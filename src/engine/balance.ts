@@ -344,6 +344,8 @@ export const BALANCE = {
     porcelainCat: { mult: 9 },
     woodpecker: { chipsPerWood: 30 },
     letterLadderBadge: { chips: 60 },
+    threeLeafClover: { sellValuePerBlind: 3 },
+    megalith: { stonesPerBlind: 1 },
     // Uncommon (§11.3)
     literaryJudge: { chips: 69 },
     rareEarth: { factor: 3 }, // ×Chips on Q·Z·X·J tiles
@@ -386,6 +388,8 @@ export const BALANCE = {
     modifierStack: { chipsPerModifier: 15 },
     correctionMark: { mult: 13 },
     serial: { chipsPerMatch: 13 },
+    noiseCancelling: { baseFactor: 1, factorPerSkippedBlind: 0.25 },
+    host: { multPerSellValue: 2 },
     // Rare (§11.4)
     carteBlanche: { shopDiscount: 3 },
     hypocrite: { factor: 5 },
@@ -434,6 +438,10 @@ export const BALANCE = {
     proofEraser: { discards: 1 },
     spareDrawer: { handSize: 1 },
     foldingManuscript: { handSize: 2, handSizeLostPerBlind: 1 },
+    counterfeit: { copies: 1 },
+    twentyFifthBlessing: { factorPerHeldY: 1.5 },
+    bloodTypeA: { chipsPerLetter: 8 },
+    dummyData: { length: 2 },
     // Legendary (§11.5)
     bookOfMargins: { slots: 3, factorPerEmptySlot: 2 },
     tyrant: { vulgarFactor: 2 },
@@ -465,12 +473,14 @@ export const BALANCE = {
   boss: {
     wantedTargetMult: 2, // Wanted: XL blind, target ×2 (수배 전단)
     letterDiscardOnPlay: 4, // Unopened Letter: discard up to 4 random hand tiles per play (미개봉 편지)
-    bondGoldPerTile: 1, // Bond: −$1 per tile played (채권)
+    bondGoldPerPlay: 1, // Bond: −$1 per hand played (채권)
     historyBookPhaseReduction: 2, // History Book: −2 phases in this boss blind (역사책)
     budgetBookHandDelta: -3, // Budget Book: hand size −3 (가계부)
     willScale: 0.5, // Will: base chips & mult ×0.5 (유서)
     finisherReward: 8,
     vitalSignTargetMult: 3,
+    cleaningSignGoldPerDiscard: 2,
+    medusaStoneTiles: 2,
   },
 } as const;
 

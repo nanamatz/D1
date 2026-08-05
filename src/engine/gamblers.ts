@@ -136,6 +136,14 @@ const fieldTiles = (field: readonly Tile[], ids: readonly string[]): Tile[] => {
 
 const newTileId = (rng: Rng, index: number): string => `gb${rng.int(1_000_000)}-${index}`;
 
+const jokerEditionTargetIndexes = (
+  run: RunState,
+  edition: Exclude<JokerEdition, 'base'>,
+): number[] =>
+  run.jokers.flatMap((joker, index) =>
+    (joker.edition ?? 'base') === edition ? [] : [index],
+  );
+
 /** Pure precondition twin of `useGambler`; also gates the pack's Use button. */
 export function canUseGambler(
   id: GamblerId,
@@ -156,7 +164,8 @@ export function canUseGambler(
     case 'copyJoker':
       return run.jokers.length > 0;
     case 'jokerEdition':
-      return run.jokers.length > 0 && (!effect.handSizeLoss || run.handSize > 1);
+      return jokerEditionTargetIndexes(run, effect.edition).length > 0 &&
+        (!effect.handSizeLoss || run.handSize > 1);
     case 'unifyLetters':
       return field.length > 0 && run.handSize > BALANCE.gambler.bridgeHandSizeFloor;
     case 'destroyForGold':
@@ -248,7 +257,8 @@ export function useGambler(
       break;
     }
     case 'jokerEdition': {
-      const chosen = rng.int(nextRun.jokers.length);
+      const targets = jokerEditionTargetIndexes(nextRun, effect.edition);
+      const chosen = targets[rng.int(targets.length)]!;
       const enhanced = { ...nextRun.jokers[chosen]!, edition: effect.edition };
       nextRun = {
         ...nextRun,

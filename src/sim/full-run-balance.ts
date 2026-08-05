@@ -295,7 +295,8 @@ function playBlind(
         gold: Math.max(0, run.gold + result.goldDelta),
         bag: run.bag
           .filter((tile) => !result.destroyedTileIds.includes(tile.id))
-          .map(grow),
+          .map(grow)
+          .concat(result.createdTiles),
         wordsThisAnte: result.submission.isGibberish
           ? run.wordsThisAnte
           : [...run.wordsThisAnte, result.submission.text.toLowerCase()],

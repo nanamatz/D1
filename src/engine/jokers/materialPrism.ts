@@ -6,9 +6,10 @@ export const materialPrism: JokerDef = {
   emoji: '🔶', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const count = new Set(ctx.submission.tiles.map((tile) => tile.material)).size;
-      ctx.mult *= BALANCE.jokers.materialPrism.factorPerMaterial ** count;
+    tileScoring: ({ ctx, tile }) => {
+      if (ctx.submission.tiles.find((candidate) => candidate.material === tile.material)?.id === tile.id) {
+        ctx.mult *= BALANCE.jokers.materialPrism.factorPerMaterial;
+      }
     },
   },
 };

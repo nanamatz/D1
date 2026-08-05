@@ -8,6 +8,7 @@ import type { JokerDef } from '../engine/events';
 import { MATERIAL_REGISTRY } from '../engine/materials';
 import { extinctLetterCount } from '../engine/jokers/outOfPrint';
 import { pouchTagChips } from '../engine/jokers/pouchTag';
+import { noiseCancellingFactor } from '../engine/jokers/noiseCancelling';
 import type {
   ConsumableId,
   JokerEdition,
@@ -170,13 +171,20 @@ export function grownValue(
       mult: gone * BALANCE.jokers.outOfPrint.multPerLetter,
     });
   }
+  if (def.id === 'noiseCancelling' && run) {
+    return t('joker.currentMult', { value: formatGrowth(noiseCancellingFactor(run.skippedBlinds)) });
+  }
   const display = def.growthDisplay;
   if (!display) return null;
   const value = owned?.state[display.stateKey] ?? display.initial;
-  const formatted = Number.isInteger(value)
-    ? String(value)
-    : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  const formatted = formatGrowth(value);
   const suffix =
-    display.kind === 'mult' ? 'Mult' : display.kind === 'multAdd' ? 'MultAdd' : 'Chips';
+    display.kind === 'mult'
+      ? 'Mult'
+      : display.kind === 'multAdd' ? 'MultAdd' : display.kind === 'gold' ? 'Gold' : 'Chips';
   return t(`joker.current${suffix}`, { value: formatted });
 }
+
+const formatGrowth = (value: number): string => Number.isInteger(value)
+  ? String(value)
+  : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');

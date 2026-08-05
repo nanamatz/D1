@@ -212,9 +212,17 @@ export const emojiTileShopPrice = (run: RunState, price: number): number =>
         BALANCE.jokers.carteBlanche.shopDiscount,
   );
 
-/** Central duplicate rule for ordinary offers and acquisitions. */
+/** Copy Editor is the sole persistent exception to ordinary ownership uniqueness. */
+export const allowsDuplicateOffers = (run: RunState): boolean =>
+  run.jokers.some((joker) => joker.defId === 'copyEditor');
+
+/** Central duplicate rule for ordinary Emoji Tile offers and acquisitions. */
 export const canOwnJoker = (run: RunState, defId: string): boolean =>
-  !run.jokers.some((joker) => joker.defId === defId);
+  allowsDuplicateOffers(run) || !run.jokers.some((joker) => joker.defId === defId);
+
+/** Shared uniqueness gate for Fable, Constellation, and Gambler cards. */
+export const canOwnConsumable = (run: RunState, id: import('./types').ConsumableId): boolean =>
+  id === 'magnifier' || allowsDuplicateOffers(run) || !run.consumables.includes(id);
 
 export const canAddJoker = (
   run: RunState,

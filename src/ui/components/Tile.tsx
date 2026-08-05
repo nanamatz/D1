@@ -8,6 +8,7 @@ import {
   materialClass,
   materialGlyph,
   tileGlyph,
+  tileTooltipChips,
   tileValue,
   type TileEnhancementAxis,
 } from '../game';
@@ -28,6 +29,8 @@ interface Props {
   onSelect?: (id: string) => void;
   /** toggle the discard mark (right-click, C-3) */
   onMark?: (id: string) => void;
+  /** Boss rule may forbid discarding without forbidding normal play. */
+  markDisabled?: boolean;
   /** drag zone this tile lives in (C-2); enables cross-zone drag when set */
   zone?: 'hand' | 'staged';
   /** D-2: this tile is the current drag origin (dashed outline) */
@@ -69,6 +72,7 @@ function TileViewImpl({
   marked = false,
   onSelect,
   onMark,
+  markDisabled = false,
   zone,
   dragging = false,
   dropTarget = false,
@@ -88,7 +92,7 @@ function TileViewImpl({
   // Wood live-growth value — hidden face-down with identity.
   const matGlyph = faceDown ? null : materialGlyph(tile);
   const rootRef = useRef<HTMLDivElement>(null);
-  usePointerTilt(rootRef, tilt && !mini && !disabled);
+  usePointerTilt(rootRef, tilt && (!mini || inspectable) && !disabled);
   const previousAxes = useRef({
     id: tile.id,
     material: tile.material,
@@ -120,13 +124,14 @@ function TileViewImpl({
     return () => window.clearTimeout(timer);
   }, [tile.id, tile.material, tile.font, tile.edition]);
   // A letterless tile (Stone, GDD §2.2) has no glyph to identify it — fall back
-  // to its material name so a screen reader announces "Stone tile, 0 chips"
-  // instead of the identity-less " tile, 0 chips" (M-4).
+  // to its material name so a screen reader announces the Stone identity and
+  // its material-chip value instead of an identity-less zero-value tile (M-4).
   const idLabel =
     tileGlyph(tile) || (tile.material !== 'ceramic' ? t(`material.${tile.material}`) : '');
   const className = [
     'tile',
     mini && 'mini',
+    inspectable && 'inspectable',
     selected && 'sel',
     hinted && 'hint',
     marked && 'marked',
@@ -143,6 +148,7 @@ function TileViewImpl({
     disabled && 'locked',
     invalid && 'boss-invalid',
     forced && 'boss-forced',
+    markDisabled && 'discard-locked',
   ]
     .filter(Boolean)
     .join(' ');
@@ -170,19 +176,15 @@ function TileViewImpl({
         focusable
           ? faceDown
             ? t('boss.faceDownTile')
-            : `${idLabel} tile, ${stripRichText(t('tile.chips', { n: tileValue(tile) }))}`
+            : `${idLabel} tile, ${stripRichText(t('tile.chips', { n: tileTooltipChips(tile) }))}`
           : undefined
       }
       draggable={false}
       onClick={interactive ? () => onSelect!(tile.id) : undefined}
-      onContextMenu={
-        onMark
-          ? (e) => {
-              e.preventDefault();
-              onMark(tile.id);
-            }
-          : undefined
-      }
+      onContextMenu={onMark ? (e) => {
+        e.preventDefault();
+        if (!markDisabled) onMark(tile.id);
+      } : undefined}
       onKeyDown={
         interactive
           ? (e) => {
@@ -202,7 +204,7 @@ function TileViewImpl({
           {(tile.edition ?? 'base') !== 'base' && (
             <span className={`tile-edition-surface tile-edition-${tile.edition}`} aria-hidden />
           )}
-          <span className="tile-letter">{tileGlyph(tile)}</span>
+          <span className="tile-letter" data-letter={tileGlyph(tile)}>{tileGlyph(tile)}</span>
           <span className="val">{tileValue(tile)}</span>
           {matGlyph && (
             <span
@@ -241,7 +243,7 @@ function TileViewImpl({
             <span className="mult">+{Number.isInteger(effectPop.mult) ? effectPop.mult : effectPop.mult.toFixed(2)}</span>
           ) : null}
           {effectPop.gold !== 0 && <span className="gold">+${effectPop.gold}</span>}
-          {effectPop.retrigger && <span className="retrigger">↻</span>}
+          {effectPop.retrigger && <span className="retrigger">{t('settle.retrigger')}</span>}
           {effectPop.chanceResults && <ChanceBadges results={effectPop.chanceResults} />}
         </span>
       )}

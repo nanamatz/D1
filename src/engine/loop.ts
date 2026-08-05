@@ -22,13 +22,13 @@ import { finalizeScore, judgeSentence, sentenceTotal } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus, JOKER_REGISTRY } from './jokers';
-import { afterBossPlay, BOSS_REGISTRY, bossPoolForAnte, drawBoss } from './bosses';
+import { afterBossPlay, BOSS_REGISTRY, bossAllowsDiscard, bossPoolForAnte, drawBoss } from './bosses';
 import { effectiveBlindTarget } from './economy';
 import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
 import { balancePouchAxes } from './pouches';
 import { EMPTY_NEXT_BLIND_BONUS } from './skipRewards';
-import type { JokerGrowthTrigger } from './events';
+import type { JokerGrowthTrigger, JokerScoreBeat } from './events';
 import type {
   BlindKind,
   BlindState,
@@ -128,6 +128,39 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
   return { ...blind, hand: opening.drawn, bag: opening.bag };
 }
 
+/** Resolve permanent Emoji Tile effects when the player confirms Blind Select. */
+export function enterJokerBlind(
+  run: RunState,
+  blind: BlindState,
+  rng: Rng,
+): { run: RunState; blind: BlindState; createdTiles: Tile[] } {
+  const nextRun: RunState = {
+    ...run,
+    bag: run.bag.slice(),
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
+  const nextBlind: BlindState = {
+    ...blind,
+    hand: blind.hand.slice(),
+    bag: blind.bag.slice(),
+    discardedThisBlind: blind.discardedThisBlind.slice(),
+  };
+  const createdTiles: Tile[] = [];
+  defaultJokerBus.emit(
+    'blindSelected',
+    { run: nextRun, blind: nextBlind, rng, createdTiles },
+    nextRun.jokers,
+  );
+  if (createdTiles.length > 0) {
+    defaultJokerBus.emit('tilesCreated', { run: nextRun, count: createdTiles.length }, nextRun.jokers);
+  }
+  return {
+    run: { ...nextRun, jokers: nextRun.jokers.filter((joker) => joker.state.destroyed !== 1) },
+    blind: nextBlind,
+    createdTiles,
+  };
+}
+
 /**
  * Early-end trigger (GDD §7.2): the end button activates once the projected
  * score reaches the blind target. projectedScore is committed + the sentence
@@ -205,6 +238,9 @@ export function discardTiles(
     throw new Error('boss: forced tile cannot be discarded');
   }
   const removed = takeFromHand(blind.hand, tileIds); // validates membership
+  if (removed.some((tile) => !bossAllowsDiscard(blind, tile))) {
+    throw new Error('boss: this tile cannot be discarded');
+  }
 
   const removedIds = new Set(tileIds);
   const keptHand = blind.hand.filter((t) => !removedIds.has(t.id));
@@ -227,15 +263,22 @@ export function discardTiles(
   };
   const goldBefore = scoringRun.gold;
   defaultJokerBus.emit(
+    'tilesDiscarded',
+    { run: scoringRun, blind: nextBlind, tiles: removed },
+    scoringRun.jokers,
+  );
+  defaultJokerBus.emit(
     'discardUsed',
     { run: scoringRun, blind: nextBlind, tiles: removed, gained: gained.length, slotsBlocked },
     scoringRun.jokers,
   );
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  const bossGoldDrain = Math.min(scoringRun.gold, boss?.goldPerDiscard ?? 0);
 
   return {
     blind: nextBlind,
     jokers: scoringRun.jokers,
-    goldDelta: scoringRun.gold - goldBefore,
+    goldDelta: scoringRun.gold - goldBefore - bossGoldDrain,
     gained,
     slotsBlocked,
   };
@@ -253,6 +296,8 @@ export interface SubmitResult {
   destroyedTileIds: string[];
   /** Wood tiles that scored this play and permanently gain +10 Chips. */
   grownWoodTileIds: string[];
+  /** Fresh permanent tiles created by Emoji Tile hooks this play. */
+  createdTiles: Tile[];
   /** Tiles pulled from the post-play hand by the active boss (Unopened Letter). */
   bossDiscardedTiles: Tile[];
   /** cloned, state-updated owned Emoji Tiles */
@@ -281,10 +326,12 @@ function scoreSubmission(
   materialGold: number;
   destroyedTileIds: string[];
   grownWoodTileIds: string[];
+  createdTiles: Tile[];
 } {
   const pushGrowthEvents = (
     target: ScoreEvent[],
     growth: readonly JokerGrowthTrigger[],
+    tileId?: string,
   ) => {
     for (const trigger of growth) {
       target.push({
@@ -294,6 +341,7 @@ function scoreSubmission(
         multDelta: 0,
         growthKind: trigger.kind,
         growthDelta: trigger.delta,
+        ...(tileId ? { tileId } : {}),
       });
     }
   };
@@ -335,9 +383,11 @@ function scoreSubmission(
     suit: b.suit,
     posUsed: null,
     settledScore: 0,
+    scoringLength: tiles.length,
   };
   const ctx: WordScoringContext = {
     submission,
+    spellingTiles: prepared.spellingTiles,
     chips: 0,
     mult: b.mult,
     baseSuit: b.suit,
@@ -351,6 +401,7 @@ function scoreSubmission(
   for (const joker of run.jokers) {
     const before = JSON.stringify([
       ctx.submission.suit,
+      ctx.submission.scoringLength,
       [...(ctx.scoringVowels ?? [])],
       [...(ctx.scoringSuits ?? [])],
       [...(ctx.tileRetriggers ?? [])],
@@ -358,6 +409,7 @@ function scoreSubmission(
     const growth = defaultJokerBus.emit('wordRules', { run, blind, ctx }, [joker]);
     const after = JSON.stringify([
       ctx.submission.suit,
+      ctx.submission.scoringLength,
       [...(ctx.scoringVowels ?? [])],
       [...(ctx.scoringSuits ?? [])],
       [...(ctx.tileRetriggers ?? [])],
@@ -373,6 +425,7 @@ function scoreSubmission(
   let materialGold = 0;
   const destroyedTileIds: string[] = [];
   const grownWoodTileIds: string[] = [];
+  const createdTiles: Tile[] = [];
   for (const t of tiles) {
     const chips = t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
     const fontEffect = fontEffectOf(t.font);
@@ -396,6 +449,7 @@ function scoreSubmission(
           kind: 'joker',
           jokerId: ctx.tileRetriggers?.get(t.id)?.[trig - fontRetriggers - 1]!,
           tileId: t.id,
+          retrigger: true,
           chipsDelta: 0,
           multDelta: 0,
         });
@@ -446,7 +500,7 @@ function scoreSubmission(
                 ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
               });
             }
-            pushGrowthEvents(events, growth);
+            pushGrowthEvents(events, growth, t.id);
           }
           if (!destroying.cancelled) destroyedTileIds.push(t.id);
           else if (mat.side.chanceResults) {
@@ -484,7 +538,7 @@ function scoreSubmission(
           goldDelta: mat.side.goldDelta ?? 0,
           grewWood: mat.side.growWood ?? false,
         }, run.jokers);
-        pushGrowthEvents(events, materialGrowth);
+        pushGrowthEvents(events, materialGrowth, t.id);
         if ((mat.side.goldDelta ?? 0) > 0) {
           for (const joker of run.jokers) {
             const beforeChips = ctx.chips;
@@ -502,7 +556,7 @@ function scoreSubmission(
                 ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
               });
             }
-            pushGrowthEvents(events, growth);
+            pushGrowthEvents(events, growth, t.id);
           }
         }
       }
@@ -526,7 +580,7 @@ function scoreSubmission(
               ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
             });
           }
-          pushGrowthEvents(events, growth);
+          pushGrowthEvents(events, growth, t.id);
         }
         events.push({
           kind: 'font', font: t.font, effect: 'goldPlay', tileId: t.id,
@@ -563,7 +617,7 @@ function scoreSubmission(
             ...(goldDelta !== 0 ? { goldDelta } : {}),
           });
         }
-        pushGrowthEvents(events, growth);
+        pushGrowthEvents(events, growth, t.id);
       }
     }
   }
@@ -571,14 +625,15 @@ function scoreSubmission(
 
   // Word length adds Mult (GDD §3.1) — a whole-word stamp landing right after the
   // suit, so the Word Hand below stacks on top of it. Valid words only (§6.4).
-  const lengthMult = wordLengthMult(tiles.length, submission.isGibberish);
+  const scoringLength = submission.scoringLength ?? tiles.length;
+  const lengthMult = wordLengthMult(scoringLength, submission.isGibberish);
   if (lengthMult !== 0) {
     ctx.mult += lengthMult;
-    events.push({ kind: 'wordLength', letters: tiles.length, multDelta: lengthMult });
+    events.push({ kind: 'wordLength', letters: scoringLength, multDelta: lengthMult });
   }
 
-  // Brass and friends read tiles REMAINING in hand — blind.hand still holds the
-  // played tiles at this point, so exclude them explicitly.
+  // Freeze tiles remaining in hand now; their effects land after every owned
+  // Emoji Tile so Brass multiplies the current total Mult.
   const playedIds = new Set(tiles.map((t) => t.id));
   const heldUnordered = blind.hand.filter((t) => !playedIds.has(t.id));
   const held =
@@ -590,14 +645,11 @@ function scoreSubmission(
           ...heldUnordered.filter((tile) => !heldOrder.includes(tile.id)),
         ]
       : heldUnordered;
-  for (const beat of applyHeldMaterials(ctx, held)) {
-    events.push({ kind: 'material', ...beat });
-  }
 
   // Word Hand (A-2): highest single per-word structure bonus. Its Chips add to
   // the current word and its Mult multiplies the current word Mult.
   const letters = letterString(tiles);
-  const letterHand = evaluateLetterHand(letters, submission.isGibberish);
+  const letterHand = evaluateLetterHand(letters, submission.isGibberish, scoringLength);
   if (letterHand && (letterHand.chips !== 0 || letterHand.mult !== 0)) {
     const beforeMult = ctx.mult;
     ctx.chips += letterHand.chips;
@@ -618,12 +670,21 @@ function scoreSubmission(
     const beforeMult = ctx.mult;
     const beforeScore = ctx.scoreBonus ?? 0;
     const beforeGold = ctx.goldDelta ?? 0;
-    const growth = defaultJokerBus.emit('wordScoring', { run, blind, ctx }, [joker]);
+    const scoreBeats: JokerScoreBeat[] = [];
+    const growth = defaultJokerBus.emit(
+      'wordScoring',
+      { run, blind, ctx, scoreBeats, rng, createdTiles },
+      [joker],
+    );
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     const scoreDelta = (ctx.scoreBonus ?? 0) - beforeScore;
     const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
-    if (chipsDelta !== 0 || multDelta !== 0 || scoreDelta !== 0 || goldDelta !== 0) {
+    if (scoreBeats.length > 0) {
+      for (const beat of scoreBeats) {
+        events.push({ kind: 'joker', jokerId: joker.defId, ...beat });
+      }
+    } else if (chipsDelta !== 0 || multDelta !== 0 || scoreDelta !== 0 || goldDelta !== 0) {
       events.push({
         kind: 'joker',
         jokerId: joker.defId,
@@ -644,6 +705,37 @@ function scoreSubmission(
         jokerId: joker.defId,
         ...jokerEditionDelta,
       });
+    }
+  }
+
+  for (const tile of held) {
+    for (const joker of run.jokers) {
+      const beforeChips = ctx.chips;
+      const beforeMult = ctx.mult;
+      const beforeGold = ctx.goldDelta ?? 0;
+      const growth = defaultJokerBus.emit(
+        'heldTileScoring',
+        { run, blind, ctx, tile },
+        [joker],
+      );
+      const chipsDelta = ctx.chips - beforeChips;
+      const multDelta = ctx.mult - beforeMult;
+      const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
+      if (chipsDelta !== 0 || multDelta !== 0 || goldDelta !== 0) {
+        events.push({
+          kind: 'joker',
+          jokerId: joker.defId,
+          tileId: tile.id,
+          chipsDelta,
+          multDelta,
+          ...jokerScoreFactors(joker.defId, beforeChips, ctx.chips, beforeMult, ctx.mult),
+          ...(goldDelta !== 0 ? { goldDelta } : {}),
+        });
+      }
+      pushGrowthEvents(events, growth, tile.id);
+    }
+    for (const beat of applyHeldMaterials(ctx, [tile])) {
+      events.push({ kind: 'material', ...beat });
     }
   }
 
@@ -769,6 +861,7 @@ function scoreSubmission(
     materialGold: materialGold + (ctx.goldDelta ?? 0),
     destroyedTileIds,
     grownWoodTileIds,
+    createdTiles,
   };
 }
 
@@ -873,7 +966,14 @@ export function submitWord(
     ...run,
     jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
   };
-  const { submission, events, materialGold, destroyedTileIds, grownWoodTileIds } = scoreSubmission(
+  const {
+    submission,
+    events,
+    materialGold,
+    destroyedTileIds,
+    grownWoodTileIds,
+    createdTiles,
+  } = scoreSubmission(
     used,
     lexicon,
     scoringRun,
@@ -881,10 +981,8 @@ export function submitWord(
     rng,
     heldOrder,
   );
-  // Economy drains: −goldPerWord flat, −goldPerTile per tile played (Bond).
-  const bossGoldDrain =
-    (boss?.goldPerWord ? -boss.goldPerWord : 0) +
-    (boss?.goldPerTile ? -boss.goldPerTile * used.length : 0);
+  // Economy drain: Bond charges once per hand played, regardless of tile count.
+  const bossGoldDrain = boss?.goldPerWord ? -boss.goldPerWord : 0;
   const goldDelta = bossGoldDrain + materialGold;
 
   const usedIds = new Set(tileIds);
@@ -897,7 +995,7 @@ export function submitWord(
   // Build the post-phase blind first so layer-3 hooks read phases remaining correctly.
   let afterBlind: BlindState = {
     ...blind,
-    hand: [...keptHand, ...drawn],
+    hand: [...keptHand, ...drawn, ...createdTiles],
     bag,
     // used tiles are spent for the blind; they return to the bag at blind end (§6.1)
     discardedThisBlind: [...blind.discardedThisBlind, ...used],
@@ -906,6 +1004,13 @@ export function submitWord(
     projectedScore: 0,
     phasesUsed: blind.phasesUsed + 1,
   };
+  if (createdTiles.length > 0) {
+    defaultJokerBus.emit(
+      'tilesCreated',
+      { run: scoringRun, count: createdTiles.length },
+      scoringRun.jokers,
+    );
+  }
 
   // Unopened Letter (미개봉 편지): after each play, discard up to N random hand tiles;
   // they exit play for the blind (§6.3) and are replaced from the remaining bag.
@@ -923,6 +1028,11 @@ export function submitWord(
       bag: refill.bag,
       discardedThisBlind: [...afterBlind.discardedThisBlind, ...dumped],
     };
+    defaultJokerBus.emit(
+      'tilesDiscarded',
+      { run: scoringRun, blind: afterBlind, tiles: dumped },
+      scoringRun.jokers,
+    );
   }
 
   // Finisher state rotates only after the current word has fully scored. Nokdo
@@ -969,6 +1079,7 @@ export function submitWord(
     goldDelta,
     destroyedTileIds,
     grownWoodTileIds,
+    createdTiles,
     bossDiscardedTiles,
     jokers: postBossRun.jokers,
     counters: postBossRun.counters,

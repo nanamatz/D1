@@ -9,10 +9,11 @@ interface Props {
   onCollection: () => void;
   onOptions: () => void;
   onProfile: () => void;
+  onDeskLab: () => void;
 }
 
 /** Main Menu (spec §2.1). Our own logotype. */
-export function MainMenu({ onPlay, onCollection, onOptions, onProfile }: Props) {
+export function MainMenu({ onPlay, onCollection, onOptions, onProfile, onDeskLab }: Props) {
   const { t, lang, setLang } = useI18n();
   const unseen = unseenCount();
   const slot = activeProfile();
@@ -71,6 +72,9 @@ export function MainMenu({ onPlay, onCollection, onOptions, onProfile }: Props) 
         >
           {t('menu.collection')}
           {unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
+        </button>
+        <button className="btn menu-desk-lab" onClick={onDeskLab}>
+          {t('menu.deskLab')}
         </button>
         <button className="btn menu-quit" onClick={onQuit}>
           {t('menu.quit')}

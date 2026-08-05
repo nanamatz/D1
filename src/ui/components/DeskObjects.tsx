@@ -5,17 +5,21 @@ import { audio } from '../audio';
 import type { SfxName } from '../audio';
 import { motionOff } from '../motion';
 import coffeeCup from '../assets/desk-coffee-cup.png';
+import coffeePot from '../assets/desk-coffee-pot.png';
 import callBell from '../assets/desk-call-bell.png';
 import blankCheck from '../assets/desk-blank-check.png';
+import slangee from '../assets/desk-slangee.png';
+import waxBall from '../assets/desk-wax-ball.png';
+import keycap from '../assets/desk-keycap.png';
 import { clamp } from '../math';
 import { useI18n } from '../i18n';
 
 /**
- * D-3 ambient side interactions (UI_DESIGN §4.8). One-shot cup, bell, and cheque
+ * D-3 ambient side interactions (UI_DESIGN §4.8). One-shot desk objects
  * encounters live in the viewport margins, portaled to <body>, so they never
  * affect the headless engine or block the game board.
  */
-type DeskKind = 'cup' | 'bell' | 'check';
+export type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'slangee' | 'waxBall' | 'keycap';
 
 interface DeskObj {
   kind: DeskKind;
@@ -26,9 +30,20 @@ interface DeskObj {
 
 const BASE_KINDS: Pick<DeskObj, 'kind' | 'sfx'>[] = [
   { kind: 'cup', sfx: 'deskCup' },
+  { kind: 'pot', sfx: 'deskPour' },
   { kind: 'bell', sfx: 'deskBell' },
   { kind: 'check', sfx: 'deskCheck' },
+  { kind: 'slangee', sfx: 'tileSelect' },
+  { kind: 'waxBall', sfx: 'stamp' },
+  { kind: 'keycap', sfx: 'buttonPress' },
 ];
+export const DESK_KINDS: readonly DeskKind[] = BASE_KINDS.map(({ kind }) => kind);
+const SIMPLE_ART: Partial<Record<DeskKind, string>> = {
+  pot: coffeePot,
+  slangee,
+  waxBall,
+  keycap,
+};
 const ENCOUNTER_GAP_MIN_MS = 70_000;
 const ENCOUNTER_GAP_SPREAD_MS = 70_000;
 const SIGNATURE_VIEWBOX_WIDTH = 100;
@@ -43,7 +58,15 @@ interface SignaturePoint {
 
 const reduced = motionOff;
 
-export function DeskObjects({ active }: { active: boolean }) {
+export function DeskObjects({
+  active,
+  sampleKind,
+  resetToken = 0,
+}: {
+  active: boolean;
+  sampleKind?: DeskKind;
+  resetToken?: number;
+}) {
   const { t } = useI18n();
   const [cup, setCup] = useState<DeskObj | null>(null);
   const [bell, setBell] = useState<DeskObj | null>(null);
@@ -85,6 +108,27 @@ export function DeskObjects({ active }: { active: boolean }) {
     setSignatureDrawing(false);
   }, [active]);
 
+  useEffect(() => {
+    if (!active || !sampleKind) return;
+    interactionTimers.current.forEach(clearTimeout);
+    interactionTimers.current = [];
+    const base = BASE_KINDS.find(({ kind }) => kind === sampleKind)!;
+    const sample: DeskObj = { ...base, side: 'left', spawn: resetToken };
+    setCup(sampleKind === 'cup' ? sample : null);
+    setBell(sampleKind === 'bell' ? sample : null);
+    setEncounter(sampleKind !== 'cup' && sampleKind !== 'bell' ? sample : null);
+    setCupDrinking(false);
+    setCupLeaving(false);
+    setBellRinging(false);
+    setBellLeaving(false);
+    setEncounterLeaving(false);
+    setEncounterInteracting(false);
+    signaturePointer.current = null;
+    signaturePointsRef.current = [];
+    setSignaturePoints([]);
+    setSignatureDrawing(false);
+  }, [active, resetToken, sampleKind]);
+
   useEffect(
     () => () => {
       interactionTimers.current.forEach(clearTimeout);
@@ -93,7 +137,7 @@ export function DeskObjects({ active }: { active: boolean }) {
   );
 
   useEffect(() => {
-    if (!active || encounter) return;
+    if (!active || encounter || sampleKind) return;
     let live = true;
     const gap = ENCOUNTER_GAP_MIN_MS + Math.random() * ENCOUNTER_GAP_SPREAD_MS;
     const timer = setTimeout(() => {
@@ -128,7 +172,7 @@ export function DeskObjects({ active }: { active: boolean }) {
       live = false;
       clearTimeout(timer);
     };
-  }, [active, encounter, encounterCycle, cup, bell]);
+  }, [active, encounter, encounterCycle, cup, bell, sampleKind]);
 
   const finishEncounter = () => {
     setEncounter(null);
@@ -146,11 +190,11 @@ export function DeskObjects({ active }: { active: boolean }) {
     audio.play('deskCup');
     setCupDrinking(true);
     later(() => {
-      setCupDrinking(false);
       setCupLeaving(true);
     }, 820);
     later(() => {
       setCup(null);
+      setCupDrinking(false);
       setCupLeaving(false);
       setEncounterCycle((n) => n + 1);
     }, 1280);
@@ -255,6 +299,16 @@ export function DeskObjects({ active }: { active: boolean }) {
     setSignatureDrawing(false);
   };
 
+  const interactSimpleEncounter = () => {
+    if (!encounter || encounter.kind === 'check' || encounterLeaving || encounterInteracting) {
+      return;
+    }
+    audio.play(encounter.sfx);
+    setEncounterInteracting(true);
+    later(() => setEncounterLeaving(true), 520);
+    later(finishEncounter, 980);
+  };
+
   const still = reduced() ? 'desk-still' : '';
   // Three independent height zones PER SIDE (six total), oldest at the bottom.
   // Removing an object compacts only the stack on that same side.
@@ -298,6 +352,7 @@ export function DeskObjects({ active }: { active: boolean }) {
         `desk-${encounter.side}`,
         slotClass(encounter),
         encounterInteracting && encounter.kind === 'check' && 'desk-signing',
+        encounterInteracting && encounter.kind !== 'check' && 'desk-interacting',
         signatureDrawing && encounter.kind === 'check' && 'desk-drawing',
         encounterLeaving ? 'desk-leaving' : 'desk-entering',
         still,
@@ -308,15 +363,16 @@ export function DeskObjects({ active }: { active: boolean }) {
 
   if (!cup && !bell && !encounter) return null;
 
-  return createPortal(
+  const objects = (
     <>
       {cup && (
         <button
           key={cup.spawn}
           className={cupClass}
           onClick={drinkCoffee}
-          aria-hidden
-          tabIndex={-1}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t(`desk.encounter.${cup.kind}.name`) : undefined}
+          tabIndex={sampleKind ? 0 : -1}
         >
           <span className="desk-glyph desk-cup-sprite">
             <span className="desk-coffee-steam" aria-hidden>
@@ -335,8 +391,9 @@ export function DeskObjects({ active }: { active: boolean }) {
           key={bell.spawn}
           className={bellClass}
           onClick={ringBell}
-          aria-hidden
-          tabIndex={-1}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t(`desk.encounter.${bell.kind}.name`) : undefined}
+          tabIndex={sampleKind ? 0 : -1}
         >
           <span className="desk-glyph desk-bell-sprite">
             <span className="desk-bell-rings" aria-hidden>
@@ -360,7 +417,12 @@ export function DeskObjects({ active }: { active: boolean }) {
       )}
 
       {encounter?.kind === 'check' && (
-        <div key={encounter.spawn} className={encounterClass} aria-hidden>
+        <div
+          key={encounter.spawn}
+          className={encounterClass}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
+        >
           <span className="desk-glyph desk-check-sprite">
             <img className="desk-check-art" src={blankCheck} alt="" draggable={false} />
             <span
@@ -399,7 +461,29 @@ export function DeskObjects({ active }: { active: boolean }) {
           </span>
         </div>
       )}
-    </>,
-    document.body,
+
+      {encounter && encounter.kind !== 'check' && SIMPLE_ART[encounter.kind] && (
+        <button
+          key={encounter.spawn}
+          className={encounterClass}
+          onClick={interactSimpleEncounter}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
+          tabIndex={sampleKind ? 0 : -1}
+        >
+          <span className="desk-glyph desk-encounter-sprite">
+            <img
+              className="desk-encounter-art"
+              src={SIMPLE_ART[encounter.kind]}
+              alt=""
+              draggable={false}
+            />
+          </span>
+        </button>
+      )}
+    </>
   );
+  return sampleKind
+    ? <div className="desk-sample-root">{objects}</div>
+    : createPortal(objects, document.body);
 }

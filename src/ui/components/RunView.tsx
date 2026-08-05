@@ -25,6 +25,18 @@ import { DeskObjects } from './DeskObjects';
 import { PackOpening } from './PackOpening';
 import { BossIntro } from './BossIntro';
 import { canUseFableOnPouch, fableTargetsTiles, isFableId } from '../../engine/fables';
+import { isConstellationId } from '../../engine/constellations';
+import { isGamblerId } from '../../engine/gamblers';
+import { jokerArt } from '../jokerArt';
+import { constellationArt } from '../constellationArt';
+import { fableArt } from '../fableArt';
+import { gamblerArt } from '../gamblerArt';
+import { packArt } from '../packArt';
+import { voucherArt } from '../voucherArt';
+import { BOSS_ART, blindEmblem } from '../bossArt';
+import { SKIP_REWARD_ART } from '../skipRewardArt';
+import { mascotSrc } from '../mascots';
+import { preloadImagesWhenIdle } from '../preload';
 
 interface Props {
   g: UseGame;
@@ -41,7 +53,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const lexicon = g.getLexicon();
   const { settings } = useSettings();
   const { t } = useI18n();
-  const { blind, run, selected, phase } = g.state;
+  const { blind, run, selected, phase, shop } = g.state;
   const [showInfo, setShowInfo] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pouchHovered, setPouchHovered] = useState(false);
@@ -50,6 +62,45 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
   const fablePackOpen = phase === 'shop' && g.state.pack?.offer.type === 'consumable';
+
+  // The shop is rolled before Fee Settlement. Warm only that exact stock while
+  // the player reads/collects, leaving gallery-scale registries on demand.
+  useEffect(() => {
+    if (phase !== 'cashout' || !shop) return;
+    const urls = [mascotSrc('piyak')];
+    for (const item of shop.items) {
+      if (!item) continue;
+      const art = item.kind === 'joker'
+        ? jokerArt(item.id)
+        : item.kind === 'punctuation' && isConstellationId(item.id)
+          ? constellationArt(item.id)
+          : item.kind === 'consumable' && isFableId(item.id)
+            ? fableArt(item.id)
+            : item.kind === 'consumable' && isGamblerId(item.id)
+              ? gamblerArt(item.id)
+              : undefined;
+      if (art) urls.push(art);
+    }
+    for (const id of [shop.voucher, shop.bonusVoucher]) {
+      if (id) urls.push(voucherArt(id));
+    }
+    for (const offer of shop.packs) {
+      if (!offer) continue;
+      const art = packArt(offer.type, offer.size, offer.artVariant);
+      if (art) urls.push(art);
+    }
+    return preloadImagesWhenIdle(urls);
+  }, [phase, shop]);
+
+  // Shop time is the idle window before Blind Select: only its two emblems,
+  // disclosed boss, and this Chapter's two Editorial Perks are decoded.
+  useEffect(() => {
+    if (phase !== 'shop') return;
+    const urls = [blindEmblem('big', null), run.chapterBossId ? BOSS_ART[run.chapterBossId] : undefined,
+      ...run.skipOffers.flatMap((offer) => offer ? [SKIP_REWARD_ART[offer.id]] : [])]
+      .filter((url): url is string => !!url);
+    return preloadImagesWhenIdle(urls);
+  }, [phase, run.chapterBossId, run.skipOffers]);
 
   useEffect(() => {
     if (!g.state.pack) setPackCandidateIds([]);

@@ -118,6 +118,14 @@ import dryingInk from './assets/jokers/drying-ink.png';
 import proofEraser from './assets/jokers/proof-eraser.png';
 import spareDrawer from './assets/jokers/spare-drawer.png';
 import foldingManuscript from './assets/jokers/folding-manuscript.png';
+import threeLeafClover from './assets/jokers/three-leaf-clover.png';
+import noiseCancelling from './assets/jokers/noise-cancelling.png';
+import counterfeit from './assets/jokers/counterfeit.png';
+import twentyFifthBlessing from './assets/jokers/twenty-fifth-blessing.png';
+import bloodTypeA from './assets/jokers/blood-type-a.png';
+import megalith from './assets/jokers/megalith.png';
+import host from './assets/jokers/host.png';
+import dummyData from './assets/jokers/dummy-data.png';
 
 const ART: Readonly<Record<string, string>> = {
   alphabeticalOrder,
@@ -240,6 +248,14 @@ const ART: Readonly<Record<string, string>> = {
   proofEraser,
   spareDrawer,
   foldingManuscript,
+  threeLeafClover,
+  noiseCancelling,
+  counterfeit,
+  twentyFifthBlessing,
+  bloodTypeA,
+  megalith,
+  host,
+  dummyData,
 };
 
 /** One 84×112 pixel master scaled into the shared 124×165 runtime frame. */

@@ -3,6 +3,7 @@ import { activeUnlocks } from '../unlocks';
 import { mascotSrc } from '../mascots';
 import { pouchArt } from '../pouchArt';
 import { recordArt } from '../recordArt';
+import { preloadImage } from '../preload';
 import draftUrl from '../assets/bosses/T_Draft.png';
 
 /**
@@ -21,15 +22,6 @@ const recordUrl = recordArt('whiteLp');
 const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, recordUrl, draftUrl];
 
 const COLOR_UNLOCKS = ['RED', 'YELLOW', 'GREEN', 'BLUE'];
-
-function preloadImage(url: string): Promise<void> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve();
-    img.onerror = () => resolve(); // a missing asset must not wedge the loader
-    img.src = url;
-  });
-}
 
 export function LoadingScreen({ onDone }: { onDone: () => void }) {
   const [pct, setPct] = useState(0);

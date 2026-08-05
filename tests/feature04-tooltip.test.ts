@@ -84,7 +84,10 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
   });
 
   it('a Stone tile (no glyph) titles by its material name', () => {
-    expect(tileTooltip(tile({ material: 'stone', letter: null }), t).title).toBe('material.stone');
+    const stone = tile({ material: 'stone', letter: null });
+    expect(tileTooltip(stone, t).title).toBe('material.stone');
+    expect(tileTooltip(stone, (key, params) => `${key}:${params?.n}`).body)
+      .toBe('tile.chips:50');
   });
 
   it('an Emoji Tile tooltip names its edition and effect', () => {

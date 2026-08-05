@@ -35,6 +35,17 @@ describe('persistent Balatro-style run table', () => {
     );
   });
 
+  it('shows and charges instant Gambler use only when it can resolve without a tile field', () => {
+    expect(shop).toContain('canUseUnheldGambler(item.id, run, [], [])');
+    const game = readFileSync('src/ui/useGame.ts', 'utf8');
+    expect(game).toContain(
+      '!canUseUnheldGambler(id, prev.run, [], [])',
+    );
+    expect(game).toContain(
+      'return canUseGambler(id, state.run, state.blind.hand, state.selected);',
+    );
+  });
+
   it('shows ten seeded Fable effect candidates and keeps pack info in the footer', () => {
     expect(pack).toContain('candidateTiles.map');
     expect(pack).toContain('className="shop-head panel pack-footer"');

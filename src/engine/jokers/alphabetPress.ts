@@ -6,13 +6,14 @@ export const alphabetPress: JokerDef = {
   emoji: '🔤', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const letters = ctx.submission.text.toUpperCase();
-      let pairs = 0;
-      for (let i = 1; i < letters.length; i++) {
-        if (letters.charCodeAt(i) === letters.charCodeAt(i - 1) + 1) pairs++;
+    tileScoring: ({ ctx, tile }) => {
+      const spellingTiles = ctx.spellingTiles ?? ctx.submission.tiles;
+      const index = spellingTiles.findIndex((candidate) => candidate.id === tile.id);
+      const previous = spellingTiles[index - 1]?.letter;
+      if (index > 0 && previous !== null && previous !== undefined && tile.letter !== null &&
+          tile.letter.charCodeAt(0) === previous.charCodeAt(0) + 1) {
+        ctx.mult *= BALANCE.jokers.alphabetPress.factorPerPair;
       }
-      ctx.mult *= BALANCE.jokers.alphabetPress.factorPerPair ** pairs;
     },
   },
 };

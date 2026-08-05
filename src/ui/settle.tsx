@@ -90,6 +90,7 @@ export interface SettleView {
     multFactor?: number;
     score: number;
     gold: number;
+    retrigger: boolean;
   } | null;
   /** a Word-Hand / suit / word-length stamp landing this beat */
   stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch'; label: string } | null;
@@ -205,6 +206,7 @@ export function emojiTriggerSfx(
 ): SfxName {
   const growthKind = 'growthKind' in event ? event.growthKind : undefined;
   const chipsFactor = 'chipsFactor' in event ? event.chipsFactor : undefined;
+  if (growthKind === 'gold') return 'coinGain';
   if (
     event.multDelta !== 0 ||
     event.multFactor !== undefined ||
@@ -405,7 +407,7 @@ export function SettleProvider({
                 jokerId: e.jokerId,
                 id: i,
                 chips: e.growthKind === 'chips' ? e.growthDelta ?? 0 : e.chipsDelta,
-                mult: e.growthKind && e.growthKind !== 'chips'
+                mult: e.growthKind === 'mult' || e.growthKind === 'multAdd'
                   ? e.growthDelta ?? 0
                   : e.multDelta,
                 ...(e.growthKind === undefined && e.chipsFactor !== undefined
@@ -415,7 +417,8 @@ export function SettleProvider({
                   ? { multFactor: e.multFactor }
                   : {}),
                 score: e.scoreDelta ?? 0,
-                gold: e.goldDelta ?? 0,
+                gold: e.growthKind === 'gold' ? e.growthDelta ?? 0 : e.goldDelta ?? 0,
+                retrigger: e.retrigger ?? false,
               },
               tileEffectPop: e.tileId
                 ? {
@@ -425,7 +428,7 @@ export function SettleProvider({
                     ...(e.chipsFactor !== undefined ? { chipsFactor: e.chipsFactor } : {}),
                     ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
                     gold: 0,
-                    retrigger: false,
+                    retrigger: e.retrigger ?? false,
                     id: i,
                   }
                 : null,
@@ -485,6 +488,7 @@ export function SettleProvider({
                     ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
                     score: 0,
                     gold: 0,
+                    retrigger: false,
                   }
                 : null,
               tileEffectPop: e.tileId

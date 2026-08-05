@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
+import { submissionLength } from '../types';
 
 export const serial: JokerDef = {
   id: 'serial', gddNumber: 42, nameKo: '연재물', nameEn: 'Serial',
@@ -12,7 +13,7 @@ export const serial: JokerDef = {
         previous &&
         !previous.isGibberish &&
         !ctx.submission.isGibberish &&
-        previous.tiles.length === ctx.submission.tiles.length
+        submissionLength(previous) === submissionLength(ctx.submission)
       ) self.state.chips = (self.state.chips ?? 0) + BALANCE.jokers.serial.chipsPerMatch;
       ctx.chips += self.state.chips ?? 0;
     },

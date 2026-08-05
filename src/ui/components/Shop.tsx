@@ -36,6 +36,7 @@ import {
   isBlindOnlyConsumable,
   isFableId,
 } from '../../engine/fables';
+import { canUseUnheldGambler, isGamblerId } from '../../engine/gamblers';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { TileView } from './Tile';
@@ -310,7 +311,9 @@ export function Shop({ g }: { g: UseGame }) {
                       : undefined}
                     {...((item.kind === 'consumable' || item.kind === 'punctuation') &&
                     !isBlindOnlyConsumable(item.id) &&
-                    !fableTargetsTiles(item.id)
+                    !fableTargetsTiles(item.id) &&
+                    (!isGamblerId(item.id) ||
+                      canUseUnheldGambler(item.id, run, [], []))
                       ? {
                           action2Label: t('shop.instantUse'),
                           action2ClassName: 'green',

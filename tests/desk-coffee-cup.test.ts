@@ -57,15 +57,44 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('setBell(next)');
   });
 
-  it('limits the pool to cup, call-bell, and blank-check encounters', () => {
-    expect(component).toContain("type DeskKind = 'cup' | 'bell' | 'check'");
+  it('includes the independent coffee pot and three tactile-toy encounters', () => {
+    expect(component).toContain(
+      "type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'slangee' | 'waxBall' | 'keycap'",
+    );
+    expect(component).toContain("{ kind: 'pot', sfx: 'deskPour' }");
     expect(component).toContain("{ kind: 'bell', sfx: 'deskBell' }");
     expect(component).toContain("{ kind: 'check', sfx: 'deskCheck' }");
+    expect(component).toContain("{ kind: 'slangee', sfx: 'tileSelect' }");
+    expect(component).toContain("{ kind: 'waxBall', sfx: 'stamp' }");
+    expect(component).toContain("{ kind: 'keycap', sfx: 'buttonPress' }");
     expect(component).not.toContain("'pencil'");
     expect(component).not.toContain("'plane'");
     expect(component).toContain("import callBell from '../assets/desk-call-bell.png'");
     expect(component).toContain("import blankCheck from '../assets/desk-blank-check.png'");
+    expect(component).toContain("import coffeePot from '../assets/desk-coffee-pot.png'");
+    expect(component).toContain("import slangee from '../assets/desk-slangee.png'");
+    expect(component).toContain("import waxBall from '../assets/desk-wax-ball.png'");
+    expect(component).toContain("import keycap from '../assets/desk-keycap.png'");
     expect(component).not.toContain("kind: 'refill'");
+  });
+
+  it('ships square transparent PNG art for every new tactile toy', () => {
+    for (const name of ['desk-slangee.png', 'desk-wax-ball.png', 'desk-keycap.png']) {
+      const png = readFileSync(`src/ui/assets/${name}`);
+      expect(png.readUInt32BE(16), name).toBe(1254);
+      expect(png.readUInt32BE(20), name).toBe(1254);
+      expect(png[25], name).toBe(6);
+    }
+  });
+
+  it('plays one tactile response before each simple encounter exits', () => {
+    expect(component).toContain('const interactSimpleEncounter = () =>');
+    expect(component).toContain('audio.play(encounter.sfx)');
+    expect(component).toContain("encounterInteracting && encounter.kind !== 'check' && 'desk-interacting'");
+    expect(css).toContain('@keyframes desk-pot-pour');
+    expect(css).toContain('@keyframes desk-slangee-squish');
+    expect(css).toContain('@keyframes desk-wax-pop');
+    expect(css).toContain('@keyframes desk-keycap-click');
   });
 
   it('rings once, then plays its exit and removes the call bell', () => {
@@ -113,9 +142,14 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('.desk-check.desk-drawing .desk-check-guide');
   });
 
-  it('does not keep the retired empty-cup refill loop', () => {
+  it('keeps coffee drained through the full cup exit', () => {
+    const drink = component.slice(
+      component.indexOf('const drinkCoffee'),
+      component.indexOf('const ringBell'),
+    );
     expect(component).not.toContain('REFILL_CHANCE');
     expect(component).not.toContain('cupEmpty');
-    expect(component).not.toContain('coffeePot');
+    expect(drink.indexOf('setCup(null)')).toBeLessThan(drink.indexOf('setCupDrinking(false)'));
+    expect(css).toContain('.desk-cup.desk-drinking.desk-leaving .desk-coffee-liquid');
   });
 });

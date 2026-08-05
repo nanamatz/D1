@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance';
 import { hasScoringSuit, type JokerDef } from '../events';
+import { submissionLength } from '../types';
 
 export const everydayHero: JokerDef = {
   id: 'everydayHero', gddNumber: 10, nameKo: '일상 영웅', nameEn: 'Everyday Hero',
@@ -8,7 +9,7 @@ export const everydayHero: JokerDef = {
   hooks: {
     wordScoring: ({ ctx }) => {
       if (
-        ctx.submission.tiles.length >= BALANCE.jokers.everydayHero.minLength &&
+        submissionLength(ctx.submission) >= BALANCE.jokers.everydayHero.minLength &&
         hasScoringSuit(ctx, 'standard')
       ) ctx.mult *= BALANCE.jokers.everydayHero.factor;
     },

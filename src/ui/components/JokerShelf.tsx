@@ -115,6 +115,7 @@ export function JokerShelf({
   const settle = useSettleView();
   const emojiSlotLimit = jokerSlotLimit(run);
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
+  const [hoveredConsumableIdx, setHoveredConsumableIdx] = useState<number | null>(null);
   const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
   const disabledIndex = run.jokers.findIndex((owned) => owned.state.bossDisabled === 1);
   const [visibleDisabledIndex, setVisibleDisabledIndex] = useState(disabledIndex);
@@ -152,6 +153,7 @@ export function JokerShelf({
     jokerId: string;
     chips: number;
     mult: number;
+    gold: number;
     id: number;
   }>>([]);
   useEffect(() => {
@@ -179,7 +181,8 @@ export function JokerShelf({
         index,
         jokerId: owned.defId,
         chips: display.kind === 'chips' ? delta : 0,
-        mult: display.kind === 'chips' ? 0 : delta,
+        mult: display.kind === 'mult' || display.kind === 'multAdd' ? delta : 0,
+        gold: display.kind === 'gold' ? delta : 0,
         id: growthId.current++,
       });
     });
@@ -187,7 +190,11 @@ export function JokerShelf({
     if (pops.length === 0) return;
     if (growthTimer.current) clearTimeout(growthTimer.current);
     setGrowthPops(pops);
-    audio.play(pops.some((pop) => pop.mult !== 0) ? 'jokerMult' : 'jokerChips');
+    audio.play(
+      pops.some((pop) => pop.gold !== 0)
+        ? 'coinGain'
+        : pops.some((pop) => pop.mult !== 0) ? 'jokerMult' : 'jokerChips',
+    );
     growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
   }, [run.jokers, animatedGrowthEvents]);
   useEffect(() => () => {
@@ -246,6 +253,7 @@ export function JokerShelf({
   // feature-04 D: spring-physics reorder for the Emoji-Tile shelf (same feel as the
   // hand), replacing native DnD. Commits reorderJoker(from, to) once on drop.
   const jokersRef = useRef<HTMLDivElement>(null);
+  const consumablesRef = useRef<HTMLDivElement>(null);
   useShelfDrag(jokersRef, !!onReorderJoker, {
     reorder: (from, to) => onReorderJoker?.(from, to),
     playGrab: () => audio.play('tilePick'),
@@ -347,6 +355,7 @@ export function JokerShelf({
                               run,
                               BALANCE.jokerPrice[def.rarity],
                               owned.edition ?? 'base',
+                              owned.state.sellBonus ?? 0,
                             ),
                           })}
                         </button>
@@ -366,8 +375,12 @@ export function JokerShelf({
                       ? { multFactor: settle.jokerPop.multFactor }
                       : {})}
                     score={growthPop ? 0 : settle.jokerPop?.score ?? 0}
-                    gold={growthPop ? 0 : settle.jokerPop?.gold ?? 0}
-                    applied={t('settle.applied')}
+                    gold={growthPop?.gold ?? settle.jokerPop?.gold ?? 0}
+                    applied={
+                      !growthPop && settle.jokerPop?.retrigger
+                        ? t('settle.retrigger')
+                        : t('settle.applied')
+                    }
                   />
                 )}
               </div>
@@ -381,13 +394,24 @@ export function JokerShelf({
       </div>
       <div className="shelf-col consumables-col">
         <div className="shelf-group consumables-group">
-          <div className="consumables">
+          <div
+            className="consumables"
+            ref={consumablesRef}
+            onPointerMove={(event) => {
+              const rect = consumablesRef.current?.getBoundingClientRect();
+              if (!rect || run.consumables.length === 0) return;
+              const ratio = Math.max(0, Math.min(0.9999, (event.clientX - rect.left) / rect.width));
+              setHoveredConsumableIdx(Math.floor(ratio * run.consumables.length));
+            }}
+            onPointerLeave={() => setHoveredConsumableIdx(null)}
+          >
         {run.consumables.map((c, i) => (
           <div
             key={i}
             className={[
               'consumable-slot',
               menuIdx === i ? 'menu-open' : '',
+              hoveredConsumableIdx === i ? 'hover-locked' : '',
               leaving?.zone === 'consumable' && leaving.index === i ? `leave-${leaving.mode}` : '',
               arriving?.zone === 'consumable' && i >= arriving.from ? 'slot-arriving' : '',
             ].filter(Boolean).join(' ')}

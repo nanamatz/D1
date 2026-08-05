@@ -12,6 +12,9 @@ import { PatternLevelUp } from './components/PatternLevelUp';
 import { ConsumableEffect } from './components/ConsumableEffect';
 import { JokerChanceEffect } from './components/JokerChanceEffect';
 import { SaveHealthNotice } from './components/SaveHealthNotice';
+import { POUCH_ART } from './pouchArt';
+import { RECORD_ART } from './recordArt';
+import { preloadImagesWhenIdle } from './preload';
 import type { Lexicon } from '../engine/lexicon';
 
 const NewRun = lazy(() =>
@@ -29,8 +32,13 @@ const Options = lazy(() =>
 const Profile = lazy(() =>
   import('./components/Profile').then(({ Profile: component }) => ({ default: component })),
 );
+const DeskEncounterLab = lazy(() =>
+  import('./components/DeskEncounterLab')
+    .then(({ DeskEncounterLab: component }) => ({ default: component })),
+);
 
-type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile';
+type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile' | 'deskLab';
+const NEW_RUN_ART = [...Object.values(POUCH_ART), ...Object.values(RECORD_ART)];
 
 export function App() {
   const lexiconRef = useRef<Lexicon | null>(null);
@@ -61,6 +69,10 @@ export function App() {
   // D-4: preload assets behind a loading screen before the Main Menu. Falls through
   // immediately when everything is cached (LoadingScreen reports real progress).
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (loading) return;
+    return preloadImagesWhenIdle(NEW_RUN_ART);
+  }, [loading]);
   // Mounted here so the persisted volumes (e.g. a saved master:0) reach the audio
   // mixer at startup on the menu screen, before Options or RunView ever mount.
   // `usePersistedState` is now backed by one shared store per key, so this
@@ -134,6 +146,8 @@ export function App() {
       case 'newrun':
         return (
           <NewRun
+            initialPouchId={g.state.run.pouchId}
+            initialRecordId={g.state.run.recordId}
             onStart={(config) => {
               void ensureLexicon()
                 .then(() => {
@@ -168,6 +182,8 @@ export function App() {
         return <Options lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'profile':
         return <Profile lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
+      case 'deskLab':
+        return <DeskEncounterLab onBack={() => setScreen('menu')} />;
       case 'menu':
       default:
         return (
@@ -176,6 +192,7 @@ export function App() {
             onCollection={() => openScreen('collection')}
             onOptions={() => openScreen('options')}
             onProfile={() => openScreen('profile')}
+            onDeskLab={() => setScreen('deskLab')}
           />
         );
     }

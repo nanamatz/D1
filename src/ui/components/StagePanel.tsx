@@ -19,6 +19,7 @@ import { TileView } from './Tile';
 import { useEntering } from './ScreenTransition';
 import { useStageDrag, type StageDragCallbacks } from '../drag';
 import { UiIcon } from './UiIcon';
+import { bossAllowsDiscard } from '../../engine/bosses';
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
@@ -172,6 +173,8 @@ export function StagePanel({
   };
   const toggleMark = (id: string) => {
     if (lock) return; // discard is disabled during the lesson lock
+    const tile = blind.hand.find((candidate) => candidate.id === id);
+    if (!tile || !bossAllowsDiscard(blind, tile)) return;
     playTileVoice(id);
     setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
   };
@@ -295,6 +298,7 @@ export function StagePanel({
             marked={validMarks.includes(tile.id)}
             faceDown={faceDown(tile)}
             disabled={lock && tile.letter !== nextLetter}
+            markDisabled={!bossAllowsDiscard(blind, tile)}
             onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}

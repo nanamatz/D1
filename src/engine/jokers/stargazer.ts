@@ -4,12 +4,12 @@ import type { JokerDef } from '../events';
 export const stargazer: JokerDef = {
   id: 'stargazer',
   gddNumber: 5,
-  nameKo: '별자리 관측',
-  nameEn: 'Stargazer',
+  nameKo: '천문학자',
+  nameEn: 'Astronomer',
   emoji: '🔭',
-  rarity: 'rare',
+  rarity: 'uncommon',
   layer: 3,
-  price: BALANCE.jokerPrice.rare,
+  price: BALANCE.jokerPrice.uncommon,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
   multOperation: 'multiply',
   hooks: {

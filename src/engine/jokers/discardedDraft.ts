@@ -6,12 +6,12 @@ export const discardedDraft: JokerDef = {
   emoji: '🗞️', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
   growthDisplay: { kind: 'chips', stateKey: 'chips', initial: 0 },
   hooks: {
-    discardUsed: ({ blind }, self) => {
-      self.state.chips = blind.discardedThisBlind.length
-        * BALANCE.jokers.discardedDraft.chipsPerTile;
+    tilesDiscarded: ({ tiles }, self) => {
+      self.state.chips = (self.state.chips ?? 0)
+        + tiles.length * BALANCE.jokers.discardedDraft.chipsPerTile;
     },
-    wordScoring: ({ blind, ctx }) => {
-      ctx.chips += blind.discardedThisBlind.length * BALANCE.jokers.discardedDraft.chipsPerTile;
+    wordScoring: ({ ctx }, self) => {
+      ctx.chips += self.state.chips ?? 0;
     },
     blindEnd: (_payload, self) => { self.state.chips = 0; },
   },

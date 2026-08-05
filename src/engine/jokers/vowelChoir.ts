@@ -6,10 +6,11 @@ export const vowelChoir: JokerDef = {
   emoji: '🎶', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
   hooks: {
-    wordScoring: ({ ctx }) => {
-      const vowels = new Set(ctx.submission.tiles.flatMap((tile) =>
-        isScoringVowel(ctx, tile.letter) ? [tile.letter!] : []));
-      ctx.mult *= BALANCE.jokers.vowelChoir.factorPerVowel ** vowels.size;
+    tileScoring: ({ ctx, tile }) => {
+      if (isScoringVowel(ctx, tile.letter) &&
+          ctx.submission.tiles.find((candidate) => candidate.letter === tile.letter)?.id === tile.id) {
+        ctx.mult *= BALANCE.jokers.vowelChoir.factorPerVowel;
+      }
     },
   },
 };

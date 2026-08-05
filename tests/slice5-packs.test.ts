@@ -83,18 +83,33 @@ describe('slice5 packs — roll by type (GDD §9.3)', () => {
   it('is deterministic per seed', () => {
     expect(rollPack(slot('tile'), run(), makeRng('s'))).toEqual(rollPack(slot('tile'), run(), makeRng('s')));
   });
+
+  it('excludes held consumables unless Copy Editor is owned', () => {
+    const held = run({ consumables: ['fable1'] });
+    const normal = rollPack(slot('consumable'), held, fixedRng(1, 1, 1));
+    expect(normal.options.some((option) => option.kind === 'consumable' && option.id === 'fable1'))
+      .toBe(false);
+
+    const copied = rollPack(
+      slot('consumable'),
+      { ...held, jokers: [{ defId: 'copyEditor', edition: 'base', state: {} }] },
+      fixedRng(1, 1, 1),
+    );
+    expect(copied.options.map((option) => option.kind === 'consumable' ? option.id : null))
+      .toEqual(['fable1', 'fable1', 'fable1']);
+  });
 });
 
 describe('slice5 packs — jackpot and modifier policy', () => {
   it('rolls Phoenix/Deer jackpots independently per eligible choice', () => {
     const fable = rollPack(slot('consumable'), run(), fixedRng(0, 0, 1));
     expect(fable.options.map((option) => option.kind === 'consumable' ? option.id : null))
-      .toEqual(['phoenix', 'phoenix', 'fable3']);
+      .toEqual(['phoenix', 'fable2', 'fable3']);
 
     const constellation = rollPack(slot('pattern'), run(), fixedRng(0, 0, 1));
     expect(constellation.options.filter((option) =>
       option.kind === 'consumable' && option.id === 'deer',
-    )).toHaveLength(2);
+    )).toHaveLength(1);
 
     const ink = rollPack(slot('ink'), run(), fixedRng(0, 0.001));
     expect(ink.options.map((option) => option.kind === 'consumable' ? option.id : null))

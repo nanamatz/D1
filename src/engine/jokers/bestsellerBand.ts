@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
+import { submissionLength } from '../types';
 
 export const bestsellerBand: JokerDef = {
   id: 'bestsellerBand', gddNumber: 36, nameKo: '베스트셀러 띠지', nameEn: 'Bestseller Band',
@@ -8,7 +9,7 @@ export const bestsellerBand: JokerDef = {
     wordScoring: ({ ctx }) => {
       if (
         !ctx.submission.isGibberish &&
-        ctx.submission.tiles.length >= BALANCE.jokers.bestsellerBand.minLength
+        submissionLength(ctx.submission) >= BALANCE.jokers.bestsellerBand.minLength
       ) ctx.goldDelta = (ctx.goldDelta ?? 0) + BALANCE.jokers.bestsellerBand.gold;
     },
   },
