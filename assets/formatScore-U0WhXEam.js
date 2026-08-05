@@ -1,0 +1,1 @@
+function e(e){if(!Number.isFinite(e))return`—`;let t=Math.round(e),n=Math.abs(t);if(n<1e7)return t.toLocaleString(`en-US`);let r=Math.floor(Math.log10(n)),i=Math.floor(n/10**r*10)/10;return`${t<0?`-`:``}${i}e${r}`}export{e as t};
