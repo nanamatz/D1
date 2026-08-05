@@ -1,4 +1,4 @@
-import{t as e}from"./balance-WbO6E29P.js";var t=`# ENABLE words up to 18 letters plus apostrophe-free tile-grammar exceptions.
+import{t as e}from"./balance-BGAU_cC0.js";var t=`# ENABLE words up to 18 letters plus apostrophe-free tile-grammar exceptions.
 # Source: ENABLE (dolph/dictionary). See data/README.md.
 # Regenerate: node scripts/build-dictionary.mjs <enable.txt> <out.txt>
 aa
