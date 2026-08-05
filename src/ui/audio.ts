@@ -23,7 +23,7 @@ export type SfxName =
   | 'tagSpawn' | 'gameOver' | 'gameClear' | 'rainbowShimmer'
   | 'jokerChips' | 'jokerMult' | 'jokerEffect'
   // D-3 ambient desk objects (feature-03): each click plays its own small sound.
-  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour'
+  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour' | 'deskKeycap' | 'deskWaxCrunch'
   // feature-04 A-1 · money is never silent — a rising coin gain / falling coin loss,
   // distinguishable by contour, fired centrally on every gold change.
   | 'coinGain' | 'coinLoss'
@@ -193,15 +193,67 @@ const RECIPES: Record<SfxName, Recipe> = {
       { cutoff: 2300, filter: 'bandpass', gain: 0.30, delay: 0.038, dur: 0.04 },
     ],
   },
-  // D-3 desk objects: a gulp/drain glug (cup) and a bright hotel-bell ding.
-  // Cosmetic, so kept soft — they never step on gameplay beats.
-  deskCup:          { gain: 0.24, dur: 0.68, tones: [{ wave: 'sine', from: 340, to: 165, sub: true }, { wave: 'triangle', from: 520, to: 210, delay: 0.12 }, { wave: 'sine', from: 250, to: 120, delay: 0.28, sub: true }], noise: { cutoff: 850 } },
-  // A struck hotel call bell: hard metallic attack followed by two inharmonic,
-  // slowly decaying dome resonances. The previous descending chord read as a UI
-  // jingle rather than a physical bell.
-  deskBell:         { gain: 0.28, dur: 0.92, tones: [{ wave: 'sine', from: 1568, to: 1535, detune: 7 }, { wave: 'sine', from: 2350, to: 2260, delay: 0.008, detune: 5 }, { wave: 'triangle', from: 784, to: 760, delay: 0.018, sub: true }], noise: { cutoff: 5200 } },
-  deskCheck:        { gain: 0.18, dur: 1.05, tones: [{ wave: 'triangle', from: 310, to: 260, delay: 0.04 }, { wave: 'triangle', from: 360, to: 290, delay: 0.38 }, { wave: 'triangle', from: 330, to: 250, delay: 0.7 }], noise: { cutoff: 3200 } },
-  deskPour:         { gain: 0.19, dur: 1.08, tones: [{ wave: 'sine', from: 205, to: 145, delay: 0.08, sub: true }, { wave: 'triangle', from: 290, to: 190, delay: 0.42 }], noise: { cutoff: 1050 } },
+  // D-3 desk objects use short physical layers instead of UI-note contours.
+  deskCup: {
+    gain: 0.4, dur: 0.86, textured: true, cutoff: 6200,
+    tones: [
+      { wave: 'sine', from: 175, to: 92, gain: 0.24, delay: 0.18, dur: 0.3, sub: true },
+      { wave: 'sine', from: 145, to: 72, gain: 0.2, delay: 0.5, dur: 0.25, sub: true },
+    ],
+    noise: [
+      { cutoff: 3600, to: 620, filter: 'bandpass', q: 0.6, gain: 0.72, dur: 0.72, attack: 0.035 },
+      { cutoff: 1100, to: 330, filter: 'lowpass', color: 'brown', gain: 0.62, delay: 0.12, dur: 0.68, attack: 0.02 },
+    ],
+  },
+  deskBell: {
+    gain: 0.4, dur: 1.12, textured: true, cutoff: 12000,
+    tones: [
+      { wave: 'sine', from: 890, to: 872, gain: 0.95, dur: 1.05, attack: 0.001 },
+      { wave: 'sine', from: 1768, to: 1735, gain: 0.5, delay: 0.002, dur: 0.88, attack: 0.001 },
+      { wave: 'sine', from: 2475, to: 2410, gain: 0.3, delay: 0.004, dur: 0.62, attack: 0.001 },
+      { wave: 'sine', from: 3260, to: 3150, gain: 0.16, delay: 0.006, dur: 0.38, attack: 0.001 },
+    ],
+    noise: [{ cutoff: 6800, filter: 'highpass', gain: 0.32, dur: 0.018, attack: 0.001 }],
+  },
+  deskCheck: {
+    gain: 0.34, dur: 0.1, textured: true, cutoff: 7000,
+    noise: [
+      { cutoff: 2600, to: 1500, filter: 'bandpass', q: 1.5, color: 'brown', gain: 0.82, dur: 0.085, attack: 0.004 },
+      { cutoff: 5200, filter: 'highpass', gain: 0.22, delay: 0.012, dur: 0.045 },
+    ],
+  },
+  deskPour: {
+    gain: 0.42, dur: 0.9, textured: true, cutoff: 9000,
+    noise: [
+      { cutoff: 6200, to: 1800, filter: 'bandpass', q: 0.5, gain: 0.9, dur: 0.82, attack: 0.055 },
+      { cutoff: 8500, to: 3800, filter: 'highpass', gain: 0.34, delay: 0.03, dur: 0.72, attack: 0.04 },
+      { cutoff: 1500, to: 420, filter: 'lowpass', color: 'brown', gain: 0.48, delay: 0.1, dur: 0.74, attack: 0.03 },
+      { cutoff: 4200, filter: 'bandpass', gain: 0.55, delay: 0.22, dur: 0.05 },
+      { cutoff: 3600, filter: 'bandpass', gain: 0.48, delay: 0.52, dur: 0.06 },
+    ],
+  },
+  deskKeycap: {
+    gain: 0.5, dur: 0.16, textured: true, cutoff: 10000,
+    tones: [
+      { wave: 'sine', from: 210, to: 135, gain: 0.48, dur: 0.038, attack: 0.001 },
+      { wave: 'sine', from: 620, to: 410, gain: 0.3, delay: 0.074, dur: 0.042, attack: 0.001 },
+    ],
+    noise: [
+      { cutoff: 5200, filter: 'highpass', gain: 0.9, dur: 0.022, attack: 0.001 },
+      { cutoff: 3900, filter: 'bandpass', q: 1.7, gain: 0.72, delay: 0.072, dur: 0.032, attack: 0.001 },
+    ],
+  },
+  deskWaxCrunch: {
+    gain: 0.5, dur: 0.4, textured: true, cutoff: 7800,
+    tones: [{ wave: 'sine', from: 130, to: 68, gain: 0.42, dur: 0.18, sub: true }],
+    noise: [
+      { cutoff: 2500, to: 780, filter: 'bandpass', q: 1.2, color: 'brown', gain: 1, dur: 0.085 },
+      { cutoff: 4600, to: 1550, filter: 'bandpass', q: 1, gain: 0.92, delay: 0.045, dur: 0.095 },
+      { cutoff: 1850, to: 480, filter: 'lowpass', color: 'brown', gain: 0.88, delay: 0.12, dur: 0.15 },
+      { cutoff: 5200, to: 1350, filter: 'bandpass', gain: 0.7, delay: 0.22, dur: 0.09 },
+      { cutoff: 3100, to: 900, filter: 'bandpass', color: 'brown', gain: 0.52, delay: 0.3, dur: 0.075 },
+    ],
+  },
   // Struck-metal partials plus a tiny contact transient: coins, not UI notes.
   coinGain: {
     gain: 0.27, dur: 0.38, textured: true, cutoff: 11000,

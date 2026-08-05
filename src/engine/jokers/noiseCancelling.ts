@@ -8,6 +8,7 @@ export const noiseCancellingFactor = (skippedBlinds: number): number =>
 export const noiseCancelling: JokerDef = {
   id: 'noiseCancelling', gddNumber: 45, nameKo: '노이즈캔슬링', nameEn: 'Noise Cancelling',
   emoji: '🎧', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
+  initialState: (run) => ({ factor: noiseCancellingFactor(run.skippedBlinds) }),
   growthDisplay: {
     kind: 'mult',
     stateKey: 'factor',
@@ -15,6 +16,9 @@ export const noiseCancelling: JokerDef = {
   },
   multOperation: 'multiply',
   hooks: {
+    blindSkipped: ({ run }, self) => {
+      self.state.factor = noiseCancellingFactor(run.skippedBlinds);
+    },
     wordScoring: ({ run, ctx }, self) => {
       const factor = noiseCancellingFactor(run.skippedBlinds);
       self.state.factor = factor;

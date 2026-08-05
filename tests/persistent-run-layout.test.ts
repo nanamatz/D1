@@ -29,21 +29,17 @@ describe('persistent Balatro-style run table', () => {
   });
 
   it('gates instant Fable use before charging for an unusable offer', () => {
-    expect(shop).toContain('!canUseUnheldFable(item.id, run, g.state.blind)');
-    expect(readFileSync('src/ui/useGame.ts', 'utf8')).toContain(
-      '!canUseUnheldFable(id, prev.run, prev.blind)',
-    );
+    expect(shop).toContain('!canUseUnheldFable(');
+    expect(shop).toContain('unlockedEmojiSet()');
+    expect(readFileSync('src/ui/useGame.ts', 'utf8')).toContain('!canUseUnheldFable(id,');
   });
 
   it('shows and charges instant Gambler use only when it can resolve without a tile field', () => {
-    expect(shop).toContain('canUseUnheldGambler(item.id, run, [], [])');
+    expect(shop).toContain('canUseUnheldGambler(item.id, run, [], [], unlockedEmojiSet())');
     const game = readFileSync('src/ui/useGame.ts', 'utf8');
-    expect(game).toContain(
-      '!canUseUnheldGambler(id, prev.run, [], [])',
-    );
-    expect(game).toContain(
-      'return canUseGambler(id, state.run, state.blind.hand, state.selected);',
-    );
+    expect(game).toContain('!canUseUnheldGambler(id, prev.run, [], [], unlockedEmojiSet())');
+    expect(game).toContain('return canUseGambler(');
+    expect(game).toContain('unlockedEmojiSet()');
   });
 
   it('shows ten seeded Fable effect candidates and keeps pack info in the footer', () => {

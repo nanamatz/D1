@@ -14,7 +14,8 @@ export const megalith: JokerDef = {
   layer: 3,
   price: BALANCE.jokerPrice.common,
   hooks: {
-    blindSelected: ({ run, blind, rng, createdTiles }) => {
+    blindSelected: ({ run, blind, rng, createdTiles, triggers }, self, env) => {
+      const made: Tile[] = [];
       for (let index = 0; index < BALANCE.jokers.megalith.stonesPerBlind; index += 1) {
         const hidden = LETTERS[rng.int(LETTERS.length)]!;
         const tile: Tile = {
@@ -28,7 +29,9 @@ export const megalith: JokerDef = {
         run.bag.push(tile);
         blind.bag.push(tile);
         createdTiles.push(tile);
+        made.push(tile);
       }
+      triggers.push({ joker: self, jokerIndex: env.index, createdTiles: made });
     },
   },
 };

@@ -13,7 +13,7 @@ export const host: JokerDef = {
   price: BALANCE.jokerPrice.uncommon,
   growthDisplay: { kind: 'multAdd', stateKey: 'mult', initial: 0 },
   hooks: {
-    blindSelected: ({ run }, self, env) => {
+    blindSelected: ({ run, triggers }, self, env) => {
       const left = run.jokers[env.index - 1];
       if (!left || left.state.destroyed === 1) return;
       const def = env.lookup(left.defId);
@@ -27,6 +27,7 @@ export const host: JokerDef = {
         : 1;
       left.state.destroyed = 1;
       self.state.mult = (self.state.mult ?? 0) + value * BALANCE.jokers.host.multPerSellValue;
+      triggers.push({ joker: self, jokerIndex: env.index, createdTiles: [] });
     },
     wordScoring: ({ ctx }, self) => {
       ctx.mult += self.state.mult ?? 0;

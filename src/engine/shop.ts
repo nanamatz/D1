@@ -5,7 +5,7 @@
  */
 
 import { BALANCE } from './balance';
-import { defaultJokerBus, JOKER_REGISTRY } from './jokers';
+import { createOwnedJoker, defaultJokerBus, JOKER_REGISTRY } from './jokers';
 import { availableJokerDefs, sampleJokerDefs } from './offers';
 import {
   consumableBuyPrice,
@@ -67,14 +67,18 @@ type PoolKind = ItemKind | 'gambler';
 type ItemPools = Record<PoolKind, ShopItem[]>;
 
 /** All items the shop could offer this run, grouped so pool size cannot skew type odds. */
-function buildPools(run: RunState, rng: Rng): ItemPools {
+function buildPools(
+  run: RunState,
+  rng: Rng,
+  profileEligible?: ReadonlySet<string>,
+): ItemPools {
   // Rarity-weighted, no-duplicate joker candidates via the shared offer pool
   // (C-1/C-2). A bounded sample (slots + spare, capped by the pool) keeps the
   // joker : Fable : Constellation : tile type-mix balanced while respecting the
   // rarity odds — listing every joker once would both ignore rarity and flood the
   // pool. Legendary never appears (weight 0); a fully-owned pool yields none.
   const jokerCount = shopItemSlots(run) + 2;
-  const jokers: ShopItem[] = sampleJokerDefs(run, jokerCount, rng).map((j) => {
+  const jokers: ShopItem[] = sampleJokerDefs(run, jokerCount, rng, new Set(), profileEligible).map((j) => {
     const edition = rollJokerEdition(run, rng);
     return {
       kind: 'joker',
@@ -139,8 +143,9 @@ function rollItems(
   run: RunState,
   rng: Rng,
   excludedJokers: ReadonlySet<string> = new Set(),
+  profileEligible?: ReadonlySet<string>,
 ): (ShopItem | null)[] {
-  const pools = buildPools(run, rng);
+  const pools = buildPools(run, rng, profileEligible);
   pools.joker = pools.joker.filter((item) =>
     item.kind !== 'joker' || !excludedJokers.has(item.id),
   );
@@ -158,11 +163,12 @@ export function rollExtraItem(
   run: RunState,
   existing: readonly (ShopItem | null)[],
   rng: Rng,
+  profileEligible?: ReadonlySet<string>,
 ): ShopItem | null {
   const shown = new Set(existing.filter((it): it is ShopItem => !!it).map((it) =>
     it.kind === 'tile' ? `${it.kind}:${it.tile.id}` : `${it.kind}:${it.id}`,
   ));
-  const pools = buildPools(run, rng);
+  const pools = buildPools(run, rng, profileEligible);
   for (const kind of Object.keys(pools) as PoolKind[]) {
     if (allowsDuplicateOffers(run) && kind !== 'tile') continue;
     pools[kind] = pools[kind].filter((it) => {
@@ -247,9 +253,13 @@ function rollPacks(rng: Rng, guaranteeBasicCharm = false): (PackSlot | null)[] {
  * is FIXED per chapter — it shows run.voucherOffer, greyed out (null) once a
  * voucher has been bought this chapter (playtest-03 C). Reroll never touches it.
  */
-export function rollShopStock(run: RunState, rng: Rng): ShopState {
+export function rollShopStock(
+  run: RunState,
+  rng: Rng,
+  profileEligible?: ReadonlySet<string>,
+): ShopState {
   return {
-    items: rollItems(run, rng),
+    items: rollItems(run, rng, new Set(), profileEligible),
     voucher: run.voucherLocked ? null : run.voucherOffer,
     bonusVoucher: null,
     packs: rollPacks(rng, (run.shopsVisited ?? 0) === 0),
@@ -270,6 +280,7 @@ export function applyPendingShopTags(
   shop: ShopState,
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+  profileEligible?: ReadonlySet<string>,
 ): PreparedShop {
   const tags = run.pendingShopTags ?? [];
   if (tags.length === 0) return { run, shop, appliedTags: [] };
@@ -287,7 +298,7 @@ export function applyPendingShopTags(
     const shown = new Set(
       items.flatMap((item) => item?.kind === 'joker' ? [item.id] : []),
     );
-    const pool = availableJokerDefs(run).filter(
+    const pool = availableJokerDefs(run, profileEligible).filter(
       (def) => def.rarity === rarity && (allowsDuplicateOffers(run) || !shown.has(def.id)),
     );
     const def = pool.length > 0 ? pool[rng.int(pool.length)] : undefined;
@@ -351,8 +362,15 @@ export function prepareShop(
   run: RunState,
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+  profileEligible?: ReadonlySet<string>,
 ): PreparedShop {
-  const prepared = applyPendingShopTags(run, rollShopStock(run, rng), rng, profileUnlocked);
+  const prepared = applyPendingShopTags(
+    run,
+    rollShopStock(run, rng, profileEligible),
+    rng,
+    profileUnlocked,
+    profileEligible,
+  );
   return {
     ...prepared,
     run: { ...prepared.run, shopsVisited: (run.shopsVisited ?? 0) + 1 },
@@ -384,18 +402,23 @@ const repriceShopItem = (run: RunState, item: ShopItem): ShopItem => {
 };
 
 /** Buy the item in slot `index`, respecting gold and joker/consumable slot caps. */
-export function buyItem(run: RunState, shop: ShopState, index: number): BuyResult {
+export function buyItem(
+  run: RunState,
+  shop: ShopState,
+  index: number,
+  profileEligible?: ReadonlySet<string>,
+): BuyResult {
   const item = shop.items[index];
   const fail: BuyResult = { run, shop, ok: false };
   if (!item || run.gold < item.price) return fail;
 
   let nextRun: RunState;
   if (item.kind === 'joker') {
-    if (!canAddJoker(run, item.id, item.edition ?? 'base')) return fail;
+    if (!canAddJoker(run, item.id, item.edition ?? 'base', profileEligible)) return fail;
     nextRun = {
       ...run,
       gold: run.gold - item.price,
-      jokers: [...run.jokers, { defId: item.id, edition: item.edition ?? 'base', state: {} }],
+      jokers: [...run.jokers, createOwnedJoker(run, item.id, item.edition ?? 'base')],
     };
   } else if (item.kind === 'tile') {
     nextRun = { ...run, gold: run.gold - item.price, bag: [...run.bag, item.tile] };
@@ -489,6 +512,7 @@ export function rerollShop(
   shop: ShopState,
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+  profileEligible?: ReadonlySet<string>,
 ): BuyResult {
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
   if (run.gold < cost) return { run, shop, ok: false };
@@ -502,11 +526,12 @@ export function rerollShop(
     nextRun,
     {
       ...shop,
-      items: [...rollItems(nextRun, rng, taggedIds), ...tagged],
+      items: [...rollItems(nextRun, rng, taggedIds, profileEligible), ...tagged],
       rerolls: shop.rerolls + 1,
     },
     rng,
     profileUnlocked,
+    profileEligible,
   );
   return { ...prepared, ok: true };
 }

@@ -8,8 +8,8 @@ import coffeeCup from '../assets/desk-coffee-cup.png';
 import coffeePot from '../assets/desk-coffee-pot.png';
 import callBell from '../assets/desk-call-bell.png';
 import blankCheck from '../assets/desk-blank-check.png';
-import slangee from '../assets/desk-slangee.png';
 import waxBall from '../assets/desk-wax-ball.png';
+import waxBallBroken from '../assets/desk-wax-ball-broken.png';
 import keycap from '../assets/desk-keycap.png';
 import { clamp } from '../math';
 import { useI18n } from '../i18n';
@@ -19,7 +19,7 @@ import { useI18n } from '../i18n';
  * encounters live in the viewport margins, portaled to <body>, so they never
  * affect the headless engine or block the game board.
  */
-export type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'slangee' | 'waxBall' | 'keycap';
+export type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap';
 
 interface DeskObj {
   kind: DeskKind;
@@ -33,14 +33,12 @@ const BASE_KINDS: Pick<DeskObj, 'kind' | 'sfx'>[] = [
   { kind: 'pot', sfx: 'deskPour' },
   { kind: 'bell', sfx: 'deskBell' },
   { kind: 'check', sfx: 'deskCheck' },
-  { kind: 'slangee', sfx: 'tileSelect' },
-  { kind: 'waxBall', sfx: 'stamp' },
-  { kind: 'keycap', sfx: 'buttonPress' },
+  { kind: 'waxBall', sfx: 'deskWaxCrunch' },
+  { kind: 'keycap', sfx: 'deskKeycap' },
 ];
 export const DESK_KINDS: readonly DeskKind[] = BASE_KINDS.map(({ kind }) => kind);
 const SIMPLE_ART: Partial<Record<DeskKind, string>> = {
   pot: coffeePot,
-  slangee,
   waxBall,
   keycap,
 };
@@ -50,6 +48,7 @@ const SIGNATURE_VIEWBOX_WIDTH = 100;
 const SIGNATURE_VIEWBOX_HEIGHT = 40;
 const SIGNATURE_MIN_DISTANCE = 48;
 const SIGNATURE_MIN_POINTS = 6;
+const SIGNATURE_SCRATCH_INTERVAL_MS = 70;
 
 interface SignaturePoint {
   x: number;
@@ -71,6 +70,7 @@ export function DeskObjects({
   const [cup, setCup] = useState<DeskObj | null>(null);
   const [bell, setBell] = useState<DeskObj | null>(null);
   const [encounter, setEncounter] = useState<DeskObj | null>(null);
+  const [coffeeReady, setCoffeeReady] = useState(true);
   const [cupDrinking, setCupDrinking] = useState(false);
   const [cupLeaving, setCupLeaving] = useState(false);
   const [bellRinging, setBellRinging] = useState(false);
@@ -83,6 +83,7 @@ export function DeskObjects({
   const seq = useRef(0);
   const signaturePointer = useRef<number | null>(null);
   const signaturePointsRef = useRef<SignaturePoint[]>([]);
+  const signatureScratchAt = useRef(0);
   const interactionTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const later = (fn: () => void, delay: number) => {
@@ -144,7 +145,10 @@ export function DeskObjects({
       if (!live) return;
 
       const candidates = BASE_KINDS.filter(
-        ({ kind }) => (kind !== 'cup' || !cup) && (kind !== 'bell' || !bell),
+        ({ kind }) =>
+          (kind !== 'cup' || (coffeeReady && !cup)) &&
+          (kind !== 'pot' || !coffeeReady) &&
+          (kind !== 'bell' || !bell),
       );
       const base = candidates[Math.floor(Math.random() * candidates.length)]!;
       const next: DeskObj = {
@@ -172,9 +176,10 @@ export function DeskObjects({
       live = false;
       clearTimeout(timer);
     };
-  }, [active, encounter, encounterCycle, cup, bell, sampleKind]);
+  }, [active, encounter, encounterCycle, cup, bell, coffeeReady, sampleKind]);
 
   const finishEncounter = () => {
+    if (encounter?.kind === 'pot') setCoffeeReady(true);
     setEncounter(null);
     setEncounterLeaving(false);
     setEncounterInteracting(false);
@@ -194,6 +199,7 @@ export function DeskObjects({
     }, 820);
     later(() => {
       setCup(null);
+      setCoffeeReady(false);
       setCupDrinking(false);
       setCupLeaving(false);
       setEncounterCycle((n) => n + 1);
@@ -246,9 +252,9 @@ export function DeskObjects({
     const point = signaturePoint(event);
     signaturePointer.current = event.pointerId;
     signaturePointsRef.current = [point];
+    signatureScratchAt.current = event.timeStamp - SIGNATURE_SCRATCH_INTERVAL_MS;
     setSignaturePoints([point]);
     setSignatureDrawing(true);
-    audio.play('deskCheck');
   };
 
   const drawSignature = (event: ReactPointerEvent<HTMLSpanElement>) => {
@@ -260,6 +266,10 @@ export function DeskObjects({
     const next = [...signaturePointsRef.current, point];
     signaturePointsRef.current = next;
     setSignaturePoints(next);
+    if (event.timeStamp - signatureScratchAt.current >= SIGNATURE_SCRATCH_INTERVAL_MS) {
+      signatureScratchAt.current = event.timeStamp;
+      audio.play('deskCheck');
+    }
   };
 
   const endSignature = (event: ReactPointerEvent<HTMLSpanElement>) => {
@@ -472,12 +482,24 @@ export function DeskObjects({
           tabIndex={sampleKind ? 0 : -1}
         >
           <span className="desk-glyph desk-encounter-sprite">
-            <img
-              className="desk-encounter-art"
-              src={SIMPLE_ART[encounter.kind]}
-              alt=""
-              draggable={false}
-            />
+            {encounter.kind === 'waxBall' ? (
+              <>
+                <img className="desk-encounter-art desk-wax-intact" src={waxBall} alt="" draggable={false} />
+                <img className="desk-encounter-art desk-wax-broken" src={waxBallBroken} alt="" draggable={false} />
+              </>
+            ) : encounter.kind === 'keycap' ? (
+              <>
+                <img className="desk-encounter-art desk-keycap-art" src={keycap} alt="" draggable={false} />
+                <span className="desk-keycap-effect" aria-hidden><i /><i /><i /><i /></span>
+              </>
+            ) : (
+              <img
+                className="desk-encounter-art"
+                src={SIMPLE_ART[encounter.kind]}
+                alt=""
+                draggable={false}
+              />
+            )}
           </span>
         </button>
       )}

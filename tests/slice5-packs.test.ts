@@ -4,7 +4,7 @@ import { newRun } from '../src/engine/run';
 import { makeRng } from '../src/engine/rng';
 import { BALANCE, packSizeRules } from '../src/engine/balance';
 import type { Rng } from '../src/engine/rng';
-import type { PackSize, PackSlot, PackType, RunState } from '../src/engine/types';
+import type { PackSize, PackSlot, PackType, RunState, ShopItem } from '../src/engine/types';
 
 const run = (over: Partial<RunState> = {}): RunState => ({ ...newRun('pack'), ...over });
 const slot = (type: PackType, size: PackSize = 'normal'): PackSlot => ({ type, size, artVariant: 0 });
@@ -98,6 +98,21 @@ describe('slice5 packs — roll by type (GDD §9.3)', () => {
     expect(copied.options.map((option) => option.kind === 'consumable' ? option.id : null))
       .toEqual(['fable1', 'fable1', 'fable1']);
   });
+
+  it('excludes a live shop Fable from its pack even when Copy Editor allows repeats', () => {
+    const copyEnabled = run({
+      jokers: [{ defId: 'copyEditor', edition: 'base', state: {} }],
+    });
+    const live: ShopItem = { kind: 'consumable', id: 'fable1', price: 3 };
+    const offer = rollPack(
+      slot('consumable'),
+      copyEnabled,
+      fixedRng(1, 1, 1),
+      [live],
+    );
+    expect(offer.options.map((option) => option.kind === 'consumable' ? option.id : null))
+      .toEqual(['fable2', 'fable2', 'fable2']);
+  });
 });
 
 describe('slice5 packs — jackpot and modifier policy', () => {
@@ -146,6 +161,17 @@ describe('slice5 packs — jackpot and modifier policy', () => {
     expect(shopped.material).not.toBe('ceramic');
     expect(shopped.font).toBe('medium');
     expect(shopped.edition).toBe('base');
+  });
+
+  it('never attaches a rolled font to Stone', () => {
+    const ints = [0, 3, 0];
+    const stone = rollTile(run(), {
+      next: () => 0,
+      int: () => ints.shift() ?? 0,
+      shuffle: <T>(items: readonly T[]) => [...items],
+    }, 0, 'pack');
+    expect(stone.material).toBe('stone');
+    expect(stone.font).toBe('medium');
   });
 });
 

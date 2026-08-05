@@ -81,6 +81,7 @@ function SubmittedWord({
   lexicon: Lexicon;
 }) {
   const { t } = useI18n();
+  const settle = useSettleView();
   const ref = useRef<HTMLDivElement>(null);
   const suits = submissionSuits(sub);
   const suitTags = suits.length > 0 && (
@@ -92,9 +93,20 @@ function SubmittedWord({
   );
   const tiles = (
     <span className="submitted-tiles">
-      {sub.tiles.map((tile) => (
-        <TileView key={tile.id} tile={tile} mini inspectable tooltip={tileTooltip(tile, t)} />
-      ))}
+      {sub.tiles.map((tile) => {
+        const wasDestroyed = sub.destroyedTileIds?.includes(tile.id) ?? false;
+        const destructionHasLanded = !settling || settle.destroyedTileIds.includes(tile.id);
+        return (
+          <TileView
+            key={tile.id}
+            tile={tile}
+            mini
+            inspectable
+            destroyed={wasDestroyed && destructionHasLanded}
+            tooltip={tileTooltip(tile, t)}
+          />
+        );
+      })}
     </span>
   );
   const content = sub.isGibberish ? (

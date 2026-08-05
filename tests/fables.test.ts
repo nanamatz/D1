@@ -59,12 +59,19 @@ describe('Fable registry', () => {
 
   it('Stone hides and remembers the selected tile letter', () => {
     const { run, blind } = setup('fable5');
-    const tile = blind.hand.find((candidate) => candidate.letter !== null)!;
-    const result = useFable('fable5', run, blind, [tile.id], zeroRng);
+    const source = blind.hand.find((candidate) => candidate.letter !== null)!;
+    const tile = { ...source, font: 'black' as const };
+    const prepared = {
+      ...blind,
+      hand: blind.hand.map((candidate) => candidate.id === tile.id ? tile : candidate),
+    };
+    run.bag = run.bag.map((candidate) => candidate.id === tile.id ? tile : candidate);
+    const result = useFable('fable5', run, prepared, [tile.id], zeroRng);
     const stone = result.blind.hand.find((candidate) => candidate.id === tile.id)!;
     expect(stone.material).toBe('stone');
     expect(stone.letter).toBeNull();
     expect(stone.letterBeforeStone).toBe(tile.letter);
+    expect(stone.font).toBe('medium');
   });
 
   it('Wood begins at +15 Chips and requests one +10 growth per play', () => {

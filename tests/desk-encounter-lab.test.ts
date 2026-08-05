@@ -16,22 +16,24 @@ describe('random encounter laboratory', () => {
     expect(lab).toContain('setResetToken((value) => value + 1)');
   });
 
-  it('is reachable from the main menu and has a contained gallery layout', () => {
+  it('is reachable only in development and has a contained gallery layout', () => {
     const app = source('src/ui/App.tsx');
     const menu = source('src/ui/components/MainMenu.tsx');
     const css = source('src/ui/styles/screens.css');
     expect(app).toContain("| 'deskLab'");
     expect(app).toContain("case 'deskLab'");
+    expect(app).toContain('const DeskEncounterLab = import.meta.env.DEV');
+    expect(menu).toContain('import.meta.env.DEV &&');
     expect(menu).toContain("t('menu.deskLab')");
     expect(css).toContain('.desk-lab-grid');
     expect(css).toContain('.desk-sample-root .desk-object');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
   });
 
-  it('names and explains all seven samples in both languages', () => {
+  it('names and explains all six samples in both languages', () => {
     const en: Record<string, string> = JSON.parse(source('locales/en.json'));
     const ko: Record<string, string> = JSON.parse(source('locales/ko.json'));
-    for (const kind of ['cup', 'pot', 'bell', 'check', 'slangee', 'waxBall', 'keycap']) {
+    for (const kind of ['cup', 'pot', 'bell', 'check', 'waxBall', 'keycap']) {
       expect(en[`desk.encounter.${kind}.name`], kind).toBeTruthy();
       expect(en[`desk.encounter.${kind}.desc`], kind).toBeTruthy();
       expect(ko[`desk.encounter.${kind}.name`], kind).toBeTruthy();

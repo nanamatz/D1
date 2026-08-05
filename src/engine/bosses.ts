@@ -1,7 +1,7 @@
 /**
  * Bosses (GDD §8.3) — data + hooks, like jokers. Each boss attacks one system
  * (readable), is build-dependent (a check), and has counterplay. This is the
- * publishing-frame roster of 14 (수배 전단 … 메두사); effects plug in at fixed
+ * publishing-frame roster of 12 ordinary bosses plus 6 finishers; effects plug in at fixed
  * points in the loop pipeline:
  *   handSizeDelta   → shrink the opening draw before the hand is dealt (Budget Book)
  *   targetMult      → scale the blind target (Wanted)
@@ -163,41 +163,6 @@ const BOSSES: readonly BossDef[] = [
       ctx.mult *= BALANCE.boss.willScale;
     },
   },
-  // 13. Cleaning Sign: each discard action costs $2.
-  {
-    id: 'cleaningSign',
-    nameEn: 'Cleaning Sign (Cleaning in Progress)',
-    nameKo: '안내표지판 (청소중)',
-    emoji: '⚠️',
-    goldPerDiscard: BALANCE.boss.cleaningSignGoldPerDiscard,
-  },
-  // 14. Medusa: petrifies two random held tiles after every play. Stone cannot
-  //     be discarded for the duration of this boss blind.
-  {
-    id: 'medusa',
-    nameEn: 'Medusa',
-    nameKo: '메두사',
-    emoji: '🐍',
-    canDiscardTile: (tile) => tile.material !== 'stone',
-    afterPlay: (run, blind, rng) => {
-      const targets = rng.shuffle(blind.hand.filter((tile) => tile.material !== 'stone'))
-        .slice(0, BALANCE.boss.medusaStoneTiles);
-      if (targets.length === 0) return { run, blind };
-      const ids = new Set(targets.map((tile) => tile.id));
-      const patch = (tiles: readonly Tile[]) => tiles.map((tile) =>
-        ids.has(tile.id) ? setTileMaterial(tile, 'stone') : tile,
-      );
-      return {
-        run: { ...run, bag: patch(run.bag) },
-        blind: {
-          ...blind,
-          hand: patch(blind.hand),
-          bag: patch(blind.bag),
-          discardedThisBlind: patch(blind.discardedThisBlind),
-        },
-      };
-    },
-  },
 ];
 
 const forceRandomTile = (blind: BlindState, rng: Rng): BlindState => {
@@ -219,6 +184,40 @@ const disableRandomJoker = (run: RunState, blind: BlindState, rng: Rng) => {
 };
 
 const FINISHERS: readonly BossDef[] = [
+  {
+    id: 'cleaningSign',
+    nameEn: 'Cleaning Sign (Cleaning in Progress)',
+    nameKo: '안내표지판 (청소중)',
+    emoji: '⚠️',
+    clearReward: BALANCE.boss.finisherReward,
+    goldPerDiscard: BALANCE.boss.cleaningSignGoldPerDiscard,
+  },
+  {
+    id: 'medusa',
+    nameEn: 'Medusa',
+    nameKo: '메두사',
+    emoji: '🐍',
+    clearReward: BALANCE.boss.finisherReward,
+    canDiscardTile: (tile) => tile.material !== 'stone',
+    afterPlay: (run, blind, rng) => {
+      const targets = rng.shuffle(blind.hand.filter((tile) => tile.material !== 'stone'))
+        .slice(0, BALANCE.boss.medusaStoneTiles);
+      if (targets.length === 0) return { run, blind };
+      const ids = new Set(targets.map((tile) => tile.id));
+      const patch = (tiles: readonly Tile[]) => tiles.map((tile) =>
+        ids.has(tile.id) ? setTileMaterial(tile, 'stone') : tile,
+      );
+      return {
+        run: { ...run, bag: patch(run.bag) },
+        blind: {
+          ...blind,
+          hand: patch(blind.hand),
+          bag: patch(blind.bag),
+          discardedThisBlind: patch(blind.discardedThisBlind),
+        },
+      };
+    },
+  },
   {
     id: 'nokdoScript',
     nameEn: 'Nokdo Script',
@@ -278,10 +277,8 @@ export const bossPoolForId = (id: string | null): BossPool =>
  *
  * `exclude` removes an id from the pool BEFORE the draw — that is what makes a
  * paid reroll actually reroll. The UI used to draw once and re-draw only if it
- * matched, which still returns the same boss when both draws land on it: 0.69%
- * on the 14-boss core pool but 6.25% on the 4-boss finisher pool, i.e. one in
- * sixteen $10 rerolls on a final Chapter did nothing at all. Excluding is also
- * one seeded draw instead of two, so the RNG stream stays simple.
+ * matched, which could return the same boss after a paid reroll. Excluding is
+ * also one seeded draw instead of two, so the RNG stream stays simple.
  *
  * A pool of one falls back to that id: a reroll that cannot change anything is
  * the caller's decision to prevent, not a reason to return nothing.

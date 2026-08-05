@@ -220,6 +220,13 @@ export const allowsDuplicateOffers = (run: RunState): boolean =>
 export const canOwnJoker = (run: RunState, defId: string): boolean =>
   allowsDuplicateOffers(run) || !run.jokers.some((joker) => joker.defId === defId);
 
+/** Profile progression is supplied by the UI; omitted means an unrestricted
+ * headless simulation/test pool. */
+export const isJokerProfileEligible = (
+  defId: string,
+  profileEligible?: ReadonlySet<string>,
+): boolean => profileEligible === undefined || profileEligible.has(defId);
+
 /** Shared uniqueness gate for Fable, Constellation, and Gambler cards. */
 export const canOwnConsumable = (run: RunState, id: import('./types').ConsumableId): boolean =>
   id === 'magnifier' || allowsDuplicateOffers(run) || !run.consumables.includes(id);
@@ -228,7 +235,9 @@ export const canAddJoker = (
   run: RunState,
   defId: string,
   edition: JokerEdition = 'base',
+  profileEligible?: ReadonlySet<string>,
 ): boolean =>
+  isJokerProfileEligible(defId, profileEligible) &&
   canOwnJoker(run, defId) &&
   run.jokers.length < jokerSlotLimit(run) + (edition === 'white' ? 1 : 0);
 

@@ -220,6 +220,7 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
 
     const destroyed = play(newRun('glass-destroy-fx'), 0);
     expect(destroyed.destroyedTileIds).toContain(hand[0]!.id);
+    expect(destroyed.submission.destroyedTileIds).toContain(hand[0]!.id);
     expect(outcome(destroyed)).toBe('destroyed');
 
     expect(outcome(play(newRun('glass-survive-fx'), 0.99))).toBe('survived');
@@ -228,6 +229,7 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
     insuredRun.jokers = [{ defId: 'glassInsurance', state: {} }];
     const insured = play(insuredRun, 0);
     expect(insured.destroyedTileIds).not.toContain(hand[0]!.id);
+    expect(insured.submission.destroyedTileIds).toBeUndefined();
     expect(outcome(insured)).toBe('survived');
   });
 

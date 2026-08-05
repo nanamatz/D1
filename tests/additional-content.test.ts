@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import en from '../locales/en.json';
+import ko from '../locales/ko.json';
 import { BALANCE } from '../src/engine/balance';
 import { emojiTileSellValue } from '../src/engine/economy';
 import { JokerBus } from '../src/engine/events';
-import { JOKER_REGISTRY, onBlindEnded } from '../src/engine/jokers';
+import { createOwnedJoker, JOKER_REGISTRY, onBlindEnded } from '../src/engine/jokers';
 import { noiseCancellingFactor } from '../src/engine/jokers/noiseCancelling';
 import { discardTiles, enterJokerBlind, startBlind, submitWord } from '../src/engine/loop';
 import { makeLexicon } from '../src/engine/lexicon';
@@ -78,7 +80,7 @@ describe('2026-08-05 additional content', () => {
     expect(scoring.mult).toBe(BALANCE.jokers.twentyFifthBlessing.factorPerHeldY ** 2);
   });
 
-  it('Blood Type A adds chips for scored A and O tiles only', () => {
+  it('Blood Type A permanently grows for scored A and O tiles and applies its current Chips', () => {
     const run = newRun('blood-type-a');
     run.jokers = [owned('bloodTypeA')];
     const blind = startBlind(run, makeRng('blood-type-a'));
@@ -86,7 +88,25 @@ describe('2026-08-05 additional content', () => {
     for (const entry of [tile('a', 'A'), tile('o', 'O'), tile('b', 'B')]) {
       bus.emit('tileScoring', { run, blind, ctx: scoring, tile: entry }, run.jokers);
     }
+    expect(run.jokers[0]!.state.chips).toBe(BALANCE.jokers.bloodTypeA.chipsPerLetter * 2);
+    expect(scoring.chips).toBe(0);
+    bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
     expect(scoring.chips).toBe(BALANCE.jokers.bloodTypeA.chipsPerLetter * 2);
+
+    const later = ctx([tile('later-b', 'B')]);
+    bus.emit('wordScoring', { run, blind, ctx: later }, run.jokers);
+    expect(later.chips).toBe(BALANCE.jokers.bloodTypeA.chipsPerLetter * 2);
+  });
+
+  it('uses the requested multiplier values and tooltip copy', () => {
+    expect(BALANCE.jokers.consonantChoir.factorPerDuplicate).toBe(1.5);
+    expect(BALANCE.jokers.fableHoard.factorPerConsumable).toBe(1.5);
+    expect(ko['jokerdesc.noiseCancelling']).toContain('[m:+0.25 배수]');
+    expect(ko['jokerdesc.noiseCancelling']).not.toContain('+×0.25');
+    expect(en['jokerdesc.noiseCancelling']).toContain('[m:+0.25 Mult]');
+    expect(ko['jokerdesc.counterfeit']).toBe(
+      '블라인드의 첫 핸드에 플레이 한 단어가 [n:1]개이면 그 타일을 복제합니다',
+    );
   });
 
   it('Noise Cancelling scales from the run-wide skipped-blind count', () => {
@@ -98,6 +118,40 @@ describe('2026-08-05 additional content', () => {
     bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
     expect(scoring.mult).toBe(noiseCancellingFactor(run.skippedBlinds));
     expect(run.jokers[0]!.state.factor).toBe(noiseCancellingFactor(run.skippedBlinds));
+  });
+
+  it('seeds every run-history Emoji Tile from actions before acquisition', () => {
+    const run = newRun('run-history-jokers');
+    run.skippedBlinds = 3;
+    run.counters.totalWords = 4;
+    run.playedWords = ['a', 'cat'];
+    run.playedLetterHands = ['twin', 'straight'];
+
+    expect(createOwnedJoker(run, 'noiseCancelling').state.factor)
+      .toBe(noiseCancellingFactor(3));
+    expect(createOwnedJoker(run, 'voraciousReader').state.chips)
+      .toBe(4 * BALANCE.jokers.voraciousReader.chipsPerWord);
+    expect(createOwnedJoker(run, 'wordHunter').state.factor)
+      .toBe(BALANCE.jokers.wordHunter.baseFactor + 2 * BALANCE.jokers.wordHunter.factorPerNewWord);
+    expect(createOwnedJoker(run, 'handScholar').state.factor)
+      .toBe(1 + 2 * BALANCE.jokers.handScholar.factorPerNewHand);
+    expect(createOwnedJoker(run, 'royaltyContract').state['seen:a']).toBe(1);
+  });
+
+  it('applies pre-acquisition word history on the next score', () => {
+    const run = newRun('run-history-score');
+    run.counters.totalWords = 4;
+    run.playedWords = ['a', 'cat'];
+    run.jokers = [createOwnedJoker(run, 'voraciousReader')];
+    const blind = startBlind(run, makeRng('run-history-score'));
+    const scoring = ctx([tile('history-a', 'A')]);
+    bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
+    expect(scoring.chips).toBe(4 * BALANCE.jokers.voraciousReader.chipsPerWord);
+
+    run.jokers = [createOwnedJoker(run, 'royaltyContract')];
+    const replay = ctx([tile('royalty-a', 'A')]);
+    bus.emit('wordScoring', { run, blind, ctx: replay }, run.jokers);
+    expect(replay.goldDelta ?? 0).toBe(0);
   });
 
   it('Three-Leaf Clover grows its sell value by $3 at each blind end', () => {
@@ -132,6 +186,8 @@ describe('2026-08-05 additional content', () => {
     expect(entered.createdTiles).toHaveLength(1);
     expect(entered.createdTiles[0]).toMatchObject({ material: 'stone', letter: null });
     expect(entered.blind.bag.some((entry) => entry.id === entered.createdTiles[0]!.id)).toBe(true);
+    expect(entered.triggers).toHaveLength(1);
+    expect(entered.triggers[0]).toMatchObject({ jokerIndex: 0, createdTiles: entered.createdTiles });
   });
 
   it('Host destroys its left Emoji Tile and gains twice its sell value as Mult', () => {
@@ -143,9 +199,19 @@ describe('2026-08-05 additional content', () => {
     const entered = enterJokerBlind(run, blind, makeRng('host-enter'));
     expect(entered.run.jokers.map((joker) => joker.defId)).toEqual(['host']);
     expect(entered.run.jokers[0]!.state.mult).toBe(expected);
+    expect(entered.triggers).toHaveLength(1);
+    expect(entered.triggers[0]).toMatchObject({ jokerIndex: 0, createdTiles: [] });
     const scoring = ctx([tile('host-a', 'A')]);
     bus.emit('wordScoring', { run: entered.run, blind: entered.blind, ctx: scoring }, entered.run.jokers);
     expect(scoring.mult).toBe(1 + expected);
+  });
+
+  it('does not announce Host when there is no left Emoji Tile to consume', () => {
+    const run = newRun('host-no-target');
+    run.jokers = [owned('host')];
+    const blind = startBlind(run, makeRng('host-no-target-start'));
+    const entered = enterJokerBlind(run, blind, makeRng('host-no-target-enter'));
+    expect(entered.triggers).toEqual([]);
   });
 
   it('Astronomer grows by ×0.1 per used Constellation card', () => {

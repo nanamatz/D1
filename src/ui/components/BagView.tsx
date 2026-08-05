@@ -15,9 +15,6 @@ interface Counts {
   perLetter: Record<string, number>;
   vowels: number;
   consonants: number;
-  materials: Record<string, number>;
-  fonts: Record<string, number>;
-  editions: Record<string, number>;
 }
 
 const LETTERS = Object.keys(BALANCE.bagComposition) as Letter[];
@@ -25,18 +22,13 @@ const POUCH_GRID_COLUMNS = 13;
 
 function tally(tiles: readonly Tile[]): Counts {
   const c: Counts = {
-    perLetter: {}, vowels: 0, consonants: 0, materials: {}, fonts: {}, editions: {},
+    perLetter: {}, vowels: 0, consonants: 0,
   };
   for (const t of tiles) {
     if (t.letter !== null) {
       c.perLetter[t.letter] = (c.perLetter[t.letter] ?? 0) + 1;
       if (isVowel(t.letter)) c.vowels++;
       else c.consonants++;
-    }
-    if (t.material !== 'ceramic') c.materials[t.material] = (c.materials[t.material] ?? 0) + 1;
-    if (t.font !== 'medium') c.fonts[t.font] = (c.fonts[t.font] ?? 0) + 1;
-    if ((t.edition ?? 'base') !== 'base') {
-      c.editions[t.edition!] = (c.editions[t.edition!] ?? 0) + 1;
     }
   }
   return c;
@@ -93,33 +85,6 @@ function PouchContents({
             </div>
           ))}
         </div>
-        {(Object.keys(full.materials).length > 0 ||
-          Object.keys(full.fonts).length > 0 ||
-          Object.keys(full.editions).length > 0) && (
-          <>
-            <div className="label" style={{ marginTop: 6 }}>
-              {t('bagview.enhanced')}
-            </div>
-            {Object.entries(full.materials).map(([m, n]) => (
-              <div key={m} className="bt-row">
-                <span>{t(`material.${m}`)}</span>
-                <b>{n}</b>
-              </div>
-            ))}
-            {Object.entries(full.fonts).map(([f, n]) => (
-              <div key={f} className="bt-row">
-                <span>{t(`font.${f}`)}</span>
-                <b>{n}</b>
-              </div>
-            ))}
-            {Object.entries(full.editions).map(([edition, n]) => (
-              <div key={edition} className="bt-row">
-                <span>{t(`edition.${edition}`)}</span>
-                <b>{n}</b>
-              </div>
-            ))}
-          </>
-        )}
       </aside>
 
       <div

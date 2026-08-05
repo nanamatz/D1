@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Lexicon } from '../../engine/lexicon';
 import { collectionSize } from '../collection';
 import { POUCH_IDS } from '../../engine/pouches';
@@ -79,9 +80,15 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
   }
 
   const back = () => setView('root');
-  // The Collection brings its own full screen + back bar, so render it directly
-  // rather than nesting it inside the options frame.
-  if (view === 'collection') return <Collection lexicon={lexicon} onBack={back} />;
+  // During a run the Collection escapes the pause card completely. Its full-screen
+  // layout otherwise inherits the card's max-height/overflow and gets clipped at
+  // both edges with a second scrollbar.
+  if (view === 'collection') {
+    const collection = <Collection lexicon={lexicon} onBack={back} />;
+    return onNewRun || onMainMenu
+      ? createPortal(<div className="overlay collection-overlay">{collection}</div>, document.body)
+      : collection;
+  }
   return (
     <div className="screen options">
       {view === 'settings' && <SettingsView />}

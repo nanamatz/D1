@@ -29,6 +29,7 @@ export const SAVE_KEYS: ReadonlySet<string> = new Set([
   'wj.lifetime',
   'wj.unlocks',
   'wj.vouchers',
+  'wj.emojiUnlocks',
   'wj.tutorial',
   'wj.tutorialIntro',
 ]);

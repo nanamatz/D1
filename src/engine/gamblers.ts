@@ -12,7 +12,13 @@
 import { BALANCE } from './balance';
 import { GAMBLER_IDS, isGamblerId, type GamblerId } from './gamblerIds';
 import { patchTiles, removeIds } from './fables';
-import { LEGENDARY_JOKERS, RARE_JOKERS, onTilesCreated, onTilesDestroyed } from './jokers';
+import {
+  createOwnedJoker,
+  LEGENDARY_JOKERS,
+  RARE_JOKERS,
+  onTilesCreated,
+  onTilesDestroyed,
+} from './jokers';
 import type { Rng } from './rng';
 import type {
   BlindState,
@@ -27,7 +33,7 @@ import type {
   TileFont,
   TileMaterial,
 } from './types';
-import { canAddJoker, canOwnJoker } from './vouchers';
+import { canAddJoker } from './vouchers';
 
 // The id space lives in a leaf module so `pouches.ts` can read it without
 // importing this file (and, through it, every joker) — see gamblerIds.ts.
@@ -150,6 +156,7 @@ export function canUseGambler(
   run: RunState,
   field: readonly Tile[],
   selectedIds: readonly string[],
+  profileEligible?: ReadonlySet<string>,
 ): boolean {
   const effect = GAMBLER_REGISTRY.get(id)?.effect;
   if (!effect || !run.consumables.includes(id)) return false;
@@ -158,7 +165,8 @@ export function canUseGambler(
 
   switch (effect.kind) {
     case 'font':
-      return selected.length === 1 && selected[0]!.font !== effect.font;
+      return selected.length === 1 && selected[0]!.material !== 'stone' &&
+        selected[0]!.font !== effect.font;
     case 'copyTile':
       return selected.length === 1;
     case 'copyJoker':
@@ -174,7 +182,12 @@ export function canUseGambler(
       return field.length >= BALANCE.gambler.fullMoonDestroy;
     case 'createJoker':
       return POOL_BY_RARITY[effect.rarity as 'rare' | 'legendary'].some((def) =>
-        canAddJoker(run, def.id),
+        canAddJoker(
+          run,
+          def.id,
+          'base',
+          effect.rarity === 'legendary' ? undefined : profileEligible,
+        ),
       );
     case 'levelAllPatterns':
       return true;
@@ -187,13 +200,22 @@ export const canUseUnheldGambler = (
   run: RunState,
   field: readonly Tile[],
   selectedIds: readonly string[],
+  profileEligible?: ReadonlySet<string>,
 ): boolean =>
-  canUseGambler(id, { ...run, consumables: [...run.consumables, id] }, field, selectedIds);
+  canUseGambler(
+    id,
+    { ...run, consumables: [...run.consumables, id] },
+    field,
+    selectedIds,
+    profileEligible,
+  );
 
 /** Presentation preview for a tile-targeting Gambler before the mutation commits. */
 export function previewGamblerTile(id: GamblerId, tile: Tile): Tile {
   const effect = GAMBLER_REGISTRY.get(id)?.effect;
-  return effect?.kind === 'font' ? { ...tile, font: effect.font } : tile;
+  return effect?.kind === 'font' && tile.material !== 'stone'
+    ? { ...tile, font: effect.font }
+    : tile;
 }
 
 export interface UseGamblerResult {
@@ -215,8 +237,11 @@ export function useGambler(
   field: readonly Tile[],
   selectedIds: readonly string[],
   rng: Rng,
+  profileEligible?: ReadonlySet<string>,
 ): UseGamblerResult {
-  if (!canUseGambler(id, run, field, selectedIds)) return { ok: false, run, blind };
+  if (!canUseGambler(id, run, field, selectedIds, profileEligible)) {
+    return { ok: false, run, blind };
+  }
   const effect = GAMBLER_REGISTRY.get(id)!.effect;
   const consumables = run.consumables.slice();
   consumables.splice(consumables.indexOf(id), 1);
@@ -225,12 +250,12 @@ export function useGambler(
 
   switch (effect.kind) {
     case 'font': {
-      // Only the font axis moves; material, edition, and the hidden Stone letter stay.
+      // Only non-Stone tiles can carry a font enhancement.
       ({ run: nextRun, blind: nextBlind } = patchTiles(
         nextRun,
         nextBlind,
         new Set(selectedIds),
-        (tile) => ({ ...tile, font: effect.font }),
+        (tile) => tile.material === 'stone' ? tile : { ...tile, font: effect.font },
       ));
       break;
     }
@@ -328,12 +353,17 @@ export function useGambler(
     }
     case 'createJoker': {
       const pool = POOL_BY_RARITY[effect.rarity as 'rare' | 'legendary'].filter((def) =>
-        canOwnJoker(nextRun, def.id),
+        canAddJoker(
+          nextRun,
+          def.id,
+          'base',
+          effect.rarity === 'legendary' ? undefined : profileEligible,
+        ),
       );
       const def = pool[rng.int(pool.length)]!;
       nextRun = {
         ...nextRun,
-        jokers: [...nextRun.jokers, { defId: def.id, edition: 'base', state: {} }],
+        jokers: [...nextRun.jokers, createOwnedJoker(nextRun, def.id)],
         ...(effect.zeroGold ? { gold: 0 } : {}),
       };
       break;

@@ -5,7 +5,7 @@
 import { BALANCE } from './balance';
 import { CONSTELLATION_IDS } from './constellations';
 import { emojiTileSellValue } from './economy';
-import { ALL_JOKERS, JOKER_REGISTRY, onTilesDestroyed } from './jokers';
+import { ALL_JOKERS, createOwnedJoker, JOKER_REGISTRY, onTilesDestroyed } from './jokers';
 import type {
   BlindState,
   ChanceResult,
@@ -16,7 +16,7 @@ import type {
   Tile,
   TileMaterial,
 } from './types';
-import { canAddJoker, canOwnJoker } from './vouchers';
+import { canAddJoker } from './vouchers';
 import type { Rng } from './rng';
 import { setTileMaterial } from './materials';
 
@@ -206,6 +206,7 @@ export function canUseFable(
   run: RunState,
   blind: BlindState,
   selectedIds: readonly string[],
+  profileEligible?: ReadonlySet<string>,
 ): boolean {
   const effect = FABLE_REGISTRY.get(id)?.effect;
   if (!effect || !run.consumables.includes(id)) return false;
@@ -231,7 +232,9 @@ export function canUseFable(
     return run.consumables.length <= run.consumableSlots;
   }
   if (effect.kind === 'createJoker') {
-    return ALL_JOKERS.some((def) => canAddJoker(run, def.id));
+    return ALL_JOKERS.some((def) =>
+      def.rarity !== 'legendary' && canAddJoker(run, def.id, 'base', profileEligible),
+    );
   }
   if (effect.kind === 'editionJoker') {
     return run.jokers.some((joker) => (joker.edition ?? 'base') === 'base');
@@ -249,16 +252,28 @@ export function canUseFableFromPack(
   run: RunState,
   blind: BlindState,
   tileIds: readonly string[],
+  profileEligible?: ReadonlySet<string>,
 ): boolean {
   if (isBlindOnlyConsumable(id)) return run.consumables.length < run.consumableSlots;
   return fableTargetsTiles(id)
     ? canUseFableOnPouch(id, { ...run, consumables: [...run.consumables, id] }, tileIds)
-    : canUseUnheldFable(id, run, blind);
+    : canUseUnheldFable(id, run, blind, profileEligible);
 }
 
 /** Gate an offered Fable before it is paid for and temporarily staged for use. */
-export function canUseUnheldFable(id: FableId, run: RunState, blind: BlindState): boolean {
-  return canUseFable(id, { ...run, consumables: [...run.consumables, id] }, blind, []);
+export function canUseUnheldFable(
+  id: FableId,
+  run: RunState,
+  blind: BlindState,
+  profileEligible?: ReadonlySet<string>,
+): boolean {
+  return canUseFable(
+    id,
+    { ...run, consumables: [...run.consumables, id] },
+    blind,
+    [],
+    profileEligible,
+  );
 }
 
 /** Rewrite every copy of the given tile ids wherever they live — the run's
@@ -344,8 +359,9 @@ export function useFable(
   blind: BlindState,
   selectedIds: readonly string[],
   rng: Rng,
+  profileEligible?: ReadonlySet<string>,
 ): UseFableResult {
-  if (!canUseFable(id, run, blind, selectedIds)) {
+  if (!canUseFable(id, run, blind, selectedIds, profileEligible)) {
     return { ok: false, run, blind, requestHint: false, chanceResults: [] };
   }
   const effect = FABLE_REGISTRY.get(id)!.effect;
@@ -379,11 +395,13 @@ export function useFable(
   } else if (effect.kind === 'doubleGold') {
     nextRun = { ...nextRun, gold: nextRun.gold + Math.min(nextRun.gold, 20) };
   } else if (effect.kind === 'createJoker') {
-    const available = ALL_JOKERS.filter((def) => canOwnJoker(nextRun, def.id));
+    const available = ALL_JOKERS.filter((def) =>
+      def.rarity !== 'legendary' && canAddJoker(nextRun, def.id, 'base', profileEligible),
+    );
     const def = available[rng.int(available.length)]!;
     nextRun = {
       ...nextRun,
-      jokers: [...nextRun.jokers, { defId: def.id, edition: 'base', state: {} }],
+      jokers: [...nextRun.jokers, createOwnedJoker(nextRun, def.id)],
     };
   } else if (effect.kind === 'editionJoker') {
     const eligible = nextRun.jokers

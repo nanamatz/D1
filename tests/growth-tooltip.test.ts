@@ -6,6 +6,7 @@ import { pouchTag } from '../src/engine/jokers/pouchTag';
 import { rhymeChain } from '../src/engine/jokers/rhymeChain';
 import { discardedDraft } from '../src/engine/jokers/discardedDraft';
 import { outOfPrint } from '../src/engine/jokers/outOfPrint';
+import { bloodTypeA } from '../src/engine/jokers/bloodTypeA';
 import { newRun } from '../src/engine/run';
 import { grownValue } from '../src/ui/descriptions';
 import { resolve, type Lang } from '../src/ui/i18n';
@@ -33,6 +34,8 @@ describe('scaling Emoji Tile tooltip value', () => {
     };
     expect(grownValue(chipsGrowth, undefined, t('ko')))
       .toBe('(현재 [c:+0] 칩)');
+    expect(grownValue(bloodTypeA, { defId: bloodTypeA.id, state: { chips: 24 } }, t('ko')))
+      .toBe('(현재 [c:+24] 칩)');
   });
 
   it('shows Pouch Tag Chips from the live remaining-tile count', () => {

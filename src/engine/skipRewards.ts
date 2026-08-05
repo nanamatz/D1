@@ -6,6 +6,7 @@
 
 import { BALANCE } from './balance';
 import { bossPoolForId, drawBossFromCycle } from './bosses';
+import { defaultJokerBus } from './jokers';
 import type { Rng } from './rng';
 import type {
   NextBlindBonus,
@@ -275,7 +276,9 @@ export function skipCurrentBlind(run: RunState, rng: Rng): SkipRewardResult {
     blindIndex: (skippedIndex + 1) as 1 | 2,
     skippedThisChapter: [...next.skippedThisChapter, skippedIndex],
     skippedBlinds: next.skippedBlinds + 1,
+    jokers: next.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
   };
+  defaultJokerBus.emit('blindSkipped', { run: advanced }, advanced.jokers);
   return awardedPack ? { run: advanced, freePack: awardedPack } : { run: advanced };
 }
 

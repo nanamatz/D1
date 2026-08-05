@@ -1,7 +1,10 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
-/** U5 (GDD §11.3) — ★ +1 Chips per word made so far, accumulating for the run.
+export const voraciousReaderChips = (totalWords: number): number =>
+  totalWords * BALANCE.jokers.voraciousReader.chipsPerWord;
+
+/** U5 (GDD §11.3) — ★ +5 Chips per word made so far, accumulating for the run.
  *  The current word pays the total BEFORE itself, then the counter ticks. */
 export const voraciousReader: JokerDef = {
   id: 'voraciousReader',
@@ -12,11 +15,16 @@ export const voraciousReader: JokerDef = {
   rarity: 'uncommon',
   layer: 1,
   price: BALANCE.jokerPrice.uncommon,
+  initialState: (run) => ({ chips: voraciousReaderChips(run.counters.totalWords) }),
   growthDisplay: { kind: 'chips', stateKey: 'chips', initial: 0 },
   hooks: {
-    wordScoring: ({ ctx }, self) => {
-      ctx.chips += self.state.chips ?? 0;
-      self.state.chips = (self.state.chips ?? 0) + BALANCE.jokers.voraciousReader.chipsPerWord;
+    wordScoring: ({ run, ctx }, self) => {
+      const chips = Math.max(
+        self.state.chips ?? 0,
+        voraciousReaderChips(run.counters.totalWords),
+      );
+      ctx.chips += chips;
+      self.state.chips = chips + BALANCE.jokers.voraciousReader.chipsPerWord;
     },
   },
 };

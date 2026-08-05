@@ -4,6 +4,8 @@ import { startBlind } from '../src/engine/loop';
 import { resolveBlind } from '../src/engine/progression';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
+import { createOwnedJoker } from '../src/engine/jokers';
+import { noiseCancellingFactor } from '../src/engine/jokers/noiseCancelling';
 import type { RunState } from '../src/engine/types';
 import {
   consumeNextBlindBonus,
@@ -89,6 +91,17 @@ describe('blind skip rewards', () => {
     expect(next.gold).toBe(run.gold + BALANCE.skipRewards.advanceGold);
     expect(next.skippedThisChapter).toEqual([0]);
     expect(next.skippedBlinds).toBe(1);
+  });
+
+  it('updates owned Noise Cancelling when the skip count advances', () => {
+    const run: RunState = {
+      ...newRun('noise-skip'),
+      skipOffers: [{ id: 'advancePayment' }, { id: 'copyPass' }],
+    };
+    run.jokers = [createOwnedJoker(run, 'noiseCancelling')];
+    const { run: next } = skipCurrentBlind(run, makeRng('noise-skip'));
+    expect(next.jokers[0]!.state.factor).toBe(noiseCancellingFactor(1));
+    expect(run.jokers[0]!.state.factor).toBe(noiseCancellingFactor(0));
   });
 
   it('carries stacked bonuses across another skip until Play is chosen', () => {

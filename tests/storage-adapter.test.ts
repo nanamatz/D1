@@ -249,10 +249,11 @@ describe('one-time migration', () => {
 });
 
 describe('SAVE_KEYS', () => {
-  it('is exactly the eight progress keys', () => {
+  it('is exactly the nine progress keys', () => {
     expect([...SAVE_KEYS].sort()).toEqual([
       'wj.collection',
       'wj.collectionSeen',
+      'wj.emojiUnlocks',
       'wj.lifetime',
       'wj.run',
       'wj.tutorial',

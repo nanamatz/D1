@@ -48,6 +48,7 @@ function atRest(state: GameState): GameState {
     lastPlayed: null,
     lastEvents: [],
     bossDiscard: null,
+    blindEntryEffects: null,
     settleId: 0,
     committedBefore: 0,
     settleComplete: true,
@@ -90,6 +91,7 @@ export function loadRun(): GameState | null {
   return {
     ...s,
     shopTagRedemptions: s.shopTagRedemptions ?? [],
+    blindEntryEffects: null,
     run: {
       ...s.run,
       jokers: s.run.jokers.filter((joker) => JOKER_REGISTRY.has(joker.defId)),

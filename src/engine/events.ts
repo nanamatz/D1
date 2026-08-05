@@ -31,12 +31,26 @@ export interface JokerScoreBeat {
   tileId?: string;
 }
 
+/** A Blind Select hook that actually resolved. The owner reference lets the UI
+ * find the same instance after another entry hook removes or reorders the shelf. */
+export interface BlindSelectedJokerTrigger {
+  joker: OwnedJoker;
+  jokerIndex: number;
+  createdTiles: Tile[];
+}
+
 export interface EngineEvents {
   /** blind is being set up; jokers may mutate phase count, discard budget, target */
   blindStart: { run: RunState; blind: BlindState };
 
   /** Blind Select was confirmed; hooks may permanently mutate the pouch/shelf. */
-  blindSelected: { run: RunState; blind: BlindState; rng: Rng; createdTiles: Tile[] };
+  blindSelected: {
+    run: RunState;
+    blind: BlindState;
+    rng: Rng;
+    createdTiles: Tile[];
+    triggers: BlindSelectedJokerTrigger[];
+  };
 
   /** mutable spelling projection before lexicon lookup; scoring still uses every submitted tile */
   wordPrepare: { run: RunState; blind: BlindState; tiles: readonly Tile[]; spellingTiles: Tile[] };
@@ -122,6 +136,9 @@ export interface EngineEvents {
   /** tiles were actually discarded, whether by the player or an external effect */
   tilesDiscarded: { run: RunState; blind: BlindState; tiles: Tile[] };
 
+  /** a Draft/Revision was skipped and the run-wide skip count has advanced */
+  blindSkipped: { run: RunState };
+
   /** sentence bonus is being finalized at blind end (GDD §7.4).
    *  Mutate ctx.sentenceChips / ctx.sentenceMult (the bonus = chips × mult). */
   sentenceScoring: {
@@ -178,6 +195,9 @@ export interface JokerDef {
   rarity: JokerRarity;
   layer: 1 | 2 | 3;
   price: number; // placeholder, see balance.ts
+  /** State for a newly acquired instance. Run-history scalers seed themselves
+   * here so buying one late includes qualifying actions from earlier this run. */
+  initialState?: (run: RunState) => Record<string, number>;
   scalingAxis?: keyof RunState['counters'];
   /** Preserve multiplicative scoring semantics in the settle log so the UI can
    * present ×factor instead of flattening the effect into an additive delta. */

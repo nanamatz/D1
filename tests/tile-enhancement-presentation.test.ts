@@ -37,6 +37,18 @@ describe('tile enhancement presentation', () => {
     });
   });
 
+  it('keeps the inherited tile colour when Inline changes only the font axis', () => {
+    const css = readFileSync(
+      fileURLToPath(new URL('../src/ui/styles/play.css', import.meta.url)),
+      'utf8',
+    );
+    const inline = css.slice(css.indexOf('.tile.f-inline'), css.indexOf('/* ---------- staged', css.indexOf('.tile.f-inline')));
+    expect(inline).toContain('-webkit-text-stroke: 2px currentColor');
+    expect(inline).toContain('-webkit-text-fill-color: transparent');
+    expect(inline).not.toMatch(/^\s*color:\s*transparent/m);
+    expect(inline).not.toContain('var(--tile-ink)');
+  });
+
   it('colours letter editions beneath material texture and omits White', () => {
     const css = readFileSync(
       fileURLToPath(new URL('../src/ui/styles/play.css', import.meta.url)),

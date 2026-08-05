@@ -309,6 +309,7 @@ describe('run counters used by live-value tags', () => {
     );
 
     expect(result.counters.totalWords).toBe(run.counters.totalWords + 1);
+    expect(result.playedWords).toEqual(['cat']);
     expect(run.counters.totalWords).toBe(0);
   });
 });

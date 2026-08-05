@@ -1,7 +1,7 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
-/** R6 (GDD §11.4) — ×1.25 Mult per consumable currently held. */
+/** R6 (GDD §11.4) — ×1.5 Mult per consumable currently held. */
 export const fableHoard: JokerDef = {
   id: 'fableHoard',
   gddNumber: 6,

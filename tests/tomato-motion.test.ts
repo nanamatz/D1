@@ -13,6 +13,9 @@ describe('tomato motion anchoring', () => {
     expect(css).toContain('.tomato-motion.hop');
     expect(sidebar).toContain('className="round-score-value"');
     expect(css).toMatch(/\.round-num\s*\{[^}]*display:\s*inline-flex/s);
+    expect(css).toMatch(/\.round-num\s*\{[^}]*gap:\s*2px/s);
+    expect(css).toMatch(/\.bs-target-row\s*\{[^}]*gap:\s*2px/s);
+    expect(sidebar).not.toContain("</span>{' '}");
     expect(css).toMatch(/\.round-panel \.tomato-anchor\s*\{[^}]*position:\s*static/s);
     expect(css).toMatch(/\.round-panel \.tomato-icon\s*\{[^}]*position:\s*static/s);
   });

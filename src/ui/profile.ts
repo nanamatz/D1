@@ -7,6 +7,11 @@ import { activeProfile, resetProfile, writeProfileValue, type ProfileSlot } from
 import { loadLifetime, recordWinsForPouch, writeLifetime } from './lifetime';
 import { UNLOCKS, loadPlayed } from './unlocks';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from './voucherProgress';
+import {
+  EMOJI_UNLOCK_RULES,
+  loadEmojiUnlockProgress,
+  revealAllEmojiTiles,
+} from './emojiUnlocks';
 
 export const PROFILE_NAME_MAX = 18;
 
@@ -43,12 +48,14 @@ export function isProfileWorldComplete(slot: ProfileSlot, lexicon: Lexicon): boo
   };
   const played = loadPlayed(slot);
   const vouchers = new Set(loadVoucherProgress(slot).unlocked);
+  const emojiTiles = new Set(loadEmojiUnlockProgress(slot).unlocked);
   return [...lexicon.words()].every((word) => collection[word] !== undefined)
     && UNLOCKS.every((unlock) => played.has(unlock.id))
     && POUCH_IDS.every((id) => isPouchUnlocked(id, pouchProgress))
     && POUCH_IDS.every((pouchId) =>
       RECORD_IDS.every((id) => isRecordUnlocked(id, recordWinsForPouch(lifetime, pouchId))))
-    && VOUCHER_UNLOCK_RULES.every((rule) => vouchers.has(rule.id));
+    && VOUCHER_UNLOCK_RULES.every((rule) => vouchers.has(rule.id))
+    && EMOJI_UNLOCK_RULES.every((rule) => emojiTiles.has(rule.id));
 }
 
 function normalizedName(slot: ProfileSlot, name: string): string {
@@ -101,6 +108,7 @@ export function unlockAllProfile(slot: ProfileSlot, lexicon: Lexicon): UnlockAll
     ...(lowestHandSize !== null ? { lowestHandSize } : {}),
     unlocked: VOUCHER_UNLOCK_RULES.map((rule) => rule.id),
   });
+  revealAllEmojiTiles(slot);
 
   writeLifetime({
     ...lifetime,

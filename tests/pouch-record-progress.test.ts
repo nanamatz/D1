@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { isRecordUnlocked } from '../src/engine/records';
-import { loadLifetime, recordRunEnd, recordWinsForPouch } from '../src/ui/lifetime';
+import {
+  loadLifetime,
+  recordBestRoundScore,
+  recordRunEnd,
+  recordWinsForPouch,
+} from '../src/ui/lifetime';
 
 class MemStorage {
   private store = new Map<string, string>();
@@ -21,6 +26,12 @@ beforeEach(() => {
 });
 
 describe('pouch and Record profile progress', () => {
+  it('keeps the highest finalized round score for the active profile', () => {
+    recordBestRoundScore(12_345);
+    recordBestRoundScore(9_999);
+    expect(loadLifetime().bestRoundScore).toBe(12_345);
+  });
+
   it('records an unseeded win once in the existing lifetime profile', () => {
     recordRunEnd({
       ante: 8,

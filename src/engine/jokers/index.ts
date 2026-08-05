@@ -136,7 +136,7 @@ import { tyrant } from './tyrant';
 import { typeFoundry } from './typeFoundry';
 import { towerOfBabel } from './towerOfBabel';
 import { misbound } from './misbound';
-import type { BlindState, ChanceResult, RunState } from '../types';
+import type { BlindState, ChanceResult, JokerEdition, OwnedJoker, RunState } from '../types';
 import type { Rng } from '../rng';
 import { clearBossJokerDebuffs } from '../bosses';
 
@@ -287,6 +287,17 @@ export const ALL_JOKERS: readonly JokerDef[] = [
 export const JOKER_REGISTRY: ReadonlyMap<string, JokerDef> = new Map(
   ALL_JOKERS.map((j) => [j.id, j]),
 );
+
+/** Construct one newly acquired Emoji Tile. Run-history scalers seed their
+ * current value here; explicit copy effects keep cloning the complete owner. */
+export function createOwnedJoker(
+  run: RunState,
+  defId: string,
+  edition: JokerEdition = 'base',
+): OwnedJoker {
+  const def = JOKER_REGISTRY.get(defId);
+  return { defId, edition, state: def?.initialState?.(run) ?? {} };
+}
 
 /** The engine-wide bus over the full registry. Emits are no-ops when a run owns no jokers. */
 export const defaultJokerBus = new JokerBus(JOKER_REGISTRY);

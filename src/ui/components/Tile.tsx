@@ -47,6 +47,8 @@ interface Props {
   invalid?: boolean;
   /** Nokdo Script: this tile must remain in the staged word. */
   forced?: boolean;
+  /** This submitted Glass tile was permanently destroyed after scoring. */
+  destroyed?: boolean;
   /** Disable local tilt when a parent surface owns the whole interaction layer. */
   tilt?: boolean;
   /** Focusable display object with no click action, used by inspection galleries. */
@@ -80,6 +82,7 @@ function TileViewImpl({
   disabled = false,
   invalid = false,
   forced = false,
+  destroyed = false,
   tilt = true,
   inspectable = false,
   tooltip,
@@ -128,6 +131,13 @@ function TileViewImpl({
   // its material-chip value instead of an identity-less zero-value tile (M-4).
   const idLabel =
     tileGlyph(tile) || (tile.material !== 'ceramic' ? t(`material.${tile.material}`) : '');
+  const effectPop =
+    settle.active && settle.tileEffectPop?.tileId === tile.id
+      ? settle.tileEffectPop
+      : null;
+  const shattering = destroyed && !!effectPop?.chanceResults?.some(
+    (result) => result.outcome === 'destroyed',
+  );
   const className = [
     'tile',
     mini && 'mini',
@@ -149,13 +159,11 @@ function TileViewImpl({
     invalid && 'boss-invalid',
     forced && 'boss-forced',
     markDisabled && 'discard-locked',
+    destroyed && 'glass-destroyed',
+    shattering && 'glass-shattering',
   ]
     .filter(Boolean)
     .join(' ');
-  const effectPop =
-    settle.active && settle.tileEffectPop?.tileId === tile.id
-      ? settle.tileEffectPop
-      : null;
 
   return (
     <Fragment>
@@ -176,7 +184,7 @@ function TileViewImpl({
         focusable
           ? faceDown
             ? t('boss.faceDownTile')
-            : `${idLabel} tile, ${stripRichText(t('tile.chips', { n: tileTooltipChips(tile) }))}`
+            : `${idLabel} tile, ${stripRichText(t('tile.chips', { n: tileTooltipChips(tile) }))}${destroyed ? `, ${t('chance.outcome.destroyed')}` : ''}`
           : undefined
       }
       draggable={false}
@@ -227,6 +235,7 @@ function TileViewImpl({
         </>
       )}
       <span className="tilt-sheen" aria-hidden />
+      {destroyed && <span className="glass-shatter-fx" aria-hidden />}
       {effectPop && (
         <span key={effectPop.id} className="trigger-pop tile-effect-pop" aria-hidden>
           {(effectPop.chips !== 0 || effectPop.chipsFactor !== undefined) && (

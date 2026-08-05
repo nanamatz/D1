@@ -39,6 +39,7 @@ export const SAVE_KEYS = new Set([
   'wj.lifetime',
   'wj.unlocks',
   'wj.vouchers',
+  'wj.emojiUnlocks',
   'wj.tutorial',
   'wj.tutorialIntro',
 ]);

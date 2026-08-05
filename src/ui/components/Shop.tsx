@@ -4,7 +4,12 @@ import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
 import { rerollCost } from '../../engine/economy';
 import { canBuyVoucher } from '../../engine/shop';
-import { canAddJoker, discountedPrice, rerollDiscount } from '../../engine/vouchers';
+import {
+  canAddJoker,
+  canOwnConsumable,
+  discountedPrice,
+  rerollDiscount,
+} from '../../engine/vouchers';
 import { motionOff } from '../motion';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
 import {
@@ -45,6 +50,7 @@ import { CardArt } from './CardArt';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { audio } from '../audio';
+import { unlockedEmojiSet } from '../emojiUnlocks';
 
 interface ShopOfferProps {
   label: string;
@@ -193,7 +199,7 @@ export function Shop({ g }: { g: UseGame }) {
         tags: tip.tags,
         sub: tip.sub,
         extra: def
-          ? grownValue(def, undefined, t, g.state.run.bag.length) ?? undefined
+          ? grownValue(def, undefined, t, g.state.run.bag.length, g.state.run) ?? undefined
           : undefined,
         rarity: def?.rarity,
         jokerArt: jokerArt(item.id),
@@ -224,8 +230,9 @@ export function Shop({ g }: { g: UseGame }) {
   const affordable = (item: ShopItem): boolean => {
     if (redeemingVoucher || run.gold < item.price) return false;
     return item.kind === 'joker'
-      ? canAddJoker(run, item.id, item.edition ?? 'base')
-      : item.kind === 'tile' || run.consumables.length < run.consumableSlots;
+      ? canAddJoker(run, item.id, item.edition ?? 'base', unlockedEmojiSet())
+      : item.kind === 'tile' ||
+        (run.consumables.length < run.consumableSlots && canOwnConsumable(run, item.id));
   };
 
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
@@ -313,12 +320,18 @@ export function Shop({ g }: { g: UseGame }) {
                     !isBlindOnlyConsumable(item.id) &&
                     !fableTargetsTiles(item.id) &&
                     (!isGamblerId(item.id) ||
-                      canUseUnheldGambler(item.id, run, [], []))
+                      canUseUnheldGambler(item.id, run, [], [], unlockedEmojiSet()))
                       ? {
                           action2Label: t('shop.instantUse'),
                           action2ClassName: 'green',
                           action2Disabled: run.gold < item.price ||
-                            (isFableId(item.id) && !canUseUnheldFable(item.id, run, g.state.blind)),
+                            !canOwnConsumable(run, item.id) ||
+                            (isFableId(item.id) && !canUseUnheldFable(
+                              item.id,
+                              run,
+                              g.state.blind,
+                              unlockedEmojiSet(),
+                            )),
                           onAction2: () => g.buyAndUse(i),
                         }
                       : {})}

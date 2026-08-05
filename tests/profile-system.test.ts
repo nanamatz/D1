@@ -21,6 +21,7 @@ import {
 } from '../src/ui/storage';
 import { UNLOCKS, playedCount } from '../src/ui/unlocks';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from '../src/ui/voucherProgress';
+import { EMOJI_UNLOCK_RULES, loadEmojiUnlockProgress } from '../src/ui/emojiUnlocks';
 
 class MemStorage {
   private map = new Map<string, string>();
@@ -80,6 +81,7 @@ describe('profile-scoped unlock all', () => {
     expect(readProfileValue('wj.collection', 1)).toBeNull();
     expect(readProfileValue('wj.unlocks', 1)).toBeNull();
     expect(readProfileValue('wj.vouchers', 1)).toBeNull();
+    expect(readProfileValue('wj.emojiUnlocks', 1)).toBeNull();
     expect(loadLifetime(1).pouchWins).toEqual([]);
     expect(loadLifetime(1).recordWins).toEqual([]);
     expect(loadLifetime(1).recordWinsByPouch).toEqual({});
@@ -104,6 +106,9 @@ describe('profile-scoped unlock all', () => {
     expect(loadVoucherProgress(1).unlocked).toEqual(
       VOUCHER_UNLOCK_RULES.map((rule) => rule.id),
     );
+    expect(loadEmojiUnlockProgress(1).unlocked).toEqual(
+      EMOJI_UNLOCK_RULES.map((rule) => rule.id),
+    );
     expect(loadLifetime(1).pouchWins).toEqual([...POUCH_IDS]);
     expect(loadLifetime(1).recordWins).toEqual([...RECORD_IDS]);
     expect(loadLifetime(1).recordWinsByPouch).toEqual(
@@ -115,6 +120,7 @@ describe('profile-scoped unlock all', () => {
     expect(collectionSize(2)).toBe(0);
     expect(playedCount(2)).toBe(0);
     expect(loadVoucherProgress(2).unlocked).toEqual([]);
+    expect(loadEmojiUnlockProgress(2).unlocked).toEqual([]);
     expect(loadLifetime(2)).toMatchObject({
       profileName: 'Second',
       pouchWins: [],
@@ -144,6 +150,12 @@ describe('profile completion status', () => {
     writeProfileValue('wj.unlocks', 1, UNLOCKS.map((unlock) => unlock.id));
     writeProfileValue('wj.vouchers', 1, {
       unlocked: VOUCHER_UNLOCK_RULES.map((rule) => rule.id),
+    });
+    writeProfileValue('wj.emojiUnlocks', 1, {
+      version: 1,
+      unlocked: EMOJI_UNLOCK_RULES.map((rule) => rule.id),
+      values: {},
+      run: null,
     });
     writeLifetime({
       ...loadLifetime(1),

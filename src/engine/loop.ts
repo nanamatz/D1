@@ -28,7 +28,7 @@ import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
 import { balancePouchAxes } from './pouches';
 import { EMPTY_NEXT_BLIND_BONUS } from './skipRewards';
-import type { JokerGrowthTrigger, JokerScoreBeat } from './events';
+import type { BlindSelectedJokerTrigger, JokerGrowthTrigger, JokerScoreBeat } from './events';
 import type {
   BlindKind,
   BlindState,
@@ -133,7 +133,12 @@ export function enterJokerBlind(
   run: RunState,
   blind: BlindState,
   rng: Rng,
-): { run: RunState; blind: BlindState; createdTiles: Tile[] } {
+): {
+  run: RunState;
+  blind: BlindState;
+  createdTiles: Tile[];
+  triggers: BlindSelectedJokerTrigger[];
+} {
   const nextRun: RunState = {
     ...run,
     bag: run.bag.slice(),
@@ -146,18 +151,24 @@ export function enterJokerBlind(
     discardedThisBlind: blind.discardedThisBlind.slice(),
   };
   const createdTiles: Tile[] = [];
+  const triggers: BlindSelectedJokerTrigger[] = [];
   defaultJokerBus.emit(
     'blindSelected',
-    { run: nextRun, blind: nextBlind, rng, createdTiles },
+    { run: nextRun, blind: nextBlind, rng, createdTiles, triggers },
     nextRun.jokers,
   );
   if (createdTiles.length > 0) {
     defaultJokerBus.emit('tilesCreated', { run: nextRun, count: createdTiles.length }, nextRun.jokers);
   }
+  const jokers = nextRun.jokers.filter((joker) => joker.state.destroyed !== 1);
   return {
-    run: { ...nextRun, jokers: nextRun.jokers.filter((joker) => joker.state.destroyed !== 1) },
+    run: { ...nextRun, jokers },
     blind: nextBlind,
     createdTiles,
+    triggers: triggers.flatMap((trigger) => {
+      const jokerIndex = jokers.indexOf(trigger.joker);
+      return jokerIndex < 0 ? [] : [{ ...trigger, jokerIndex }];
+    }),
   };
 }
 
@@ -304,6 +315,10 @@ export interface SubmitResult {
   jokers: RunState['jokers'];
   /** run-wide counters updated by this successful submission */
   counters: RunState['counters'];
+  /** unique valid words played across the run, including this submission */
+  playedWords: string[];
+  /** unique Word Hand ids made across the run, including this submission */
+  playedLetterHands: string[];
 }
 
 /**
@@ -820,6 +835,7 @@ function scoreSubmission(
 
   const total = ctx.chips * ctx.mult + (ctx.scoreBonus ?? 0);
   submission.settledScore = total;
+  if (destroyedTileIds.length > 0) submission.destroyedTileIds = [...destroyedTileIds];
   // Presentation order is explicit and independent from the mutation order above:
   // whole-word stamps -> each played tile and its own effects -> Emoji Tiles in
   // shelf order -> held tiles in their frozen play-time order -> global/boss beats.
@@ -1045,8 +1061,24 @@ export function submitWord(
     afterBlind,
     rng,
   );
+  const priorWords = afterBoss.run.playedWords ?? [];
+  const playedWord = submission.text.toLowerCase();
+  const playedWords = submission.isGibberish || priorWords.includes(playedWord)
+    ? priorWords
+    : [...priorWords, playedWord];
+  const priorHands = afterBoss.run.playedLetterHands ?? [];
+  const playedHand = evaluateLetterHand(
+    letterString(submission.tiles),
+    submission.isGibberish,
+    submission.scoringLength,
+  )?.id;
+  const playedLetterHands = !playedHand || priorHands.includes(playedHand)
+    ? priorHands
+    : [...priorHands, playedHand];
   const postBossRun: RunState = {
     ...afterBoss.run,
+    playedWords,
+    playedLetterHands,
     counters: {
       ...afterBoss.run.counters,
       totalWords: afterBoss.run.counters.totalWords + 1,
@@ -1083,6 +1115,8 @@ export function submitWord(
     bossDiscardedTiles,
     jokers: postBossRun.jokers,
     counters: postBossRun.counters,
+    playedWords: postBossRun.playedWords ?? [],
+    playedLetterHands: postBossRun.playedLetterHands ?? [],
     blind: { ...afterBlind, projectedScore },
   };
 }

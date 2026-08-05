@@ -26,6 +26,7 @@ export const setTileMaterial = (tile: Tile, material: TileMaterial): Tile => {
       ...withoutWood,
       material,
       letter: null,
+      font: 'medium',
       ...(originalLetter ? { letterBeforeStone: originalLetter } : {}),
     };
   }

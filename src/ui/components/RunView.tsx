@@ -24,6 +24,7 @@ import { GuidedIntro } from './GuidedIntro';
 import { DeskObjects } from './DeskObjects';
 import { PackOpening } from './PackOpening';
 import { BossIntro } from './BossIntro';
+import { BlindEntryEffects } from './BlindEntryEffects';
 import { canUseFableOnPouch, fableTargetsTiles, isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { isGamblerId } from '../../engine/gamblers';
@@ -279,6 +280,10 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onReorderJoker={g.reorderJokers}
             jokersFaceDown={phase === 'playing' && !!blind.jokersFaceDown}
             settleComplete={g.state.settleComplete}
+          />
+          <BlindEntryEffects
+            event={g.state.blindEntryEffects}
+            onComplete={g.clearBlindEntryEffects}
           />
           <section className="phase-workspace" key={boardKey}>
             {notAllowedNotice !== null && (

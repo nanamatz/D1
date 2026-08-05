@@ -2926,6 +2926,7 @@ body.cb-safe .tile.hint {
   filter: url(#unlock-chroma);
 }
 .emoji-tile-collection {
+  position: relative;
   width: var(--shop-card-w);
   height: var(--shop-card-h);
   margin-inline: auto;
@@ -2934,6 +2935,21 @@ body.cb-safe .tile.hint {
   background: transparent;
   box-shadow: none;
   cursor: pointer;
+}
+.emoji-tile-collection.locked .cc-joker-art {
+  opacity: 0;
+}
+.emoji-tile-collection.locked {
+  background: var(--badge-bg);
+}
+.emoji-tile-lock {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 44px;
+  height: 44px;
+  background: url('../assets/pouch-lock.png') center / contain no-repeat;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 /* Boss collection card: pixel-art emblem in place of the emoji glyph. */
 .boss-card-art {
@@ -3886,6 +3902,19 @@ body.cb-safe .tile.hint {
   justify-content: center;
   padding: 20px;
   z-index: 50;
+}
+.collection-overlay {
+  z-index: 70;
+  padding: 0;
+  overflow: hidden;
+}
+.collection-overlay > .collection {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
 }
 .profile-dashboard,
 .collection-modal,

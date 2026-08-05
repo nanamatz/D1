@@ -51,6 +51,7 @@ import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
+import { unlockedEmojiSet } from '../emojiUnlocks';
 
 const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
 
@@ -422,7 +423,7 @@ export function PackOpening({
         tags: tip.tags,
         sub: tip.sub,
         extra: def
-          ? grownValue(def, undefined, t, g.state.run.bag.length) ?? undefined
+          ? grownValue(def, undefined, t, g.state.run.bag.length, g.state.run) ?? undefined
           : undefined,
         rarity: def?.rarity,
       };
@@ -588,7 +589,8 @@ export function PackOpening({
             const needsConfirmation = fable || gamblerId !== null || constellation;
             const blindOnlyFable = fableId !== null && isBlindOnlyConsumable(fableId);
             const blockKey =
-              o.kind === 'joker' && !canAddJoker(g.state.run, o.id, o.edition)
+              o.kind === 'joker' &&
+                !canAddJoker(g.state.run, o.id, o.edition, unlockedEmojiSet())
                 ? 'pack.jokersFull'
                 : undefined;
             const N = pack.offer.options.length;
@@ -603,9 +605,21 @@ export function PackOpening({
               GAMBLER_REGISTRY.get(gamblerId)?.effect.kind === 'font';
             const actionDisabled =
               (fable &&
-                !canUseFableFromPack(fableId, g.state.run, g.state.blind, selectedCandidates)) ||
+                !canUseFableFromPack(
+                  fableId,
+                  g.state.run,
+                  g.state.blind,
+                  selectedCandidates,
+                  unlockedEmojiSet(),
+                )) ||
               (gamblerId !== null &&
-                !canUseUnheldGambler(gamblerId, g.state.run, candidateTiles, gamblerTargets));
+                !canUseUnheldGambler(
+                  gamblerId,
+                  g.state.run,
+                  candidateTiles,
+                  gamblerTargets,
+                  unlockedEmojiSet(),
+                ));
             const fanStyle = {
               ['--fan-rot' as string]: `${(i - mid) * 7}deg`,
               ['--fan-entry-rot' as string]: `${(i - mid) * 12}deg`,

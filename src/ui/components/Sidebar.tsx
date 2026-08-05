@@ -260,7 +260,7 @@ export function Sidebar({
               >
                 <span className="tomato-icon" key={settle.scorePop?.id ?? 'idle'} aria-hidden />
               </span>
-            </span>{' '}
+            </span>
             <span className="round-score-value">{formatScore(round)}</span>
           </span>
         </div>

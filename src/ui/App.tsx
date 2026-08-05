@@ -32,10 +32,12 @@ const Options = lazy(() =>
 const Profile = lazy(() =>
   import('./components/Profile').then(({ Profile: component }) => ({ default: component })),
 );
-const DeskEncounterLab = lazy(() =>
-  import('./components/DeskEncounterLab')
-    .then(({ DeskEncounterLab: component }) => ({ default: component })),
-);
+const DeskEncounterLab = import.meta.env.DEV
+  ? lazy(() =>
+      import('./components/DeskEncounterLab')
+        .then(({ DeskEncounterLab: component }) => ({ default: component })),
+    )
+  : null;
 
 type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile' | 'deskLab';
 const NEW_RUN_ART = [...Object.values(POUCH_ART), ...Object.values(RECORD_ART)];
@@ -119,7 +121,7 @@ export function App() {
       const control = target.closest(
         'button, [role="button"], input[type="checkbox"], input[type="radio"]',
       );
-      return control?.matches(':disabled, [aria-disabled="true"]') ? null : control;
+      return control?.matches(':disabled, [aria-disabled="true"], .desk-object') ? null : control;
     };
     const click = (event: MouseEvent) => {
       if (enabledControl(event.target)) audio.play('buttonPress');
@@ -183,7 +185,9 @@ export function App() {
       case 'profile':
         return <Profile lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'deskLab':
-        return <DeskEncounterLab onBack={() => setScreen('menu')} />;
+        return DeskEncounterLab
+          ? <DeskEncounterLab onBack={() => setScreen('menu')} />
+          : null;
       case 'menu':
       default:
         return (

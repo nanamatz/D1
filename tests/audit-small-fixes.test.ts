@@ -16,8 +16,7 @@ import ko from '../locales/ko.json';
 
 describe('boss reroll never returns the boss it replaced (BALANCE-03 / U-8)', () => {
   // The old code drew once and re-drew only on a match, so two draws could both
-  // land on the current boss: 1/144 on the core pool but 1/16 on the four-boss
-  // finisher pool — a $10 reroll that visibly did nothing on a final Chapter.
+  // land on the current boss and make a paid reroll visibly do nothing.
   for (const [name, pool, ids] of [
     ['core', 'core', CORE_BOSS_IDS],
     ['finisher', 'finisher', FINISHER_BOSS_IDS],

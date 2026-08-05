@@ -14,10 +14,9 @@ describe('feedback 7 UI regressions', () => {
     expect(play).not.toContain('.frame.settle-shake');
   });
 
-  it('keeps pouch editions legible and counted', () => {
+  it('keeps pouch enhancements inspectable without the removed summary list', () => {
     const bag = source('src/ui/components/BagView.tsx');
-    expect(bag).toContain('editions: Record<string, number>');
-    expect(bag).toContain('Object.entries(full.editions)');
+    expect(bag).not.toContain('bagview.enhanced');
     expect(bag).toContain('<TileView tile={tile} inspectable tooltip={tileTooltip(tile, t)} />');
   });
 

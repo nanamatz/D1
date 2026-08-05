@@ -119,6 +119,14 @@ describe('font cards — #1 / #4 / #7 / #11', () => {
     const target: Tile = { ...blind.hand[0]!, font: 'bold' };
     expect(canUseGambler('geese', run, [target], [target.id])).toBe(false);
   });
+
+  it('cannot apply a font to Stone', () => {
+    const { run, blind } = setup('geese');
+    const target: Tile = {
+      ...blind.hand[0]!, material: 'stone', letter: null, letterBeforeStone: 'A', font: 'medium',
+    };
+    expect(canUseGambler('geese', run, [target], [target.id])).toBe(false);
+  });
 });
 
 describe('#2 Boar — the unique-ownership exception', () => {

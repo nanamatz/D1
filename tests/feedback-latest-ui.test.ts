@@ -50,6 +50,14 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.shop-sale-region > \.panel\s*\{[^}]*min-height:\s*var\(--shop-lower-panel-h\)/s);
   });
 
+  it('keeps live shop cards out of opened packs and disables stale purchases', () => {
+    const shop = source('src/ui/components/Shop.tsx');
+    expect(game).toContain('rollPack(slot, prev.run, rng, prev.shop.items, unlockedEmojiSet())');
+    expect(game).toContain("state.phase !== 'shop' || !state.shop");
+    expect(game).toContain('canOwnJoker(prev.run, item.id) && unlockedEmojiSet().has(item.id)');
+    expect(shop).toContain('canOwnConsumable(run, item.id)');
+  });
+
   it('distinguishes additive from multiplicative Chips and Mult popups', () => {
     const tile = source('src/ui/components/Tile.tsx');
     const settle = source('src/ui/settle.tsx');

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CORE_BOSS_IDS,
   FINISHER_BOSS_IDS,
   afterBossPlay,
   bossPoolForAnte,
@@ -43,10 +44,16 @@ describe('endless chapter curve and finisher schedule', () => {
     expect(bossPoolForAnte(16)).toBe('finisher');
     expect(bossPoolForAnte(24)).toBe('finisher');
     expect(FINISHER_BOSS_IDS).toContain(drawBoss(makeRng('finisher'), 'finisher'));
+    expect(CORE_BOSS_IDS).toHaveLength(12);
+    expect(FINISHER_BOSS_IDS).toHaveLength(6);
+    expect(FINISHER_BOSS_IDS).toEqual(expect.arrayContaining(['cleaningSign', 'medusa']));
+    expect(CORE_BOSS_IDS).not.toEqual(expect.arrayContaining(['cleaningSign', 'medusa']));
   });
 
   it('keeps an already scheduled finisher after an ante-reducing voucher', () => {
     expect(bossPoolForId('blueprint')).toBe('finisher');
+    expect(bossPoolForId('cleaningSign')).toBe('finisher');
+    expect(bossPoolForId('medusa')).toBe('finisher');
   });
 
   it('stays finite and increasing through chapter 38, then stops explicitly', () => {
@@ -62,6 +69,8 @@ describe('endless chapter curve and finisher schedule', () => {
 
   it('formats huge targets without Infinity or an overflowing digit wall', () => {
     expect(formatScore(123_456)).toBe('123,456');
+    expect(formatScore(9_999_999)).toBe('9,999,999');
+    expect(formatScore(10_000_000)).toBe('1e7');
     expect(formatScore(1_234_567_890)).toBe('1.2e9');
     expect(formatScore(Number.POSITIVE_INFINITY)).toBe('—');
   });
@@ -125,6 +134,8 @@ describe('finisher boss hooks', () => {
     });
     expect(vital.target).toBe(normal.target * 3);
     expect(effectiveClearReward(run, 'boss', 'vitalSign')).toBe(8);
+    expect(effectiveClearReward(run, 'boss', 'cleaningSign')).toBe(8);
+    expect(effectiveClearReward(run, 'boss', 'medusa')).toBe(8);
   });
 
   it('Ultrasound disables exactly one Emoji Tile and clears the marker at blind end', () => {

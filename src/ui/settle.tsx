@@ -76,6 +76,8 @@ export interface SettleView {
     chanceResults?: ChanceResult[];
     id: number;
   } | null;
+  /** Glass tiles whose destruction beat has landed in the current timeline. */
+  destroyedTileIds: readonly string[];
   /** joker currently wiggling */
   activeJokerId: string | null;
   /** Edition enhancement beat on an Emoji Tile; its timeline slot leaves a readable gap. */
@@ -113,6 +115,7 @@ const IDLE: SettleView = {
   activeTileId: null,
   tilePops: {},
   tileEffectPop: null,
+  destroyedTileIds: [],
   activeJokerId: null,
   activeJokerEnhanced: false,
   jokerPop: null,
@@ -150,6 +153,12 @@ const scaledBeatDurationMs = (event: ScoreEvent, speed: number): number => {
     ? Math.max(scaled, CHANCE_MATERIAL_STEP_MIN)
     : scaled;
 };
+
+const tileWasDestroyed = (
+  event: ScoreEvent,
+): event is Extract<ScoreEvent, { kind: 'material' }> =>
+  event.kind === 'material' &&
+  !!event.chanceResults?.some((result) => result.outcome === 'destroyed');
 
 /**
  * Pure fold of one ScoreEvent into the running chips/mult tally — the single
@@ -281,11 +290,15 @@ export function SettleProvider({
       let chips = 0;
       let mult = 0;
       const pops: Record<string, number> = {};
+      const destroyedTileIds = beats
+        .filter(tileWasDestroyed)
+        .map((event) => event.tileId);
       for (const e of beats) {
         if (e.kind === 'tile') pops[e.tileId] = e.chips;
         ({ chips, mult } = accumulate(chips, mult, e));
       }
-      setView({ ...IDLE, active: true, chips, mult, tilePops: pops });
+      setView({ ...IDLE, active: true, chips, mult, tilePops: pops, destroyedTileIds });
+      if (destroyedTileIds.length > 0) audio.play('matGlassBreak');
       audio.play('totalRoll');
       const off = setTimeout(() => {
         setView(IDLE);
@@ -298,6 +311,7 @@ export function SettleProvider({
     let chips = 0;
     let mult = 0;
     const pops: Record<string, number> = {};
+    const destroyedTileIds = new Set<string>();
     let tickStep = 0;
 
     let elapsed = 0;
@@ -309,6 +323,7 @@ export function SettleProvider({
           const prevChips = chips;
           const prevMult = mult;
           ({ chips, mult } = accumulate(chips, mult, e));
+          if (tileWasDestroyed(e)) destroyedTileIds.add(e.tileId);
           // SFX (work order B): fire inside the speed-scaled beat timer so the
           // cadence tracks game speed automatically. Facade no-ops until unlocked.
           if (e.kind === 'tile') {
@@ -336,6 +351,7 @@ export function SettleProvider({
             // A-2: the material's own voice when it triggers during scoring (Brass ring,
             // Stone knock, Wood knock, …), not a generic fill.
             audio.material(e.material);
+            if (tileWasDestroyed(e)) audio.play('matGlassBreak');
             // Lead plate's Lucky roll landed a Mult hit → its dice rattle (A polish).
             if (e.material === 'leadPlate' && e.multDelta > 0) audio.play('matDiceRattle');
             // feedback #2/#3: flash + a single upward bounce on the triggering tile.
@@ -362,6 +378,7 @@ export function SettleProvider({
             activeTileId: null,
             tilePops: { ...pops },
             tileEffectPop: null,
+            destroyedTileIds: [...destroyedTileIds],
             activeJokerId: null,
             activeJokerEnhanced: false,
             jokerPop: null,

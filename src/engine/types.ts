@@ -104,6 +104,9 @@ export interface WordSubmission {
   scoringLength?: number;
   /** Active boss accepted the play but debuffed it to 0. */
   debuffed?: boolean;
+  /** Played Glass tiles permanently destroyed while this word scored. Kept on
+   *  the submission so its tray tiles can remain visibly shattered. */
+  destroyedTileIds?: string[];
 }
 
 // ---------- Sentence patterns (GDD §5) ----------
@@ -408,6 +411,10 @@ export interface RunState {
    *  Reset when a new ante begins; read by the Memoirs boss (회고록) to debuff
    *  any word already played this ante (GDD §8.3). */
   wordsThisAnte: string[];
+  /** Unique valid words submitted across the whole run. Optional for legacy saves. */
+  playedWords?: string[];
+  /** Unique Word Hand ids made across the whole run. Optional for legacy saves. */
+  playedLetterHands?: string[];
   /** Boss rerolls spent this chapter; reset when the Deadline clears. */
   bossRerollsUsed: number;
   /** scaling counters (GDD §11.6) — one per axis, jokers read/write these */

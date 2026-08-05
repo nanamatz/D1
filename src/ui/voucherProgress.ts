@@ -94,7 +94,7 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
   { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '손패 크기를 8장으로 감소', met: (p) => p.lowestHandSize !== null && p.lowestHandSize <= 8 },
   { id: 'encyclopedia', conditionEn: 'Buy 20 tiles from the shop', conditionKo: '상점에서 타일 20장 구매', met: (p) => p.tilesBought >= 20 },
   { id: 'householdLedger', conditionEn: 'Reach maximum interest for 10 consecutive rounds', conditionKo: '10라운드 연속 최대 이자 획득', met: (p) => p.maxInterestStreak >= 10 },
-  { id: 'portrait', conditionEn: 'Discover all 14 regular boss blinds', conditionKo: '일반 보스 블라인드 14종 발견', met: (p) => CORE_BOSS_IDS.every((id) => p.bossesSeen.includes(id)) },
+  { id: 'portrait', conditionEn: 'Discover all 12 regular boss blinds', conditionKo: '일반 보스 블라인드 12종 발견', met: (p) => CORE_BOSS_IDS.every((id) => p.bossesSeen.includes(id)) },
   { id: 'couponBook', conditionEn: 'Spend $2,500 in shops', conditionKo: '상점에서 총 $2,500 지출', met: (p) => p.goldSpent >= 2500 },
   { id: 'oldBook', conditionEn: 'Win a run', conditionKo: '8장 마감 승리', met: (p) => p.wins >= 1 },
   { id: 'kungfuManual', conditionEn: 'Use Blank Paper 10 times', conditionKo: '백지 10회 사용', met: (p) => p.blankPaperUses >= 10 },

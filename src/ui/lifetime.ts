@@ -29,6 +29,7 @@ export interface Lifetime {
   wins: number;
   highestAnte: number;
   highestEndlessAnte: number;
+  bestRoundScore: number;
   bestEndlessScore: number;
   bestWordScore: number;
   bestWord: string;
@@ -59,6 +60,7 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   wins: 0,
   highestAnte: 0,
   highestEndlessAnte: 0,
+  bestRoundScore: 0,
   bestEndlessScore: 0,
   bestWordScore: 0,
   bestWord: '',
@@ -161,6 +163,7 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
     unlockAllWarned: stored.unlockAllWarned === true,
     unlockAllApplied: stored.unlockAllApplied === true,
     challengesDisabled: stored.challengesDisabled === true,
+    bestRoundScore: safeCount(stored.bestRoundScore),
     bestWord,
     bestWordScore: collectionBest?.value ?? wordLetterChips(bestWord),
     pouchWins: Array.isArray(stored.pouchWins)
@@ -174,6 +177,15 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
 
 export function writeLifetime(lifetime: Lifetime, slot: ProfileSlot = activeProfile()): void {
   writeProfileValue(KEY, slot, lifetime);
+}
+
+/** Record one fully finalized blind score as soon as the round resolves. */
+export function recordBestRoundScore(score: number): void {
+  const lifetime = loadLifetime();
+  const bestRoundScore = Math.max(lifetime.bestRoundScore, safeCount(score));
+  if (bestRoundScore !== lifetime.bestRoundScore) {
+    writeLifetime({ ...lifetime, bestRoundScore });
+  }
 }
 
 export interface RunResult {

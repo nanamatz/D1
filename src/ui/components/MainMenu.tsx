@@ -73,9 +73,11 @@ export function MainMenu({ onPlay, onCollection, onOptions, onProfile, onDeskLab
           {t('menu.collection')}
           {unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
         </button>
-        <button className="btn menu-desk-lab" onClick={onDeskLab}>
-          {t('menu.deskLab')}
-        </button>
+        {import.meta.env.DEV && (
+          <button className="btn menu-desk-lab" onClick={onDeskLab}>
+            {t('menu.deskLab')}
+          </button>
+        )}
         <button className="btn menu-quit" onClick={onQuit}>
           {t('menu.quit')}
         </button>

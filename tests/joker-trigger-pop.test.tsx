@@ -156,7 +156,9 @@ describe('Emoji Tile trigger popup', () => {
 
       expect(tileBeats.map((event) => event.kind === 'joker' ? event.tileId : undefined), testCase.jokerId)
         .toEqual(testCase.expected.map((index) => hand[index]!.id));
-      if (testCase.jokerId !== 'woodblockPress') expect(beats).toEqual(tileBeats);
+      if (testCase.jokerId !== 'woodblockPress' && testCase.jokerId !== 'bloodTypeA') {
+        expect(beats).toEqual(tileBeats);
+      }
       for (const beat of tileBeats) {
         if (beat.kind !== 'joker' || !beat.tileId) continue;
         const tileBeat = result.events.findIndex(

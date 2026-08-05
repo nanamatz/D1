@@ -50,13 +50,14 @@ import { letterChips } from '../engine/scoring';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import type { Lexicon } from '../engine/lexicon';
 import { recordWord } from './collection';
-import { recordEndlessEnd, recordRunEnd } from './lifetime';
+import { recordBestRoundScore, recordEndlessEnd, recordRunEnd } from './lifetime';
 import { clearRun, loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
 import { motionOff } from './motion';
 import { patternLevelBus } from './patternLevel';
 import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
+import { recordEmojiUnlockEvent, unlockedEmojiSet } from './emojiUnlocks';
 import {
   canUseFable,
   canUseFableFromPack,
@@ -84,6 +85,7 @@ import {
   bossRerollLimit,
   bossRerollPrice,
   canOwnConsumable,
+  canOwnJoker,
   CONSUMABLE_PATTERN,
   discountedPrice,
   interestCap,
@@ -144,6 +146,27 @@ const keepSelectedInHand = (selected: readonly string[], blind: BlindState): str
     : kept;
 };
 
+/** Persisted pouch deltas only: previews, failed rolls, and temporary hand moves
+ * never count as creation/destruction achievements. */
+const recordPouchUnlockChanges = (before: RunState, after: RunState): void => {
+  const beforeIds = new Set(before.bag.map((tile) => tile.id));
+  const afterIds = new Set(after.bag.map((tile) => tile.id));
+  const destroyed = before.bag.filter((tile) => !afterIds.has(tile.id));
+  const created = after.bag.filter((tile) => !beforeIds.has(tile.id));
+  if (destroyed.length > 0 || created.length > 0) {
+    recordEmojiUnlockEvent({ kind: 'tileChanges', run: after, destroyed, created });
+  }
+};
+
+/** Presentation payload for Emoji Tiles that resolved when Blind Select was confirmed. */
+export interface BlindEntryEffectEvent {
+  triggers: Array<{
+    jokerId: string;
+    jokerIndex: number;
+    createdTiles: Tile[];
+  }>;
+}
+
 export interface GameState {
   seed: string;
   rngCounter: number;
@@ -156,6 +179,8 @@ export interface GameState {
   lastEvents: ScoreEvent[];
   /** Transient Unopened Letter discard pull, rendered by StagePanel. */
   bossDiscard: { id: number; tiles: Tile[] } | null;
+  /** One-shot Blind Select Emoji Tile trigger choreography. */
+  blindEntryEffects: BlindEntryEffectEvent | null;
   settleId: number;
   /** committed score BEFORE the in-flight settle — lets the round number climb
    *  from the old committed to the new one during the animation (playtest-04 A-1) */
@@ -287,6 +312,7 @@ export function completePendingPackTransition(state: GameState): GameState {
     message: null,
     lastEvents: [],
     bossDiscard: null,
+    blindEntryEffects: null,
     settleId: 0,
     committedBefore: 0,
     lastPlayed: null,
@@ -361,6 +387,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     message: null,
     lastEvents: [],
     bossDiscard: null,
+    blindEntryEffects: null,
     settleId: 0,
     committedBefore: 0,
     lastPlayed: null,
@@ -420,6 +447,7 @@ export interface UseGame {
   playWord: (heldOrder?: string[]) => void;
   discard: (ids: string[]) => void;
   selectBlind: () => void;
+  clearBlindEntryEffects: (event: BlindEntryEffectEvent) => void;
   skipBlind: () => void;
   confirmCashout: () => void;
   /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
@@ -452,6 +480,27 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     lastSaved.current = json;
     writeRun(json);
   }, [state]);
+
+  // Recover stale live stock if an in-shop pack/effect acquires the same object.
+  // New packs exclude these ids up front; this keeps old saves and indirect grants
+  // from leaving an enabled-looking offer that the acquisition gate must reject.
+  useEffect(() => {
+    if (state.phase !== 'shop' || !state.shop) return;
+    setState((prev) => {
+      if (prev.phase !== 'shop' || !prev.shop) return prev;
+      let changed = false;
+      const items = prev.shop.items.map((item) => {
+        if (!item || item.kind === 'tile') return item;
+        const available = item.kind === 'joker'
+          ? canOwnJoker(prev.run, item.id) && unlockedEmojiSet().has(item.id)
+          : canOwnConsumable(prev.run, item.id);
+        if (available) return item;
+        changed = true;
+        return null;
+      });
+      return changed ? { ...prev, shop: { ...prev.shop, items } } : prev;
+    });
+  }, [state.phase, state.run.jokers, state.run.consumables, state.shop]);
 
   // Record each finished run into the lifetime stats exactly once (spec §2.12).
   // Keyed on the gameover snapshot identity so StrictMode re-runs don't double-count.
@@ -527,17 +576,20 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         chanceResults,
       );
       jokerChanceEffectBus.emit(chanceResults);
+      recordPouchUnlockChanges(runWithPattern, runAfterJokers);
       const outcome = resolveBlind(runAfterJokers, s.blind, final.finalScore);
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
       const stats: RunStats = { ...s.stats, patternCounts };
       const roundedFinal = Math.round(final.finalScore);
+      recordBestRoundScore(roundedFinal);
       const endlessBestScore = s.run.victorySecured
         ? Math.max(s.endlessBestScore, roundedFinal)
         : s.endlessBestScore;
 
       if (!outcome.cleared) {
+        recordEmojiUnlockEvent({ kind: 'snapshot', run: outcome.run });
         return {
           ...s,
           run: outcome.run,
@@ -564,6 +616,18 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         interestCap: interestCap(runWithPattern),
         handSize: s.blind.hand.length,
       });
+      const acrostic = s.blind.sequence.length > 0 &&
+        s.blind.sequence.every((word) => !word.isGibberish && word.text.length > 0) &&
+        getLexicon().isWord(s.blind.sequence.map((word) => word.text[0]!).join(''));
+      recordEmojiUnlockEvent({
+        kind: 'blindCleared',
+        run: runAfterJokers,
+        blind: s.blind,
+        judgment: final.judgment,
+        interest: outcome.earned.interest,
+        acrostic,
+      });
+      recordEmojiUnlockEvent({ kind: 'snapshot', run: outcome.run });
       if (outcome.won) recordVoucherProgress({ kind: 'runWon' });
 
       if (outcome.endlessComplete) {
@@ -630,7 +694,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         };
       }
       const rng = makeRng(`${s.seed}#${s.rngCounter}`);
-      const preparedShop = prepareShop(advancedRun, rng, unlockedVoucherSet());
+      const preparedShop = prepareShop(
+        advancedRun,
+        rng,
+        unlockedVoucherSet(),
+        unlockedEmojiSet(),
+      );
       advancedRun = preparedShop.run;
       const shop = preparedShop.shop;
       if (outcome.won) {
@@ -686,7 +755,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const buy = useCallback((index: number) => {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
-      const res = buyItem(prev.run, prev.shop, index);
+      const res = buyItem(prev.run, prev.shop, index, unlockedEmojiSet());
       if (!res.ok) return prev;
       const item = prev.shop.items[index]!;
       if (item.kind !== 'joker') {
@@ -696,6 +765,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           spent: item.price,
         });
       } else recordVoucherProgress({ kind: 'shopBuy', item: 'other', spent: item.price });
+      recordEmojiUnlockEvent({
+        kind: item.kind === 'joker' ? 'jokerBought' : 'snapshot',
+        run: res.run,
+      });
       recordEditionedJokers(res.run);
       audio.play('purchase');
       return {
@@ -714,6 +787,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (prev.phase !== 'shop' && prev.phase !== 'playing') return prev;
       const res = sellJoker(prev.run, index, makeRng(`${prev.seed}#${prev.rngCounter}`));
       if (!res.ok) return prev;
+      recordEmojiUnlockEvent({ kind: 'jokerSold', run: res.run });
       audio.play('sell');
       return { ...prev, run: res.run, rngCounter: prev.rngCounter + 1 };
     });
@@ -723,9 +797,16 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const res = rerollShop(prev.run, prev.shop, rng, unlockedVoucherSet());
+      const res = rerollShop(
+        prev.run,
+        prev.shop,
+        rng,
+        unlockedVoucherSet(),
+        unlockedEmojiSet(),
+      );
       if (!res.ok) return prev;
       recordVoucherProgress({ kind: 'reroll', spent: rerollCost(prev.shop.rerolls, rerollDiscount(prev.run)) });
+      recordEmojiUnlockEvent({ kind: 'snapshot', run: res.run });
       audio.play('reroll');
       return {
         ...prev,
@@ -778,7 +859,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const confirmCashout = useCallback(() => {
     setState((prev) =>
       prev.phase === 'cashout' && prev.pendingRun
-        ? {
+        ? (() => {
+          recordEmojiUnlockEvent({ kind: 'shopEntered', run: prev.pendingRun });
+          return {
             ...prev,
             phase: 'shop',
             run: prev.pendingRun,
@@ -796,7 +879,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             settleComplete: true,
             finalScore: null,
             sentenceBonus: null,
-          }
+          };
+        })()
         : prev,
     );
   }, []);
@@ -812,17 +896,35 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         jokerEntered.blind,
         makeRng(`${prev.seed}#boss-enter-${prev.run.ante}-${prev.rngCounter}`),
       );
+      const run = consumeNextBlindBonus(entered.run);
+      recordPouchUnlockChanges(prev.run, run);
+      recordEmojiUnlockEvent({ kind: 'blindStarted', run });
       recordVoucherProgress({ kind: 'handSize', size: entered.blind.hand.length });
       recordVoucherProgress({ kind: 'anteReached', ante: prev.run.ante });
       if (prev.blind.bossId) recordVoucherProgress({ kind: 'bossSeen', id: prev.blind.bossId });
+      const triggers = jokerEntered.triggers.map((trigger) => {
+        const movedIndex = entered.run.jokers.indexOf(trigger.joker);
+        return {
+          jokerId: trigger.joker.defId,
+          jokerIndex: movedIndex >= 0 ? movedIndex : trigger.jokerIndex,
+          createdTiles: trigger.createdTiles,
+        };
+      });
       return {
         ...prev,
         phase: 'playing',
-        run: consumeNextBlindBonus(entered.run),
+        run,
         blind: entered.blind,
         selected: entered.blind.forcedTileId ? [entered.blind.forcedTileId] : [],
+        blindEntryEffects: triggers.length > 0 ? { triggers } : null,
       };
     });
+  }, []);
+
+  const clearBlindEntryEffects = useCallback((event: BlindEntryEffectEvent) => {
+    setState((prev) => prev.blindEntryEffects === event
+      ? { ...prev, blindEntryEffects: null }
+      : prev);
   }, []);
 
   /** Skip Draft/Revision, grant its disclosed reward, and prepare the next blind. */
@@ -837,7 +939,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         : startBlind(run, rng, { bossId: run.chapterBossId });
       const pack = reward.freePack
         ? (() => {
-            const offer = rollPack(reward.freePack, run, rng);
+            const offer = rollPack(reward.freePack, run, rng, [], unlockedEmojiSet());
             return {
               offer,
               picksLeft: offer.pick,
@@ -848,6 +950,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             };
           })()
         : null;
+      recordEmojiUnlockEvent({ kind: 'blindSkipped', run });
+      if (pack) recordEmojiUnlockEvent({ kind: 'packOpened', run });
       return {
         ...prev,
         run,
@@ -918,13 +1022,19 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           spent: VOUCHER_REGISTRY.get(boughtId)?.price ?? 0,
         });
       }
+      recordEmojiUnlockEvent({ kind: 'snapshot', run: res.run });
       audio.play('voucherRedeem');
       tutorialBus.fire('firstVoucher');
       // Catalog upgrades open and fill their new sale slot immediately.
       let shop = res.shop;
       let rngCounter = prev.rngCounter;
       if (boughtId === 'catalog' || boughtId === 'couponBook') {
-        const extra = rollExtraItem(res.run, res.shop.items, makeRng(`${prev.seed}#${rngCounter}`));
+        const extra = rollExtraItem(
+          res.run,
+          res.shop.items,
+          makeRng(`${prev.seed}#${rngCounter}`),
+          unlockedEmojiSet(),
+        );
         shop = { ...res.shop, items: [...res.shop.items, extra] };
         rngCounter += 1;
       }
@@ -948,10 +1058,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         : discountedPrice(prev.run, BALANCE.pack.size[slot.size].price);
       if (prev.run.gold < price) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const offer = rollPack(slot, prev.run, rng);
+      const offer = rollPack(slot, prev.run, rng, prev.shop.items, unlockedEmojiSet());
       const packs = prev.shop.packs.slice();
       packs[index] = null;
       recordVoucherProgress({ kind: 'packBuy', spent: price });
+      recordEmojiUnlockEvent({ kind: 'packOpened', run: prev.run });
       return {
         ...prev,
         run: { ...prev.run, gold: prev.run.gold - price },
@@ -985,11 +1096,13 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // Constellations are also confirmed through a dedicated immediate-use path;
       // they never enter the consumable shelf when opened from a pack.
       if (option.kind === 'punctuation') return prev;
-      const run = applyPackPick(prev.run, option);
+      const run = applyPackPick(prev.run, option, unlockedEmojiSet());
+      if (run === prev.run) return prev;
       // A-4 confirm SFX fires in PackOpening on selection (immediate feedback, feature-04
       // C) rather than here — blocked picks there never reach the pick action, so they
       // stay silent without a run-identity check.
       recordEditionedJokers(run);
+      recordEmojiUnlockEvent({ kind: 'snapshot', run });
       return completePendingPackTransition({
         ...prev,
         run,
@@ -1021,12 +1134,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       };
 
       if (isBlindOnlyConsumable(id)) {
-        if (!canUseFableFromPack(id, prev.run, prev.blind, [])) return prev;
-        const run = applyPackPick(prev.run, option);
+        if (!canUseFableFromPack(id, prev.run, prev.blind, [], unlockedEmojiSet())) return prev;
+        const run = applyPackPick(prev.run, option, unlockedEmojiSet());
+        if (run === prev.run) return prev;
+        recordEmojiUnlockEvent({ kind: 'snapshot', run });
         return finish(run, prev.blind, 0);
       }
 
-      if (!canUseFableFromPack(id, prev.run, prev.blind, tileIds)) return prev;
+      if (!canUseFableFromPack(id, prev.run, prev.blind, tileIds, unlockedEmojiSet())) return prev;
       const stagedRun = { ...prev.run, consumables: [...prev.run.consumables, id] };
       let run: RunState;
       let blind = prev.blind;
@@ -1042,6 +1157,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           prev.blind,
           [],
           makeRng(`${prev.seed}#${prev.rngCounter}`),
+          unlockedEmojiSet(),
         );
         if (!result.ok) return prev;
         run = result.run;
@@ -1050,6 +1166,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       }
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+      recordPouchUnlockChanges(prev.run, run);
+      recordEmojiUnlockEvent({ kind: 'consumableUsed', run, family: 'fable' });
       recordEditionedJokers(run);
       if (!fableTargetsTiles(id)) consumableEffectBus.emit(id, prev.run, run, chanceResults);
       return finish(run, blind, 1);
@@ -1070,7 +1188,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const id = option.id;
       const field = prev.pack.candidateTiles;
       const targets = gamblerTargetsTiles(id) ? tileIds : [];
-      if (!canUseUnheldGambler(id, prev.run, field, targets)) return prev;
+      if (!canUseUnheldGambler(id, prev.run, field, targets, unlockedEmojiSet())) return prev;
 
       const stagedRun = { ...prev.run, consumables: [...prev.run.consumables, id] };
       const result = useGambler(
@@ -1080,6 +1198,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         field,
         targets,
         makeRng(`${prev.seed}#${prev.rngCounter}`),
+        unlockedEmojiSet(),
       );
       if (!result.ok) return prev;
 
@@ -1091,6 +1210,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         : null;
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+      recordPouchUnlockChanges(prev.run, result.run);
+      recordEmojiUnlockEvent({ kind: 'consumableUsed', run: result.run, family: 'gambler' });
       recordEditionedJokers(result.run);
       if (GAMBLER_REGISTRY.get(id)?.effect.kind !== 'font') {
         consumableEffectBus.emit(id, prev.run, result.run);
@@ -1125,6 +1246,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       });
       audio.play('consumableUse');
       recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
+      recordEmojiUnlockEvent({ kind: 'consumableUsed', run, family: 'constellation' });
       patternLevelBus.emit({
         cardId: option.id as import('../engine/constellations').ConstellationId,
         pattern,
@@ -1169,6 +1291,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             const candidateTiles = syncCandidates(prev.pack.candidateTiles, result.run);
             audio.play('consumableUse');
             recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+            recordPouchUnlockChanges(prev.run, result.run);
+            recordEmojiUnlockEvent({ kind: 'consumableUsed', run: result.run, family: 'fable' });
             return {
               ...prev,
               run: result.run,
@@ -1258,7 +1382,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // The shop has no active tile field. Only field-free Gambler effects whose
       // other preconditions pass may resolve there.
       if (prev.phase === 'shop' && isGamblerId(id) &&
-          !canUseGambler(id, prev.run, [], [])) return prev;
+          !canUseGambler(id, prev.run, [], [], unlockedEmojiSet())) return prev;
       if (isGamblerId(id)) {
         const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
         const result = useGambler(
@@ -1268,6 +1392,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           prev.phase === 'shop' ? [] : prev.blind.hand,
           prev.selected,
           rng,
+          unlockedEmojiSet(),
         );
         if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
         const selected = prev.selected.filter((tileId) =>
@@ -1276,6 +1401,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         const blind = reconcileBossHand(result.run, result.blind, rng);
         audio.play('consumableUse');
         recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+        recordPouchUnlockChanges(prev.run, result.run);
+        recordEmojiUnlockEvent({ kind: 'consumableUsed', run: result.run, family: 'gambler' });
         recordEditionedJokers(result.run);
         consumableEffectBus.emit(id, prev.run, result.run);
         return {
@@ -1295,11 +1422,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           prev.blind,
           prev.selected,
           rng,
+          unlockedEmojiSet(),
         );
         if (!result.ok) return { ...prev, message: { key: 'consumable.invalidSelection' } };
         const blind = reconcileBossHand(result.run, result.blind, rng);
         audio.play('consumableUse'); // A-3: object actions are audible
         recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
+        recordPouchUnlockChanges(prev.run, result.run);
+        recordEmojiUnlockEvent({ kind: 'consumableUsed', run: result.run, family: 'fable' });
         recordEditionedJokers(result.run);
         consumableEffectBus.emit(id, prev.run, result.run, result.chanceResults);
         const hint = result.requestHint
@@ -1325,22 +1455,25 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       audio.play('consumableUse'); // A-3
       if (pattern) {
         recordVoucherProgress({ kind: 'consumableUsed', family: 'constellation' });
+        const run = onConstellationUsed({
+          ...prev.run,
+          consumables,
+          lastFableOrConstellation: id,
+          patternLevels: {
+            ...prev.run.patternLevels,
+            [pattern]: (prev.run.patternLevels[pattern] ?? 1) + 1,
+          },
+        });
+        recordEmojiUnlockEvent({ kind: 'consumableUsed', run, family: 'constellation' });
         return {
           ...prev,
-          run: onConstellationUsed({
-            ...prev.run,
-            consumables,
-            lastFableOrConstellation: id,
-            patternLevels: {
-              ...prev.run.patternLevels,
-              [pattern]: (prev.run.patternLevels[pattern] ?? 1) + 1,
-            },
-          }),
+          run,
         };
       }
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
       const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, getLexicon(), 3) : prev.hint;
       const run = { ...prev.run, consumables };
+      recordEmojiUnlockEvent({ kind: 'consumableUsed', run, family: 'fable' });
       consumableEffectBus.emit(id, prev.run, run);
       return { ...prev, run, hint };
     },
@@ -1384,8 +1517,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const id = item.id;
       if (!canOwnConsumable(prev.run, id)) return prev;
       if (fableTargetsTiles(id) || isBlindOnlyConsumable(id)) return prev;
-      if (isFableId(id) && !canUseUnheldFable(id, prev.run, prev.blind)) return prev;
-      if (isGamblerId(id) && !canUseUnheldGambler(id, prev.run, [], [])) return prev;
+      if (isFableId(id) &&
+          !canUseUnheldFable(id, prev.run, prev.blind, unlockedEmojiSet())) return prev;
+      if (isGamblerId(id) &&
+          !canUseUnheldGambler(id, prev.run, [], [], unlockedEmojiSet())) return prev;
       const items = prev.shop.items.slice();
       items[index] = null;
       const paid: GameState = {
@@ -1438,10 +1573,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         bossDiscardedTiles,
         jokers,
         counters,
+        playedWords,
+        playedLetterHands,
       } = result;
-      // Glass shatter (A polish): a tile broke this play. Delayed so the shatter lands
-      // during the settle, after the glass tile's own ring beat — not at submit.
-      if (destroyedTileIds.length > 0) window.setTimeout(() => audio.play('matGlassBreak'), 450);
+      const selectedIds = new Set(prev.selected);
+      const heldTiles = prev.blind.hand.filter((tile) => !selectedIds.has(tile.id));
       const growWood = (tile: import('../engine/types').Tile) =>
         grownWoodTileIds.includes(tile.id)
           ? {
@@ -1479,6 +1615,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         ...prev.run,
         jokers,
         counters,
+        playedWords,
+        playedLetterHands,
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))
@@ -1490,6 +1628,17 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           ? prev.run.wordsThisAnte
           : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],
       }, destroyedTileIds.length);
+      recordPouchUnlockChanges(prev.run, nextRun);
+      const letterHandId = events.find((event) => event.kind === 'letterHand')?.hand ?? null;
+      recordEmojiUnlockEvent({
+        kind: 'wordPlayed',
+        run: nextRun,
+        blind,
+        submission,
+        letterHandId,
+        heldTiles,
+        bossDiscarded: bossDiscardedTiles.length,
+      });
       const wordScore = letterChips(submission.tiles);
       const best = prev.stats.bestWord;
       const bestWord =
@@ -1633,17 +1782,24 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         makeRng(`${prev.seed}#${prev.rngCounter}`),
       );
       recordVoucherProgress({ kind: 'tilesDiscarded', count: valid.length });
+      const nextRun: RunState = {
+        ...prev.run,
+        jokers,
+        gold: prev.run.gold + goldDelta,
+        consumables: gained.length
+          ? [...prev.run.consumables, ...gained]
+          : prev.run.consumables,
+      };
+      recordEmojiUnlockEvent({
+        kind: 'discardUsed',
+        run: nextRun,
+        tiles: valid.length,
+        slotsBlocked,
+      });
       const nextState: GameState = {
         ...prev,
         blind,
-        run: {
-          ...prev.run,
-          jokers,
-          gold: prev.run.gold + goldDelta,
-          consumables: gained.length
-            ? [...prev.run.consumables, ...gained]
-            : prev.run.consumables,
-        },
+        run: nextRun,
         message: slotsBlocked > 0 ? { key: 'font.slotsFull' } : null,
         hint: null,
         rngCounter: prev.rngCounter + 1,
@@ -1664,7 +1820,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const consumables = prev.run.consumables.slice();
       consumables.splice(index, 1);
       const gold = prev.run.gold + consumableSellValue(prev.run, c);
-      return { ...prev, run: { ...prev.run, consumables, gold } };
+      const run = { ...prev.run, consumables, gold };
+      recordEmojiUnlockEvent({ kind: 'snapshot', run });
+      return { ...prev, run };
     });
   }, []);
 
@@ -1704,11 +1862,13 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const newGame = useCallback(() => {
     const next = { ...bootstrap(), runStarted: true };
     recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+    recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
   }, []);
   const startRun = useCallback((options: RunStartOptions) => {
     const next = { ...bootstrap(options), runStarted: true };
     recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+    recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
   }, []);
 
@@ -1736,17 +1896,31 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // On the board, both Fables and Gamblers expose their live engine preconditions.
       if (state.phase === 'playing' && !state.pendingEnd) {
         if (isGamblerId(id)) {
-          return canUseGambler(id, state.run, state.blind.hand, state.selected);
+          return canUseGambler(
+            id,
+            state.run,
+            state.blind.hand,
+            state.selected,
+            unlockedEmojiSet(),
+          );
         }
-        return !isFableId(id) || canUseFable(id, state.run, state.blind, state.selected);
+        return !isFableId(id) || canUseFable(
+          id,
+          state.run,
+          state.blind,
+          state.selected,
+          unlockedEmojiSet(),
+        );
       }
       // In the shop (feedback 5): tile-targeting and blind-only Fables must be held
       // for a blind. Non-tile Fables use their own precondition; Constellations level.
       if (state.phase === 'shop') {
         if (isBlindOnlyConsumable(id) || fableTargetsTiles(id)) return false;
-        if (isGamblerId(id)) return canUseGambler(id, state.run, [], []);
+        if (isGamblerId(id)) {
+          return canUseGambler(id, state.run, [], [], unlockedEmojiSet());
+        }
         if (!isFableId(id)) return true;
-        return canUseFable(id, state.run, state.blind, []);
+        return canUseFable(id, state.run, state.blind, [], unlockedEmojiSet());
       }
       return false;
     },
@@ -1771,6 +1945,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     playWord,
     discard,
     selectBlind,
+    clearBlindEntryEffects,
     skipBlind,
     confirmCashout,
     markSettleComplete,

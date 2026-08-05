@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 const component = readFileSync('src/ui/components/DeskObjects.tsx', 'utf8');
 const css = readFileSync('src/ui/styles/play.css', 'utf8');
 const audio = readFileSync('src/ui/audio.ts', 'utf8');
+const app = readFileSync('src/ui/App.tsx', 'utf8');
 
 describe('ambient coffee cup interaction', () => {
   it('uses the pixel-art asset and a separately animated liquid layer', () => {
@@ -46,7 +47,7 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('setCupLeaving(true)');
     expect(component).toContain('setCup(null)');
     expect(component).toContain("cupLeaving ? 'desk-leaving' : 'desk-entering'");
-    expect(audio).toMatch(/deskCup:\s+\{[^}]*dur:\s*0\.68/s);
+    expect(audio).toMatch(/deskCup:\s*\{[\s\S]*?gain:\s*0\.4[\s\S]*?dur:\s*0\.86/);
   });
 
   it('waits longer between one-shot encounters', () => {
@@ -57,29 +58,33 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('setBell(next)');
   });
 
-  it('includes the independent coffee pot and three tactile-toy encounters', () => {
+  it('includes the coffee pot and the two tactile-toy encounters', () => {
     expect(component).toContain(
-      "type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'slangee' | 'waxBall' | 'keycap'",
+      "type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap'",
     );
     expect(component).toContain("{ kind: 'pot', sfx: 'deskPour' }");
     expect(component).toContain("{ kind: 'bell', sfx: 'deskBell' }");
     expect(component).toContain("{ kind: 'check', sfx: 'deskCheck' }");
-    expect(component).toContain("{ kind: 'slangee', sfx: 'tileSelect' }");
-    expect(component).toContain("{ kind: 'waxBall', sfx: 'stamp' }");
-    expect(component).toContain("{ kind: 'keycap', sfx: 'buttonPress' }");
+    expect(component).toContain("{ kind: 'waxBall', sfx: 'deskWaxCrunch' }");
+    expect(component).toContain("{ kind: 'keycap', sfx: 'deskKeycap' }");
     expect(component).not.toContain("'pencil'");
     expect(component).not.toContain("'plane'");
     expect(component).toContain("import callBell from '../assets/desk-call-bell.png'");
     expect(component).toContain("import blankCheck from '../assets/desk-blank-check.png'");
     expect(component).toContain("import coffeePot from '../assets/desk-coffee-pot.png'");
-    expect(component).toContain("import slangee from '../assets/desk-slangee.png'");
     expect(component).toContain("import waxBall from '../assets/desk-wax-ball.png'");
+    expect(component).toContain("import waxBallBroken from '../assets/desk-wax-ball-broken.png'");
     expect(component).toContain("import keycap from '../assets/desk-keycap.png'");
+    expect(component).not.toContain("'slangee'");
     expect(component).not.toContain("kind: 'refill'");
   });
 
-  it('ships square transparent PNG art for every new tactile toy', () => {
-    for (const name of ['desk-slangee.png', 'desk-wax-ball.png', 'desk-keycap.png']) {
+  it('ships square transparent PNG art for both tactile toys', () => {
+    for (const name of [
+      'desk-wax-ball.png',
+      'desk-wax-ball-broken.png',
+      'desk-keycap.png',
+    ]) {
       const png = readFileSync(`src/ui/assets/${name}`);
       expect(png.readUInt32BE(16), name).toBe(1254);
       expect(png.readUInt32BE(20), name).toBe(1254);
@@ -90,11 +95,25 @@ describe('ambient coffee cup interaction', () => {
   it('plays one tactile response before each simple encounter exits', () => {
     expect(component).toContain('const interactSimpleEncounter = () =>');
     expect(component).toContain('audio.play(encounter.sfx)');
+    expect(audio).toMatch(/deskKeycap:\s*\{[\s\S]*?gain:\s*0\.5[\s\S]*?dur:\s*0\.16[\s\S]*?cutoff:\s*5200/);
+    expect(audio).toMatch(/deskWaxCrunch:\s*\{[\s\S]*?gain:\s*0\.5[\s\S]*?dur:\s*0\.4[\s\S]*?color:\s*'brown'/);
     expect(component).toContain("encounterInteracting && encounter.kind !== 'check' && 'desk-interacting'");
     expect(css).toContain('@keyframes desk-pot-pour');
-    expect(css).toContain('@keyframes desk-slangee-squish');
     expect(css).toContain('@keyframes desk-wax-pop');
     expect(css).toContain('@keyframes desk-keycap-click');
+    expect(css).toContain('@keyframes desk-keycap-burst');
+    expect(component).toContain('className="desk-encounter-art desk-wax-intact"');
+    expect(component).toContain('className="desk-encounter-art desk-wax-broken"');
+    expect(component).toContain('className="desk-encounter-art desk-keycap-art"');
+    expect(component).toContain('className="desk-keycap-effect"');
+    expect(component).not.toContain("onPointerDown={encounter.kind === 'keycap'");
+    expect(component).toContain('onClick={interactSimpleEncounter}');
+    expect(app).toContain("[aria-disabled=\"true\"], .desk-object");
+    expect(css).toContain('.desk-waxBall.desk-interacting .desk-wax-broken');
+    expect(css).toContain('.desk-keycap.desk-interacting .desk-keycap-art');
+    expect(css).toContain('.desk-keycap.desk-interacting .desk-keycap-effect');
+    expect(css).not.toContain('.desk-keycap-cap');
+    expect(css).not.toContain('.desk-keycap-chain');
   });
 
   it('rings once, then plays its exit and removes the call bell', () => {
@@ -108,7 +127,7 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('@keyframes call-bell-switch-press');
     expect(css).toContain('.desk-bell.desk-ringing .desk-bell-switch');
     expect(css).toContain('@keyframes call-bell-waves');
-    expect(audio).toMatch(/deskBell:\s+\{[^}]*dur:\s*0\.92/s);
+    expect(audio).toMatch(/deskBell:\s*\{[\s\S]*?gain:\s*0\.4[\s\S]*?dur:\s*1\.12[\s\S]*?textured:\s*true/);
     expect(audio).not.toContain('deskPencil:');
     expect(audio).not.toContain('deskPlane:');
   });
@@ -123,6 +142,8 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('onPointerCancel={cancelSignature}');
     expect(component).toContain('event.currentTarget.setPointerCapture(event.pointerId)');
     expect(component).toContain('distance < SIGNATURE_MIN_DISTANCE');
+    expect(component).toContain('event.timeStamp - signatureScratchAt.current >= SIGNATURE_SCRATCH_INTERVAL_MS');
+    expect(component).toContain("audio.play('deskCheck')");
     expect(component).toContain('points.length < SIGNATURE_MIN_POINTS');
     expect(component).toContain('later(() => setEncounterLeaving(true), 320)');
     expect(component).toContain('later(finishEncounter, 900)');
@@ -132,7 +153,7 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('.desk-check.desk-drawing .desk-check-pen');
     expect(css).not.toContain('@keyframes check-signature-draw');
     expect(css).not.toContain('@keyframes check-pen-write');
-    expect(audio).toMatch(/deskCheck:\s+\{[^}]*dur:\s*1\.05/s);
+    expect(audio).toMatch(/deskCheck:\s*\{[\s\S]*?gain:\s*0\.34[\s\S]*?dur:\s*0\.1[\s\S]*?textured:\s*true/);
   });
 
   it('adds a subtle localized signature hint that clears while drawing', () => {
@@ -142,13 +163,22 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('.desk-check.desk-drawing .desk-check-guide');
   });
 
-  it('keeps coffee drained through the full cup exit', () => {
+  it('shows a full cup first, then only the pot until it refills the cup', () => {
     const drink = component.slice(
       component.indexOf('const drinkCoffee'),
       component.indexOf('const ringBell'),
     );
     expect(component).not.toContain('REFILL_CHANCE');
     expect(component).not.toContain('cupEmpty');
+    expect(component).toContain('const [coffeeReady, setCoffeeReady] = useState(true)');
+    expect(component).toContain("(kind !== 'cup' || (coffeeReady && !cup))");
+    expect(component).toContain("(kind !== 'pot' || !coffeeReady)");
+    expect(drink).toContain('setCoffeeReady(false)');
+    expect(component).toContain("if (encounter?.kind === 'pot') setCoffeeReady(true)");
+    const pour = audio.slice(audio.indexOf('deskPour:'), audio.indexOf('deskKeycap:'));
+    expect(pour).toMatch(/gain:\s*0\.42[\s\S]*?dur:\s*0\.9[\s\S]*?filter:\s*'highpass'/);
+    expect(pour).toContain("color: 'brown'");
+    expect(pour).not.toContain('tones:');
     expect(drink.indexOf('setCup(null)')).toBeLessThan(drink.indexOf('setCupDrinking(false)'));
     expect(css).toContain('.desk-cup.desk-drinking.desk-leaving .desk-coffee-liquid');
   });

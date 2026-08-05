@@ -10,7 +10,7 @@ import { ALL_JOKERS } from './jokers';
 import type { JokerDef } from './events';
 import type { Rng } from './rng';
 import type { JokerRarity, RunState } from './types';
-import { allowsDuplicateOffers, canOwnJoker } from './vouchers';
+import { allowsDuplicateOffers, canOwnJoker, isJokerProfileEligible } from './vouchers';
 
 /** Offer weight for a joker by its rarity. 0 = never offered (Legendary, until §12
  *  gives it a route — an absent rarity key resolves to 0 here). */
@@ -25,8 +25,14 @@ export function jokerRarityWeight(def: JokerDef): number {
  * bookkeeping. Copy effects are explicit one-shot exceptions and do not relax
  * this ordinary acquisition gate.
  */
-export function availableJokerDefs(run: RunState): JokerDef[] {
-  return ALL_JOKERS.filter((j) => canOwnJoker(run, j.id) && jokerRarityWeight(j) > 0);
+export function availableJokerDefs(
+  run: RunState,
+  profileEligible?: ReadonlySet<string>,
+): JokerDef[] {
+  return ALL_JOKERS.filter((j) =>
+    isJokerProfileEligible(j.id, profileEligible) &&
+    canOwnJoker(run, j.id) &&
+    jokerRarityWeight(j) > 0);
 }
 
 /**
@@ -39,13 +45,20 @@ export function availableJokerDefs(run: RunState): JokerDef[] {
  * whole draw returns fewer than `count` when the pool empties (the shrinking-pool
  * "nothing new" effect, C-4).
  */
-export function sampleJokerDefs(run: RunState, count: number, rng: Rng): JokerDef[] {
+export function sampleJokerDefs(
+  run: RunState,
+  count: number,
+  rng: Rng,
+  excludedIds: ReadonlySet<string> = new Set(),
+  profileEligible?: ReadonlySet<string>,
+): JokerDef[] {
   const withReplacement = allowsDuplicateOffers(run);
   // Grouped ONCE, then drained. A Map keeps first-seen rarity order, which is what
   // the weighted walk below indexes into — so this draws the same sequence from the
   // same seed as regrouping per pick did, without the per-pick rebuild.
   const byRarity = new Map<JokerRarity, JokerDef[]>();
-  for (const def of availableJokerDefs(run)) {
+  for (const def of availableJokerDefs(run, profileEligible)) {
+    if (excludedIds.has(def.id)) continue;
     const group = byRarity.get(def.rarity);
     if (group) group.push(def);
     else byRarity.set(def.rarity, [def]);

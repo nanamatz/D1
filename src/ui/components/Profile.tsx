@@ -20,6 +20,7 @@ import {
   type ProfileSlot,
 } from '../storage';
 import { UNLOCKS, applyPresentation, playedCount } from '../unlocks';
+import { formatScore } from '../formatScore';
 
 interface Props {
   lexicon: Lexicon;
@@ -214,6 +215,9 @@ export function Profile({ lexicon, onBack }: Props) {
         <div className="profile-actions">
           <div className="profile-balance">
             <span>{t('profile.wins')}: <strong>{lifetime.wins}</strong></span>
+            <span>{t('profile.bestRoundScore')}: <strong>{
+              lifetime.bestRoundScore ? formatScore(lifetime.bestRoundScore) : '—'
+            }</strong></span>
             <span>{t('profile.balanceRuns')}: <strong>{lifetime.balance.runs}</strong></span>
             <span>{t('profile.balanceWinRate')}: <strong>{balanceWinRate}%</strong></span>
             <span>

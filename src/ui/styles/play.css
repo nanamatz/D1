@@ -1544,7 +1544,7 @@
 .bs-target-row {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 2px;
 }
 /* The target row has no big font-size of its own (the number sizes itself), so the
    shared `em`-based tomato would stay tiny here — size it to match the target readout. */
@@ -1799,7 +1799,6 @@
 .desk-cup,
 .desk-bell,
 .desk-pot,
-.desk-slangee,
 .desk-waxBall,
 .desk-keycap {
   padding: 0;
@@ -1892,6 +1891,7 @@
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: visible;
   transform-origin: 50% 82%;
 }
 .desk-encounter-art {
@@ -1902,6 +1902,49 @@
   object-fit: contain;
   image-rendering: pixelated;
   pointer-events: none;
+}
+.desk-wax-intact {
+  z-index: 2;
+}
+.desk-wax-broken {
+  z-index: 3;
+  opacity: 0;
+}
+.desk-keycap-art {
+  z-index: 2;
+  transform-origin: 50% 72%;
+}
+.desk-keycap-effect {
+  position: absolute;
+  inset: 12%;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+}
+.desk-keycap-effect i {
+  position: absolute;
+  width: 14px;
+  height: 5px;
+  background: #fff4bb;
+  box-shadow: 0 5px 0 #ff6259;
+}
+.desk-keycap-effect i:nth-child(1) {
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
+}
+.desk-keycap-effect i:nth-child(2) {
+  top: 45%;
+  right: 1%;
+}
+.desk-keycap-effect i:nth-child(3) {
+  bottom: 3%;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
+}
+.desk-keycap-effect i:nth-child(4) {
+  top: 45%;
+  left: 1%;
 }
 .desk-bell-sprite {
   position: relative;
@@ -2061,7 +2104,6 @@
 .desk-bell.desk-entering,
 .desk-check.desk-entering,
 .desk-pot.desk-entering,
-.desk-slangee.desk-entering,
 .desk-waxBall.desk-entering,
 .desk-keycap.desk-entering {
   animation: desk-cup-down 0.78s cubic-bezier(0.2, 0.82, 0.28, 1.08) both;
@@ -2078,14 +2120,35 @@
 .desk-pot.desk-interacting .desk-encounter-sprite {
   animation: desk-pot-pour 0.52s steps(6, end) both;
 }
-.desk-slangee.desk-interacting .desk-encounter-sprite {
-  animation: desk-slangee-squish 0.52s steps(6, end) both;
-}
 .desk-waxBall.desk-interacting .desk-encounter-sprite {
   animation: desk-wax-pop 0.52s steps(6, end) both;
 }
-.desk-keycap.desk-interacting .desk-encounter-sprite {
+.desk-waxBall.desk-interacting .desk-wax-intact {
+  animation: desk-wax-intact-break 0.52s steps(1, end) both;
+}
+.desk-waxBall.desk-interacting .desk-wax-broken {
+  animation: desk-wax-broken-reveal 0.52s steps(5, end) both;
+}
+.desk-waxBall.desk-interacting .desk-encounter-sprite::after {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 48%;
+  width: 7px;
+  height: 7px;
+  background: #ffb52e;
+  box-shadow: -35px -28px 0 #ff7a0a, 32px -34px 0 #ffd85a, -42px 20px 0 #d94c08,
+    39px 17px 0 #ff8d0a;
+  opacity: 0;
+  pointer-events: none;
+  animation: desk-wax-shards 0.52s steps(5, end) both;
+}
+.desk-keycap.desk-interacting .desk-keycap-art {
   animation: desk-keycap-click 0.52s steps(6, end) both;
+}
+.desk-keycap.desk-interacting .desk-keycap-effect {
+  animation: desk-keycap-burst 0.52s steps(5, end) both;
 }
 @keyframes desk-in-left {
   from { transform: translateX(-160%); opacity: 0; }
@@ -2131,21 +2194,37 @@
   0%, 100% { transform: rotate(0); }
   38%, 72% { transform: translate(4px, 3px) rotate(18deg); }
 }
-@keyframes desk-slangee-squish {
-  0%, 100% { transform: scale(1); }
-  42% { transform: translateY(10%) scale(1.16, 0.7); }
-  72% { transform: translateY(-3%) scale(0.94, 1.08); }
-}
 @keyframes desk-wax-pop {
-  0%, 100% { transform: scale(1) rotate(0); filter: brightness(1); }
-  32% { transform: scale(0.88) rotate(-4deg); filter: brightness(1); }
-  48% { transform: scale(1.12) rotate(5deg); filter: brightness(1.45); }
-  72% { transform: scale(0.98) rotate(-2deg); filter: brightness(1); }
+  0% { transform: scale(1) rotate(0); filter: brightness(1); }
+  28% { transform: translateY(5%) scale(0.9, 0.82) rotate(-3deg); filter: brightness(0.9); }
+  46% { transform: translateY(-2%) scale(1.08) rotate(4deg); filter: brightness(1.35); }
+  100% { transform: scale(1) rotate(-1deg); filter: brightness(1); }
+}
+@keyframes desk-wax-intact-break {
+  0%, 34% { opacity: 1; }
+  35%, 100% { opacity: 0; }
+}
+@keyframes desk-wax-broken-reveal {
+  0%, 34% { opacity: 0; transform: scale(0.78); }
+  35% { opacity: 1; transform: scale(0.9); }
+  58% { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes desk-wax-shards {
+  0%, 28% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  38% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -65%) scale(1.75); }
 }
 @keyframes desk-keycap-click {
-  0%, 100% { transform: translateY(0) scaleY(1); }
-  36%, 62% { transform: translateY(9px) scaleY(0.86); }
-  78% { transform: translateY(-3px) scaleY(1.04); }
+  0%, 100% { transform: translateY(0) scaleY(1); filter: brightness(1); }
+  18% { transform: translateY(3px) scale(1.03, 0.94); filter: brightness(0.9); }
+  34%, 62% { transform: translateY(9px) scale(1.06, 0.82); filter: brightness(0.72); }
+  78% { transform: translateY(-2px) scale(0.98, 1.04); filter: brightness(1.18); }
+}
+@keyframes desk-keycap-burst {
+  0%, 20% { opacity: 0; transform: scale(0.58); }
+  34%, 55% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.28); }
 }
 @keyframes call-bell-ring {
   0%, 100% { transform: translateY(0) rotate(0) scale(1); }
@@ -2197,10 +2276,25 @@
   .desk-bell.desk-ringing .desk-bell-rings,
   .desk-check.desk-signing .desk-check-sprite,
   .desk-pot.desk-interacting .desk-encounter-sprite,
-  .desk-slangee.desk-interacting .desk-encounter-sprite,
   .desk-waxBall.desk-interacting .desk-encounter-sprite,
-  .desk-keycap.desk-interacting .desk-encounter-sprite {
+  .desk-waxBall.desk-interacting .desk-wax-intact,
+  .desk-waxBall.desk-interacting .desk-wax-broken,
+  .desk-waxBall.desk-interacting .desk-encounter-sprite::after,
+  .desk-keycap.desk-interacting .desk-keycap-art,
+  .desk-keycap.desk-interacting .desk-keycap-effect {
     animation: none;
+  }
+  .desk-waxBall.desk-interacting .desk-wax-intact {
+    opacity: 0;
+  }
+  .desk-waxBall.desk-interacting .desk-wax-broken {
+    opacity: 1;
+  }
+  .desk-keycap.desk-interacting .desk-keycap-art {
+    transform: translateY(8px) scale(1.05, 0.84);
+  }
+  .desk-keycap.desk-interacting .desk-keycap-effect {
+    opacity: 1;
   }
   .desk-coffee-steam i {
     opacity: 0.42;
@@ -2592,6 +2686,43 @@
 .joker-chance-pop {
   position: fixed;
   z-index: 72;
+}
+.blind-entry-trigger-pop {
+  position: fixed;
+  z-index: 76;
+  animation: triggerPopBelow 0.55s ease-out forwards;
+}
+.blind-entry-stone-fly {
+  position: fixed;
+  z-index: 77;
+  pointer-events: none;
+  animation: blindEntryStoneFly 0.7s cubic-bezier(.2, .76, .32, 1) both;
+}
+.blind-entry-stone-fly .tile {
+  pointer-events: none;
+  filter: drop-shadow(0 5px 2px rgba(0, 0, 0, .42));
+}
+.pouch-widget.receiving-tile {
+  animation: pouchReceiveTile .3s cubic-bezier(.2, 1.5, .45, 1);
+}
+@keyframes blindEntryStoneFly {
+  0% {
+    transform: translate(0, 0) rotate(-12deg) scale(.72);
+    opacity: 0;
+  }
+  16% { opacity: 1; }
+  48% {
+    transform: translate(var(--blind-fly-mid-x), var(--blind-fly-mid-y)) rotate(15deg) scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--blind-fly-x), var(--blind-fly-y)) rotate(34deg) scale(.3);
+    opacity: 0;
+  }
+}
+@keyframes pouchReceiveTile {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(.88) rotate(-3deg); filter: brightness(1.35); }
 }
 .joker-chance-pop.below {
   animation: triggerPopBelow 0.55s ease-out forwards;
@@ -3631,10 +3762,83 @@
   0% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(0.35) rotate(14deg); }
 }
+/* Glass breaks on its material-result beat, then stays cracked in the submitted
+   word so permanent destruction remains readable after the animation. */
+.tile.glass-destroyed {
+  filter: grayscale(.78) brightness(.62);
+  box-shadow: var(--shadow), inset 0 0 0 3px rgba(29, 39, 43, .72);
+}
+.glass-shatter-fx {
+  position: absolute;
+  z-index: 12;
+  inset: 2px;
+  overflow: visible;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(32deg, transparent 0 47%, rgba(235, 249, 255, .9) 48% 50%, transparent 51%),
+    linear-gradient(148deg, transparent 0 56%, rgba(30, 52, 61, .9) 57% 59%, transparent 60%),
+    linear-gradient(72deg, transparent 0 38%, rgba(235, 249, 255, .75) 39% 41%, transparent 42%);
+}
+.glass-shatter-fx::before,
+.glass-shatter-fx::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.glass-shatter-fx::before {
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(223, 244, 250, .9);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px rgba(29, 50, 58, .75);
+}
+.glass-shatter-fx::after {
+  width: 5px;
+  height: 7px;
+  background: #dff7ff;
+  box-shadow: -28px -22px #9dd8e8, 26px -25px #f4fdff, -33px 20px #78b9ca,
+    31px 23px #c8eff8, 2px -34px #89c9d9, -3px 34px #eefcff;
+  opacity: 0;
+}
+.tile.glass-shattering {
+  z-index: 9;
+  overflow: visible;
+  animation: glass-tile-shatter .58s steps(7, end) both;
+}
+.tile.glass-shattering .glass-shatter-fx::before {
+  animation: glass-impact .58s steps(5, end) both;
+}
+.tile.glass-shattering .glass-shatter-fx::after {
+  animation: glass-shards .58s steps(6, end) both;
+}
+@keyframes glass-tile-shatter {
+  0% { transform: translate(0) rotate(0) scale(1); filter: brightness(1.45); }
+  18% { transform: translate(-3px, 1px) rotate(-3deg) scale(1.06); }
+  36% { transform: translate(3px, -2px) rotate(3deg) scale(.96); }
+  58% { transform: translate(-2px, 2px) rotate(-2deg) scale(.88); }
+  100% { transform: translate(0) rotate(0) scale(1); filter: grayscale(.78) brightness(.62); }
+}
+@keyframes glass-impact {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  24% { opacity: 1; transform: translate(-50%, -50%) scale(1.35); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes glass-shards {
+  0%, 20% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  35% { opacity: 1; transform: translate(-50%, -50%) scale(.7); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+}
 @media (prefers-reduced-motion: reduce) {
   .tile.mat-flash,
   .tile.trig-bounce,
   .tile.mat-destroy,
+  .tile.glass-shattering,
+  .tile.glass-shattering .glass-shatter-fx::before,
+  .tile.glass-shattering .glass-shatter-fx::after,
   .tile-edition-violet,
   .tile-edition-rainbow { animation: none; }
   .tile-enhance-fx { display: none; }
@@ -3695,8 +3899,8 @@
 }
 .tile.f-inline {
   font-weight: 500;
-  -webkit-text-stroke: 2px var(--tile-ink);
-  color: transparent;
+  -webkit-text-stroke: 2px currentColor;
+  -webkit-text-fill-color: transparent;
 }
 
 /* ---------- staged + hand ---------- */
@@ -4433,7 +4637,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 2px;
 }
 /* Tomato: vertically centred in the panel, left-aligned to the panel's padding
    edge — independent of the centred number (its 1.7em size is unchanged). */
@@ -4448,7 +4652,10 @@
   height: 1.7em;
   vertical-align: middle;
 }
-.round-score-value { flex: none; }
+.round-score-value {
+  flex: none;
+  white-space: nowrap;
+}
 
 .joker.boss-disabled-entering {
   animation: ultrasound-disable-in .68s steps(6, end) both;
@@ -4659,22 +4866,6 @@
      `auto`: tall content genuinely has to scroll. */
   overflow-x: clip;
   overflow-y: auto;
-}
-/* The Collection is the one pause view that wants the wide grid it gets as a
-   standalone screen. Every other view here is a narrow centred column and would
-   only gain empty space, so the width follows the content rather than the modal. */
-.overlay-card.pause-modal:has(.collection) {
-  max-width: min(1240px, 96vw);
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-.overlay-card.pause-modal:has(.detail-jokers) {
-  max-height: calc(100vh - 40px);
-  padding: 0;
-  overflow-y: clip;
 }
 .pause-modal .screen {
   min-height: 0;

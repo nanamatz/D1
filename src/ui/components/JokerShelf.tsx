@@ -295,6 +295,7 @@ export function JokerShelf({
               <div
                 key={i}
                 data-joker-id={owned.defId}
+                data-joker-index={i}
                 className={[
                   'joker-slot',
                   jokerMenuIdx === i && 'menu-open',

@@ -39,6 +39,7 @@ describe('pouch hover summary and click view', () => {
     expect(pouch).toContain('const remaining = tally(tiles)');
     expect(pouch).toContain('className="pouch-modal-letter-grid"');
     expect(pouch).toContain('{remaining.perLetter[letter] ?? 0}');
+    expect(pouch).not.toContain('bagview.enhanced');
     expect(css).toMatch(/\.pouch-modal-letter-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s);
   });
 

@@ -59,6 +59,11 @@ import { richText } from '../richtext';
 import { SKIP_REWARD_IDS } from '../../engine/skipRewards';
 import { SKIP_REWARD_ART } from '../skipRewardArt';
 import { skipRewardCollectionDescKey, skipRewardParams } from '../skipRewardTooltip';
+import {
+  isEmojiUnlocked,
+  loadEmojiUnlockProgress,
+  unlockedEmojiSet,
+} from '../emojiUnlocks';
 
 type Category =
   | 'words'
@@ -170,7 +175,7 @@ export function Collection({ lexicon, onBack }: Props) {
       const progress = runUnlockProgress();
       return {
       words: { have: profileCollectionSize(lexicon.size), total: lexicon.size },
-      jokers: { have: ALL_JOKERS.length, total: ALL_JOKERS.length },
+      jokers: { have: unlockedEmojiSet().size, total: ALL_JOKERS.length },
       enhancedTiles: {
         have: MATERIALS.length + FONTS.length,
         total: MATERIALS.length + FONTS.length,
@@ -497,23 +502,34 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
 function JokersView() {
   const { t, lang } = useI18n();
   const { page, pages, visible, setPage } = usePaged(ALL_JOKERS, JOKERS_PER_PAGE);
+  const progress = loadEmojiUnlockProgress();
 
   return (
     <>
       <div className="card-grid joker-collection-grid">
         {visible.map((def) => {
           const art = jokerArt(def.id);
+          const unlocked = isEmojiUnlocked(def.id, progress);
           return (
             <Tooltip
               key={def.id}
-              title={lang === 'ko' ? def.nameKo : def.nameEn}
-              body={t(jokerDescKey(def.id))}
-              extra={grownValue(def, undefined, t)}
-              rarity={def.rarity}
+              title={unlocked
+                ? (lang === 'ko' ? def.nameKo : def.nameEn)
+                : t('collection.joker.undiscovered')}
+              body={unlocked
+                ? t(jokerDescKey(def.id))
+                : t('collection.joker.undiscoveredHint')}
+              extra={unlocked ? grownValue(def, undefined, t) : null}
+              {...(unlocked ? { rarity: def.rarity } : {})}
               down
             >
-              <TiltCard idle className="emoji-tile-collection" tabIndex={0}>
+              <TiltCard
+                idle
+                className={`emoji-tile-collection${unlocked ? '' : ' locked'}`}
+                tabIndex={0}
+              >
                 {art && <img className="cc-joker-art" src={art} alt="" />}
+                {!unlocked && <span className="emoji-tile-lock" aria-hidden="true" />}
               </TiltCard>
             </Tooltip>
           );
@@ -654,7 +670,7 @@ function BossesView() {
       <div className="panel target-table">
         <div className="label">{t('collection.targetCurve')}</div>
         {/* Non-boss blind emblems: Draft (small) / Revision (big). Deadlines are
-            the 14 bosses shown to the right. */}
+            the 18 bosses shown to the right. */}
         <div className="blind-emblems">
           {(['small', 'big'] as const).map(
             (k) =>
