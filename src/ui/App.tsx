@@ -82,6 +82,25 @@ export function App() {
   // page-load values — which is what used to let it write a stale snapshot back.
   useSettings();
   const [screen, setScreen] = useState<Screen>('menu');
+
+  // Escape follows the visible Back button's real stack. Capture phase matters:
+  // overlays and focused controls may consume the key before it reaches window.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.repeat) return;
+      const back = document.querySelector<HTMLButtonElement>(
+        '.collection-overlay .back-bar, .pause-overlay .back-bar, '
+          + '.screen-pane.screen-in .back-bar, .screen-pane.screen-in .desk-lab-back',
+      );
+      if (!back) return;
+      event.preventDefault();
+      event.stopPropagation();
+      back.click();
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, []);
+
   const openScreen = useCallback(
     (next: Exclude<Screen, 'menu'>) => {
       if (next === 'newrun') {
