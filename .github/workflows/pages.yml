@@ -1,0 +1,41 @@
+name: Deploy Pages
+
+# The legacy Jekyll builder stopped publishing this site (four consecutive
+# "Page build failed." on clean trees, 2026-08-06), so Pages is set to
+# build_type=workflow and this is what publishes it.
+#
+# Flow is unchanged: `npm run deploy` still builds dist/ and pushes it to the
+# gh-pages branch. This workflow then publishes that branch as-is.
+# Run it after a deploy with:  gh workflow run pages.yml
+#
+# Trigger is manual on purpose. A `push: branches: [gh-pages]` trigger cannot
+# work here — GitHub reads workflow files from the ref that was pushed, and
+# gh-pages holds only the built site.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploy
+        uses: actions/deploy-pages@v4
