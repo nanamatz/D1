@@ -1575,6 +1575,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         counters,
         playedWords,
         playedLetterHands,
+        letterHandPlayCounts,
       } = result;
       const selectedIds = new Set(prev.selected);
       const heldTiles = prev.blind.hand.filter((tile) => !selectedIds.has(tile.id));
@@ -1617,6 +1618,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         counters,
         playedWords,
         playedLetterHands,
+        letterHandPlayCounts,
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))

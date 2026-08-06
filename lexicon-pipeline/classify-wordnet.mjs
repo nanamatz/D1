@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Fill every dictionary word with POS using Princeton WordNet 3.0.
- * Existing baked tags stay authoritative; WordNet fills only missing words.
+ * Existing baked tags are enriched with exact-headword source tags; explicit
+ * POS overrides remain authoritative. WordNet morphology fills missing words.
  *
  * Usage:
  *   node classify-wordnet.mjs --words ../data/dictionary.txt \
@@ -23,6 +24,7 @@ const EXISTING = args.existing ?? '../data/lexicon.json';
 const WORDNET = args.wordnet;
 const MOBY = args.moby;
 const OUT = args.out ?? EXISTING;
+const POS_OVERRIDES = args.posOverrides ?? 'lexicon-pipeline/pos-overrides.json';
 const MAX_WORD_LENGTH = 18;
 
 if (!WORDNET || !MOBY) {
@@ -39,6 +41,9 @@ const dictionary = [...new Set(readLines(WORDS).filter(eligible))];
 const existing = fs.existsSync(EXISTING)
   ? Object.fromEntries(Object.entries(JSON.parse(fs.readFileSync(EXISTING, 'utf8')))
     .filter(([word]) => eligible(word)))
+  : {};
+const posOverrides = fs.existsSync(POS_OVERRIDES)
+  ? JSON.parse(fs.readFileSync(POS_OVERRIDES, 'utf8'))
   : {};
 
 const wordnet = new Map();
@@ -149,6 +154,25 @@ const POS_ORDER = [
   'article', 'conjunction', 'preposition', 'interjection',
 ];
 
+/** Direct labels only: no suffix/lemma inference, so legacy tags gain only
+ * POS explicitly attached to the same spelling in Moby or WordNet. */
+function exactFromSources(word) {
+  const pos = new Set(moby.get(word)?.pos ?? []);
+  const data = wordnet.get(word);
+  if (data?.noun) pos.add('noun');
+  if (data?.adjective) pos.add('adjective');
+  if (data?.adverb) pos.add('adverb');
+  if (data?.frames.size) {
+    const frames = [...data.frames];
+    if (frames.some((frame) => linkingFrames.has(frame))) pos.add('verbLinking');
+    if (frames.some((frame) => transitiveFrames.has(frame))) pos.add('verbTransitive');
+    if (frames.some((frame) => !linkingFrames.has(frame) && !transitiveFrames.has(frame))) {
+      pos.add('verbIntransitive');
+    }
+  }
+  return POS_ORDER.filter((value) => pos.has(value));
+}
+
 function fromSources(word) {
   const mobyEntry = moby.get(word);
   const pos = new Set(mobyEntry?.pos ?? []);
@@ -209,11 +233,18 @@ function fallback(word) {
 
 const output = { ...existing };
 let preserved = 0;
+let enriched = 0;
 let mobyClassified = 0;
 let wordnetClassified = 0;
 let guessed = 0;
 for (const word of dictionary) {
   if (output[word]?.pos?.length) {
+    const pos = [
+      ...output[word].pos,
+      ...exactFromSources(word).filter((value) => !output[word].pos.includes(value)),
+    ];
+    if (pos.length > output[word].pos.length) enriched += 1;
+    output[word] = { ...output[word], pos };
     preserved += 1;
     continue;
   }
@@ -228,7 +259,12 @@ for (const word of dictionary) {
   };
 }
 
+for (const [word, pos] of Object.entries(posOverrides)) {
+  if (!output[word] || !Array.isArray(pos) || pos.length === 0) continue;
+  output[word] = { ...output[word], pos: POS_ORDER.filter((value) => pos.includes(value)) };
+}
+
 const sorted = Object.fromEntries(Object.entries(output).sort(([a], [b]) => a.localeCompare(b)));
 fs.writeFileSync(OUT, JSON.stringify(sorted));
 console.log(`wrote ${Object.keys(sorted).length} entries to ${OUT}`);
-console.log(`preserved ${preserved}; Moby ${mobyClassified}; WordNet-only ${wordnetClassified}; fallback ${guessed}`);
+console.log(`preserved ${preserved} (${enriched} enriched); Moby ${mobyClassified}; WordNet-only ${wordnetClassified}; fallback ${guessed}; overrides ${Object.keys(posOverrides).length}`);

@@ -13,6 +13,10 @@ const registerOverrides = JSON.parse(readFileSync(
   resolve(root, 'lexicon-pipeline/register-overrides.json'),
   'utf8',
 ));
+const posOverrides = JSON.parse(readFileSync(
+  resolve(root, 'lexicon-pipeline/pos-overrides.json'),
+  'utf8',
+));
 const dictionary = readFileSync(resolve(root, 'data/dictionary.txt'), 'utf8')
   .split(/\r?\n/)
   .map((line) => line.trim())
@@ -70,6 +74,14 @@ for (const [word, entry] of Object.entries(table)) {
   }
   for (const pos of entry.pos) {
     if (!parts.has(pos)) errors.push(`${word}: invalid POS ${pos}`);
+  }
+}
+for (const [word, pos] of Object.entries(posOverrides)) {
+  if (!table[word]) errors.push(`${word}: POS override word missing from lexicon`);
+  else if (!Array.isArray(pos) || pos.length === 0 || pos.some((value) => !parts.has(value))) {
+    errors.push(`${word}: invalid POS override`);
+  } else if (JSON.stringify(table[word].pos) !== JSON.stringify(pos)) {
+    errors.push(`${word}: POS override ${pos.join(',')} != lexicon ${table[word].pos.join(',')}`);
   }
 }
 

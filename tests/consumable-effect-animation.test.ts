@@ -52,6 +52,16 @@ describe('shared consumable result animation', () => {
     expect(css).toContain('.cfx-created');
   });
 
+  it('emphasizes economy and edition outcomes and shatters removed tiles', () => {
+    const component = source('../src/ui/components/ConsumableEffect.tsx');
+    const css = source('../src/ui/styles/screens.css');
+    expect(component).toContain('className="cfx-shatter-fx"');
+    expect(component).toContain('className="cfx-gold"');
+    expect(css).toMatch(/\.cfx-stats \.cfx-gold\s*\{[^}]*border:\s*0;[^}]*font-size:\s*var\(--ds-2xl\);/s);
+    expect(css).toMatch(/\.consumable-effect \.chance-result\s*\{[^}]*font-size:\s*var\(--ds-sm\);/s);
+    expect(css).toContain('@keyframes cfx-shatter-shards');
+  });
+
   it('preserves exact chance outcomes for the shared result vignette', () => {
     const run = newRun('chance-fx');
     const chanceResults = [{

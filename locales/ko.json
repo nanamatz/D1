@@ -956,6 +956,7 @@
   "runinfo.tabHands": "단어 족보",
   "runinfo.tabBlind": "블라인드",
   "runinfo.tabVouchers": "바우처",
+  "runinfo.timesUsed": "{n}",
   "bagview.title": "주머니",
   "bagview.full": "전체 주머니",
   "bagview.remaining": "남은 타일",

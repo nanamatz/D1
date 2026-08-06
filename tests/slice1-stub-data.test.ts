@@ -33,4 +33,9 @@ describe('slice1 stub data — real dictionary.txt + lexicon.json load correctly
     // RUN is verb + noun (chant example)
     expect(lex.lookup('run')!.pos).toContain('verbIntransitive');
   });
+
+  it('keeps exact source POS additions and curated overrides', () => {
+    expect(lex.lookup('medical')!.pos).toEqual(expect.arrayContaining(['noun', 'adjective']));
+    expect(lex.lookup('nuclear')!.pos).toEqual(['noun', 'adjective']);
+  });
 });

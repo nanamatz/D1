@@ -4270,7 +4270,7 @@ body.cb-safe .tile.hint {
 }
 .ri-hand {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
+  grid-template-columns: 30px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -4349,6 +4349,21 @@ body.cb-safe .tile.hint {
 .runinfo .pcm .chips { color: var(--chips); }
 .runinfo .pcm .mult { color: var(--mult); }
 .runinfo .pcm .times { color: var(--ink-dim); }
+.ri-use-count {
+  display: inline-grid;
+  min-width: 58px;
+  min-height: 28px;
+  place-items: center;
+  margin-left: 8px;
+  border: 1px solid var(--inset-edge);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  line-height: 1;
+  white-space: nowrap;
+}
 .ri-vouchers {
   display: flex;
   flex-wrap: wrap;
@@ -4797,7 +4812,44 @@ body.cb-safe .tile.hint {
   image-rendering: pixelated;
 }
 .cfx-destroyed {
-  animation: cfx-destroy .85s ease .2s both;
+  animation: cfx-destroy 1.05s steps(8, end) .2s both;
+}
+.cfx-shatter-fx {
+  position: absolute;
+  z-index: 13;
+  inset: -3px;
+  overflow: visible;
+  border-radius: 6px;
+  pointer-events: none;
+  background:
+    linear-gradient(32deg, transparent 0 47%, rgba(244, 253, 255, .95) 48% 50%, transparent 51%),
+    linear-gradient(148deg, transparent 0 56%, rgba(35, 51, 58, .92) 57% 59%, transparent 60%),
+    linear-gradient(72deg, transparent 0 38%, rgba(244, 253, 255, .82) 39% 41%, transparent 42%);
+  animation: cfx-shatter-crack 1.05s steps(7, end) .2s both;
+}
+.cfx-shatter-fx::before,
+.cfx-shatter-fx::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.cfx-shatter-fx::before {
+  width: 15px;
+  height: 15px;
+  border: 3px solid rgba(235, 249, 255, .95);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(29, 50, 58, .78);
+  animation: cfx-shatter-impact 1.05s steps(7, end) .2s both;
+}
+.cfx-shatter-fx::after {
+  width: 5px;
+  height: 7px;
+  background: #dff7ff;
+  box-shadow: -28px -22px #9dd8e8, 26px -25px #f4fdff, -33px 20px #78b9ca,
+    31px 23px #c8eff8, 2px -34px #89c9d9, -3px 34px #eefcff;
+  animation: cfx-shatter-shards 1.05s steps(8, end) .2s both;
 }
 .cfx-changed {
   animation: cfx-change 1.15s cubic-bezier(.34, 1.7, .5, 1) .58s both;
@@ -4823,6 +4875,15 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-xl);
   animation: cfx-stat-in .4s ease .9s both;
 }
+.cfx-stats .cfx-gold {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--ds-2xl);
+  line-height: 1;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, .42), 0 0 12px rgba(240, 178, 62, .35);
+}
 .chance-results {
   display: inline-flex;
   flex-wrap: wrap;
@@ -4846,6 +4907,10 @@ body.cb-safe .tile.hint {
   white-space: nowrap;
   box-shadow: 2px 2px 0 rgba(0, 0, 0, .4);
   animation: chance-result-in .4s steps(4, end) .48s both;
+}
+.consumable-effect .chance-result {
+  padding: 6px 12px;
+  font-size: var(--ds-sm);
 }
 .chance-result small { font-size: .68em; color: var(--ink); }
 .chance-result b { color: var(--gold); font-weight: 400; }
@@ -4883,9 +4948,28 @@ body.cb-safe .tile.hint {
   100% { transform: translateY(-15px) scale(.82); opacity: 0; filter: brightness(2); }
 }
 @keyframes cfx-destroy {
-  0%, 25% { opacity: 1; transform: none; filter: brightness(1); }
-  55% { filter: brightness(2); }
+  0%, 18% { opacity: 1; transform: none; filter: brightness(1); }
+  25% { opacity: 1; transform: translate(-3px, 1px) rotate(-3deg) scale(1.06); }
+  32% { opacity: 1; transform: translate(3px, -2px) rotate(3deg) scale(.98); }
+  40% { opacity: 1; transform: translate(-2px, 2px) rotate(-2deg) scale(1.03); }
+  58% { opacity: 1; transform: none; filter: brightness(2); }
   100% { opacity: 0; transform: scale(.12) rotate(18deg); filter: brightness(2); }
+}
+@keyframes cfx-shatter-crack {
+  0%, 18% { opacity: 0; transform: scale(.7); }
+  25%, 58% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+@keyframes cfx-shatter-impact {
+  0%, 18% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.35); }
+  58% { opacity: .8; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+}
+@keyframes cfx-shatter-shards {
+  0%, 25% { opacity: 0; transform: translate(-50%, -50%) scale(.25); }
+  32% { opacity: 1; transform: translate(-50%, -50%) scale(.65); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.25) rotate(20deg); }
 }
 @keyframes cfx-change {
   from { opacity: 0; transform: scale(.65); filter: brightness(2); }
@@ -4919,6 +5003,12 @@ body.cb-safe .tile.hint {
     animation-duration: .01ms !important;
     animation-delay: 0ms !important;
   }
+  .cfx-destroyed {
+    opacity: .55;
+    animation: none !important;
+    filter: grayscale(1);
+  }
+  .cfx-shatter-fx { display: none; }
 }
 
 /* Constellation use: shake the source, reveal old Mult/Chips, add each green

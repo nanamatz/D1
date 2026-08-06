@@ -2,9 +2,9 @@
 
 `dictionary.txt` contains every ENABLE word of 18 letters or fewer plus 13
 apostrophe-free tile-grammar exceptions (172,228 total). `lexicon.json` gives every dictionary word a non-empty
-POS list: existing curated tags stay authoritative, then public-domain Moby POS
-and Princeton WordNet 3.0 fill the expanded pool; a deterministic suffix fallback
-covers remaining obscure forms.
+POS list: exact-headword public-domain Moby POS and Princeton WordNet 3.0 tags
+are unioned with the legacy classification, explicit `pos-overrides.json` wins,
+and a deterministic suffix fallback covers remaining obscure forms.
 
 Every lexicon entry also passes the offline representative-meaning register
 audit defined by `docs/# 영단어 레지스터 분류 기준.md`. Wiktionary usage

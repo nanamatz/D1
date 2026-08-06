@@ -91,6 +91,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     wordsThisAnte: [], // reset per ante; read by Memoirs (회고록)
     playedWords: [],
     playedLetterHands: [],
+    letterHandPlayCounts: {},
     bossRerollsUsed: 0,
     counters: freshCounters(),
   };

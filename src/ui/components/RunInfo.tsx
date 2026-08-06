@@ -95,6 +95,9 @@ export function RunInfo({ run, blind, onClose }: Props) {
                         <span className="times">×</span>
                         <b className="mult">{cm.mult}</b>
                       </span>
+                      <span className="ri-use-count">
+                        {t('runinfo.timesUsed', { n: run.patternPlayCounts?.[p] ?? 0 })}
+                      </span>
                     </div>
                   </Tooltip>
                 );
@@ -121,6 +124,9 @@ export function RunInfo({ run, blind, onClose }: Props) {
                           <b className="mult">{bonus.mult}</b>
                         </>
                       )}
+                    </span>
+                    <span className="ri-use-count">
+                      {t('runinfo.timesUsed', { n: run.letterHandPlayCounts?.[hand.id] ?? 0 })}
                     </span>
                   </div>
                 );

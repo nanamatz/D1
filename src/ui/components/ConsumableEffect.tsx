@@ -60,6 +60,7 @@ export function ConsumableEffect() {
   const tileObject = (tile: Tile, mode: 'destroyed' | 'changed' | 'created') => (
     <div key={`${mode}-${tile.id}`} className={`cfx-object cfx-${mode}`}>
       <TileView tile={tile} mini inspectable tooltip={tileTooltip(tile, t)} />
+      {mode === 'destroyed' && <span className="cfx-shatter-fx" aria-hidden />}
     </div>
   );
 
@@ -131,7 +132,11 @@ export function ConsumableEffect() {
             {active.addedConsumables.map(consumableObject)}
           </div>
           <div className="cfx-stats">
-            {active.goldDelta !== 0 && <span>{active.goldDelta > 0 ? '+' : ''}${active.goldDelta}</span>}
+            {active.goldDelta !== 0 && (
+              <span className="cfx-gold">
+                {active.goldDelta > 0 ? '+' : ''}${active.goldDelta}
+              </span>
+            )}
             {active.handSizeDelta !== 0 && (
               <span>{t('consumableFx.handSize', { n: active.handSizeDelta })}</span>
             )}

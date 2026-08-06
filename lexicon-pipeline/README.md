@@ -19,6 +19,7 @@ node lexicon-pipeline/classify-wordnet.mjs \
   --existing data/lexicon.json \
   --wordnet /path/to/WordNet-3.0/dict \
   --moby /path/to/mobypos.txt \
+  --posOverrides lexicon-pipeline/pos-overrides.json \
   --out data/lexicon.json
 node lexicon-pipeline/fetch-wiktionary-registers.mjs
 node lexicon-pipeline/fetch-wiktionary-primary-registers.mjs
@@ -27,12 +28,15 @@ npm run check:data
 ```
 
 `dictionary.txt` contains every ENABLE word of 18 letters or fewer plus apostrophe-free tile-grammar
-exceptions. `classify-wordnet.mjs` preserves every existing non-empty entry,
-then fills missing words from Moby and WordNet. WordNet morphology handles
+exceptions. `classify-wordnet.mjs` unions exact-headword Moby/WordNet POS into
+existing non-empty entries, fills missing words, then applies `pos-overrides.json`.
+WordNet morphology handles
 inflections and verb frames distinguish transitive, intransitive, and linking
 uses. A deterministic suffix fallback gives the remaining obscure forms a
 non-empty POS. Register classification is a separate pass, so the POS builder
 defaults newly added words to Standard rather than applying legacy suit seeds.
+Each `pos-overrides.json` row is the complete ordered POS list for that word,
+not an additive patch; `check:data` verifies that the baked entry matches it.
 
 Current playable build: 172,228 dictionary words, 172,251 lexicon entries
 (23 retained pre-existing entries sit outside the dictionary). `check:data`

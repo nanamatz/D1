@@ -87,8 +87,9 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
   it('BOOK adds Twin Chips and multiplies the current word Mult', () => {
     const lex = makeLexicon(['book'], {});
     const { run, blind } = handOf(['B', 'O', 'O', 'K']);
+    run.letterHandPlayCounts = { twin: 2 };
     const ids = blind.hand.slice(0, 4).map((t) => t.id);
-    const { submission, events } = submitWord(blind, run, lex, ids, makeRng('test'));
+    const { submission, events, letterHandPlayCounts } = submitWord(blind, run, lex, ids, makeRng('test'));
     // chips: B9+O3+O3+K15 = 30, +Twin 15 = 45
     // mult: (standard 1.0 + length 4) × Twin 1 = 5.0 => 45 × 5.0 = 225
     expect(submission.text).toBe('BOOK');
@@ -97,6 +98,7 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     expect(events).toContainEqual({
       kind: 'letterHand', hand: 'twin', chipsDelta: 15, multDelta: 0, multFactor: 1,
     });
+    expect(letterHandPlayCounts.twin).toBe(3);
   });
 
   it('gibberish QRSTU fires Straight, stays a hole (suit/POS null)', () => {

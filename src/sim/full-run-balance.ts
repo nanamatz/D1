@@ -294,6 +294,7 @@ function playBlind(
         counters: result.counters,
         playedWords: result.playedWords,
         playedLetterHands: result.playedLetterHands,
+        letterHandPlayCounts: result.letterHandPlayCounts,
         gold: Math.max(0, run.gold + result.goldDelta),
         bag: run.bag
           .filter((tile) => !result.destroyedTileIds.includes(tile.id))

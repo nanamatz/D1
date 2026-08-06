@@ -318,7 +318,9 @@ export interface SubmitResult {
   /** unique valid words played across the run, including this submission */
   playedWords: string[];
   /** unique Word Hand ids made across the run, including this submission */
-  playedLetterHands: string[];
+  playedLetterHands: NonNullable<RunState['playedLetterHands']>;
+  /** run-wide Word Hand use counts, including this submission */
+  letterHandPlayCounts: NonNullable<RunState['letterHandPlayCounts']>;
 }
 
 /**
@@ -1075,10 +1077,15 @@ export function submitWord(
   const playedLetterHands = !playedHand || priorHands.includes(playedHand)
     ? priorHands
     : [...priorHands, playedHand];
+  const letterHandPlayCounts = { ...afterBoss.run.letterHandPlayCounts };
+  if (playedHand) {
+    letterHandPlayCounts[playedHand] = (letterHandPlayCounts[playedHand] ?? 0) + 1;
+  }
   const postBossRun: RunState = {
     ...afterBoss.run,
     playedWords,
     playedLetterHands,
+    letterHandPlayCounts,
     counters: {
       ...afterBoss.run.counters,
       totalWords: afterBoss.run.counters.totalWords + 1,
@@ -1117,6 +1124,7 @@ export function submitWord(
     counters: postBossRun.counters,
     playedWords: postBossRun.playedWords ?? [],
     playedLetterHands: postBossRun.playedLetterHands ?? [],
+    letterHandPlayCounts: postBossRun.letterHandPlayCounts ?? {},
     blind: { ...afterBlind, projectedScore },
   };
 }

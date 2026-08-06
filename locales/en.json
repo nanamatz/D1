@@ -956,6 +956,7 @@
   "runinfo.tabHands": "Word Hands",
   "runinfo.tabBlind": "Blinds",
   "runinfo.tabVouchers": "Vouchers",
+  "runinfo.timesUsed": "{n}",
   "bagview.title": "Pouch",
   "bagview.full": "Full pouch",
   "bagview.remaining": "Remaining",

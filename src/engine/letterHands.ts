@@ -15,14 +15,9 @@
  */
 
 import { BALANCE } from './balance';
+import type { LetterHandId } from './types';
 
-export type LetterHandId =
-  | 'twin'
-  | 'triplet'
-  | 'longword'
-  | 'palindrome'
-  | 'vowelFlush'
-  | 'straight';
+export type { LetterHandId } from './types';
 
 export interface LetterHandDef {
   id: LetterHandId;

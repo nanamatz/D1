@@ -125,6 +125,14 @@ export type PatternId =
   | 'negative'
   | 'complex';
 
+export type LetterHandId =
+  | 'twin'
+  | 'triplet'
+  | 'longword'
+  | 'palindrome'
+  | 'vowelFlush'
+  | 'straight';
+
 export interface PatternMatch {
   pattern: PatternId;
   rank: number;
@@ -414,7 +422,9 @@ export interface RunState {
   /** Unique valid words submitted across the whole run. Optional for legacy saves. */
   playedWords?: string[];
   /** Unique Word Hand ids made across the whole run. Optional for legacy saves. */
-  playedLetterHands?: string[];
+  playedLetterHands?: LetterHandId[];
+  /** Times each Word Hand scored across the whole run. Optional for legacy saves. */
+  letterHandPlayCounts?: Partial<Record<LetterHandId, number>>;
   /** Boss rerolls spent this chapter; reset when the Deadline clears. */
   bossRerollsUsed: number;
   /** scaling counters (GDD §11.6) — one per axis, jokers read/write these */

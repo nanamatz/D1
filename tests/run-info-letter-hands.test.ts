@@ -23,6 +23,15 @@ describe('Run Info Word Hands reference', () => {
     expect(styles).toMatch(/\.ri-pat \.pcm,\s*\.ri-hand \.pcm\s*\{/);
   });
 
+  it('shows boxed run-use counts after both score readouts', () => {
+    const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
+    const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(source).toContain('run.patternPlayCounts?.[p] ?? 0');
+    expect(source).toContain('run.letterHandPlayCounts?.[hand.id] ?? 0');
+    expect(source.match(/className="ri-use-count"/g)).toHaveLength(2);
+    expect(styles).toContain('.ri-use-count {');
+  });
+
   it('provides both-locale condition copy for every registered hand', () => {
     for (const { id } of LETTER_HAND_REGISTRY) {
       expect(en).toHaveProperty(`letterhand.${id}.desc`);
