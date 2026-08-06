@@ -39,3 +39,7 @@ jobs:
           path: .
       - id: deploy
         uses: actions/deploy-pages@v4
+        with:
+          # The site is ~39 MB across 363 files; the action's 10-minute default
+          # expires while the deployment is still queued.
+          timeout: 1800000
