@@ -251,6 +251,73 @@ describe('Emoji Tile trigger popup', () => {
       .toBeCloseTo(BALANCE.jokers.wordHunter.factorPerNewWord);
   });
 
+  it('records Drying Ink decay as its own negative trigger beat', () => {
+    const run = newRun('joker-decay-drying-ink');
+    run.jokers = [{ defId: 'dryingInk', state: {} }];
+    const hand = tilesFor('cat');
+    const result = submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      hand.map((tile) => tile.id),
+      makeRng('joker-decay'),
+    );
+    const decay = result.events.find(
+      (event) => event.kind === 'joker' && event.jokerId === 'dryingInk' && event.growthDelta! < 0,
+    );
+    expect(decay).toMatchObject({
+      growthKind: 'multAdd',
+      growthDelta: -BALANCE.jokers.dryingInk.multLostPerVowelWord,
+    });
+
+    const terminalRun = newRun('joker-decay-drying-ink-terminal');
+    terminalRun.jokers = [{ defId: 'dryingInk', state: { mult: 1 } }];
+    const terminal = submitWord(
+      { ...startBlind(terminalRun, makeRng(terminalRun.seed)), hand },
+      terminalRun,
+      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      hand.map((tile) => tile.id),
+      makeRng('joker-decay-terminal'),
+    );
+    expect(terminal.jokers).toHaveLength(0);
+    expect(terminal.destroyedJokers[0]).toMatchObject({
+      index: 0,
+      joker: { defId: 'dryingInk', state: { mult: 0, destroyed: 1 } },
+    });
+  });
+
+  it('records Dulling Pencil decay as its own negative trigger beat', () => {
+    const run = newRun('joker-decay-dulling-pencil');
+    run.jokers = [{ defId: 'dullingPencil', state: {} }];
+    const hand = tilesFor('cat');
+    const result = submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand },
+      run,
+      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      hand.map((tile) => tile.id),
+      makeRng('joker-decay-pencil'),
+    );
+    expect(result.events).toContainEqual(expect.objectContaining({
+      jokerId: 'dullingPencil',
+      growthKind: 'chips',
+      growthDelta: -BALANCE.jokers.dullingPencil.chipsLostPerHand,
+    }));
+
+    run.jokers[0]!.state.chips = BALANCE.jokers.dullingPencil.chipsLostPerHand;
+    const terminal = submitWord(
+      { ...startBlind(run, makeRng('joker-decay-pencil-terminal')), hand },
+      run,
+      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      hand.map((tile) => tile.id),
+      makeRng('joker-decay-pencil-terminal'),
+    );
+    expect(terminal.jokers).toHaveLength(0);
+    expect(terminal.destroyedJokers[0]?.joker.state).toMatchObject({
+      chips: 0,
+      destroyed: 1,
+    });
+  });
+
   it('renders symbolic values and the Applied fallback', () => {
     const effect = renderToStaticMarkup(
       <JokerPop chips={12} mult={3} multFactor={2} score={20} gold={4} applied="Applied" />,
@@ -269,6 +336,13 @@ describe('Emoji Tile trigger popup', () => {
     expect(renderToStaticMarkup(
       <JokerPop chips={0} mult={0} applied="Applied" />,
     )).toContain('Applied');
+
+    const decrease = renderToStaticMarkup(
+      <JokerPop chips={0} mult={-1} stat={-1} applied="Applied" />,
+    );
+    expect(decrease).toContain('-1');
+    expect(decrease).not.toContain('+-1');
+    expect(decrease).toContain('class="stat"');
 
     expect(jokerEvent('sometimesY', 'yay')).toMatchObject({
       chipsDelta: 0,
@@ -289,6 +363,17 @@ describe('Emoji Tile trigger popup', () => {
     expect(css).toMatch(/\.joker-pop\s*\{[^}]*top:\s*calc\(100% \+ 10px\)[^}]*triggerPopBelow/s);
     expect(css).toMatch(/\.tile-effect-pop\s*\{[^}]*bottom:\s*calc\(100% \+ 10px\)[^}]*triggerPopAbove/s);
     expect(css).toMatch(/\.hand \.tile\.trig-bounce\s*\{[^}]*jokerWiggle/s);
+  });
+
+  it('keeps per-tile Emoji values on the Emoji Tile while the letter tile only reacts', () => {
+    const settle = readFileSync('src/ui/settle.tsx', 'utf8');
+    const start = settle.indexOf("} else if (e.kind === 'joker')", settle.indexOf('const base: SettleView'));
+    const branch = settle.slice(start, settle.indexOf("} else if (e.kind === 'boss')", start));
+
+    expect(settle).toContain('if (e.tileId) triggerTile(e.tileId)');
+    expect(branch).toContain('activeTileId: e.tileId ?? null');
+    expect(branch).toContain('jokerPop:');
+    expect(branch).not.toContain('tileEffectPop:');
   });
 
   it('keeps the White edition filter while its Emoji Tile fires', () => {

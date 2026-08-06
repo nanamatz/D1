@@ -19,6 +19,10 @@ describe('A-2 letter hands — matching + highest-only rule', () => {
     expect(hand('MAMMA')?.id).toBe('triplet');
   });
 
+  it('BANANA → Triplet outranks Longword', () => {
+    expect(hand('BANANA')?.id).toBe('triplet');
+  });
+
   it('BOOK → Twin (adjacent OO, valid word)', () => {
     expect(hand('BOOK')?.id).toBe('twin');
   });
@@ -99,6 +103,22 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
       kind: 'letterHand', hand: 'twin', chipsDelta: 15, multDelta: 0, multFactor: 1,
     });
     expect(letterHandPlayCounts.twin).toBe(3);
+  });
+
+  it('submitting a six-letter triple records and announces Triplet', () => {
+    const lex = makeLexicon(['banana'], {});
+    const { run, blind } = handOf(['B', 'A', 'N', 'A', 'N', 'A']);
+    const ids = blind.hand.slice(0, 6).map((t) => t.id);
+    const { events, letterHandPlayCounts } = submitWord(blind, run, lex, ids, makeRng('triplet'));
+
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: 'letterHand',
+      hand: 'triplet',
+      chipsDelta: BALANCE.letterHands.triplet.chips,
+      multFactor: BALANCE.letterHands.triplet.mult,
+    }));
+    expect(letterHandPlayCounts.triplet).toBe(1);
+    expect(letterHandPlayCounts.longword).toBeUndefined();
   });
 
   it('gibberish QRSTU fires Straight, stays a hole (suit/POS null)', () => {

@@ -4,7 +4,12 @@ import type { JokerDef } from '../events';
 export const dullingPencil: JokerDef = {
   id: 'dullingPencil', gddNumber: 30, nameKo: '닳는 연필', nameEn: 'Dulling Pencil',
   emoji: '✏️', rarity: 'common', layer: 1, price: BALANCE.jokerPrice.common,
-  growthDisplay: { kind: 'chips', stateKey: 'chips', initial: BALANCE.jokers.dullingPencil.chips },
+  growthDisplay: {
+    kind: 'chips',
+    stateKey: 'chips',
+    initial: BALANCE.jokers.dullingPencil.chips,
+    showDecrease: true,
+  },
   hooks: {
     wordScoring: ({ ctx }, self) => {
       const current = self.state.chips ?? BALANCE.jokers.dullingPencil.chips;

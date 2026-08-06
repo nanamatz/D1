@@ -157,6 +157,9 @@ export interface EngineEvents {
   /** letter tiles entered the permanent pouch */
   tilesCreated: { run: RunState; count: number };
 
+  /** existing letter tiles received a new material, font, or edition */
+  tilesEnhanced: { run: RunState; count: number };
+
   /** blind ended. early=true when ended via the projected≥target trigger */
   blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number; rng: Rng; chanceResults: ChanceResult[] };
 
@@ -171,8 +174,14 @@ export type EngineEventName = keyof EngineEvents;
 
 export interface JokerGrowthTrigger {
   jokerId: string;
-  kind: 'mult' | 'multAdd' | 'chips' | 'gold';
+  kind: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize';
   delta: number;
+}
+
+/** A self-destroyed owner retained only until its final trigger has been shown. */
+export interface DestroyedJokerSnapshot {
+  joker: OwnedJoker;
+  index: number;
 }
 
 export type JokerHandler<E extends EngineEventName> = (
@@ -207,11 +216,13 @@ export interface JokerDef {
   multDisplayFactor?: number;
   /** Optional live-value row for scaling Emoji Tile tooltips.
    *  `mult` = a ×factor, `multAdd` = additive +Mult, `chips` = additive +Chips,
-   *  `gold` = added sell value. */
+   *  `gold` = added sell value, `handSize` = added hand capacity. */
   growthDisplay?: {
-    kind: 'mult' | 'multAdd' | 'chips' | 'gold';
+    kind: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize';
     stateKey: string;
     initial: number;
+    /** Opt in when a mechanic's live-value loss should play as a trigger beat. */
+    showDecrease?: boolean;
   };
   hooks: JokerHooks;
 }
@@ -250,6 +261,8 @@ export class JokerBus {
     const growth: JokerGrowthTrigger[] = [];
     for (let index = 0; index < owned.length; index++) {
       const joker = owned[index]!;
+      // A destroyed owner may remain in the UI until its final trigger finishes.
+      if (joker.state.destroyed === 1) continue;
       // Generic boss debuff marker. The owner stays in place, but every hook and
       // edition effect is inactive until the marker is cleared at blind end.
       if (joker.state.bossDisabled === 1) continue;
@@ -261,7 +274,9 @@ export class JokerBus {
       handler(payload, joker, { index, lookup: (id) => this.defs.get(id) });
       if (display) {
         const delta = (joker.state[display.stateKey] ?? display.initial) - before;
-        if (delta > 0) growth.push({ jokerId: joker.defId, kind: display.kind, delta });
+        if (delta > 0 || (display.showDecrease && delta < 0)) {
+          growth.push({ jokerId: joker.defId, kind: display.kind, delta });
+        }
       }
     }
     return growth;

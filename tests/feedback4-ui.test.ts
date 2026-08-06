@@ -15,7 +15,7 @@ describe('feedback 4 UI regressions', () => {
     expect(anim).toContain('return snap ? value : display');
   });
 
-  it('shows every tile-specific scoring contribution at its source tile', () => {
+  it("shows each letter tile's own scoring contribution at that tile", () => {
     const settle = source('src/ui/settle.tsx');
     const tile = source('src/ui/components/Tile.tsx');
 

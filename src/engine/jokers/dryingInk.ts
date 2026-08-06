@@ -4,7 +4,12 @@ import { isScoringVowel, type JokerDef } from '../events';
 export const dryingInk: JokerDef = {
   id: 'dryingInk', gddNumber: 43, nameKo: '마르는 잉크', nameEn: 'Drying Ink',
   emoji: '🖋️', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
-  growthDisplay: { kind: 'multAdd', stateKey: 'mult', initial: BALANCE.jokers.dryingInk.mult },
+  growthDisplay: {
+    kind: 'multAdd',
+    stateKey: 'mult',
+    initial: BALANCE.jokers.dryingInk.mult,
+    showDecrease: true,
+  },
   hooks: {
     wordScoring: ({ ctx }, self) => {
       const current = self.state.mult ?? BALANCE.jokers.dryingInk.mult;

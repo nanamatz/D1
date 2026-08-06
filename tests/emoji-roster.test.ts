@@ -15,6 +15,8 @@ import {
   RARE_JOKERS,
   UNCOMMON_JOKERS,
   onBlindEnded,
+  onBlindEndedWithDestroyedJokers,
+  onTilesEnhanced,
 } from '../src/engine/jokers';
 import { startBlind } from '../src/engine/loop';
 import { makeRng, type Rng } from '../src/engine/rng';
@@ -92,12 +94,12 @@ const fixedRng = (value: number): Rng => ({
 });
 
 describe('GDD §11 roster shape', () => {
-  it('registers Common 29 / Uncommon 47 / Rare 47 / Legendary 5', () => {
+  it('registers Common 29 / Uncommon 47 / Rare 48 / Legendary 5', () => {
     expect(COMMON_JOKERS).toHaveLength(29);
     expect(UNCOMMON_JOKERS).toHaveLength(47);
-    expect(RARE_JOKERS).toHaveLength(47);
+    expect(RARE_JOKERS).toHaveLength(48);
     expect(LEGENDARY_JOKERS).toHaveLength(5);
-    expect(ALL_JOKERS).toHaveLength(128);
+    expect(ALL_JOKERS).toHaveLength(129);
     expect(JOKER_REGISTRY.size).toBe(ALL_JOKERS.length);
   });
 
@@ -129,10 +131,17 @@ describe('Common — §11.2', () => {
   it('Dulling Pencil loses Chips after each played hand', () => {
     const run = runWith('dullingPencil');
     const blind = blindFor(run);
-    expect(play(run, blind, submission('cat')).chips).toBe(BALANCE.jokers.dullingPencil.chips);
+    const ctx = ctxFor(submission('cat'));
+    const growth = bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.chips).toBe(BALANCE.jokers.dullingPencil.chips);
     expect(run.jokers[0]?.state.chips).toBe(
       BALANCE.jokers.dullingPencil.chips - BALANCE.jokers.dullingPencil.chipsLostPerHand,
     );
+    expect(growth).toContainEqual({
+      jokerId: 'dullingPencil',
+      kind: 'chips',
+      delta: -BALANCE.jokers.dullingPencil.chipsLostPerHand,
+    });
     run.jokers[0]!.state.chips = BALANCE.jokers.dullingPencil.chipsLostPerHand;
     play(run, blind, submission('cat'));
     expect(run.jokers[0]?.state).toMatchObject({ chips: 0, destroyed: 1 });
@@ -192,10 +201,22 @@ describe('Uncommon — §11.3', () => {
     const blind = blindFor(run);
     const ctx = ctxFor(submission('cat'));
     ctx.scoringVowels = new Set(['A', 'E', 'I', 'O', 'U']);
-    bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    const growth = bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
     expect(ctx.mult).toBe(1 + BALANCE.jokers.dryingInk.mult);
     expect(run.jokers[0]?.state.mult).toBe(
       BALANCE.jokers.dryingInk.mult - BALANCE.jokers.dryingInk.multLostPerVowelWord,
+    );
+    expect(growth).toContainEqual({
+      jokerId: 'dryingInk',
+      kind: 'multAdd',
+      delta: -BALANCE.jokers.dryingInk.multLostPerVowelWord,
+    });
+
+    const nextCtx = ctxFor(submission('cry'));
+    nextCtx.scoringVowels = new Set(['A', 'E', 'I', 'O', 'U']);
+    bus.emit('wordScoring', { run, blind, ctx: nextCtx }, run.jokers);
+    expect(nextCtx.mult).toBe(
+      1 + BALANCE.jokers.dryingInk.mult - BALANCE.jokers.dryingInk.multLostPerVowelWord,
     );
     run.jokers[0]!.state.mult = BALANCE.jokers.dryingInk.multLostPerVowelWord;
     const expiringCtx = ctxFor(submission('cat'));
@@ -217,7 +238,19 @@ describe('Uncommon — §11.3', () => {
       - BALANCE.jokers.foldingManuscript.handSizeLostPerBlind,
     );
     run.jokers[0]!.state.handSize = BALANCE.jokers.foldingManuscript.handSizeLostPerBlind;
-    expect(onBlindEnded(run, first, fixedRng(1)).jokers).toHaveLength(0);
+    const terminal = onBlindEndedWithDestroyedJokers(run, first, fixedRng(1));
+    expect(terminal.run.jokers).toHaveLength(0);
+    expect(terminal.destroyedJokers).toEqual([{
+      joker: expect.objectContaining({
+        defId: 'foldingManuscript',
+        state: expect.objectContaining({ handSize: 0, destroyed: 1 }),
+      }),
+      index: 0,
+    }]);
+    expect(JOKER_REGISTRY.get('foldingManuscript')?.growthDisplay).toMatchObject({
+      kind: 'handSize',
+      showDecrease: true,
+    });
   });
 
   it('Hollow Promise pays per Inline discard blocked by full slots', () => {
@@ -247,7 +280,7 @@ describe('Uncommon — §11.3', () => {
     expect(play(run, blind, submission('cat')).chips).toBe(0);
   });
 
-  it('Glasswork pays per Glass tile and eats one Glass tile per blind', () => {
+  it('Glasswork pays per Glass tile without removing one at blind end', () => {
     const run = runWith('glasswork');
     const blind = blindFor(run);
     expect(play(run, blind, submission('cat', { material: 'glass' })).mult).toBe(
@@ -256,17 +289,7 @@ describe('Uncommon — §11.3', () => {
 
     run.bag = run.bag.map((tile, i) => (i < 2 ? { ...tile, material: 'glass' } : tile));
     const after = onBlindEnded(run, blind, fixedRng(1));
-    expect(after.bag.filter((tile) => tile.material === 'glass')).toHaveLength(1);
-    expect(after.bag).toHaveLength(run.bag.length - 1);
-    expect(run.bag.filter((tile) => tile.material === 'glass')).toHaveLength(2); // input untouched
-  });
-
-  it('Glasswork s pouch loss feeds Type Foundry s destruction growth', () => {
-    const run = newRun('roster-glass-foundry');
-    run.jokers = [{ defId: 'glasswork', state: {} }, { defId: 'typeFoundry', state: {} }];
-    run.bag = run.bag.map((tile, i) => (i === 0 ? { ...tile, material: 'glass' } : tile));
-    const after = onBlindEnded(run, blindFor(run), fixedRng(1));
-    expect(after.jokers[1]?.state.factor).toBe(BALANCE.jokers.typeFoundry.factorPerTile);
+    expect(after.bag).toEqual(run.bag);
   });
 
   it('Voracious Reader pays the words-so-far total, then ticks', () => {
@@ -348,6 +371,15 @@ describe('Uncommon — §11.3', () => {
 });
 
 describe('Rare — §11.4', () => {
+  it('Blacksmith gains +10 Chips per enhanced letter tile and scores its total', () => {
+    const run = runWith('blacksmith');
+    const after = onTilesEnhanced(run, 3);
+    expect(after.jokers[0]?.state.chips).toBe(
+      3 * BALANCE.jokers.blacksmith.chipsPerEnhancement,
+    );
+    expect(play(after, blindFor(after), submission('cat')).chips).toBe(30);
+  });
+
   it('Out of Print pays per alphabet letter wiped from the pouch', () => {
     const run = runWith('outOfPrint');
     expect(play(run, blindFor(run), submission('cat')).chips).toBe(0);

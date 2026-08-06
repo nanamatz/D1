@@ -59,12 +59,12 @@ export interface SettleView {
   active: boolean;
   chips: number;
   mult: number;
-  /** tile currently popping its +N tag */
+  /** tile currently lifting for its own score or an Emoji Tile targeting it */
   activeTileId: string | null;
   /** tileId → chip value, accumulated as each tile scores (drives the +N tags) */
   tilePops: Record<string, number>;
-  /** contribution currently firing above its source letter tile. Unlike tilePops,
-   *  this preserves Mult, multiplicative, gold, and zero-delta retrigger beats. */
+  /** A letter tile's own contribution firing above it. Emoji-authored values stay
+   *  on the firing Emoji Tile even when its event targets this letter tile. */
   tileEffectPop: {
     tileId: string;
     chips: number;
@@ -92,6 +92,7 @@ export interface SettleView {
     multFactor?: number;
     score: number;
     gold: number;
+    stat: number;
     retrigger: boolean;
   } | null;
   /** a Word-Hand / suit / word-length stamp landing this beat */
@@ -409,14 +410,11 @@ export function SettleProvider({
           } else if (e.kind === 'pouch') {
             setView({ ...base, stamp: { kind: 'pouch', label: e.pouchId } });
           } else if (e.kind === 'joker') {
-            // Per-tile jokers (item 3) carry a tileId — pop on that tile as well as
-            // wiggling the joker, and grow the tile's +N when they add chips.
-            if (e.tileId && e.chipsDelta !== 0) {
-              pops[e.tileId] = (pops[e.tileId] ?? 0) + e.chipsDelta;
-            }
+            // A per-tile Emoji effect carries tileId only to lift/wiggle its target.
+            // Its value belongs to the firing Emoji Tile's popup, so do not repeat
+            // the same Chips/Mult tag above the letter tile.
             setView({
               ...base,
-              tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId,
               activeJokerEnhanced: false,
@@ -435,20 +433,9 @@ export function SettleProvider({
                   : {}),
                 score: e.scoreDelta ?? 0,
                 gold: e.growthKind === 'gold' ? e.growthDelta ?? 0 : e.goldDelta ?? 0,
+                stat: e.growthKind === 'handSize' ? e.growthDelta ?? 0 : 0,
                 retrigger: e.retrigger ?? false,
               },
-              tileEffectPop: e.tileId
-                ? {
-                    tileId: e.tileId,
-                    chips: e.chipsDelta,
-                    mult: e.multDelta,
-                    ...(e.chipsFactor !== undefined ? { chipsFactor: e.chipsFactor } : {}),
-                    ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
-                    gold: 0,
-                    retrigger: e.retrigger ?? false,
-                    id: i,
-                  }
-                : null,
             });
           } else if (e.kind === 'boss') {
             setView({ ...base });
@@ -505,6 +492,7 @@ export function SettleProvider({
                     ...(e.multFactor !== undefined ? { multFactor: e.multFactor } : {}),
                     score: 0,
                     gold: 0,
+                    stat: 0,
                     retrigger: false,
                   }
                 : null,

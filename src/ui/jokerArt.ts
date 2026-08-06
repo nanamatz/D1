@@ -126,6 +126,7 @@ import bloodTypeA from './assets/jokers/blood-type-a.png';
 import megalith from './assets/jokers/megalith.png';
 import host from './assets/jokers/host.png';
 import dummyData from './assets/jokers/dummy-data.png';
+import blacksmith from './assets/jokers/blacksmith.png';
 
 const ART: Readonly<Record<string, string>> = {
   alphabeticalOrder,
@@ -256,6 +257,7 @@ const ART: Readonly<Record<string, string>> = {
   megalith,
   host,
   dummyData,
+  blacksmith,
 };
 
 /** One 84×112 pixel master scaled into the shared 124×165 runtime frame. */

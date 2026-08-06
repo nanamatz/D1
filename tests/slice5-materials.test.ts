@@ -231,6 +231,16 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
     expect(insured.destroyedTileIds).not.toContain(hand[0]!.id);
     expect(insured.submission.destroyedTileIds).toBeUndefined();
     expect(outcome(insured)).toBe('survived');
+
+    const termInsuredRun = newRun('term-insured-fx');
+    termInsuredRun.jokers = [{ defId: 'termInsurance', state: {} }];
+    const termInsured = play(termInsuredRun, 0);
+    expect(termInsured.destroyedTileIds).not.toContain(hand[0]!.id);
+    expect(termInsured.events).toContainEqual(expect.objectContaining({
+      kind: 'joker',
+      jokerId: 'termInsurance',
+      multFactor: BALANCE.jokers.termInsurance.factor,
+    }));
   });
 
   it('doubles the mult on the word it is played in', () => {

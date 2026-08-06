@@ -173,15 +173,18 @@ export function grownValue(
   const display = def.growthDisplay;
   if (!display) return null;
   const ownedValue = owned?.state[display.stateKey] ?? display.initial;
-  const historyValue = run && def.initialState
-    ? def.initialState(run)[display.stateKey] ?? display.initial
-    : display.initial;
-  const value = Math.max(ownedValue, historyValue);
+  const value = run && def.initialState
+    ? Math.max(ownedValue, def.initialState(run)[display.stateKey] ?? display.initial)
+    : ownedValue;
   const formatted = formatGrowth(value);
   const suffix =
     display.kind === 'mult'
       ? 'Mult'
-      : display.kind === 'multAdd' ? 'MultAdd' : display.kind === 'gold' ? 'Gold' : 'Chips';
+      : display.kind === 'multAdd'
+        ? 'MultAdd'
+        : display.kind === 'gold'
+          ? 'Gold'
+          : display.kind === 'handSize' ? 'HandSize' : 'Chips';
   return t(`joker.current${suffix}`, { value: formatted });
 }
 

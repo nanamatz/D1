@@ -41,6 +41,10 @@ interface Envelope {
 function atRest(state: GameState): GameState {
   return {
     ...state,
+    run: {
+      ...state.run,
+      jokers: state.run.jokers.filter((joker) => joker.state.destroyed !== 1),
+    },
     selected: state.blind.forcedTileId ? [state.blind.forcedTileId] : [],
     message: null,
     hint: null,
@@ -94,7 +98,9 @@ export function loadRun(): GameState | null {
     blindEntryEffects: null,
     run: {
       ...s.run,
-      jokers: s.run.jokers.filter((joker) => JOKER_REGISTRY.has(joker.defId)),
+      jokers: s.run.jokers.filter(
+        (joker) => JOKER_REGISTRY.has(joker.defId) && joker.state.destroyed !== 1,
+      ),
       consumables: (s.run.consumables ?? []).filter(isKnownConsumableId),
     },
     sentenceBonus: null,

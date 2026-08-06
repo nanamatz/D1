@@ -68,13 +68,13 @@ function hasStraight(s: string): boolean {
 /** Registry ordered by ascending rank (index-independent — rank drives the pick). */
 export const LETTER_HAND_REGISTRY: readonly LetterHandDef[] = [
   { id: 'twin', rank: BALANCE.letterHands.twin.rank, gibberish: false, test: hasAdjacentPair },
-  { id: 'triplet', rank: BALANCE.letterHands.triplet.rank, gibberish: false, test: hasTriple },
   {
     id: 'longword',
     rank: BALANCE.letterHands.longword.rank,
     gibberish: false,
     test: (s) => s.length >= BALANCE.letterHand.longwordLen,
   },
+  { id: 'triplet', rank: BALANCE.letterHands.triplet.rank, gibberish: false, test: hasTriple },
   { id: 'palindrome', rank: BALANCE.letterHands.palindrome.rank, gibberish: false, test: isPalindrome },
   { id: 'vowelFlush', rank: BALANCE.letterHands.vowelFlush.rank, gibberish: true, test: isVowelFlush },
   { id: 'straight', rank: BALANCE.letterHands.straight.rank, gibberish: true, test: hasStraight },

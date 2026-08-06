@@ -1,13 +1,7 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
-/**
- * U4 (GDD §11.3) — +Mult per Glass tile in the played word, and one Glass tile
- * permanently leaves the pouch at each blind end. The removal is deterministic
- * (first Glass in bag order) so no extra RNG draw shifts the seeded stream;
- * `onBlindEnded` re-emits `tilesDestroyed` for the shrink, so Type Foundry (L3)
- * and friends see it like any other permanent destruction.
- */
+/** U4 (GDD §11.3) — +Mult per Glass tile in the played word. */
 export const glasswork: JokerDef = {
   id: 'glasswork',
   gddNumber: 4,
@@ -20,16 +14,6 @@ export const glasswork: JokerDef = {
   hooks: {
     tileScoring: ({ ctx, tile }) => {
       if (tile.material === 'glass') ctx.mult += BALANCE.jokers.glasswork.multPerGlass;
-    },
-    blindEnd: ({ run }) => {
-      let left = BALANCE.jokers.glasswork.lostPerBlind;
-      run.bag = run.bag.filter((tile) => {
-        if (left > 0 && tile.material === 'glass') {
-          left--;
-          return false;
-        }
-        return true;
-      });
     },
   },
 };

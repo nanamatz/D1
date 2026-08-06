@@ -10,7 +10,7 @@
  *   voids           → an allowed-but-zero submission (Forbidden Paper single-suit lock)
  *   blocks          → an illegal submission (unused by the current roster; kept as infra)
  *   goldPerWord     → economy drain per hand played (Bond)
- *   goldPerDiscard  → economy drain per discard action (Cleaning Sign)
+ *   goldPerDiscardedTile → economy drain per discarded tile (Cleaning Sign)
  *   discardOnPlay   → discard N random hand tiles after each play (Unopened Letter)
  *
  * Boss art (id → image) lives in the UI (`src/ui/bossArt.ts`) so the engine stays
@@ -72,8 +72,8 @@ export interface BossDef {
   voids?: (submission: WordSubmission, priorSequence: readonly WordSubmission[]) => boolean;
   /** gold removed each time a hand is played */
   goldPerWord?: number;
-  /** gold removed each time the player spends a discard */
-  goldPerDiscard?: number;
+  /** gold removed for each tile in a player discard */
+  goldPerDiscardedTile?: number;
   /** random hand tiles discarded after each play (Unopened Letter) */
   discardOnPlay?: number;
   /** Whether a tile may be included in a player discard action. */
@@ -186,11 +186,11 @@ const disableRandomJoker = (run: RunState, blind: BlindState, rng: Rng) => {
 const FINISHERS: readonly BossDef[] = [
   {
     id: 'cleaningSign',
-    nameEn: 'Cleaning Sign (Cleaning in Progress)',
-    nameKo: '안내표지판 (청소중)',
+    nameEn: 'Cleaning Sign',
+    nameKo: '청소 표지판',
     emoji: '⚠️',
     clearReward: BALANCE.boss.finisherReward,
-    goldPerDiscard: BALANCE.boss.cleaningSignGoldPerDiscard,
+    goldPerDiscardedTile: BALANCE.boss.cleaningSignGoldPerDiscardedTile,
   },
   {
     id: 'medusa',

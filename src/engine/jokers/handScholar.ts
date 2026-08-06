@@ -11,6 +11,21 @@ const stateFromPlayedHands = (hands: readonly string[]): Record<string, number> 
   };
 };
 
+const syncPlayedHands = (
+  playedHands: readonly string[],
+  state: Record<string, number>,
+  currentHand?: string,
+): number => {
+  const unique = new Set(playedHands);
+  for (const [key, value] of Object.entries(state)) {
+    if (value > 0 && key.startsWith('seen:')) unique.add(key.slice('seen:'.length));
+  }
+  if (currentHand) unique.add(currentHand);
+  for (const hand of unique) state[`seen:${hand}`] = 1;
+  state.factor = 1 + unique.size * BALANCE.jokers.handScholar.factorPerNewHand;
+  return state.factor;
+};
+
 export const handScholar: JokerDef = {
   id: 'handScholar', gddNumber: 30, nameKo: '족보 학자', nameEn: 'Hand Scholar',
   emoji: '🎓', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
@@ -19,17 +34,12 @@ export const handScholar: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     wordScoring: ({ run, ctx }, self) => {
-      const history = stateFromPlayedHands(run.playedLetterHands ?? []);
-      for (const [key, value] of Object.entries(history)) {
-        if (key !== 'factor') self.state[key] = value;
-      }
-      self.state.factor = Math.max(self.state.factor ?? 1, history.factor ?? 1);
-      const hand = evaluateLetterHand(letterString(ctx.submission.tiles), ctx.submission.isGibberish);
-      if (hand && !self.state[`seen:${hand.id}`]) {
-        self.state[`seen:${hand.id}`] = 1;
-        self.state.factor = (self.state.factor ?? 1) + BALANCE.jokers.handScholar.factorPerNewHand;
-      }
-      ctx.mult *= self.state.factor ?? 1;
+      const hand = evaluateLetterHand(
+        letterString(ctx.submission.tiles),
+        ctx.submission.isGibberish,
+        ctx.submission.scoringLength,
+      );
+      ctx.mult *= syncPlayedHands(run.playedLetterHands ?? [], self.state, hand?.id);
     },
   },
 };

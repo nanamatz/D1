@@ -4,6 +4,7 @@ import {
   FABLE_DEFS,
   FABLE_IDS,
   canUseFable,
+  canUseFableOnPouch,
   canUseUnheldFable,
   fablePickCount,
   fableTargetsTiles,
@@ -50,11 +51,13 @@ describe('Fable registry', () => {
 
   it('enhances selected tiles in both the live blind and permanent pouch', () => {
     const { run, blind } = setup('fable4');
+    run.jokers = [{ defId: 'blacksmith', edition: 'base', state: {} }];
     const ids = blind.hand.slice(0, 2).map((tile) => tile.id);
     const result = useFable('fable4', run, blind, ids, zeroRng);
     expect(result.ok).toBe(true);
     expect(result.blind.hand.filter((tile) => ids.includes(tile.id)).every((tile) => tile.material === 'leadPlate')).toBe(true);
     expect(result.run.bag.filter((tile) => ids.includes(tile.id)).every((tile) => tile.material === 'leadPlate')).toBe(true);
+    expect(result.run.jokers[0]?.state.chips).toBe(20);
   });
 
   it('Stone hides and remembers the selected tile letter', () => {
@@ -240,9 +243,13 @@ describe('Fable registry', () => {
     expect(result.blind.hand.filter((t) => ids.includes(t.id)).every((t) => t.material === 'polished')).toBe(true);
   });
 
-  it('applies a tile Fable to dealt POUCH candidates by id (Fable Pack path)', () => {
+  it('applies a tile Fable to dealt POUCH candidates by id (Fable/Ink Pack path)', () => {
     const base = newRun('pouch');
-    const run = { ...base, consumables: ['fable6' as const] }; // Polished ×2
+    const run = {
+      ...base,
+      consumables: ['fable6' as const],
+      jokers: [{ defId: 'blacksmith', edition: 'base' as const, state: {} }],
+    }; // Polished ×2
     expect(fableTargetsTiles('fable6')).toBe(true);
     expect(fablePickCount('fable6')).toEqual({ min: 1, max: 2 });
     const ids = run.bag.slice(0, 2).map((t) => t.id);
@@ -250,6 +257,20 @@ describe('Fable registry', () => {
     expect(ok).toBe(true);
     expect(after.bag.filter((t) => ids.includes(t.id)).every((t) => t.material === 'polished')).toBe(true);
     expect(after.consumables).toEqual([]); // the card was consumed
+    expect(after.jokers[0]?.state.chips).toBe(20);
+  });
+
+  it('enables Lion and Mouse only for a selected non-Glass pack candidate', () => {
+    const base = newRun('lion-and-mouse-candidate');
+    const glass = { ...base.bag[0]!, material: 'glass' as const };
+    const plain = base.bag[1]!;
+    const run = {
+      ...base,
+      bag: base.bag.map((tile) => tile.id === glass.id ? glass : tile),
+      consumables: ['fable8' as const],
+    };
+    expect(canUseFableOnPouch('fable8', run, [glass.id])).toBe(false);
+    expect(canUseFableOnPouch('fable8', run, [plain.id])).toBe(true);
   });
 
   it('accepts one pouch target when the listed maximum is two', () => {

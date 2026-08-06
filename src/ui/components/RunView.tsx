@@ -62,7 +62,8 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [introOpen, setIntroOpen] = useState(false);
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
-  const fablePackOpen = phase === 'shop' && g.state.pack?.offer.type === 'consumable';
+  const candidatePackOpen = phase === 'shop' &&
+    (g.state.pack?.offer.type === 'consumable' || g.state.pack?.offer.type === 'ink');
 
   // The shop is rolled before Fee Settlement. Warm only that exact stock while
   // the player reads/collects, leaving gallery-scale registries on demand.
@@ -264,17 +265,17 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             pouchRemaining={phase === 'shop' ? run.bag.length : blind.bag.length}
             {...(!g.state.settleComplete ? { animatedGrowthEvents: g.state.lastEvents } : {})}
             onUseConsumable={(id) => {
-              if (fablePackOpen && isFableId(id) && fableTargetsTiles(id)) {
+              if (candidatePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 g.useHeldPackFable(id, packCandidateIds);
               } else {
                 g.useConsumable(id);
               }
             }}
             canUseConsumable={(id) =>
-              fablePackOpen && isFableId(id) && fableTargetsTiles(id)
+              candidatePackOpen && isFableId(id) && fableTargetsTiles(id)
                 ? canUseFableOnPouch(id, run, packCandidateIds)
                 : g.canUseConsumable(id)}
-            deferTargetFableUse={fablePackOpen}
+            deferTargetFableUse={candidatePackOpen}
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}
             onReorderJoker={g.reorderJokers}

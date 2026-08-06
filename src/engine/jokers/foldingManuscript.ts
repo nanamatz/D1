@@ -4,6 +4,12 @@ import type { JokerDef } from '../events';
 export const foldingManuscript: JokerDef = {
   id: 'foldingManuscript', gddNumber: 44, nameKo: '접는 원고', nameEn: 'Folding Manuscript',
   emoji: '📄', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
+  growthDisplay: {
+    kind: 'handSize',
+    stateKey: 'handSize',
+    initial: BALANCE.jokers.foldingManuscript.handSize,
+    showDecrease: true,
+  },
   hooks: {
     blindStart: ({ blind }, self) => {
       blind.handSizeTotal += self.state.handSize ?? BALANCE.jokers.foldingManuscript.handSize;

@@ -28,7 +28,13 @@ Version 0.2 — systems expansion
   Case and the coins from Coin Purse, while Lucky Pouch gains a centred gold
   circular emblem (§12.2).
 - Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, Deer may rarely appear in Constellation Packs, and Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3).
-- Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. The 128-tile roster starts with 53 ordinary tiles plus all 5 Legendary definitions profile-eligible; 70 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
+- Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. The 129-tile roster starts with 54 ordinary tiles plus all 5 Legendary definitions profile-eligible; 70 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
+- Changed 2026-08-06: Term Insurance permanently prevents letter-tile destruction while owned and gives ×2 Mult on every prevention. Its four-use limit and self-destruction are retired (§11.4).
+- Changed 2026-08-06: Hand Scholar starts at ×1 and increases its multiplicative factor by ×0.5 per distinct Word Hand recorded this run, up to ×4 for all six hands. Hands played before acquisition count immediately. Every run-history Emoji Tile seeds and reconciles from the authoritative run-wide ledger (§11.6).
+- Changed 2026-08-06: Glasswork no longer removes a Glass tile from the permanent pouch at blind end; it only gives +7 Mult per played Glass tile (§11.3).
+- Changed 2026-08-06: Rare Emoji Tile Blacksmith starts at +0 Chips and permanently gains +10 Chips whenever an existing letter tile receives a material, font, or edition enhancement. Held tile-targeting Fables may use the pouch candidates in either an open Fable Pack or Ink Pack (§9.3, §10.1, §11.4).
+- Changed 2026-08-06: Triplet now ranks above Longword, so a valid 6+ letter word containing the same letter three times triggers Triplet instead of being shadowed by Longword (§5.5).
+- Changed 2026-08-06: Cleaning Sign displays as `청소 표지판` in Korean and removes $2 for each tile discarded, rather than once per discard action (§8.4).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
   Legendary roster by Book of Margins, Tyrant, Type Foundry, Tower of Babel, and
   Misbound. Common 32 and Uncommon 35 remain a review baseline with additional
@@ -424,8 +430,8 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | Rank | Hand | Condition | Example | Bonus (placeholder) | Gibberish |
 |---|---|---|---|---|---|
 | 1 | Twin | two identical letters adjacent | b**OO**k | +15 Chips, ×1 Mult | no |
-| 2 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +30 Chips, ×2 Mult | no |
-| 3 | Longword | 6+ letters | LETTER | +45 Chips, ×2 Mult | no |
+| 2 | Longword | 6+ letters | LETTER | +30 Chips, ×2 Mult | no |
+| 3 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +45 Chips, ×2 Mult | no |
 | 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +45 Chips, ×3 Mult | no |
 | 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +75 Chips, ×4 Mult | **yes** |
 | 6 | Straight | 5 consecutive alphabet values (any order) | Q-R-S-T-U | +90 Chips, ×5 Mult | **yes** |
@@ -557,7 +563,10 @@ application mutates the running Chips/Mult at that tile, emits its own score
 event with the source tile id, and fires again on a full-tile retrigger. Distinct
 letter/material/font effects attach to the first qualifying tile of each type;
 pair/repetition effects attach to the tile that completes the condition. Held
-tile effects resolve in the frozen visible hand order.
+tile effects resolve in the frozen visible hand order. The source tile id drives
+the target letter tile's lift/glow/wiggle only; the Chips/Mult/gold/retrigger
+readout appears once below the firing Emoji Tile, never duplicated above the
+letter tile.
 
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
@@ -740,7 +749,7 @@ data predicate is the source of truth for both scoring and preview UI.
 
 | Finisher | Effect | Presentation / counterplay |
 |---|---|---|
-| Cleaning Sign · 안내표지판 (청소중) (`cleaningSign`) | −$2 per **discard action**; gold cannot fall below $0. | Pressures discard-scaling builds without disabling their core action. |
+| Cleaning Sign · 청소 표지판 (`cleaningSign`) | −$2 per **discarded tile**; gold cannot fall below $0. | Pressures large discards without disabling the action. |
 | Medusa · 메두사 (`medusa`) | After each hand, turn 2 seeded-random held non-Stone tiles into Stone; Stone tiles cannot be discarded during this blind. | Shrinks discard flexibility while leaving Stone playable as a gibberish escape. |
 | Nokdo Script · 녹도 문자 (`nokdoScript`) | One random letter tile must remain selected and must be included in the next submitted word. It cannot be deselected or discarded. Consumables may still transform it—including changing it to Stone—or destroy it. If it leaves the hand, another random hand tile becomes forced; an empty hand has none. | A parchment bearing deer-track-like glyphs; build or consume around the forced tile. |
 | Blueprint · 블루프린트 (`blueprint`) | On Deadline entry, shuffle the owned Emoji Tiles once and deal every one face-down. Their order and hidden faces then remain fixed for the blind; all effects stay active. Every face is restored as soon as the blind ends. | Every back is black and displays `mascotSrc('woodak')`, so it always follows the player's currently selected WooDak skin. |
@@ -853,7 +862,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 | 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity. Each choice has a 0.3% Deer jackpot (§10.3). | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
 | 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Phoenix is a 0.05% per-choice jackpot; Comic Book may additionally add one ordinary Gambler card. | Arcana |
-| 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects | Spectral |
+| 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects and compatible held Fables | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
 **Sizes:** Tile/Fable/Constellation Packs show **3/5/5** choices at Basic/Classic/Premium; Charm/Ink Packs show **2/4/4**. The player may take up to **1/1/2**, respectively. Prices are **$4/$6/$8** by size (`balance.ts` `pack.size`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence: the illustrated pack top tears away along a jagged seam, pixel card backs and hard-edged ink debris pour out, then the real choices settle into their fan (changed 2026-08-02).
@@ -864,7 +873,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Jackpot and cross-family rolls (changed 2026-08-04).** Every Fable choice independently has a **0.05%** chance to become Phoenix, and every Constellation choice independently has a **0.3%** chance to become Deer. An Ink choice independently rolls Phoenix at **0.05%** and Deer at **0.3%**. Its ordinary pool excludes those jackpots and uses relative weights **1** for ten standard cards versus **0.4** each for Rainman and Sake Cup; choices are drawn without replacement inside one pack. Multiple jackpots may therefore appear in one pack. Comic Book additionally gives each non-jackpot Fable choice a **5%** chance to become an ordinary Gambler card, capped at one Comic-Book replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.phoenixChance`, `pack.deerChance`, `pack.inkGamblerWeights`, `pack.gamblerInFableChance`).
 
-> **Impl note (updated 2026-08-04).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
+> **Impl note (updated 2026-08-06).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. A compatible held tile-targeting Fable may resolve against either pack's candidates. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -907,7 +916,7 @@ Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
 blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired
 from shop item slots and packs.
 
-**Fable Pack resolution (changed 2026-07-29).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field is selectable immediately when the pack opens. While it is open, a compatible tile-targeting Fable already held on the consumable shelf may also use those selected pouch candidates; this is the only shop-phase exception to the normal staged-hand targeting rule. Enabled and disabled Use states occupy the same fixed position. Using previews the resulting letter/material/font/edition on every target and plays the complete card-to-target application animation; the transformed candidate image remains in that committed state instead of reverting when the preview ends. Only after that animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+**Fable/Ink Pack pouch-candidate resolution (changed 2026-08-06).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field is selectable immediately when either a Fable Pack or Ink Pack opens. While either pack is open, a compatible tile-targeting Fable already held on the consumable shelf may also use those selected pouch candidates; this is the only shop-phase exception to the normal staged-hand targeting rule. Enabled and disabled Use states occupy the same fixed position. Using previews the resulting letter/material/font/edition on every target and plays the complete card-to-target application animation; the transformed candidate image remains in that committed state instead of reverting when the preview ends. Only after that animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
 
 **Constellation Pack resolution (changed 2026-07-29).** A revealed Constellation follows the same select-then-confirm interaction, but its action is always named **Use**, never Select. Use immediately levels the mapped sentence pattern, plays the full Constellation level-up sequence, ignores held-consumable capacity, and does not place the card in a held slot.
 
@@ -917,7 +926,7 @@ from shop item slots and packs.
 
 Held targeted effects normally use the tiles currently staged on the board. A
 target-requiring held card cannot be consumed until one to its listed maximum valid
-target count is staged. While a Fable Pack is open, the same held effect instead may
+target count is staged. While a Fable or Ink Pack is open, the same held effect instead may
 target the pack's immediately active ten seeded pouch candidates under the same
 range. Random creation
 respects the destination slot cap.
@@ -1059,16 +1068,16 @@ until it is moved into §11.
 > The engine identifier stays `joker` (`JokerDef`, `src/engine/jokers/`,
 > `BALANCE.jokerSlots`) — display terms never rename engine identifiers.
 
-**Roster status (updated 2026-08-05).** The active roster contains **128 authored
-definitions**: Common 29 + Uncommon 47 + Rare 47 + Legendary 5. This includes
+**Roster status (updated 2026-08-06).** The active roster contains **129 authored
+definitions**: Common 29 + Uncommon 47 + Rare 48 + Legendary 5. This includes
 the idea bank's 22 Common, 35 Uncommon, and 33 active Rare alternatives plus
-the eight 2026-08-05 additions. The separate 97-tile redesign in
+the eight 2026-08-05 additions and Blacksmith. The separate 97-tile redesign in
 `docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md` remains
 postponed and is not an implementation source.
 
-**Implementation status (roster complete, 2026-08-05).** All 128 active definitions
+**Implementation status (roster complete, 2026-08-06).** All 129 active definitions
 ship as data + event hooks, one file each under `src/engine/jokers/`.
-**Art is complete:** all 128 active definitions have 84×112 pixel
+**Art is complete:** all 129 active definitions have 84×112 pixel
 masters registered through the shared resolver. The shared 124×165 runtime
 frame is wired to the owned shelf, shop,
 opened Charm Pack, held-consumable shelf, and Collection.
@@ -1079,16 +1088,12 @@ the Phoenix-only Legendary acquisition route remain pending, so every
 definition is deliberately visible to review code paths while Legendary
 tiles still have no normal runtime acquisition path.
 
-Four engine notes fall out of the roster pass. **Stenographer (C06 / 속기사)**
+Three engine notes fall out of the roster pass. **Stenographer (C06 / 속기사)**
 adds +4 Mult once only when the current submitted word is strictly shorter
 than the immediately previous submitted word; equal lengths and the first word
 never trigger it. **Hollow Promise (U21)** pays $3 for each Inline discard-gain
 trigger blocked specifically because the consumable shelf has no free slot.
-**Glasswork (U4)** shrinks the
-permanent pouch in its `blindEnd` hook; `onBlindEnded` compares the bag length
-around the emit and re-announces the shrink as `tilesDestroyed`, so Type
-Foundry (L3) and any future destruction-fed tile see it generically rather than
-by special case. **Tyrant (L2)** applies its Vulgar rewrite as an additive delta
+**Tyrant (L2)** applies its Vulgar rewrite as an additive delta
 from the word's own suit multiplier to `suitMult.vulgar × 2`, which keeps it
 independent of shelf order; the submitted word's final register and visible tag
 become Vulgar, so bosses, Unison, and sentence-history effects see the rewrite.
@@ -1148,7 +1153,7 @@ the complete permanent `run.bag` in the Shop.
 
 The compact tables below retain the original 30 entries. The promoted 90 rows
 in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 form the active foundation; the eight
-2026-08-05 additions below complete the active 128-entry roster.
+2026-08-05 additions and Blacksmith complete the active 129-entry roster.
 
 ### 11.2 Common — active 29
 
@@ -1168,7 +1173,7 @@ in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 form the active foundation; the ei
 |---|---|---|---|---|
 | U1 | Literary Judge | +69 Chips if word is Formal suit | 1–2 | — |
 | U3 | Rare Earth | ×3 Chips on that letter when using Q·Z·X·J | 1 | — |
-| U4 | Glasswork | +7 Mult per glass tile; 1 glass tile is lost each round | 1 | — |
+| U4 | Glasswork | +7 Mult per played Glass tile | 1 | — |
 | U5 | Voracious Reader | +5 Chips per total words made so far, accumulating | 1 | ★ |
 | U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +8 | 2 | ★ |
 | U7 | Street Cred | Each Slang word made permanently raises Chips by +30 | 2 | ★ |
@@ -1179,7 +1184,7 @@ in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 form the active foundation; the ei
 | U5A | Astronomer · 천문학자 (`stargazer`) | Starts at ×1; permanently gain +0.1 ×Mult whenever a Constellation card is used | 3 | ★ |
 | U50 | Host · 숙주 | On Blind Select confirmation, destroy the Emoji Tile immediately to the left and permanently gain +Mult equal to twice its sell value | 1 | ★ Mult |
 
-### 11.4 Rare — active 47
+### 11.4 Rare — active 48
 
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
@@ -1193,11 +1198,13 @@ in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 form the active foundation; the ei
 | R9 | Dadaist | Give gibberish final Slang membership and its visible tag, then apply ×2.5 Mult; `suit`/POS remain null and the sentence hole remains | 2 | Clear a blind using only gibberish |
 | R10 | Interest Glutton | For every $1 interest received at round end, gain +5 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
+| R44 | Term Insurance · 단기 보험 | Permanently prevents letter-tile destruction while owned; every prevention gives ×2 Mult | 1 | — |
 | R46 | Counterfeit · 모조품 | If the word played in a blind's first hand contains exactly one letter tile, create a complete copy in the hand and permanent pouch | 1 | tile generation |
 | R47 | 25th Blessing · 25번째 축복 | Each held Y gives ×1.5 Mult; a played Y is not held | 1 | dynamic exponential |
 | R48 | Blood Type A · 혈액형 A | Each scored A or O tile permanently adds +8 Chips to this Emoji Tile, including retriggers; starts at +0 and displays its current Chips | 1 | ★ Chips |
 | R41 | Copy Editor · 카피 에디터 | While owned, Emoji Tiles, Fables, Constellations, and Gambler cards may repeat in shops and packs | 3 | rule change |
 | R51 | Dummy Data · 더미 데이터 | Increase the played word's effective length by 2 for length Mult, Longword, and word-length Emoji Tile checks | 1 | rule change |
+| R52 | Blacksmith · 대장간 | Starts at +0 Chips; whenever an existing letter tile receives a material, font, or edition enhancement, permanently gain +10 Chips | 1 | ★ Chips · Start |
 
 ### 11.5 Legendary — confirmed 5
 
@@ -1221,11 +1228,16 @@ Common/Uncommon additions may expand the table after their review.
 Effects whose copy says “this run” or “so far” read the run-wide history, not
 only events observed after acquisition. Buying Noise Cancelling, Voracious
 Reader, Hand Scholar, Word Hunter, or Royalty Contract later therefore includes
-all earlier qualifying skips, words, and Word Hands immediately.
+all earlier qualifying skips, words, and Word Hands immediately. Hand Scholar's
+current multiplicative factor is `1 + distinct Word Hands × 0.5`, capped
+naturally at ×4 by the six-entry Word Hand registry.
 
 | Scaling axis | Emoji Tiles |
 |---|---|
 | Total words made | Voracious Reader (U5) |
+| Unique valid words | Word Hunter (R31), Royalty Contract (U35) |
+| Unique Word Hand types | Hand Scholar (R30) |
+| Skipped blinds | Noise Cancelling (U45) |
 | Formal suit accumulation | Classicist (U6) |
 | Slang suit accumulation | Street Cred (U7) |
 | Removing a complete alphabet family | Out of Print (R4) |
@@ -1233,6 +1245,7 @@ all earlier qualifying skips, words, and Word Hands immediately.
 | Interest received | Interest Glutton (R10, next-round additive) |
 | Empty Emoji Tile slots | Book of Margins (L1) |
 | Permanent letter-tile destruction | Type Foundry (L3) |
+| Letter-tile enhancements | Blacksmith (R52) |
 | Survived rounds | Misbound (L5) |
 
 ### 11.7 Core Oppositions & Balance Pressure Points
@@ -1495,7 +1508,7 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 - **Emoji Tiles keyed to Word Hands (§5.5).** Word Hands currently ship
   without a dedicated Emoji Tile family.
 - **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
-  the active 128-tile roster; the separate 97-tile redesign remains postponed.
+  the active 129-tile roster; the separate 97-tile redesign remains postponed.
 - **Letter-Hand leveling (if ever).** Constellation Cards level sentence patterns
   only; whether Word Hands should ever level remains deferred.
 - **Touch long-press marking (playtest-03 F).** Right-click discard marking still

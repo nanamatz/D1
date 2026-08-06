@@ -27,7 +27,15 @@ const dirty = (): GameState =>
   ({
     seed: 'seed-1',
     rngCounter: 3,
-    run: { ante: 2, blindIndex: 1, gold: 7, jokers: [{ defId: 'ceramicArtisan', state: {} }] },
+    run: {
+      ante: 2,
+      blindIndex: 1,
+      gold: 7,
+      jokers: [
+        { defId: 'ceramicArtisan', state: {} },
+        { defId: 'foldingManuscript', state: { handSize: 0, destroyed: 1 } },
+      ],
+    },
     blind: { kind: 'big', hand: [{ id: 't1' }], committedScore: 120 },
     phase: 'playing',
     stats: { wordsPlayed: 4 },
@@ -82,6 +90,7 @@ describe('run persistence', () => {
     expect(saved.lastPlayed).toBeNull();
     // Nothing left to animate, so the finalize effects are free to run on load.
     expect(saved.settleComplete).toBe(true);
+    expect(saved.run.jokers).toEqual([{ defId: 'ceramicArtisan', state: {} }]);
   });
 
   it('keeps pendingEnd so a blind caught mid-resolution still resolves on load', () => {

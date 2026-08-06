@@ -144,8 +144,8 @@ export const BALANCE = {
   //       hand only. rank 1 (weakest) .. 6 (strongest). -----
   letterHands: {
     twin:       { rank: 1, chips: 15, mult: 1 },
-    triplet:    { rank: 2, chips: 30, mult: 2 },
-    longword:   { rank: 3, chips: 45, mult: 2 },
+    longword:   { rank: 2, chips: 30, mult: 2 },
+    triplet:    { rank: 3, chips: 45, mult: 2 },
     palindrome: { rank: 4, chips: 45, mult: 3 },
     vowelFlush: { rank: 5, chips: 75, mult: 4 },
     straight:   { rank: 6, chips: 90, mult: 5 },
@@ -422,7 +422,7 @@ export const BALANCE = {
     // Uncommon (§11.3)
     literaryJudge: { chips: 69 },
     rareEarth: { factor: 3 }, // ×Chips on Q·Z·X·J tiles
-    glasswork: { multPerGlass: 7, lostPerBlind: 1 },
+    glasswork: { multPerGlass: 7 },
     voraciousReader: { chipsPerWord: 5 },
     classicist: { multPerFormal: 8 },
     streetCred: { chipsPerSlang: 30 },
@@ -504,7 +504,7 @@ export const BALANCE = {
     holePunch: { factorPerGibberish: 0.2 },
     goldenType: { chips: 50 },
     deadlineAuction: { goldPerGrowth: 5, factorPerStep: 0.2 },
-    termInsurance: { prevents: 4, chipsPerPrevent: 80 },
+    termInsurance: { factor: 2 },
     exactingCritic: { factorPerUncommon: 2 },
     dullingPencil: { chips: 100, chipsLostPerHand: 5 },
     dryingInk: { mult: 15, multLostPerVowelWord: 1 },
@@ -515,6 +515,7 @@ export const BALANCE = {
     twentyFifthBlessing: { factorPerHeldY: 1.5 },
     bloodTypeA: { chipsPerLetter: 8 },
     dummyData: { length: 2 },
+    blacksmith: { chipsPerEnhancement: 10 },
     // Legendary (§11.5)
     bookOfMargins: { slots: 3, factorPerEmptySlot: 2 },
     tyrant: { vulgarFactor: 2 },
@@ -552,7 +553,7 @@ export const BALANCE = {
     willScale: 0.5, // Will: base chips & mult ×0.5 (유서)
     finisherReward: 8,
     vitalSignTargetMult: 3,
-    cleaningSignGoldPerDiscard: 2,
+    cleaningSignGoldPerDiscardedTile: 2,
     medusaStoneTiles: 2,
   },
 } as const;

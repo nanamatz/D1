@@ -1,9 +1,9 @@
 /**
  * Joker registry (GDD §11). One joker per file, grouped by rarity here.
- * Active roster: Common 29 + Uncommon 47 + Rare 47 + Legendary 5.
+ * Active roster: Common 29 + Uncommon 47 + Rare 48 + Legendary 5.
  */
 
-import { JokerBus, type JokerDef } from '../events';
+import { JokerBus, type DestroyedJokerSnapshot, type JokerDef } from '../events';
 // Common (§11.2)
 import { ceramicArtisan } from './ceramicArtisan';
 import { longWordFan } from './longWordFan';
@@ -130,6 +130,7 @@ import { counterfeit } from './counterfeit';
 import { twentyFifthBlessing } from './twentyFifthBlessing';
 import { bloodTypeA } from './bloodTypeA';
 import { dummyData } from './dummyData';
+import { blacksmith } from './blacksmith';
 // Legendary (§11.5)
 import { bookOfMargins } from './bookOfMargins';
 import { tyrant } from './tyrant';
@@ -268,6 +269,7 @@ export const RARE_JOKERS: readonly JokerDef[] = [
   twentyFifthBlessing,
   bloodTypeA,
   dummyData,
+  blacksmith,
 ];
 export const LEGENDARY_JOKERS: readonly JokerDef[] = [
   bookOfMargins,
@@ -327,14 +329,25 @@ export function onTilesCreated(run: RunState, count: number): RunState {
   return next;
 }
 
-export function onBlindEnded(
+export function onTilesEnhanced(run: RunState, count: number): RunState {
+  if (count <= 0) return run;
+  const next = mutableRun(run);
+  defaultJokerBus.emit('tilesEnhanced', { run: next, count }, next.jokers);
+  return next;
+}
+
+export interface BlindEndJokerResult {
+  run: RunState;
+  destroyedJokers: DestroyedJokerSnapshot[];
+}
+
+function resolveBlindEndJokers(
   run: RunState,
   blind: BlindState,
   rng: Rng,
   chanceResults: ChanceResult[] = [],
-): RunState {
+): BlindEndJokerResult {
   const next = mutableRun(run);
-  const bagBefore = next.bag.length;
   defaultJokerBus.emit('blindEnd', {
     run: next,
     blind,
@@ -343,12 +356,30 @@ export function onBlindEnded(
     rng,
     chanceResults,
   }, next.jokers);
-  // A blindEnd hook may shrink the permanent pouch (Glasswork U4). Re-announce it
-  // generically so destruction-fed tiles (Type Foundry L3) see it like any other.
-  const lost = bagBefore - next.bag.length;
-  if (lost > 0) defaultJokerBus.emit('tilesDestroyed', { run: next, count: lost }, next.jokers);
-  return clearBossJokerDebuffs({
-    ...next,
-    jokers: next.jokers.filter((joker) => joker.state.destroyed !== 1),
-  });
+  const cleared = clearBossJokerDebuffs(next);
+  const destroyedJokers = cleared.jokers.flatMap(
+    (joker, index) => joker.state.destroyed === 1 ? [{ joker, index }] : [],
+  );
+  return {
+    run: { ...cleared, jokers: cleared.jokers.filter((joker) => joker.state.destroyed !== 1) },
+    destroyedJokers,
+  };
+}
+
+export function onBlindEndedWithDestroyedJokers(
+  run: RunState,
+  blind: BlindState,
+  rng: Rng,
+  chanceResults: ChanceResult[] = [],
+): BlindEndJokerResult {
+  return resolveBlindEndJokers(run, blind, rng, chanceResults);
+}
+
+export function onBlindEnded(
+  run: RunState,
+  blind: BlindState,
+  rng: Rng,
+  chanceResults: ChanceResult[] = [],
+): RunState {
+  return resolveBlindEndJokers(run, blind, rng, chanceResults).run;
 }

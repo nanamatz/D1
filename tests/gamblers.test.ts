@@ -98,6 +98,7 @@ describe('registry — GDD §10.3', () => {
 describe('font cards — #1 / #4 / #7 / #11', () => {
   it('moves only the font axis and consumes the card', () => {
     const { run, blind } = setup('barnSwallow');
+    run.jokers = [{ defId: 'blacksmith', edition: 'base', state: {} }];
     const target: Tile = { ...blind.hand[0]!, material: 'glass', edition: 'gray' };
     const field = [target];
     const seeded = {
@@ -112,6 +113,7 @@ describe('font cards — #1 / #4 / #7 / #11', () => {
     expect(after.edition).toBe('gray');
     expect(after.letter).toBe(target.letter);
     expect(result.run.consumables).not.toContain('barnSwallow');
+    expect(result.run.jokers[0]?.state.chips).toBe(10);
   });
 
   it('is unusable on a tile that already carries the font', () => {

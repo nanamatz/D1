@@ -18,6 +18,7 @@ import {
   RARE_JOKERS,
   onTilesCreated,
   onTilesDestroyed,
+  onTilesEnhanced,
 } from './jokers';
 import type { Rng } from './rng';
 import type {
@@ -257,6 +258,7 @@ export function useGambler(
         new Set(selectedIds),
         (tile) => tile.material === 'stone' ? tile : { ...tile, font: effect.font },
       ));
+      nextRun = onTilesEnhanced(nextRun, selectedIds.length);
       break;
     }
     case 'copyTile': {

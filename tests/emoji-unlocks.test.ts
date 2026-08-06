@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe('Emoji Tile profile unlocks', () => {
-  it('starts with 53 ordinary tiles and all five Legendary tiles eligible', () => {
+  it('starts with 54 ordinary tiles and all five Legendary tiles eligible', () => {
     const eligible = unlockedEmojiSet();
     const ordinary = ALL_JOKERS.filter((def) => def.rarity !== 'legendary');
     expect(EMOJI_UNLOCK_RULES).toHaveLength(70);
@@ -43,7 +43,7 @@ describe('Emoji Tile profile unlocks', () => {
       ALL_JOKERS.find((def) => def.id === rule.id)?.rarity === 'uncommon')).toHaveLength(29);
     expect(EMOJI_UNLOCK_RULES.filter((rule) =>
       ALL_JOKERS.find((def) => def.id === rule.id)?.rarity === 'rare')).toHaveLength(30);
-    expect(ordinary.filter((def) => eligible.has(def.id))).toHaveLength(53);
+    expect(ordinary.filter((def) => eligible.has(def.id))).toHaveLength(54);
     expect(ALL_JOKERS.filter((def) => def.rarity === 'legendary' && eligible.has(def.id)))
       .toHaveLength(5);
     for (const rule of EMOJI_UNLOCK_RULES) {

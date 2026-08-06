@@ -8,7 +8,7 @@ export interface HeldPackFableEvent {
 
 type Listener = (event: HeldPackFableEvent) => void;
 
-/** Transient bridge from the persistent consumable shelf to the open Fable-pack panel. */
+/** Transient bridge from the persistent consumable shelf to an open candidate-pack panel. */
 class PackFableFxBus {
   private listeners = new Set<Listener>();
 

@@ -26,12 +26,16 @@ describe('feedback 2 UI regressions', () => {
     );
   });
 
-  it('activates Fable-pack candidates immediately and supports held target Fables', () => {
+  it('supports held target Fables against both Fable- and Ink-pack candidates', () => {
     const pack = source('src/ui/components/PackOpening.tsx');
     const run = source('src/ui/components/RunView.tsx');
+    const game = source('src/ui/useGame.ts');
     expect(pack).toContain("const candidatesActive = pack.offer.type === 'consumable'");
     expect(pack).toContain('packFableFxBus.on');
+    expect(run).toContain("g.state.pack?.offer.type === 'ink'");
     expect(run).toContain('g.useHeldPackFable(id, packCandidateIds)');
+    expect(game).toContain("current.pack?.offer.type !== 'ink'");
+    expect(game).toContain("prev.pack?.offer.type !== 'ink'");
   });
 
   it('previews target-axis changes and keeps tile score feedback at the source', () => {

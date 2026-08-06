@@ -5,7 +5,13 @@
 import { BALANCE } from './balance';
 import { CONSTELLATION_IDS } from './constellations';
 import { emojiTileSellValue } from './economy';
-import { ALL_JOKERS, createOwnedJoker, JOKER_REGISTRY, onTilesDestroyed } from './jokers';
+import {
+  ALL_JOKERS,
+  createOwnedJoker,
+  JOKER_REGISTRY,
+  onTilesDestroyed,
+  onTilesEnhanced,
+} from './jokers';
 import type {
   BlindState,
   ChanceResult,
@@ -98,8 +104,8 @@ export function isBlindOnlyConsumable(id: ConsumableId): boolean {
 }
 
 /** True when a Fable's effect targets specific letter tiles (material / rank-up /
- *  destroy). Shop copies may only be bought and held for a blind; Fable Packs use
- *  their dealt pouch candidates directly. */
+ *  destroy). Shop copies may only be bought and held for a blind; Fable/Ink Packs
+ *  expose their dealt pouch candidates directly. */
 export function fableTargetsTiles(id: ConsumableId): boolean {
   if (!isFableId(id)) return false;
   const kind = FABLE_REGISTRY.get(id)?.effect.kind;
@@ -133,7 +139,7 @@ export const jokerSellGoldValue = (run: RunState): number =>
   );
 
 /**
- * Apply a tile-targeting Fable to tiles in the POUCH (run.bag) by id — the Fable Pack
+ * Apply a tile-targeting Fable to tiles in the POUCH (run.bag) by id — the Fable/Ink Pack
  * candidate path, where there is no live hand. Mirrors the in-blind effects (toMaterial
  * / rank-up / destroy) but patches only run.bag, and consumes the card. Returns ok:false
  * (unchanged run) if the selection is invalid.
@@ -157,7 +163,10 @@ export function useFableOnPouch(
   });
 
   if (effect.kind === 'material') {
-    return commit(run.bag.map((t) => (ids.has(t.id) ? setTileMaterial(t, effect.material) : t)));
+    const result = commit(
+      run.bag.map((t) => (ids.has(t.id) ? setTileMaterial(t, effect.material) : t)),
+    );
+    return { ...result, run: onTilesEnhanced(result.run, ids.size) };
   }
   if (effect.kind === 'rankUp') {
     return commit(
@@ -192,6 +201,7 @@ export function canUseFableOnPouch(
   if (targets.length !== tileIds.length) return false;
   if (effect.kind === 'material') {
     return tileIds.length >= 1 && tileIds.length <= effect.count &&
+      targets.every((tile) => tile.material !== effect.material) &&
       (effect.material === 'stone' || targets.every(canRestoreLetter));
   }
   if (effect.kind === 'rankUp') {
@@ -392,6 +402,7 @@ export function useFable(
       ids,
       (tile) => setTileMaterial(tile, effect.material),
     ));
+    nextRun = onTilesEnhanced(nextRun, selectedIds.length);
   } else if (effect.kind === 'doubleGold') {
     nextRun = { ...nextRun, gold: nextRun.gold + Math.min(nextRun.gold, 20) };
   } else if (effect.kind === 'createJoker') {

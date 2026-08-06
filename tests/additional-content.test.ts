@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { BALANCE } from '../src/engine/balance';
+import { BOSS_REGISTRY } from '../src/engine/bosses';
 import { emojiTileSellValue } from '../src/engine/economy';
 import { JokerBus } from '../src/engine/events';
 import { createOwnedJoker, JOKER_REGISTRY, onBlindEnded } from '../src/engine/jokers';
@@ -37,15 +38,25 @@ const ctx = (tiles: Tile[]): WordScoringContext => ({
 });
 
 describe('2026-08-05 additional content', () => {
-  it('Cleaning Sign charges $2 per discard without taking gold below zero', () => {
+  it('Cleaning Sign charges $2 per discarded tile without taking gold below zero', () => {
     const run = newRun('cleaning-sign');
-    run.gold = 1;
+    run.gold = 10;
     const blind = startBlind(run, makeRng('cleaning-sign'), {
       kind: 'boss',
       bossId: 'cleaningSign',
     });
-    const result = discardTiles(blind, run, [blind.hand[0]!.id], makeRng('cleaning-sign-discard'));
-    expect(result.goldDelta).toBe(-1);
+    const result = discardTiles(
+      blind,
+      run,
+      blind.hand.slice(0, 3).map((entry) => entry.id),
+      makeRng('cleaning-sign-discard'),
+    );
+    expect(BOSS_REGISTRY.get('cleaningSign')?.nameKo).toBe('청소 표지판');
+    expect(result.goldDelta).toBe(-6);
+
+    run.gold = 1;
+    const capped = discardTiles(blind, run, [blind.hand[0]!.id], makeRng('cleaning-sign-cap'));
+    expect(capped.goldDelta).toBe(-1);
   });
 
   it('Counterfeit copies exactly one tile on the first play into hand and permanent output', () => {
@@ -148,10 +159,51 @@ describe('2026-08-05 additional content', () => {
     bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
     expect(scoring.chips).toBe(4 * BALANCE.jokers.voraciousReader.chipsPerWord);
 
+    run.jokers = [createOwnedJoker(run, 'wordHunter')];
+    const hunted = ctx([tile('hunter-a', 'A')]);
+    bus.emit('wordScoring', { run, blind, ctx: hunted }, run.jokers);
+    expect(hunted.mult).toBe(
+      BALANCE.jokers.wordHunter.baseFactor
+      + 2 * BALANCE.jokers.wordHunter.factorPerNewWord,
+    );
+
     run.jokers = [createOwnedJoker(run, 'royaltyContract')];
     const replay = ctx([tile('royalty-a', 'A')]);
     bus.emit('wordScoring', { run, blind, ctx: replay }, run.jokers);
     expect(replay.goldDelta ?? 0).toBe(0);
+  });
+
+  it('applies Hand Scholar ×Mult for every distinct Word Hand already played this run', () => {
+    const run = newRun('hand-scholar-history');
+    run.playedLetterHands = [
+      'twin', 'triplet', 'longword', 'palindrome', 'vowelFlush', 'straight',
+    ];
+    run.jokers = [owned('handScholar')];
+    const blind = startBlind(run, makeRng('hand-scholar-history'));
+    const scoring = ctx([tile('history-a', 'A')]);
+    bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
+
+    const expected = 1
+      + run.playedLetterHands.length * BALANCE.jokers.handScholar.factorPerNewHand;
+    expect(expected).toBe(4);
+    expect(run.jokers[0]!.state.factor).toBe(expected);
+    expect(scoring.mult).toBe(expected);
+  });
+
+  it('counts a newly played Word Hand once before the run ledger advances', () => {
+    const run = newRun('hand-scholar-current');
+    run.jokers = [createOwnedJoker(run, 'handScholar')];
+    const blind = startBlind(run, makeRng('hand-scholar-current'));
+    const scoring = ctx([tile('twin-a', 'A'), tile('twin-b', 'A')]);
+
+    bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
+    expect(scoring.mult).toBe(1 + BALANCE.jokers.handScholar.factorPerNewHand);
+    expect(run.jokers[0]!.state.factor)
+      .toBe(1 + BALANCE.jokers.handScholar.factorPerNewHand);
+
+    const replay = ctx([tile('replay-a', 'A'), tile('replay-b', 'A')]);
+    bus.emit('wordScoring', { run, blind, ctx: replay }, run.jokers);
+    expect(replay.mult).toBe(1 + BALANCE.jokers.handScholar.factorPerNewHand);
   });
 
   it('Three-Leaf Clover grows its sell value by $3 at each blind end', () => {

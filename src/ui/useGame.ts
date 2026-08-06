@@ -34,6 +34,7 @@ import type {
   SkipRewardId,
   Tile,
 } from '../engine/types';
+import type { DestroyedJokerSnapshot } from '../engine/events';
 import {
   prepareShop,
   buyItem,
@@ -92,12 +93,17 @@ import {
   rerollDiscount,
   VOUCHER_REGISTRY,
 } from '../engine/vouchers';
-import { onBlindEnded, onConstellationUsed, onTilesDestroyed } from '../engine/jokers';
+import {
+  onBlindEndedWithDestroyedJokers,
+  onConstellationUsed,
+  onTilesDestroyed,
+} from '../engine/jokers';
 import {
   consumeNextBlindBonus,
   rollSkipOffers,
   skipCurrentBlind,
 } from '../engine/skipRewards';
+import { GROWTH_POP_MS } from './timing';
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -144,6 +150,23 @@ const keepSelectedInHand = (selected: readonly string[], blind: BlindState): str
   return blind.forcedTileId && !kept.includes(blind.forcedTileId)
     ? [blind.forcedTileId, ...kept]
     : kept;
+};
+
+const withDestroyedJokers = (
+  run: RunState,
+  destroyed: readonly DestroyedJokerSnapshot[],
+): RunState => {
+  if (destroyed.length === 0) return run;
+  const jokers = run.jokers.slice();
+  for (const { joker, index } of [...destroyed].sort((a, b) => a.index - b.index)) {
+    jokers.splice(Math.min(index, jokers.length), 0, joker);
+  }
+  return { ...run, jokers };
+};
+
+const withoutDestroyedJokers = (run: RunState): RunState => {
+  const jokers = run.jokers.filter((joker) => joker.state.destroyed !== 1);
+  return jokers.length === run.jokers.length ? run : { ...run, jokers };
 };
 
 /** Persisted pouch deltas only: previews, failed rolls, and temporary hand moves
@@ -481,6 +504,21 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     writeRun(json);
   }, [state]);
 
+  // Blind-end decreases have no score timeline. Keep a terminal owner visible
+  // for the direct popup beat, then remove it; score-timeline deaths are removed
+  // synchronously by markSettleComplete below.
+  useEffect(() => {
+    if (!state.settleComplete || !state.run.jokers.some((joker) => joker.state.destroyed === 1)) return;
+    const timer = setTimeout(() => {
+      setState((prev) => {
+        if (!prev.settleComplete) return prev;
+        const run = withoutDestroyedJokers(prev.run);
+        return run === prev.run ? prev : { ...prev, run };
+      });
+    }, GROWTH_POP_MS);
+    return () => clearTimeout(timer);
+  }, [state.run.jokers, state.settleComplete]);
+
   // Recover stale live stock if an in-shop pack/effect acquires the same object.
   // New packs exclude these ids up front; this keeps old saves and indirect grants
   // from leaving an enabled-looking offer that the acquisition gate must reject.
@@ -569,11 +607,16 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           }
         : runWithMaterialGold;
       const chanceResults: ChanceResult[] = [];
-      const runAfterJokers = onBlindEnded(
+      const blindEndJokers = onBlindEndedWithDestroyedJokers(
         runWithPattern,
         s.blind,
         makeRng(`${s.seed}#joker-end-${s.run.ante}-${s.run.blindIndex}`),
         chanceResults,
+      );
+      const runAfterJokers = blindEndJokers.run;
+      const visibleRunAfterJokers = withDestroyedJokers(
+        runAfterJokers,
+        blindEndJokers.destroyedJokers,
       );
       jokerChanceEffectBus.emit(chanceResults);
       recordPouchUnlockChanges(runWithPattern, runAfterJokers);
@@ -592,7 +635,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         recordEmojiUnlockEvent({ kind: 'snapshot', run: outcome.run });
         return {
           ...s,
-          run: outcome.run,
+          run: withDestroyedJokers(outcome.run, blindEndJokers.destroyedJokers),
           stats,
           endlessBestScore,
           phase: 'gameover',
@@ -633,7 +676,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (outcome.endlessComplete) {
         return {
           ...s,
-          run: outcome.run,
+          run: withDestroyedJokers(outcome.run, blindEndJokers.destroyedJokers),
           stats,
           endlessBestScore,
           phase: 'gameover',
@@ -705,11 +748,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (outcome.won) {
         return {
           ...s,
-          run: {
+          run: withDestroyedJokers({
             ...runAfterJokers,
             gold: outcome.run.gold,
             victorySecured: true,
-          },
+          }, blindEndJokers.destroyedJokers),
           stats,
           phase: 'gameover',
           cashout: outcome.earned,
@@ -732,10 +775,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           rngCounter: s.rngCounter + 1,
         };
       }
-      // Keep s.run / s.blind on the CLEARED blind so the board stays frozen behind
-      // the Fee Settlement overlay (A-2); the advanced run applies on confirm.
+      // Keep the cleared blind frozen behind Fee Settlement, while blind-end Emoji
+      // state lands now so direct growth/decay tags remain visible (A-2).
       return {
         ...s,
+        run: visibleRunAfterJokers,
         stats,
         endlessBestScore,
         phase: 'cashout',
@@ -984,7 +1028,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
 
   /** SettleProvider signals the settle timeline has landed — arms the clear UI (05 A). */
   const markSettleComplete = useCallback(() => {
-    setState((prev) => (prev.settleComplete ? prev : { ...prev, settleComplete: true }));
+    setState((prev) => {
+      const run = withoutDestroyedJokers(prev.run);
+      return prev.settleComplete && run === prev.run
+        ? prev
+        : { ...prev, run, settleComplete: true };
+    });
   }, []);
 
   const continueEndless = useCallback(() => {
@@ -1263,7 +1312,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (
         heldPackFablePending.current ||
         current.phase !== 'shop' ||
-        current.pack?.offer.type !== 'consumable' ||
+        (current.pack?.offer.type !== 'consumable' && current.pack?.offer.type !== 'ink') ||
         !fableTargetsTiles(id) ||
         !canUseFableOnPouch(id, current.run, tileIds)
       ) {
@@ -1281,7 +1330,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             heldPackFablePending.current = false;
             if (
               prev.phase !== 'shop' ||
-              prev.pack?.offer.type !== 'consumable' ||
+              (prev.pack?.offer.type !== 'consumable' && prev.pack?.offer.type !== 'ink') ||
               !canUseFableOnPouch(id, prev.run, tileIds)
             ) {
               return prev;
@@ -1572,6 +1621,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         createdTiles,
         bossDiscardedTiles,
         jokers,
+        destroyedJokers,
         counters,
         playedWords,
         playedLetterHands,
@@ -1630,6 +1680,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           ? prev.run.wordsThisAnte
           : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],
       }, destroyedTileIds.length);
+      const visibleNextRun = withDestroyedJokers(nextRun, destroyedJokers);
       recordPouchUnlockChanges(prev.run, nextRun);
       const letterHandId = events.find((event) => event.kind === 'letterHand')?.hand ?? null;
       recordEmojiUnlockEvent({
@@ -1649,7 +1700,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           : best;
       const next: GameState = {
         ...prev,
-        run: nextRun,
+        run: visibleNextRun,
         blind,
         selected: keepSelectedInHand([], blind),
         message: submission.debuffed ? { key: 'boss.notAllowed' } : null,

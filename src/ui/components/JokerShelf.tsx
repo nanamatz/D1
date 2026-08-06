@@ -27,9 +27,9 @@ import { CardArt } from './CardArt';
 import { mascotSrc } from '../mascots';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
+import { GROWTH_POP_MS } from '../timing';
 
 const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
-const GROWTH_POP_MS = 600;
 const NO_GROWTH_EVENTS: readonly ScoreEvent[] = [];
 
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
@@ -42,6 +42,7 @@ export function JokerPop({
   multFactor,
   score = 0,
   gold = 0,
+  stat = 0,
   applied,
 }: {
   chips: number;
@@ -50,11 +51,12 @@ export function JokerPop({
   multFactor?: number | undefined;
   score?: number;
   gold?: number;
+  stat?: number;
   applied: string;
 }) {
   const signed = (value: number) => `${value > 0 ? '+' : ''}${fmtMult(value)}`;
   const money = gold > 0 ? `+$${gold}` : `-$${Math.abs(gold)}`;
-  const hasValue = chips !== 0 || chipsFactor !== undefined || mult !== 0 || multFactor !== undefined || score !== 0 || gold !== 0;
+  const hasValue = chips !== 0 || chipsFactor !== undefined || mult !== 0 || multFactor !== undefined || score !== 0 || gold !== 0 || stat !== 0;
   return (
     <span className="trigger-pop joker-pop" aria-hidden>
       {(chips !== 0 || chipsFactor !== undefined) && (
@@ -72,6 +74,7 @@ export function JokerPop({
         <span className="score"><span className="tomato-icon" />{signed(score)}</span>
       )}
       {gold !== 0 && <span className="gold">{money}</span>}
+      {stat !== 0 && <span className="stat">{signed(stat)}</span>}
       {!hasValue && <span className="applied">{applied}</span>}
     </span>
   );
@@ -87,7 +90,7 @@ interface Props {
   onSellJoker?: (index: number) => void;
   /** when set, the joker shelf supports drag-reorder (feature-02 D-1) */
   onReorderJoker?: (from: number, to: number) => void;
-  /** An open Fable pack supplies pouch targets, so targeted Fables wait for its FX. */
+  /** An open Fable/Ink pack supplies pouch targets, so targeted Fables wait for its FX. */
   deferTargetFableUse?: boolean;
   /** Blueprint: hide every Emoji Tile behind the selected WooDak skin. */
   jokersFaceDown?: boolean;
@@ -154,6 +157,7 @@ export function JokerShelf({
     chips: number;
     mult: number;
     gold: number;
+    stat: number;
     id: number;
   }>>([]);
   useEffect(() => {
@@ -171,18 +175,24 @@ export function JokerShelf({
       const snapshotKey = `${index}:${owned.defId}:${display.stateKey}`;
       const before = previousGrowth.current.get(snapshotKey);
       const after = next.get(snapshotKey)!;
-      if (before === undefined || after <= before) return;
+      if (before === undefined || after === before) return;
+      const change = after - before;
+      if (change < 0 && !display.showDecrease) return;
       const coverageKey = `${owned.defId}:${display.kind}`;
-      const hidden = Math.min(after - before, covered.get(coverageKey) ?? 0);
-      covered.set(coverageKey, Math.max(0, (covered.get(coverageKey) ?? 0) - hidden));
-      const delta = after - before - hidden;
-      if (delta <= 1e-9) return;
+      const coverage = covered.get(coverageKey) ?? 0;
+      const hidden = Math.sign(coverage) === Math.sign(change)
+        ? Math.sign(change) * Math.min(Math.abs(change), Math.abs(coverage))
+        : 0;
+      covered.set(coverageKey, coverage - hidden);
+      const delta = change - hidden;
+      if (Math.abs(delta) <= 1e-9) return;
       pops.push({
         index,
         jokerId: owned.defId,
         chips: display.kind === 'chips' ? delta : 0,
         mult: display.kind === 'mult' || display.kind === 'multAdd' ? delta : 0,
         gold: display.kind === 'gold' ? delta : 0,
+        stat: display.kind === 'handSize' ? delta : 0,
         id: growthId.current++,
       });
     });
@@ -193,7 +203,9 @@ export function JokerShelf({
     audio.play(
       pops.some((pop) => pop.gold !== 0)
         ? 'coinGain'
-        : pops.some((pop) => pop.mult !== 0) ? 'jokerMult' : 'jokerChips',
+        : pops.some((pop) => pop.mult !== 0)
+          ? 'jokerMult'
+          : pops.some((pop) => pop.chips !== 0) ? 'jokerChips' : 'jokerEffect',
     );
     growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
   }, [run.jokers, animatedGrowthEvents]);
@@ -377,6 +389,7 @@ export function JokerShelf({
                       : {})}
                     score={growthPop ? 0 : settle.jokerPop?.score ?? 0}
                     gold={growthPop?.gold ?? settle.jokerPop?.gold ?? 0}
+                    stat={growthPop?.stat ?? settle.jokerPop?.stat ?? 0}
                     applied={
                       !growthPop && settle.jokerPop?.retrigger
                         ? t('settle.retrigger')

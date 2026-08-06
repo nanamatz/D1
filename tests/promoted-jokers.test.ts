@@ -85,12 +85,13 @@ describe('promoted Emoji Tile hooks', () => {
     expect(next.jokers[0]?.state.chips).toBe(3 * BALANCE.jokers.livingType.chipsPerTile);
   });
 
-  it('Term Insurance cancels its configured destructions, scores each, then destroys itself', () => {
+  it('Term Insurance prevents destruction indefinitely and doubles Mult each time', () => {
     const run = newRun('insurance');
     run.jokers = [owned('termInsurance')];
     const blind = startBlind(run, makeRng('insurance'));
     const ctx = wordCtx(word('CAT'));
-    for (let index = 0; index < BALANCE.jokers.termInsurance.prevents; index++) {
+    const attempts = 8;
+    for (let index = 0; index < attempts; index++) {
       const payload = {
         run, blind, ctx, tile: ctx.submission.tiles[index % ctx.submission.tiles.length]!,
         cause: 'glass' as const, cancelled: false,
@@ -98,10 +99,14 @@ describe('promoted Emoji Tile hooks', () => {
       bus.emit('tileDestroying', payload, run.jokers);
       expect(payload.cancelled).toBe(true);
     }
-    expect(ctx.chips).toBe(
-      BALANCE.jokers.termInsurance.prevents * BALANCE.jokers.termInsurance.chipsPerPrevent,
-    );
-    expect(run.jokers[0]?.state.destroyed).toBe(1);
+    expect(ctx.chips).toBe(0);
+    expect(ctx.mult).toBe(BALANCE.jokers.termInsurance.factor ** attempts);
+    expect(run.jokers[0]?.state.destroyed).toBeUndefined();
+    expect(run.jokers[0]?.state.prevented).toBeUndefined();
+    expect(JOKER_REGISTRY.get('termInsurance')).toMatchObject({
+      multOperation: 'multiply',
+      multDisplayFactor: BALANCE.jokers.termInsurance.factor,
+    });
   });
 
   it('Copy Editor relaxes the central duplicate gate while owned', () => {

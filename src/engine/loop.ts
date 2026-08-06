@@ -28,7 +28,12 @@ import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
 import { balancePouchAxes } from './pouches';
 import { EMPTY_NEXT_BLIND_BONUS } from './skipRewards';
-import type { BlindSelectedJokerTrigger, JokerGrowthTrigger, JokerScoreBeat } from './events';
+import type {
+  BlindSelectedJokerTrigger,
+  DestroyedJokerSnapshot,
+  JokerGrowthTrigger,
+  JokerScoreBeat,
+} from './events';
 import type {
   BlindKind,
   BlindState,
@@ -284,7 +289,10 @@ export function discardTiles(
     scoringRun.jokers,
   );
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
-  const bossGoldDrain = Math.min(scoringRun.gold, boss?.goldPerDiscard ?? 0);
+  const bossGoldDrain = Math.min(
+    scoringRun.gold,
+    removed.length * (boss?.goldPerDiscardedTile ?? 0),
+  );
 
   return {
     blind: nextBlind,
@@ -313,6 +321,8 @@ export interface SubmitResult {
   bossDiscardedTiles: Tile[];
   /** cloned, state-updated owned Emoji Tiles */
   jokers: RunState['jokers'];
+  /** Self-destroyed Emoji Tiles retained by the UI through their final trigger. */
+  destroyedJokers: DestroyedJokerSnapshot[];
   /** run-wide counters updated by this successful submission */
   counters: RunState['counters'];
   /** unique valid words played across the run, including this submission */
@@ -1055,6 +1065,9 @@ export function submitWord(
 
   // Finisher state rotates only after the current word has fully scored. Nokdo
   // selects from the replacement hand; Ultrasound changes the disabled Emoji Tile.
+  const destroyedJokers: DestroyedJokerSnapshot[] = scoringRun.jokers.flatMap(
+    (joker, index) => joker.state.destroyed === 1 ? [{ joker, index }] : [],
+  );
   const afterBoss = afterBossPlay(
     {
       ...scoringRun,
@@ -1121,6 +1134,7 @@ export function submitWord(
     createdTiles,
     bossDiscardedTiles,
     jokers: postBossRun.jokers,
+    destroyedJokers,
     counters: postBossRun.counters,
     playedWords: postBossRun.playedWords ?? [],
     playedLetterHands: postBossRun.playedLetterHands ?? [],

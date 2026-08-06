@@ -125,6 +125,12 @@ describe('latest feedback regressions', () => {
     expect(screens).not.toContain('scrollbar-gutter: stable');
   });
 
+  it('lets the Published modal use the available viewport height', () => {
+    const screens = source('src/ui/styles/screens.css');
+    expect(screens).toMatch(/\.overlay\.gameover-overlay:has\(\.go-won\)\s*\{[^}]*padding-block:\s*12px;/s);
+    expect(screens).toMatch(/\.overlay-card\.gameover\.go-won\s*\{[^}]*max-height:\s*calc\(100vh - 24px\);/s);
+  });
+
   it('animates only the Main Menu title and disables it for reduced motion', () => {
     const screens = source('src/ui/styles/screens.css');
     expect(screens).toMatch(/\.menu \.logotype\s*\{[^}]*animation:\s*menu-title-float/s);
