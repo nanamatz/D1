@@ -44,9 +44,9 @@ describe('scoreWord folds the length bonus into layer 1', () => {
   });
 
   it('keeps the suit multiplier meaningful alongside it', () => {
-    // RUN = R(3)+U(3)+N(3) = 9 chips; slang ×2.0; length 3
-    //   => 9 × (2.0 + 3) = 45
-    expect(scoreWord(tiles('run'), lex).settledScore).toBe(45);
+    // RUN = R(3)+U(3)+N(3) = 9 chips; slang ×5; length 3
+    //   => 9 × (5 + 3) = 72
+    expect(scoreWord(tiles('run'), lex).settledScore).toBe(72);
   });
 
   it('leaves gibberish on chips × 1.0', () => {

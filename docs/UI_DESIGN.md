@@ -329,7 +329,7 @@ Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle di
 with a compact four-card challenge strip: highest-scoring word (intrinsic
 letter-chip sum only), longest discovered word, most-played word, and total
 discoveries. Beneath it, **Words** and **Register Scores** tabs separate the
-searchable word gallery from the live ×1/×1.5/×2/×3 register reference.
+searchable word gallery from the live ×1/×3/×5/×10 register reference.
 
 *D-7b pattern pictograms (added 2026-07-30):* the zodiac mark already engraved
 at the top of each Constellation card becomes the shared pictogram for its

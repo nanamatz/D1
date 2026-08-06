@@ -281,7 +281,7 @@ interface PatternBalance {
   repeatFloor?: number;
 }
 
-/** Sum of the geometrically growing level increments above level 1. */
+/** Sum of the fixed level increments above level 1. */
 function patternLevelGrowth(level: number): number {
   const steps = Math.max(0, level - 1);
   const growth: number = BALANCE.patternLevelGrowthFactor;

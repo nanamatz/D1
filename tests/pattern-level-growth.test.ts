@@ -4,10 +4,10 @@ import { patternChipsMult } from '../src/engine/patterns';
 import { patternLevelTone } from '../src/ui/patternLevel';
 
 describe('sentence-pattern level growth', () => {
-  it('uses the stronger 2× first increments and 1.5× follow-up growth', () => {
-    expect(BALANCE.patternLevelGrowthFactor).toBe(1.5);
-    expect(BALANCE.patterns.simple).toMatchObject({ levelChips: 30, levelMult: 2 });
-    expect(patternChipsMult('simple', 3)).toEqual({ chips: 115, mult: 8 });
+  it('uses fixed Chips increments and +1 Mult per level', () => {
+    expect(BALANCE.patternLevelGrowthFactor).toBe(1);
+    expect(BALANCE.patterns.simple).toMatchObject({ levelChips: 30, levelMult: 1 });
+    expect(patternChipsMult('simple', 3)).toEqual({ chips: 100, mult: 4 });
   });
 
   it('keeps every level value and level-up delta a natural number', () => {
@@ -19,8 +19,8 @@ describe('sentence-pattern level growth', () => {
     expect(one).toEqual({ chips: base.baseChips, mult: base.baseMult });
     expect(two.chips - one.chips).toBe(base.levelChips);
     expect(two.mult - one.mult).toBe(base.levelMult);
-    expect(three.chips - two.chips).toBeGreaterThan(0);
-    expect(three.mult - two.mult).toBeGreaterThan(0);
+    expect(three.chips - two.chips).toBe(base.levelChips);
+    expect(three.mult - two.mult).toBe(base.levelMult);
 
     for (const id of Object.keys(BALANCE.patterns) as (keyof typeof BALANCE.patterns)[]) {
       let previous = patternChipsMult(id, 1);

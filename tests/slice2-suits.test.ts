@@ -25,20 +25,20 @@ describe('slice2 — suit multiplier in layer 1 (GDD §3.1, §7.1)', () => {
     expect(scoreWord(tiles('cat'), lex).settledScore).toBe(60);
   });
 
-  it('slang ×2.0', () => {
-    // RUN = 9 chips, slang ×2.0 + length 3 => 9 × 5.0 = 45
-    expect(scoreWord(tiles('run'), lex).settledScore).toBe(45);
+  it('slang ×5', () => {
+    // RUN = 9 chips, slang ×5 + length 3 => 9 × 8 = 72
+    expect(scoreWord(tiles('run'), lex).settledScore).toBe(72);
   });
 
-  it('formal ×1.5', () => {
+  it('formal ×3', () => {
     // GENTLEMAN = G6 E3 N3 T3 L3 E3 M9 A3 N3 = 36 chips; length 9;
-    // formal ×1.5 + 9 = 10.5 => 36 × 10.5 = 378
-    expect(scoreWord(tiles('gentleman'), lex).settledScore).toBe(378);
+    // formal ×3 + 9 = 12 => 36 × 12 = 432
+    expect(scoreWord(tiles('gentleman'), lex).settledScore).toBe(432);
   });
 
-  it('vulgar ×3.0', () => {
-    // DAMN = D6 A3 M9 N3 = 21 chips; length 4; vulgar ×3.0 + 4 = 7.0 => 21 × 7 = 147
-    expect(scoreWord(tiles('damn'), lex).settledScore).toBe(147);
+  it('vulgar ×10', () => {
+    // DAMN = D6 A3 M9 N3 = 21 chips; length 4; vulgar ×10 + 4 = 14 => 21 × 14 = 294
+    expect(scoreWord(tiles('damn'), lex).settledScore).toBe(294);
   });
 
   it('uses the exact BALANCE.suitMult knobs (no hard-coded multipliers)', () => {

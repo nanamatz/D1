@@ -152,12 +152,12 @@ describe('starting pouches', () => {
       multDelta: 5.5,
     });
     const final = endBlind(result.blind, run, lexicon);
-    expect(final.sentenceChips).toBe(8.5); // Outcry 15×2 becomes 8.5×8.5
-    expect(final.sentenceMult).toBe(8.5);
+    expect(final.sentenceChips).toBe(8); // Outcry 15×1 becomes 8×8
+    expect(final.sentenceMult).toBe(8);
     expect(final.breakdown).toMatchObject({
       pouchId: 'lunchBag',
-      pouchChipsDelta: -6.5,
-      pouchMultDelta: 6.5,
+      pouchChipsDelta: -7,
+      pouchMultDelta: 7,
     });
   });
 });

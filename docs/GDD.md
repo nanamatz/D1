@@ -35,6 +35,8 @@ Version 0.2 — systems expansion
 - Changed 2026-08-06: Rare Emoji Tile Blacksmith starts at +0 Chips and permanently gains +10 Chips whenever an existing letter tile receives a material, font, or edition enhancement. Held tile-targeting Fables may use the pouch candidates in either an open Fable Pack or Ink Pack (§9.3, §10.1, §11.4).
 - Changed 2026-08-06: Triplet now ranks above Longword, so a valid 6+ letter word containing the same letter three times triggers Triplet instead of being shadowed by Longword (§5.5).
 - Changed 2026-08-06: Cleaning Sign displays as `청소 표지판` in Korean and removes $2 for each tile discarded, rather than once per discard action (§8.4).
+- Changed 2026-08-06: register base Mult is Standard ×1, Formal ×3, Slang ×5, and Vulgar ×10 so the much rarer registers pay a meaningful premium after additive word-length Mult (§3.1).
+- Changed 2026-08-06: sentence-pattern base Mult is compressed to ×1/×2/×3/×4 by rank band while base Chips stay unchanged. Every Constellation level now adds its fixed Chips increment and +1 Mult linearly; the former ×1.5 geometric growth is retired (§5.2–§5.4).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
   Legendary roster by Book of Margins, Tyrant, Type Foundry, Tower of Babel, and
   Misbound. Common 32 and Uncommon 35 remain a review baseline with additional
@@ -265,10 +267,10 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 
 | Suit | Character | Rarity | Base multiplier (placeholder) | Position |
 |---|---|---|---|---|
-| Standard | Everyday vocabulary | Overwhelming majority | ×1.0 | Safe main line |
-| Formal | Academic / literary | Fewer than majority | ×1.5 | Mid-game main candidate |
-| Slang | Generation/group/era-limited nonstandard speech | Few | ×2.0 | Strong when combined with emoji tiles |
-| Vulgar | Profanity / taboo | Fewest | ×3.0 | High-risk jackpot |
+| Standard | Everyday vocabulary | Overwhelming majority | ×1 | Safe main line |
+| Formal | Academic / literary | Fewer than majority | ×3 | Mid-game main candidate |
+| Slang | Generation/group/era-limited nonstandard speech | Few | ×5 | Strong when combined with emoji tiles |
+| Vulgar | Profanity / taboo | Fewest | ×10 | High-risk jackpot |
 
 > **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in *how easy they are to make* (Standard common → Vulgar rare). Treating this asymmetry as a resource rather than a defect, harder-to-make suits get higher base multipliers, embedding a risk-reward curve into the suit structure itself. On top of that, "suit-pushing emoji tiles" (layer 2) recreate Balatro-style build bias.
 
@@ -337,7 +339,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, Unison, and post-pattern Chips add to it, then pattern, Unison, and post-pattern Mult multiply the combined axis. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Pattern levels grow exponentially: the first level-up adds the table's listed Chips and Mult, and each later level-up's increment is ×1.5 larger than the previous one (`BALANCE.patternLevelGrowthFactor`). After accumulated growth, both axes are rounded to the nearest positive integer; therefore the current Chips/Mult and every displayed level-up delta are always natural numbers.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, Unison, and post-pattern Chips add to it, then pattern, Unison, and post-pattern Mult multiply the combined axis. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult is deliberately compressed to ×1/×2/×3/×4 by rank band so an unupgraded pattern does not decide the blind by itself. Every level-up adds the table's fixed Chips increment and +1 Mult linearly (`BALANCE.patternLevelGrowthFactor = 1`); therefore the current Chips/Mult and every displayed level-up delta remain natural numbers.
 
 ```
 sentenceChips = patternChips + 15 × absorbedModifiers + unisonChips
@@ -355,20 +357,20 @@ folded invisibly into the pattern label.
 
 | # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|
-| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 2 | +20, +2 |
-| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 3 | +20, +2 |
-| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 3, **+10 Chips per repeat beyond the 2nd** | +20, +2 (repeat bonus +10/level) |
-| 4 | Simple | Noun + Verb | BIRDS FLY | 2 | 40 × 3 | +30, +2 |
-| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 4 | +30, +2 |
-| 6 | Transitive | Noun + Verb + Noun | CAT EATS FISH | 3 | 60 × 4 | +40, +2 |
-| 7 | Ditransitive | Noun + Verb + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 5 | +50, +4 |
-| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 5 | +60, +4 |
-| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 6 | +70, +4 |
-| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 6 | +80, +4 |
-| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 7 | +90, +6 |
-| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 7 | +100, +6 |
+| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 1 | +20, +1 |
+| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 1 | +20, +1 |
+| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 1, **+10 Chips per repeat beyond the 2nd** | +20, +1 (repeat bonus +10/level) |
+| 4 | Simple | Noun + Verb | BIRDS FLY | 2 | 40 × 2 | +30, +1 |
+| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 2 | +30, +1 |
+| 6 | Transitive | Noun + Verb + Noun | CAT EATS FISH | 3 | 60 × 2 | +40, +1 |
+| 7 | Ditransitive | Noun + Verb + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 3 | +50, +1 |
+| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 3 | +60, +1 |
+| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 3 | +70, +1 |
+| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 3 | +80, +1 |
+| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 4 | +90, +1 |
+| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 4 | +100, +1 |
 
-(Values live in `balance.ts` under `patterns`; the 2026-08-02 ease pass raised all base Chips and Mult while preserving the rank hierarchy.)
+(Values live in `balance.ts` under `patterns`; the 2026-08-06 balance pass keeps the raised Chips while compressing base Mult.)
 
 Design intent:
 
@@ -391,11 +393,11 @@ One rule replaces the v0.1 tone-overlay table:
 
 Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). A register-mult Unison therefore scales the committed blind score even when no sentence pattern matches. This preserves the flush role ("commit to one suit across phases → reward") while keeping all richer combination rules (Hypocrite, etc.) in emoji tiles.
 
-Note on Vulgar stacking: suit base ×3 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity), with the ladder deliberately gentler than the v0.1 Tirade (×3) draft. Exact values are playtest material.
+Note on Vulgar stacking: suit base ×10 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity). Exact values remain playtest material.
 
 ### 5.4 Constellation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is now **uniform**: each use raises both axes; the first increment is the §5.2 right-column `+Chips, +Mult`, and later increments grow geometrically by ×1.5 — the old multiplier-only vs flat-only split is gone.
+Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is **uniform and linear**: each use adds the §5.2 right-column's fixed Chips increment and +1 Mult.
 
 **Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
 engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
@@ -404,20 +406,20 @@ engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
 status, preview, Run Info, settlement, run summary, and Constellation tooltips
 all show this same mark, so the mapping is readable before effect prose.
 
-| Constellation | Levels up | First level-up increment (later ×1.5 each) |
+| Constellation | Levels up | Increment per level |
 |---|---|---|
-| Libra / 천칭자리 | Outcry | +20 Chips, +2 Mult |
-| Leo / 사자자리 | Imperative | +20 Chips, +2 Mult |
-| Aquarius / 물병자리 | Chant | +20 Chips, +2 Mult (repeat bonus +10 Chips/level) |
-| Aries / 양자리 | Simple | +30 Chips, +2 Mult |
-| Taurus / 황소자리 | Descriptive | +30 Chips, +2 Mult |
-| Gemini / 쌍둥이자리 | Transitive | +40 Chips, +2 Mult |
-| Cancer / 게자리 | Ditransitive | +50 Chips, +4 Mult |
-| Virgo / 처녀자리 | Compound | +60 Chips, +4 Mult |
-| Scorpio / 전갈자리 | Object Complement | +70 Chips, +4 Mult |
-| Sagittarius / 궁수자리 | Interrogative | +80 Chips, +4 Mult |
-| Capricorn / 염소자리 | Negative | +90 Chips, +6 Mult |
-| Pisces / 물고기자리 | Complex | +100 Chips, +6 Mult |
+| Libra / 천칭자리 | Outcry | +20 Chips, +1 Mult |
+| Leo / 사자자리 | Imperative | +20 Chips, +1 Mult |
+| Aquarius / 물병자리 | Chant | +20 Chips, +1 Mult (repeat bonus +10 Chips/level) |
+| Aries / 양자리 | Simple | +30 Chips, +1 Mult |
+| Taurus / 황소자리 | Descriptive | +30 Chips, +1 Mult |
+| Gemini / 쌍둥이자리 | Transitive | +40 Chips, +1 Mult |
+| Cancer / 게자리 | Ditransitive | +50 Chips, +1 Mult |
+| Virgo / 처녀자리 | Compound | +60 Chips, +1 Mult |
+| Scorpio / 전갈자리 | Object Complement | +70 Chips, +1 Mult |
+| Sagittarius / 궁수자리 | Interrogative | +80 Chips, +1 Mult |
+| Capricorn / 염소자리 | Negative | +90 Chips, +1 Mult |
+| Pisces / 물고기자리 | Complex | +100 Chips, +1 Mult |
 
 ### 5.5 Word Hands (단어 족보) — per-word structure bonuses (playtest-02 A-2)
 
@@ -966,7 +968,7 @@ also available through the surrounding tooltip and accessible label.
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
-One per sentence pattern, 1:1 (full mapping and first-level increments in §5.4). Using a Constellation card permanently levels its pattern: each use raises **both** the pattern's base Chips and base Mult, with each successive increment ×1.5 larger than the last (§5.2). Specializing into the most-played patterns is the intended play.
+One per sentence pattern, 1:1 (full mapping and increments in §5.4). Using a Constellation card permanently levels its pattern: each use adds the pattern's fixed Chips increment and +1 Mult (§5.2). Specializing into the most-played patterns is the intended play.
 
 **Use sequence (changed 2026-07-29).** The used card shakes while the score
 panel presents the pattern's current Mult and Chips. The green `+Mult` increment

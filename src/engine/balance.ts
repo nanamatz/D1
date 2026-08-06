@@ -67,7 +67,7 @@ export const BALANCE = {
   } as Record<string, number>,
 
   // ----- Suit base multipliers (GDD §3.1) -----
-  suitMult: { standard: 1.0, formal: 1.5, slang: 2.0, vulgar: 3.0 },
+  suitMult: { standard: 1, formal: 3, slang: 5, vulgar: 10 },
 
   // ----- Word length (GDD §3.1, 2026-07-30) — length ADDS to Mult, it does not
   //       multiply the suit multiplier: `chips × (suitMult + length × multPerLetter)`.
@@ -114,26 +114,26 @@ export const BALANCE = {
   } as Record<Exclude<TileFont, 'medium'>, FontEffectId>,
 
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
-  //       Every pattern owns a base [chips × mult]; each level's increment
-  //       grows geometrically by patternLevelGrowthFactor. At sentence settlement,
+  //       Every pattern owns a base [chips × mult]; each level adds a fixed
+  //       Chips increment and +1 Mult. At sentence settlement,
   //       Chips add to the committed blind score and Mult multiplies that combined
   //       Chips axis. Chant additionally adds `repeatChips` per repeat beyond the
   //       2nd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
   patterns: {
-    outcry:       { rank: 1, baseChips: 15, baseMult: 2, levelChips: 20, levelMult: 2 },
-    imperative:   { rank: 2, baseChips: 25, baseMult: 3, levelChips: 20, levelMult: 2 },
-    chant:        { rank: 3, baseChips: 25, baseMult: 3, levelChips: 20, levelMult: 2, repeatChips: 10, repeatLevelChips: 10, repeatFloor: 2 },
-    simple:       { rank: 4, baseChips: 40, baseMult: 3, levelChips: 30, levelMult: 2 },
-    descriptive:  { rank: 5, baseChips: 45, baseMult: 4, levelChips: 30, levelMult: 2 },
-    transitive:   { rank: 6, baseChips: 60, baseMult: 4, levelChips: 40, levelMult: 2 },
-    ditransitive: { rank: 7, baseChips: 75, baseMult: 5, levelChips: 50, levelMult: 4 },
-    compound:     { rank: 8, baseChips: 90, baseMult: 5, levelChips: 60, levelMult: 4 },
-    objectComplement: { rank: 9, baseChips: 115, baseMult: 6, levelChips: 70, levelMult: 4 },
-    interrogative:    { rank: 10, baseChips: 135, baseMult: 6, levelChips: 80, levelMult: 4 },
-    negative:         { rank: 11, baseChips: 165, baseMult: 7, levelChips: 90, levelMult: 6 },
-    complex:          { rank: 12, baseChips: 195, baseMult: 7, levelChips: 100, levelMult: 6 },
+    outcry:       { rank: 1, baseChips: 15, baseMult: 1, levelChips: 20, levelMult: 1 },
+    imperative:   { rank: 2, baseChips: 25, baseMult: 1, levelChips: 20, levelMult: 1 },
+    chant:        { rank: 3, baseChips: 25, baseMult: 1, levelChips: 20, levelMult: 1, repeatChips: 10, repeatLevelChips: 10, repeatFloor: 2 },
+    simple:       { rank: 4, baseChips: 40, baseMult: 2, levelChips: 30, levelMult: 1 },
+    descriptive:  { rank: 5, baseChips: 45, baseMult: 2, levelChips: 30, levelMult: 1 },
+    transitive:   { rank: 6, baseChips: 60, baseMult: 2, levelChips: 40, levelMult: 1 },
+    ditransitive: { rank: 7, baseChips: 75, baseMult: 3, levelChips: 50, levelMult: 1 },
+    compound:     { rank: 8, baseChips: 90, baseMult: 3, levelChips: 60, levelMult: 1 },
+    objectComplement: { rank: 9, baseChips: 115, baseMult: 3, levelChips: 70, levelMult: 1 },
+    interrogative:    { rank: 10, baseChips: 135, baseMult: 3, levelChips: 80, levelMult: 1 },
+    negative:         { rank: 11, baseChips: 165, baseMult: 4, levelChips: 90, levelMult: 1 },
+    complex:          { rank: 12, baseChips: 195, baseMult: 4, levelChips: 100, levelMult: 1 },
   },
-  patternLevelGrowthFactor: 1.5,
+  patternLevelGrowthFactor: 1,
 
   /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
    *  uniform on the Chips side for every pattern (the old multiply-pattern variant is gone). */

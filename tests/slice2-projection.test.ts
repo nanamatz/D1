@@ -57,12 +57,12 @@ describe('slice2 — projected score split (GDD §7.1)', () => {
     expect(canEndEarly(after)).toBe(true);
   });
 
-  it('flows the suit multiplier into projected (RUN slang ×2 + length 3 = 45 ≥ 6)', () => {
+  it('flows the suit multiplier into projected (RUN slang ×5 + length 3 = 72 ≥ 6)', () => {
     const { run, blind } = blindSpelling('run', 6);
     const ids = blind.hand.slice(0, 3).map((t) => t.id);
     const { blind: after } = submitWord(blind, run, lex, ids, makeRng('test'));
-    // RUN = 9 chips; slang ×2.0 + length 3 => 9 × 5.0 = 45
-    expect(after.committedScore).toBe(45);
+    // RUN = 9 chips; slang ×5 + length 3 => 9 × 8 = 72
+    expect(after.committedScore).toBe(72);
     expect(canEndEarly(after)).toBe(true);
   });
 

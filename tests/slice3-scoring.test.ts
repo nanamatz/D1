@@ -28,68 +28,68 @@ const jm = (
 //         × (patternMult × unisonMult)
 
 describe('slice3 scoring — pattern Chips add, then pattern Mult multiplies (GDD §5.2)', () => {
-  it('Outcry: 15 × 2 = +30', () => {
-    expect(finalizeScore(0, jm('outcry'), LV()).total).toBe(30);
+  it('Outcry: 15 × 1 = +15', () => {
+    expect(finalizeScore(0, jm('outcry'), LV()).total).toBe(15);
   });
 
-  it('Imperative: (10 + 25) × 3 = 105', () => {
-    expect(finalizeScore(10, jm('imperative'), LV()).total).toBe(105);
+  it('Imperative: (10 + 25) × 1 = 35', () => {
+    expect(finalizeScore(10, jm('imperative'), LV()).total).toBe(35);
   });
 
-  it('Simple: (50 + 40) × 3 = 270', () => {
-    expect(finalizeScore(50, jm('simple'), LV()).total).toBe(270);
+  it('Simple: (50 + 40) × 2 = 180', () => {
+    expect(finalizeScore(50, jm('simple'), LV()).total).toBe(180);
   });
 
-  it('Transitive: (100 + 60) × 4 = 640', () => {
-    expect(finalizeScore(100, jm('transitive'), LV()).total).toBe(640);
+  it('Transitive: (100 + 60) × 2 = 320', () => {
+    expect(finalizeScore(100, jm('transitive'), LV()).total).toBe(320);
   });
 
-  it('Descriptive: (100 + 45) × 4 = 580', () => {
-    expect(finalizeScore(100, jm('descriptive'), LV()).total).toBe(580);
+  it('Descriptive: (100 + 45) × 2 = 290', () => {
+    expect(finalizeScore(100, jm('descriptive'), LV()).total).toBe(290);
   });
 
-  it('Ditransitive: (100 + 75) × 5 = 875', () => {
-    expect(finalizeScore(100, jm('ditransitive'), LV()).total).toBe(875);
+  it('Ditransitive: (100 + 75) × 3 = 525', () => {
+    expect(finalizeScore(100, jm('ditransitive'), LV()).total).toBe(525);
   });
 
-  it('Compound: (100 + 90) × 5 = 950', () => {
-    expect(finalizeScore(100, jm('compound'), LV()).total).toBe(950);
+  it('Compound: (100 + 90) × 3 = 570', () => {
+    expect(finalizeScore(100, jm('compound'), LV()).total).toBe(570);
   });
 
-  it('Object Complement: 115 × 6 = +690', () => {
-    expect(finalizeScore(0, jm('objectComplement'), LV()).total).toBe(690);
+  it('Object Complement: 115 × 3 = +345', () => {
+    expect(finalizeScore(0, jm('objectComplement'), LV()).total).toBe(345);
   });
 
-  it('Interrogative: 135 × 6 = +810', () => {
-    expect(finalizeScore(0, jm('interrogative'), LV()).total).toBe(810);
+  it('Interrogative: 135 × 3 = +405', () => {
+    expect(finalizeScore(0, jm('interrogative'), LV()).total).toBe(405);
   });
 
-  it('Negative: 165 × 7 = +1155', () => {
-    expect(finalizeScore(0, jm('negative'), LV()).total).toBe(1155);
+  it('Negative: 165 × 4 = +660', () => {
+    expect(finalizeScore(0, jm('negative'), LV()).total).toBe(660);
   });
 
-  it('Complex: 195 × 7 = +1365', () => {
-    expect(finalizeScore(0, jm('complex'), LV()).total).toBe(1365);
+  it('Complex: 195 × 4 = +780', () => {
+    expect(finalizeScore(0, jm('complex'), LV()).total).toBe(780);
   });
 });
 
 describe('slice3 scoring — modifiers add +15 chips each, uniformly (GDD §5.1 rule 3)', () => {
-  it('Simple with 2 mods: (40 + 15·2) × 3 = 210', () => {
-    expect(finalizeScore(0, jm('simple', { absorbed: 2 }), LV()).total).toBe(210);
+  it('Simple with 2 mods: (40 + 15·2) × 2 = 140', () => {
+    expect(finalizeScore(0, jm('simple', { absorbed: 2 }), LV()).total).toBe(140);
   });
 
-  it('Transitive with 3 mods: (60 + 15·3) × 4 = 420', () => {
-    expect(finalizeScore(0, jm('transitive', { absorbed: 3 }), LV()).total).toBe(420);
+  it('Transitive with 3 mods: (60 + 15·3) × 2 = 210', () => {
+    expect(finalizeScore(0, jm('transitive', { absorbed: 3 }), LV()).total).toBe(210);
   });
 });
 
 describe('slice3 scoring — Chant repeat bonus (GDD §5.2)', () => {
-  it('exactly 2 repeats: base 25 × 3 = 75 (no repeat bonus yet)', () => {
-    expect(finalizeScore(0, jm('chant', { repeats: 2 }), LV()).total).toBe(75);
+  it('exactly 2 repeats: base 25 × 1 = 25 (no repeat bonus yet)', () => {
+    expect(finalizeScore(0, jm('chant', { repeats: 2 }), LV()).total).toBe(25);
   });
 
-  it('4 repeats: +10 chips per repeat beyond the 2nd → (25 + 10·2) × 3 = 135', () => {
-    expect(finalizeScore(0, jm('chant', { repeats: 4 }), LV()).total).toBe(135);
+  it('4 repeats: +10 chips per repeat beyond the 2nd → (25 + 10·2) × 1 = 45', () => {
+    expect(finalizeScore(0, jm('chant', { repeats: 4 }), LV()).total).toBe(45);
   });
 });
 
@@ -104,22 +104,22 @@ describe('slice3 scoring — Unison folds into the formula (GDD §5.3)', () => {
     expect(result.bonus).toBe(50);
   });
 
-  it('Transitive × Slang unison: (100 + 60) × (4 × 1.5) = 960', () => {
-    expect(finalizeScore(100, jm('transitive', { unison: 'slang' }), LV()).total).toBe(960);
+  it('Transitive × Slang unison: (100 + 60) × (2 × 1.5) = 480', () => {
+    expect(finalizeScore(100, jm('transitive', { unison: 'slang' }), LV()).total).toBe(480);
   });
 
-  it('Imperative + Standard unison: (25 + 50) × 3 = 225', () => {
-    expect(finalizeScore(0, jm('imperative', { unison: 'standard' }), LV()).total).toBe(225);
+  it('Imperative + Standard unison: (25 + 50) × 1 = 75', () => {
+    expect(finalizeScore(0, jm('imperative', { unison: 'standard' }), LV()).total).toBe(75);
   });
 });
 
 describe('slice3 scoring — leveling raises both Chips and Mult (GDD §5.4)', () => {
-  it('Imperative at level 2: (25+20) × (3+2) = 225', () => {
-    expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(225);
+  it('Imperative at level 2: (25+20) × (1+1) = 90', () => {
+    expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(90);
   });
 
-  it('Descriptive at level 2: (100 + 45+30) × (4+2) = 1050', () => {
-    expect(finalizeScore(100, jm('descriptive'), LV({ descriptive: 2 })).total).toBe(1050);
+  it('Descriptive at level 2: (100 + 45+30) × (2+1) = 525', () => {
+    expect(finalizeScore(100, jm('descriptive'), LV({ descriptive: 2 })).total).toBe(525);
   });
 
   it('no pattern and no unison leaves the total unchanged', () => {
