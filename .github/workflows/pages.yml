@@ -27,9 +27,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
       - id: deploy
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+      - name: Verify delayed deployment
+        if: steps.deploy.outcome == 'failure'
+        env:
+          LIVE_URL: ${{ steps.pages.outputs.base_url }}/
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error "$LIVE_URL" | cmp --silent dist/index.html -; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
