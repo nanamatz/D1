@@ -21,7 +21,6 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -34,12 +33,8 @@ jobs:
         with:
           ref: gh-pages
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: .
       - id: deploy
         uses: actions/deploy-pages@v4
-        with:
-          # The site is ~39 MB across 363 files; the action's 10-minute default
-          # expires while the deployment is still queued.
-          timeout: 1800000
