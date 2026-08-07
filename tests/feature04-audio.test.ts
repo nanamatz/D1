@@ -5,7 +5,14 @@
  * which is what "wired centrally, never call-site branching" actually means.
  */
 import { describe, it, expect } from 'vitest';
-import { MATERIAL_SFX, SFX_NAMES, effectiveGain, type SfxName } from '../src/ui/audio';
+import {
+  MATERIAL_SFX,
+  SAMPLED_SFX_NAMES,
+  SFX_NAMES,
+  chipSoundTier,
+  effectiveGain,
+  type SfxName,
+} from '../src/ui/audio';
 
 const FULL = { master: 100, music: 100, sfx: 100 };
 // The 9 engine TileMaterial values (types.ts) — kept in step by this test.
@@ -37,5 +44,19 @@ describe('feature-04 A-1/A-3/A-4 — new manifest entries exist and are audible'
       expect(SFX_NAMES).toContain(n);
       expect(effectiveGain(n, FULL)).toBeGreaterThan(0);
     }
+  });
+
+  it('plays the supplied pack-opening sample through the shared facade', () => {
+    expect(SAMPLED_SFX_NAMES).toContain('packOpen');
+  });
+
+  it('plays the supplied rollover sample for rerolls', () => {
+    expect(SAMPLED_SFX_NAMES).toContain('reroll');
+  });
+
+  it('uses denser chip recordings as the Chips amount rises', () => {
+    expect([1, 11, 41, 101].map(chipSoundTier)).toEqual([
+      'lay', 'stack', 'handle', 'collide',
+    ]);
   });
 });

@@ -2,9 +2,9 @@
  * Audio facade (work order B, phase 1 — SFX). One module singleton owns the
  * AudioContext and a master→group gain graph; components call `audio.play(name)`.
  *
- * Every sound is SYNTHESIZED (no asset files) via small oscillator/noise recipes,
- * so this whole layer is swappable for real chiptune later without touching a
- * single call site — that is the point of the facade (see assets/AUDIO_LICENSES.md).
+ * Most sounds are synthesized via small oscillator/noise recipes. Selected
+ * one-shot samples live behind the same facade, so call sites stay unchanged
+ * (see assets/AUDIO_LICENSES.md).
  *
  * Autoplay policy: browsers only allow an AudioContext to make sound after a user
  * gesture. We install a one-shot pointerdown/keydown listener that resumes the
@@ -13,6 +13,23 @@
  */
 
 import { clamp } from './math';
+import packOpenSample from '../../Audio/cards-pack-open-2.ogg';
+import rerollSample from '../../Audio/rollover1.ogg';
+import chipLay1 from '../../Audio/chip-lay-1.ogg';
+import chipLay2 from '../../Audio/chip-lay-2.ogg';
+import chipsStack1 from '../../Audio/chips-stack-1.ogg';
+import chipsStack2 from '../../Audio/chips-stack-2.ogg';
+import chipsStack3 from '../../Audio/chips-stack-3.ogg';
+import chipsStack5 from '../../Audio/chips-stack-5.ogg';
+import chipsStack6 from '../../Audio/chips-stack-6.ogg';
+import chipsHandle1 from '../../Audio/chips-handle-1.ogg';
+import chipsHandle2 from '../../Audio/chips-handle-2.ogg';
+import chipsHandle3 from '../../Audio/chips-handle-3.ogg';
+import chipsHandle4 from '../../Audio/chips-handle-4.ogg';
+import chipsCollide1 from '../../Audio/chips-collide-1.ogg';
+import chipsCollide2 from '../../Audio/chips-collide-2.ogg';
+import chipsCollide3 from '../../Audio/chips-collide-3.ogg';
+import chipsCollide4 from '../../Audio/chips-collide-4.ogg';
 
 export type SfxName =
   | 'tilePop' | 'countTick' | 'jokerBlip' | 'stamp' | 'multFill' | 'totalRoll'
@@ -390,6 +407,27 @@ const RECIPES: Record<SfxName, Recipe> = {
 };
 
 export const SFX_NAMES = Object.keys(RECIPES) as readonly SfxName[];
+const SAMPLES: Partial<Record<SfxName, string>> = {
+  packOpen: packOpenSample,
+  reroll: rerollSample,
+};
+export const SAMPLED_SFX_NAMES = Object.keys(SAMPLES) as readonly SfxName[];
+export type ChipSoundTier = 'lay' | 'stack' | 'handle' | 'collide';
+const CHIP_SAMPLES: Record<ChipSoundTier, readonly string[]> = {
+  lay: [chipLay1, chipLay2],
+  stack: [chipsStack1, chipsStack2, chipsStack3, chipsStack5, chipsStack6],
+  handle: [chipsHandle1, chipsHandle2, chipsHandle3, chipsHandle4],
+  collide: [chipsCollide1, chipsCollide2, chipsCollide3, chipsCollide4],
+};
+
+/** Denser chip recordings track the magnitude of the Chips operation. */
+export function chipSoundTier(chips: number): ChipSoundTier {
+  const amount = Math.abs(chips);
+  if (amount <= 10) return 'lay';
+  if (amount <= 40) return 'stack';
+  if (amount <= 100) return 'handle';
+  return 'collide';
+}
 export const TEXTURED_SFX_NAMES = Object.entries(RECIPES)
   .filter(([, recipe]) => recipe.textured)
   .map(([name]) => name as SfxName);
@@ -532,6 +570,7 @@ class Audio {
   // music buses are OFF until the SOUND / MUSIC words are played (or the Settings
   // override enables them). setBusEnabled flips these; play()/playMusic() respect them.
   private busEnabled = { sfx: false, music: false };
+  private chipSampleIndex = 0;
 
   constructor() {
     // Install the one-shot unlock gesture listener as soon as this module loads
@@ -738,7 +777,27 @@ class Audio {
   }
 
   play(name: SfxName, opts?: { step?: number }): void {
+    const sample = SAMPLES[name];
+    if (sample) {
+      this.playSample(sample, effectiveGain(name, this.vol), () => this.playRecipe(name, opts));
+      return;
+    }
     this.playRecipe(name, opts);
+  }
+
+  /** Play a physical chip sample whose density matches the Chips delta. */
+  chips(amount: number): void {
+    if (amount === 0) return;
+    const samples = CHIP_SAMPLES[chipSoundTier(amount)];
+    const sample = samples[this.chipSampleIndex++ % samples.length]!;
+    this.playSample(sample, effectiveGain('jokerChips', this.vol));
+  }
+
+  private playSample(src: string, gain: number, fallback?: () => void): void {
+    if (!this.busEnabled.sfx || !this.unlocked || typeof window === 'undefined' || gain <= 0) return;
+    const sound = new window.Audio(src);
+    sound.volume = gain;
+    void sound.play().catch(() => fallback?.());
   }
 
   private playRecipe(name: SfxName, opts: { step?: number } | undefined): void {

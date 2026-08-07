@@ -1913,6 +1913,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const blind = prev.run.blindIndex === 2
         ? startBlind(run, rng, { kind: 'boss', bossId })
         : prev.blind;
+      audio.play('reroll');
       return { ...prev, run, blind, rngCounter: prev.rngCounter + 1 };
     });
   }, []);

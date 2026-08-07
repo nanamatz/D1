@@ -210,6 +210,7 @@ export function JokerShelf({
           ? 'jokerMult'
           : pops.some((pop) => pop.chips !== 0) ? 'jokerChips' : 'jokerEffect',
     );
+    audio.chips(pops.reduce((total, pop) => total + Math.abs(pop.chips), 0));
     growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
   }, [run.jokers, animatedGrowthEvents]);
   useEffect(() => () => {

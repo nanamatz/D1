@@ -29,7 +29,7 @@ export function PatternLevelUp() {
   useEffect(() => {
     if (!evt) return;
     const multSound = window.setTimeout(() => audio.play('countTick', { step: 0 }), 1300);
-    const chipSound = window.setTimeout(() => audio.play('countTick', { step: 1 }), 1880);
+    const chipSound = window.setTimeout(() => audio.chips(after.chips - before.chips), 1880);
     const levelSound = window.setTimeout(() => audio.play('countTick', { step: 2 }), 2060);
     const timer = setTimeout(() => setEvt(null), PATTERN_LEVEL_DURATION_MS);
     return () => {

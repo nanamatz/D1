@@ -300,6 +300,7 @@ export function SettleProvider({
       }
       setView({ ...IDLE, active: true, chips, mult, tilePops: pops, destroyedTileIds });
       if (destroyedTileIds.length > 0) audio.play('matGlassBreak');
+      audio.chips(chips);
       audio.play('totalRoll');
       const off = setTimeout(() => {
         setView(IDLE);
@@ -324,6 +325,7 @@ export function SettleProvider({
           const prevChips = chips;
           const prevMult = mult;
           ({ chips, mult } = accumulate(chips, mult, e));
+          if (chips !== prevChips) audio.chips(chips - prevChips);
           if (tileWasDestroyed(e)) destroyedTileIds.add(e.tileId);
           // SFX (work order B): fire inside the speed-scaled beat timer so the
           // cadence tracks game speed automatically. Facade no-ops until unlocked.
