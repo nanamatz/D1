@@ -162,6 +162,14 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(run.jokers[0]?.state.factor).toBe(2.25);
   });
 
+  it('Scrap Dealer records its payout so the shelf plays a gold trigger', () => {
+    const run = runWith('scrapDealer');
+    const after = onTilesDestroyed(run, 2);
+
+    expect(after.gold - run.gold).toBe(2 * BALANCE.jokers.scrapDealer.goldPerTile);
+    expect(after.jokers[0]?.state.goldPaid).toBe(2 * BALANCE.jokers.scrapDealer.goldPerTile);
+  });
+
   it('Tower of Babel makes valid words members of all four final registers', () => {
     const run = runWith('towerOfBabel');
     const blind = startBlind(run, makeRng('babel'));

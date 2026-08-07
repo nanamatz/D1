@@ -16,7 +16,7 @@ import {
 } from './economy';
 import { rollJokerEdition } from './editions';
 import { CONSTELLATION_POOL, rollTile, FABLE_POOL } from './packs';
-import { GAMBLER_IDS } from './gamblers';
+import { ORDINARY_GAMBLER_IDS } from './gamblerIds';
 import { pouchAllowsGamblerShop } from './pouches';
 import {
   CONSUMABLE_PATTERN,
@@ -92,7 +92,7 @@ function buildPools(
     id,
     price: consumableBuyPrice(run, id),
   }));
-  const gamblers: ShopItem[] = (pouchAllowsGamblerShop(run) ? GAMBLER_IDS : [])
+  const gamblers: ShopItem[] = (pouchAllowsGamblerShop(run) ? ORDINARY_GAMBLER_IDS : [])
     .filter((id) => canOwnConsumable(run, id)).map((id) => ({
     kind: 'consumable',
     id,

@@ -591,6 +591,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   /** Judge & resolve the current blind, then route to Cash Out or Game Over. */
   const finalize = useCallback(
     (s: GameState): GameState => {
+      const settledScore = s.finalScore;
+      if (settledScore === null) return s;
       const final = endBlind(s.blind, s.run, getLexicon());
       const runWithMaterialGold: RunState = {
         ...s.run,
@@ -620,12 +622,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       );
       jokerChanceEffectBus.emit(chanceResults);
       recordPouchUnlockChanges(runWithPattern, runAfterJokers);
-      const outcome = resolveBlind(runAfterJokers, s.blind, final.finalScore);
+      const outcome = resolveBlind(runAfterJokers, s.blind, settledScore);
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
       const stats: RunStats = { ...s.stats, patternCounts };
-      const roundedFinal = Math.round(final.finalScore);
+      const roundedFinal = Math.round(settledScore);
       recordBestRoundScore(roundedFinal);
       const endlessBestScore = s.run.victorySecured
         ? Math.max(s.endlessBestScore, roundedFinal)
@@ -1812,7 +1814,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     if (!state.pendingEnd || state.finalScore === null) return;
     const reduce = prefersReduce();
     const id = setTimeout(
-      () => setState((prev) => (prev.pendingEnd ? { ...finalize(prev), pendingEnd: false } : prev)),
+      () => setState((prev) => {
+        if (!prev.pendingEnd || prev.finalScore === null) return prev;
+        return { ...finalize(prev), pendingEnd: false, sentenceBonus: null };
+      }),
       reduce ? VERDICT_BEAT_REDUCED_MS : BONUS_LAND_MS + VERDICT_BEAT_MS,
     );
     return () => clearTimeout(id);

@@ -264,6 +264,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             run={run}
             pouchRemaining={phase === 'shop' ? run.bag.length : blind.bag.length}
             {...(!g.state.settleComplete ? { animatedGrowthEvents: g.state.lastEvents } : {})}
+            bonusJokerTriggers={g.state.sentenceBonus?.jokerTriggers ?? []}
             onUseConsumable={(id) => {
               if (candidatePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 g.useHeldPackFable(id, packCandidateIds);

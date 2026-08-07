@@ -8,7 +8,6 @@
  */
 
 import type {
-  ConsumableId,
   FontEffectId,
   JokerEdition,
   Letter,
@@ -16,6 +15,8 @@ import type {
   PackType,
   TileFont,
 } from './types';
+
+const patternDifficultyLevelChips = { easy: 15, medium: 30, hard: 45 } as const;
 
 export const BALANCE = {
   // ----- Core loop (GDD §6) -----
@@ -115,24 +116,25 @@ export const BALANCE = {
 
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
   //       Every pattern owns a base [chips × mult]; each level adds a fixed
-  //       Chips increment and +1 Mult. At sentence settlement,
+  //       difficulty-tier Chips increment and +1 Mult. At sentence settlement,
   //       Chips add to the committed blind score and Mult multiplies that combined
   //       Chips axis. Chant additionally adds `repeatChips` per repeat beyond the
   //       2nd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
+  patternDifficultyLevelChips,
   patterns: {
-    outcry:       { rank: 1, baseChips: 15, baseMult: 1, levelChips: 20, levelMult: 1 },
-    imperative:   { rank: 2, baseChips: 25, baseMult: 1, levelChips: 20, levelMult: 1 },
-    chant:        { rank: 3, baseChips: 25, baseMult: 1, levelChips: 20, levelMult: 1, repeatChips: 10, repeatLevelChips: 10, repeatFloor: 2 },
-    simple:       { rank: 4, baseChips: 40, baseMult: 2, levelChips: 30, levelMult: 1 },
-    descriptive:  { rank: 5, baseChips: 45, baseMult: 2, levelChips: 30, levelMult: 1 },
-    transitive:   { rank: 6, baseChips: 60, baseMult: 2, levelChips: 40, levelMult: 1 },
-    ditransitive: { rank: 7, baseChips: 75, baseMult: 3, levelChips: 50, levelMult: 1 },
-    compound:     { rank: 8, baseChips: 90, baseMult: 3, levelChips: 60, levelMult: 1 },
-    objectComplement: { rank: 9, baseChips: 115, baseMult: 3, levelChips: 70, levelMult: 1 },
-    interrogative:    { rank: 10, baseChips: 135, baseMult: 3, levelChips: 80, levelMult: 1 },
-    negative:         { rank: 11, baseChips: 165, baseMult: 4, levelChips: 90, levelMult: 1 },
-    complex:          { rank: 12, baseChips: 195, baseMult: 4, levelChips: 100, levelMult: 1 },
-  },
+    outcry:       { rank: 1, difficulty: 'easy', baseChips: 15, baseMult: 1, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    imperative:   { rank: 2, difficulty: 'easy', baseChips: 25, baseMult: 1, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    chant:        { rank: 3, difficulty: 'hard', baseChips: 25, baseMult: 1, levelChips: patternDifficultyLevelChips.hard, levelMult: 1, repeatChips: 10, repeatLevelChips: 10, repeatFloor: 2 },
+    simple:       { rank: 4, difficulty: 'easy', baseChips: 40, baseMult: 2, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    descriptive:  { rank: 5, difficulty: 'medium', baseChips: 45, baseMult: 2, levelChips: patternDifficultyLevelChips.medium, levelMult: 1 },
+    transitive:   { rank: 6, difficulty: 'medium', baseChips: 60, baseMult: 2, levelChips: patternDifficultyLevelChips.medium, levelMult: 1 },
+    ditransitive: { rank: 7, difficulty: 'hard', baseChips: 75, baseMult: 3, levelChips: patternDifficultyLevelChips.hard, levelMult: 1 },
+    compound:     { rank: 8, difficulty: 'hard', baseChips: 90, baseMult: 3, levelChips: patternDifficultyLevelChips.hard, levelMult: 1 },
+    objectComplement: { rank: 9, difficulty: 'hard', baseChips: 115, baseMult: 3, levelChips: patternDifficultyLevelChips.hard, levelMult: 1 },
+    interrogative:    { rank: 10, difficulty: 'easy', baseChips: 135, baseMult: 3, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    negative:         { rank: 11, difficulty: 'medium', baseChips: 165, baseMult: 4, levelChips: patternDifficultyLevelChips.medium, levelMult: 1 },
+    complex:          { rank: 12, difficulty: 'hard', baseChips: 195, baseMult: 4, levelChips: patternDifficultyLevelChips.hard, levelMult: 1 },
+  } as const,
   patternLevelGrowthFactor: 1,
 
   /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
@@ -213,6 +215,7 @@ export const BALANCE = {
   goldPerRemainingPhase: 1,
   interest: { per: 5, rate: 1, cap: 5 },
   sellRatio: 0.5,
+  minimumEditionSellBonus: 1,
 
   // ----- Shop (GDD §9.2) -----
   shop: {
@@ -275,25 +278,9 @@ export const BALANCE = {
     /** Comic Book only (GDD §9.3): per-choice chance a Fable Pack option becomes a
      *  Gambler card, capped at one per pack. Without the voucher it is exactly 0. */
     gamblerInFableChance: 0.05,
-    /** Per-choice jackpot bands. Ink rolls both; Fable rolls Phoenix and
-     *  Constellation rolls Deer. */
-    phoenixChance: 0.0005,
+    /** Ink-only per-choice jackpot bands. */
+    phoenixChance: 0.003,
     deerChance: 0.003,
-    /** Relative weights for ordinary Ink Pack Gambler cards. */
-    inkGamblerWeights: {
-      barnSwallow: 1,
-      boar: 1,
-      bridge: 1,
-      bushWarbler: 1,
-      butterflies: 1,
-      craneAndSun: 1,
-      cuckoo: 1,
-      curtain: 1,
-      fullMoon: 1,
-      geese: 1,
-      rainman: 0.4,
-      sakeCup: 0.4,
-    } as Partial<Record<ConsumableId, number>>,
     sizeWeights: { normal: 8, jumbo: 4, mega: 1 } as Record<string, number>,
     scarceShow: { normal: 2, jumbo: 4, mega: 4 } as Record<PackSize, number>,
     tileModifiers: { materialChance: 0.4, fontChance: 0.2 },
@@ -541,7 +528,10 @@ export const BALANCE = {
   // ----- Consumables (GDD §10) -----
   consumableSlots: 2,
   piggyBankCap: 20,
-  fables: { cowherdEditionChance: 0.25 },
+  fables: {
+    cowherdEditionChance: 0.25,
+    cowherdEditionWeights: { gray: 0.50, violet: 0.35, rainbow: 0.15 },
+  },
 
   // ----- Boss effects (GDD §8.3) — per-boss knobs -----
   boss: {

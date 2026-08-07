@@ -1,7 +1,7 @@
 import { BALANCE } from './balance';
 // Leaf id module, NOT `./gamblers`: that file reaches the joker rosters and
 // importing it here closed a cycle back into `economy` (see gamblerIds.ts).
-import { GAMBLER_IDS } from './gamblerIds';
+import { ORDINARY_GAMBLER_IDS } from './gamblerIds';
 import type { Rng } from './rng';
 import { applyVoucher } from './vouchers';
 import { isVowel } from './types';
@@ -83,7 +83,7 @@ export function applyStartingPouch(run: RunState, rng: Rng): RunState {
       next = { ...next, gold: next.gold + BALANCE.pouches.green.gold };
       break;
     case 'lucky':
-      next = addConsumables(next, [GAMBLER_IDS[rng.int(GAMBLER_IDS.length)]!]);
+      next = addConsumables(next, [ORDINARY_GAMBLER_IDS[rng.int(ORDINARY_GAMBLER_IDS.length)]!]);
       break;
     case 'fiveColor':
       next = {

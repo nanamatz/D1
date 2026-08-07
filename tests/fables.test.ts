@@ -190,6 +190,31 @@ describe('Fable registry', () => {
     expect(missed.chanceResults[0]?.outcome).toBe('failure');
   });
 
+  it('weights successful Cowherd editions Gray/Violet/Rainbow at 50/35/15', () => {
+    const { run, blind } = setup('fable15');
+    const editionAt = (editionRoll: number) => {
+      const rolls = [0, editionRoll];
+      const rng: Rng = {
+        next: () => rolls.shift() ?? 0,
+        int: () => 0,
+        shuffle: <T>(items: readonly T[]) => items.slice(),
+      };
+      return useFable(
+        'fable15',
+        { ...run, jokers: [{ defId: 'carteBlanche', edition: 'base', state: {} }] },
+        blind,
+        [],
+        rng,
+      ).run.jokers[0]?.edition;
+    };
+
+    expect(BALANCE.fables.cowherdEditionWeights).toEqual({ gray: 0.50, violet: 0.35, rainbow: 0.15 });
+    expect(editionAt(0.499999)).toBe('gray');
+    expect(editionAt(0.50)).toBe('violet');
+    expect(editionAt(0.849999)).toBe('violet');
+    expect(editionAt(0.85)).toBe('rainbow');
+  });
+
   it('creates only an unowned Charm unless Copy Editor is owned', () => {
     const create = setup('fable14');
     const owned = {

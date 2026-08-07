@@ -226,7 +226,7 @@ describe('Emoji Tile trigger popup', () => {
 
     expect(announcements).toHaveLength(2);
     expect(tileView).toContain("t('settle.retrigger')");
-    expect(shelf).toContain('settle.jokerPop?.retrigger');
+    expect(shelf).toContain('visiblePop.retrigger');
   });
 
   it('records scaling growth as its own trigger beat', () => {
@@ -355,8 +355,9 @@ describe('Emoji Tile trigger popup', () => {
     const tile = readFileSync('src/ui/components/Tile.tsx', 'utf8');
     const css = readFileSync('src/ui/styles/play.css', 'utf8');
 
-    expect(shelf.indexOf('</Tooltip>')).toBeLessThan(shelf.indexOf('{firing && (growthPop || settle.jokerPop)'));
+    expect(shelf.indexOf('</Tooltip>')).toBeLessThan(shelf.indexOf('{firing && visiblePop'));
     expect(shelf).toContain('animatedGrowthEvents');
+    expect(shelf).toContain('bonusJokerTriggers');
     expect(tile).toContain('className="trigger-pop tile-effect-pop"');
     expect(tile).toContain('className="chip-diamond"');
     expect(css).toMatch(/\.trigger-pop\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);

@@ -3,6 +3,7 @@ import { newRun } from '../src/engine/run';
 import { startBlind, submitWord, endBlind } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
+import { resolveBlind } from '../src/engine/progression';
 import type { BlindState, Letter, RunState, Tile } from '../src/engine/types';
 
 const lex = makeLexicon([], {
@@ -78,6 +79,21 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     ({ blind: b } = play(b, run, 'fish'));
     expect(b.projectedScore).toBe(b.committedScore); // no pattern survives the hole
   });
+
+  it('Broken Sentence clears from the live projection before a loss can resolve', () => {
+    const { run } = freshBlind(800);
+    run.jokers = [{ defId: 'brokenSentence', state: {} }];
+    const { blind } = play(startBlind(run, makeRng('broken-live'), { target: 800 }), run, 'zzz');
+
+    // Gibberish ZZZ commits 90. With no sentence pattern, Broken Sentence adds
+    // 125 Chips and ×4 Mult: (90 + 125) × 4 = 860, already above the target.
+    expect(blind.committedScore).toBe(90);
+    expect(blind.projectedScore).toBe(860);
+
+    const final = endBlind(blind, run, lex);
+    expect(final.finalScore).toBe(blind.projectedScore);
+    expect(resolveBlind(run, blind, final.finalScore).cleared).toBe(true);
+  });
 });
 
 describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
@@ -120,5 +136,18 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
       pouchChipsDelta: 0,
       pouchMultDelta: 0,
     });
+  });
+
+  it('attributes Broken Sentence so its owned Emoji Tile plays a trigger beat', () => {
+    const { run, blind } = freshBlind();
+    run.jokers = [{ defId: 'brokenSentence', state: {} }];
+    const result = endBlind(blind, run, lex);
+
+    expect(result.breakdown.jokerTriggers).toEqual([{
+      jokerId: 'brokenSentence',
+      jokerIndex: 0,
+      chipsDelta: 125,
+      multFactor: 4,
+    }]);
   });
 });

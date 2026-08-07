@@ -4374,8 +4374,15 @@
   overflow: visible;
 }
 .consumable-slot > .tt-anchor {
+  position: relative;
   width: var(--shop-card-w);
   height: 100%;
+}
+.consumable-slot > .tt-anchor > .consumable-select {
+  z-index: 3;
+}
+.consumable-slot.menu-open > .tt-anchor > .consumable-select {
+  pointer-events: none;
 }
 /* The second/right held card sits against the shelf boundary. Right-align its
    downward tooltip so neither the main card nor its optional sub-card is clipped

@@ -171,7 +171,7 @@ export function grownValue(
     });
   }
   const display = def.growthDisplay;
-  if (!display) return null;
+  if (!display || display.showInTooltip === false) return null;
   const ownedValue = owned?.state[display.stateKey] ?? display.initial;
   const value = run && def.initialState
     ? Math.max(ownedValue, def.initialState(run)[display.stateKey] ?? display.initial)

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { BALANCE } from '../../engine/balance';
 import { consumableSellValue, emojiTileSellValue } from '../../engine/economy';
-import type { ConsumableId, RunState, ScoreEvent } from '../../engine/types';
+import type { ConsumableId, RunState, ScoreEvent, SentenceJokerTrigger } from '../../engine/types';
 import {
   consumableAxisTip,
   consumableTooltipBody,
@@ -96,6 +96,8 @@ interface Props {
   jokersFaceDown?: boolean;
   /** Growth already choreographed by the current scoring timeline. */
   animatedGrowthEvents?: readonly ScoreEvent[];
+  /** Blind-end sentence effects currently landing in the score box. */
+  bonusJokerTriggers?: readonly SentenceJokerTrigger[];
   /** Ultrasound rotation is revealed only after the scoring timeline completes. */
   settleComplete?: boolean;
 }
@@ -112,6 +114,7 @@ export function JokerShelf({
   deferTargetFableUse = false,
   jokersFaceDown = false,
   animatedGrowthEvents = NO_GROWTH_EVENTS,
+  bonusJokerTriggers = [],
   settleComplete = true,
 }: Props) {
   const { t, lang } = useI18n();
@@ -212,6 +215,9 @@ export function JokerShelf({
   useEffect(() => () => {
     if (growthTimer.current) clearTimeout(growthTimer.current);
   }, []);
+  useEffect(() => {
+    if (bonusJokerTriggers.length > 0) audio.play('jokerEffect');
+  }, [bonusJokerTriggers]);
   // A-3: pair every object action with a brief on-object animation before it resolves
   // — pop/dissolve when consumed, slide-away when sold — so it never looks like nothing
   // happened. The state change is delayed one beat so the animation is seen.
@@ -289,7 +295,33 @@ export function JokerShelf({
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
             const growthPop = growthPops.find((pop) => pop.index === i && pop.jokerId === def.id);
             const settleFiring = settle.active && settle.activeJokerId === def.id;
-            const firing = settleFiring || growthPop !== undefined;
+            const bonusTrigger = bonusJokerTriggers.find(
+              (trigger) => trigger.jokerIndex === i && trigger.jokerId === def.id,
+            );
+            const bonusPop = bonusTrigger
+              ? {
+                  id: `sentence-${bonusTrigger.jokerIndex}`,
+                  chips: bonusTrigger.chipsDelta,
+                  mult: 0,
+                  multFactor: bonusTrigger.multFactor,
+                  score: 0,
+                  gold: 0,
+                  stat: 0,
+                  retrigger: false,
+                }
+              : null;
+            const visiblePop: {
+              id: string | number;
+              chips: number;
+              mult: number;
+              chipsFactor?: number;
+              multFactor?: number;
+              score?: number;
+              gold: number;
+              stat: number;
+              retrigger?: boolean;
+            } | null = growthPop ?? (settleFiring ? settle.jokerPop : bonusPop);
+            const firing = settleFiring || growthPop !== undefined || bonusTrigger !== undefined;
             const enhancedFiring = settleFiring && settle.activeJokerEnhanced;
             const bossDisabled = visibleDisabledIndex === i;
             const className = [
@@ -333,7 +365,7 @@ export function JokerShelf({
                   status={bossDisabled ? 'disabled' : undefined}
                 >
                   <TiltCard
-                    key={growthPop?.id ?? (settleFiring ? settle.jokerPop?.id : 'idle')}
+                    key={visiblePop?.id ?? 'idle'}
                     idle
                     className={className}
                   >
@@ -376,22 +408,22 @@ export function JokerShelf({
                     )}
                   </TiltCard>
                 </Tooltip>
-                {firing && (growthPop || settle.jokerPop) && (
+                {firing && visiblePop && (
                   <JokerPop
-                    key={growthPop?.id ?? settle.jokerPop?.id}
-                    chips={growthPop?.chips ?? settle.jokerPop?.chips ?? 0}
-                    {...(!growthPop && settle.jokerPop?.chipsFactor !== undefined
-                      ? { chipsFactor: settle.jokerPop.chipsFactor }
+                    key={visiblePop.id}
+                    chips={visiblePop.chips ?? 0}
+                    {...(!growthPop && visiblePop.chipsFactor !== undefined
+                      ? { chipsFactor: visiblePop.chipsFactor }
                       : {})}
-                    mult={growthPop?.mult ?? settle.jokerPop?.mult ?? 0}
-                    {...(!growthPop && settle.jokerPop?.multFactor !== undefined
-                      ? { multFactor: settle.jokerPop.multFactor }
+                    mult={visiblePop.mult ?? 0}
+                    {...(!growthPop && visiblePop.multFactor !== undefined
+                      ? { multFactor: visiblePop.multFactor }
                       : {})}
-                    score={growthPop ? 0 : settle.jokerPop?.score ?? 0}
-                    gold={growthPop?.gold ?? settle.jokerPop?.gold ?? 0}
-                    stat={growthPop?.stat ?? settle.jokerPop?.stat ?? 0}
+                    score={growthPop ? 0 : visiblePop.score ?? 0}
+                    gold={visiblePop.gold ?? 0}
+                    stat={visiblePop.stat ?? 0}
                     applied={
-                      !growthPop && settle.jokerPop?.retrigger
+                      !growthPop && visiblePop.retrigger
                         ? t('settle.retrigger')
                         : t('settle.applied')
                     }
@@ -450,14 +482,6 @@ export function JokerShelf({
                   }
                 }}
               >
-                <button
-                  type="button"
-                  className="owned-object-select"
-                  aria-label={t(`consumable.${c}`)}
-                  aria-haspopup="menu"
-                  aria-expanded={menuIdx === i}
-                  onClick={() => setMenuIdx(menuIdx === i ? null : i)}
-                />
                 <div className="consumable-object-art">
                   {isFableId(c) ? (
                     <CardArt family="fable"
@@ -519,6 +543,19 @@ export function JokerShelf({
                   </div>
                 )}
               </TiltCard>
+              <button
+                type="button"
+                className="owned-object-select consumable-select"
+                aria-label={t(`consumable.${c}`)}
+                aria-haspopup="menu"
+                aria-expanded={menuIdx === i}
+                onClick={() => setMenuIdx(menuIdx === i ? null : i)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Escape') return;
+                  e.stopPropagation();
+                  setMenuIdx(null);
+                }}
+              />
             </Tooltip>
           </div>
         ))}

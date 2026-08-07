@@ -916,6 +916,7 @@ function scoreSentence(
     totalBefore: committed,
     sentenceChips: base.sentenceChips,
     sentenceMult: base.sentenceMult,
+    jokerTriggers: [],
   };
   defaultJokerBus.emit(
     'sentenceScoring',
@@ -956,6 +957,9 @@ function scoreSentence(
       unisonMult: unison?.mult ?? 1,
       effectChips,
       effectMult,
+      ...(ctx.jokerTriggers && ctx.jokerTriggers.length > 0
+        ? { jokerTriggers: ctx.jokerTriggers }
+        : {}),
       pouchId,
       pouchChipsDelta,
       pouchMultDelta,

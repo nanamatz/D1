@@ -31,5 +31,10 @@ export const GAMBLER_IDS: readonly GamblerId[] = [
   'geese', 'phoenix', 'rainman', 'sakeCup',
 ];
 
+/** Cards eligible for ordinary acquisition; Deer and Phoenix are Ink jackpots. */
+export const ORDINARY_GAMBLER_IDS: readonly GamblerId[] = GAMBLER_IDS.filter(
+  (id) => id !== 'deer' && id !== 'phoenix',
+);
+
 export const isGamblerId = (id: ConsumableId): id is GamblerId =>
   (GAMBLER_IDS as readonly ConsumableId[]).includes(id);

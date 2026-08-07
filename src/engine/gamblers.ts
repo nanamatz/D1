@@ -1,7 +1,7 @@
 /**
  * Gambler cards (GDD §10.3) — the Spectral analog: rare, powerful, usually
  * double-edged. Native source is the Ink Pack (§9.3); Comic Book lets one
- * replace a Fable-Pack choice, and Deer may replace a Constellation-Pack choice.
+ * ordinary card replace a Fable-Pack choice. Deer and Phoenix are Ink-only.
  *
  * All fourteen supplied effects are implemented through this registry.
  *

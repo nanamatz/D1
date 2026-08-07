@@ -6,8 +6,69 @@ import { patternLevelTone } from '../src/ui/patternLevel';
 describe('sentence-pattern level growth', () => {
   it('uses fixed Chips increments and +1 Mult per level', () => {
     expect(BALANCE.patternLevelGrowthFactor).toBe(1);
-    expect(BALANCE.patterns.simple).toMatchObject({ levelChips: 30, levelMult: 1 });
-    expect(patternChipsMult('simple', 3)).toEqual({ chips: 100, mult: 4 });
+    expect(BALANCE.patterns.simple).toMatchObject({
+      difficulty: 'easy', levelChips: 15, levelMult: 1,
+    });
+    expect(patternChipsMult('simple', 3)).toEqual({ chips: 70, mult: 4 });
+  });
+
+  it('classifies construction difficulty independently from payout rank', () => {
+    expect(Object.entries(BALANCE.patterns).reduce<Record<string, string[]>>(
+      (groups, [id, pattern]) => {
+        (groups[pattern.difficulty] ??= []).push(id);
+        return groups;
+      },
+      {},
+    )).toEqual({
+      easy: ['outcry', 'imperative', 'simple', 'interrogative'],
+      hard: ['chant', 'ditransitive', 'compound', 'objectComplement', 'complex'],
+      medium: ['descriptive', 'transitive', 'negative'],
+    });
+  });
+
+  it('uses the tier Chips slope while keeping Mult growth uniform', () => {
+    for (const pattern of Object.values(BALANCE.patterns)) {
+      expect(pattern.levelChips).toBe(
+        BALANCE.patternDifficultyLevelChips[pattern.difficulty],
+      );
+      expect(pattern.levelMult).toBe(1);
+    }
+  });
+
+  it('keeps representative Easy/Medium/Hard curves at Lv1, Lv5, and Lv10', () => {
+    expect([1, 5, 10].map((level) => patternChipsMult('outcry', level))).toEqual([
+      { chips: 15, mult: 1 },
+      { chips: 75, mult: 5 },
+      { chips: 150, mult: 10 },
+    ]);
+    expect([1, 5, 10].map((level) => patternChipsMult('descriptive', level))).toEqual([
+      { chips: 45, mult: 2 },
+      { chips: 165, mult: 6 },
+      { chips: 315, mult: 11 },
+    ]);
+    expect([1, 5, 10].map((level) => patternChipsMult('complex', level))).toEqual([
+      { chips: 195, mult: 4 },
+      { chips: 375, mult: 8 },
+      { chips: 600, mult: 13 },
+    ]);
+  });
+
+  it('lets sustained Easy investment overtake base Complex without doing so immediately', () => {
+    const firstLevelAtLeast = (id: keyof typeof BALANCE.patterns, committed: number) => {
+      const complex = patternChipsMult('complex', 1);
+      const targetBonus = (committed + complex.chips) * complex.mult - committed;
+      for (let level = 1; level <= 32; level += 1) {
+        const current = patternChipsMult(id, level);
+        const bonus = (committed + current.chips) * current.mult - committed;
+        if (bonus >= targetBonus) return level;
+      }
+      return null;
+    };
+
+    expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets[0])).toBe(6);
+    expect(firstLevelAtLeast('imperative', BALANCE.anteBaseTargets[0])).toBe(6);
+    expect(firstLevelAtLeast('simple', BALANCE.anteBaseTargets[0])).toBe(5);
+    expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets.at(-1)!)).toBe(5);
   });
 
   it('keeps every level value and level-up delta a natural number', () => {

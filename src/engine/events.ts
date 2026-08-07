@@ -221,6 +221,8 @@ export interface JokerDef {
     kind: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize';
     stateKey: string;
     initial: number;
+    /** False for trigger-only counters that animate but are not a live mechanic. */
+    showInTooltip?: boolean;
     /** Opt in when a mechanic's live-value loss should play as a trigger beat. */
     showDecrease?: boolean;
   };

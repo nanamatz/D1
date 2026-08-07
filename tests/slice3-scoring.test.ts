@@ -114,8 +114,8 @@ describe('slice3 scoring — Unison folds into the formula (GDD §5.3)', () => {
 });
 
 describe('slice3 scoring — leveling raises both Chips and Mult (GDD §5.4)', () => {
-  it('Imperative at level 2: (25+20) × (1+1) = 90', () => {
-    expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(90);
+  it('Imperative at level 2: (25+15) × (1+1) = 80', () => {
+    expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(80);
   });
 
   it('Descriptive at level 2: (100 + 45+30) × (2+1) = 525', () => {

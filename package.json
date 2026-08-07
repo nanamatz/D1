@@ -19,6 +19,7 @@
     "sim:length-mult": "tsx src/sim/length-mult.ts",
     "sim:endless": "tsx src/sim/endless.ts",
     "sim:materials": "tsx src/sim/materials.ts",
+    "sim:patterns": "tsx src/sim/patterns12.ts",
     "sim:full-run": "tsx src/sim/full-run-balance.ts",
     "sim:emoji-sample": "tsx src/sim/emoji-sample.ts",
     "sim:emoji-bank": "tsx src/sim/emoji-bank.ts",

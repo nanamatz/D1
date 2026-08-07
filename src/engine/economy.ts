@@ -157,7 +157,12 @@ export const emojiTileSellValue = (
   basePrice: number,
   edition: JokerEdition = 'base',
   bonus = 0,
-): number => sellValue(emojiTileBuyPrice(run, basePrice, edition)) + bonus;
+): number => {
+  const adjusted = sellValue(emojiTileBuyPrice(run, basePrice, edition));
+  if (edition === 'base') return adjusted + bonus;
+  const base = sellValue(emojiTileBuyPrice(run, basePrice));
+  return Math.max(adjusted, base + BALANCE.minimumEditionSellBonus) + bonus;
+};
 
 export const consumableSellValue = (run: RunState, id: ConsumableId): number =>
   sellValue(consumableBuyPrice(run, id));

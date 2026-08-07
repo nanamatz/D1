@@ -27,7 +27,7 @@ Version 0.2 — systems expansion
   remains `lunchBag`. Pouch object art also removes the pencils from Pencil
   Case and the coins from Coin Purse, while Lucky Pouch gains a centred gold
   circular emblem (§12.2).
-- Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, Deer may rarely appear in Constellation Packs, and Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3).
+- Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, and ordinary Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3). The 2026-08-07 acquisition pass makes Deer and Phoenix Ink-Pack-only.
 - Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. The 129-tile roster starts with 54 ordinary tiles plus all 5 Legendary definitions profile-eligible; 70 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
 - Changed 2026-08-06: Term Insurance permanently prevents letter-tile destruction while owned and gives ×2 Mult on every prevention. Its four-use limit and self-destruction are retired (§11.4).
 - Changed 2026-08-06: Hand Scholar starts at ×1 and increases its multiplicative factor by ×0.5 per distinct Word Hand recorded this run, up to ×4 for all six hands. Hands played before acquisition count immediately. Every run-history Emoji Tile seeds and reconciles from the authoritative run-wide ledger (§11.6).
@@ -37,6 +37,9 @@ Version 0.2 — systems expansion
 - Changed 2026-08-06: Cleaning Sign displays as `청소 표지판` in Korean and removes $2 for each tile discarded, rather than once per discard action (§8.4).
 - Changed 2026-08-06: register base Mult is Standard ×1, Formal ×3, Slang ×5, and Vulgar ×10 so the much rarer registers pay a meaningful premium after additive word-length Mult (§3.1).
 - Changed 2026-08-06: sentence-pattern base Mult is compressed to ×1/×2/×3/×4 by rank band while base Chips stay unchanged. Every Constellation level now adds its fixed Chips increment and +1 Mult linearly; the former ×1.5 geometric growth is retired (§5.2–§5.4).
+- Changed 2026-08-07: sentence-pattern construction difficulty is classified independently from payout rank. Easy/Medium/Hard Constellation levels add +15/+30/+45 Chips respectively while every pattern continues to gain +1 Mult (§5.2–§5.4).
+- Changed 2026-08-07: Deer and Phoenix are Ink-Pack-only jackpots at 0.3% per choice each. The other 12 Gambler Cards roll uniformly; Lucky Pouch shop and starting-card routes, plus Comic Book replacements, exclude both jackpots (§9.3, §10.3, §12.2).
+- Changed 2026-08-07: The Cowherd and the Weaver Girl keeps its 25% success chance, then selects Gray/Violet/Rainbow at 50%/35%/15% (§10.1).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
   Legendary roster by Book of Margins, Tyrant, Type Foundry, Tower of Babel, and
   Misbound. Common 32 and Uncommon 35 remain a review baseline with additional
@@ -339,7 +342,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, Unison, and post-pattern Chips add to it, then pattern, Unison, and post-pattern Mult multiply the combined axis. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult is deliberately compressed to ×1/×2/×3/×4 by rank band so an unupgraded pattern does not decide the blind by itself. Every level-up adds the table's fixed Chips increment and +1 Mult linearly (`BALANCE.patternLevelGrowthFactor = 1`); therefore the current Chips/Mult and every displayed level-up delta remain natural numbers.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, Unison, and post-pattern Chips add to it, then pattern, Unison, and post-pattern Mult multiply the combined axis. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult is deliberately compressed to ×1/×2/×3/×4 by rank band so an unupgraded pattern does not decide the blind by itself. Every level-up adds the pattern's construction-difficulty tier Chips increment (**Easy +15 · Medium +30 · Hard +45**) and +1 Mult linearly (`BALANCE.patternLevelGrowthFactor = 1`); therefore the current Chips/Mult and every displayed level-up delta remain natural numbers. Rank remains payout precedence, not a proxy for construction difficulty.
 
 ```
 sentenceChips = patternChips + 15 × absorbedModifiers + unisonChips
@@ -355,22 +358,22 @@ use a Chips-coloured tag, Unison uses a gold tag, and post-pattern Emoji Tile,
 voucher, or boss adjustments use an effect-coloured tag. They must never be
 folded invisibly into the pattern label.
 
-| # | Pattern | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
-|---|---|---|---|---|---|---|
-| 1 | Outcry | Interjection alone | SHH / WOW | 1 | 15 × 1 | +20, +1 |
-| 2 | Imperative | Verb + Noun | EAT FISH | 2 | 25 × 1 | +20, +1 |
-| 3 | Chant | Same verb ×2+ | RUN RUN | 2+ | 25 × 1, **+10 Chips per repeat beyond the 2nd** | +20, +1 (repeat bonus +10/level) |
-| 4 | Simple | Noun + Verb | BIRDS FLY | 2 | 40 × 2 | +30, +1 |
-| 5 | Descriptive | Noun + linking V + Adj | PIZZA TASTES GOOD | 3 | 45 × 2 | +30, +1 |
-| 6 | Transitive | Noun + Verb + Noun | CAT EATS FISH | 3 | 60 × 2 | +40, +1 |
-| 7 | Ditransitive | Noun + Verb + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 3 | +50, +1 |
-| 8 | Compound | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 3 | +60, +1 |
-| 9 | Object Complement (5형식) | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 3 | +70, +1 |
-| 10 | Interrogative | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 3 | +80, +1 |
-| 11 | Negative | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 4 | +90, +1 |
-| 12 | Complex | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 4 | +100, +1 |
+| # | Pattern | Difficulty | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
+|---|---|---|---|---|---|---|---|
+| 1 | Outcry | Easy | Interjection alone | SHH / WOW | 1 | 15 × 1 | +15, +1 |
+| 2 | Imperative | Easy | Verb + Noun | EAT FISH | 2 | 25 × 1 | +15, +1 |
+| 3 | Chant | Hard | Same verb ×2+ | EAT EAT | 2+ | 25 × 1, **+10 Chips per repeat beyond the 2nd** | +45, +1 (repeat bonus +10/level) |
+| 4 | Simple | Easy | Noun + Verb | BIRDS FLY | 2 | 40 × 2 | +15, +1 |
+| 5 | Descriptive | Medium | Noun + linking V + Adj | PIZZA SEEMS TASTY | 3 | 45 × 2 | +30, +1 |
+| 6 | Transitive | Medium | Noun + Verb + Noun | CAT EATS FISH | 3 | 60 × 2 | +30, +1 |
+| 7 | Ditransitive | Hard | Noun + Verb + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 3 | +45, +1 |
+| 8 | Compound | Hard | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 3 | +45, +1 |
+| 9 | Object Complement (5형식) | Hard | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 3 | +45, +1 |
+| 10 | Interrogative | Easy | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 3 | +15, +1 |
+| 11 | Negative | Medium | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 4 | +30, +1 |
+| 12 | Complex | Hard | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 4 | +45, +1 |
 
-(Values live in `balance.ts` under `patterns`; the 2026-08-06 balance pass keeps the raised Chips while compressing base Mult.)
+(Values live in `balance.ts` under `patterns`; the 2026-08-07 difficulty pass keeps base Chips/Mult unchanged and retunes only per-level Chips growth.)
 
 Design intent:
 
@@ -378,7 +381,8 @@ Design intent:
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, which now starts at two consecutive copies of the same verb.
 - **Simple, Transitive, and Ditransitive accept any verb subtype** (ease pass 2026-08-04). Their word count and order stay fixed; Descriptive and Object Complement retain their specialized verb checks.
 - **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences add more Chips and apply a stronger factor to the committed blind score. The "structural sentences pay off big" principle from §7.3 lives directly in both axes.
-- **#7–12 are tight-to-impossible in the base 5 phases** — the reason to seek future phase-extension effects is built into the table itself.
+- **The Hard tier is tight in the base 5 phases** — especially Compound and Complex at 5+ words; phase-extension effects create room for modifiers or longer clause forms.
+- **Construction difficulty is independent of payout rank.** Easy = a short, broad lexical skeleton (Outcry, Imperative, Simple, Interrogative); Medium = three-word structure or a required negative marker (Descriptive, Transitive, Negative); Hard = exact repetition, four-object structure, a controlled verb, or two full clauses (Chant, Ditransitive, Compound, Object Complement, Complex). Outcry is structurally Easy even though its one-word sequence must also clear the blind to survive; target viability is measured separately in simulation.
 - **Object Complement uses a controlled verb family** (`MAKE/CALL/FIND/NAME/KEEP/CONSIDER/ELECT/PAINT` and inflections), because POS alone cannot distinguish `I GIVE HIM FISH` (Ditransitive) from `I MADE HIM HAPPY` (Object Complement).
 - **Interrogative does not require a Question Mark tile.** An interrogative word or auxiliary opener is sufficient. This preserves the alphabet-only pouch rule (§2.1).
 - **Elliptical WHY questions count.** `WHY ME` is parsed as `WHY [IS IT] ME`; the understood predicate need not be played.
@@ -397,7 +401,7 @@ Note on Vulgar stacking: suit base ×10 plus Unison-Vulgar ×2 is an intentional
 
 ### 5.4 Constellation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is **uniform and linear**: each use adds the §5.2 right-column's fixed Chips increment and +1 Mult.
+Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is **linear**: each use adds the §5.2 right-column's difficulty-tier Chips increment and +1 Mult.
 
 **Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
 engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
@@ -408,18 +412,18 @@ all show this same mark, so the mapping is readable before effect prose.
 
 | Constellation | Levels up | Increment per level |
 |---|---|---|
-| Libra / 천칭자리 | Outcry | +20 Chips, +1 Mult |
-| Leo / 사자자리 | Imperative | +20 Chips, +1 Mult |
-| Aquarius / 물병자리 | Chant | +20 Chips, +1 Mult (repeat bonus +10 Chips/level) |
-| Aries / 양자리 | Simple | +30 Chips, +1 Mult |
+| Libra / 천칭자리 | Outcry | +15 Chips, +1 Mult |
+| Leo / 사자자리 | Imperative | +15 Chips, +1 Mult |
+| Aquarius / 물병자리 | Chant | +45 Chips, +1 Mult (repeat bonus +10 Chips/level) |
+| Aries / 양자리 | Simple | +15 Chips, +1 Mult |
 | Taurus / 황소자리 | Descriptive | +30 Chips, +1 Mult |
-| Gemini / 쌍둥이자리 | Transitive | +40 Chips, +1 Mult |
-| Cancer / 게자리 | Ditransitive | +50 Chips, +1 Mult |
-| Virgo / 처녀자리 | Compound | +60 Chips, +1 Mult |
-| Scorpio / 전갈자리 | Object Complement | +70 Chips, +1 Mult |
-| Sagittarius / 궁수자리 | Interrogative | +80 Chips, +1 Mult |
-| Capricorn / 염소자리 | Negative | +90 Chips, +1 Mult |
-| Pisces / 물고기자리 | Complex | +100 Chips, +1 Mult |
+| Gemini / 쌍둥이자리 | Transitive | +30 Chips, +1 Mult |
+| Cancer / 게자리 | Ditransitive | +45 Chips, +1 Mult |
+| Virgo / 처녀자리 | Compound | +45 Chips, +1 Mult |
+| Scorpio / 전갈자리 | Object Complement | +45 Chips, +1 Mult |
+| Sagittarius / 궁수자리 | Interrogative | +15 Chips, +1 Mult |
+| Capricorn / 염소자리 | Negative | +30 Chips, +1 Mult |
+| Pisces / 물고기자리 | Complex | +45 Chips, +1 Mult |
 
 ### 5.5 Word Hands (단어 족보) — per-word structure bonuses (playtest-02 A-2)
 
@@ -534,6 +538,7 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 The old "cash-out button unlocks at projected ≥ target" was a fake choice: surplus score is worthless and remaining phases pay gold, so continuing past the target was always wrong. **Auto-settle** removes the non-choice.
 
 - **Trigger.** After a submission's **full settle sequence** (word settle → Word-Hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
+- **Final-score authority.** Every sentence-scoring hook, including Broken Sentence when no pattern exists, is included in the live projection before the end trigger is tested. Once the sentence-finalize sequence publishes `finalScore`, that exact value—not a later recomputation—is the sole input to clear/Game Over resolution. Its temporary Emoji Tile trigger state is cleared before either result modal appears.
 - **Remaining phases = money.** Normally 1 gold per remaining phase, paid as a
   Fee Settlement line item (§9.1). Purple Pouch replaces this with $2 per phase
   and adds $1 per remaining discard (§12.2).
@@ -821,9 +826,9 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
   actions are briefly locked so the visual delay cannot double-buy or leave the
   shop midway. Reduced motion commits immediately.
 
-**Price policy (changed 2026-08-04):** Emoji Tiles use fixed rarity prices **Common $4 · Uncommon $6 · Rare $9 · Legendary $15**. Letter tiles cost $1; Fable/Constellation cards $3; Gambler cards $4; Basic/Classic/Premium packs $4/$6/$8; Vouchers $10. Gray/Violet/Rainbow/White editions add **$2/$3/$5/$5** to an Emoji Tile, and letter-tile editions use the same applicable surcharge. Newspaper/Papyrus apply 25%/50% after the surcharge, round down, and enforce a $1 minimum; Coupon Tag's explicit free stock remains $0. Selling recalculates that item's **current** discounted, edition-adjusted price, halves it, rounds down, and enforces a $1 minimum. Consequently, buying a discount Voucher can lower the sale value of already-owned objects.
+**Price policy (changed 2026-08-07):** Emoji Tiles use fixed rarity prices **Common $4 · Uncommon $6 · Rare $9 · Legendary $15**. Letter tiles cost $1; Fable/Constellation cards $3; Gambler cards $4; Basic/Classic/Premium packs $4/$6/$8; Vouchers $10. Gray/Violet/Rainbow/White editions add **$2/$3/$5/$5** to an Emoji Tile, and letter-tile editions use the same applicable surcharge. Newspaper/Papyrus apply 25%/50% after the surcharge, round down, and enforce a $1 minimum; Coupon Tag's explicit free stock remains $0. Selling recalculates that item's **current** discounted, edition-adjusted price, halves it, rounds down, and enforces a $1 minimum. A non-Base Emoji Tile is always worth at least $1 more than its otherwise identical Base edition, even when discounts and rounding would collapse both values. Buying a discount Voucher can still lower the sale value of already-owned objects.
 
-**Emoji tile appearance rates by rarity (`balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution is **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs.** Its implemented acquisition route is the Phoenix Gambler card (§10.3), available as the Fable/Ink jackpot, which creates one random unowned Legendary.
+**Emoji tile appearance rates by rarity (`balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution is **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs.** Its implemented acquisition route is the Phoenix Gambler card (§10.3), available only as an Ink-Pack jackpot, which creates one random unowned Legendary.
 
 **Profile lock filter (implemented 2026-08-05).** Common, Uncommon, and Rare use
 an immediately available 53-tile starter subset (18 Common / 18 Uncommon / 17
@@ -861,9 +866,9 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 | Pack (ko / en) | Contents | Analog |
 |---|---|---|
-| 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity. Each choice has a 0.3% Deer jackpot (§10.3). | Celestial |
+| 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Phoenix is a 0.05% per-choice jackpot; Comic Book may additionally add one ordinary Gambler card. | Arcana |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Comic Book may add one ordinary Gambler card. | Arcana |
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects and compatible held Fables | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
@@ -873,7 +878,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Tile modifiers.** Every Tile-Pack choice rolls its three axes independently: non-base material **40%**, non-base font **20%**, and edition **8%** (Gray 4% / Violet 2.8% / Rainbow 1.2%). A rolled Stone always forces the font result back to Medium. Flyer/Wanted Poster raise only that edition table to 16%/32%. An Encyclopedia shop tile instead rolls material 40%, no font, and a fixed edition table totaling 20% (Gray 10% / Violet 7% / Rainbow 3%), unaffected by Flyer/Wanted Poster.
 
-**Jackpot and cross-family rolls (changed 2026-08-04).** Every Fable choice independently has a **0.05%** chance to become Phoenix, and every Constellation choice independently has a **0.3%** chance to become Deer. An Ink choice independently rolls Phoenix at **0.05%** and Deer at **0.3%**. Its ordinary pool excludes those jackpots and uses relative weights **1** for ten standard cards versus **0.4** each for Rainman and Sake Cup; choices are drawn without replacement inside one pack. Multiple jackpots may therefore appear in one pack. Comic Book additionally gives each non-jackpot Fable choice a **5%** chance to become an ordinary Gambler card, capped at one Comic-Book replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.phoenixChance`, `pack.deerChance`, `pack.inkGamblerWeights`, `pack.gamblerInFableChance`).
+**Ink-only jackpots and ordinary rolls (changed 2026-08-07).** Every Ink choice reserves an independent **0.3% Phoenix** band and **0.3% Deer** band. The remaining 99.4% is divided uniformly among the 12 ordinary Gambler Cards, so each ordinary card has an **8.2833% base chance on the first fully eligible choice**. Ordinary choices are drawn without replacement inside one pack; later-choice odds therefore normalize over the remaining eligible pool. If a rolled jackpot is ineligible, its band falls back to an ordinary card and never increases the other jackpot's chance. Fable and Constellation Packs never roll either jackpot. Comic Book gives each Fable choice a **5%** chance to become an ordinary Gambler card, capped at one replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.phoenixChance`, `pack.deerChance`, `pack.gamblerInFableChance`).
 
 > **Impl note (updated 2026-08-06).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. A compatible held tile-targeting Fable may resolve against either pack's candidates. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
@@ -961,7 +966,7 @@ also available through the surrounding tooltip and accessible label.
 | 12 | Belling the Cat | Turn 1 selected tile into Brass |
 | 13 | The Wolf and the Crane | Turn 1 selected tile into Wood |
 | 14 | Heungbu and Nolbu | Create 1 random Emoji Tile if an Emoji Tile slot is available |
-| 15 | The Cowherd and the Weaver Girl | 1/4 chance to give one random uneditioned Emoji Tile Gray, Violet, or Rainbow; unusable if none is eligible |
+| 15 | The Cowherd and the Weaver Girl | 1/4 chance to give one random uneditioned Emoji Tile an edition; a success selects Gray/Violet/Rainbow at 50%/35%/15%; unusable if none is eligible |
 | 16 | The Rabbit and the Turtle | Raise 2 selected tile letters by one alphabet rank; Z wraps to A |
 | 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Emoji Tiles, capped at +$50; its tooltip shows the live capped payout from the currently owned Emoji Tiles |
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
@@ -1012,13 +1017,13 @@ the framing — these are gambles.
 
 **Ink Pack naming: settled.** The pack is the **Ink Pack / 잉크 팩** and the Gambler cards are its contents. The "Forbidden Books / 금서 팩" line stays **deferred** — not revived as a separate sixth pack, not used as an alternate name for this one. Revisit only if a concrete need appears that the five existing families cannot cover.
 
-**Acquisition routing (confirmed 2026-07-29).** Ink Packs are the native route.
-A Fable choice has a 0.05% Phoenix jackpot regardless of Comic Book. Comic Book
-additionally enables an ordinary Gambler replacement at 5% per eligible choice,
-maximum one per pack. Deer has an independent 0.3% chance per Constellation
-choice. Ink-Pack choices have independent 0.05% Phoenix and 0.3% Deer bands;
-ordinary Rainman and Sake Cup each have 0.4 relative weight against every other
-ordinary card's 1.0 (§9.3). All rolls use the seeded RNG.
+**Acquisition routing (changed 2026-08-07).** Ink Packs are the only route for
+Deer and Phoenix, each with an independent 0.3% band per choice. The other 12
+Gambler Cards share the remaining 99.4% uniformly and are drawn without
+replacement. Comic Book enables one ordinary Gambler replacement at 5% per
+eligible Fable choice, maximum one per pack. Lucky Pouch's starting card and
+shop family also use only the uniformly distributed ordinary 12. All rolls use
+the seeded RNG.
 
 **Target field.** A held Gambler card used during a blind targets the current
 hand. A tile-targeting Gambler used directly from a pack instead targets that
@@ -1038,7 +1043,7 @@ receive new ids and enter the run's pouch permanently.
 | 6 | Crane and Sun / 학과 해 | Create one seeded-random unowned Rare Emoji Tile, then set held gold to $0. Unusable without an eligible tile or free slot. |
 | 7 | Cuckoo / 뻐꾸기 | Change one selected letter tile's font to **Inline**. Preserve material and edition. |
 | 8 | Curtain / 휘장 | Create two complete copies of one selected letter tile in the active field and add them permanently to the pouch. Copy letter/hidden letter, material, font, edition, and Wood growth; assign new ids. |
-| 9 | Deer / 사슴 | Raise all 12 sentence-pattern levels by 1. May also appear very rarely in Constellation Packs and resolves immediately without occupying a held slot. |
+| 9 | Deer / 사슴 | Raise all 12 sentence-pattern levels by 1. Appears only as a 0.3% per-choice Ink-Pack jackpot. |
 | 10 | Full Moon / 보름달 | Permanently destroy 1 seeded-random tile in the active field, then create 3 random enhanced vowel tiles using A/E/I/O/U. Each created tile receives one seeded-random non-base enhancement from material, font, or letter-tile edition; Stone is excluded because it would erase the promised vowel. |
 | 11 | Geese / 기러기 | Change one selected letter tile's font to **Void** (`bold` internally). Preserve material and edition. |
 | 12 | Phoenix / 봉황 | Create one seeded-random unowned Legendary Emoji Tile. Unusable without an eligible tile or free slot. This is the normal-play Legendary acquisition route. |
@@ -1384,10 +1389,11 @@ opens Fee Settlement. Red LP suppresses only a Draft's clear-reward line, so
 Purple's remaining-resource lines still pay on a cleared Draft.
 
 **Lucky Pouch shop route.** This is an explicit acquisition-route exception:
-implemented Gambler Cards become eligible in ordinary shop item slots under a
-data-defined shop weight, in addition to their Ink Pack and Comic Book routes.
-The starting card is chosen uniformly from the 14 implemented definitions and
-occupies one held-consumable slot.
+the 12 ordinary Gambler Cards become eligible in ordinary shop item slots under
+a data-defined shop weight, in addition to their Ink Pack and Comic Book routes.
+Deer and Phoenix remain Ink-Pack-only. The starting card is chosen uniformly
+from the same ordinary 12 and occupies one held-consumable slot. Within either
+Lucky-Pouch route, each ordinary card is therefore 8.3333% likely.
 
 **Briefcase balance transform.** Resolve one individual word through every normal
 base, letter, material, font, edition, Word Hand, suit, Emoji Tile, voucher,

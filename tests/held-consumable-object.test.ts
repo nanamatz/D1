@@ -30,7 +30,10 @@ describe('held consumable foreground objects', () => {
       /className=\{className\}[\s\S]*className="owned-object-select"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>/,
     );
     expect(shelf).toMatch(
-      /className="consumable-object"[\s\S]*className="owned-object-select"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>/,
+      /className="consumable-object"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>[\s\S]*className="owned-object-select consumable-select"/,
+    );
+    expect(css).toMatch(
+      /\.consumable-slot\.menu-open > \.tt-anchor > \.consumable-select\s*\{[^}]*pointer-events:\s*none;/s,
     );
     expect(css).toContain('.consumables .consumable-slot.menu-open');
     expect(css).toContain('.consumable-slot.menu-open .consumable-object-art');

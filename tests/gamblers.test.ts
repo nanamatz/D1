@@ -1,6 +1,6 @@
 /**
  * Gambler cards (GDD §10.3) + the Ink Pack (§9.3) — all fourteen effects,
- * their acquisition routes, and the cross-family rolls.
+ * their acquisition routes, and Ink-only jackpot rolls.
  */
 import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
@@ -375,42 +375,44 @@ describe('acquisition — GDD §9.3', () => {
     }
   });
 
-  it('a Fable Pack can only roll the Phoenix jackpot without Comic Book', () => {
+  it('a Fable Pack never rolls a Gambler card without Comic Book', () => {
     const run = newRun('fable-pack');
     for (let i = 0; i < 40; i++) {
       const offer = rollPack(slot('consumable'), run, makeRng(`fable-${i}`));
       for (const option of offer.options) {
         const id = (option as { id: ConsumableId }).id;
-        expect(!isGamblerId(id) || id === 'phoenix').toBe(true);
+        expect(isGamblerId(id)).toBe(false);
       }
     }
   });
 
-  it('Comic Book lets at most one non-jackpot Fable choice become a Gambler card', () => {
+  it('Comic Book lets at most one Fable choice become an ordinary Gambler card', () => {
     const run: RunState = { ...newRun('comic'), vouchers: ['comicBook'] };
     let seen = 0;
     for (let i = 0; i < 200; i++) {
       const offer = rollPack(slot('consumable'), run, makeRng(`comic-${i}`));
       const gamblers = offer.options.filter((option) => {
         const id = (option as { id: ConsumableId }).id;
-        return isGamblerId(id) && id !== 'phoenix';
+        return isGamblerId(id);
       });
       expect(gamblers.length).toBeLessThanOrEqual(1);
+      expect(gamblers.some((option) => {
+        const id = (option as { id: ConsumableId }).id;
+        return id === 'phoenix' || id === 'deer';
+      })).toBe(false);
       seen += gamblers.length;
     }
     expect(seen).toBeGreaterThan(0); // ~5% per choice over 200 packs
   });
 
-  it('Deer rolls independently for each Constellation choice', () => {
+  it('Constellation Packs never roll Deer', () => {
     const run = newRun('deer-pack');
-    let seen = 0;
     for (let i = 0; i < 400; i++) {
       const offer = rollPack(slot('pattern'), run, makeRng(`deer-${i}`));
       const deer = offer.options.filter(
         (option) => (option as { id: ConsumableId }).id === 'deer',
       );
-      seen += deer.length;
+      expect(deer).toHaveLength(0);
     }
-    expect(seen).toBeGreaterThan(0); // 0.3% per choice over 400 packs
   });
 });

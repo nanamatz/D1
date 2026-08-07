@@ -7,6 +7,7 @@ import {
   effectiveInterest,
 } from '../src/engine/economy';
 import { isGamblerId } from '../src/engine/gamblers';
+import { ORDINARY_GAMBLER_IDS } from '../src/engine/gamblerIds';
 import { onBlindEnded } from '../src/engine/jokers';
 import { makeLexicon } from '../src/engine/lexicon';
 import { endBlind, startBlind, submitWord } from '../src/engine/loop';
@@ -99,7 +100,11 @@ describe('starting pouches', () => {
     const luckyB = runWith('lucky', 'whiteLp', 'lucky-seed');
     expect(luckyA.consumables).toEqual(luckyB.consumables);
     expect(luckyA.consumables[0] && isGamblerId(luckyA.consumables[0])).toBe(true);
+    expect(ORDINARY_GAMBLER_IDS).toContain(luckyA.consumables[0]);
     expect(pouchAllowsGamblerShop(luckyA)).toBe(true);
+    for (let i = 0; i < 200; i++) {
+      expect(ORDINARY_GAMBLER_IDS).toContain(runWith('lucky', 'whiteLp', `lucky-${i}`).consumables[0]);
+    }
 
     const coinA = runWith('coinPurse', 'whiteLp', 'coin-seed');
     const coinB = runWith('coinPurse', 'whiteLp', 'coin-seed');
@@ -113,11 +118,13 @@ describe('starting pouches', () => {
   it('lets Gambler cards appear in Lucky Pouch shop consumable slots', () => {
     const run = runWith('lucky');
     let found = false;
-    for (let i = 0; i < 400 && !found; i++) {
+    for (let i = 0; i < 400; i++) {
       const shop = rollShopStock(run, makeRng(`lucky-shop-${i}`));
-      found = shop.items.some(
-        (item) => item?.kind === 'consumable' && isGamblerId(item.id),
-      );
+      for (const item of shop.items) {
+        if (item?.kind !== 'consumable' || !isGamblerId(item.id)) continue;
+        found = true;
+        expect(ORDINARY_GAMBLER_IDS).toContain(item.id);
+      }
     }
     expect(found).toBe(true);
   });

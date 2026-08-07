@@ -242,6 +242,15 @@ export interface SentenceScoringContext {
   sentenceChips: number;
   /** Mult factor applied to the combined Chips axis: patternMult × unisonMult (GDD §5.2) */
   sentenceMult: number;
+  /** Emoji Tile effects that need their own blind-end trigger presentation. */
+  jokerTriggers?: SentenceJokerTrigger[];
+}
+
+export interface SentenceJokerTrigger {
+  jokerId: string;
+  jokerIndex: number;
+  chipsDelta: number;
+  multFactor: number;
 }
 
 /** Player-facing sources folded into the finalized sentence bonus. */
@@ -254,6 +263,7 @@ export interface SentenceBonusBreakdown {
   /** Post-pattern effects from Emoji Tiles, vouchers, or bosses. */
   effectChips: number;
   effectMult: number;
+  jokerTriggers?: SentenceJokerTrigger[];
   /** Final Starting-Pouch axis transform, kept separate from ordinary effects. */
   pouchId: PouchId | null;
   pouchChipsDelta: number;

@@ -492,7 +492,7 @@
   "consumabledesc.fable12": "Enhance [n:1] selected tile into a Brass tile",
   "consumabledesc.fable13": "Enhance [n:1] selected tile into a Wood tile",
   "consumabledesc.fable14": "Create [n:1] random Emoji Tile (Requires available space)",
-  "consumabledesc.fable15": "A [n:1] in [n:4] chance to give [n:1] random uneditioned Emoji Tile [G:Gray], [v:Violet], or [r:Rainbow]",
+  "consumabledesc.fable15": "A [n:1] in [n:4] chance to give [n:1] random uneditioned Emoji Tile [G:Gray] ([n:50%]), [v:Violet] ([n:35%]), or [r:Rainbow] ([n:15%])",
   "consumabledesc.fable16": "Advance the letters of [n:2] selected tiles by [n:1] alphabet rank",
   "consumabledesc.fable17": "Gain the total sell value of all current Emoji Tiles, up to [$:$50]",
   "consumabledesc.fable18": "Destroy up to [n:2] selected tiles, removing them from the pouch for this run",

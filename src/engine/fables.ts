@@ -423,9 +423,13 @@ export function useFable(
     chanceResults.push({ chance, label: 'edition', outcome: success ? 'success' : 'failure' });
     if (success) {
       const target = eligible[rng.int(eligible.length)]!;
-      const editions: readonly JokerEdition[] = ['gray', 'violet', 'rainbow'];
+      const weights = BALANCE.fables.cowherdEditionWeights;
+      const roll = rng.next();
+      const edition: JokerEdition = roll < weights.gray
+        ? 'gray'
+        : roll < weights.gray + weights.violet ? 'violet' : 'rainbow';
       const jokers = nextRun.jokers.slice();
-      jokers[target.index] = { ...target.joker, edition: editions[rng.int(editions.length)]! };
+      jokers[target.index] = { ...target.joker, edition };
       nextRun = { ...nextRun, jokers };
     }
   } else if (effect.kind === 'rankUp') {

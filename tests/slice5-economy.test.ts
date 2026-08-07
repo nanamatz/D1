@@ -75,4 +75,14 @@ describe('slice5 economy — shop costs (GDD §9.2)', () => {
     expect(consumableBuyPrice(fresh, 'fable1')).toBe(3);
     expect(consumableBuyPrice(fresh, 'phoenix')).toBe(4);
   });
+
+  it('keeps every owned Emoji edition worth more than its Base edition after discounts', () => {
+    const run = newRun('edition-sale');
+    run.vouchers = ['newspaper', 'papyrus'];
+    const base = emojiTileSellValue(run, BALANCE.jokerPrice.common);
+
+    for (const edition of ['gray', 'violet', 'rainbow', 'white'] as const) {
+      expect(emojiTileSellValue(run, BALANCE.jokerPrice.common, edition)).toBeGreaterThan(base);
+    }
+  });
 });

@@ -58,6 +58,7 @@ describe('shared consumable result animation', () => {
     expect(component).toContain('className="cfx-shatter-fx"');
     expect(component).toContain('className="cfx-gold"');
     expect(css).toMatch(/\.cfx-stats \.cfx-gold\s*\{[^}]*border:\s*0;[^}]*font-size:\s*var\(--ds-2xl\);/s);
+    expect(css).toMatch(/\.cfx-stats \.cfx-gold\s*\{[^}]*top:\s*-10px;/s);
     expect(css).toMatch(/\.consumable-effect \.chance-result\s*\{[^}]*font-size:\s*var\(--ds-sm\);/s);
     expect(css).toContain('@keyframes cfx-shatter-shards');
   });

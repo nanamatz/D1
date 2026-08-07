@@ -13,6 +13,7 @@ import { CONSTELLATION_IDS, CONSTELLATION_PATTERN } from './constellations';
 import { sampleJokerDefs } from './offers';
 import { rollJokerEdition, rollShopTileEdition, rollTileEdition } from './editions';
 import { FABLE_IDS } from './fables';
+import { ORDINARY_GAMBLER_IDS } from './gamblerIds';
 import { GAMBLER_IDS } from './gamblers';
 import { createOwnedJoker } from './jokers';
 import {
@@ -47,7 +48,6 @@ export const CONSTELLATION_POOL: readonly ConsumableId[] = CONSTELLATION_IDS;
 
 /** Gambler-card pool — the Ink Pack's contents (GDD §9.3, §10.3). */
 export const GAMBLER_POOL: readonly ConsumableId[] = GAMBLER_IDS;
-const INK_BASE_POOL = GAMBLER_IDS.filter((id) => id !== 'phoenix' && id !== 'deer');
 
 const MATERIALS: readonly TileMaterial[] = [
   'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',
@@ -120,21 +120,6 @@ function drawConsumables(
     : Array.from({ length: show }, () => make(pool[rng.int(pool.length)]!));
 }
 
-/** Take one weighted id without replacement from the remaining Ink pool. */
-function takeWeightedInk(remaining: ConsumableId[], rng: Rng, withReplacement = false): ConsumableId {
-  const weight = (id: ConsumableId) => BALANCE.pack.inkGamblerWeights[id] ?? 1;
-  let roll = rng.next() * remaining.reduce((sum, id) => sum + weight(id), 0);
-  let picked = remaining.length - 1;
-  for (let index = 0; index < remaining.length; index += 1) {
-    roll -= weight(remaining[index]!);
-    if (roll < 0) {
-      picked = index;
-      break;
-    }
-  }
-  return withReplacement ? remaining[picked]! : remaining.splice(picked, 1)[0]!;
-}
-
 export function rollPack(
   slot: PackSlot,
   run: RunState,
@@ -168,21 +153,12 @@ export function rollPack(
     case 'consumable': {
       const pool = FABLE_POOL.filter(canOfferConsumable);
       options = drawConsumables(pool, show, rng, (id) => ({ kind: 'consumable', id }), withReplacement);
-      const phoenixShown = new Set<ConsumableId>();
-      options = options.map((option) => {
-        const replace = rng.next() < BALANCE.pack.phoenixChance &&
-          canOfferConsumable('phoenix') && (withReplacement || !phoenixShown.has('phoenix'));
-        if (replace) phoenixShown.add('phoenix');
-        return replace ? { kind: 'consumable', id: 'phoenix' } : option;
-      });
       // Comic Book adds an ordinary Gambler replacement, capped at one per pack.
-      // Phoenix above is the separate voucher-free jackpot route.
       if (fablePacksContainInk(run)) {
         for (let i = 0; i < options.length; i++) {
           const option = options[i];
-          if (option?.kind === 'consumable' && option.id !== 'phoenix' &&
-              rng.next() < BALANCE.pack.gamblerInFableChance) {
-            const candidates = INK_BASE_POOL.filter((id) => canOfferConsumable(id) &&
+          if (option?.kind === 'consumable' && rng.next() < BALANCE.pack.gamblerInFableChance) {
+            const candidates = ORDINARY_GAMBLER_IDS.filter((id) => canOfferConsumable(id) &&
               (withReplacement || !options.some((entry) => entry.kind === 'consumable' && entry.id === id)));
             if (candidates.length > 0) options[i] = {
               kind: 'consumable',
@@ -195,18 +171,23 @@ export function rollPack(
       break;
     }
     case 'ink': {
-      const ordinary = INK_BASE_POOL.filter(canOfferConsumable);
+      const ordinary = ORDINARY_GAMBLER_IDS.filter(canOfferConsumable);
       options = [];
       while (options.length < show && (ordinary.length > 0 || withReplacement)) {
         const roll = rng.next();
         const shown = new Set(options.flatMap((option) => option.kind === 'consumable' ? [option.id] : []));
         const phoenixAllowed = canOfferConsumable('phoenix') && (withReplacement || !shown.has('phoenix'));
         const deerAllowed = canOfferConsumable('deer') && (withReplacement || !shown.has('deer'));
-        const id = roll < BALANCE.pack.phoenixChance && phoenixAllowed
-          ? 'phoenix'
-          : roll < BALANCE.pack.phoenixChance + BALANCE.pack.deerChance && deerAllowed
-            ? 'deer'
-            : ordinary.length > 0 ? takeWeightedInk(ordinary, rng, withReplacement) : null;
+        let id: ConsumableId | null = null;
+        if (roll < BALANCE.pack.phoenixChance) {
+          if (phoenixAllowed) id = 'phoenix';
+        } else if (roll < BALANCE.pack.phoenixChance + BALANCE.pack.deerChance) {
+          if (deerAllowed) id = 'deer';
+        }
+        if (!id && ordinary.length > 0) {
+          const index = rng.int(ordinary.length);
+          id = withReplacement ? ordinary[index]! : ordinary.splice(index, 1)[0]!;
+        }
         if (!id) break;
         options.push({ kind: 'consumable', id });
       }
@@ -226,14 +207,6 @@ export function rollPack(
           options[options.length - 1] = { kind: 'punctuation', id, pattern: favorite };
         }
       }
-      // Deer is an independent jackpot roll for every Constellation choice.
-      const deerShown = new Set<ConsumableId>();
-      options = options.map((option) => {
-        const replace = rng.next() < BALANCE.pack.deerChance &&
-          canOfferConsumable('deer') && (withReplacement || !deerShown.has('deer'));
-        if (replace) deerShown.add('deer');
-        return replace ? { kind: 'consumable', id: 'deer' } : option;
-      });
       break;
     }
   }

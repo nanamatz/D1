@@ -3,6 +3,7 @@ import { rollPack, applyPackPick, rollTile } from '../src/engine/packs';
 import { newRun } from '../src/engine/run';
 import { makeRng } from '../src/engine/rng';
 import { BALANCE, packSizeRules } from '../src/engine/balance';
+import { ORDINARY_GAMBLER_IDS } from '../src/engine/gamblerIds';
 import type { Rng } from '../src/engine/rng';
 import type { PackSize, PackSlot, PackType, RunState, ShopItem } from '../src/engine/types';
 
@@ -116,26 +117,25 @@ describe('slice5 packs — roll by type (GDD §9.3)', () => {
 });
 
 describe('slice5 packs — jackpot and modifier policy', () => {
-  it('rolls Phoenix/Deer jackpots independently per eligible choice', () => {
+  it('keeps Phoenix and Deer exclusive to Ink Packs', () => {
     const fable = rollPack(slot('consumable'), run(), fixedRng(0, 0, 1));
     expect(fable.options.map((option) => option.kind === 'consumable' ? option.id : null))
-      .toEqual(['phoenix', 'fable2', 'fable3']);
+      .toEqual(['fable1', 'fable2', 'fable3']);
 
     const constellation = rollPack(slot('pattern'), run(), fixedRng(0, 0, 1));
-    expect(constellation.options.filter((option) =>
-      option.kind === 'consumable' && option.id === 'deer',
-    )).toHaveLength(1);
+    expect(constellation.options.some((option) => option.kind === 'consumable')).toBe(false);
 
-    const ink = rollPack(slot('ink'), run(), fixedRng(0, 0.001));
+    const ink = rollPack(slot('ink'), run(), fixedRng(0.002999, 0.003));
     expect(ink.options.map((option) => option.kind === 'consumable' ? option.id : null))
       .toEqual(['phoenix', 'deer']);
   });
 
-  it('makes Phoenix far rarer and downweights Rainman/Sake Cup in Ink Packs', () => {
-    expect(BALANCE.pack.phoenixChance).toBe(0.0005);
+  it('uses 0.3% reserved bands and uniform odds for all 12 ordinary cards', () => {
+    expect(BALANCE.pack.phoenixChance).toBe(0.003);
     expect(BALANCE.pack.deerChance).toBe(0.003);
-    expect(BALANCE.pack.inkGamblerWeights.rainman).toBe(0.4);
-    expect(BALANCE.pack.inkGamblerWeights.sakeCup).toBe(0.4);
+    expect(ORDINARY_GAMBLER_IDS).toHaveLength(12);
+    expect((1 - BALANCE.pack.phoenixChance - BALANCE.pack.deerChance) /
+      ORDINARY_GAMBLER_IDS.length).toBeCloseTo(0.0828333, 6);
 
     const counts = new Map<string, number>();
     for (let seed = 0; seed < 4_000; seed += 1) {
@@ -143,12 +143,25 @@ describe('slice5 packs — jackpot and modifier policy', () => {
         if (option.kind === 'consumable') counts.set(option.id, (counts.get(option.id) ?? 0) + 1);
       }
     }
-    const common = ['barnSwallow', 'boar', 'bridge', 'bushWarbler', 'butterflies',
-      'craneAndSun', 'cuckoo', 'curtain', 'fullMoon', 'geese'];
-    const commonAverage = common.reduce((sum, id) => sum + (counts.get(id) ?? 0), 0) / common.length;
-    expect(counts.get('rainman') ?? 0).toBeLessThan(commonAverage * 0.6);
-    expect(counts.get('sakeCup') ?? 0).toBeLessThan(commonAverage * 0.6);
-    expect(counts.get('phoenix') ?? 0).toBeLessThan(counts.get('deer') ?? 0);
+    const ordinaryAverage = ORDINARY_GAMBLER_IDS.reduce(
+      (sum, id) => sum + (counts.get(id) ?? 0), 0,
+    ) / ORDINARY_GAMBLER_IDS.length;
+    for (const id of ORDINARY_GAMBLER_IDS) {
+      expect(counts.get(id) ?? 0).toBeGreaterThan(ordinaryAverage * 0.75);
+      expect(counts.get(id) ?? 0).toBeLessThan(ordinaryAverage * 1.25);
+    }
+  });
+
+  it('falls back to an ordinary card when a rolled jackpot is ineligible', () => {
+    const phoenixOwned = run({ consumables: ['phoenix'] });
+    const offer = rollPack(slot('ink'), phoenixOwned, fixedRng(0.001, 1));
+    expect(offer.options[0]).toMatchObject({ kind: 'consumable', id: 'barnSwallow' });
+    expect(offer.options.some((option) =>
+      option.kind === 'consumable' && option.id === 'deer',
+    )).toBe(false);
+
+    const ordinary = rollPack(slot('ink'), run(), fixedRng(0.006, 1));
+    expect(ordinary.options[0]).toMatchObject({ kind: 'consumable', id: 'barnSwallow' });
   });
 
   it('pack material and font rolls are independent; shop tiles never gain a font', () => {
