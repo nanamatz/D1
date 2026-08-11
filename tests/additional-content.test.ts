@@ -71,6 +71,12 @@ describe('2026-08-05 additional content', () => {
     expect(first.createdTiles[0]).toMatchObject({ letter: 'A', material: 'ceramic', font: 'medium' });
     expect(first.createdTiles[0]!.id).not.toBe(source.id);
     expect(first.blind.hand.some((entry) => entry.id === first.createdTiles[0]!.id)).toBe(true);
+    expect(first.events).toContainEqual(expect.objectContaining({
+      kind: 'joker',
+      jokerId: 'counterfeit',
+      sourceTileId: source.id,
+      createdTileIds: [first.createdTiles[0]!.id],
+    }));
     expect(first.jokers[1]!.state.chips).toBe(BALANCE.jokers.livingType.chipsPerTile);
 
     const nextTile = first.blind.hand[0]!;
@@ -116,7 +122,10 @@ describe('2026-08-05 additional content', () => {
     expect(ko['jokerdesc.noiseCancelling']).not.toContain('+×0.25');
     expect(en['jokerdesc.noiseCancelling']).toContain('[m:+0.25 Mult]');
     expect(ko['jokerdesc.counterfeit']).toBe(
-      '블라인드의 첫 핸드에 플레이 한 단어가 [n:1]개이면 그 타일을 복제합니다',
+      '블라인드의 첫 핸드에 플레이 한 타일이 [n:1]개이면 그 타일을 복제합니다',
+    );
+    expect(en['jokerdesc.counterfeit']).toBe(
+      "If exactly [n:1] tile is played in a blind's first hand, copy that tile",
     );
   });
 

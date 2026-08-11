@@ -628,7 +628,7 @@
   "jokerdesc.foldingManuscript": "[p:+2 hand size] lose [n:1] at the end of each blind",
   "jokerdesc.threeLeafClover": "Sell value gains [$:+$3] at the end of each blind",
   "jokerdesc.noiseCancelling": "Gain [m:+0.25 Mult] per blind skipped this run",
-  "jokerdesc.counterfeit": "If the word played in a blind's first hand contains [n:1] tile, copy that tile",
+  "jokerdesc.counterfeit": "If exactly [n:1] tile is played in a blind's first hand, copy that tile",
   "jokerdesc.twentyFifthBlessing": "Each [n:Y] held in hand gives [m:×1.5 Mult]",
   "jokerdesc.bloodTypeA": "Permanently gains [c:+8 Chips] whenever a played [n:A] or [n:O] scores",
   "jokerdesc.megalith": "When a blind is selected, permanently adds [n:1] Stone tile to the pouch",

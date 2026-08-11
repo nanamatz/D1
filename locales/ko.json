@@ -628,7 +628,7 @@
   "jokerdesc.foldingManuscript": "[p:핸드 크기 +2] 블라인드 종료마다 [n:1] 감소",
   "jokerdesc.threeLeafClover": "블라인드 종료 시 판매 가치가 [$:+$3] 증가합니다",
   "jokerdesc.noiseCancelling": "이번 런에서 건너뛴 블라인드마다 [m:+0.25 배수]",
-  "jokerdesc.counterfeit": "블라인드의 첫 핸드에 플레이 한 단어가 [n:1]개이면 그 타일을 복제합니다",
+  "jokerdesc.counterfeit": "블라인드의 첫 핸드에 플레이 한 타일이 [n:1]개이면 그 타일을 복제합니다",
   "jokerdesc.twentyFifthBlessing": "핸드에 들고 있는 [n:Y]마다 [m:×1.5 배수]",
   "jokerdesc.bloodTypeA": "플레이한 [n:A] 또는 [n:O]가 득점할 때마다 영구적으로 [c:+8 칩]",
   "jokerdesc.megalith": "블라인드를 선택하면 주머니에 석재 타일 [n:1]개를 영구적으로 추가합니다",

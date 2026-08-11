@@ -19,7 +19,12 @@ export const counterfeit: JokerDef = {
         (_, index): Tile => ({ ...source, id: `cf${rng.int(1_000_000)}-${index}` }),
       );
       createdTiles.push(...copies);
-      scoreBeats?.push({ chipsDelta: 0, multDelta: 0 });
+      scoreBeats?.push({
+        chipsDelta: 0,
+        multDelta: 0,
+        createdTileIds: copies.map((tile) => tile.id),
+        sourceTileId: source.id,
+      });
     },
   },
 };

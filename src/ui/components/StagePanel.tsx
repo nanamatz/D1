@@ -77,6 +77,9 @@ export function StagePanel({
   // useFlip captures the empty→full change and flies the tiles in from the pouch.
   const entering = useEntering();
   const shownHand = entering ? [] : hand;
+  const createdTileIds = new Set(g.state.lastEvents.flatMap((event) =>
+    event.kind === 'joker' ? event.createdTileIds ?? [] : [],
+  ));
   const seenRainbowTiles = useRef(new Set<string>());
   useEffect(() => {
     if (entering) return;
@@ -108,7 +111,9 @@ export function StagePanel({
   };
   useFlip(handRef, `${sortMode}|${entering ? 'entering' : ''}|${shownHand.map((tl) => tl.id).join(',')}`, {
     enterOrigin: pouchOrigin,
-    onEnter: (i) => { window.setTimeout(() => audio.play('tileDeal'), i * 60); },
+    onEnter: (i, id) => {
+      if (!createdTileIds.has(id)) window.setTimeout(() => audio.play('tileDeal'), i * 60);
+    },
   });
   useFlip(stagedRef, staged.map((tl) => tl.id).join(','));
 

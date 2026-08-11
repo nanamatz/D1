@@ -105,7 +105,7 @@ export interface FlipOpts {
   enterOrigin?: () => { x: number; y: number } | null;
   /** Fired once per entering tile in DOM order (0-based) so the caller can play
    *  a staggered per-tile sound. Fires even under reduced motion (sound ≠ motion). */
-  onEnter?: (index: number) => void;
+  onEnter?: (index: number, id: string) => void;
 }
 
 export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: FlipOpts): void {
@@ -148,7 +148,7 @@ export function useFlip(ref: RefObject<HTMLElement | null>, key: string, opts?: 
       const isEnter = !seen.current.has(id);
       if (isEnter && o?.enterOrigin) {
         // Freshly drawn tile — pouch enter (staggered), plus the per-tile sound.
-        o.onEnter?.(enterIdx);
+        o.onEnter?.(enterIdx, id);
         if (!reduce) {
           // Suspend CSS idle motion during the pouch flight. Otherwise the flight
           // ends over a wobble already halfway through its cycle and visibly hops.

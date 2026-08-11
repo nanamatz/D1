@@ -29,6 +29,9 @@ export interface JokerScoreBeat {
   scoreDelta?: number;
   goldDelta?: number;
   tileId?: string;
+  /** A tile-copy beat flies these new hand tiles out of the source tile. */
+  createdTileIds?: string[];
+  sourceTileId?: string;
 }
 
 /** A Blind Select hook that actually resolved. The owner reference lets the UI

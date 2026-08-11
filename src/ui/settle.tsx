@@ -36,6 +36,126 @@ function triggerTile(tileId: string): void {
   window.setTimeout(() => el.classList.remove('mat-flash', 'trig-bounce'), 560);
 }
 
+type TileCreationEvent = Extract<ScoreEvent, { kind: 'joker' }> & {
+  createdTileIds: string[];
+  sourceTileId: string;
+};
+
+const hasTileCreation = (event: ScoreEvent): event is TileCreationEvent =>
+  event.kind === 'joker' &&
+  !!event.sourceTileId &&
+  !!event.createdTileIds?.length;
+
+const handTile = (id: string): HTMLElement | null =>
+  typeof document === 'undefined'
+    ? null
+    : document.querySelector<HTMLElement>(`.hand [data-tile-id="${CSS.escape(id)}"]`);
+
+function setCreatedTilesPending(events: readonly ScoreEvent[], pending: boolean): void {
+  for (const event of events) {
+    if (!hasTileCreation(event)) continue;
+    for (const id of event.createdTileIds) {
+      handTile(id)?.classList.toggle('tile-creation-pending', pending);
+    }
+  }
+}
+
+/** Fly a visual clone from the submitted source tile into its new hand slot. */
+function animateTileCreation(event: TileCreationEvent, duration: number): () => void {
+  if (typeof document === 'undefined') return () => {};
+  const source = document.querySelector<HTMLElement>(
+    `.submitted-tiles [data-tile-id="${CSS.escape(event.sourceTileId)}"]`,
+  ) ?? document.querySelector<HTMLElement>(
+    `.joker-slot[data-joker-id="${CSS.escape(event.jokerId)}"] .joker`,
+  );
+  const sourceRect = source?.getBoundingClientRect();
+  const cleanups: Array<() => void> = [];
+
+  source?.animate(
+    [
+      { filter: 'brightness(1)' },
+      { filter: 'brightness(2.4) drop-shadow(0 0 12px #fff)' },
+      { filter: 'brightness(1)' },
+    ],
+    { duration: Math.min(duration, 420), easing: 'steps(4, end)' },
+  );
+
+  event.createdTileIds.forEach((id, index) => {
+    const target = handTile(id);
+    if (!target) return;
+    const targetRect = target.getBoundingClientRect();
+    const from = sourceRect ?? targetRect;
+    const dx = from.left + from.width / 2 - (targetRect.left + targetRect.width / 2);
+    const dy = from.top + from.height / 2 - (targetRect.top + targetRect.height / 2);
+    const scale = targetRect.width > 0 ? from.width / targetRect.width : 1;
+    const ghost = target.cloneNode(true) as HTMLElement;
+    ghost.classList.remove('tile-creation-pending', 'flip-entering');
+    ghost.classList.add('tile-creation-ghost');
+    ghost.removeAttribute('data-flip-id');
+    ghost.setAttribute('aria-hidden', 'true');
+    Object.assign(ghost.style, {
+      left: `${targetRect.left}px`,
+      top: `${targetRect.top}px`,
+      width: `${targetRect.width}px`,
+      height: `${targetRect.height}px`,
+    });
+    document.body.appendChild(ghost);
+
+    const delay = index * 70;
+    const animation = ghost.animate(
+      [
+        {
+          transform: `translate(${dx}px, ${dy}px) scale(${scale * 0.72}) rotate(-10deg)`,
+          opacity: 0,
+        },
+        {
+          offset: 0.22,
+          transform: `translate(${dx}px, ${dy}px) scale(${scale * 1.08}) rotate(8deg)`,
+          opacity: 1,
+        },
+        {
+          offset: 0.62,
+          transform: `translate(${dx * 0.42}px, ${dy * 0.52 - 42}px) scale(.92) rotate(-5deg)`,
+          opacity: 1,
+        },
+        { transform: 'translate(0, 0) scale(1) rotate(0deg)', opacity: 1 },
+      ],
+      {
+        duration: Math.max(240, duration - delay),
+        delay,
+        easing: 'cubic-bezier(.2, .78, .28, 1)',
+        fill: 'forwards',
+      },
+    );
+    let landed = false;
+    const reveal = () => {
+      if (landed) return;
+      landed = true;
+      target.classList.remove('tile-creation-pending');
+      ghost.remove();
+    };
+    animation.addEventListener('finish', () => {
+      reveal();
+      audio.play('tileDeal');
+      target.animate(
+        [
+          { transform: 'scale(.78)', filter: 'brightness(1.8)' },
+          { transform: 'scale(1.1)', filter: 'brightness(1.25)' },
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+        ],
+        { duration: 220, easing: 'cubic-bezier(.2, 1.5, .4, 1)' },
+      );
+    }, { once: true });
+    animation.addEventListener('cancel', reveal, { once: true });
+    cleanups.push(() => {
+      animation.cancel();
+      reveal();
+    });
+  });
+
+  return () => cleanups.forEach((cleanup) => cleanup());
+}
+
 /** Restart the board-level score impact. Amplitude comes from the Settings
  * slider's `--screen-shake` variable; reduced motion never reaches this path. */
 function triggerScreenShake(): void {
@@ -142,6 +262,7 @@ const ENHANCED_JOKER_STEP = 1000;
 // its delayed reveal can be read. Chance-bearing material beats keep this
 // real-time floor; settle completion uses the same duration helper below.
 const CHANCE_MATERIAL_STEP_MIN = 600;
+const TILE_CREATION_STEP_MIN = 480;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
 
@@ -150,6 +271,7 @@ const beatDurationMs = (event: ScoreEvent): number =>
 
 const scaledBeatDurationMs = (event: ScoreEvent, speed: number): number => {
   const scaled = beatDurationMs(event) / speed;
+  if (hasTileCreation(event)) return Math.max(scaled, TILE_CREATION_STEP_MIN);
   return event.kind === 'material' && event.chanceResults?.length
     ? Math.max(scaled, CHANCE_MATERIAL_STEP_MIN)
     : scaled;
@@ -310,6 +432,8 @@ export function SettleProvider({
     }
 
     const timers: ReturnType<typeof setTimeout>[] = [];
+    const creationCleanups: Array<() => void> = [];
+    setCreatedTilesPending(beats, true);
     let chips = 0;
     let mult = 0;
     const pops: Record<string, number> = {};
@@ -343,6 +467,9 @@ export function SettleProvider({
             audio.play('stamp');
           } else if (e.kind === 'joker') {
             audio.play(emojiTriggerSfx(e));
+            if (hasTileCreation(e)) {
+              creationCleanups.push(animateTileCreation(e, scaledBeatDurationMs(e, speed)));
+            }
             if (e.tileId) triggerTile(e.tileId);
           } else if (e.kind === 'font') {
             audio.play('jokerBlip');
@@ -519,12 +646,17 @@ export function SettleProvider({
     // completion — the round-clear UI is gated on this, not the raw score (05 A).
     timers.push(
       setTimeout(() => {
+        setCreatedTilesPending(beats, false);
         audio.play('totalRoll');
         setView(IDLE);
         onCompleteRef.current?.();
       }, settleDurationMs(events, speed, false)),
     );
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      creationCleanups.forEach((cleanup) => cleanup());
+      setCreatedTilesPending(beats, false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settleId, speed, screenShake]);
 

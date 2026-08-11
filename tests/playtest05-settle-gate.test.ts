@@ -123,6 +123,20 @@ describe('settleDurationMs — enhanced Emoji Tile beats stay readable', () => {
   });
 });
 
+describe('settleDurationMs — tile creation stays visible at high speed', () => {
+  it('holds a Counterfeit copy beat long enough to reach the hand', () => {
+    const copy: ScoreEvent = {
+      kind: 'joker',
+      jokerId: 'counterfeit',
+      chipsDelta: 0,
+      multDelta: 0,
+      sourceTileId: 'source',
+      createdTileIds: ['copy'],
+    };
+    expect(settleDurationMs([copy, settle()], 4, false)).toBe(480 + 650 / 4);
+  });
+});
+
 /**
  * The critical bug: a `material` event with a nonzero multDelta (Polished,
  * Glass, mult-rolling Lead plate) lands in the log BEFORE `suit`, because

@@ -4108,6 +4108,20 @@
 .hand .tile.flip-entering {
   animation: none;
 }
+/* Tile-copy hooks add the real tile to engine state immediately, but reveal it
+   only when the owning Emoji Tile's settle beat flies a visual clone into place. */
+.hand .tile.tile-creation-pending {
+  visibility: hidden !important;
+}
+.tile-creation-ghost {
+  position: fixed !important;
+  z-index: 78;
+  margin: 0 !important;
+  pointer-events: none !important;
+  animation: none !important;
+  transform-origin: center;
+  filter: drop-shadow(0 7px 3px rgba(0, 0, 0, .48));
+}
 /* D-4: jokers & consumables share the tiles' idle wobble family (staggered slow
    sine, ±1.2°). The firing joker is excluded so its settle wiggle wins; empty
    slots never wobble. Suppressed under reduced motion (block below). */
