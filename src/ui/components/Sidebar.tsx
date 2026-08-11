@@ -12,7 +12,10 @@ import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
+import { recordArt } from '../recordArt';
 import { PatternIcon } from './UiIcon';
+import { TiltCard } from './TiltCard';
+import { Tooltip } from './Tooltip';
 import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 
@@ -227,10 +230,22 @@ export function Sidebar({
             <div className="bs-target">
               <span className="tlabel">{t('sidebar.target')}:</span>
               <span className="bs-target-row">
-                {/* D-5: pixel tomato replaces the poker-chip icon beside score
-                    numbers; the "Chips" term/box stay unchanged. Art (grey/red/green/
-                    full) is composited by .tomato-icon from the unlock classes. */}
-                <span className="tomato-icon" aria-hidden />
+                <Tooltip
+                  title={t(`record.${run.recordId}.name`)}
+                  body={[
+                    t(`record.${run.recordId}.desc`),
+                    run.recordId !== 'whiteLp' && t('newrun.cumulative'),
+                  ].filter(Boolean).join('\n')}
+                >
+                  <TiltCard
+                    className="target-record-card"
+                    role="img"
+                    aria-label={t(`record.${run.recordId}.name`)}
+                    tabIndex={0}
+                  >
+                    <img className="target-record" src={recordArt(run.recordId)} alt="" />
+                  </TiltCard>
+                </Tooltip>
                 <span className="target">{formatScore(blind.target)}</span>
               </span>
             </div>
