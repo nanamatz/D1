@@ -15,13 +15,13 @@
  */
 
 import { BALANCE } from './balance';
-import type { LetterHandId } from './types';
+import { VOWELS, type Letter, type LetterHandId } from './types';
 
 export type { LetterHandId } from './types';
 
 export interface LetterHandDef {
   id: LetterHandId;
-  rank: number; // 1 (weakest) .. 6 (strongest) — highest single hand wins
+  rank: number; // 1 (weakest) .. 9 (strongest) — highest single hand wins
   /** eligible when the submission is gibberish */
   gibberish: boolean;
   test: (letters: string) => boolean;
@@ -34,7 +34,14 @@ export interface LetterHandMatch {
   mult: number;
 }
 
-const VOWELS = ['A', 'E', 'I', 'O', 'U'] as const;
+export const KNOWLEDGE_LETTER_HAND_IDS = [
+  'typeEconomy',
+  'vowelless',
+  'grandPalindrome',
+] as const satisfies readonly LetterHandId[];
+
+export const isKnowledgeLetterHand = (id: LetterHandId): boolean =>
+  KNOWLEDGE_LETTER_HAND_IDS.includes(id as (typeof KNOWLEDGE_LETTER_HAND_IDS)[number]);
 
 /** True if the string contains two identical letters adjacent (b**OO**k). */
 const hasAdjacentPair = (s: string): boolean => /(.)\1/.test(s);
@@ -52,7 +59,20 @@ function hasTriple(s: string): boolean {
 const isPalindrome = (s: string): boolean =>
   s.length >= BALANCE.letterHand.palindromeMinLen && s === s.split('').reverse().join('');
 
-const isVowelFlush = (s: string): boolean => VOWELS.every((v) => s.includes(v));
+const isVowelFlush = (s: string): boolean => [...VOWELS].every((v) => s.includes(v));
+
+const hasNoRepeatedLetters = (s: string): boolean =>
+  s.length >= BALANCE.letterHand.typeEconomyMinLen && new Set(s).size === s.length;
+
+const isVowelless = (s: string): boolean => {
+  const minLength = VOWELS.has('Y')
+    ? BALANCE.letterHand.vowellessMinLenWhenYVowel
+    : BALANCE.letterHand.vowellessMinLenWhenYConsonant;
+  return s.length >= minLength && [...s].every((letter) => !VOWELS.has(letter as Letter));
+};
+
+const isGrandPalindrome = (s: string): boolean =>
+  s.length >= BALANCE.letterHand.grandPalindromeMinLen && s === [...s].reverse().join('');
 
 /** True if the letters include N consecutive alphabet values (Q-R-S-T-U-V). */
 function hasStraight(s: string): boolean {
@@ -78,6 +98,19 @@ export const LETTER_HAND_REGISTRY: readonly LetterHandDef[] = [
   { id: 'palindrome', rank: BALANCE.letterHands.palindrome.rank, gibberish: false, test: isPalindrome },
   { id: 'vowelFlush', rank: BALANCE.letterHands.vowelFlush.rank, gibberish: true, test: isVowelFlush },
   { id: 'straight', rank: BALANCE.letterHands.straight.rank, gibberish: true, test: hasStraight },
+  {
+    id: 'typeEconomy',
+    rank: BALANCE.letterHands.typeEconomy.rank,
+    gibberish: false,
+    test: hasNoRepeatedLetters,
+  },
+  { id: 'vowelless', rank: BALANCE.letterHands.vowelless.rank, gibberish: false, test: isVowelless },
+  {
+    id: 'grandPalindrome',
+    rank: BALANCE.letterHands.grandPalindrome.rank,
+    gibberish: false,
+    test: isGrandPalindrome,
+  },
 ];
 
 /**

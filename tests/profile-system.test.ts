@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/engine/balance';
+import { KNOWLEDGE_LETTER_HAND_IDS } from '../src/engine/letterHands';
 import { makeLexicon } from '../src/engine/lexicon';
 import { POUCH_IDS } from '../src/engine/pouches';
 import { RECORD_IDS } from '../src/engine/records';
 import { collectionSize } from '../src/ui/collection';
-import { loadLifetime, writeLifetime } from '../src/ui/lifetime';
+import {
+  discoverLetterHand,
+  loadDiscoveredLetterHands,
+  loadLifetime,
+  writeLifetime,
+} from '../src/ui/lifetime';
 import {
   createProfile,
   isProfileWorldComplete,
@@ -85,6 +91,7 @@ describe('profile-scoped unlock all', () => {
     expect(loadLifetime(1).pouchWins).toEqual([]);
     expect(loadLifetime(1).recordWins).toEqual([]);
     expect(loadLifetime(1).recordWinsByPouch).toEqual({});
+    expect(loadLifetime(1).discoveredLetterHands).toEqual([]);
 
     expect(loadLifetime(2)).toMatchObject({
       profileName: 'Second',
@@ -114,6 +121,7 @@ describe('profile-scoped unlock all', () => {
     expect(loadLifetime(1).recordWinsByPouch).toEqual(
       Object.fromEntries(POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]])),
     );
+    expect(loadLifetime(1).discoveredLetterHands).toEqual([...KNOWLEDGE_LETTER_HAND_IDS]);
     expect(loadLifetime(1).unlockAllApplied).toBe(true);
     expect(loadLifetime(1).challengesDisabled).toBe(true);
 
@@ -130,6 +138,15 @@ describe('profile-scoped unlock all', () => {
       unlockAllApplied: false,
       challengesDisabled: false,
     });
+  });
+});
+
+describe('profile-scoped secret Word Hands', () => {
+  it('records a discovery only in the selected profile slot', () => {
+    createProfile(2, 'Second');
+    discoverLetterHand('vowelless', 2);
+    expect([...loadDiscoveredLetterHands(1)]).toEqual([]);
+    expect([...loadDiscoveredLetterHands(2)]).toEqual(['vowelless']);
   });
 });
 
@@ -164,6 +181,7 @@ describe('profile completion status', () => {
       recordWinsByPouch: Object.fromEntries(
         POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]]),
       ),
+      discoveredLetterHands: [...KNOWLEDGE_LETTER_HAND_IDS],
     }, 1);
 
     expect(isProfileWorldComplete(1, completeLexicon)).toBe(true);

@@ -143,7 +143,7 @@ export const BALANCE = {
 
   // ----- Word Hands (playtest-02 A-2) — per-word structure bonuses, applied
   //       inside WordScoringContext: Chips add and Mult multiplies. Highest single
-  //       hand only. rank 1 (weakest) .. 6 (strongest). -----
+  //       hand only. rank 1 (weakest) .. 9 (strongest). -----
   letterHands: {
     twin:       { rank: 1, chips: 15, mult: 1 },
     longword:   { rank: 2, chips: 30, mult: 2 },
@@ -151,9 +151,20 @@ export const BALANCE = {
     palindrome: { rank: 4, chips: 45, mult: 3 },
     vowelFlush: { rank: 5, chips: 75, mult: 4 },
     straight:   { rank: 6, chips: 90, mult: 5 },
+    typeEconomy:    { rank: 7, chips: 105, mult: 6 },
+    vowelless:      { rank: 8, chips: 120, mult: 7 },
+    grandPalindrome:{ rank: 9, chips: 150, mult: 8 },
   },
-  /** min word length for the Longword hand, and min length for Palindrome to count */
-  letterHand: { longwordLen: 6, palindromeMinLen: 3, straightRun: 5 },
+  /** Word-Hand structure thresholds (GDD §5.5). */
+  letterHand: {
+    longwordLen: 6,
+    palindromeMinLen: 3,
+    straightRun: 5,
+    typeEconomyMinLen: 8,
+    vowellessMinLenWhenYConsonant: 5,
+    vowellessMinLenWhenYVowel: 3,
+    grandPalindromeMinLen: 7,
+  },
 
   // Constellation level-ups are uniform per pattern via `patterns.*.levelChips /
   // levelMult` (feature-02 A) — the separate punctuationLevel table is retired.
@@ -370,6 +381,8 @@ export const BALANCE = {
       exactingCritic: 3,
       twentyFifthBlessing: 3,
       bloodTypeA: 10,
+      palindromist: 10,
+      handScholar: 8,
     } as Record<string, number>,
   },
 
@@ -479,7 +492,7 @@ export const BALANCE = {
     longFormSerial: { freeLetters: 5, factorPerLetter: 1.5 },
     twinPeaks: { retriggers: 1 },
     threefoldSeal: { retriggers: 1 },
-    handScholar: { factorPerNewHand: 0.5 },
+    handScholar: { factorPerNewHand: 0.5, maxFactor: 4 },
     wordHunter: { baseFactor: 2, factorPerNewWord: 0.1 },
     plagiarist: { factor: 4 },
     hotOffThePress: { minLength: 5, factor: 3.5 },

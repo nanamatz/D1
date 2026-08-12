@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import type { BlindState, PatternId, RunState } from '../../engine/types';
+import type { BlindState, LetterHandId, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { effectiveClearReward } from '../../engine/economy';
 import { sentenceTotal } from '../../engine/patterns';
@@ -18,6 +18,7 @@ import { TiltCard } from './TiltCard';
 import { Tooltip } from './Tooltip';
 import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
+import { isLetterHandDiscovered } from '../lifetime';
 
 interface Props {
   run: RunState;
@@ -35,6 +36,7 @@ interface Props {
   currentPattern: PatternId | null;
   /** the staged-word preview — its status shows above the 0×0 box (E-9) */
   preview: StagePreview | null;
+  discoveredLetterHands: ReadonlySet<LetterHandId>;
   onOpenInfo: () => void;
   onOpenOptions: () => void;
   mode?: 'blind' | 'shop' | 'blindselect';
@@ -45,12 +47,22 @@ const fmtSigned = (value: number): string =>
   `${value >= 0 ? '+' : ''}${Number.isInteger(value) ? value : value.toFixed(2)}`;
 
 /** Selected-tile status text, in Balatro's hand-name position (E-9). */
-function StatusLine({ preview }: { preview: StagePreview | null }) {
+function StatusLine({
+  preview,
+  discoveredLetterHands,
+}: {
+  preview: StagePreview | null;
+  discoveredLetterHands: ReadonlySet<LetterHandId>;
+}) {
   const { t } = useI18n();
   if (!preview) return <div className="sb-status">&nbsp;</div>;
   if (preview.blocked) return <div className="sb-status warn">{t('boss.blockedWord')}</div>;
   if (preview.isGibberish) {
-    const lh = preview.letterHand ? ` · ${t(`letterhand.${preview.letterHand.id}`)}` : '';
+    const lh = preview.letterHand
+      ? ` · ${isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)
+          ? t(`letterhand.${preview.letterHand.id}`)
+          : '???'}`
+      : '';
     return (
       <div className="sb-status warn">
         {t('stage.notWord')}
@@ -59,7 +71,11 @@ function StatusLine({ preview }: { preview: StagePreview | null }) {
     );
   }
   const suit = preview.suit ?? 'standard';
-  const label = preview.letterHand ? t(`letterhand.${preview.letterHand.id}`) : t(`suit.${suit}`);
+  const label = preview.letterHand
+    ? isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)
+      ? t(`letterhand.${preview.letterHand.id}`)
+      : '???'
+    : t(`suit.${suit}`);
   return (
     <div className={['sb-status', suit !== 'standard' ? `loud ${suit}` : ''].filter(Boolean).join(' ')}>
       {label}
@@ -77,6 +93,7 @@ export function Sidebar({
   sentenceBonus,
   currentPattern,
   preview,
+  discoveredLetterHands,
   onOpenInfo,
   onOpenOptions,
   mode = 'blind',
@@ -332,7 +349,10 @@ export function Sidebar({
             )}
           </div>
         ) : (
-          <StatusLine preview={mode === 'blind' ? preview : null} />
+          <StatusLine
+            preview={mode === 'blind' ? preview : null}
+            discoveredLetterHands={discoveredLetterHands}
+          />
         )}
         <div
           className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing', burning && 'burning']

@@ -9,6 +9,7 @@ describe('Run Info Word Hands reference', () => {
     const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
     expect(source).toContain("{ id: 'hands', label: 'runinfo.tabHands' }");
     expect(source).toContain('LETTER_HAND_REGISTRY.map');
+    expect(LETTER_HAND_REGISTRY).toHaveLength(9);
   });
 
   it('shows Word Hand Chips as additive and Mult as multiplicative', () => {
@@ -37,5 +38,13 @@ describe('Run Info Word Hands reference', () => {
       expect(en).toHaveProperty(`letterhand.${id}.desc`);
       expect(ko).toHaveProperty(`letterhand.${id}.desc`);
     }
+  });
+
+  it('masks secret names and conditions until profile discovery', () => {
+    const runInfo = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
+    const sidebar = readFileSync('src/ui/components/Sidebar.tsx', 'utf8');
+    expect(runInfo).toContain("discovered ? t(`letterhand.${hand.id}`) : '???'");
+    expect(runInfo).toContain("discovered ? richText(t(`letterhand.${hand.id}.desc`)) : '???'");
+    expect(sidebar).toContain('isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)');
   });
 });

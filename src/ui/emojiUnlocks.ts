@@ -9,6 +9,7 @@ import {
   submissionSuits,
   type BlindState,
   type Letter,
+  type LetterHandId,
   type RunState,
   type SentenceJudgment,
   type Tile,
@@ -72,6 +73,7 @@ const CUMULATIVE_IDS = new Set([
   'doubleImpression', 'bestsellerBand', 'badReview', 'stargazer', 'fableHoard',
   'censorsBane', 'rotaryPress', 'stoneTongue', 'twinPeaks', 'wordHunter',
   'livingType', 'royalWe', 'bloodTypeA',
+  'palindromist',
 ]);
 
 const safeValue = (value: unknown): number =>
@@ -313,6 +315,10 @@ function playedWord(
 
   if (letterHandId === 'straight') add(progress, 'letterLadderBadge');
   if (letterHandId === 'twin') add(progress, 'twinPeaks');
+  if (letterHandId === 'palindrome' || letterHandId === 'grandPalindrome') {
+    add(progress, 'palindromist');
+  }
+  set(progress, 'handScholar', run.playedLetterHands?.length ?? 0);
 
   const letters = submission.tiles.flatMap((tile) => tile.letter ? [tile.letter] : []);
   const vowels = letters.filter(isVowel).length;
@@ -449,7 +455,7 @@ export type EmojiUnlockEvent =
       run: RunState;
       blind: BlindState;
       submission: WordSubmission;
-      letterHandId: string | null;
+      letterHandId: LetterHandId | null;
       heldTiles: readonly Tile[];
       bossDiscarded: number;
     }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { judgeSentence } from '../../engine/patterns';
 import { stagePreview } from '../game';
@@ -38,6 +38,7 @@ import { BOSS_ART, blindEmblem } from '../bossArt';
 import { SKIP_REWARD_ART } from '../skipRewardArt';
 import { mascotSrc } from '../mascots';
 import { preloadImagesWhenIdle } from '../preload';
+import { loadDiscoveredLetterHands } from '../lifetime';
 
 interface Props {
   g: UseGame;
@@ -55,6 +56,10 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const { settings } = useSettings();
   const { t } = useI18n();
   const { blind, run, selected, phase, shop } = g.state;
+  const discoveredLetterHands = useMemo(
+    () => loadDiscoveredLetterHands(),
+    [run.playedLetterHands],
+  );
   const [showInfo, setShowInfo] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pouchHovered, setPouchHovered] = useState(false);
@@ -255,6 +260,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           sentenceBonus={g.state.sentenceBonus}
           currentPattern={judgment.match?.pattern ?? null}
           preview={preview}
+          discoveredLetterHands={discoveredLetterHands}
           onOpenInfo={() => setShowInfo(true)}
           onOpenOptions={() => setPaused(true)}
           mode={sidebarMode}
@@ -349,7 +355,12 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <GuidedIntro g={g} onClose={() => setIntroOpen(false)} />
       )}
       {!ending && !settling && showInfo && (
-        <RunInfo run={run} blind={blind} onClose={() => setShowInfo(false)} />
+        <RunInfo
+          run={run}
+          blind={blind}
+          discoveredLetterHands={discoveredLetterHands}
+          onClose={() => setShowInfo(false)}
+        />
       )}
       {ending && <GameOver g={g} onNewRun={onNewRun} onMainMenu={onExit} />}
       </div>

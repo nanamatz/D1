@@ -199,6 +199,31 @@ describe('2026-08-05 additional content', () => {
     expect(scoring.mult).toBe(expected);
   });
 
+  it('caps Hand Scholar at ×4 after the roster grows to nine Word Hands', () => {
+    const run = newRun('hand-scholar-cap');
+    run.playedLetterHands = [
+      'twin', 'longword', 'triplet', 'palindrome', 'vowelFlush', 'straight',
+      'typeEconomy', 'vowelless', 'grandPalindrome',
+    ];
+    run.jokers = [createOwnedJoker(run, 'handScholar')];
+    const blind = startBlind(run, makeRng('hand-scholar-cap'));
+    const scoring = ctx([tile('cap-a', 'A')]);
+    bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
+
+    expect(scoring.mult).toBe(BALANCE.jokers.handScholar.maxFactor);
+    expect(run.jokers[0]!.state.factor).toBe(BALANCE.jokers.handScholar.maxFactor);
+  });
+
+  it('lets Grand Palindrome inherit the Palindromist effect', () => {
+    const run = newRun('grand-palindromist');
+    run.jokers = [owned('palindromist')];
+    const blind = startBlind(run, makeRng('grand-palindromist'));
+    const scoring = ctx((Array.from('ROTATOR') as Letter[]).map((letter, index) =>
+      tile(`rotator-${index}`, letter)));
+    bus.emit('wordScoring', { run, blind, ctx: scoring }, run.jokers);
+    expect(scoring.mult).toBe(BALANCE.jokers.palindromist.factor);
+  });
+
   it('counts a newly played Word Hand once before the run ledger advances', () => {
     const run = newRun('hand-scholar-current');
     run.jokers = [createOwnedJoker(run, 'handScholar')];

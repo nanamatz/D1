@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { BlindKind, BlindState, PatternId, RunState } from '../../engine/types';
+import type { BlindKind, BlindState, LetterHandId, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
 import { effectiveBlindTarget, effectiveClearReward } from '../../engine/economy';
@@ -17,10 +17,12 @@ import { Tooltip } from './Tooltip';
 import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
 import { PatternIcon, UiIcon } from './UiIcon';
+import { isLetterHandDiscovered } from '../lifetime';
 
 interface Props {
   run: RunState;
   blind: BlindState;
+  discoveredLetterHands: ReadonlySet<LetterHandId>;
   onClose: () => void;
 }
 
@@ -49,7 +51,7 @@ const PATTERN_ORDER: PatternId[] = [
 ];
 
 /** Run Info overlay (spec §2.4): Pattern levels · Word Hands · Blinds · Vouchers. */
-export function RunInfo({ run, blind, onClose }: Props) {
+export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>('patterns');
 
@@ -109,12 +111,13 @@ export function RunInfo({ run, blind, onClose }: Props) {
             <div className="ri-hands">
               {LETTER_HAND_REGISTRY.map((hand) => {
                 const bonus = BALANCE.letterHands[hand.id];
+                const discovered = isLetterHandDiscovered(hand.id, discoveredLetterHands);
                 return (
                   <div className="ri-hand" key={hand.id}>
                     <span className="ri-hand-rank">{hand.rank}</span>
                     <span className="ri-hand-copy">
-                      <strong>{t(`letterhand.${hand.id}`)}</strong>
-                      <span>{richText(t(`letterhand.${hand.id}.desc`))}</span>
+                      <strong>{discovered ? t(`letterhand.${hand.id}`) : '???'}</strong>
+                      <span>{discovered ? richText(t(`letterhand.${hand.id}.desc`)) : '???'}</span>
                     </span>
                     <span className="ri-hand-score pcm">
                       <b className="chips">+{bonus.chips}</b>

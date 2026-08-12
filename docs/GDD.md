@@ -28,9 +28,10 @@ Version 0.2 — systems expansion
   Case and the coins from Coin Purse, while Lucky Pouch gains a centred gold
   circular emblem (§12.2).
 - Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, and ordinary Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3). The 2026-08-07 acquisition pass makes Deer and Phoenix Ink-Pack-only.
-- Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. The 129-tile roster starts with 54 ordinary tiles plus all 5 Legendary definitions profile-eligible; 70 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
+- Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. After the 2026-08-12 Word-Hand additions, the 129-tile roster starts with 52 ordinary tiles plus all 5 Legendary definitions profile-eligible; 72 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
 - Changed 2026-08-06: Term Insurance permanently prevents letter-tile destruction while owned and gives ×2 Mult on every prevention. Its four-use limit and self-destruction are retired (§11.4).
-- Changed 2026-08-06: Hand Scholar starts at ×1 and increases its multiplicative factor by ×0.5 per distinct Word Hand recorded this run, up to ×4 for all six hands. Hands played before acquisition count immediately. Every run-history Emoji Tile seeds and reconciles from the authoritative run-wide ledger (§11.6).
+- Changed 2026-08-06: Hand Scholar starts at ×1 and increases its multiplicative factor by ×0.5 per distinct Word Hand recorded this run, with an explicit ×4 cap. Hands played before acquisition count immediately. Every run-history Emoji Tile seeds and reconciles from the authoritative run-wide ledger (§11.6).
+- Changed 2026-08-12: Word Hands add the hidden knowledge tier Type Economy, Vowelless, and Grand Palindrome above the original six. All three require valid dictionary words and persist their first discovery per profile; Hand Scholar now unlocks after eight distinct hands in one run, while Palindromist unlocks after ten cumulative palindromes and treats Grand Palindrome as a palindrome (§5.5, §11.4).
 - Changed 2026-08-06: Glasswork no longer removes a Glass tile from the permanent pouch at blind end; it only gives +7 Mult per played Glass tile (§11.3).
 - Changed 2026-08-06: Rare Emoji Tile Blacksmith starts at +0 Chips and permanently gains +10 Chips whenever an existing letter tile receives a material, font, or edition enhancement. Held tile-targeting Fables may use the pouch candidates in either an open Fable Pack or Ink Pack (§9.3, §10.1, §11.4).
 - Changed 2026-08-06: Triplet now ranks above Longword, so a valid 6+ letter word containing the same letter three times triggers Triplet instead of being shadowed by Longword (§5.5).
@@ -429,21 +430,27 @@ all show this same mark, so the mapping is readable before effect prose.
 
 Sentence patterns are the *run-level* payoff (evaluated across the whole sequence at blind end). **Word Hands** supply the *word-level* dopamine — a per-word "hand type" (Balatro's poker hands, transposed to letter structure) evaluated at submission. Engine ids remain `letterHands` / `LetterHandId`; this is a display-term change only.
 
-- **Scoring placement.** The matched hand's Chips add to the current word Chips and its Mult multiplies the current word Mult inside `WordScoringContext`, layer 1: `wordScore = (currentWordChips + handChips) × (currentWordMult × handMult)`. Values are placeholders in `balance.ts`. The length multiplier (§3.1) folds in just before this, on the Mult side; Longword is the Chips side of the same idea, so the two stack rather than duplicating.
+- **Scoring placement.** The matched hand's Chips add to the current word Chips and its Mult multiplies the current word Mult inside `WordScoringContext`, layer 1: `wordScore = (currentWordChips + handChips) × (currentWordMult × handMult)`. Values live in `balance.ts`. The length multiplier (§3.1) folds in just before this, on the Mult side; Longword is the Chips side of the same idea, so the two stack rather than duplicating.
 - **Highest single hand only** (consistent with the sentence-pattern rule, §5.1 rule 2).
-- **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); Twin, Triplet, Longword and Palindrome are valid-words-only. See §6.4.
+- **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); every other Word Hand is valid-words-only. See §6.4.
+- **Knowledge tier (changed 2026-08-12).** Ranks 7–9 are difficult valid-word structures hidden until first completion. Y uses the shared vowel/consonant classification and is currently a consonant, so Vowelless starts at 5 physical letters. Type Economy and Grand Palindrome likewise use physical spelling length; Dummy Data's effective-length increase remains Longword-only.
+- **Collision policy.** The highest rank remains the one scored and recorded. A strict family superset inherits family effects: Grand Palindrome therefore counts for Palindromist and its unlock. Orthogonal overlaps do not inherit the shadowed hand: for example, a Type Economy word that also contains all vowels scores only Type Economy and does not trigger Vowel Flush-specific effects.
 
-| Rank | Hand | Condition | Example | Bonus (placeholder) | Gibberish |
+| Rank | Hand | Condition | Example | Bonus | Gibberish |
 |---|---|---|---|---|---|
 | 1 | Twin | two identical letters adjacent | b**OO**k | +15 Chips, ×1 Mult | no |
 | 2 | Longword | 6+ letters | LETTER | +30 Chips, ×2 Mult | no |
 | 3 | Triplet | same letter ×3 anywhere | b**A**n**A**n**A** | +45 Chips, ×2 Mult | no |
 | 4 | Palindrome | reads the same reversed (len ≥ 3) | LEVEL | +45 Chips, ×3 Mult | no |
-| 5 | Vowel Flush | contains all of A,E,I,O,U | EDUCATION | +75 Chips, ×4 Mult | **yes** |
+| 5 | Vowel Flush | contains all of A,E,I,O,U | SEQUOIA | +75 Chips, ×4 Mult | **yes** |
 | 6 | Straight | 5 consecutive alphabet values (any order) | Q-R-S-T-U | +90 Chips, ×5 Mult | **yes** |
+| 7 | Type Economy | 8+ physical letters, no repeated letter | DIALOGUE | +105 Chips, ×6 Mult | no |
+| 8 | Vowelless | 5+ physical letters, no A/E/I/O/U | CRYPT | +120 Chips, ×7 Mult | no |
+| 9 | Grand Palindrome | valid palindrome, 7+ physical letters | ROTATOR | +150 Chips, ×8 Mult | no |
 
-- **Preview & settle.** The staged-word preview shows the matched hand by name + projected bonus; the settle sequence stamps its name onto the word (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-06).** Run Info → Word Hands lists all six conditions, their current fixed Chips/Mult bonuses, rank order, gibberish eligibility, and how many times each hand has scored this run. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
+- **Shipped-lexicon check (2026-08-12).** Among 172,251 valid entries, Vowelless has 60 candidates under the live Y-as-consonant rule (the hypothetical Y-as-vowel branch has 17), Type Economy has 10,164, and Grand Palindrome has 7. A seeded 100,000-hand upper-bound scan of the baseline 10-tile opening found at least one spellable candidate in roughly 1.56%, 7.56%, and 0.017% of hands respectively; these are perfect-dictionary-solver rates, not expected human completion rates.
+- **Preview, discovery & settle.** The original six always show by name. An undiscovered knowledge-tier match renders as `???` in both the staged-word status and Run Info name/condition; its score axes remain visible. Completing it writes the id into the active profile's `wj.lifetime`, and the settle stamp reveals the real name on that play. Profile → Reveal All marks all three discovered. The settle sequence otherwise stamps the matched name normally (UI_DESIGN §4).
+- **In-game reference (changed 2026-08-12).** Run Info → Word Hands lists all nine ranks, fixed Chips/Mult bonuses, run-use counts, and their visible conditions. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
 - **Out of scope (for now):** leveling Word Hands (Constellation Cards level
   sentence patterns only) and dedicated Emoji Tiles keyed to Word Hands—see
   §12.4.
@@ -1205,6 +1212,8 @@ in `docs/EMOJI_TILE_IDEA_BANK.md` §§2–4.2 form the active foundation; the ei
 | R9 | Dadaist | Give gibberish final Slang membership and its visible tag, then apply ×2.5 Mult; `suit`/POS remain null and the sentence hole remains | 2 | Clear a blind using only gibberish |
 | R10 | Interest Glutton | For every $1 interest received at round end, gain +5 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
+| R24 | Palindromist · 회문 작가 | Any valid palindrome of 3+ letters gives ×4 Mult; Grand Palindrome counts | 1 | Complete 10 palindromes cumulatively |
+| R30 | Hand Scholar · 족보 학자 | Starts at ×1; +0.5 to its factor per distinct Word Hand played this run, capped at ×4 | 1 | Complete 8 distinct Word Hands in one run |
 | R44 | Term Insurance · 단기 보험 | Permanently prevents letter-tile destruction while owned; every prevention gives ×2 Mult | 1 | — |
 | R46 | Counterfeit · 모조품 | If the word played in a blind's first hand contains exactly one letter tile, create a complete copy in the hand and permanent pouch | 1 | tile generation |
 | R47 | 25th Blessing · 25번째 축복 | Each held Y gives ×1.5 Mult; a played Y is not held | 1 | dynamic exponential |
@@ -1237,7 +1246,7 @@ only events observed after acquisition. Buying Noise Cancelling, Voracious
 Reader, Hand Scholar, Word Hunter, or Royalty Contract later therefore includes
 all earlier qualifying skips, words, and Word Hands immediately. Hand Scholar's
 current multiplicative factor is `1 + distinct Word Hands × 0.5`, capped
-naturally at ×4 by the six-entry Word Hand registry.
+explicitly at ×4 even though the registry now contains nine entries.
 
 | Scaling axis | Emoji Tiles |
 |---|---|

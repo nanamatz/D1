@@ -33,17 +33,17 @@ beforeEach(() => {
 });
 
 describe('Emoji Tile profile unlocks', () => {
-  it('starts with 54 ordinary tiles and all five Legendary tiles eligible', () => {
+  it('starts with 52 ordinary tiles and all five Legendary tiles eligible', () => {
     const eligible = unlockedEmojiSet();
     const ordinary = ALL_JOKERS.filter((def) => def.rarity !== 'legendary');
-    expect(EMOJI_UNLOCK_RULES).toHaveLength(70);
+    expect(EMOJI_UNLOCK_RULES).toHaveLength(72);
     expect(EMOJI_UNLOCK_RULES.filter((rule) =>
       ALL_JOKERS.find((def) => def.id === rule.id)?.rarity === 'common')).toHaveLength(11);
     expect(EMOJI_UNLOCK_RULES.filter((rule) =>
       ALL_JOKERS.find((def) => def.id === rule.id)?.rarity === 'uncommon')).toHaveLength(29);
     expect(EMOJI_UNLOCK_RULES.filter((rule) =>
-      ALL_JOKERS.find((def) => def.id === rule.id)?.rarity === 'rare')).toHaveLength(30);
-    expect(ordinary.filter((def) => eligible.has(def.id))).toHaveLength(54);
+      ALL_JOKERS.find((def) => def.id === rule.id)?.rarity === 'rare')).toHaveLength(32);
+    expect(ordinary.filter((def) => eligible.has(def.id))).toHaveLength(52);
     expect(ALL_JOKERS.filter((def) => def.rarity === 'legendary' && eligible.has(def.id)))
       .toHaveLength(5);
     for (const rule of EMOJI_UNLOCK_RULES) {
@@ -134,5 +134,37 @@ describe('Emoji Tile profile unlocks', () => {
       acrostic: false,
     });
     expect(loadEmojiUnlockProgress().unlocked).toContain('rewrite');
+  });
+
+  it('unlocks Palindromist cumulatively and Hand Scholar from eight hands in one run', () => {
+    const run = newRun('word-hand-unlocks');
+    run.playedLetterHands = [
+      'twin', 'longword', 'triplet', 'palindrome', 'vowelFlush', 'straight',
+      'typeEconomy', 'vowelless',
+    ];
+    const blind = startBlind(run, makeRng('word-hand-unlocks'));
+    const submission = {
+      text: 'LEVEL',
+      tiles: blind.hand.slice(0, 5),
+      isGibberish: false,
+      suit: 'standard' as const,
+      posUsed: null,
+      settledScore: 0,
+    };
+    recordEmojiUnlockEvent({ kind: 'newRun', run });
+    for (let index = 0; index < 10; index += 1) {
+      recordEmojiUnlockEvent({
+        kind: 'wordPlayed',
+        run,
+        blind,
+        submission,
+        letterHandId: index === 9 ? 'grandPalindrome' : 'palindrome',
+        heldTiles: [],
+        bossDiscarded: 0,
+      });
+    }
+    const progress = loadEmojiUnlockProgress();
+    expect(progress.unlocked).toContain('palindromist');
+    expect(progress.unlocked).toContain('handScholar');
   });
 });

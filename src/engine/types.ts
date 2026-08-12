@@ -131,7 +131,10 @@ export type LetterHandId =
   | 'longword'
   | 'palindrome'
   | 'vowelFlush'
-  | 'straight';
+  | 'straight'
+  | 'typeEconomy'
+  | 'vowelless'
+  | 'grandPalindrome';
 
 export interface PatternMatch {
   pattern: PatternId;
@@ -226,7 +229,7 @@ export type ScoreEvent =
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
-  | { kind: 'letterHand'; hand: string; chipsDelta: number; multDelta: number; multFactor: number }
+  | { kind: 'letterHand'; hand: LetterHandId; chipsDelta: number; multDelta: number; multFactor: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; retrigger?: boolean; growthKind?: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize'; growthDelta?: number; createdTileIds?: string[]; sourceTileId?: string }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }

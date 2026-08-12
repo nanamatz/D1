@@ -13,7 +13,8 @@ import {
 } from './storage';
 import { POUCH_IDS } from '../engine/pouches';
 import { RECORD_IDS } from '../engine/records';
-import type { PouchId, RecordId } from '../engine/types';
+import { KNOWLEDGE_LETTER_HAND_IDS, isKnowledgeLetterHand } from '../engine/letterHands';
+import type { LetterHandId, PouchId, RecordId } from '../engine/types';
 import { wordLetterChips } from '../engine/scoring';
 import { collectionHighlights, loadCollection } from './collection';
 
@@ -34,6 +35,8 @@ export interface Lifetime {
   bestWordScore: number;
   bestWord: string;
   mostGold: number;
+  /** Profile-wide reveal state for the three secret knowledge-tier Word Hands. */
+  discoveredLetterHands: LetterHandId[];
   pouchWins: PouchId[];
   /** Aggregate wins used by Starting Pouch unlock conditions. */
   recordWins: RecordId[];
@@ -65,6 +68,7 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   bestWordScore: 0,
   bestWord: '',
   mostGold: 0,
+  discoveredLetterHands: [],
   pouchWins: [],
   recordWins: [],
   recordWinsByPouch: {},
@@ -104,6 +108,15 @@ function normalizeBalance(value: unknown): BalanceTelemetry {
 function normalizeRecordWins(value: unknown): RecordId[] {
   return Array.isArray(value)
     ? value.filter((id): id is RecordId => RECORD_IDS.includes(id as RecordId))
+    : [];
+}
+
+function normalizeDiscoveredLetterHands(value: unknown): LetterHandId[] {
+  return Array.isArray(value)
+    ? value.filter((id): id is LetterHandId =>
+        typeof id === 'string' && KNOWLEDGE_LETTER_HAND_IDS.includes(
+          id as (typeof KNOWLEDGE_LETTER_HAND_IDS)[number],
+        ))
     : [];
 }
 
@@ -166,6 +179,7 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
     bestRoundScore: safeCount(stored.bestRoundScore),
     bestWord,
     bestWordScore: collectionBest?.value ?? wordLetterChips(bestWord),
+    discoveredLetterHands: normalizeDiscoveredLetterHands(stored.discoveredLetterHands),
     pouchWins: Array.isArray(stored.pouchWins)
       ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId))
       : [],
@@ -177,6 +191,34 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
 
 export function writeLifetime(lifetime: Lifetime, slot: ProfileSlot = activeProfile()): void {
   writeProfileValue(KEY, slot, lifetime);
+}
+
+/** Cheap profile read for render paths: avoids the collection scan in loadLifetime(). */
+export function loadDiscoveredLetterHands(
+  slot: ProfileSlot = activeProfile(),
+): ReadonlySet<LetterHandId> {
+  const stored = readProfileValue<Pick<Lifetime, 'discoveredLetterHands'>>(KEY, slot);
+  return new Set(normalizeDiscoveredLetterHands(stored?.discoveredLetterHands));
+}
+
+export function isLetterHandDiscovered(
+  id: LetterHandId,
+  discovered: ReadonlySet<LetterHandId> = loadDiscoveredLetterHands(),
+): boolean {
+  return !isKnowledgeLetterHand(id) || discovered.has(id);
+}
+
+export function discoverLetterHand(
+  id: LetterHandId,
+  slot: ProfileSlot = activeProfile(),
+): void {
+  if (!isKnowledgeLetterHand(id)) return;
+  const discovered = loadDiscoveredLetterHands(slot);
+  if (discovered.has(id)) return;
+  writeLifetime({
+    ...loadLifetime(slot),
+    discoveredLetterHands: [...discovered, id],
+  }, slot);
 }
 
 /** Record one fully finalized blind score as soon as the round resolves. */

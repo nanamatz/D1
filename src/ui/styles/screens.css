@@ -4271,6 +4271,9 @@ body.cb-safe .tile.hint {
 .ri-hands {
   display: grid;
   gap: 8px;
+  max-height: calc(92vh - 150px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 .ri-hand {
   display: grid;

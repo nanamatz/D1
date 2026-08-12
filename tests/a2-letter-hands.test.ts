@@ -5,7 +5,7 @@ import { newRun } from '../src/engine/run';
 import { startBlind, submitWord } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
-import type { Letter, Tile } from '../src/engine/types';
+import { VOWELS, type Letter, type Tile } from '../src/engine/types';
 
 /** Convenience: evaluate the hand for a spelled string (uppercased letters). */
 const hand = (s: string, gibberish = false) => evaluateLetterHand(s.toUpperCase(), gibberish);
@@ -32,12 +32,31 @@ describe('A-2 letter hands — matching + highest-only rule', () => {
     expect(hand('PLANE')).toBeNull();
   });
 
-  it('EDUCATION → Vowel Flush beats Longword (highest only)', () => {
-    expect(hand('EDUCATION')?.id).toBe('vowelFlush');
+  it('SEQUOIA → Vowel Flush beats Longword (highest only)', () => {
+    expect(hand('SEQUOIA')?.id).toBe('vowelFlush');
   });
 
   it('QRSTU → Straight (5 consecutive alphabet values)', () => {
     expect(hand('QRSTU')?.id).toBe('straight');
+  });
+
+  it('DIALOGUE → Type Economy above Vowel Flush', () => {
+    expect(hand('DIALOGUE')?.id).toBe('typeEconomy');
+  });
+
+  it('RHYTHM → Vowelless with Y treated as a consonant', () => {
+    expect(VOWELS.has('Y')).toBe(false);
+    expect(hand('RHYTHM')?.id).toBe('vowelless');
+  });
+
+  it('ROTATOR → Grand Palindrome above Palindrome and Longword', () => {
+    expect(hand('ROTATOR')?.id).toBe('grandPalindrome');
+  });
+
+  it('new physical-length thresholds ignore Dummy Data effective length', () => {
+    expect(evaluateLetterHand('ACEGIK', false, 8)?.id).toBe('longword');
+    expect(evaluateLetterHand('BCDF', false, 8)?.id).toBe('longword');
+    expect(evaluateLetterHand('RADAR', false, 8)?.id).toBe('palindrome');
   });
 
   it('a plain short word matches nothing', () => {
@@ -51,23 +70,27 @@ describe('A-2 letter hands — gibberish eligibility', () => {
     expect(hand('AEIOU', true)?.id).toBe('vowelFlush');
   });
 
-  it('Twin / Triplet / Longword / Palindrome do NOT fire on gibberish', () => {
+  it('every valid-only hand stays disabled on gibberish', () => {
     expect(hand('XOOZ', true)).toBeNull(); // adjacent OO but gibberish → no Twin
     expect(hand('ZAAAP', true)).toBeNull(); // A ×3 but gibberish → no Triplet
     expect(hand('ZXCVBNML', true)).toBeNull(); // 8 letters but gibberish → no Longword (no straight run)
     expect(hand('ZOOZ', true)).toBeNull(); // palindrome but gibberish → no Palindrome
+    expect(hand('BCDFG', true)).toBeNull(); // no vowels, but gibberish → no Vowelless
+    expect(hand('ABCDWXYZ', true)).toBeNull(); // unique 8 letters, but gibberish → no Type Economy
+    expect(hand('ABCDCBA', true)).toBeNull(); // 7-letter palindrome, but gibberish → no Grand Palindrome
   });
 });
 
 describe('A-2 letter hands — bonus values come from balance.ts', () => {
   it('returns the balance-keyed chips/mult for the match', () => {
-    const m = hand('EDUCATION');
+    const m = hand('SEQUOIA');
     expect(m).not.toBeNull();
     expect(m!.chips).toBe(BALANCE.letterHands.vowelFlush.chips);
     expect(m!.mult).toBe(BALANCE.letterHands.vowelFlush.mult);
   });
 
   it('every registered hand has a balance entry', () => {
+    expect(LETTER_HAND_REGISTRY).toHaveLength(9);
     for (const def of LETTER_HAND_REGISTRY) {
       expect(BALANCE.letterHands[def.id]).toBeDefined();
     }

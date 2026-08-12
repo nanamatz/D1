@@ -3,10 +3,15 @@ import type { JokerDef } from '../events';
 import { evaluateLetterHand } from '../letterHands';
 import { letterString } from '../scoring';
 
+const factorFor = (count: number): number => Math.min(
+  BALANCE.jokers.handScholar.maxFactor,
+  1 + count * BALANCE.jokers.handScholar.factorPerNewHand,
+);
+
 const stateFromPlayedHands = (hands: readonly string[]): Record<string, number> => {
   const unique = new Set(hands);
   return {
-    factor: 1 + unique.size * BALANCE.jokers.handScholar.factorPerNewHand,
+    factor: factorFor(unique.size),
     ...Object.fromEntries([...unique].map((hand) => [`seen:${hand}`, 1])),
   };
 };
@@ -22,7 +27,7 @@ const syncPlayedHands = (
   }
   if (currentHand) unique.add(currentHand);
   for (const hand of unique) state[`seen:${hand}`] = 1;
-  state.factor = 1 + unique.size * BALANCE.jokers.handScholar.factorPerNewHand;
+  state.factor = factorFor(unique.size);
   return state.factor;
 };
 

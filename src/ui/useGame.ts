@@ -51,7 +51,7 @@ import { letterChips } from '../engine/scoring';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import type { Lexicon } from '../engine/lexicon';
 import { recordWord } from './collection';
-import { recordBestRoundScore, recordEndlessEnd, recordRunEnd } from './lifetime';
+import { discoverLetterHand, recordBestRoundScore, recordEndlessEnd, recordRunEnd } from './lifetime';
 import { clearRun, loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
@@ -1685,6 +1685,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const visibleNextRun = withDestroyedJokers(nextRun, destroyedJokers);
       recordPouchUnlockChanges(prev.run, nextRun);
       const letterHandId = events.find((event) => event.kind === 'letterHand')?.hand ?? null;
+      if (letterHandId) discoverLetterHand(letterHandId);
       recordEmojiUnlockEvent({
         kind: 'wordPlayed',
         run: nextRun,

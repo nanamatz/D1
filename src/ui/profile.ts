@@ -5,6 +5,7 @@ import { RECORD_IDS, isRecordUnlocked } from '../engine/records';
 import { collectionSize, loadCollection } from './collection';
 import { activeProfile, resetProfile, writeProfileValue, type ProfileSlot } from './storage';
 import { loadLifetime, recordWinsForPouch, writeLifetime } from './lifetime';
+import { KNOWLEDGE_LETTER_HAND_IDS } from '../engine/letterHands';
 import { UNLOCKS, loadPlayed } from './unlocks';
 import { loadVoucherProgress, VOUCHER_UNLOCK_RULES } from './voucherProgress';
 import {
@@ -55,7 +56,8 @@ export function isProfileWorldComplete(slot: ProfileSlot, lexicon: Lexicon): boo
     && POUCH_IDS.every((pouchId) =>
       RECORD_IDS.every((id) => isRecordUnlocked(id, recordWinsForPouch(lifetime, pouchId))))
     && VOUCHER_UNLOCK_RULES.every((rule) => vouchers.has(rule.id))
-    && EMOJI_UNLOCK_RULES.every((rule) => emojiTiles.has(rule.id));
+    && EMOJI_UNLOCK_RULES.every((rule) => emojiTiles.has(rule.id))
+    && KNOWLEDGE_LETTER_HAND_IDS.every((id) => lifetime.discoveredLetterHands.includes(id));
 }
 
 function normalizedName(slot: ProfileSlot, name: string): string {
@@ -117,6 +119,7 @@ export function unlockAllProfile(slot: ProfileSlot, lexicon: Lexicon): UnlockAll
     recordWinsByPouch: Object.fromEntries(
       POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]]),
     ),
+    discoveredLetterHands: [...KNOWLEDGE_LETTER_HAND_IDS],
     unlockAllApplied: true,
     challengesDisabled: true,
   }, slot);

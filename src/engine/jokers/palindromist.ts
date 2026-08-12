@@ -9,7 +9,8 @@ export const palindromist: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }) => {
-      if (evaluateLetterHand(letterString(ctx.submission.tiles), ctx.submission.isGibberish)?.id === 'palindrome') {
+      const hand = evaluateLetterHand(letterString(ctx.submission.tiles), ctx.submission.isGibberish)?.id;
+      if (hand === 'palindrome' || hand === 'grandPalindrome') {
         ctx.mult *= BALANCE.jokers.palindromist.factor;
       }
     },
