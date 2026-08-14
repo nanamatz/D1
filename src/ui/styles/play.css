@@ -1192,6 +1192,9 @@
 .fable-effect-target.fx-font .fable-target-fx::after {
   content: 'Aa';
 }
+.fable-effect-target.fx-edition .fable-target-fx::after {
+  content: '✦';
+}
 .fable-effect-target.fx-destroy .fable-target-fx::after {
   content: '×';
   color: #ff6464;

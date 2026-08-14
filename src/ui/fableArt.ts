@@ -18,11 +18,13 @@ import fable15 from '../../docs/Arts/Cards/Fable/Vector/T_Fable15-preview.png';
 import fable16 from '../../docs/Arts/Cards/Fable/Vector/T_Fable16-preview.png';
 import fable17 from '../../docs/Arts/Cards/Fable/Vector/T_Fable17-preview.png';
 import fable18 from '../../docs/Arts/Cards/Fable/Vector/T_Fable18-preview.png';
+import fable19 from '../../docs/Arts/Cards/Fable/Vector/T_Fable19-preview.png';
+import fable20 from '../../docs/Arts/Cards/Fable/Vector/T_Fable20-preview.png';
 
 export const FABLE_ART: Readonly<Record<FableId, string>> = {
   fable1, fable2, fable3, fable4, fable5, fable6,
   fable7, fable8, fable9, fable10, fable11, fable12,
-  fable13, fable14, fable15, fable16, fable17, fable18,
+  fable13, fable14, fable15, fable16, fable17, fable18, fable19, fable20,
 };
 
 export const fableArt = (id: FableId): string => FABLE_ART[id];

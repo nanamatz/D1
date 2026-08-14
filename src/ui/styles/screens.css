@@ -582,6 +582,18 @@
   min-width: 44px;
   text-align: right;
 }
+.cashout-line.mastery .amt {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.cashout-line.mastery .amt b { color: var(--chips); }
+.cashout-line.mastery .amt em {
+  color: var(--gold);
+  font-family: 'Jersey 10';
+  font-size: var(--fs-md);
+  font-style: normal;
+}
 .coins {
   font-size: var(--fs-md);
   letter-spacing: -2px;
@@ -4322,13 +4334,29 @@ body.cb-safe .tile.hint {
 }
 .ri-hand {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto auto;
+  grid-template-columns: 30px minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   background: var(--inset);
   border: 1px solid var(--inset-edge);
   border-radius: var(--r-sm);
+}
+.ri-hand-level {
+  display: flex;
+  min-width: 70px;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--gold);
+  font-family: 'Jersey 10';
+  font-size: var(--ds-xs);
+  line-height: 1;
+}
+.ri-hand-level small {
+  margin-top: 3px;
+  color: var(--ink-dim);
+  font-family: 'Noto Sans KR';
+  font-size: var(--fs-xs);
 }
 .ri-hand-rank {
   display: grid;

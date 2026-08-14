@@ -13,7 +13,8 @@ Version 0.2 — systems expansion
 - New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 15 regular bosses, and a six-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 30 Editorial Perks now ship (§8.2; alphabet-lore expansion 2026-08-12).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
 - Changed 2026-08-04: the Stationery Shop and pack economy adopt the Balatro-reference probability and price policy. Item weights are Emoji Tile 20 / Fable 4 / Constellation 4, voucher-gated letter tile 4, and Lucky-Pouch Gambler 2; pack type weights are 4/4/4/1.2/0.6 and sizes 8/4/1. Emoji Tile prices are the project override **$4/$6/$9/$15** by rarity (§9.2–§9.3, §11.8).
-- Changed 2026-08-03: **Consumables** use 3 card families — Fable (18 implemented), Constellation (12 implemented), and Gambler (14 implemented). Rainman and Sake Cup complete the supplied Gambler roster (§10).
+- Changed 2026-08-14: Word Hands gain run-only levels. A cleared blind awards Proof Stamps equal to the most-played Word Hand's play count; a handless blind awards one seeded-random stamp. Level costs are 1 stamp through level 5, 3 through level 8, then 5. The Crow and the Pitcher joins the Fable roster as a two-stamp accelerator (§5.5, §10.1).
+- Changed 2026-08-14: **Consumables** use 3 card families — Fable (20 implemented), Constellation (12 implemented), and Gambler (14 implemented). The Ass in the Lion's Skin completes the Fable roster with a targeted letter-tile edition effect (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
 - Changed 2026-08-03: all fourteen Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls them in the shop.
 - Changed 2026-08-02: Full Moon's three created vowels now each receive one seeded-random non-base enhancement axis (material, font, or letter-tile edition), rather than always receiving a material (§10.3).
@@ -99,7 +100,7 @@ Version 0.2 — systems expansion
 | High card | Gibberish submission | Non-word tile dump; letter chips only |
 | Blind (Small/Big/Boss) | Blind | One round: phases + discard budget + target score |
 | Ante | Ante | 3 blinds; base target rises per ante |
-| Tarot cards | Fable Cards | 18 one-shot tile/economy/tool effects |
+| Tarot cards | Fable Cards | 19 one-shot tile/economy/tool effects |
 | Planet cards | Constellation Cards | Sentence-pattern level-up consumables |
 | Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); 14 implemented |
 | Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
@@ -440,6 +441,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 - **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); every other Word Hand is valid-words-only. See §6.4.
 - **Knowledge tier (changed 2026-08-12).** Ranks 7–9 are difficult valid-word structures hidden until first completion. Y uses the shared vowel/consonant classification and is currently a consonant, so Vowelless starts at 5 physical letters. Type Economy and Grand Palindrome likewise use physical spelling length; Dummy Data's effective-length increase remains Longword-only.
 - **Collision policy.** The highest rank remains the one scored and recorded. An Emoji Tile whose text explicitly says a hand is **contained** checks raw structure independently of that winner: Grand Palindrome can trigger Mirror Image, and a Type Economy word containing all five vowels can trigger Gathering while only Type Economy supplies the base Word-Hand score.
+- **Run-only levels and Proof Stamps (changed 2026-08-14).** Every Word Hand starts at level 1. Clearing a blind awards the most-played scored hand one stamp per time it scored in that blind; if several hands tie, the latest tied hand wins. If no Word Hand scored, one of the nine receives one seeded-random stamp. A loss and a skipped blind award none. Advancing from current levels 1–5 costs 1 stamp, levels 6–8 cost 3, and level 9 onward costs 5; one award may cross multiple levels and keeps any remainder. Each level adds the hand row's rank-band Chips increment (+5 for ranks 1–3, +10 for ranks 4–6, +15 for ranks 7–9), while every third level gained adds +1 to its Mult factor. Fee Settlement reveals the awarded hand, stamp count, and any crossed levels; Run Info shows live level and stamp progress. Undiscovered knowledge-tier names remain `???` when a random award lands on them.
 
 | Rank | Hand | Condition | Example | Bonus | Gibberish |
 |---|---|---|---|---|---|
@@ -455,10 +457,8 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 
 - **Shipped-lexicon check (2026-08-12).** Among 172,251 valid entries, Vowelless has 60 candidates under the live Y-as-consonant rule (the hypothetical Y-as-vowel branch has 17), Type Economy has 10,164, and Grand Palindrome has 7. A seeded 100,000-hand upper-bound scan of the baseline 10-tile opening found at least one spellable candidate in roughly 1.56%, 7.56%, and 0.017% of hands respectively; these are perfect-dictionary-solver rates, not expected human completion rates.
 - **Preview, discovery & settle.** The original six always show by name. An undiscovered knowledge-tier match renders as `???` in both the staged-word status and Run Info name/condition; its score axes remain visible. Completing it writes the id into the active profile's `wj.lifetime`, and the settle stamp reveals the real name on that play. Profile → Reveal All marks all three discovered. The settle sequence otherwise stamps the matched name normally (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-12).** Run Info → Word Hands lists all nine ranks, fixed Chips/Mult bonuses, run-use counts, and their visible conditions. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
-- **Out of scope (for now):** leveling Word Hands (Constellation Cards level
-  sentence patterns only) and dedicated Emoji Tiles keyed to Word Hands—see
-  §12.4.
+- **In-game reference (changed 2026-08-14).** Run Info → Word Hands lists all nine ranks, current levels, live Chips/Mult bonuses, stamp progress, run-use counts, and their visible conditions. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
+- **Out of scope (for now):** dedicated Emoji Tiles keyed to Word Hand levels—see §12.4.
 
 ---
 
@@ -905,7 +905,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Ink-only jackpots and ordinary rolls (changed 2026-08-07).** Every Ink choice reserves an independent **0.3% Phoenix** band and **0.3% Deer** band. The remaining 99.4% is divided uniformly among the 12 ordinary Gambler Cards, so each ordinary card has an **8.2833% base chance on the first fully eligible choice**. Ordinary choices are drawn without replacement inside one pack; later-choice odds therefore normalize over the remaining eligible pool. If a rolled jackpot is ineligible, its band falls back to an ordinary card and never increases the other jackpot's chance. Fable and Constellation Packs never roll either jackpot. Comic Book gives each Fable choice a **5%** chance to become an ordinary Gambler card, capped at one replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.phoenixChance`, `pack.deerChance`, `pack.gamblerInFableChance`).
 
-> **Impl note (updated 2026-08-06).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 18 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. A compatible held tile-targeting Fable may resolve against either pack's candidates. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
+> **Impl note (updated 2026-08-14).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 19 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. A compatible held tile-targeting Fable may resolve against either pack's candidates. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -954,7 +954,7 @@ from shop item slots and packs.
 
 **Held-slot presentation (changed 2026-07-31).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Sell and Use belong to the same mouse-interaction transform as the image, so idle motion, pointer tilt, rotation, scaling, and lift move the card and buttons together without reflowing the shelf. Sell is vertically centred at the image's right and Use sits beneath it; both match the shop Buy button's dimensions. An owned Emoji Tile and its Sell button use the same centred position, dimensions, and shared pointer transform.
 
-### 10.1 Fable Cards (Tarot-equivalent), 18
+### 10.1 Fable Cards (Tarot-equivalent), 19
 
 Held targeted effects normally use the tiles currently staged on the board. A
 target-requiring held card cannot be consumed until one to its listed maximum valid
@@ -963,11 +963,11 @@ target the pack's immediately active ten seeded pouch candidates under the same
 range. Random creation
 respects the destination slot cap.
 
-**Art rendering (changed 2026-07-31).** All 18 supplied pixel illustrations keep
+**Art rendering (changed 2026-08-14).** All 19 supplied pixel illustrations keep
 high-detail, path-only SVG masters normalized to one `500×700` canvas (fixed 5:7
 ratio, 32-color palette, `250×350` logical pixel grid). Every source illustration
 is stretched to the full common image bounds established by The North Wind and
-the Sun, so all 18 cards have identical visible width and height with no cropping
+the Sun, so all 20 cards have identical visible width and height with no cropping
 or unequal internal margins. No SVG master embeds a raster image. Collection,
 shop, pack opening, and the held-card shelf reuse pixel-identical `500×700` PNG
 runtime derivatives inside the shared framed component; this avoids parsing the
@@ -995,6 +995,8 @@ also available through the surrounding tooltip and accessible label.
 | 16 | The Rabbit and the Turtle | Raise 2 selected tile letters by one alphabet rank; Z wraps to A |
 | 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Emoji Tiles, capped at +$50; its tooltip shows the live capped payout from the currently owned Emoji Tiles |
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
+| 19 | The Crow and the Pitcher | Add 2 Proof Stamps to the most recently scored Word Hand |
+| 20 | The Ass in the Lion's Skin | Give 1 selected Base letter tile a seeded-random Gray/Violet/Rainbow edition at 50%/35%/15%; preserve its material and font |
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 

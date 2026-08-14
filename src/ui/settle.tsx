@@ -216,7 +216,7 @@ export interface SettleView {
     retrigger: boolean;
   } | null;
   /** a Word-Hand / suit / word-length stamp landing this beat */
-  stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch' | 'tag'; label: string } | null;
+  stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch' | 'tag'; label: string; level?: number } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
    *  (item 6). `id` is the beat index so each pop re-mounts and replays its rise.
    * `chipsOp`/`multOp` preserve whether the source displayed +delta or ×factor. */
@@ -535,7 +535,7 @@ export function SettleProvider({
           } else if (e.kind === 'suit') {
             setView({ ...base, stamp: e.suit ? { kind: 'suit', label: e.suit } : null });
           } else if (e.kind === 'letterHand') {
-            setView({ ...base, stamp: { kind: 'letterHand', label: e.hand } });
+            setView({ ...base, stamp: { kind: 'letterHand', label: e.hand, level: e.level } });
           } else if (e.kind === 'wordLength') {
             setView({ ...base, stamp: { kind: 'wordLength', label: String(e.letters) } });
           } else if (e.kind === 'pouch') {

@@ -42,7 +42,12 @@ describe('Fable Pack resolution', () => {
     const { run } = setup();
     const targets = run.bag.slice(0, 2);
     const staged = { ...run, consumables: [...run.consumables, 'fable4' as const] };
-    const result = useFableOnPouch('fable4', staged, targets.map((tile) => tile.id));
+    const result = useFableOnPouch(
+      'fable4',
+      staged,
+      targets.map((tile) => tile.id),
+      makeRng('fable-pack-use'),
+    );
     expect(result.ok).toBe(true);
     expect(result.run.consumables).not.toContain('fable4');
     expect(

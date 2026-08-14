@@ -7,8 +7,12 @@ import { formatScore } from '../formatScore';
 import { kindForIndex } from '../../engine/progression';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { patternChipsMult } from '../../engine/patterns';
-import { BALANCE } from '../../engine/balance';
-import { LETTER_HAND_REGISTRY } from '../../engine/letterHands';
+import {
+  LETTER_HAND_REGISTRY,
+  letterHandChipsMult,
+  letterHandLevel,
+  letterHandStampCost,
+} from '../../engine/letterHands';
 import { bossDescKey, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { patternLevelClass } from '../patternLevel';
@@ -110,7 +114,9 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
           {tab === 'hands' && (
             <div className="ri-hands">
               {LETTER_HAND_REGISTRY.map((hand) => {
-                const bonus = BALANCE.letterHands[hand.id];
+                const level = letterHandLevel(run.letterHandLevels, hand.id);
+                const bonus = letterHandChipsMult(hand.id, level);
+                const stamps = run.letterHandStamps?.[hand.id] ?? 0;
                 const discovered = isLetterHandDiscovered(hand.id, discoveredLetterHands);
                 return (
                   <div className="ri-hand" key={hand.id}>
@@ -127,6 +133,10 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                           <b className="mult">{bonus.mult}</b>
                         </>
                       )}
+                    </span>
+                    <span className="ri-hand-level">
+                      <b>Lv {level}</b>
+                      <small>{t('runinfo.wordHandStamps', { n: stamps, cost: letterHandStampCost(level) })}</small>
                     </span>
                     <span className="ri-use-count">
                       {t('runinfo.timesUsed', { n: run.letterHandPlayCounts?.[hand.id] ?? 0 })}

@@ -67,6 +67,7 @@ describe('slice5 progression — resolveBlind gold & advancement (GDD §9.1)', (
       discards: 0,
       interest: 2,
       total: 7,
+      letterHandReward: expect.objectContaining({ stamps: 1, random: true }),
     });
     expect(out.run.gold).toBe(17);
     expect(out.run.blindIndex).toBe(1);

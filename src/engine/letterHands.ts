@@ -15,7 +15,8 @@
  */
 
 import { BALANCE } from './balance';
-import { VOWELS, type Letter, type LetterHandId } from './types';
+import { VOWELS, type BlindState, type Letter, type LetterHandId, type RunState } from './types';
+import type { Rng } from './rng';
 
 export type { LetterHandId } from './types';
 
@@ -30,8 +31,18 @@ export interface LetterHandDef {
 export interface LetterHandMatch {
   id: LetterHandId;
   rank: number;
+  level: number;
   chips: number;
   mult: number;
+}
+
+export interface LetterHandStampReward {
+  hand: LetterHandId;
+  stamps: number;
+  random: boolean;
+  fromLevel: number;
+  toLevel: number;
+  stampsRemaining: number;
 }
 
 export const KNOWLEDGE_LETTER_HAND_IDS = [
@@ -42,6 +53,74 @@ export const KNOWLEDGE_LETTER_HAND_IDS = [
 
 export const isKnowledgeLetterHand = (id: LetterHandId): boolean =>
   KNOWLEDGE_LETTER_HAND_IDS.includes(id as (typeof KNOWLEDGE_LETTER_HAND_IDS)[number]);
+
+export const letterHandLevel = (
+  levels: Partial<Record<LetterHandId, number>> | undefined,
+  id: LetterHandId,
+): number => Math.max(1, levels?.[id] ?? 1);
+
+export function letterHandChipsMult(id: LetterHandId, level = 1): { chips: number; mult: number } {
+  const base = BALANCE.letterHands[id];
+  const upgrades = Math.max(0, level - 1);
+  return {
+    chips: base.chips + upgrades * base.levelChips,
+    mult: base.mult + Math.floor(upgrades / BALANCE.letterHand.levelMultEvery),
+  };
+}
+
+export function letterHandStampCost(level: number): number {
+  return BALANCE.letterHand.stampCosts.find((tier) => level <= tier.throughLevel)?.stamps
+    ?? BALANCE.letterHand.lateStampCost;
+}
+
+/** Add stamps and consume as many complete level costs as they cover. */
+export function addLetterHandStamps(
+  run: RunState,
+  hand: LetterHandId,
+  added: number,
+): { run: RunState; reward: Omit<LetterHandStampReward, 'random'> } {
+  const fromLevel = letterHandLevel(run.letterHandLevels, hand);
+  let level = fromLevel;
+  let stamps = (run.letterHandStamps?.[hand] ?? 0) + Math.max(0, added);
+  while (stamps >= letterHandStampCost(level)) {
+    stamps -= letterHandStampCost(level);
+    level += 1;
+  }
+  return {
+    run: {
+      ...run,
+      letterHandLevels: { ...run.letterHandLevels, [hand]: level },
+      letterHandStamps: { ...run.letterHandStamps, [hand]: stamps },
+    },
+    reward: { hand, stamps: added, fromLevel, toLevel: level, stampsRemaining: stamps },
+  };
+}
+
+/** Clear reward: most-played scored hand gets its play count in stamps. If none
+ * scored, one seeded-random hand gets one. A tie goes to the latest tied hand. */
+export function awardBlindLetterHandStamps(
+  run: RunState,
+  blind: BlindState,
+  rng: Pick<Rng, 'int'>,
+): { run: RunState; reward: LetterHandStampReward } {
+  const played = blind.sequence.flatMap((submission) => {
+    const match = evaluateLetterHand(
+      submission.text.toUpperCase(),
+      submission.isGibberish,
+      submission.scoringLength,
+    );
+    return match ? [match.id] : [];
+  });
+  const counts: Partial<Record<LetterHandId, number>> = {};
+  for (const hand of played) counts[hand] = (counts[hand] ?? 0) + 1;
+  const max = Math.max(0, ...Object.values(counts));
+  const random = max === 0;
+  const hand = random
+    ? LETTER_HAND_REGISTRY[rng.int(LETTER_HAND_REGISTRY.length)]!.id
+    : [...played].reverse().find((id) => counts[id] === max)!;
+  const result = addLetterHandStamps(run, hand, random ? 1 : max);
+  return { run: result.run, reward: { ...result.reward, random } };
+}
 
 /** True if the string contains two identical letters adjacent (b**OO**k). */
 const hasAdjacentPair = (s: string): boolean => /(.)\1/.test(s);
@@ -121,6 +200,7 @@ export function evaluateLetterHand(
   letters: string,
   isGibberish: boolean,
   effectiveLength = letters.length,
+  levels?: Partial<Record<LetterHandId, number>>,
 ): LetterHandMatch | null {
   let best: LetterHandMatch | null = null;
   for (const def of LETTER_HAND_REGISTRY) {
@@ -129,8 +209,9 @@ export function evaluateLetterHand(
       ? effectiveLength < BALANCE.letterHand.longwordLen
       : !def.test(letters)) continue;
     if (!best || def.rank > best.rank) {
-      const b = BALANCE.letterHands[def.id];
-      best = { id: def.id, rank: def.rank, chips: b.chips, mult: b.mult };
+      const level = letterHandLevel(levels, def.id);
+      const bonus = letterHandChipsMult(def.id, level);
+      best = { id: def.id, rank: def.rank, level, ...bonus };
     }
   }
   return best;

@@ -145,15 +145,15 @@ export const BALANCE = {
   //       inside WordScoringContext: Chips add and Mult multiplies. Highest single
   //       hand only. rank 1 (weakest) .. 9 (strongest). -----
   letterHands: {
-    twin:       { rank: 1, chips: 15, mult: 1 },
-    longword:   { rank: 2, chips: 30, mult: 2 },
-    triplet:    { rank: 3, chips: 45, mult: 2 },
-    palindrome: { rank: 4, chips: 45, mult: 3 },
-    vowelFlush: { rank: 5, chips: 75, mult: 4 },
-    straight:   { rank: 6, chips: 90, mult: 5 },
-    typeEconomy:    { rank: 7, chips: 105, mult: 6 },
-    vowelless:      { rank: 8, chips: 120, mult: 7 },
-    grandPalindrome:{ rank: 9, chips: 150, mult: 8 },
+    twin:       { rank: 1, chips: 15, mult: 1, levelChips: 5 },
+    longword:   { rank: 2, chips: 30, mult: 2, levelChips: 5 },
+    triplet:    { rank: 3, chips: 45, mult: 2, levelChips: 5 },
+    palindrome: { rank: 4, chips: 45, mult: 3, levelChips: 10 },
+    vowelFlush: { rank: 5, chips: 75, mult: 4, levelChips: 10 },
+    straight:   { rank: 6, chips: 90, mult: 5, levelChips: 10 },
+    typeEconomy:    { rank: 7, chips: 105, mult: 6, levelChips: 15 },
+    vowelless:      { rank: 8, chips: 120, mult: 7, levelChips: 15 },
+    grandPalindrome:{ rank: 9, chips: 150, mult: 8, levelChips: 15 },
   },
   /** Word-Hand structure thresholds (GDD §5.5). */
   letterHand: {
@@ -164,6 +164,12 @@ export const BALANCE = {
     vowellessMinLenWhenYConsonant: 5,
     vowellessMinLenWhenYVowel: 3,
     grandPalindromeMinLen: 7,
+    levelMultEvery: 3,
+    stampCosts: [
+      { throughLevel: 5, stamps: 1 },
+      { throughLevel: 8, stamps: 3 },
+    ],
+    lateStampCost: 5,
   },
 
   // Constellation level-ups are uniform per pattern via `patterns.*.levelChips /
@@ -565,6 +571,8 @@ export const BALANCE = {
   fables: {
     cowherdEditionChance: 0.25,
     cowherdEditionWeights: { gray: 0.50, violet: 0.35, rainbow: 0.15 },
+    crowWordHandStamps: 2,
+    lionSkinEditionWeights: { gray: 0.50, violet: 0.35, rainbow: 0.15 },
   },
 
   // ----- Boss effects (GDD §8.3) — per-boss knobs -----

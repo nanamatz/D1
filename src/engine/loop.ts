@@ -46,6 +46,7 @@ import type {
   BlindState,
   ConsumableId,
   Letter,
+  LetterHandId,
   RunState,
   ScoreEvent,
   SentenceBonusBreakdown,
@@ -384,6 +385,8 @@ export interface SubmitResult {
   playedLetterHands: NonNullable<RunState['playedLetterHands']>;
   /** run-wide Word Hand use counts, including this submission */
   letterHandPlayCounts: NonNullable<RunState['letterHandPlayCounts']>;
+  /** most recently scored Word Hand, including this submission */
+  lastLetterHand: LetterHandId | null;
   /** Distinct physical letters discarded across this run, including boss discards. */
   discardedLetters: Letter[];
   discardedLetterCounts: Partial<Record<Letter, number>>;
@@ -742,7 +745,12 @@ function scoreSubmission(
   // Word Hand (A-2): highest single per-word structure bonus. Its Chips add to
   // the current word and its Mult multiplies the current word Mult.
   const letters = letterString(tiles);
-  const letterHand = evaluateLetterHand(letters, submission.isGibberish, scoringLength);
+  const letterHand = evaluateLetterHand(
+    letters,
+    submission.isGibberish,
+    scoringLength,
+    run.letterHandLevels,
+  );
   if (letterHand && (letterHand.chips !== 0 || letterHand.mult !== 0)) {
     const beforeMult = ctx.mult;
     ctx.chips += letterHand.chips;
@@ -750,6 +758,7 @@ function scoreSubmission(
     events.push({
       kind: 'letterHand',
       hand: letterHand.id,
+      level: letterHand.level,
       chipsDelta: letterHand.chips,
       multDelta: ctx.mult - beforeMult,
       multFactor: letterHand.mult,
@@ -1188,6 +1197,7 @@ export function submitWord(
     playedWords,
     playedLetterHands,
     letterHandPlayCounts,
+    lastLetterHand: playedHand ?? afterBoss.run.lastLetterHand ?? null,
     counters: {
       ...afterBoss.run.counters,
       totalWords: afterBoss.run.counters.totalWords + 1,
@@ -1228,6 +1238,7 @@ export function submitWord(
     playedWords: postBossRun.playedWords ?? [],
     playedLetterHands: postBossRun.playedLetterHands ?? [],
     letterHandPlayCounts: postBossRun.letterHandPlayCounts ?? {},
+    lastLetterHand: postBossRun.lastLetterHand ?? null,
     discardedLetters: postBossRun.discardedLetters ?? [],
     discardedLetterCounts: postBossRun.discardedLetterCounts ?? {},
     blind: { ...afterBlind, projectedScore },

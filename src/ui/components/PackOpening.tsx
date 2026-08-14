@@ -52,6 +52,7 @@ import { CardArt } from './CardArt';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { unlockedEmojiSet } from '../emojiUnlocks';
+import { makeRng } from '../../engine/rng';
 
 const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
 
@@ -233,7 +234,7 @@ export function PackOpening({
   const [selectedFable, setSelectedFable] = useState<string | null>(null);
   const [tileFx, setTileFx] = useState<{
     key: string;
-    kind: 'material' | 'font' | 'rankUp' | 'destroy' | 'other';
+    kind: 'material' | 'font' | 'rankUp' | 'destroy' | 'edition' | 'other';
     tileIds: string[];
     preview: Map<string, Tile>;
   } | null>(null);
@@ -275,8 +276,8 @@ export function PackOpening({
     const off = packFableFxBus.on((event) => {
       const effectKind = FABLE_REGISTRY.get(event.id)?.effect.kind;
       const kind =
-        effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
-          ? effectKind
+        effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy' || effectKind === 'tileEdition'
+          ? effectKind === 'tileEdition' ? 'edition' : effectKind
           : 'other';
       const effectMs = motionOff() ? 120 : 900;
       const key = `held:${event.id}`;
@@ -289,7 +290,14 @@ export function PackOpening({
         preview: new Map(
           (pack.candidateTiles ?? [])
             .filter((tile) => event.tileIds.includes(tile.id))
-            .map((tile) => [tile.id, previewFableTile(event.id, tile)]),
+            .map((tile) => [
+              tile.id,
+              previewFableTile(
+                event.id,
+                tile,
+                makeRng(`${g.state.seed}#${g.state.rngCounter}`),
+              ),
+            ]),
         ),
       });
       timer = window.setTimeout(() => {
@@ -327,7 +335,7 @@ export function PackOpening({
   };
   const doTileEffectUse = (
     key: string,
-    kind: 'material' | 'font' | 'rankUp' | 'destroy' | 'other',
+    kind: 'material' | 'font' | 'rankUp' | 'destroy' | 'edition' | 'other',
     tileIds: string[],
     previewTile: (tile: Tile) => Tile,
     resolvePick: () => void,
@@ -371,14 +379,18 @@ export function PackOpening({
     const targetIds = fableTargetsTiles(fableId) ? tileIds : [];
     const effectKind = FABLE_REGISTRY.get(fableId)?.effect.kind;
     const kind =
-      effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy'
-        ? effectKind
+      effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy' || effectKind === 'tileEdition'
+        ? effectKind === 'tileEdition' ? 'edition' : effectKind
         : 'other';
     doTileEffectUse(
       key,
       kind,
       targetIds,
-      (tile) => previewFableTile(fableId, tile),
+      (tile) => previewFableTile(
+        fableId,
+        tile,
+        makeRng(`${g.state.seed}#${g.state.rngCounter}`),
+      ),
       resolvePick,
     );
   };

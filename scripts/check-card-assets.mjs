@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { PNG } from 'pngjs';
 
 const families = {
-  Fable: Array.from({ length: 18 }, (_, index) => `T_Fable${index + 1}`),
+  Fable: Array.from({ length: 20 }, (_, index) => `T_Fable${index + 1}`),
   Constellation: [
     'Aquarius', 'Aries', 'Cancer', 'Capricorn', 'Gemini', 'Leo',
     'Libra', 'Pisces', 'Sagittarius', 'Scorpio', 'Taurus', 'Virgo',
@@ -66,7 +66,7 @@ for (const file of packSvgFiles) {
   }
 }
 
-console.log('Card assets OK: 76 SVG masters + 76 runtime PNG derivatives');
+console.log('Card assets OK: 78 SVG masters + 78 runtime PNG derivatives');
 
 function readFileNames(directory, extension) {
   return readdirSync(directory).filter((file) => file.endsWith(extension));

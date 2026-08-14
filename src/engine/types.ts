@@ -229,7 +229,7 @@ export type ScoreEvent =
   | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
-  | { kind: 'letterHand'; hand: LetterHandId; chipsDelta: number; multDelta: number; multFactor: number }
+  | { kind: 'letterHand'; hand: LetterHandId; level: number; chipsDelta: number; multDelta: number; multFactor: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; retrigger?: boolean; growthKind?: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize'; growthDelta?: number; createdTileIds?: string[]; sourceTileId?: string }
   | { kind: 'tag'; tagId: SkipRewardId; chipsDelta: number; multDelta: number; scoreDelta?: number; tileId?: string; retrigger?: boolean }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
@@ -470,6 +470,11 @@ export interface RunState {
   playedLetterHands?: LetterHandId[];
   /** Times each Word Hand scored across the whole run. Optional for legacy saves. */
   letterHandPlayCounts?: Partial<Record<LetterHandId, number>>;
+  /** Current run-only Word Hand levels and unspent mastery stamps. */
+  letterHandLevels?: Partial<Record<LetterHandId, number>>;
+  letterHandStamps?: Partial<Record<LetterHandId, number>>;
+  /** Most recently scored Word Hand, used by The Crow and the Pitcher. */
+  lastLetterHand?: LetterHandId | null;
   /** Physical discard counts by letter across the run. Optional for legacy saves. */
   discardedLetterCounts?: Partial<Record<Letter, number>>;
   /** Boss rerolls spent this chapter; reset when the Deadline clears. */
@@ -566,6 +571,7 @@ export type ConsumableId =
   | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
   | 'fable7' | 'fable8' | 'fable9' | 'fable10' | 'fable11' | 'fable12'
   | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18'
+  | 'fable19' | 'fable20'
   // gambler cards (GDD §10.3)
   | 'barnSwallow' | 'boar' | 'bridge' | 'bushWarbler' | 'butterflies'
   | 'craneAndSun' | 'cuckoo' | 'curtain' | 'deer' | 'fullMoon'

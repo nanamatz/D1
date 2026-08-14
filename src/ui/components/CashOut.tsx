@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import type { BlindEarnings } from '../../engine/progression';
+import type { LetterHandId } from '../../engine/types';
 import { pouchDisablesInterest } from '../../engine/pouches';
 import { recordDisablesInterest } from '../../engine/records';
 import { useCountUp, useReveal } from '../useAnim';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
+import { isLetterHandDiscovered } from '../lifetime';
 import type { UseGame } from '../useGame';
 import { UiIcon } from './UiIcon';
 
@@ -28,7 +30,13 @@ function Coins({ n }: { n: number }) {
 }
 
 /** Cash Out — blind-end settlement, revealed line by line (spec §2.5, GDD §9.1). */
-export function CashOut({ g }: { g: UseGame }) {
+export function CashOut({
+  g,
+  discoveredLetterHands,
+}: {
+  g: UseGame;
+  discoveredLetterHands: ReadonlySet<LetterHandId>;
+}) {
   const { t } = useI18n();
   const e: BlindEarnings | null = g.state.cashout;
   if (!e) return null;
@@ -44,15 +52,16 @@ export function CashOut({ g }: { g: UseGame }) {
       : []),
     { key: noInterest ? 'cashout.noInterest' : 'cashout.interest', amount: e.interest },
   ];
+  const mastery = e.letterHandReward;
 
-  const shown = useReveal(lines.length);
+  const shown = useReveal(lines.length + (mastery ? 1 : 0));
   const total = useCountUp(shown >= lines.length ? e.total : 0, 500);
 
   // Each payout line lands with the rising coin voice used by real gold gains,
   // so the Fee Settlement presentation is audibly monetary too.
   const lastShown = useRef(0);
   useEffect(() => {
-    if (shown > lastShown.current) {
+    if (shown > lastShown.current && shown <= lines.length) {
       audio.play('coinGain', { step: (shown - 1) * 3 });
       lastShown.current = shown;
     }
@@ -77,6 +86,23 @@ export function CashOut({ g }: { g: UseGame }) {
               </span>
             </div>
           ))}
+          {mastery && (
+            <div className={['cashout-line', 'mastery', shown > lines.length && 'in'].filter(Boolean).join(' ')}>
+              <span className="desc">
+                {t(mastery.random ? 'cashout.wordHandStampsRandom' : 'cashout.wordHandStamps', {
+                  hand: isLetterHandDiscovered(mastery.hand, discoveredLetterHands)
+                    ? t(`letterhand.${mastery.hand}`)
+                    : '???',
+                })}
+              </span>
+              <span className="amt">
+                <b>{t('cashout.stampAmount', { n: mastery.stamps })}</b>
+                {mastery.toLevel > mastery.fromLevel && (
+                  <em>{t('cashout.levelUp', { from: mastery.fromLevel, to: mastery.toLevel })}</em>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         <button

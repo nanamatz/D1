@@ -62,7 +62,7 @@ function WordStamp() {
   if (!settle.active || !settle.stamp) return null;
   const label =
     settle.stamp.kind === 'letterHand'
-      ? t(`letterhand.${settle.stamp.label}`)
+      ? `Lv.${settle.stamp.level ?? 1} ${t(`letterhand.${settle.stamp.label}`)}`
       : settle.stamp.kind === 'wordLength'
         ? t(settle.stamp.label === '1' ? 'settle.wordLength.one' : 'settle.wordLength', { n: settle.stamp.label })
         : settle.stamp.kind === 'pouch'

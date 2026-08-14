@@ -14,6 +14,8 @@ import {
 } from './economy';
 import type { BlindKind, BlindState, RunState } from './types';
 import { defaultJokerBus } from './jokers';
+import { awardBlindLetterHandStamps, type LetterHandStampReward } from './letterHands';
+import { makeRng } from './rng';
 
 const KINDS = ['small', 'big', 'boss'] as const;
 
@@ -37,6 +39,7 @@ export interface BlindEarnings {
   discards: number;
   interest: number;
   total: number;
+  letterHandReward: LetterHandStampReward | null;
 }
 
 export interface BlindOutcome {
@@ -61,6 +64,7 @@ const NO_EARNINGS: BlindEarnings = {
   discards: 0,
   interest: 0,
   total: 0,
+  letterHandReward: null,
 };
 
 function advance(ante: number, blindIndex: 0 | 1 | 2): { ante: number; blindIndex: 0 | 1 | 2 } {
@@ -97,6 +101,11 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
   const interestGold = interestScoring.interest;
   defaultJokerBus.emit('interestResolved', { run, interest: interestGold }, run.jokers);
   const total = reward + phases + discards + interestGold;
+  const mastery = awardBlindLetterHandStamps(
+    run,
+    blind,
+    makeRng(`${run.seed}#word-hand-stamp-${run.ante}-${run.blindIndex}`),
+  );
   const won =
     !run.victorySecured && run.ante === BALANCE.runAntes && run.blindIndex === 2;
   const endlessComplete =
@@ -120,9 +129,10 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
       discards,
       interest: interestGold,
       total,
+      letterHandReward: mastery.reward,
     },
     run: {
-      ...run,
+      ...mastery.run,
       gold: run.gold + total,
       ante: next.ante,
       blindIndex: next.blindIndex,

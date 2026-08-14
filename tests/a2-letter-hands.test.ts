@@ -123,7 +123,7 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     expect(submission.isGibberish).toBe(false);
     expect(submission.settledScore).toBe(225);
     expect(events).toContainEqual({
-      kind: 'letterHand', hand: 'twin', chipsDelta: 15, multDelta: 0, multFactor: 1,
+      kind: 'letterHand', hand: 'twin', level: 1, chipsDelta: 15, multDelta: 0, multFactor: 1,
     });
     expect(letterHandPlayCounts.twin).toBe(3);
   });
@@ -155,7 +155,20 @@ describe('A-2 letter hands — folded into word settlement (loop.ts)', () => {
     expect(submission.posUsed).toBeNull();
     expect(submission.settledScore).toBe(660);
     expect(events).toContainEqual({
-      kind: 'letterHand', hand: 'straight', chipsDelta: 90, multDelta: 4, multFactor: 5,
+      kind: 'letterHand', hand: 'straight', level: 1, chipsDelta: 90, multDelta: 4, multFactor: 5,
+    });
+  });
+
+  it('uses the current Word Hand level for Chips and Mult', () => {
+    const lex = makeLexicon(['book'], {});
+    const { run, blind } = handOf(['B', 'O', 'O', 'K']);
+    run.letterHandLevels = { ...run.letterHandLevels, twin: 4 };
+    const ids = blind.hand.slice(0, 4).map((t) => t.id);
+    const { submission, events } = submitWord(blind, run, lex, ids, makeRng('leveled-twin'));
+
+    expect(submission.settledScore).toBe(600);
+    expect(events).toContainEqual({
+      kind: 'letterHand', hand: 'twin', level: 4, chipsDelta: 30, multDelta: 5, multFactor: 2,
     });
   });
 });

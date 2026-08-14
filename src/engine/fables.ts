@@ -20,21 +20,25 @@ import type {
   Letter,
   RunState,
   Tile,
+  TileEdition,
   TileMaterial,
 } from './types';
 import { canAddJoker } from './vouchers';
 import type { Rng } from './rng';
 import { setTileMaterial } from './materials';
+import { addLetterHandStamps } from './letterHands';
 
 export type FableId =
   | 'fable1' | 'fable2' | 'fable3' | 'fable4' | 'fable5' | 'fable6'
   | 'fable7' | 'fable8' | 'fable9' | 'fable10' | 'fable11' | 'fable12'
-  | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18';
+  | 'fable13' | 'fable14' | 'fable15' | 'fable16' | 'fable17' | 'fable18'
+  | 'fable19' | 'fable20';
 
 export const FABLE_IDS: readonly FableId[] = [
   'fable1', 'fable2', 'fable3', 'fable4', 'fable5', 'fable6',
   'fable7', 'fable8', 'fable9', 'fable10', 'fable11', 'fable12',
   'fable13', 'fable14', 'fable15', 'fable16', 'fable17', 'fable18',
+  'fable19', 'fable20',
 ];
 
 export const isFableId = (id: ConsumableId): id is FableId =>
@@ -51,7 +55,9 @@ type FableEffect =
   | { kind: 'editionJoker' }
   | { kind: 'rankUp'; count: number }
   | { kind: 'jokerSellGold' }
-  | { kind: 'destroy'; max: number };
+  | { kind: 'destroy'; max: number }
+  | { kind: 'wordHandStamps'; count: number }
+  | { kind: 'tileEdition' };
 
 export interface FableDef {
   id: FableId;
@@ -79,6 +85,8 @@ export const FABLE_DEFS: readonly FableDef[] = [
   { id: 'fable16', number: 16, effect: { kind: 'rankUp', count: 2 } },
   { id: 'fable17', number: 17, effect: { kind: 'jokerSellGold' } },
   { id: 'fable18', number: 18, effect: { kind: 'destroy', max: 2 } },
+  { id: 'fable19', number: 19, effect: { kind: 'wordHandStamps', count: BALANCE.fables.crowWordHandStamps } },
+  { id: 'fable20', number: 20, effect: { kind: 'tileEdition' } },
 ];
 
 export const FABLE_REGISTRY: ReadonlyMap<FableId, FableDef> = new Map(
@@ -109,7 +117,7 @@ export function isBlindOnlyConsumable(id: ConsumableId): boolean {
 export function fableTargetsTiles(id: ConsumableId): boolean {
   if (!isFableId(id)) return false;
   const kind = FABLE_REGISTRY.get(id)?.effect.kind;
-  return kind === 'material' || kind === 'rankUp' || kind === 'destroy';
+  return kind === 'material' || kind === 'rankUp' || kind === 'destroy' || kind === 'tileEdition';
 }
 
 /** How many tiles the player must pick for a tile-targeting Fable. */
@@ -117,8 +125,17 @@ export function fablePickCount(id: FableId): { min: number; max: number } {
   const effect = FABLE_REGISTRY.get(id)?.effect;
   if (effect?.kind === 'material' || effect?.kind === 'rankUp') return { min: 1, max: effect.count };
   if (effect?.kind === 'destroy') return { min: 1, max: effect.max };
+  if (effect?.kind === 'tileEdition') return { min: 1, max: 1 };
   return { min: 0, max: 0 };
 }
+
+const rollFableTileEdition = (rng: Pick<Rng, 'next'>): TileEdition => {
+  const weights = BALANCE.fables.lionSkinEditionWeights;
+  const roll = rng.next();
+  return roll < weights.gray
+    ? 'gray'
+    : roll < weights.gray + weights.violet ? 'violet' : 'rainbow';
+};
 
 /** Live payout shared by The Heavenly Maiden and the Woodcutter's tooltip and
  * effect resolution, so the displayed amount can never drift from the award. */
@@ -148,6 +165,7 @@ export function useFableOnPouch(
   id: FableId,
   run: RunState,
   tileIds: readonly string[],
+  rng: Pick<Rng, 'next'>,
 ): { ok: boolean; run: RunState } {
   const effect = FABLE_REGISTRY.get(id)?.effect;
   if (!effect || !canUseFableOnPouch(id, run, tileIds)) return { ok: false, run };
@@ -191,6 +209,11 @@ export function useFableOnPouch(
     const result = commit(run.bag.filter((t) => !ids.has(t.id)));
     return { ...result, run: onTilesDestroyed(result.run, ids.size) };
   }
+  if (effect.kind === 'tileEdition') {
+    const edition = rollFableTileEdition(rng);
+    const result = commit(run.bag.map((tile) => ids.has(tile.id) ? { ...tile, edition } : tile));
+    return { ...result, run: onTilesEnhanced(result.run, ids.size) };
+  }
   return { ok: false, run };
 }
 
@@ -213,6 +236,9 @@ export function canUseFableOnPouch(
   if (effect.kind === 'rankUp') {
     return tileIds.length >= 1 && tileIds.length <= effect.count &&
       targets.every((tile) => tile.letter !== null);
+  }
+  if (effect.kind === 'tileEdition') {
+    return tileIds.length === 1 && (targets[0]!.edition ?? 'base') === 'base';
   }
   return effect.kind === 'destroy' && tileIds.length >= 1 && tileIds.length <= effect.max;
 }
@@ -237,6 +263,9 @@ export function canUseFable(
       selected.every((tile) => tile.letter !== null);
   }
   if (effect.kind === 'destroy') return selected.length >= 1 && selected.length <= effect.max;
+  if (effect.kind === 'tileEdition') {
+    return selected.length === 1 && (selected[0]!.edition ?? 'base') === 'base';
+  }
   if (effect.kind === 'copyLast') {
     return (run.lastFableOrConstellation ?? null) !== null &&
       run.consumables.length <= run.consumableSlots;
@@ -255,6 +284,7 @@ export function canUseFable(
   if (effect.kind === 'editionJoker') {
     return run.jokers.some((joker) => (joker.edition ?? 'base') === 'base');
   }
+  if (effect.kind === 'wordHandStamps') return (run.lastLetterHand ?? null) !== null;
   return true;
 }
 
@@ -317,7 +347,7 @@ const nextLetter = (letter: Letter): Letter =>
   String.fromCharCode(letter === 'Z' ? 65 : letter.charCodeAt(0) + 1) as Letter;
 
 /** Presentation preview for a tile-targeting Fable before the mutation commits. */
-export function previewFableTile(id: FableId, tile: Tile): Tile {
+export function previewFableTile(id: FableId, tile: Tile, rng?: Pick<Rng, 'next'>): Tile {
   const effect = FABLE_REGISTRY.get(id)?.effect;
   if (effect?.kind === 'material') return setTileMaterial(tile, effect.material);
   if (effect?.kind === 'rankUp' && tile.letter !== null) {
@@ -328,6 +358,9 @@ export function previewFableTile(id: FableId, tile: Tile): Tile {
         ? { letterBeforeStone: nextLetter(tile.letterBeforeStone) }
         : {}),
     };
+  }
+  if (effect?.kind === 'tileEdition' && rng) {
+    return { ...tile, edition: rollFableTileEdition(rng) };
   }
   return tile;
 }
@@ -451,6 +484,18 @@ export function useFable(
   } else if (effect.kind === 'destroy') {
     ({ run: nextRun, blind: nextBlind } = removeIds(nextRun, nextBlind, new Set(selectedIds)));
     nextRun = onTilesDestroyed(nextRun, selectedIds.length);
+  } else if (effect.kind === 'wordHandStamps') {
+    nextRun = addLetterHandStamps(nextRun, run.lastLetterHand!, effect.count).run;
+  } else if (effect.kind === 'tileEdition') {
+    const ids = new Set(selectedIds);
+    const edition = rollFableTileEdition(rng);
+    ({ run: nextRun, blind: nextBlind } = patchTiles(
+      nextRun,
+      nextBlind,
+      ids,
+      (tile) => ({ ...tile, edition }),
+    ));
+    nextRun = onTilesEnhanced(nextRun, selectedIds.length);
   }
 
   return { ok: true, run: nextRun, blind: nextBlind, requestHint, chanceResults };

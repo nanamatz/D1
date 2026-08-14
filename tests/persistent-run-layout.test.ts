@@ -48,7 +48,7 @@ describe('persistent Balatro-style run table', () => {
   });
 
   it('centres viewport overlays outside the persistent rail and zoomed board', () => {
-    expect(runView).toContain('{settling && <CashOut g={g} />}');
+    expect(runView).toContain('{settling && <CashOut g={g} discoveredLetterHands={discoveredLetterHands} />}');
     expect(runView).toContain('createPortal((');
     expect(runView).toContain('Viewport-centred overlays live outside `.frame`');
     expect(screenCss).toMatch(/\.overlay\.cashout-overlay\s*\{[^}]*position:\s*fixed/s);

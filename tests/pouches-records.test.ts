@@ -49,6 +49,7 @@ describe('starting pouches', () => {
       discards: 2,
       interest: 0,
       total: 9,
+      letterHandReward: expect.objectContaining({ stamps: 1, random: true }),
     });
   });
 

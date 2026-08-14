@@ -60,7 +60,7 @@ function StatusLine({
   if (preview.isGibberish) {
     const lh = preview.letterHand
       ? ` · ${isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)
-          ? t(`letterhand.${preview.letterHand.id}`)
+          ? `Lv.${preview.letterHand.level} ${t(`letterhand.${preview.letterHand.id}`)}`
           : '???'}`
       : '';
     return (
@@ -73,7 +73,7 @@ function StatusLine({
   const suit = preview.suit ?? 'standard';
   const label = preview.letterHand
     ? isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)
-      ? t(`letterhand.${preview.letterHand.id}`)
+      ? `Lv.${preview.letterHand.level} ${t(`letterhand.${preview.letterHand.id}`)}`
       : '???'
     : t(`suit.${suit}`);
   return (

@@ -8,6 +8,7 @@ import {
   canUseUnheldFable,
   fablePickCount,
   fableTargetsTiles,
+  previewFableTile,
   useFable,
   useFableOnPouch,
 } from '../src/engine/fables';
@@ -35,10 +36,10 @@ function setup(id: (typeof FABLE_IDS)[number]): { run: RunState; blind: BlindSta
 }
 
 describe('Fable registry', () => {
-  it('contains all 18 ordered cards', () => {
-    expect(FABLE_DEFS).toHaveLength(18);
+  it('contains all 20 ordered cards', () => {
+    expect(FABLE_DEFS).toHaveLength(20);
     expect(FABLE_DEFS.map((def) => def.number)).toEqual(
-      Array.from({ length: 18 }, (_, index) => index + 1),
+      Array.from({ length: 20 }, (_, index) => index + 1),
     );
   });
 
@@ -278,7 +279,7 @@ describe('Fable registry', () => {
     expect(fableTargetsTiles('fable6')).toBe(true);
     expect(fablePickCount('fable6')).toEqual({ min: 1, max: 2 });
     const ids = run.bag.slice(0, 2).map((t) => t.id);
-    const { ok, run: after } = useFableOnPouch('fable6', run, ids);
+    const { ok, run: after } = useFableOnPouch('fable6', run, ids, zeroRng);
     expect(ok).toBe(true);
     expect(after.bag.filter((t) => ids.includes(t.id)).every((t) => t.material === 'polished')).toBe(true);
     expect(after.consumables).toEqual([]); // the card was consumed
@@ -301,7 +302,7 @@ describe('Fable registry', () => {
   it('accepts one pouch target when the listed maximum is two', () => {
     const run = { ...newRun('pouch2'), consumables: ['fable6' as const] };
     const one = run.bag.slice(0, 1).map((t) => t.id);
-    expect(useFableOnPouch('fable6', run, one).ok).toBe(true);
+    expect(useFableOnPouch('fable6', run, one, zeroRng).ok).toBe(true);
   });
 
   it('destroys up to two selected tiles from the live blind and permanent pouch', () => {
@@ -310,5 +311,50 @@ describe('Fable registry', () => {
     const result = useFable('fable18', run, blind, ids, zeroRng);
     expect(result.run.bag.some((tile) => ids.includes(tile.id))).toBe(false);
     expect(result.blind.hand.some((tile) => ids.includes(tile.id))).toBe(false);
+  });
+
+  it('adds two stamps to the most recently played Word Hand', () => {
+    const { run, blind } = setup('fable19');
+    expect(canUseFable('fable19', run, blind, [])).toBe(false);
+    const prepared = {
+      ...run,
+      lastLetterHand: 'twin' as const,
+      letterHandLevels: { ...run.letterHandLevels, twin: 6 },
+      letterHandStamps: { ...run.letterHandStamps, twin: 1 },
+    };
+    const result = useFable('fable19', prepared, blind, [], zeroRng);
+    expect(result.ok).toBe(true);
+    expect(result.run.letterHandLevels?.twin).toBe(7);
+    expect(result.run.letterHandStamps?.twin).toBe(0);
+  });
+
+  it('gives one selected Base letter tile a seeded random edition', () => {
+    const { run, blind } = setup('fable20');
+    const target = blind.hand[0]!;
+    expect(fableTargetsTiles('fable20')).toBe(true);
+    expect(fablePickCount('fable20')).toEqual({ min: 1, max: 1 });
+    expect(canUseFable('fable20', run, blind, [target.id])).toBe(true);
+
+    const preview = previewFableTile('fable20', target, highRng);
+    const result = useFable('fable20', run, blind, [target.id], highRng);
+    const enhanced = result.blind.hand.find((tile) => tile.id === target.id)!;
+    expect(enhanced.edition).toBe('rainbow');
+    expect(enhanced.edition).toBe(preview.edition);
+    expect(enhanced.material).toBe(target.material);
+    expect(enhanced.font).toBe(target.font);
+
+    const pouchRun = { ...newRun('lion-skin-pouch'), consumables: ['fable20' as const] };
+    const pouchTarget = pouchRun.bag[0]!;
+    const pouchResult = useFableOnPouch('fable20', pouchRun, [pouchTarget.id], highRng);
+    expect(pouchResult.ok).toBe(true);
+    expect(pouchResult.run.bag.find((tile) => tile.id === pouchTarget.id)?.edition).toBe('rainbow');
+
+    const editionedBlind = {
+      ...blind,
+      hand: blind.hand.map((tile) => tile.id === target.id
+        ? { ...tile, edition: 'gray' as const }
+        : tile),
+    };
+    expect(canUseFable('fable20', run, editionedBlind, [target.id])).toBe(false);
   });
 });

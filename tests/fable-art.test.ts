@@ -8,7 +8,7 @@ import { FABLE_ART } from '../src/ui/fableArt';
 import { CardArt } from '../src/ui/components/CardArt';
 
 describe('Fable card art', () => {
-  it('keeps normalized SVG masters and maps all 18 runtime PNG derivatives', () => {
+  it('keeps normalized SVG masters and maps all 20 runtime PNG derivatives', () => {
     expect(Object.keys(FABLE_ART)).toEqual([...FABLE_IDS]);
     for (let number = 1; number <= FABLE_IDS.length; number += 1) {
       const source = fileURLToPath(

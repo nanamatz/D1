@@ -34,7 +34,8 @@ describe('latest feedback regressions', () => {
   });
 
   it('shows Fable target application VFX and waits 0.5 seconds after completion', () => {
-    expect(pack).toContain('previewFableTile(fableId, tile)');
+    expect(pack).toContain('previewFableTile(');
+    expect(pack).toContain('makeRng(`${g.state.seed}#${g.state.rngCounter}`)');
     expect(pack).toContain('window.setTimeout(() => {');
     expect(pack).toContain('}, 500);');
     expect(play).toContain('.fable-effect-target');

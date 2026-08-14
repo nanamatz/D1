@@ -276,7 +276,7 @@ surface. The developer-only Primordial image uses the same resolver but never ap
 | **Editions** | Base / Gray / White / Rainbow / Violet | five runtime-size Emoji Tile samples in one unbroken horizontal row using the live edition overlays; the horizontal-scroll layer is separate from the overflow-visible card layer so lifted/tilted card tops are never clipped; narrow viewports scroll horizontally instead of wrapping; each tooltip names the edition and its effect; White remains Emoji-Tile-only per GDD §11.8 |
 | Vouchers | 32 tickets | 16 base/upgraded pairs; four pairs per page; locked upgrades show only “Undiscovered” and the unseeded-run discovery hint — no name, effect, condition, or progress |
 | **Tags** | all 30 Editorial Perks | two-page 5×3 pixel-icon gallery (15 per page); every effect-specific image uses the same idle/cursor tilt and shared tooltip as Blind Select; Tags are a complete rules reference and have no discovery lock |
-| **Fable Cards** | 18 implemented cards | supplied pixel art keeps a path-only SVG master and uses its pixel-identical `500×700` PNG runtime derivative in a 5-column, 10-per-page gallery; hover shows the full effect |
+| **Fable Cards** | 19 implemented cards | supplied pixel art keeps a path-only SVG master and uses its pixel-identical `500×700` PNG runtime derivative in a 5-column, 10-per-page gallery; hover shows the full effect |
 | **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; hover shows the mapped sentence pattern |
 | **Gambler Cards** | 14 implemented cards | supplied artwork uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; every card uses its live runtime tooltip |
 | Card Packs | Tile 8 · Charm 4 · Fable 8 · Constellation 8 · Ink 4 | four-page image-only gallery: Tile, combined Charm + Ink, Fable, Constellation; every page contains eight cards and therefore shares the same two-row height; all 32 supplied artworks keep a shared `244×400` path-only SVG master and use its pixel-identical PNG runtime derivative plus the common idle and cursor tilt/sheen, with no persistent type/grade/coming-soon labels; hover or keyboard focus restores the shared type/description/grade tooltip |
@@ -285,7 +285,7 @@ surface. The developer-only Primordial image uses the same resolver but never ap
 | **Starting Pouches** | 14 object-art entries from GDD §12.2 | one-at-a-time circular `arrow | panel | arrow` carousel with art left, enlarged bold localized effect right, 14 position dots below, and the shared orange Back footer; signed/count values and voucher names use semantic highlight colours; unlocked = full art/effect with no unlock copy; locked = silhouette + generated arcade-pixel lock sprite + exact unlock condition only; the tooltip retains the actual name/effect (changed 2026-08-12) |
 | **Blinds** | left: Chapter → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Draft/Revision badges + 21 boss chips (undiscovered = `?`) | doubles as the player-facing target-curve reference; boss cards retain their tooltip and use shared cursor tilt/sheen |
 
-Fable reports `18/18`, Constellation reports `12/12`, and Gambler reports `14/14`
+Fable reports `20/20`, Constellation reports `12/12`, and Gambler reports `14/14`
 supplied artworks. All fourteen Gambler effects and their Ink Pack,
 Comic-Book-gated Fable mixing, and Deer-in-Constellation routes ship per GDD
 §10.3.

@@ -1202,8 +1202,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       let run: RunState;
       let blind = prev.blind;
       let chanceResults: ChanceResult[] = [];
+      const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       if (fableTargetsTiles(id)) {
-        const result = useFableOnPouch(id, stagedRun, tileIds);
+        const result = useFableOnPouch(id, stagedRun, tileIds, rng);
         if (!result.ok) return prev;
         run = result.run;
       } else {
@@ -1212,7 +1213,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           stagedRun,
           prev.blind,
           [],
-          makeRng(`${prev.seed}#${prev.rngCounter}`),
+          rng,
           unlockedEmojiSet(),
         );
         if (!result.ok) return prev;
@@ -1342,7 +1343,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             ) {
               return prev;
             }
-            const result = useFableOnPouch(id, prev.run, tileIds);
+            const result = useFableOnPouch(
+              id,
+              prev.run,
+              tileIds,
+              makeRng(`${prev.seed}#${prev.rngCounter}`),
+            );
             if (!result.ok) return prev;
             const candidateTiles = syncCandidates(prev.pack.candidateTiles, result.run);
             audio.play('consumableUse');
@@ -1633,6 +1639,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         playedWords,
         playedLetterHands,
         letterHandPlayCounts,
+        lastLetterHand,
         discardedLetters,
         discardedLetterCounts,
       } = result;
@@ -1678,6 +1685,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         playedWords,
         playedLetterHands,
         letterHandPlayCounts,
+        lastLetterHand,
         discardedLetters,
         discardedLetterCounts,
         gold: Math.max(0, prev.run.gold + goldDelta),

@@ -368,7 +368,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {/* Viewport-centred overlays live outside `.frame`: the persistent board
           owns a left rail and may carry a filter/zoom containing block, neither
           of which should offset a modal from the physical screen centre. */}
-      {settling && <CashOut g={g} />}
+      {settling && <CashOut g={g} discoveredLetterHands={discoveredLetterHands} />}
       {/* D-3 · ambient desk objects in the viewport margins — cosmetic, only while
           actively playing (not during the guided intro or a pause menu). */}
       <DeskObjects active={phase === 'playing' && !introOpen && !paused} />

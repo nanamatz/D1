@@ -45,7 +45,7 @@ export interface StagePreview {
   /** POS of the staged word (item 6) — its tagged set, shown before submitting */
   pos: string | null;
   /** the Word Hand this word matches (A-2), if any */
-  letterHand: { id: LetterHandId; chips: number; mult: number } | null;
+  letterHand: { id: LetterHandId; level: number; chips: number; mult: number } | null;
   /** true if the active boss forbids this word (The Noun Lock) */
   blocked: boolean;
   /** true if the active boss accepts this word but reduces its score to 0 */
@@ -76,7 +76,7 @@ export function stagePreview(
     (boss?.debuffs?.(hypothetical, { run, blind, lexicon }, blind.sequence) ?? false) ||
     (boss?.voids?.(hypothetical, blind.sequence) ?? false);
   const letters = letterString(tiles);
-  const letterHand = evaluateLetterHand(letters, base.isGibberish);
+  const letterHand = evaluateLetterHand(letters, base.isGibberish, letters.length, run.letterHandLevels);
   return {
     text: base.text,
     isGibberish: base.isGibberish,
@@ -84,7 +84,9 @@ export function stagePreview(
     chips: base.chips,
     suitMult: base.mult,
     pos: base.isGibberish ? null : posLabel(hypothetical, lexicon, t),
-    letterHand: letterHand ? { id: letterHand.id, chips: letterHand.chips, mult: letterHand.mult } : null,
+    letterHand: letterHand
+      ? { id: letterHand.id, level: letterHand.level, chips: letterHand.chips, mult: letterHand.mult }
+      : null,
     blocked,
     debuffed,
   };

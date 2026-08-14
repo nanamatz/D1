@@ -19,6 +19,7 @@ import type {
   RecordId,
   RunState,
   ScalingCounters,
+  LetterHandId,
 } from './types';
 
 function freshPatternLevels(): Record<PatternId, number> {
@@ -31,6 +32,12 @@ function freshPatternCounts(): Record<PatternId, number> {
   const counts = {} as Record<PatternId, number>;
   for (const id of Object.keys(BALANCE.patterns) as PatternId[]) counts[id] = 0;
   return counts;
+}
+
+function freshLetterHandValues(value: number): Record<LetterHandId, number> {
+  return Object.fromEntries(
+    (Object.keys(BALANCE.letterHands) as LetterHandId[]).map((id) => [id, value]),
+  ) as Record<LetterHandId, number>;
 }
 
 function freshCounters(): ScalingCounters {
@@ -93,6 +100,9 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     playedWords: [],
     playedLetterHands: [],
     letterHandPlayCounts: {},
+    letterHandLevels: freshLetterHandValues(1),
+    letterHandStamps: freshLetterHandValues(0),
+    lastLetterHand: null,
     discardedLetters: [],
     discardedLetterCounts: {},
     bossRerollsUsed: 0,
