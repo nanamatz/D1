@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { isRecordUnlocked } from '../src/engine/records';
 import {
+  JOKER_RECORD_STICKER_TOTAL,
+  jokerRecordStickerCount,
   loadLifetime,
   recordBestRoundScore,
   recordRunEnd,
@@ -63,6 +65,41 @@ describe('pouch and Record profile progress', () => {
     });
   });
 
+  it('keeps each owned Emoji Tile\'s highest cleared Record sticker', () => {
+    recordRunEnd({
+      ante: 8,
+      gold: 20,
+      bestWord: null,
+      won: true,
+      recordId: 'whiteLp',
+      jokerIds: ['bookworm', 'bookworm', 'notAProductionJoker'],
+    });
+    recordRunEnd({
+      ante: 8,
+      gold: 30,
+      bestWord: null,
+      won: true,
+      recordId: 'greenLp',
+      jokerIds: ['bookworm', 'alliterationSticker'],
+    });
+    recordRunEnd({
+      ante: 8,
+      gold: 40,
+      bestWord: null,
+      won: true,
+      recordId: 'redLp',
+      jokerIds: ['bookworm'],
+    });
+
+    const lifetime = loadLifetime();
+    expect(lifetime.jokerRecordStickers).toEqual({
+      bookworm: 'greenLp',
+      alliterationSticker: 'greenLp',
+    });
+    expect(jokerRecordStickerCount(lifetime)).toBe(6);
+    expect(JOKER_RECORD_STICKER_TOTAL).toBe(1_200);
+  });
+
   it('does not grant unlock progress for losses or custom-seed wins', () => {
     recordRunEnd({
       ante: 3,
@@ -72,6 +109,7 @@ describe('pouch and Record profile progress', () => {
       pouchId: 'blue',
       recordId: 'redLp',
       customSeed: false,
+      jokerIds: ['bookworm'],
     });
     recordRunEnd({
       ante: 8,
@@ -81,10 +119,12 @@ describe('pouch and Record profile progress', () => {
       pouchId: 'blue',
       recordId: 'redLp',
       customSeed: true,
+      jokerIds: ['alliterationSticker'],
     });
     expect(loadLifetime().pouchWins).toEqual([]);
     expect(loadLifetime().recordWins).toEqual([]);
     expect(loadLifetime().recordWinsByPouch).toEqual({});
+    expect(loadLifetime().jokerRecordStickers).toEqual({});
     expect(loadLifetime().wins).toBe(1);
     expect(loadLifetime().balance).toEqual({
       version: 1,
@@ -103,6 +143,7 @@ describe('pouch and Record profile progress', () => {
       pouchWins: [],
       recordWins: [],
       recordWinsByPouch: {},
+      jokerRecordStickers: {},
       balance: { version: 1, runs: 0, wins: 0, lossesByChapter: {} },
     });
   });
@@ -159,5 +200,17 @@ describe('pouch and Record profile progress', () => {
       wins: 2,
       lossesByChapter: { '2': 3 },
     });
+  });
+
+  it('drops stale Emoji Tile ids and invalid Record stickers from storage', () => {
+    localStorage.setItem('wj.lifetime', JSON.stringify({
+      jokerRecordStickers: {
+        bookworm: 'dvd',
+        retiredTile: 'dvd',
+        alliterationSticker: 'cassette',
+      },
+    }));
+
+    expect(loadLifetime().jokerRecordStickers).toEqual({ bookworm: 'dvd' });
   });
 });

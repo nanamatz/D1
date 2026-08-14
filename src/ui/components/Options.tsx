@@ -4,7 +4,12 @@ import type { Lexicon } from '../../engine/lexicon';
 import { collectionSize } from '../collection';
 import { POUCH_IDS } from '../../engine/pouches';
 import { RECORD_IDS } from '../../engine/records';
-import { loadLifetime, recordWinCount } from '../lifetime';
+import {
+  JOKER_RECORD_STICKER_TOTAL,
+  jokerRecordStickerCount,
+  loadLifetime,
+  recordWinCount,
+} from '../lifetime';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
 import { useI18n } from '../i18n';
@@ -276,6 +281,10 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
           <Stat
             k={t('stats.recordWins')}
             v={`${recordWinCount(lt)}/${POUCH_IDS.length * RECORD_IDS.length}`}
+          />
+          <Stat
+            k={t('stats.jokerRecordStickers')}
+            v={`${jokerRecordStickerCount(lt)}/${JOKER_RECORD_STICKER_TOTAL}`}
           />
         </div>
       </div>

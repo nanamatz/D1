@@ -4,6 +4,7 @@ import { KNOWLEDGE_LETTER_HAND_IDS } from '../src/engine/letterHands';
 import { makeLexicon } from '../src/engine/lexicon';
 import { POUCH_IDS } from '../src/engine/pouches';
 import { RECORD_IDS } from '../src/engine/records';
+import { ALL_JOKERS } from '../src/engine/jokers';
 import { collectionSize } from '../src/ui/collection';
 import {
   discoverLetterHand,
@@ -121,6 +122,9 @@ describe('profile-scoped unlock all', () => {
     expect(loadLifetime(1).recordWinsByPouch).toEqual(
       Object.fromEntries(POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]])),
     );
+    expect(loadLifetime(1).jokerRecordStickers).toEqual(
+      Object.fromEntries(ALL_JOKERS.map((joker) => [joker.id, 'dvd'])),
+    );
     expect(loadLifetime(1).discoveredLetterHands).toEqual([...KNOWLEDGE_LETTER_HAND_IDS]);
     expect(loadLifetime(1).unlockAllApplied).toBe(true);
     expect(loadLifetime(1).challengesDisabled).toBe(true);
@@ -134,6 +138,7 @@ describe('profile-scoped unlock all', () => {
       pouchWins: [],
       recordWins: [],
       recordWinsByPouch: {},
+      jokerRecordStickers: {},
       unlockAllWarned: false,
       unlockAllApplied: false,
       challengesDisabled: false,

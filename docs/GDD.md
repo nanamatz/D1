@@ -1559,6 +1559,20 @@ transparent RGBA selection canvas used by the Pouch family.
 - DVD matches the CD's physical size but uses a clearly different iridescent
   rainbow surface pattern.
 
+**Emoji Tile Record stickers (added 2026-08-14).** Clearing the Chapter 8
+Deadline in an ordinary unseeded run stamps every production Emoji Tile still
+owned after blind-end hooks resolve with the selected Record. A disabled tile
+still qualifies; one destroyed or sold before that snapshot does not. Copies
+collapse to their shared definition id. The profile stores only the highest
+Record per Emoji Tile, and a higher sticker counts every lower cumulative tier.
+Collection -> Emoji Tiles renders that Record's existing art as a small
+upper-right sticker and explains the exact Record in the shared tooltip. The
+The Statistics total is therefore `150 Emoji Tiles × 8 Records = 1,200`.
+Stickers are profile-scoped mastery marks with no gameplay effect, never enter
+`RunState`, and custom-seed or post-victory Endless play cannot award them.
+Profile Reveal All fills the current production roster with DVD stickers while
+disabling Challenges through its existing rule.
+
 ### 12.4 Open Questions & Next Steps
 
 **Resolved since v0.1:** sentence pattern table (→ §5) · in-phase loop (→ §6) ·
@@ -1625,7 +1639,8 @@ change. Both paths still pass through the SOUND-gated SFX bus.
 override. The first press changes no unlock or discovery state and only persists
 that the selected profile saw the warning. A later press fills that profile's
 word Collection, Palette/audio/mascot registry, Starting Pouch wins, Record wins,
-and upgraded-voucher registry, and marks Challenges disabled for that profile.
+Emoji Tile Record stickers, and upgraded-voucher registry, and marks Challenges
+disabled for that profile.
 The word Collection uses the per-profile applied marker to present every
 dictionary entry as discovered; it does not fabricate 50,000 play-count or score
 records.

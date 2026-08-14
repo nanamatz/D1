@@ -39,6 +39,7 @@ import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { pouchArt } from '../pouchArt';
 import { loadLifetime } from '../lifetime';
+import { recordArt } from '../recordArt';
 import {
   isWordCollectionComplete,
   pouchUnlockWordCount,
@@ -518,6 +519,7 @@ function JokersView() {
   const { t, lang } = useI18n();
   const { page, pages, visible, setPage } = usePaged(ALL_JOKERS, JOKERS_PER_PAGE);
   const progress = loadEmojiUnlockProgress();
+  const stickers = loadLifetime().jokerRecordStickers;
 
   return (
     <>
@@ -525,6 +527,7 @@ function JokersView() {
         {visible.map((def) => {
           const art = jokerArt(def.id);
           const unlocked = isEmojiUnlocked(def.id, progress);
+          const sticker = stickers[def.id];
           return (
             <Tooltip
               key={def.id}
@@ -535,6 +538,13 @@ function JokersView() {
                 ? t(jokerDescKey(def.id))
                 : t('collection.joker.undiscoveredHint')}
               extra={unlocked ? grownValue(def, undefined, t) : null}
+              sub={unlocked && sticker ? {
+                title: t('collection.joker.recordSticker'),
+                body: t('collection.joker.recordStickerDesc', {
+                  record: t(`record.${sticker}.name`),
+                }),
+                kind: 'other',
+              } : undefined}
               {...(unlocked ? { rarity: def.rarity } : {})}
               down
             >
@@ -544,6 +554,14 @@ function JokersView() {
                 tabIndex={0}
               >
                 {art && <img className="cc-joker-art" src={art} alt="" />}
+                {unlocked && sticker && (
+                  <img
+                    className="joker-record-sticker"
+                    src={recordArt(sticker)}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                )}
                 {!unlocked && <span className="emoji-tile-lock" aria-hidden="true" />}
               </TiltCard>
             </Tooltip>

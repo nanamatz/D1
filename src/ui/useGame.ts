@@ -561,6 +561,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           pouchId: state.run.pouchId,
           recordId: state.run.recordId,
           customSeed: state.run.customSeed,
+          jokerIds: state.run.jokers
+            .filter((joker) => joker.state.destroyed !== 1)
+            .map((joker) => joker.defId),
         });
       }
     }
@@ -570,6 +573,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     state.run.pouchId,
     state.run.recordId,
     state.run.customSeed,
+    state.run.jokers,
     state.stats.bestWord,
     state.endlessBestScore,
   ]);

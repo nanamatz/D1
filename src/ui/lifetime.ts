@@ -13,6 +13,7 @@ import {
 } from './storage';
 import { POUCH_IDS } from '../engine/pouches';
 import { RECORD_IDS } from '../engine/records';
+import { ALL_JOKERS } from '../engine/jokers';
 import { KNOWLEDGE_LETTER_HAND_IDS, isKnowledgeLetterHand } from '../engine/letterHands';
 import type { LetterHandId, PouchId, RecordId } from '../engine/types';
 import { wordLetterChips } from '../engine/scoring';
@@ -42,6 +43,8 @@ export interface Lifetime {
   recordWins: RecordId[];
   /** Record ladder progress is independent for every Starting Pouch. */
   recordWinsByPouch: Partial<Record<PouchId, RecordId[]>>;
+  /** Highest Record cleared while each production Emoji Tile remained owned. */
+  jokerRecordStickers: Partial<Record<string, RecordId>>;
   balance: BalanceTelemetry;
 }
 
@@ -72,6 +75,7 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   pouchWins: [],
   recordWins: [],
   recordWinsByPouch: {},
+  jokerRecordStickers: {},
   balance: {
     version: 1,
     runs: 0,
@@ -82,6 +86,8 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
 
 const safeCount = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+
+const productionJokerIds = new Set(ALL_JOKERS.map((joker) => joker.id));
 
 function normalizeBalance(value: unknown): BalanceTelemetry {
   const stored =
@@ -132,6 +138,16 @@ function normalizeRecordWinsByPouch(
   return normalized;
 }
 
+function normalizeJokerRecordStickers(
+  value: unknown,
+): Partial<Record<string, RecordId>> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter(
+    (entry): entry is [string, RecordId] =>
+      productionJokerIds.has(entry[0]) && RECORD_IDS.includes(entry[1] as RecordId),
+  ));
+}
+
 export function recordWinsForPouch(
   lifetime: Pick<Lifetime, 'recordWinsByPouch'>,
   pouchId: PouchId,
@@ -144,6 +160,18 @@ export function recordWinCount(
 ): number {
   return POUCH_IDS.reduce(
     (total, pouchId) => total + new Set(lifetime.recordWinsByPouch[pouchId] ?? []).size,
+    0,
+  );
+}
+
+export const JOKER_RECORD_STICKER_TOTAL = ALL_JOKERS.length * RECORD_IDS.length;
+
+/** Balatro-style progress: a tier-N sticker also counts every lower Record. */
+export function jokerRecordStickerCount(
+  lifetime: Pick<Lifetime, 'jokerRecordStickers'>,
+): number {
+  return Object.values(lifetime.jokerRecordStickers).reduce(
+    (total, id) => total + (id ? RECORD_IDS.indexOf(id) + 1 : 0),
     0,
   );
 }
@@ -185,6 +213,7 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
       : [],
     recordWins,
     recordWinsByPouch,
+    jokerRecordStickers: normalizeJokerRecordStickers(stored.jokerRecordStickers),
     balance: normalizeBalance(stored.balance),
   };
 }
@@ -238,6 +267,8 @@ export interface RunResult {
   pouchId?: PouchId;
   recordId?: RecordId;
   customSeed?: boolean;
+  /** Production Emoji Tiles still owned after Chapter 8 blind-end hooks resolve. */
+  jokerIds?: readonly string[];
 }
 
 /** Fold one finished run into the lifetime record (idempotency is the caller's job). */
@@ -246,6 +277,7 @@ export function recordRunEnd(r: RunResult): void {
   const pouchWins = new Set(lt.pouchWins);
   const recordWins = new Set(lt.recordWins);
   const recordWinsByPouch = { ...lt.recordWinsByPouch };
+  const jokerRecordStickers = { ...lt.jokerRecordStickers };
   if (r.won && !r.customSeed) {
     if (r.pouchId) pouchWins.add(r.pouchId);
     if (r.recordId) recordWins.add(r.recordId);
@@ -253,6 +285,16 @@ export function recordRunEnd(r: RunResult): void {
       recordWinsByPouch[r.pouchId] = [
         ...new Set([...(recordWinsByPouch[r.pouchId] ?? []), r.recordId]),
       ];
+    }
+    if (r.recordId) {
+      const nextRank = RECORD_IDS.indexOf(r.recordId);
+      for (const jokerId of new Set(r.jokerIds ?? [])) {
+        if (!productionJokerIds.has(jokerId)) continue;
+        const previous = jokerRecordStickers[jokerId];
+        if (!previous || nextRank > RECORD_IDS.indexOf(previous)) {
+          jokerRecordStickers[jokerId] = r.recordId;
+        }
+      }
     }
   }
   const balance = { ...lt.balance, lossesByChapter: { ...lt.balance.lossesByChapter } };
@@ -275,6 +317,7 @@ export function recordRunEnd(r: RunResult): void {
     pouchWins: [...pouchWins],
     recordWins: [...recordWins],
     recordWinsByPouch,
+    jokerRecordStickers,
     balance,
   };
   writeLifetime(next);
