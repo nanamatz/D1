@@ -1817,10 +1817,17 @@
 .desk-bell,
 .desk-pot,
 .desk-waxBall,
-.desk-keycap {
+.desk-keycap,
+.desk-shacoBox,
+.desk-fly,
+.desk-bulldog,
+.desk-launchButton {
   padding: 0;
   width: clamp(112px, 11vw, 168px);
   height: clamp(112px, 11vw, 168px);
+}
+.desk-bulldog {
+  cursor: default;
 }
 .desk-check {
   padding: 0;
@@ -1962,6 +1969,169 @@
 .desk-keycap-effect i:nth-child(4) {
   top: 45%;
   left: 1%;
+}
+.desk-shaco-closed {
+  z-index: 2;
+}
+.desk-shaco-popped {
+  z-index: 3;
+  opacity: 0;
+  transform-origin: 50% 82%;
+}
+.desk-fly-art {
+  z-index: 2;
+  transform-origin: 50% 55%;
+}
+.desk-fly-swatter {
+  z-index: 4;
+  opacity: 0;
+  transform-origin: 78% 78%;
+}
+.desk-fly-impact {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 48%;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  background: #fff4bb;
+  box-shadow: -28px 0 0 #ff6259, 28px 0 0 #ff6259, 0 -28px 0 #ffe04b,
+    0 28px 0 #ffe04b, -20px -20px 0 #fff4bb, 20px 20px 0 #fff4bb;
+  pointer-events: none;
+}
+.desk-bulldog-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 76%;
+}
+.desk-bulldog.desk-left .desk-bulldog-sprite {
+  transform-origin: 0 76%;
+}
+.desk-bulldog.desk-right .desk-bulldog-sprite {
+  transform-origin: 100% 76%;
+}
+.desk-bulldog-sprite::after {
+  content: '';
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 52%;
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+  background: #fff4bb;
+  box-shadow: -58px 0 0 #ff6259, 58px 0 0 #ff6259,
+    0 -58px 0 #ffe04b, 0 58px 0 #ffe04b,
+    -41px -41px 0 #fff4bb, 41px -41px 0 #fff4bb,
+    -41px 41px 0 #ff6259, 41px 41px 0 #ff6259;
+  transform: translate(-50%, -50%) scale(0.2);
+  pointer-events: none;
+}
+.desk-bulldog-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-bulldog-open {
+  z-index: 2;
+}
+.desk-bulldog-bite {
+  z-index: 4;
+  opacity: 0;
+}
+.desk-bulldog-teeth {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  clip-path: polygon(22% 40%, 78% 40%, 86% 49%, 85% 69%, 74% 79%, 66% 83%, 34% 83%, 26% 79%, 15% 69%, 14% 49%);
+  pointer-events: none;
+}
+.desk-bulldog-tooth {
+  --tooth-rot: 0deg;
+  position: absolute;
+  width: 12%;
+  height: 21%;
+  padding: 0;
+  border: max(2px, 0.16vw) solid #071327;
+  border-radius: 0 0 3px 3px;
+  background: #fff4bb;
+  box-shadow: inset 0 -6px 0 #d7b866, 0 3px 0 #071327;
+  clip-path: polygon(50% 0, 100% 78%, 92% 100%, 8% 100%, 0 78%);
+  transform: translate(-50%, -50%) rotate(var(--tooth-rot));
+  transform-origin: 50% 88%;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.1s steps(2, end), filter 0.1s steps(2, end);
+}
+.desk-bulldog-tooth:hover:not(:disabled),
+.desk-bulldog-tooth:focus-visible {
+  filter: brightness(1.2);
+}
+.desk-bulldog-tooth:focus-visible {
+  outline: 3px solid #ffe04b;
+  outline-offset: 2px;
+}
+.desk-bulldog-tooth:disabled {
+  cursor: default;
+}
+.desk-bulldog-tooth.pressed {
+  filter: brightness(0.68);
+  transform: translate(-50%, 5%) rotate(var(--tooth-rot)) scaleY(0.48);
+}
+.desk-bulldog-tooth:nth-child(1) { left: 26%; top: 56%; --tooth-rot: -18deg; }
+.desk-bulldog-tooth:nth-child(2) { left: 33%; top: 59%; --tooth-rot: -13deg; }
+.desk-bulldog-tooth:nth-child(3) { left: 40%; top: 61%; --tooth-rot: -7deg; }
+.desk-bulldog-tooth:nth-child(4) { left: 47%; top: 62%; --tooth-rot: -2deg; }
+.desk-bulldog-tooth:nth-child(5) { left: 53%; top: 62%; --tooth-rot: 2deg; }
+.desk-bulldog-tooth:nth-child(6) { left: 60%; top: 61%; --tooth-rot: 7deg; }
+.desk-bulldog-tooth:nth-child(7) { left: 67%; top: 59%; --tooth-rot: 13deg; }
+.desk-bulldog-tooth:nth-child(8) { left: 74%; top: 56%; --tooth-rot: 18deg; }
+.desk-launch-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 50% 78%;
+}
+.desk-launch-sprite::after {
+  content: '';
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  height: 34%;
+  border: 7px solid #ff3038;
+  opacity: 0;
+  box-shadow: 0 0 0 8px #ffe04b, 0 0 0 16px #ff3038;
+  transform: translate(-50%, -50%) scale(0.2);
+  pointer-events: none;
+}
+.desk-launch-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.desk-launch-covered {
+  z-index: 2;
+}
+.desk-launch-open {
+  z-index: 3;
+  opacity: 0;
+}
+.desk-launch-pressed {
+  z-index: 4;
+  opacity: 0;
 }
 .desk-bell-sprite {
   position: relative;
@@ -2122,7 +2292,11 @@
 .desk-check.desk-entering,
 .desk-pot.desk-entering,
 .desk-waxBall.desk-entering,
-.desk-keycap.desk-entering {
+.desk-keycap.desk-entering,
+.desk-shacoBox.desk-entering,
+.desk-fly.desk-entering,
+.desk-bulldog.desk-entering,
+.desk-launchButton.desk-entering {
   animation: desk-cup-down 0.78s cubic-bezier(0.2, 0.82, 0.28, 1.08) both;
 }
 .desk-left.desk-leaving {
@@ -2131,7 +2305,7 @@
 .desk-right.desk-leaving {
   animation: desk-out-right 0.55s ease-in both;
 }
-.desk-object:not(.desk-cup):not(.desk-bell):not(.desk-check).desk-entering .desk-glyph {
+.desk-object:not(.desk-cup):not(.desk-bell):not(.desk-check):not(.desk-interacting).desk-entering .desk-glyph {
   animation: desk-bob 2.6s ease-in-out 0.7s infinite;
 }
 .desk-pot.desk-interacting .desk-encounter-sprite {
@@ -2166,6 +2340,57 @@
 }
 .desk-keycap.desk-interacting .desk-keycap-effect {
   animation: desk-keycap-burst 0.52s steps(5, end) both;
+}
+.desk-shacoBox.desk-interacting .desk-shaco-closed {
+  animation: desk-shaco-close 0.52s steps(1, end) both;
+}
+.desk-shacoBox.desk-interacting .desk-shaco-popped {
+  animation: desk-shaco-pop 0.52s steps(7, end) both;
+}
+.desk-fly.desk-entering .desk-fly-art {
+  animation: desk-fly-hover 0.34s steps(4, end) infinite;
+}
+.desk-fly.desk-interacting .desk-fly-art {
+  animation: desk-fly-knock-away 0.52s steps(7, end) both;
+}
+.desk-fly.desk-interacting .desk-fly-swatter {
+  animation: desk-fly-swatter-slap 0.52s steps(7, end) both;
+}
+.desk-fly.desk-interacting .desk-fly-impact {
+  animation: desk-fly-impact-pop 0.52s steps(5, end) both;
+}
+.desk-bulldog.desk-interacting .desk-bulldog-sprite {
+  animation: desk-bulldog-snap 0.72s steps(8, end) both;
+}
+.desk-bulldog.desk-interacting .desk-bulldog-open {
+  animation: desk-bulldog-open-hide 0.72s steps(1, end) both;
+}
+.desk-bulldog.desk-interacting .desk-bulldog-bite {
+  animation: desk-bulldog-bite 0.72s steps(8, end) both;
+}
+.desk-bulldog.desk-interacting .desk-bulldog-teeth {
+  animation: desk-bulldog-teeth-hide 0.72s steps(1, end) both;
+}
+.desk-bulldog.desk-interacting .desk-bulldog-sprite::after {
+  animation: desk-bulldog-scare-flash 0.72s steps(7, end) both;
+}
+.desk-launchButton.desk-cover-open .desk-launch-covered {
+  animation: desk-launch-cover-hide 0.34s steps(4, end) both;
+}
+.desk-launchButton.desk-cover-open .desk-launch-open {
+  animation: desk-launch-cover-open 0.34s steps(5, end) both;
+}
+.desk-launchButton.desk-interacting .desk-launch-sprite {
+  animation: desk-launch-activate 1.26s steps(12, end) both;
+}
+.desk-launchButton.desk-interacting .desk-launch-open {
+  animation: desk-launch-open-hide 1.26s steps(1, end) both;
+}
+.desk-launchButton.desk-interacting .desk-launch-pressed {
+  animation: desk-launch-press 1.26s steps(10, end) both;
+}
+.desk-launchButton.desk-interacting .desk-launch-sprite::after {
+  animation: desk-launch-shockwave 1.26s steps(8, end) both;
 }
 @keyframes desk-in-left {
   from { transform: translateX(-160%); opacity: 0; }
@@ -2243,6 +2468,119 @@
   34%, 55% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.28); }
 }
+@keyframes desk-shaco-close {
+  0%, 18% { opacity: 1; }
+  19%, 100% { opacity: 0; }
+}
+@keyframes desk-shaco-pop {
+  0%, 18% {
+    opacity: 0;
+    clip-path: inset(46% 0 0);
+    transform: translateY(24%) scale(0.88, 0.42);
+  }
+  19% { opacity: 1; }
+  56% {
+    opacity: 1;
+    clip-path: inset(0);
+    transform: translateY(-8%) scale(1.08, 1.16);
+  }
+  78% { transform: translateY(2%) scale(1.04, 0.96); }
+  100% {
+    opacity: 1;
+    clip-path: inset(0);
+    transform: translateY(0) scale(1.05);
+  }
+}
+@keyframes desk-fly-hover {
+  0%, 100% { transform: translate(-3px, 1px) rotate(-2deg); }
+  25% { transform: translate(3px, -4px) rotate(2deg); }
+  50% { transform: translate(-1px, -7px) rotate(-1deg); }
+  75% { transform: translate(4px, 2px) rotate(3deg); }
+}
+@keyframes desk-fly-knock-away {
+  0%, 30% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
+  38% { transform: translate(2px, 6px) rotate(-8deg) scale(1.12, 0.42); filter: brightness(1.45); }
+  52% { opacity: 1; transform: translate(24%, 20%) rotate(105deg) scale(0.86); }
+  100% { opacity: 0; transform: translate(105%, 115%) rotate(430deg) scale(0.58); }
+}
+@keyframes desk-fly-swatter-slap {
+  0%, 10% { opacity: 0; transform: translate(68%, -72%) rotate(18deg) scale(1.12); }
+  20% { opacity: 1; }
+  38%, 48% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
+  100% { opacity: 0; transform: translate(38%, -48%) rotate(12deg) scale(1.06); }
+}
+@keyframes desk-fly-impact-pop {
+  0%, 32% { opacity: 0; transform: translate(-50%, -50%) scale(0.35); }
+  38%, 50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.55); }
+}
+@keyframes desk-bulldog-snap {
+  0%, 18% { transform: translate(0) scale(1); }
+  23% { transform: translateY(9%) scale(0.82, 0.72); }
+  28% { transform: translateY(-10%) scale(1.62); filter: brightness(1.65); }
+  36% { transform: translate(-7%, -6%) rotate(-5deg) scale(1.5); }
+  44% { transform: translate(7%, -5%) rotate(5deg) scale(1.42); }
+  53% { transform: translate(-4%, -3%) rotate(-3deg) scale(1.34); }
+  64% { transform: translate(3%, -2%) rotate(2deg) scale(1.25); }
+  78% { transform: translate(-1%, -1%) rotate(-1deg) scale(1.16); }
+  100% { transform: translate(0) scale(1.08); filter: brightness(1); }
+}
+@keyframes desk-bulldog-open-hide {
+  0%, 27% { opacity: 1; }
+  28%, 100% { opacity: 0; }
+}
+@keyframes desk-bulldog-bite {
+  0%, 27% { opacity: 0; transform: translateY(10%) scale(0.92, 0.55); }
+  28% { opacity: 1; transform: translateY(5%) scale(1.08, 0.82); }
+  48% { opacity: 1; transform: translateY(-3%) scale(1.06, 1.08); }
+  100% { opacity: 1; transform: translateY(0) scale(1.02); }
+}
+@keyframes desk-bulldog-teeth-hide {
+  0%, 27% { opacity: 1; }
+  28%, 100% { opacity: 0; }
+}
+@keyframes desk-bulldog-scare-flash {
+  0%, 24% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  28%, 38% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  55% { opacity: 0.55; transform: translate(-50%, -50%) rotate(22deg) scale(1.55); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(35deg) scale(2); }
+}
+@keyframes desk-launch-cover-hide {
+  0%, 35% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: translateY(-10%) scaleY(0.7); }
+}
+@keyframes desk-launch-cover-open {
+  0% { opacity: 0; transform: translateY(10%) scaleY(0.65); }
+  52% { opacity: 1; transform: translateY(-3%) scaleY(1.06); }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+@keyframes desk-launch-activate {
+  0%, 12% { transform: translate(0) scale(1); filter: brightness(1); }
+  18% { transform: translateY(5%) scale(1.05, 0.88); filter: brightness(1.45); }
+  26% { transform: translate(-5%, -3%) rotate(-4deg) scale(1.12); }
+  34% { transform: translate(5%, -2%) rotate(4deg) scale(1.1); }
+  44% { transform: translate(-4%, 0) rotate(-3deg) scale(1.08); }
+  56% { transform: translate(4%, 1%) rotate(3deg) scale(1.06); }
+  70% { transform: translate(-2%, 0) rotate(-1deg) scale(1.04); }
+  84% { transform: translate(2%, 0) rotate(1deg) scale(1.03); }
+  100% { transform: translate(0) scale(1.02); filter: brightness(1); }
+}
+@keyframes desk-launch-open-hide {
+  0%, 13% { opacity: 1; }
+  14%, 100% { opacity: 0; }
+}
+@keyframes desk-launch-press {
+  0%, 13% { opacity: 0; transform: translateY(-2%) scale(1.03); }
+  14%, 100% { opacity: 1; transform: translateY(0) scale(1); }
+  28%, 42%, 58% { filter: brightness(1.55); }
+  35%, 50%, 72% { filter: brightness(0.82); }
+}
+@keyframes desk-launch-shockwave {
+  0%, 13% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  18%, 28% { opacity: 1; transform: translate(-50%, -50%) scale(0.7); }
+  56% { opacity: 0.65; transform: translate(-50%, -50%) scale(1.65); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+}
 @keyframes call-bell-ring {
   0%, 100% { transform: translateY(0) rotate(0) scale(1); }
   10% { transform: translateY(2px) scale(1.01, 0.98); }
@@ -2278,6 +2616,48 @@
 .desk-still .desk-glyph {
   animation: none !important;
 }
+.desk-still.desk-shacoBox.desk-interacting .desk-shaco-closed {
+  opacity: 0;
+}
+.desk-still.desk-shacoBox.desk-interacting .desk-shaco-popped {
+  opacity: 1;
+  clip-path: inset(0);
+  transform: scale(1.05);
+}
+.desk-still.desk-fly.desk-interacting .desk-fly-art {
+  opacity: 0;
+}
+.desk-still.desk-fly.desk-interacting .desk-fly-swatter,
+.desk-still.desk-fly.desk-interacting .desk-fly-impact {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+.desk-still.desk-fly.desk-interacting .desk-fly-swatter {
+  transform: none;
+}
+.desk-still.desk-bulldog.desk-interacting .desk-bulldog-open,
+.desk-still.desk-bulldog.desk-interacting .desk-bulldog-teeth {
+  opacity: 0;
+}
+.desk-still.desk-bulldog.desk-interacting .desk-bulldog-bite {
+  opacity: 1;
+  transform: scale(1.02);
+}
+.desk-still.desk-bulldog.desk-interacting .desk-bulldog-sprite::after {
+  animation: none;
+  opacity: 0;
+}
+.desk-still.desk-launchButton.desk-cover-open .desk-launch-covered,
+.desk-still.desk-launchButton.desk-interacting .desk-launch-open {
+  opacity: 0;
+}
+.desk-still.desk-launchButton.desk-cover-open:not(.desk-interacting) .desk-launch-open,
+.desk-still.desk-launchButton.desk-interacting .desk-launch-pressed {
+  opacity: 1;
+}
+.desk-still.desk-launchButton.desk-interacting .desk-launch-sprite::after {
+  opacity: 0;
+}
 @media (prefers-reduced-motion: reduce) {
   .desk-object {
     transition: none;
@@ -2298,7 +2678,23 @@
   .desk-waxBall.desk-interacting .desk-wax-broken,
   .desk-waxBall.desk-interacting .desk-encounter-sprite::after,
   .desk-keycap.desk-interacting .desk-keycap-art,
-  .desk-keycap.desk-interacting .desk-keycap-effect {
+  .desk-keycap.desk-interacting .desk-keycap-effect,
+  .desk-shacoBox.desk-interacting .desk-shaco-closed,
+  .desk-shacoBox.desk-interacting .desk-shaco-popped,
+  .desk-fly.desk-entering .desk-fly-art,
+  .desk-fly.desk-interacting .desk-fly-art,
+  .desk-fly.desk-interacting .desk-fly-swatter,
+  .desk-fly.desk-interacting .desk-fly-impact,
+  .desk-bulldog.desk-interacting .desk-bulldog-sprite,
+  .desk-bulldog.desk-interacting .desk-bulldog-open,
+  .desk-bulldog.desk-interacting .desk-bulldog-bite,
+  .desk-bulldog.desk-interacting .desk-bulldog-teeth,
+  .desk-bulldog.desk-interacting .desk-bulldog-sprite::after,
+  .desk-launchButton.desk-cover-open .desk-launch-covered,
+  .desk-launchButton.desk-cover-open .desk-launch-open,
+  .desk-launchButton.desk-interacting .desk-launch-sprite,
+  .desk-launchButton.desk-interacting .desk-launch-pressed,
+  .desk-launchButton.desk-interacting .desk-launch-sprite::after {
     animation: none;
   }
   .desk-waxBall.desk-interacting .desk-wax-intact {
@@ -2312,6 +2708,44 @@
   }
   .desk-keycap.desk-interacting .desk-keycap-effect {
     opacity: 1;
+  }
+  .desk-shacoBox.desk-interacting .desk-shaco-closed {
+    opacity: 0;
+  }
+  .desk-shacoBox.desk-interacting .desk-shaco-popped {
+    opacity: 1;
+    clip-path: inset(0);
+    transform: scale(1.05);
+  }
+  .desk-fly.desk-interacting .desk-fly-art {
+    opacity: 0;
+  }
+  .desk-fly.desk-interacting .desk-fly-swatter {
+    opacity: 1;
+    transform: none;
+  }
+  .desk-fly.desk-interacting .desk-fly-impact {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  .desk-bulldog.desk-interacting .desk-bulldog-open,
+  .desk-bulldog.desk-interacting .desk-bulldog-teeth {
+    opacity: 0;
+  }
+  .desk-bulldog.desk-interacting .desk-bulldog-bite {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  .desk-launchButton.desk-cover-open .desk-launch-covered,
+  .desk-launchButton.desk-interacting .desk-launch-open {
+    opacity: 0;
+  }
+  .desk-launchButton.desk-cover-open:not(.desk-interacting) .desk-launch-open,
+  .desk-launchButton.desk-interacting .desk-launch-pressed {
+    opacity: 1;
+  }
+  .desk-launchButton.desk-interacting .desk-launch-sprite::after {
+    opacity: 0;
   }
   .desk-coffee-steam i {
     opacity: 0.42;

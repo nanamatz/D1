@@ -19,9 +19,9 @@ import {
 } from '../src/engine/skipRewards';
 
 describe('blind skip rewards', () => {
-  it('rolls two reproducible, distinct offers from the twenty-six-entry uniform pool', () => {
+  it('rolls two reproducible, distinct offers from the thirty-entry uniform pool', () => {
     const run = newRun('skip-roll');
-    expect(new Set(SKIP_REWARD_IDS).size).toBe(26);
+    expect(new Set(SKIP_REWARD_IDS).size).toBe(30);
     expect(SKIP_REWARD_IDS).not.toContain('leadStory');
     const offers = rollSkipOffers(run, makeRng('offers'));
     expect(offers).toEqual(rollSkipOffers(run, makeRng('offers')));
@@ -55,6 +55,7 @@ describe('blind skip rewards', () => {
       'garbageTag',
       'inkTag',
       'economyTag',
+      'pythagoreanYTag',
     ]);
     for (const id of SKIP_REWARD_IDS) {
       expect(isImmediateSkipReward(id), id).toBe(IMMEDIATE_SKIP_REWARD_IDS.includes(
@@ -123,6 +124,10 @@ describe('blind skip rewards', () => {
       handSize: 0,
       targetMultiplier: 1,
       startingScore: 0,
+      alphaOmegaReplays: 0,
+      lipogramLetters: [],
+      scarletLetters: [],
+      clearRewardBonus: 0,
     });
   });
 

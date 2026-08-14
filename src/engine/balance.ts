@@ -202,7 +202,7 @@ export const BALANCE = {
   },
 
   // ----- Blind skip rewards (GDD §8.2) -----
-  // Twenty-six equally likely publishing-world rewards. Draft and Revision may be
+  // Thirty equally likely publishing-world rewards. Draft and Revision may be
   // skipped; Deadline never may. Delayed blind bonuses carry across another
   // skip so the player always receives them on the next stage they actually play.
   skipRewards: {
@@ -218,6 +218,10 @@ export const BALANCE = {
     garbageGoldPerDiscard: 1,
     jugglerHandSize: 1,
     economyGoldMultiplier: 2,
+    lipogramTargetMultiplier: 0.7,
+    pythagoreanWideTargetMultiplier: 0.9,
+    pythagoreanNarrowTargetMultiplier: 1.2,
+    pythagoreanNarrowReward: 12,
   },
 
   // ----- Economy (GDD §9.1) -----
@@ -238,7 +242,7 @@ export const BALANCE = {
     // letter-tile family adds 4 and Lucky Pouch's Gambler family adds 2.
     itemWeights: { joker: 20, tile: 4, consumable: 4, punctuation: 4, gambler: 2 },
   },
-  jokerPrice: { common: 4, uncommon: 6, rare: 9, legendary: 15 },
+  jokerPrice: { common: 4, uncommon: 6, rare: 9, legendary: 15, primordial: 0 },
   jokerEditionPrice: { base: 0, gray: 2, violet: 3, rainbow: 5, white: 5 } as Record<JokerEdition, number>,
   jokerSlots: 5,
   consumablePrice: 3,
@@ -317,7 +321,6 @@ export const BALANCE = {
       alliterationSticker: 10,
       porcelainCat: 25,
       woodpecker: 50,
-      letterLadderBadge: 5,
       proofEraser: 50,
       spareDrawer: 2,
       threeLeafClover: 10,
@@ -368,7 +371,6 @@ export const BALANCE = {
       woodblockPress: 100,
       materialPrism: 5,
       longFormSerial: 9,
-      twinPeaks: 30,
       wordHunter: 500,
       plagiarist: 2,
       nightOwl: 1,
@@ -381,7 +383,6 @@ export const BALANCE = {
       exactingCritic: 3,
       twentyFifthBlessing: 3,
       bloodTypeA: 10,
-      palindromist: 10,
       handScholar: 8,
     } as Record<string, number>,
   },
@@ -416,9 +417,12 @@ export const BALANCE = {
     assonance: { repeatedVowels: 2, mult: 7 },
     porcelainCat: { mult: 9 },
     woodpecker: { chipsPerWood: 30 },
-    letterLadderBadge: { chips: 60 },
     threeLeafClover: { sellValuePerBlind: 3 },
     megalith: { stonesPerBlind: 1 },
+    storyteller: { multPerFable: 1 },
+    recycling: { goldPerTile: 5 },
+    beehiveTile: { wordLength: 6, chipsPerWord: 6 },
+    cubism: { baseFactor: 1, factorPerLeadPlate: 0.25 },
     // Uncommon (§11.3)
     literaryJudge: { chips: 69 },
     rareEarth: { factor: 3 }, // ×Chips on Q·Z·X·J tiles
@@ -440,7 +444,15 @@ export const BALANCE = {
     growthRings: { chipsPerStep: 15, multPerStep: 4 },
     materialSampler: { chipsPerMaterial: 30 },
     monomaterial: { mult: 10 },
-    scrapDealer: { goldPerTile: 4 },
+    strawberryJam: { factor: 3 },
+    scrapDealer: { factorPerBrass: 0.2 },
+    bald: { factor: 1.5 },
+    shuriken: { baseFactor: 2, lossPerDiscardedTile: 0.01, minFactor: 0 },
+    earthquake: { hands: 10 },
+    dogFood: { multPerReroll: 2 },
+    delisting: { gold: 3 },
+    greatDepression: { goldPerStep: 1, goldPerStepHeld: 5 },
+    leak: { baselineTiles: 68, multPerMissingTile: 4 },
     lightTouch: { goldPerTile: 2 },
     heavyPress: { chipsPerTile: 15 },
     hollowPromise: { gold: 3 },
@@ -486,12 +498,7 @@ export const BALANCE = {
     woodblockPress: { factorPerGrowth: 0.1 },
     materialPrism: { factorPerMaterial: 1.25 },
     typeOrchestra: { factorPerFont: 1.25 },
-    palindromist: { factor: 4 },
-    straightShooter: { factor: 4 },
-    vowelSymphony: { factor: 4 },
     longFormSerial: { freeLetters: 5, factorPerLetter: 1.5 },
-    twinPeaks: { retriggers: 1 },
-    threefoldSeal: { retriggers: 1 },
     handScholar: { factorPerNewHand: 0.5, maxFactor: 4 },
     wordHunter: { baseFactor: 2, factorPerNewWord: 0.1 },
     plagiarist: { factor: 4 },
@@ -516,11 +523,25 @@ export const BALANCE = {
     bloodTypeA: { chipsPerLetter: 8 },
     dummyData: { length: 2 },
     blacksmith: { chipsPerEnhancement: 10 },
+    gematria: { mult: 15 },
+    cadmusTeeth: { chipsPerLetter: 10 },
+    golem: { factor: 3 },
+    temurah: { factor: 5 },
+    alphabetPoet: { minWords: 3, factor: 3.5 },
+    iotaStroke: { factor: 4 },
+    zombie: {},
+    biochemistry: { baseFactor: 1, factorPerChain: 0.5 },
+    ambidextrous: { factor: 2 },
+    thirdParty: { factor: 3 },
+    mirrorImage: { factor: 3 },
+    gathering: { factor: 2 },
+    straightTalk: { factor: 3 },
+    scarletLetter: { baseFactor: 1, factorPerDiscardedA: 0.1 },
     // Legendary (§11.5)
     bookOfMargins: { slots: 3, factorPerEmptySlot: 2 },
     tyrant: { vulgarFactor: 2 },
     typeFoundry: { factorPerTile: 1.5 },
-    misbound: { destroyDenominator: 100, factorPerSurvival: 0.8 },
+    misbound: { destroyDenominator: 1_000, factorPerSurvival: 0.8 },
   },
   /** Q·Z·X·J — the Rare Earth (U3) letter set. */
   rareLetters: ['Q', 'Z', 'X', 'J'] as readonly Letter[],

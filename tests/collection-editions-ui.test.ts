@@ -62,7 +62,7 @@ describe('Edition Collection page', () => {
     expect(enhanced).not.toContain('role="tablist"');
   });
 
-  it('shows all 26 Tags as a two-page 5×3 image grid with shared interaction', () => {
+  it('shows all 30 Tags as a two-page 5×3 image grid with shared interaction', () => {
     const component = readFileSync(
       new URL('../src/ui/components/Collection.tsx', import.meta.url),
       'utf8',
@@ -76,7 +76,7 @@ describe('Edition Collection page', () => {
       component.indexOf('function usePaged', component.indexOf('function TagsView()')),
     );
 
-    expect(SKIP_REWARD_IDS).toHaveLength(26);
+    expect(SKIP_REWARD_IDS).toHaveLength(30);
     expect(tagsView).toContain('visible.map((id) =>');
     expect(tagsView).toContain('SKIP_REWARD_ART[id]');
     expect(tagsView).toContain('skipRewardCollectionDescKey(id)');
@@ -109,5 +109,20 @@ describe('Edition Collection page', () => {
       /\.collection-pouch-carousel\s*\{[^}]*grid-template-columns:\s*50px minmax\(0,\s*1fr\) 50px;/s,
     );
     expect(css).toContain('width: 176px;');
+  });
+
+  it('wraps every shared Collection pager and hides the full word total until completion', () => {
+    const component = readFileSync(
+      new URL('../src/ui/components/Collection.tsx', import.meta.url),
+      'utf8',
+    );
+    const pager = component.slice(component.indexOf('function Pager('));
+
+    expect(pager).toContain('(page + delta + pages) % pages');
+    expect(pager).not.toContain('page === 0');
+    expect(pager).not.toContain('page === pages - 1');
+    expect(component).toContain("{n.have}/{id === 'words' && !wordCollectionComplete ? '???' : n.total}");
+    expect(component).toContain('const allWordsComplete = isWordCollectionComplete(lexicon);');
+    expect(component).toContain("hideTotal={!allWordsComplete && !query.trim() && suit === 'all'}");
   });
 });

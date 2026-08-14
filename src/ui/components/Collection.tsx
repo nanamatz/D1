@@ -39,7 +39,11 @@ import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { pouchArt } from '../pouchArt';
 import { loadLifetime } from '../lifetime';
-import { pouchUnlockWordCount, profileCollectionSize } from '../profile';
+import {
+  isWordCollectionComplete,
+  pouchUnlockWordCount,
+  profileCollectionSize,
+} from '../profile';
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
 import { VoucherCard } from './VoucherCard';
@@ -170,11 +174,12 @@ export function Collection({ lexicon, onBack }: Props) {
     markCollectionSeen();
   }, []);
 
+  const wordCollectionComplete = useMemo(() => isWordCollectionComplete(lexicon), [lexicon]);
   const counts = useMemo(
     () => {
       const progress = runUnlockProgress();
       return {
-      words: { have: profileCollectionSize(lexicon.size), total: lexicon.size },
+      words: { have: Math.min(profileCollectionSize(lexicon.size), lexicon.size), total: lexicon.size },
       jokers: { have: unlockedEmojiSet().size, total: ALL_JOKERS.length },
       enhancedTiles: {
         have: MATERIALS.length + FONTS.length,
@@ -231,7 +236,7 @@ export function Collection({ lexicon, onBack }: Props) {
                         >
                           <span className="cat-name">{t(`collection.cat.${id}`)}</span>
                           <span className="cat-count">
-                            {n.have}/{n.total}
+                            {n.have}/{id === 'words' && !wordCollectionComplete ? '???' : n.total}
                           </span>
                           {id === 'words' && unseenCount() > 0 && <span className="badge">!</span>}
                         </button>
@@ -346,6 +351,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const [page, setPage] = useState(0);
   const collected = useMemo(() => loadCollection(), []);
   const allWordsUnlocked = loadLifetime().unlockAllApplied;
+  const allWordsComplete = isWordCollectionComplete(lexicon);
   const records = useMemo(() => collectionHighlights(collected), [collected]);
 
   // Item 1: list the WHOLE dictionary, not just what's been played — words never
@@ -458,7 +464,11 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
                 setPage(0);
               }}
             />
-            <span className="coll-search-count">{t('collection.found', { n: words.length })}</span>
+            <span className="coll-search-count">
+              {t('collection.found', {
+                n: allWordsComplete || query.trim() || suit !== 'all' ? words.length : '???',
+              })}
+            </span>
           </div>
           <div className="coll-filters">
             {suits.map((s) => (
@@ -490,7 +500,12 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
               ))}
             </div>
           )}
-          <Pager page={clamped} pages={pages} onPage={setPage} />
+          <Pager
+            page={clamped}
+            pages={pages}
+            onPage={setPage}
+            hideTotal={!allWordsComplete && !query.trim() && suit === 'all'}
+          />
         </>
       )}
       </div>
@@ -1045,16 +1060,31 @@ function GamblerCardsView() {
 }
 
 // ---------- shared pager ----------
-function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
+function Pager({
+  page,
+  pages,
+  onPage,
+  hideTotal = false,
+}: {
+  page: number;
+  pages: number;
+  onPage: (p: number) => void;
+  hideTotal?: boolean;
+}) {
   const { t } = useI18n();
   if (pages <= 1) return null;
+  const move = (delta: number) => onPage((page + delta + pages) % pages);
   return (
     <div className="pager">
-      <button className="car-arrow" disabled={page <= 0} onClick={() => onPage(page - 1)}>
+      <button className="car-arrow" onClick={() => move(-1)}>
         ‹
       </button>
-      <span className="pager-label">{t('collection.page', { n: page + 1, m: pages })}</span>
-      <button className="car-arrow" disabled={page >= pages - 1} onClick={() => onPage(page + 1)}>
+      <span className="pager-label">
+        {hideTotal
+          ? t('collection.pageUnknown', { n: page + 1 })
+          : t('collection.page', { n: page + 1, m: pages })}
+      </span>
+      <button className="car-arrow" onClick={() => move(1)}>
         ›
       </button>
     </div>

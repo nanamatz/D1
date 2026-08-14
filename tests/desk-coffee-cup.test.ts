@@ -58,15 +58,19 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('setBell(next)');
   });
 
-  it('includes the coffee pot and the two tactile-toy encounters', () => {
+  it('includes the coffee pot, tactile toys, Shaco box, fly, and bulldog encounters', () => {
     expect(component).toContain(
-      "type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap'",
+      "type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap' | 'shacoBox' | 'fly' | 'bulldog' | 'launchButton'",
     );
     expect(component).toContain("{ kind: 'pot', sfx: 'deskPour' }");
     expect(component).toContain("{ kind: 'bell', sfx: 'deskBell' }");
     expect(component).toContain("{ kind: 'check', sfx: 'deskCheck' }");
     expect(component).toContain("{ kind: 'waxBall', sfx: 'deskWaxCrunch' }");
     expect(component).toContain("{ kind: 'keycap', sfx: 'deskKeycap' }");
+    expect(component).toContain("{ kind: 'shacoBox', sfx: 'deskJackPop' }");
+    expect(component).toContain("{ kind: 'fly', sfx: 'deskFlySwat' }");
+    expect(component).toContain("{ kind: 'bulldog', sfx: 'deskBulldogBite' }");
+    expect(component).toContain("{ kind: 'launchButton', sfx: 'deskLaunchAlarm' }");
     expect(component).not.toContain("'pencil'");
     expect(component).not.toContain("'plane'");
     expect(component).toContain("import callBell from '../assets/desk-call-bell.png'");
@@ -75,8 +79,104 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain("import waxBall from '../assets/desk-wax-ball.png'");
     expect(component).toContain("import waxBallBroken from '../assets/desk-wax-ball-broken.png'");
     expect(component).toContain("import keycap from '../assets/desk-keycap.png'");
+    expect(component).toContain("import shacoBox from '../assets/desk-shaco-box.png'");
+    expect(component).toContain("import shacoBoxPopped from '../assets/desk-shaco-box-popped.png'");
+    expect(component).toContain("import fly from '../assets/desk-fly.png'");
+    expect(component).toContain("import flySwatter from '../assets/desk-fly-swatter.png'");
+    expect(component).toContain("import bulldogRoulette from '../assets/desk-bulldog-roulette.png'");
+    expect(component).toContain("import bulldogBite from '../assets/desk-bulldog-bite.png'");
+    expect(component).toContain("import launchButtonCovered from '../assets/desk-launch-button-covered.png'");
+    expect(component).toContain("import launchButtonOpen from '../assets/desk-launch-button-open.png'");
+    expect(component).toContain("import launchButtonPressed from '../assets/desk-launch-button-pressed.png'");
     expect(component).not.toContain("'slangee'");
     expect(component).not.toContain("kind: 'refill'");
+  });
+
+  it('springs the Shaco clown from a transparent two-frame sprite pair', () => {
+    for (const name of ['desk-shaco-box.png', 'desk-shaco-box-popped.png']) {
+      const png = readFileSync(`src/ui/assets/${name}`);
+      expect(png.readUInt32BE(16), name).toBe(1254);
+      expect(png.readUInt32BE(20), name).toBe(1254);
+      expect(png[25], name).toBe(6);
+    }
+    expect(component).toContain('className="desk-encounter-art desk-shaco-closed"');
+    expect(component).toContain('className="desk-encounter-art desk-shaco-popped"');
+    expect(css).toContain('@keyframes desk-shaco-pop');
+    expect(css).toContain('.desk-shacoBox.desk-interacting .desk-shaco-popped');
+    expect(audio).toMatch(/deskJackPop:\s*\{[\s\S]*?gain:\s*0\.46[\s\S]*?dur:\s*0\.74[\s\S]*?from:\s*145,\s*to:\s*560/);
+  });
+
+  it('swats the flying pest and knocks it out of the encounter', () => {
+    for (const name of ['desk-fly.png', 'desk-fly-swatter.png']) {
+      const png = readFileSync(`src/ui/assets/${name}`);
+      expect(png.readUInt32BE(16), name).toBe(1254);
+      expect(png.readUInt32BE(20), name).toBe(1254);
+      expect(png[25], name).toBe(6);
+    }
+    expect(component).toContain('className="desk-encounter-art desk-fly-art"');
+    expect(component).toContain('className="desk-encounter-art desk-fly-swatter"');
+    expect(component).toContain('className="desk-fly-impact"');
+    expect(css).toContain('@keyframes desk-fly-swatter-slap');
+    expect(css).toContain('@keyframes desk-fly-knock-away');
+    expect(audio).toMatch(/deskFlySwat:\s*\{[\s\S]*?gain:\s*0\.48[\s\S]*?dur:\s*0\.38[\s\S]*?color:\s*'brown'/);
+  });
+
+  it('keeps Bulldog Roulette active until one of eight teeth triggers the bite', () => {
+    for (const name of ['desk-bulldog-roulette.png', 'desk-bulldog-bite.png']) {
+      const png = readFileSync(`src/ui/assets/${name}`);
+      expect(png.readUInt32BE(16), name).toBe(1254);
+      expect(png.readUInt32BE(20), name).toBe(1254);
+      expect(png[25], name).toBe(6);
+    }
+    expect(component).toContain('const BULLDOG_TEETH = 8');
+    expect(component).toContain("trigger: base.kind === 'bulldog'");
+    expect(component).toContain('Math.floor(Math.random() * BULLDOG_TEETH)');
+    expect(component).toContain('Array.from({ length: BULLDOG_TEETH }');
+    expect(component).toContain('onClick={() => pressBulldogTooth(index)}');
+    expect(component).toContain("if (index !== encounter.trigger)");
+    expect(component).toContain("audio.play('deskKeycap')");
+    expect(component).toContain("audio.play('deskBulldogBite')");
+    expect(component).toContain('later(() => setEncounterLeaving(true), 720)');
+    expect(component).toContain('later(finishEncounter, 1260)');
+    expect(css).toContain('@keyframes desk-bulldog-bite');
+    expect(css).toContain('@keyframes desk-bulldog-scare-flash');
+    expect(css).toContain('scale(1.62)');
+    expect(css).toContain(':not(.desk-interacting).desk-entering .desk-glyph');
+    expect(css).toContain('.desk-bulldog-tooth.pressed');
+    expect(css).toMatch(/\.desk-bulldog-tooth\s*\{[\s\S]*?width:\s*12%[\s\S]*?height:\s*21%/);
+    expect(css).toMatch(/\.desk-bulldog-teeth\s*\{[\s\S]*?clip-path:\s*polygon\(22% 40%/);
+    expect(css).toContain('clip-path: polygon(50% 0, 100% 78%, 92% 100%, 8% 100%, 0 78%)');
+    expect(css).toContain('transform-origin: 50% 88%');
+    expect(css).toContain('.desk-bulldog.desk-interacting .desk-bulldog-bite');
+    expect(audio).toMatch(/deskBulldogBite:\s*\{[\s\S]*?gain:\s*0\.56[\s\S]*?dur:\s*0\.7[\s\S]*?color:\s*'brown'/);
+  });
+
+  it('opens the launch-button cover before the second click activates and exits', () => {
+    for (const name of [
+      'desk-launch-button-covered.png',
+      'desk-launch-button-open.png',
+      'desk-launch-button-pressed.png',
+    ]) {
+      const png = readFileSync(`src/ui/assets/${name}`);
+      expect(png.readUInt32BE(16), name).toBe(1254);
+      expect(png.readUInt32BE(20), name).toBe(1254);
+      expect(png[25], name).toBe(6);
+    }
+    expect(component).toContain('const [launchCoverOpen, setLaunchCoverOpen] = useState(false)');
+    expect(component).toContain("if (!launchCoverOpen)");
+    expect(component).toContain("audio.play('deskLaunchCover')");
+    expect(component).toContain('setLaunchCoverOpen(true)');
+    expect(component).toContain("audio.play('deskLaunchAlarm')");
+    expect(component).toContain('later(() => setEncounterLeaving(true), 1260)');
+    expect(component).toContain('later(finishEncounter, 1820)');
+    expect(component).toContain('onClick={interactLaunchButton}');
+    expect(css).toContain('@keyframes desk-launch-cover-open');
+    expect(css).toContain('@keyframes desk-launch-activate');
+    expect(css).toContain('@keyframes desk-launch-shockwave');
+    expect(css).toContain('.desk-launchButton.desk-cover-open .desk-launch-open');
+    expect(css).toContain('.desk-launchButton.desk-interacting .desk-launch-pressed');
+    expect(audio).toMatch(/deskLaunchCover:\s*\{[\s\S]*?gain:\s*0\.4[\s\S]*?dur:\s*0\.3/);
+    expect(audio).toMatch(/deskLaunchAlarm:\s*\{[\s\S]*?gain:\s*0\.52[\s\S]*?dur:\s*1\.28[\s\S]*?color:\s*'brown'/);
   });
 
   it('ships square transparent PNG art for both tactile toys', () => {

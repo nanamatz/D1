@@ -44,7 +44,7 @@ describe('endless chapter curve and finisher schedule', () => {
     expect(bossPoolForAnte(16)).toBe('finisher');
     expect(bossPoolForAnte(24)).toBe('finisher');
     expect(FINISHER_BOSS_IDS).toContain(drawBoss(makeRng('finisher'), 'finisher'));
-    expect(CORE_BOSS_IDS).toHaveLength(12);
+    expect(CORE_BOSS_IDS).toHaveLength(15);
     expect(FINISHER_BOSS_IDS).toHaveLength(6);
     expect(FINISHER_BOSS_IDS).toEqual(expect.arrayContaining(['cleaningSign', 'medusa']));
     expect(CORE_BOSS_IDS).not.toEqual(expect.arrayContaining(['cleaningSign', 'medusa']));

@@ -19,6 +19,7 @@ import {
   onTilesEnhanced,
 } from '../src/engine/jokers';
 import { startBlind } from '../src/engine/loop';
+import { resolveBlind } from '../src/engine/progression';
 import { makeRng, type Rng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import type {
@@ -94,13 +95,17 @@ const fixedRng = (value: number): Rng => ({
 });
 
 describe('GDD §11 roster shape', () => {
-  it('registers Common 29 / Uncommon 47 / Rare 48 / Legendary 5', () => {
-    expect(COMMON_JOKERS).toHaveLength(29);
-    expect(UNCOMMON_JOKERS).toHaveLength(47);
-    expect(RARE_JOKERS).toHaveLength(48);
+  it('registers Common 34 / Uncommon 57 / Rare 54 / Legendary 5 publicly', () => {
+    expect(COMMON_JOKERS).toHaveLength(34);
+    expect(UNCOMMON_JOKERS).toHaveLength(57);
+    expect(RARE_JOKERS).toHaveLength(54);
     expect(LEGENDARY_JOKERS).toHaveLength(5);
-    expect(ALL_JOKERS).toHaveLength(129);
-    expect(JOKER_REGISTRY.size).toBe(ALL_JOKERS.length);
+    expect(ALL_JOKERS).toHaveLength(150);
+    expect(JOKER_REGISTRY.size).toBe(ALL_JOKERS.length + 1);
+    for (const retired of [
+      'vowelSymphony', 'letterLadderBadge', 'palindromist',
+      'straightShooter', 'twinPeaks', 'threefoldSeal',
+    ]) expect(JOKER_REGISTRY.has(retired), retired).toBe(false);
   });
 
   it('gives every tile a name and both locale effect strings', () => {
@@ -258,7 +263,7 @@ describe('Uncommon — §11.3', () => {
     const blind = blindFor(run);
     bus.emit(
       'discardUsed',
-      { run, blind, tiles: [], gained: 0, slotsBlocked: 2 },
+      { run, blind, tiles: [], gained: 0, slotsBlocked: 2, destroyedTiles: [] },
       run.jokers,
     );
     expect(run.gold).toBe(2 * BALANCE.jokers.hollowPromise.gold);
@@ -415,7 +420,9 @@ describe('Rare — §11.4', () => {
   it('Interest Glutton banks the round s interest for the next round', () => {
     const run = runWith('interestGlutton', { gold: 17 });
     expect(play(run, blindFor(run), submission('cat')).mult).toBe(1);
-    const after = onBlindEnded(run, blindFor(run), fixedRng(1));
+    const blind = blindFor(run);
+    const ended = onBlindEnded(run, blind, fixedRng(1));
+    const after = resolveBlind(ended, blind, blind.target).run;
     expect(after.jokers[0]?.state.mult).toBe(3 * BALANCE.jokers.interestGlutton.multPerGold); // $17 → $3 interest (cap 5)
     expect(play(after, blindFor(after), submission('cat')).mult).toBe(
       1 + 3 * BALANCE.jokers.interestGlutton.multPerGold,
@@ -428,7 +435,7 @@ describe('Legendary — §11.5', () => {
     expect(BALANCE.jokers.bookOfMargins).toEqual({ slots: 3, factorPerEmptySlot: 2 });
     expect(BALANCE.jokers.tyrant).toEqual({ vulgarFactor: 2 });
     expect(BALANCE.jokers.typeFoundry).toEqual({ factorPerTile: 1.5 });
-    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 100, factorPerSurvival: 0.8 });
+    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 1_000, factorPerSurvival: 0.8 });
   });
 
   it('Tyrant rewrites every valid word to doubled Vulgar', () => {

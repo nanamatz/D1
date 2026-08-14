@@ -30,7 +30,7 @@ describe('shared tooltip accessibility', () => {
   it('wraps every tooltip and pouch description at word boundaries', () => {
     const css = source('src/ui/styles/screens.css');
     expect(css).toMatch(
-      /\.tt-card\.tt-portal,\s*\.select-desc,\s*\.pouch-selected-info p\s*\{[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*break-word;/s,
+      /\.tt-card\.tt-portal,\s*\.select-desc,\s*\.pouch-selected-info p\s*\{[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*normal;/s,
     );
   });
 

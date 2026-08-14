@@ -22,12 +22,19 @@ import { finalizeScore, judgeSentence, sentenceTotal } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus, JOKER_REGISTRY } from './jokers';
-import { afterBossPlay, BOSS_REGISTRY, bossAllowsDiscard, bossPoolForAnte, drawBoss } from './bosses';
+import {
+  afterBossPlay,
+  BOSS_REGISTRY,
+  bossAllowsDiscard,
+  bossPoolForAnte,
+  drawBoss,
+  sentenceSequenceForBlind,
+} from './bosses';
 import { effectiveBlindTarget } from './economy';
 import { kindForIndex } from './progression';
 import { constellationPassiveFactor } from './vouchers';
 import { balancePouchAxes } from './pouches';
-import { EMPTY_NEXT_BLIND_BONUS } from './skipRewards';
+import { EMPTY_NEXT_BLIND_BONUS, tagDebuffsSubmission } from './skipRewards';
 import type {
   BlindSelectedJokerTrigger,
   DestroyedJokerSnapshot,
@@ -118,6 +125,11 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     vowelsHidden: false,
     forcedTileId: null,
     jokersFaceDown: false,
+    deadLetter: null,
+    lipogramLetters: [...(nextBonus.lipogramLetters ?? [])],
+    scarletLetters: [...(nextBonus.scarletLetters ?? [])],
+    alphaOmegaReplays: nextBonus.alphaOmegaReplays ?? 0,
+    clearRewardBonus: nextBonus.clearRewardBonus ?? 0,
   };
 
   // Apply the boss's setup effect (phases, discards, flags — GDD §8.3).
@@ -221,7 +233,28 @@ export interface DiscardResult {
   gained: ConsumableId[];
   /** discardGain triggers that no-opped on full slots (→ UI "slots full" toast) */
   slotsBlocked: number;
+  /** Distinct physical letters discarded across this run. */
+  discardedLetters: Letter[];
+  discardedLetterCounts: Partial<Record<Letter, number>>;
+  /** Permanent pouch after discard-triggered destruction. */
+  bag: Tile[];
+  /** Physical tiles permanently destroyed by discard hooks. */
+  destroyedTiles: Tile[];
 }
+
+const withDiscardedLetters = (
+  run: RunState,
+  tiles: readonly Tile[],
+): Pick<RunState, 'discardedLetters' | 'discardedLetterCounts'> => {
+  const letters = new Set(run.discardedLetters ?? []);
+  const counts = { ...(run.discardedLetterCounts ?? {}) };
+  for (const tile of tiles) {
+    if (!tile.letter) continue;
+    letters.add(tile.letter);
+    counts[tile.letter] = (counts[tile.letter] ?? 0) + 1;
+  }
+  return { discardedLetters: [...letters], discardedLetterCounts: counts };
+};
 
 /**
  * Discard (GDD §6.3, Balatro-aligned): the chosen tiles LEAVE PLAY for the rest
@@ -268,6 +301,7 @@ export function discardTiles(
   const { gained, slotsBlocked } = rollDiscardGains(run, removed, rng);
   const scoringRun: RunState = {
     ...run,
+    ...withDiscardedLetters(run, removed),
     jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
   };
   const nextBlind: BlindState = {
@@ -278,6 +312,7 @@ export function discardTiles(
     discardsLeft: blind.discardsLeft - 1,
   };
   const goldBefore = scoringRun.gold;
+  const destroyedTiles: Tile[] = [];
   defaultJokerBus.emit(
     'tilesDiscarded',
     { run: scoringRun, blind: nextBlind, tiles: removed },
@@ -285,9 +320,23 @@ export function discardTiles(
   );
   defaultJokerBus.emit(
     'discardUsed',
-    { run: scoringRun, blind: nextBlind, tiles: removed, gained: gained.length, slotsBlocked },
+    {
+      run: scoringRun,
+      blind: nextBlind,
+      tiles: removed,
+      gained: gained.length,
+      slotsBlocked,
+      destroyedTiles,
+    },
     scoringRun.jokers,
   );
+  if (destroyedTiles.length > 0) {
+    defaultJokerBus.emit(
+      'tilesDestroyed',
+      { run: scoringRun, count: destroyedTiles.length },
+      scoringRun.jokers,
+    );
+  }
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   const bossGoldDrain = Math.min(
     scoringRun.gold,
@@ -300,6 +349,10 @@ export function discardTiles(
     goldDelta: scoringRun.gold - goldBefore - bossGoldDrain,
     gained,
     slotsBlocked,
+    discardedLetters: scoringRun.discardedLetters ?? [],
+    discardedLetterCounts: scoringRun.discardedLetterCounts ?? {},
+    bag: scoringRun.bag,
+    destroyedTiles,
   };
 }
 
@@ -331,6 +384,9 @@ export interface SubmitResult {
   playedLetterHands: NonNullable<RunState['playedLetterHands']>;
   /** run-wide Word Hand use counts, including this submission */
   letterHandPlayCounts: NonNullable<RunState['letterHandPlayCounts']>;
+  /** Distinct physical letters discarded across this run, including boss discards. */
+  discardedLetters: Letter[];
+  discardedLetterCounts: Partial<Record<Letter, number>>;
 }
 
 /**
@@ -448,6 +504,14 @@ function scoreSubmission(
     }
     pushGrowthEvents(ruleEvents, growth);
   }
+  for (const tile of tiles) {
+    const repeats = (blind.scarletLetters ?? []).filter((letter) => letter === tile.letter).length;
+    for (let i = 0; i < repeats; i++) {
+      const sources = ctx.tileRetriggers?.get(tile.id) ?? [];
+      sources.push('scarletTag');
+      ctx.tileRetriggers?.set(tile.id, sources);
+    }
+  }
   submission.effectiveSuits = [...(ctx.scoringSuits ?? [])];
   let materialGold = 0;
   const destroyedTileIds: string[] = [];
@@ -472,14 +536,16 @@ function scoreSubmission(
           chipsDelta: 0, multDelta: 0, goldDelta: 0,
         });
       } else if (trig > fontRetriggers) {
-        events.push({
-          kind: 'joker',
-          jokerId: ctx.tileRetriggers?.get(t.id)?.[trig - fontRetriggers - 1]!,
-          tileId: t.id,
-          retrigger: true,
-          chipsDelta: 0,
-          multDelta: 0,
-        });
+        const source = ctx.tileRetriggers?.get(t.id)?.[trig - fontRetriggers - 1]!;
+        events.push(source === 'scarletTag'
+          ? {
+              kind: 'tag', tagId: 'scarletTag', tileId: t.id, retrigger: true,
+              chipsDelta: 0, multDelta: 0,
+            }
+          : {
+              kind: 'joker', jokerId: source, tileId: t.id, retrigger: true,
+              chipsDelta: 0, multDelta: 0,
+            });
       }
 
       ctx.chips += chips;
@@ -700,7 +766,7 @@ function scoreSubmission(
     const scoreBeats: JokerScoreBeat[] = [];
     const growth = defaultJokerBus.emit(
       'wordScoring',
-      { run, blind, ctx, scoreBeats, rng, createdTiles },
+      { run, blind, ctx, scoreBeats, rng, createdTiles, lookup: (word) => lexicon.lookup(word) },
       [joker],
     );
     const chipsDelta = ctx.chips - beforeChips;
@@ -790,7 +856,9 @@ function scoreSubmission(
     }
   }
 
+  const lipogramDebuffed = tagDebuffsSubmission(blind, submission);
   const debuffed =
+    lipogramDebuffed ||
     (boss?.debuffs?.(submission, { run, blind, lexicon }, blind.sequence) ?? false) ||
     (boss?.voids?.(submission, blind.sequence) ?? false);
   for (const joker of run.jokers) {
@@ -830,12 +898,13 @@ function scoreSubmission(
     ctx.mult = 0;
     submission.debuffed = true;
     if (beforeChips !== 0 || beforeMult !== 0) {
-      events.push({
-        kind: 'boss',
-        bossId: blind.bossId!,
-        chipsDelta: -beforeChips,
-        multDelta: -beforeMult,
-      });
+      events.push(lipogramDebuffed
+        ? {
+            kind: 'tag', tagId: 'lipogramTag', chipsDelta: -beforeChips, multDelta: -beforeMult,
+          }
+        : {
+            kind: 'boss', bossId: blind.bossId!, chipsDelta: -beforeChips, multDelta: -beforeMult,
+          });
     }
   }
 
@@ -910,12 +979,20 @@ function scoreSentence(
 } {
   const base = finalizeScore(committed, judgment, run.patternLevels);
   const ctx: SentenceScoringContext = {
-    sequence: sequence.slice(),
+    sequence: sentenceSequenceForBlind(blind, sequence),
     match: judgment.match,
     unison: judgment.unison,
     totalBefore: committed,
     sentenceChips: base.sentenceChips,
     sentenceMult: base.sentenceMult,
+    scoreBonus: (() => {
+      const replays = blind.alphaOmegaReplays ?? 0;
+      const first = blind.sequence[0];
+      const last = blind.sequence[blind.sequence.length - 1];
+      if (replays <= 0 || !first || !last) return 0;
+      const lastScore = first.text === last.text ? 0 : last.settledScore;
+      return (first.settledScore + lastScore) * replays;
+    })(),
     jokerTriggers: [],
   };
   defaultJokerBus.emit(
@@ -928,6 +1005,7 @@ function scoreSentence(
   if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
   const effectChips = ctx.sentenceChips - base.sentenceChips;
   const effectMult = ctx.sentenceMult / base.sentenceMult;
+  const effectScore = ctx.scoreBonus ?? 0;
   let pouchId: RunState['pouchId'] | null = null;
   let pouchChipsDelta = 0;
   let pouchMultDelta = 0;
@@ -945,7 +1023,7 @@ function scoreSentence(
     ? BALANCE.unison[judgment.unison.suit] as { chips?: number; mult?: number }
     : null;
   return {
-    total: sentenceTotal(ctx.totalBefore, ctx.sentenceChips, ctx.sentenceMult),
+    total: sentenceTotal(ctx.totalBefore, ctx.sentenceChips, ctx.sentenceMult) + (ctx.scoreBonus ?? 0),
     sentenceChips: ctx.sentenceChips,
     sentenceMult: ctx.sentenceMult,
     breakdown: {
@@ -957,6 +1035,7 @@ function scoreSentence(
       unisonMult: unison?.mult ?? 1,
       effectChips,
       effectMult,
+      effectScore,
       ...(ctx.jokerTriggers && ctx.jokerTriggers.length > 0
         ? { jokerTriggers: ctx.jokerTriggers }
         : {}),
@@ -1036,6 +1115,11 @@ export function submitWord(
     projectedScore: 0,
     phasesUsed: blind.phasesUsed + 1,
   };
+  defaultJokerBus.emit(
+    'tilesPlayed',
+    { run: scoringRun, blind: afterBlind, tiles: used },
+    scoringRun.jokers,
+  );
   if (createdTiles.length > 0) {
     defaultJokerBus.emit(
       'tilesCreated',
@@ -1060,6 +1144,7 @@ export function submitWord(
       bag: refill.bag,
       discardedThisBlind: [...afterBlind.discardedThisBlind, ...dumped],
     };
+    Object.assign(scoringRun, withDiscardedLetters(scoringRun, dumped));
     defaultJokerBus.emit(
       'tilesDiscarded',
       { run: scoringRun, blind: afterBlind, tiles: dumped },
@@ -1119,7 +1204,7 @@ export function submitWord(
 
   // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
   // sentence bonus is a projection, never accumulated per phase.
-  const judgment = judgeSentence(sequence, lexicon);
+  const judgment = judgeSentence(sentenceSequenceForBlind(afterBlind, sequence), lexicon);
   const projectedScore = scoreSentence(
     committedScore,
     sequence,
@@ -1143,6 +1228,8 @@ export function submitWord(
     playedWords: postBossRun.playedWords ?? [],
     playedLetterHands: postBossRun.playedLetterHands ?? [],
     letterHandPlayCounts: postBossRun.letterHandPlayCounts ?? {},
+    discardedLetters: postBossRun.discardedLetters ?? [],
+    discardedLetterCounts: postBossRun.discardedLetterCounts ?? {},
     blind: { ...afterBlind, projectedScore },
   };
 }
@@ -1173,7 +1260,7 @@ export interface EndBlindResult {
  * blind automatically (§6.1, §6.6).
  */
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
-  const judgment = judgeSentence(blind.sequence, lexicon);
+  const judgment = judgeSentence(sentenceSequenceForBlind(blind), lexicon);
   const scored = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind, lexicon);
   return {
     judgment,

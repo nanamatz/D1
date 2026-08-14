@@ -213,7 +213,8 @@ describe('cumulative Record difficulty', () => {
       jokers: [{ defId: 'interestGlutton', edition: 'base' as const, state: {} }],
     };
     const blind = startBlind(run, makeRng('purple-interest'), { target: 1 });
-    const after = onBlindEnded(run, blind, makeRng('purple-interest-end'));
+    const ended = onBlindEnded(run, blind, makeRng('purple-interest-end'));
+    const after = resolveBlind(ended, blind, blind.target).run;
     expect(after.jokers[0]?.state.mult).toBe(0);
   });
 });

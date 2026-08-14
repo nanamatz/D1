@@ -52,9 +52,11 @@ describe('latest feedback regressions', () => {
 
   it('keeps live shop cards out of opened packs and disables stale purchases', () => {
     const shop = source('src/ui/components/Shop.tsx');
+    const emojiUnlocks = source('src/ui/emojiUnlocks.ts');
     expect(game).toContain('rollPack(slot, prev.run, rng, prev.shop.items, unlockedEmojiSet())');
     expect(game).toContain("state.phase !== 'shop' || !state.shop");
-    expect(game).toContain('canOwnJoker(prev.run, item.id) && unlockedEmojiSet().has(item.id)');
+    expect(game).toContain('canOwnJoker(prev.run, item.id) && shopEmojiSet().has(item.id)');
+    expect(emojiUnlocks).toContain('if (import.meta.env.DEV) eligible.add(DEVELOPER_GRACE_ID);');
     expect(shop).toContain('canOwnConsumable(run, item.id)');
   });
 

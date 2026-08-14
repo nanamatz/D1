@@ -162,12 +162,14 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(run.jokers[0]?.state.factor).toBe(2.25);
   });
 
-  it('Scrap Dealer records its payout so the shelf plays a gold trigger', () => {
+  it('Scrap Dealer multiplies Mult for Brass tiles in the permanent pouch', () => {
     const run = runWith('scrapDealer');
-    const after = onTilesDestroyed(run, 2);
-
-    expect(after.gold - run.gold).toBe(2 * BALANCE.jokers.scrapDealer.goldPerTile);
-    expect(after.jokers[0]?.state.goldPaid).toBe(2 * BALANCE.jokers.scrapDealer.goldPerTile);
+    run.bag = run.bag.map((tile, index) => index < 2 ? { ...tile, material: 'brass' } : tile);
+    const blind = startBlind(run, makeRng('scrap-brass'));
+    const ctx = ctxFor(submission('metal'));
+    bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.mult).toBe(1 + 2 * BALANCE.jokers.scrapDealer.factorPerBrass);
+    expect(run.jokers[0]?.state.factor).toBe(ctx.mult);
   });
 
   it('Tower of Babel makes valid words members of all four final registers', () => {

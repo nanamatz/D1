@@ -25,6 +25,10 @@ import inkTag from './assets/skip-rewards/ink-tag.png';
 import couponTag from './assets/skip-rewards/coupon-tag.png';
 import jugglerTag from './assets/skip-rewards/juggler-tag.png';
 import economyTag from './assets/skip-rewards/economy-tag.png';
+import alphaOmegaTag from './assets/skip-rewards/alpha-omega-tag.png';
+import lipogramTag from './assets/skip-rewards/lipogram-tag.png';
+import scarletTag from './assets/skip-rewards/scarlet-tag.png';
+import pythagoreanYTag from './assets/skip-rewards/pythagorean-y-tag.png';
 
 /** UI-only art for every Editorial Perk. The headless engine keeps ids/effects only. */
 export const SKIP_REWARD_ART: Record<SkipRewardId, string> = {
@@ -54,4 +58,8 @@ export const SKIP_REWARD_ART: Record<SkipRewardId, string> = {
   couponTag,
   jugglerTag,
   economyTag,
+  alphaOmegaTag,
+  lipogramTag,
+  scarletTag,
+  pythagoreanYTag,
 };

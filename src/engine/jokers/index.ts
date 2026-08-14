@@ -1,6 +1,7 @@
 /**
  * Joker registry (GDD §11). One joker per file, grouped by rarity here.
- * Active roster: Common 29 + Uncommon 47 + Rare 48 + Legendary 5.
+ * Active public roster: Common 34 + Uncommon 57 + Rare 54 + Legendary 5.
+ * Developer-only Primordial tiles stay outside ALL_JOKERS and the Collection.
  */
 
 import { JokerBus, type DestroyedJokerSnapshot, type JokerDef } from '../events';
@@ -28,12 +29,17 @@ import { alliterationSticker } from './alliterationSticker';
 import { assonance } from './assonance';
 import { porcelainCat } from './porcelainCat';
 import { woodpecker } from './woodpecker';
-import { letterLadderBadge } from './letterLadderBadge';
 import { dullingPencil } from './dullingPencil';
 import { proofEraser } from './proofEraser';
 import { spareDrawer } from './spareDrawer';
 import { threeLeafClover } from './threeLeafClover';
 import { megalith } from './megalith';
+import { scarletLetter } from './scarletLetter';
+import { peddler } from './peddler';
+import { storyteller } from './storyteller';
+import { recycling } from './recycling';
+import { beehiveTile } from './beehiveTile';
+import { cubism } from './cubism';
 // Uncommon (§11.3)
 import { literaryJudge } from './literaryJudge';
 import { rareEarth } from './rareEarth';
@@ -81,6 +87,16 @@ import { dryingInk } from './dryingInk';
 import { foldingManuscript } from './foldingManuscript';
 import { noiseCancelling } from './noiseCancelling';
 import { host } from './host';
+import { gematria } from './gematria';
+import { cadmusTeeth } from './cadmusTeeth';
+import { strawberryJam } from './strawberryJam';
+import { bald } from './bald';
+import { shuriken } from './shuriken';
+import { earthquake } from './earthquake';
+import { dogFood } from './dogFood';
+import { delisting } from './delisting';
+import { greatDepression } from './greatDepression';
+import { leak } from './leak';
 // Rare (§11.4)
 import { carteBlanche } from './carteBlanche';
 import { hypocrite } from './hypocrite';
@@ -105,12 +121,7 @@ import { loadedLeadDice } from './loadedLeadDice';
 import { woodblockPress } from './woodblockPress';
 import { materialPrism } from './materialPrism';
 import { typeOrchestra } from './typeOrchestra';
-import { palindromist } from './palindromist';
-import { straightShooter } from './straightShooter';
-import { vowelSymphony } from './vowelSymphony';
 import { longFormSerial } from './longFormSerial';
-import { twinPeaks } from './twinPeaks';
-import { threefoldSeal } from './threefoldSeal';
 import { handScholar } from './handScholar';
 import { wordHunter } from './wordHunter';
 import { plagiarist } from './plagiarist';
@@ -131,6 +142,19 @@ import { twentyFifthBlessing } from './twentyFifthBlessing';
 import { bloodTypeA } from './bloodTypeA';
 import { dummyData } from './dummyData';
 import { blacksmith } from './blacksmith';
+import { golem } from './golem';
+import { temurah } from './temurah';
+import { alphabetPoet } from './alphabetPoet';
+import { iotaStroke } from './iotaStroke';
+import { zombie } from './zombie';
+import { biochemistry } from './biochemistry';
+import { ambidextrous } from './ambidextrous';
+import { thirdParty } from './thirdParty';
+import { mirrorImage } from './mirrorImage';
+import { gathering } from './gathering';
+import { straightTalk } from './straightTalk';
+import { developerGrace } from './developerGrace';
+export { DEVELOPER_GRACE_ID } from './developerGrace';
 // Legendary (§11.5)
 import { bookOfMargins } from './bookOfMargins';
 import { tyrant } from './tyrant';
@@ -165,12 +189,17 @@ export const COMMON_JOKERS: readonly JokerDef[] = [
   assonance,
   porcelainCat,
   woodpecker,
-  letterLadderBadge,
   dullingPencil,
   proofEraser,
   spareDrawer,
   threeLeafClover,
   megalith,
+  scarletLetter,
+  peddler,
+  storyteller,
+  recycling,
+  beehiveTile,
+  cubism,
 ];
 export const UNCOMMON_JOKERS: readonly JokerDef[] = [
   literaryJudge,
@@ -220,6 +249,16 @@ export const UNCOMMON_JOKERS: readonly JokerDef[] = [
   noiseCancelling,
   stargazer,
   host,
+  gematria,
+  cadmusTeeth,
+  strawberryJam,
+  bald,
+  shuriken,
+  earthquake,
+  dogFood,
+  delisting,
+  greatDepression,
+  leak,
 ];
 export const RARE_JOKERS: readonly JokerDef[] = [
   carteBlanche,
@@ -244,12 +283,7 @@ export const RARE_JOKERS: readonly JokerDef[] = [
   woodblockPress,
   materialPrism,
   typeOrchestra,
-  palindromist,
-  straightShooter,
-  vowelSymphony,
   longFormSerial,
-  twinPeaks,
-  threefoldSeal,
   handScholar,
   wordHunter,
   plagiarist,
@@ -270,6 +304,17 @@ export const RARE_JOKERS: readonly JokerDef[] = [
   bloodTypeA,
   dummyData,
   blacksmith,
+  golem,
+  temurah,
+  alphabetPoet,
+  iotaStroke,
+  zombie,
+  biochemistry,
+  ambidextrous,
+  thirdParty,
+  mirrorImage,
+  gathering,
+  straightTalk,
 ];
 export const LEGENDARY_JOKERS: readonly JokerDef[] = [
   bookOfMargins,
@@ -279,6 +324,9 @@ export const LEGENDARY_JOKERS: readonly JokerDef[] = [
   misbound,
 ];
 
+/** Never offered or rendered in the Collection; UI dev builds inject it explicitly. */
+export const DEVELOPER_JOKERS: readonly JokerDef[] = [developerGrace];
+
 export const ALL_JOKERS: readonly JokerDef[] = [
   ...COMMON_JOKERS,
   ...UNCOMMON_JOKERS,
@@ -287,7 +335,7 @@ export const ALL_JOKERS: readonly JokerDef[] = [
 ];
 
 export const JOKER_REGISTRY: ReadonlyMap<string, JokerDef> = new Map(
-  ALL_JOKERS.map((j) => [j.id, j]),
+  [...ALL_JOKERS, ...DEVELOPER_JOKERS].map((j) => [j.id, j]),
 );
 
 /** Construct one newly acquired Emoji Tile. Run-history scalers seed their

@@ -4,7 +4,7 @@ const FILES = {
   en: 'locales/en.json',
   ko: 'locales/ko.json',
 };
-const TAG = /\[([mcbnkag$pCURLGvrw]):([^\]\r\n]+)\]/gu;
+const TAG = /\[([mcbnkage$pCURLGvrw]):([^\]\r\n]+)\]/gu;
 const TAG_LIKE = /\[[A-Za-z$]+:/u;
 const PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9_]*)\}/gu;
 const NUMBER = /(?:×\s*[+−-]?\d+(?:\.\d+)?|[+−-]?\d+(?:\.\d+)?%?)/gu;

@@ -7,6 +7,7 @@ import { baseScore, scoreWord, letterString } from '../engine/scoring';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
+import { tagDebuffsSubmission } from '../engine/skipRewards';
 import { isVowel } from '../engine/types';
 import { fontDescKey } from './descriptions';
 import type { Lexicon } from '../engine/lexicon';
@@ -71,6 +72,7 @@ export function stagePreview(
     : false;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   const debuffed =
+    tagDebuffsSubmission(blind, hypothetical) ||
     (boss?.debuffs?.(hypothetical, { run, blind, lexicon }, blind.sequence) ?? false) ||
     (boss?.voids?.(hypothetical, blind.sequence) ?? false);
   const letters = letterString(tiles);

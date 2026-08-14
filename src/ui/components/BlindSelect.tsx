@@ -14,7 +14,7 @@ import { skipRewardParams } from '../skipRewardTooltip';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
 import { isImmediateSkipReward, isNextShopSkipReward } from '../../engine/skipRewards';
-import type { SkipRewardOffer } from '../../engine/types';
+import type { PythagoreanPath, SkipRewardOffer } from '../../engine/types';
 import { motionOff } from '../motion';
 import { UiIcon } from './UiIcon';
 import { audio } from '../audio';
@@ -37,7 +37,9 @@ export function BlindSelect({ g }: { g: UseGame }) {
   const { run, blind } = g.state;
   const [leaving, setLeaving] = useState(false);
   const [autoRedeeming, setAutoRedeeming] = useState<SkipRewardOffer | null>(null);
-  const busy = leaving || autoRedeeming !== null;
+  const [autoRedeemPath, setAutoRedeemPath] = useState<PythagoreanPath | null>(null);
+  const [choosingPath, setChoosingPath] = useState<SkipRewardOffer | null>(null);
+  const busy = leaving || autoRedeeming !== null || choosingPath !== null;
   const leave = (action: () => void) => {
     if (motionOff()) { action(); return; }
     setLeaving(true);
@@ -99,7 +101,9 @@ export function BlindSelect({ g }: { g: UseGame }) {
                 <div className="bs-boss">
                   <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
                   <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
-                  <span className="be">{richText(t(bossDescKey(boss.id)))}</span>
+                  <span className="be">{richText(t(bossDescKey(boss.id), {
+                    letter: blind.deadLetter ?? '—',
+                  }))}</span>
                 </div>
               )}
               {(status === 'skipped' || claiming) && (
@@ -147,6 +151,10 @@ export function BlindSelect({ g }: { g: UseGame }) {
                         onClick={() => {
                           if (busy) return;
                           audio.play('tagSpawn');
+                          if (skipOffer.id === 'pythagoreanYTag') {
+                            setChoosingPath(skipOffer);
+                            return;
+                          }
                           if (isImmediateSkipReward(skipOffer.id) && !motionOff()) {
                             setAutoRedeeming(skipOffer);
                             return;
@@ -175,6 +183,35 @@ export function BlindSelect({ g }: { g: UseGame }) {
           );
         })}
       </div>
+      {choosingPath && (
+        <div className="pythagorean-choice" role="dialog" aria-modal="true">
+          <div className="pythagorean-choice-card">
+            <img src={SKIP_REWARD_ART.pythagoreanYTag} alt="" />
+            <strong>{t('skipReward.pythagoreanYTag.name')}</strong>
+            <span>{t('skipReward.pythagoreanYTag.choose')}</span>
+            <div className="pythagorean-choice-actions">
+              {(['wide', 'narrow'] as const).map((path) => (
+                <button
+                  key={path}
+                  className={['btn', path === 'wide' ? 'green' : 'red'].join(' ')}
+                  onClick={() => {
+                    const offer = choosingPath;
+                    setChoosingPath(null);
+                    if (motionOff()) {
+                      leave(() => g.skipBlind(path));
+                      return;
+                    }
+                    setAutoRedeemPath(path);
+                    setAutoRedeeming(offer);
+                  }}
+                >
+                  {t(`skipReward.pythagoreanYTag.${path}`, skipRewardParams(choosingPath, run))}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {autoRedeeming && (
         <div
           className="skip-tag-auto-redeem"
@@ -182,7 +219,10 @@ export function BlindSelect({ g }: { g: UseGame }) {
           onAnimationEnd={(event) => {
             if (event.target !== event.currentTarget || event.animationName !== 'skip-tag-auto-redeem') return;
             setAutoRedeeming(null);
-            leave(g.skipBlind);
+            const path = autoRedeemPath;
+            setAutoRedeemPath(null);
+            if (path) leave(() => g.skipBlind(path));
+            else leave(g.skipBlind);
           }}
         >
           <img src={SKIP_REWARD_ART[autoRedeeming.id]} alt="" />

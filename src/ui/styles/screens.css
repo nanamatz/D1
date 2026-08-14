@@ -50,6 +50,7 @@
   --rarity-uncommon: var(--chips);
   --rarity-rare: var(--mult);
   --rarity-legendary: var(--gold);
+  --rarity-primordial: #5b238f;
   --tt-sub-gap: 10px;
   position: absolute;
   bottom: calc(100% + 10px);
@@ -119,7 +120,7 @@
 .select-desc,
 .pouch-selected-info p {
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
 }
 .tt-card.tt-portal {
   position: fixed;
@@ -159,7 +160,7 @@
     1px 0 #58e8df,
     0 2px 0 #17282d;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
 }
 /* Pale inset plate, proportioned like the reference and free to grow by line count. */
 .tt-desc {
@@ -177,7 +178,7 @@
 .tt-body {
   white-space: pre-line;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
   font-family: var(--tt-copy-font);
   font-size: var(--fs-lg);
   font-weight: 700;
@@ -204,7 +205,7 @@
   color: #9b9b9b;
   text-align: center;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
 }
 .tt-inline-detail {
   display: flex;
@@ -332,12 +333,15 @@
   color: #b8342b;
   font-weight: 700;
 }
-.hl-axis {
+.hl-axis,
+.hl-term {
   color: #9a6500;
-  font-size: 1.08em;
   font-weight: 900;
-  letter-spacing: .02em;
   text-shadow: 0 1px 0 rgba(255, 215, 106, .34);
+}
+.hl-axis {
+  font-size: 1.08em;
+  letter-spacing: .02em;
 }
 .hl-gibberish {
   color: var(--mult);
@@ -357,7 +361,8 @@
 .hl-rarity-common,
 .hl-rarity-uncommon,
 .hl-rarity-rare,
-.hl-rarity-legendary {
+.hl-rarity-legendary,
+.hl-rarity-primordial {
   font-weight: 900;
 }
 .hl-rarity-common {
@@ -371,6 +376,9 @@
 }
 .hl-rarity-legendary {
   color: var(--rarity-legendary);
+}
+.hl-rarity-primordial {
+  color: var(--rarity-primordial);
 }
 .hl-edition-gray,
 .hl-edition-violet,
@@ -432,6 +440,10 @@
 .tt-rarity.legendary {
   background: var(--rarity-legendary);
   color: #20160a;
+}
+.tt-rarity.primordial {
+  background: var(--rarity-primordial);
+  color: #fff;
 }
 /* Grade tones escalate like rarity does, so the badge reads at a glance.
    Tokens (not raw hex) so the chromatic-unlock palette still governs them. */
@@ -886,6 +898,39 @@
     0 0 24px color-mix(in srgb, var(--gold) 65%, transparent);
   pointer-events: none;
   animation: skip-tag-auto-redeem 1.05s steps(10, end) both;
+}
+.pythagorean-choice {
+  position: fixed;
+  inset: 0;
+  z-index: 195;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 8, 18, .72);
+}
+.pythagorean-choice-card {
+  width: min(430px, calc(100vw - 32px));
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 20px;
+  color: var(--text);
+  background: var(--panel);
+  border: 4px solid var(--gold);
+  box-shadow: 8px 8px 0 var(--ink);
+  font-family: var(--ctl-font);
+  text-align: center;
+}
+.pythagorean-choice-card > img {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.pythagorean-choice-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 .skip-tag-auto-redeem img {
   width: 72px;
@@ -4339,7 +4384,9 @@ body.cb-safe .tile.hint {
   font-size: var(--ds-xs);
   line-height: 1;
   color: var(--pattern-level-color, var(--gold));
-  margin-right: 8px;
+  min-width: 3.25ch;
+  margin-right: 12px;
+  text-align: right;
 }
 /* Shared [Chips × Mult] axis readout for sentence patterns and Word Hands. */
 .ri-pat .pcm,
@@ -4787,7 +4834,7 @@ body.cb-safe .tile.hint {
   font-size: var(--fs-md);
   font-weight: 700;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
 }
 .cfx-results {
   min-height: 58px;

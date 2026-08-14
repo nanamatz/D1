@@ -90,17 +90,15 @@ Hands 1–6 remain visible from the start.
 
 The live implementation previously had no `handScholar` unlock gate. This pass adds the eight-distinct-hands one-run target and locale copy. Its scoring factor remains explicitly capped at ×4 so the larger registry does not silently buff the tile to ×5.5.
 
-### B-2. `palindromist` must match both palindrome hands
+### B-2. Palindrome-family Emoji Tile inheritance
 
-`palindromist` ("회문이면 ×4") and its unlock ("누적 회문 10회 완성") key on hand type. Because only the highest hand applies, **a 7+ letter palindrome now resolves to 대회문 and would silently stop triggering `palindromist`** — a strict downgrade for making a *better* palindrome. Wrong incentive.
-
-The live implementation previously had no `palindromist` unlock gate. This pass adds the cumulative-ten target; both the effect and unlock counter match **회문 OR 대회문**.
+The former `palindromist` implementation and its unlock were later retired as a duplicate condition. Mirror Image now owns the contained-Palindrome condition and therefore also fires for Grand Palindrome, independently of which hand wins the base-score comparison.
 
 Audit the same pattern across all Emoji Tiles: any tile keyed on a specific hand type needs checking against its new supersets. `longFormSerial` is keyed on letter count rather than hand type, so it is unaffected; confirm the rest.
 
 ### B-3. Vowelless has no Emoji Tile counterpart
 
-`vowelSymphony` (모음 플러시 ×4) has no opposite number. Hand #8 ships without a dedicated tile; a Vowelless counterpart is a follow-up design item, not part of this work order.
+Hand #8 ships without a dedicated tile; a Vowelless counterpart is a follow-up design item, not part of this work order. Vowel Symphony was later retired because Gathering duplicated its Vowel Flush multiplier role.
 
 ---
 
@@ -137,7 +135,7 @@ Land in the same pass:
 
 - **GDD** — synchronized with all nine hands, collision policy, discovery, unlocks, and lexicon evidence.
 - **screens-spec** — synchronized with nine rows, `???` masking, sidebar behavior, and bounded short-viewport scrolling.
-- **Emoji Tile spec/GDD** — records Palindromist inheritance/unlock and Hand Scholar unlock/cap.
+- **Emoji Tile spec/GDD** — records contained-hand inheritance and Hand Scholar unlock/cap.
 - **balance.ts** — owns every rank, Chips/Mult value, and all physical-length/Y-branch thresholds.
 - **AGENTS.md / CLAUDE.md** — easy-to-miss Word-Hand rules updated; no new save key was added.
 
@@ -147,4 +145,4 @@ Land in the same pass:
 
 1. **Y is a consonant**; lexicon counts are recorded in Section C.
 2. Letter Hands have **no leveling path** today.
-3. Palindromist needed the strict-superset fix; Vowel Symphony, Straight Shooter, and Letter Ladder Badge keep highest-hand-only behavior for orthogonal collisions; Twin Peaks, Threefold Seal, and Long-form Serial already inspect raw structure and needed no change.
+3. The duplicate-condition cleanup later retired Palindromist, Straight Shooter, Letter Ladder Badge, Twin Peaks, Threefold Seal, and Vowel Symphony. Mirror Image, Straight Talk, Ambidextrous, Third Party, and Gathering now own those contained-hand conditions; Long-form Serial remains distinct because it scales per letter beyond the Longword threshold.

@@ -20,11 +20,12 @@
  * because what counts as a Mult value is a fact about the sentence, not about
  * the characters: "Mult" and "배수" invert word order between our two locales,
  * and "×2 the sentence bonus" is a Mult while "2+ suits" is not. The translator
- * marks the span; this only renders it.
+ * marks the span; this only renders it. `[e:...]` marks a defined game term in
+ * yellow without changing the term's accessible plain-text form.
  */
 import type { ReactNode } from 'react';
 
-const TAG = /\[([mcbnkag$pCURLGvrw]):([^\]]*)\]/g;
+const TAG = /\[([mcbnkage$pCURLGvrw]):([^\]]*)\]/g;
 const SCORE_VALUE = /^(\s*(?:×\s*)?(?:[+-]?\{[^}]+\}|[+-]?\d+(?:\.\d+)?))(.*)$/;
 
 const CLASS: Record<string, string> = {
@@ -34,6 +35,7 @@ const CLASS: Record<string, string> = {
   n: 'hl-count',
   k: 'hl-kind',
   a: 'hl-axis',
+  e: 'hl-term',
   g: 'hl-gibberish',
   $: 'hl-money',
   p: 'hl-property',
@@ -41,6 +43,7 @@ const CLASS: Record<string, string> = {
   U: 'hl-rarity-uncommon',
   R: 'hl-rarity-rare',
   L: 'hl-rarity-legendary',
+  P: 'hl-rarity-primordial',
   G: 'hl-edition-gray',
   v: 'hl-edition-violet',
   r: 'hl-edition-rainbow',

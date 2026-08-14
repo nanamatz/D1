@@ -209,7 +209,7 @@ describe('Emoji Tile trigger popup', () => {
 
   it('marks Emoji Tile retrigger announcements and renders Again/다시 labels', () => {
     const run = newRun('retrigger-label');
-    run.jokers = [{ defId: 'twinPeaks', state: {} }];
+    run.jokers = [{ defId: 'echoChamber', state: {} }];
     const hand = tilesFor('letter');
     const result = submitWord(
       { ...startBlind(run, makeRng(run.seed)), hand },
@@ -219,7 +219,7 @@ describe('Emoji Tile trigger popup', () => {
       makeRng('retrigger-label-play'),
     );
     const announcements = result.events.filter(
-      (event) => event.kind === 'joker' && event.jokerId === 'twinPeaks' && event.retrigger,
+      (event) => event.kind === 'joker' && event.jokerId === 'echoChamber' && event.retrigger,
     );
     const tileView = readFileSync('src/ui/components/Tile.tsx', 'utf8');
     const shelf = readFileSync('src/ui/components/JokerShelf.tsx', 'utf8');

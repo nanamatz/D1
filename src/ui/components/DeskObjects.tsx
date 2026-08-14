@@ -11,6 +11,15 @@ import blankCheck from '../assets/desk-blank-check.png';
 import waxBall from '../assets/desk-wax-ball.png';
 import waxBallBroken from '../assets/desk-wax-ball-broken.png';
 import keycap from '../assets/desk-keycap.png';
+import shacoBox from '../assets/desk-shaco-box.png';
+import shacoBoxPopped from '../assets/desk-shaco-box-popped.png';
+import fly from '../assets/desk-fly.png';
+import flySwatter from '../assets/desk-fly-swatter.png';
+import bulldogRoulette from '../assets/desk-bulldog-roulette.png';
+import bulldogBite from '../assets/desk-bulldog-bite.png';
+import launchButtonCovered from '../assets/desk-launch-button-covered.png';
+import launchButtonOpen from '../assets/desk-launch-button-open.png';
+import launchButtonPressed from '../assets/desk-launch-button-pressed.png';
 import { clamp } from '../math';
 import { useI18n } from '../i18n';
 
@@ -19,13 +28,14 @@ import { useI18n } from '../i18n';
  * encounters live in the viewport margins, portaled to <body>, so they never
  * affect the headless engine or block the game board.
  */
-export type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap';
+export type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap' | 'shacoBox' | 'fly' | 'bulldog' | 'launchButton';
 
 interface DeskObj {
   kind: DeskKind;
   sfx: SfxName;
   side: 'left' | 'right';
   spawn: number;
+  trigger: number | undefined;
 }
 
 const BASE_KINDS: Pick<DeskObj, 'kind' | 'sfx'>[] = [
@@ -35,15 +45,22 @@ const BASE_KINDS: Pick<DeskObj, 'kind' | 'sfx'>[] = [
   { kind: 'check', sfx: 'deskCheck' },
   { kind: 'waxBall', sfx: 'deskWaxCrunch' },
   { kind: 'keycap', sfx: 'deskKeycap' },
+  { kind: 'shacoBox', sfx: 'deskJackPop' },
+  { kind: 'fly', sfx: 'deskFlySwat' },
+  { kind: 'bulldog', sfx: 'deskBulldogBite' },
+  { kind: 'launchButton', sfx: 'deskLaunchAlarm' },
 ];
 export const DESK_KINDS: readonly DeskKind[] = BASE_KINDS.map(({ kind }) => kind);
 const SIMPLE_ART: Partial<Record<DeskKind, string>> = {
   pot: coffeePot,
   waxBall,
   keycap,
+  shacoBox,
+  fly,
 };
 const ENCOUNTER_GAP_MIN_MS = 70_000;
 const ENCOUNTER_GAP_SPREAD_MS = 70_000;
+const BULLDOG_TEETH = 8;
 const SIGNATURE_VIEWBOX_WIDTH = 100;
 const SIGNATURE_VIEWBOX_HEIGHT = 40;
 const SIGNATURE_MIN_DISTANCE = 48;
@@ -77,6 +94,8 @@ export function DeskObjects({
   const [bellLeaving, setBellLeaving] = useState(false);
   const [encounterLeaving, setEncounterLeaving] = useState(false);
   const [encounterInteracting, setEncounterInteracting] = useState(false);
+  const [bulldogPressed, setBulldogPressed] = useState<number[]>([]);
+  const [launchCoverOpen, setLaunchCoverOpen] = useState(false);
   const [encounterCycle, setEncounterCycle] = useState(0);
   const [signaturePoints, setSignaturePoints] = useState<SignaturePoint[]>([]);
   const [signatureDrawing, setSignatureDrawing] = useState(false);
@@ -103,6 +122,8 @@ export function DeskObjects({
     setBellLeaving(false);
     setEncounterLeaving(false);
     setEncounterInteracting(false);
+    setBulldogPressed([]);
+    setLaunchCoverOpen(false);
     signaturePointer.current = null;
     signaturePointsRef.current = [];
     setSignaturePoints([]);
@@ -114,7 +135,14 @@ export function DeskObjects({
     interactionTimers.current.forEach(clearTimeout);
     interactionTimers.current = [];
     const base = BASE_KINDS.find(({ kind }) => kind === sampleKind)!;
-    const sample: DeskObj = { ...base, side: 'left', spawn: resetToken };
+    const sample: DeskObj = {
+      ...base,
+      side: 'left',
+      spawn: resetToken,
+      trigger: sampleKind === 'bulldog'
+        ? Math.floor(Math.random() * BULLDOG_TEETH)
+        : undefined,
+    };
     setCup(sampleKind === 'cup' ? sample : null);
     setBell(sampleKind === 'bell' ? sample : null);
     setEncounter(sampleKind !== 'cup' && sampleKind !== 'bell' ? sample : null);
@@ -124,6 +152,8 @@ export function DeskObjects({
     setBellLeaving(false);
     setEncounterLeaving(false);
     setEncounterInteracting(false);
+    setBulldogPressed([]);
+    setLaunchCoverOpen(false);
     signaturePointer.current = null;
     signaturePointsRef.current = [];
     setSignaturePoints([]);
@@ -155,6 +185,9 @@ export function DeskObjects({
         ...base,
         side: Math.random() < 0.5 ? 'left' : 'right',
         spawn: seq.current++,
+        trigger: base.kind === 'bulldog'
+          ? Math.floor(Math.random() * BULLDOG_TEETH)
+          : undefined,
       };
 
       if (next.kind === 'cup') {
@@ -166,6 +199,8 @@ export function DeskObjects({
       } else {
         setEncounterLeaving(false);
         setEncounterInteracting(false);
+        setBulldogPressed([]);
+        setLaunchCoverOpen(false);
         signaturePointsRef.current = [];
         setSignaturePoints([]);
         setSignatureDrawing(false);
@@ -183,6 +218,8 @@ export function DeskObjects({
     setEncounter(null);
     setEncounterLeaving(false);
     setEncounterInteracting(false);
+    setBulldogPressed([]);
+    setLaunchCoverOpen(false);
     signaturePointer.current = null;
     signaturePointsRef.current = [];
     setSignaturePoints([]);
@@ -319,6 +356,44 @@ export function DeskObjects({
     later(finishEncounter, 980);
   };
 
+  const pressBulldogTooth = (index: number) => {
+    if (
+      encounter?.kind !== 'bulldog' ||
+      encounterLeaving ||
+      encounterInteracting ||
+      bulldogPressed.includes(index)
+    ) {
+      return;
+    }
+
+    setBulldogPressed((pressed) => [...pressed, index]);
+    if (index !== encounter.trigger) {
+      audio.play('deskKeycap');
+      return;
+    }
+
+    audio.play('deskBulldogBite');
+    setEncounterInteracting(true);
+    later(() => setEncounterLeaving(true), 720);
+    later(finishEncounter, 1260);
+  };
+
+  const interactLaunchButton = () => {
+    if (encounter?.kind !== 'launchButton' || encounterLeaving || encounterInteracting) {
+      return;
+    }
+    if (!launchCoverOpen) {
+      audio.play('deskLaunchCover');
+      setLaunchCoverOpen(true);
+      return;
+    }
+
+    audio.play('deskLaunchAlarm');
+    setEncounterInteracting(true);
+    later(() => setEncounterLeaving(true), 1260);
+    later(finishEncounter, 1820);
+  };
+
   const still = reduced() ? 'desk-still' : '';
   // Three independent height zones PER SIDE (six total), oldest at the bottom.
   // Removing an object compacts only the stack on that same side.
@@ -363,6 +438,7 @@ export function DeskObjects({
         slotClass(encounter),
         encounterInteracting && encounter.kind === 'check' && 'desk-signing',
         encounterInteracting && encounter.kind !== 'check' && 'desk-interacting',
+        launchCoverOpen && encounter.kind === 'launchButton' && 'desk-cover-open',
         signatureDrawing && encounter.kind === 'check' && 'desk-drawing',
         encounterLeaving ? 'desk-leaving' : 'desk-entering',
         still,
@@ -472,6 +548,81 @@ export function DeskObjects({
         </div>
       )}
 
+      {encounter?.kind === 'bulldog' && (
+        <div
+          key={encounter.spawn}
+          className={encounterClass}
+          role={sampleKind ? 'group' : undefined}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
+        >
+          <span className="desk-glyph desk-bulldog-sprite">
+            <img
+              className="desk-bulldog-art desk-bulldog-open"
+              src={bulldogRoulette}
+              alt=""
+              draggable={false}
+            />
+            <img
+              className="desk-bulldog-art desk-bulldog-bite"
+              src={bulldogBite}
+              alt=""
+              draggable={false}
+            />
+            <span className="desk-bulldog-teeth">
+              {Array.from({ length: BULLDOG_TEETH }, (_, index) => {
+                const pressed = bulldogPressed.includes(index);
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    className={`desk-bulldog-tooth${pressed ? ' pressed' : ''}`}
+                    onClick={() => pressBulldogTooth(index)}
+                    disabled={pressed || encounterInteracting || encounterLeaving}
+                    aria-label={sampleKind
+                      ? t('desk.bulldog.tooth', { n: index + 1 })
+                      : undefined}
+                    tabIndex={sampleKind ? 0 : -1}
+                  />
+                );
+              })}
+            </span>
+          </span>
+        </div>
+      )}
+
+      {encounter?.kind === 'launchButton' && (
+        <button
+          key={encounter.spawn}
+          className={encounterClass}
+          onClick={interactLaunchButton}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
+          tabIndex={sampleKind ? 0 : -1}
+        >
+          <span className="desk-glyph desk-launch-sprite">
+            <img
+              className="desk-launch-art desk-launch-covered"
+              src={launchButtonCovered}
+              alt=""
+              draggable={false}
+            />
+            <img
+              className="desk-launch-art desk-launch-open"
+              src={launchButtonOpen}
+              alt=""
+              draggable={false}
+            />
+            <img
+              className="desk-launch-art desk-launch-pressed"
+              src={launchButtonPressed}
+              alt=""
+              draggable={false}
+            />
+          </span>
+        </button>
+      )}
+
       {encounter && encounter.kind !== 'check' && SIMPLE_ART[encounter.kind] && (
         <button
           key={encounter.spawn}
@@ -491,6 +642,17 @@ export function DeskObjects({
               <>
                 <img className="desk-encounter-art desk-keycap-art" src={keycap} alt="" draggable={false} />
                 <span className="desk-keycap-effect" aria-hidden><i /><i /><i /><i /></span>
+              </>
+            ) : encounter.kind === 'shacoBox' ? (
+              <>
+                <img className="desk-encounter-art desk-shaco-closed" src={shacoBox} alt="" draggable={false} />
+                <img className="desk-encounter-art desk-shaco-popped" src={shacoBoxPopped} alt="" draggable={false} />
+              </>
+            ) : encounter.kind === 'fly' ? (
+              <>
+                <img className="desk-encounter-art desk-fly-art" src={fly} alt="" draggable={false} />
+                <img className="desk-encounter-art desk-fly-swatter" src={flySwatter} alt="" draggable={false} />
+                <span className="desk-fly-impact" aria-hidden />
               </>
             ) : (
               <img

@@ -50,7 +50,7 @@ import { CardArt } from './CardArt';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { audio } from '../audio';
-import { unlockedEmojiSet } from '../emojiUnlocks';
+import { shopEmojiSet, unlockedEmojiSet } from '../emojiUnlocks';
 
 interface ShopOfferProps {
   label: string;
@@ -230,7 +230,7 @@ export function Shop({ g }: { g: UseGame }) {
   const affordable = (item: ShopItem): boolean => {
     if (redeemingVoucher || run.gold < item.price) return false;
     return item.kind === 'joker'
-      ? canAddJoker(run, item.id, item.edition ?? 'base', unlockedEmojiSet())
+      ? canAddJoker(run, item.id, item.edition ?? 'base', shopEmojiSet())
       : item.kind === 'tile' ||
         (run.consumables.length < run.consumableSlots && canOwnConsumable(run, item.id));
   };

@@ -1,7 +1,7 @@
 /**
  * Bosses (GDD §8.3) — data + hooks, like jokers. Each boss attacks one system
  * (readable), is build-dependent (a check), and has counterplay. This is the
- * publishing-frame roster of 12 ordinary bosses plus 6 finishers; effects plug in at fixed
+ * publishing-frame roster of 15 ordinary bosses plus 6 finishers; effects plug in at fixed
  * points in the loop pipeline:
  *   handSizeDelta   → shrink the opening draw before the hand is dealt (Budget Book)
  *   targetMult      → scale the blind target (Wanted)
@@ -21,7 +21,7 @@ import { BALANCE } from './balance';
 import { setTileMaterial } from './materials';
 import type { Lexicon } from './lexicon';
 import type { Rng } from './rng';
-import { isVerb, submissionHasSuit, submissionSuits } from './types';
+import { isVerb, submissionHasSuit, submissionLength, submissionSuits } from './types';
 import type {
   BlindState,
   RunState,
@@ -60,6 +60,8 @@ export interface BossDef {
   /** Presentation-only factors for hooks implemented as equivalent deltas. */
   scoreFactors?: { chips?: number; mult?: number };
   sentenceScoring?: (ctx: SentenceScoringContext) => void;
+  /** Transform only the sequence seen by sentence-pattern and Unison judging. */
+  sentenceSequence?: (sequence: readonly WordSubmission[]) => WordSubmission[];
   /** true → the submission is allowed but its word score is reduced to 0 */
   debuffs?: (
     submission: WordSubmission,
@@ -163,6 +165,53 @@ const BOSSES: readonly BossDef[] = [
       ctx.mult *= BALANCE.boss.willScale;
     },
   },
+  {
+    id: 'deadLetter',
+    nameEn: 'Dead Letter',
+    nameKo: '사문자',
+    emoji: '✉️',
+    enter: (run, blind, rng) => {
+      const counts = new Map<string, number>();
+      for (const tile of [...blind.hand, ...blind.bag, ...blind.discardedThisBlind]) {
+        if (tile.letter) counts.set(tile.letter, (counts.get(tile.letter) ?? 0) + 1);
+      }
+      const repeated = [...counts.entries()]
+        .filter(([, count]) => count >= 2)
+        .map(([letter]) => letter)
+        .sort();
+      const available = repeated.length > 0 ? repeated : [...counts.keys()].sort();
+      return {
+        run,
+        blind: {
+          ...blind,
+          deadLetter: available.length > 0
+            ? (available[rng.int(available.length)] as import('./types').Letter)
+            : null,
+        },
+      };
+    },
+    debuffs: (submission, env) =>
+      !submission.isGibberish &&
+      !!env.blind.deadLetter &&
+      submission.text.toUpperCase().includes(env.blind.deadLetter),
+  },
+  {
+    id: 'stereotypePlate',
+    nameEn: 'Stereotype Plate',
+    nameKo: '스테레오타입 판',
+    emoji: '▤',
+    debuffs: (submission, _env, prior) =>
+      !submission.isGibberish &&
+      prior.some((word) =>
+        !word.isGibberish && submissionLength(word) === submissionLength(submission)),
+  },
+  {
+    id: 'orphanLine',
+    nameEn: 'Orphan Line',
+    nameKo: '고아행',
+    emoji: '¶',
+    sentenceSequence: (sequence) => sequence.slice(1),
+  },
 ];
 
 const forceRandomTile = (blind: BlindState, rng: Rng): BlindState => {
@@ -265,6 +314,15 @@ export const CORE_BOSS_IDS: readonly string[] = BOSSES.map((b) => b.id);
 export const FINISHER_BOSS_IDS: readonly string[] = FINISHERS.map((boss) => boss.id);
 export const ALL_BOSS_IDS: readonly string[] = [...CORE_BOSS_IDS, ...FINISHER_BOSS_IDS];
 export type BossPool = 'core' | 'finisher';
+
+/** Apply a boss's sentence-only transform without altering committed words. */
+export function sentenceSequenceForBlind(
+  blind: BlindState,
+  sequence: readonly WordSubmission[] = blind.sequence,
+): WordSubmission[] {
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  return boss?.sentenceSequence ? boss.sentenceSequence(sequence) : sequence.slice();
+}
 
 export const bossPoolForAnte = (ante: number): BossPool =>
   ante > 0 && ante % BALANCE.runAntes === 0 ? 'finisher' : 'core';

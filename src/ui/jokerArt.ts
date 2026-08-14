@@ -46,7 +46,6 @@ import alliterationSticker from './assets/jokers/alliteration-sticker.png';
 import assonance from './assets/jokers/assonance.png';
 import porcelainCat from './assets/jokers/porcelain-cat.png';
 import woodpecker from './assets/jokers/woodpecker.png';
-import letterLadderBadge from './assets/jokers/letter-ladder-badge.png';
 import everydayHero from './assets/jokers/everyday-hero.png';
 import formalInvitation from './assets/jokers/formal-invitation.png';
 import slangDictionary from './assets/jokers/slang-dictionary.png';
@@ -92,12 +91,7 @@ import loadedLeadDice from './assets/jokers/loaded-lead-dice.png';
 import woodblockPress from './assets/jokers/woodblock-press.png';
 import materialPrism from './assets/jokers/material-prism.png';
 import typeOrchestra from './assets/jokers/type-orchestra.png';
-import palindromist from './assets/jokers/palindromist.png';
-import straightShooter from './assets/jokers/straight-shooter.png';
-import vowelSymphony from './assets/jokers/vowel-symphony.png';
 import longFormSerial from './assets/jokers/long-form-serial.png';
-import twinPeaks from './assets/jokers/twin-peaks.png';
-import threefoldSeal from './assets/jokers/threefold-seal.png';
 import handScholar from './assets/jokers/hand-scholar.png';
 import wordHunter from './assets/jokers/word-hunter.png';
 import plagiarist from './assets/jokers/plagiarist.png';
@@ -127,6 +121,34 @@ import megalith from './assets/jokers/megalith.png';
 import host from './assets/jokers/host.png';
 import dummyData from './assets/jokers/dummy-data.png';
 import blacksmith from './assets/jokers/blacksmith.png';
+import gematria from './assets/jokers/gematria.png';
+import cadmusTeeth from './assets/jokers/cadmus-teeth.png';
+import golem from './assets/jokers/golem.png';
+import temurah from './assets/jokers/temurah.png';
+import alphabetPoet from './assets/jokers/alphabet-poet.png';
+import iotaStroke from './assets/jokers/iota-stroke.png';
+import strawberryJam from './assets/jokers/strawberry-jam.png';
+import zombie from './assets/jokers/zombie.png';
+import biochemistry from './assets/jokers/biochemistry.png';
+import bald from './assets/jokers/bald.png';
+import ambidextrous from './assets/jokers/ambidextrous.png';
+import thirdParty from './assets/jokers/third-party.png';
+import mirrorImage from './assets/jokers/mirror-image.png';
+import gathering from './assets/jokers/gathering.png';
+import straightTalk from './assets/jokers/straight-talk.png';
+import scarletLetter from './assets/jokers/scarlet-letter.png';
+import peddler from './assets/jokers/peddler.png';
+import storyteller from './assets/jokers/storyteller.png';
+import recycling from './assets/jokers/recycling.png';
+import beehiveTile from './assets/jokers/beehive-tile.png';
+import cubism from './assets/jokers/cubism.png';
+import shuriken from './assets/jokers/shuriken.png';
+import earthquake from './assets/jokers/earthquake.png';
+import dogFood from './assets/jokers/dog-food.png';
+import delisting from './assets/jokers/delisting.png';
+import greatDepression from './assets/jokers/great-depression.png';
+import leak from './assets/jokers/leak.png';
+import developerGrace from './assets/jokers/developer-grace.png';
 
 const ART: Readonly<Record<string, string>> = {
   alphabeticalOrder,
@@ -177,7 +199,6 @@ const ART: Readonly<Record<string, string>> = {
   assonance,
   porcelainCat,
   woodpecker,
-  letterLadderBadge,
   everydayHero,
   formalInvitation,
   slangDictionary,
@@ -223,12 +244,7 @@ const ART: Readonly<Record<string, string>> = {
   woodblockPress,
   materialPrism,
   typeOrchestra,
-  palindromist,
-  straightShooter,
-  vowelSymphony,
   longFormSerial,
-  twinPeaks,
-  threefoldSeal,
   handScholar,
   wordHunter,
   plagiarist,
@@ -258,6 +274,34 @@ const ART: Readonly<Record<string, string>> = {
   host,
   dummyData,
   blacksmith,
+  gematria,
+  cadmusTeeth,
+  golem,
+  temurah,
+  alphabetPoet,
+  iotaStroke,
+  strawberryJam,
+  zombie,
+  biochemistry,
+  bald,
+  ambidextrous,
+  thirdParty,
+  mirrorImage,
+  gathering,
+  straightTalk,
+  scarletLetter,
+  peddler,
+  storyteller,
+  recycling,
+  beehiveTile,
+  cubism,
+  shuriken,
+  earthquake,
+  dogFood,
+  delisting,
+  greatDepression,
+  leak,
+  developerGrace,
 };
 
 /** One 84×112 pixel master scaled into the shared 124×165 runtime frame. */

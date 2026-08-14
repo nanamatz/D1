@@ -1,7 +1,7 @@
 /** Profile-scoped Emoji Tile achievements. The headless engine receives the
  * resulting eligible-id set; it never reads browser or desktop storage. */
 import { BALANCE } from '../engine/balance';
-import { ALL_JOKERS } from '../engine/jokers';
+import { ALL_JOKERS, DEVELOPER_GRACE_ID } from '../engine/jokers';
 import { jokerSlotLimit } from '../engine/vouchers';
 import {
   isConsonant,
@@ -46,6 +46,13 @@ export const EMOJI_UNLOCK_RULES: readonly EmojiUnlockRule[] = ALL_JOKERS
     target: target(def.id),
   }));
 
+/** Profile-eligible shop pool plus the one development-only pinned tile. */
+export function shopEmojiSet(): Set<string> {
+  const eligible = unlockedEmojiSet();
+  if (import.meta.env.DEV) eligible.add(DEVELOPER_GRACE_ID);
+  return eligible;
+}
+
 interface RunTracker {
   seed: string;
   initialLetters: Letter[];
@@ -67,13 +74,12 @@ export interface EmojiUnlockProgress {
 
 const CUMULATIVE_IDS = new Set([
   'fillInTheBlank', 'bookworm', 'alliterationSticker', 'porcelainCat', 'woodpecker',
-  'letterLadderBadge', 'proofEraser', 'threeLeafClover', 'megalith', 'glasswork',
+  'proofEraser', 'threeLeafClover', 'megalith', 'glasswork',
   'everydayHero', 'slangDictionary', 'oneVoice', 'sometimesY', 'syllableScale',
   'glassInsurance', 'scrapDealer', 'lightTouch', 'heavyPress', 'hollowPromise',
   'doubleImpression', 'bestsellerBand', 'badReview', 'stargazer', 'fableHoard',
-  'censorsBane', 'rotaryPress', 'stoneTongue', 'twinPeaks', 'wordHunter',
+  'censorsBane', 'rotaryPress', 'stoneTongue', 'wordHunter',
   'livingType', 'royalWe', 'bloodTypeA',
-  'palindromist',
 ]);
 
 const safeValue = (value: unknown): number =>
@@ -313,11 +319,6 @@ function playedWord(
   }
   set(progress, 'rareEarth', tracker.rareLetters.length);
 
-  if (letterHandId === 'straight') add(progress, 'letterLadderBadge');
-  if (letterHandId === 'twin') add(progress, 'twinPeaks');
-  if (letterHandId === 'palindrome' || letterHandId === 'grandPalindrome') {
-    add(progress, 'palindromist');
-  }
   set(progress, 'handScholar', run.playedLetterHands?.length ?? 0);
 
   const letters = submission.tiles.flatMap((tile) => tile.letter ? [tile.letter] : []);

@@ -9,14 +9,18 @@ import { bossPoolForId, drawBossFromCycle } from './bosses';
 import { defaultJokerBus } from './jokers';
 import type { Rng } from './rng';
 import type {
+  BlindState,
   NextBlindBonus,
   PackSize,
   PackSlot,
   PackType,
   PatternId,
+  PythagoreanPath,
+  Letter,
   RunState,
   SkipRewardId,
   SkipRewardOffer,
+  WordSubmission,
 } from './types';
 
 export const SKIP_REWARD_IDS: readonly SkipRewardId[] = [
@@ -46,6 +50,10 @@ export const SKIP_REWARD_IDS: readonly SkipRewardId[] = [
   'couponTag',
   'jugglerTag',
   'economyTag',
+  'alphaOmegaTag',
+  'lipogramTag',
+  'scarletTag',
+  'pythagoreanYTag',
 ];
 
 /** Rewards whose effect resolves as part of the skip itself, not at a later blind/shop event. */
@@ -61,6 +69,7 @@ export const IMMEDIATE_SKIP_REWARD_IDS = [
   'garbageTag',
   'inkTag',
   'economyTag',
+  'pythagoreanYTag',
 ] as const satisfies readonly SkipRewardId[];
 
 const IMMEDIATE_SKIP_REWARDS = new Set<SkipRewardId>(IMMEDIATE_SKIP_REWARD_IDS);
@@ -93,7 +102,21 @@ export const EMPTY_NEXT_BLIND_BONUS: NextBlindBonus = {
   handSize: 0,
   targetMultiplier: 1,
   startingScore: 0,
+  alphaOmegaReplays: 0,
+  lipogramLetters: [],
+  scarletLetters: [],
+  clearRewardBonus: 0,
 };
+
+/** Shared scoring/preview predicate for letter-restriction Tags. */
+export function tagDebuffsSubmission(
+  blind: BlindState,
+  submission: WordSubmission,
+): boolean {
+  return !submission.isGibberish &&
+    (blind.lipogramLetters ?? []).some((letter) =>
+      submission.text.toUpperCase().includes(letter));
+}
 
 /** Two equally weighted offers without repeating this or the previous Chapter's Tags. */
 export function rollSkipOffers(
@@ -102,11 +125,14 @@ export function rollSkipOffers(
   previous: readonly SkipRewardOffer[] = [],
 ): [SkipRewardOffer, SkipRewardOffer] {
   const patterns = Object.keys(run.patternLevels) as PatternId[];
+  const letters = Object.keys(BALANCE.letterChips) as Letter[];
   const roll = (ids: readonly SkipRewardId[]): SkipRewardOffer => {
     const id = ids[rng.int(ids.length)]!;
-    return id === 'houseStyle'
-      ? { id, pattern: patterns[rng.int(patterns.length)]! }
-      : { id };
+    if (id === 'houseStyle') return { id, pattern: patterns[rng.int(patterns.length)]! };
+    if (id === 'lipogramTag' || id === 'scarletTag') {
+      return { id, letter: letters[rng.int(letters.length)]! };
+    }
+    return { id };
   };
   const previousIds = new Set(previous.map((offer) => offer.id));
   const pool = SKIP_REWARD_IDS.filter((id) => !previousIds.has(id));
@@ -127,6 +153,18 @@ function withBlindBonus(
       targetMultiplier:
         run.nextBlindBonus.targetMultiplier * (bonus.targetMultiplier ?? 1),
       startingScore: run.nextBlindBonus.startingScore + (bonus.startingScore ?? 0),
+      alphaOmegaReplays:
+        (run.nextBlindBonus.alphaOmegaReplays ?? 0) + (bonus.alphaOmegaReplays ?? 0),
+      lipogramLetters: [
+        ...(run.nextBlindBonus.lipogramLetters ?? []),
+        ...(bonus.lipogramLetters ?? []),
+      ],
+      scarletLetters: [
+        ...(run.nextBlindBonus.scarletLetters ?? []),
+        ...(bonus.scarletLetters ?? []),
+      ],
+      clearRewardBonus:
+        (run.nextBlindBonus.clearRewardBonus ?? 0) + (bonus.clearRewardBonus ?? 0),
     },
   };
 }
@@ -162,7 +200,11 @@ export interface SkipRewardResult {
 }
 
 /** Apply the current offer and advance to the next blind without payout or shop. */
-export function skipCurrentBlind(run: RunState, rng: Rng): SkipRewardResult {
+export function skipCurrentBlind(
+  run: RunState,
+  rng: Rng,
+  options: { pythagoreanPath?: PythagoreanPath } = {},
+): SkipRewardResult {
   if (run.blindIndex === 2) throw new Error('Deadline cannot be skipped');
   const skippedIndex = run.blindIndex;
   const offer = run.skipOffers[skippedIndex];
@@ -268,6 +310,33 @@ export function skipCurrentBlind(run: RunState, rng: Rng): SkipRewardResult {
         ...next,
         gold: next.gold * BALANCE.skipRewards.economyGoldMultiplier,
       };
+      break;
+    case 'alphaOmegaTag':
+      next = withBlindBonus(next, { alphaOmegaReplays: 1 });
+      break;
+    case 'lipogramTag':
+      if (!offer.letter) throw new Error('Lipogram Tag offer is missing its disclosed letter');
+      next = withBlindBonus(next, {
+        targetMultiplier: BALANCE.skipRewards.lipogramTargetMultiplier,
+        lipogramLetters: [offer.letter],
+      });
+      break;
+    case 'scarletTag':
+      if (!offer.letter) throw new Error('Scarlet Tag offer is missing its disclosed letter');
+      next = withBlindBonus(next, { scarletLetters: [offer.letter] });
+      break;
+    case 'pythagoreanYTag':
+      if (!options.pythagoreanPath) {
+        throw new Error('Y Tag requires a disclosed path choice');
+      }
+      next = options.pythagoreanPath === 'wide'
+        ? withBlindBonus(next, {
+            targetMultiplier: BALANCE.skipRewards.pythagoreanWideTargetMultiplier,
+          })
+        : withBlindBonus(next, {
+            targetMultiplier: BALANCE.skipRewards.pythagoreanNarrowTargetMultiplier,
+            clearRewardBonus: BALANCE.skipRewards.pythagoreanNarrowReward,
+          });
       break;
   }
 

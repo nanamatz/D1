@@ -231,6 +231,7 @@ export type ScoreEvent =
   | { kind: 'wordLength'; letters: number; multDelta: number }
   | { kind: 'letterHand'; hand: LetterHandId; chipsDelta: number; multDelta: number; multFactor: number }
   | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; retrigger?: boolean; growthKind?: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize'; growthDelta?: number; createdTileIds?: string[]; sourceTileId?: string }
+  | { kind: 'tag'; tagId: SkipRewardId; chipsDelta: number; multDelta: number; scoreDelta?: number; tileId?: string; retrigger?: boolean }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
   | { kind: 'settle'; chips: number; mult: number; total: number };
@@ -245,6 +246,8 @@ export interface SentenceScoringContext {
   sentenceChips: number;
   /** Mult factor applied to the combined Chips axis: patternMult × unisonMult (GDD §5.2) */
   sentenceMult: number;
+  /** Flat score added after the sentence Chips x Mult axes resolve. */
+  scoreBonus?: number;
   /** Emoji Tile effects that need their own blind-end trigger presentation. */
   jokerTriggers?: SentenceJokerTrigger[];
 }
@@ -266,6 +269,8 @@ export interface SentenceBonusBreakdown {
   /** Post-pattern effects from Emoji Tiles, vouchers, or bosses. */
   effectChips: number;
   effectMult: number;
+  /** Flat post-sentence score from effects such as Omega Tag. */
+  effectScore?: number;
   jokerTriggers?: SentenceJokerTrigger[];
   /** Final Starting-Pouch axis transform, kept separate from ordinary effects. */
   pouchId: PouchId | null;
@@ -304,13 +309,21 @@ export type SkipRewardId =
   | 'inkTag'
   | 'couponTag'
   | 'jugglerTag'
-  | 'economyTag';
+  | 'economyTag'
+  | 'alphaOmegaTag'
+  | 'lipogramTag'
+  | 'scarletTag'
+  | 'pythagoreanYTag';
+
+export type PythagoreanPath = 'wide' | 'narrow';
 
 /** The reward is rolled and fully disclosed before the player chooses to skip. */
 export interface SkipRewardOffer {
   id: SkipRewardId;
   /** House Style's exact sentence pattern is part of the disclosed offer. */
   pattern?: PatternId;
+  /** Letter-bound Tags disclose their seeded letter before the skip decision. */
+  letter?: Letter;
 }
 
 /** Bonuses carried until the next blind the player actually chooses to play. */
@@ -320,6 +333,14 @@ export interface NextBlindBonus {
   handSize: number;
   targetMultiplier: number;
   startingScore: number;
+  /** Final-score replays of the first and last individual word. */
+  alphaOmegaReplays: number;
+  /** Disclosed letters whose valid words are debuffed in the next played blind. */
+  lipogramLetters: Letter[];
+  /** Disclosed letters whose physical tiles retrigger in the next played blind. */
+  scarletLetters: Letter[];
+  /** Extra clear reward attached to the next played blind only. */
+  clearRewardBonus: number;
 }
 
 /** Starting-pouch choice. Display names live in i18n; engine ids stay stable. */
@@ -374,6 +395,13 @@ export interface BlindState {
   forcedTileId?: string | null;
   /** Blueprint: Emoji Tile identities are hidden for this blind. */
   jokersFaceDown?: boolean;
+  /** Dead Letter's seeded forbidden letter for this Deadline. */
+  deadLetter?: Letter | null;
+  /** Next-blind Tag state copied in before the carry is consumed. */
+  lipogramLetters?: Letter[];
+  scarletLetters?: Letter[];
+  alphaOmegaReplays?: number;
+  clearRewardBonus?: number;
 }
 
 export interface RunState {
@@ -392,6 +420,8 @@ export interface RunState {
   skippedThisChapter: (0 | 1)[];
   /** Lifetime count within this run; balance telemetry and future hooks read it. */
   skippedBlinds: number;
+  /** Distinct physical letters discarded earlier in this run (Cadmus's Teeth). */
+  discardedLetters?: Letter[];
   /** Real Stationery Shops entered; absent legacy values mean none visited yet. */
   shopsVisited?: number;
   /** Stacks across consecutive skips and is consumed only when Play is chosen. */
@@ -411,6 +441,8 @@ export interface RunState {
   consumables: ConsumableId[];
   /** Last used Fable/Constellation card, for The Boy Who Cried Wolf. */
   lastFableOrConstellation?: ConsumableId | null;
+  /** Number of Fable cards successfully used during this run. */
+  fablesUsed?: number;
   consumableSlots: number; // base 2
   jokerSlots: number; // base 5; Kung Fu Manual adds one
   patternLevels: Record<PatternId, number>;
@@ -438,6 +470,8 @@ export interface RunState {
   playedLetterHands?: LetterHandId[];
   /** Times each Word Hand scored across the whole run. Optional for legacy saves. */
   letterHandPlayCounts?: Partial<Record<LetterHandId, number>>;
+  /** Physical discard counts by letter across the run. Optional for legacy saves. */
+  discardedLetterCounts?: Partial<Record<Letter, number>>;
   /** Boss rerolls spent this chapter; reset when the Deadline clears. */
   bossRerollsUsed: number;
   /** scaling counters (GDD §11.6) — one per axis, jokers read/write these */
@@ -467,6 +501,8 @@ export type ShopItem =
       price: number;
       /** Guaranteed rarity-tag stock stays beside ordinary items on reroll. */
       rarityTag?: 'uncommonTag' | 'rareTag';
+      /** Development-build fixture retained across rerolls of the first shop. */
+      developerPinned?: true;
     }
   | { kind: 'consumable'; id: ConsumableId; price: number }
   | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId; price: number }
@@ -505,7 +541,7 @@ export interface ShopState {
 
 // ---------- Jokers (GDD §11) ----------
 
-export type JokerRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+export type JokerRarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'primordial';
 export type JokerEdition = 'base' | 'gray' | 'violet' | 'rainbow' | 'white';
 
 export interface OwnedJoker {

@@ -159,7 +159,13 @@ export function useFableOnPouch(
   };
   const commit = (bag: Tile[]): { ok: true; run: RunState } => ({
     ok: true,
-    run: { ...run, bag, consumables: consumed(), lastFableOrConstellation: id },
+    run: {
+      ...run,
+      bag,
+      consumables: consumed(),
+      lastFableOrConstellation: id,
+      fablesUsed: (run.fablesUsed ?? 0) + 1,
+    },
   });
 
   if (effect.kind === 'material') {
@@ -382,6 +388,7 @@ export function useFable(
     ...run,
     consumables,
     lastFableOrConstellation: id === 'fable2' ? (run.lastFableOrConstellation ?? null) : id,
+    fablesUsed: (run.fablesUsed ?? 0) + 1,
   };
   let nextBlind = blind;
   let requestHint = false;

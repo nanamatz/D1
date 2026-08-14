@@ -40,7 +40,7 @@ export type SfxName =
   | 'tagSpawn' | 'gameOver' | 'gameClear' | 'rainbowShimmer'
   | 'jokerChips' | 'jokerMult' | 'jokerEffect'
   // D-3 ambient desk objects (feature-03): each click plays its own small sound.
-  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour' | 'deskKeycap' | 'deskWaxCrunch'
+  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour' | 'deskKeycap' | 'deskWaxCrunch' | 'deskJackPop' | 'deskFlySwat' | 'deskBulldogBite' | 'deskLaunchCover' | 'deskLaunchAlarm'
   // feature-04 A-1 · money is never silent — a rising coin gain / falling coin loss,
   // distinguishable by contour, fired centrally on every gold change.
   | 'coinGain' | 'coinLoss'
@@ -269,6 +269,62 @@ const RECIPES: Record<SfxName, Recipe> = {
       { cutoff: 1850, to: 480, filter: 'lowpass', color: 'brown', gain: 0.88, delay: 0.12, dur: 0.15 },
       { cutoff: 5200, to: 1350, filter: 'bandpass', gain: 0.7, delay: 0.22, dur: 0.09 },
       { cutoff: 3100, to: 900, filter: 'bandpass', color: 'brown', gain: 0.52, delay: 0.3, dur: 0.075 },
+    ],
+  },
+  deskJackPop: {
+    gain: 0.46, dur: 0.74, textured: true, cutoff: 9800,
+    tones: [
+      { wave: 'triangle', from: 145, to: 560, gain: 0.62, dur: 0.12, attack: 0.001 },
+      { wave: 'sine', from: 560, to: 165, gain: 0.54, delay: 0.1, dur: 0.6, attack: 0.001 },
+      { wave: 'square', from: 820, to: 430, gain: 0.11, delay: 0.04, dur: 0.2, attack: 0.001 },
+    ],
+    noise: [{ cutoff: 6500, filter: 'highpass', gain: 0.4, dur: 0.025, attack: 0.001 }],
+  },
+  deskFlySwat: {
+    gain: 0.48, dur: 0.38, textured: true, cutoff: 9800,
+    tones: [
+      { wave: 'square', from: 620, to: 760, gain: 0.12, dur: 0.1, attack: 0.001 },
+      { wave: 'sine', from: 125, to: 58, gain: 0.56, delay: 0.09, dur: 0.2, attack: 0.001, sub: true },
+    ],
+    noise: [
+      { cutoff: 7200, filter: 'highpass', gain: 0.42, dur: 0.035, attack: 0.001 },
+      { cutoff: 950, to: 220, filter: 'lowpass', color: 'brown', gain: 0.88, delay: 0.08, dur: 0.16, attack: 0.001 },
+    ],
+  },
+  deskBulldogBite: {
+    gain: 0.56, dur: 0.7, textured: true, cutoff: 11000,
+    tones: [
+      { wave: 'sine', from: 170, to: 62, gain: 0.72, dur: 0.28, attack: 0.001, sub: true },
+      { wave: 'square', from: 880, to: 185, gain: 0.24, dur: 0.1, attack: 0.001 },
+      { wave: 'sine', from: 92, to: 54, gain: 0.48, delay: 0.18, dur: 0.36, attack: 0.008, sub: true },
+    ],
+    noise: [
+      { cutoff: 9200, filter: 'highpass', gain: 0.82, dur: 0.045, attack: 0.001 },
+      { cutoff: 780, to: 190, filter: 'lowpass', color: 'brown', gain: 0.78, delay: 0.06, dur: 0.34, attack: 0.001 },
+    ],
+  },
+  deskLaunchCover: {
+    gain: 0.4, dur: 0.3, textured: true, cutoff: 12000,
+    tones: [
+      { wave: 'sine', from: 1180, to: 820, gain: 0.34, dur: 0.22, attack: 0.001 },
+      { wave: 'sine', from: 2150, to: 1560, gain: 0.18, delay: 0.018, dur: 0.18, attack: 0.001 },
+    ],
+    noise: [
+      { cutoff: 7600, filter: 'highpass', gain: 0.5, dur: 0.035, attack: 0.001 },
+      { cutoff: 1800, to: 520, filter: 'bandpass', gain: 0.38, delay: 0.12, dur: 0.1 },
+    ],
+  },
+  deskLaunchAlarm: {
+    gain: 0.52, dur: 1.28, textured: true, cutoff: 10500,
+    tones: [
+      { wave: 'square', from: 560, to: 880, gain: 0.3, dur: 0.32, attack: 0.001 },
+      { wave: 'square', from: 880, to: 560, gain: 0.3, delay: 0.32, dur: 0.32, attack: 0.001 },
+      { wave: 'square', from: 560, to: 880, gain: 0.26, delay: 0.64, dur: 0.32, attack: 0.001 },
+      { wave: 'sine', from: 118, to: 42, gain: 0.82, delay: 0.82, dur: 0.42, attack: 0.001, sub: true },
+    ],
+    noise: [
+      { cutoff: 8800, filter: 'highpass', gain: 0.52, dur: 0.045, attack: 0.001 },
+      { cutoff: 1100, to: 180, filter: 'lowpass', color: 'brown', gain: 0.9, delay: 0.82, dur: 0.4, attack: 0.001 },
     ],
   },
   // Struck-metal partials plus a tiny contact transient: coins, not UI notes.

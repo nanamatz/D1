@@ -13,6 +13,7 @@ import {
   remainingPhaseGold,
 } from './economy';
 import type { BlindKind, BlindState, RunState } from './types';
+import { defaultJokerBus } from './jokers';
 
 const KINDS = ['small', 'big', 'boss'] as const;
 
@@ -83,14 +84,18 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
       run,
     };
   }
-  const reward = effectiveClearReward(run, blind.kind, blind.bossId);
+  const reward = effectiveClearReward(run, blind.kind, blind.bossId) + (blind.clearRewardBonus ?? 0);
   const tagReward = run.pendingClearReward
-    + (blind.kind === 'boss' ? (run.pendingBossReward ?? 0) : 0);
+    + (blind.kind === 'boss' ? (run.pendingBossReward ?? 0) : 0)
+    + (blind.clearRewardBonus ?? 0);
   const phaseCount = blind.phasesTotal - blind.phasesUsed;
   const phases = remainingPhaseGold(run, phaseCount);
   const discardCount = blind.discardsLeft;
   const discards = remainingDiscardGold(run, discardCount);
-  const interestGold = effectiveInterest(run);
+  const interestScoring = { run, interest: effectiveInterest(run) };
+  defaultJokerBus.emit('interestScoring', interestScoring, run.jokers);
+  const interestGold = interestScoring.interest;
+  defaultJokerBus.emit('interestResolved', { run, interest: interestGold }, run.jokers);
   const total = reward + phases + discards + interestGold;
   const won =
     !run.victorySecured && run.ante === BALANCE.runAntes && run.blindIndex === 2;

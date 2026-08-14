@@ -78,6 +78,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     jokers: [],
     consumables: [],
     lastFableOrConstellation: null,
+    fablesUsed: 0,
     consumableSlots: BALANCE.consumableSlots,
     jokerSlots: BALANCE.jokerSlots,
     patternLevels: freshPatternLevels(),
@@ -92,6 +93,8 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     playedWords: [],
     playedLetterHands: [],
     letterHandPlayCounts: {},
+    discardedLetters: [],
+    discardedLetterCounts: {},
     bossRerollsUsed: 0,
     counters: freshCounters(),
   };

@@ -216,7 +216,7 @@ export interface SettleView {
     retrigger: boolean;
   } | null;
   /** a Word-Hand / suit / word-length stamp landing this beat */
-  stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch'; label: string } | null;
+  stamp: { kind: 'letterHand' | 'suit' | 'wordLength' | 'pouch' | 'tag'; label: string } | null;
   /** this beat's chip / mult increase, for the floating +N pops over the scorebox
    *  (item 6). `id` is the beat index so each pop re-mounts and replays its rise.
    * `chipsOp`/`multOp` preserve whether the source displayed +delta or ×factor. */
@@ -318,6 +318,7 @@ export function accumulate(
   if (
     e.kind === 'letterHand' ||
     e.kind === 'joker' ||
+    e.kind === 'tag' ||
     e.kind === 'boss' ||
     e.kind === 'pouch' ||
     e.kind === 'material' ||
@@ -462,7 +463,8 @@ export function SettleProvider({
             e.kind === 'wordLength' ||
             e.kind === 'letterHand' ||
             e.kind === 'boss' ||
-            e.kind === 'pouch'
+            e.kind === 'pouch' ||
+            e.kind === 'tag'
           ) {
             audio.play('stamp');
           } else if (e.kind === 'joker') {
@@ -538,6 +540,13 @@ export function SettleProvider({
             setView({ ...base, stamp: { kind: 'wordLength', label: String(e.letters) } });
           } else if (e.kind === 'pouch') {
             setView({ ...base, stamp: { kind: 'pouch', label: e.pouchId } });
+          } else if (e.kind === 'tag') {
+            if (e.tileId) triggerTile(e.tileId);
+            setView({
+              ...base,
+              activeTileId: e.tileId ?? null,
+              stamp: { kind: 'tag', label: e.tagId },
+            });
           } else if (e.kind === 'joker') {
             // A per-tile Emoji effect carries tileId only to lift/wiggle its target.
             // Its value belongs to the firing Emoji Tile's popup, so do not repeat

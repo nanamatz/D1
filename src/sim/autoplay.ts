@@ -11,6 +11,7 @@
 import { newRun } from '../engine/run';
 import { startBlind, discardTiles, submitWord, canEndEarly, endBlind } from '../engine/loop';
 import { judgeSentence } from '../engine/patterns';
+import { sentenceSequenceForBlind } from '../engine/bosses';
 import { NO_LETTER } from '../engine/scoring';
 import { JOKER_REGISTRY } from '../engine/jokers';
 import { resolveBlind, currentTarget, kindForIndex } from '../engine/progression';
@@ -56,7 +57,7 @@ function main(): void {
     if (result.createdTiles.length) run.bag.push(...result.createdTiles);
     blind = after;
     const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `[${submission.suit} suit]`;
-    const judged = judgeSentence(blind.sequence, lex);
+    const judged = judgeSentence(sentenceSequenceForBlind(blind), lex);
     const patt = judged.match ? judged.match.pattern.toUpperCase() : '—';
     const uni = judged.unison ? ` +unison(${judged.unison.suit})` : '';
     console.log(

@@ -59,7 +59,7 @@ describe('useGame wires the predicate at BOTH call sites', () => {
   it('uses it in the discard path — discarding the last tiles with a dry pouch', () => {
     // The discard reducer must set pendingEnd, not return a stuck board.
     const discard = game.slice(game.indexOf('const discard = useCallback'));
-    expect(discard.slice(0, 2000)).toContain('blindExhausted');
+    expect(discard.slice(0, 3500)).toContain('blindExhausted');
   });
 
   it('uses it in the consumable path — a destroying Fable/Gambler with a dry pouch', () => {

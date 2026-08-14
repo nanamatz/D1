@@ -102,7 +102,7 @@ export function Sidebar({
   const showBlindResources = mode !== 'shop';
   const phasesLeft = showBlindResources ? blind.phasesTotal - blind.phasesUsed : 0;
   const settle = useSettleView();
-  const reward = effectiveClearReward(run, blind.kind);
+  const reward = effectiveClearReward(run, blind.kind) + (blind.clearRewardBonus ?? 0);
   // A (playtest-04) + item 7: the ROUND score is committed ONLY and never decreases,
   // and it ALWAYS rolls up with the same eased count-up the sentence bonus uses — no
   // more per-beat stepping. While a word's settle animates the scorebox, the round
@@ -220,7 +220,9 @@ export function Sidebar({
         </div>
         <div className="bb-eff">
           {mode === 'blind' && boss && (
-            <span className="bosseff">{richText(t(`bossdesc.${boss.id}`))}</span>
+            <span className="bosseff">{richText(t(`bossdesc.${boss.id}`, {
+              letter: blind.deadLetter ?? '—',
+            }))}</span>
           )}
         </div>
         {mode !== 'blind' ? (
@@ -336,6 +338,11 @@ export function Sidebar({
             {Math.abs(sentenceBonus!.effectMult - 1) > 0.001 && (
               <span className="bonus-part effect">
                 {t('sidebar.bonusEffectMult', { mult: fmtMult(sentenceBonus!.effectMult) })}
+              </span>
+            )}
+            {(sentenceBonus!.effectScore ?? 0) !== 0 && (
+              <span className="bonus-part effect">
+                {t('sidebar.bonusEffectScore', { score: formatScore(sentenceBonus!.effectScore ?? 0) })}
               </span>
             )}
             {sentenceBonus!.pouchId && (

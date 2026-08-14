@@ -135,3 +135,18 @@ export function evaluateLetterHand(
   }
   return best;
 }
+
+/** Whether a submission contains one specific structure, independent of the
+ * highest-hand winner used for the word's own score. */
+export function matchesLetterHand(
+  id: LetterHandId,
+  letters: string,
+  isGibberish: boolean,
+  effectiveLength = letters.length,
+): boolean {
+  const def = LETTER_HAND_REGISTRY.find((candidate) => candidate.id === id);
+  if (!def || (isGibberish && !def.gibberish)) return false;
+  return id === 'longword'
+    ? effectiveLength >= BALANCE.letterHand.longwordLen
+    : def.test(letters);
+}

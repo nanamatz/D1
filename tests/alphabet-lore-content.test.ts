@@ -1,0 +1,244 @@
+import { describe, expect, it } from 'vitest';
+import { BALANCE } from '../src/engine/balance';
+import { BOSS_REGISTRY, enterBossBlind } from '../src/engine/bosses';
+import { createOwnedJoker } from '../src/engine/jokers';
+import { discardTiles, endBlind, startBlind, submitWord } from '../src/engine/loop';
+import { makeLexicon } from '../src/engine/lexicon';
+import { resolveBlind } from '../src/engine/progression';
+import { makeRng } from '../src/engine/rng';
+import { newRun } from '../src/engine/run';
+import {
+  consumeNextBlindBonus,
+  skipCurrentBlind,
+} from '../src/engine/skipRewards';
+import { stagePreview } from '../src/ui/game';
+import type { BlindState, Letter, RunState, Tile, WordSubmission } from '../src/engine/types';
+
+const lex = makeLexicon([], {
+  ant: { suit: 'standard', pos: ['noun'] },
+  ate: { suit: 'standard', pos: ['verbTransitive'] },
+  bat: { suit: 'standard', pos: ['noun'] },
+  cat: { suit: 'standard', pos: ['noun'] },
+  dog: { suit: 'standard', pos: ['noun'] },
+  eat: { suit: 'standard', pos: ['verbTransitive'] },
+  run: { suit: 'standard', pos: ['verbIntransitive'] },
+  stone: { suit: 'standard', pos: ['noun'] },
+  tone: { suit: 'standard', pos: ['noun'] },
+});
+
+let serial = 0;
+const tilesFor = (word: string): Tile[] => [...word.toUpperCase()].map((letter) => ({
+  id: `lore-${serial++}`,
+  letter: letter as Letter,
+  material: 'ceramic',
+  font: 'medium',
+  edition: 'base',
+}));
+
+const play = (blind: BlindState, run: RunState, word: string) => {
+  const hand = tilesFor(word);
+  return submitWord(
+    { ...blind, hand },
+    run,
+    lex,
+    hand.map((tile) => tile.id),
+    makeRng(`play-${word}-${serial}`),
+  );
+};
+
+const runWith = (id: string): RunState => {
+  const run = newRun(`lore-${id}`);
+  run.jokers = [createOwnedJoker(run, id)];
+  return run;
+};
+
+describe('alphabet-lore Emoji Tiles', () => {
+  it('Gematria adds Mult for equal intrinsic letter Chips', () => {
+    const run = runWith('gematria');
+    const blind = startBlind(run, makeRng('gematria'), { target: 1_000_000 });
+    const first = play(blind, run, 'cat');
+    const second = play(first.blind, { ...run, jokers: first.jokers }, 'dog');
+    expect(second.events).toContainEqual(expect.objectContaining({
+      kind: 'joker', jokerId: 'gematria', multDelta: BALANCE.jokers.gematria.mult,
+    }));
+  });
+
+  it("Cadmus's Teeth counts each discarded alphabet letter once across the run", () => {
+    const run = runWith('cadmusTeeth');
+    const base = startBlind(run, makeRng('cadmus'));
+    const hand = [...tilesFor('aab'), ...base.hand.slice(3)];
+    const result = discardTiles(
+      { ...base, hand },
+      run,
+      hand.slice(0, 3).map((tile) => tile.id),
+      makeRng('cadmus-discard'),
+    );
+    expect(result.discardedLetters.sort()).toEqual(['A', 'B']);
+    expect(result.jokers[0]!.state.chips).toBe(BALANCE.jokers.cadmusTeeth.chipsPerLetter * 2);
+
+    const lateRun = { ...newRun('cadmus-late'), discardedLetters: result.discardedLetters };
+    expect(createOwnedJoker(lateRun, 'cadmusTeeth').state.chips).toBe(
+      BALANCE.jokers.cadmusTeeth.chipsPerLetter * 2,
+    );
+  });
+
+  it('Golem, Temurah, and Iota Stroke recognize their dictionary transformations', () => {
+    const golemRun = runWith('golem');
+    const golem = play(startBlind(golemRun, makeRng('golem')), golemRun, 'stone');
+    expect(golem.events).toContainEqual(expect.objectContaining({
+      kind: 'joker', jokerId: 'golem', multFactor: BALANCE.jokers.golem.factor,
+    }));
+
+    const temurahRun = runWith('temurah');
+    const eat = play(startBlind(temurahRun, makeRng('temurah')), temurahRun, 'eat');
+    const ate = play(eat.blind, { ...temurahRun, jokers: eat.jokers }, 'ate');
+    expect(ate.events).toContainEqual(expect.objectContaining({
+      kind: 'joker', jokerId: 'temurah', multFactor: BALANCE.jokers.temurah.factor,
+    }));
+
+    const iotaRun = runWith('iotaStroke');
+    const cat = play(startBlind(iotaRun, makeRng('iota')), iotaRun, 'cat');
+    const bat = play(cat.blind, { ...iotaRun, jokers: cat.jokers }, 'bat');
+    expect(bat.events).toContainEqual(expect.objectContaining({
+      kind: 'joker', jokerId: 'iotaStroke', multFactor: BALANCE.jokers.iotaStroke.factor,
+    }));
+  });
+
+  it('Alphabet Poet multiplies the sentence bonus for ascending initials', () => {
+    const run = runWith('alphabetPoet');
+    let blind = startBlind(run, makeRng('alphabet-poet'), { target: 1_000_000 });
+    let currentRun = run;
+    for (const word of ['ant', 'bat', 'cat']) {
+      const result = play(blind, currentRun, word);
+      blind = result.blind;
+      currentRun = { ...currentRun, jokers: result.jokers };
+    }
+    const end = endBlind(blind, currentRun, lex);
+    expect(end.breakdown.effectMult).toBe(BALANCE.jokers.alphabetPoet.factor);
+    expect(end.breakdown.jokerTriggers?.[0]?.jokerId).toBe('alphabetPoet');
+  });
+});
+
+describe('alphabet-lore bosses', () => {
+  it('Dead Letter seeds a repeated letter and debuffs a valid word containing it', () => {
+    const run = newRun('dead-letter');
+    const started = startBlind(run, makeRng('dead-letter-start'), {
+      kind: 'boss', bossId: 'deadLetter', target: 1_000_000,
+    });
+    const entered = enterBossBlind(run, started, makeRng('dead-letter-enter'));
+    expect(entered.blind.deadLetter).toMatch(/^[A-Z]$/);
+    const letter = entered.blind.deadLetter!;
+    const word = letter.toLowerCase();
+    const singleLex = makeLexicon([], { [word]: { suit: 'standard', pos: ['noun'] } });
+    const tile = tilesFor(letter)[0]!;
+    const result = submitWord(
+      { ...entered.blind, hand: [tile] }, entered.run, singleLex, [tile.id], makeRng('dead-letter-play'),
+    );
+    expect(result.submission.debuffed).toBe(true);
+    expect(result.submission.settledScore).toBe(0);
+  });
+
+  it('Stereotype Plate debuffs a reused valid physical length', () => {
+    const run = newRun('stereotype');
+    const blind = startBlind(run, makeRng('stereotype'), {
+      kind: 'boss', bossId: 'stereotypePlate', target: 1_000_000,
+    });
+    const cat = play(blind, run, 'cat');
+    const dog = play(cat.blind, { ...run, jokers: cat.jokers }, 'dog');
+    expect(dog.submission.debuffed).toBe(true);
+    expect(dog.submission.settledScore).toBe(0);
+  });
+
+  it('Orphan Line excludes only the first word from pattern and Unison judgment', () => {
+    const run = newRun('orphan');
+    const plain = startBlind(run, makeRng('plain'), { target: 1_000_000 });
+    const plainCat = play(plain, run, 'cat');
+    const plainRun = play(plainCat.blind, run, 'run');
+    expect(endBlind(plainRun.blind, run, lex).judgment.match?.pattern).toBe('simple');
+
+    const orphan = startBlind(run, makeRng('orphan'), {
+      kind: 'boss', bossId: 'orphanLine', target: 1_000_000,
+    });
+    const orphanCat = play(orphan, run, 'cat');
+    const orphanRun = play(orphanCat.blind, run, 'run');
+    const end = endBlind(orphanRun.blind, run, lex);
+    expect(orphanCat.submission.settledScore).toBeGreaterThan(0);
+    expect(end.judgment.match).toBeNull();
+    expect(end.judgment.unison).toBeNull();
+  });
+});
+
+describe('alphabet-lore Tags', () => {
+  it('Scarlet Tag retriggers each disclosed-letter tile once', () => {
+    const run = newRun('scarlet');
+    run.nextBlindBonus.scarletLetters = ['A'];
+    const blind = startBlind(run, makeRng('scarlet'));
+    const result = play(blind, run, 'cat');
+    const a = result.submission.tiles.find((tile) => tile.letter === 'A')!;
+    expect(result.events.filter((event) => event.kind === 'tile' && event.tileId === a.id)).toHaveLength(2);
+    expect(result.events).toContainEqual(expect.objectContaining({
+      kind: 'tag', tagId: 'scarletTag', tileId: a.id, retrigger: true,
+    }));
+  });
+
+  it('Lipogram Tag cuts the target and debuffs matching valid words', () => {
+    const run: RunState = {
+      ...newRun('lipogram'),
+      skipOffers: [{ id: 'lipogramTag', letter: 'A' }, { id: 'copyPass' }],
+    };
+    const skipped = skipCurrentBlind(run, makeRng('lipogram-skip')).run;
+    const tagged = startBlind(skipped, makeRng('lipogram-blind'));
+    const plain = startBlind(consumeNextBlindBonus(skipped), makeRng('lipogram-blind'));
+    expect(tagged.target).toBe(Math.round(plain.target * BALANCE.skipRewards.lipogramTargetMultiplier));
+    const hand = tilesFor('cat');
+    const staged = { ...tagged, hand };
+    expect(stagePreview(staged, skipped, lex, hand.map((tile) => tile.id), (key) => key)?.debuffed)
+      .toBe(true);
+    const result = submitWord(
+      staged, skipped, lex, hand.map((tile) => tile.id), makeRng('lipogram-play'),
+    );
+    expect(result.submission.debuffed).toBe(true);
+    expect(result.events).toContainEqual(expect.objectContaining({ kind: 'tag', tagId: 'lipogramTag' }));
+  });
+
+  it('Alpha & Omega replays first/last settled scores, counting identical text once', () => {
+    const word = (text: string, score: number): WordSubmission => ({
+      text, tiles: tilesFor(text), isGibberish: false, suit: 'standard', posUsed: null,
+      settledScore: score, effectiveSuits: [],
+    });
+    const run = newRun('alpha-omega');
+    const blind = {
+      ...startBlind(run, makeRng('alpha-omega')),
+      alphaOmegaReplays: 1,
+      committedScore: 30,
+      sequence: [word('cat', 10), word('dog', 20)],
+    };
+    expect(endBlind(blind, run, lex).finalScore).toBe(60);
+    const same = { ...blind, committedScore: 20, sequence: [word('cat', 10), word('cat', 10)] };
+    expect(endBlind(same, run, lex).finalScore).toBe(30);
+  });
+
+  it('Pythagorean Y applies the chosen next-blind risk/reward path', () => {
+    const offer = (seed: string): RunState => ({
+      ...newRun(seed),
+      skipOffers: [{ id: 'pythagoreanYTag' }, { id: 'copyPass' }],
+    });
+    const wide = skipCurrentBlind(offer('wide'), makeRng('wide'), { pythagoreanPath: 'wide' }).run;
+    expect(wide.nextBlindBonus.targetMultiplier).toBe(BALANCE.skipRewards.pythagoreanWideTargetMultiplier);
+
+    const narrow = skipCurrentBlind(offer('narrow'), makeRng('narrow'), { pythagoreanPath: 'narrow' }).run;
+    const blind = startBlind(narrow, makeRng('narrow-blind'), { target: 1 });
+    const active = consumeNextBlindBonus(narrow);
+    const outcome = resolveBlind(active, blind, blind.target);
+    expect(blind.target).toBe(BALANCE.skipRewards.pythagoreanNarrowTargetMultiplier);
+    expect(outcome.earned.tagReward).toBe(BALANCE.skipRewards.pythagoreanNarrowReward);
+  });
+});
+
+describe('alphabet-lore content registries', () => {
+  it('registers exactly the requested additions', () => {
+    expect(BOSS_REGISTRY.has('deadLetter')).toBe(true);
+    expect(BOSS_REGISTRY.has('stereotypePlate')).toBe(true);
+    expect(BOSS_REGISTRY.has('orphanLine')).toBe(true);
+  });
+});

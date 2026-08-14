@@ -40,7 +40,9 @@ export function BossIntro({ blind }: { blind: BlindState }) {
         <div className="boss-intro-copy">
           <div className="boss-intro-kicker">{t('blind.boss')}</div>
           <div className="boss-intro-name">{lang === 'ko' ? boss.nameKo : boss.nameEn}</div>
-          <div className="boss-intro-effect">{richText(t(`bossdesc.${boss.id}`))}</div>
+          <div className="boss-intro-effect">{richText(t(`bossdesc.${boss.id}`, {
+            letter: blind.deadLetter ?? '—',
+          }))}</div>
         </div>
       </div>
     </div>

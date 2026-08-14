@@ -5,7 +5,12 @@
  */
 
 import { BALANCE } from './balance';
-import { createOwnedJoker, defaultJokerBus, JOKER_REGISTRY } from './jokers';
+import {
+  createOwnedJoker,
+  defaultJokerBus,
+  DEVELOPER_GRACE_ID,
+  JOKER_REGISTRY,
+} from './jokers';
 import { availableJokerDefs, sampleJokerDefs } from './offers';
 import {
   consumableBuyPrice,
@@ -257,9 +262,20 @@ export function rollShopStock(
   run: RunState,
   rng: Rng,
   profileEligible?: ReadonlySet<string>,
+  developerMode = false,
 ): ShopState {
+  const items = rollItems(run, rng, new Set(), profileEligible);
+  if (developerMode && (run.shopsVisited ?? 0) === 0) {
+    items[0] = {
+      kind: 'joker',
+      id: DEVELOPER_GRACE_ID,
+      edition: 'base',
+      price: BALANCE.jokerPrice.primordial,
+      developerPinned: true,
+    };
+  }
   return {
-    items: rollItems(run, rng, new Set(), profileEligible),
+    items,
     voucher: run.voucherLocked ? null : run.voucherOffer,
     bonusVoucher: null,
     packs: rollPacks(rng, (run.shopsVisited ?? 0) === 0),
@@ -363,10 +379,11 @@ export function prepareShop(
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
   profileEligible?: ReadonlySet<string>,
+  developerMode = false,
 ): PreparedShop {
   const prepared = applyPendingShopTags(
     run,
-    rollShopStock(run, rng, profileEligible),
+    rollShopStock(run, rng, profileEligible, developerMode),
     rng,
     profileUnlocked,
     profileEligible,
@@ -516,17 +533,32 @@ export function rerollShop(
 ): BuyResult {
   const cost = rerollCost(shop.rerolls, rerollDiscount(run));
   if (run.gold < cost) return { run, shop, ok: false };
-  const nextRun = { ...run, gold: run.gold - cost };
+  const nextRun = {
+    ...run,
+    gold: run.gold - cost,
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
+  defaultJokerBus.emit('shopRerolled', { run: nextRun }, nextRun.jokers);
   const tagged = shop.items.filter(
     (item): item is Extract<ShopItem, { kind: 'joker' }> =>
       item?.kind === 'joker' && item.rarityTag !== undefined,
   );
-  const taggedIds = new Set(tagged.map((item) => item.id));
+  const pinned = shop.items.filter(
+    (item): item is Extract<ShopItem, { kind: 'joker' }> =>
+      item?.kind === 'joker' && item.developerPinned === true,
+  );
+  const retained = [...tagged, ...pinned];
+  const retainedIds = new Set(retained.map((item) => item.id));
   const prepared = applyPendingShopTags(
     nextRun,
     {
       ...shop,
-      items: [...rollItems(nextRun, rng, taggedIds, profileEligible), ...tagged],
+      items: [
+        ...rollItems(nextRun, rng, retainedIds, profileEligible)
+          .slice(0, Math.max(0, shopItemSlots(nextRun) - pinned.length)),
+        ...pinned,
+        ...tagged,
+      ],
       rerolls: shop.rerolls + 1,
     },
     rng,

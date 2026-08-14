@@ -140,6 +140,16 @@ describe('richText — pack highlight tags', () => {
     expect(classes).toEqual(['hl-gibberish']);
   });
 
+  it('highlights defined game terms in yellow without changing their wording', () => {
+    const nodes = richText('[e:Triplet] / [e:Vowel Flush]').filter(isValidElement);
+    expect(nodes.map((node) => (node.props as { className: string }).className))
+      .toEqual(['hl-term', 'hl-term']);
+    expect(stripRichText('[e:Triplet] / [e:Vowel Flush]')).toBe('Triplet / Vowel Flush');
+
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(css).toMatch(/\.hl-term\s*\{[^}]*color:\s*#9a6500/s);
+  });
+
   it('uses the matching Emoji Tile rarity classes', () => {
     const classes = richText('[C:Common] [U:Uncommon] [R:Rare] [L:Legendary]')
       .filter(isValidElement)
@@ -184,9 +194,37 @@ describe('richText — pack highlight tags', () => {
     const css = readFileSync('src/ui/styles/screens.css', 'utf8');
     expect(css).toMatch(/\.tt-body \[class\^='hl-'\][^{]*\{[^}]*white-space:\s*nowrap/s);
   });
+
+  it('wraps all descriptive copy only at word boundaries', () => {
+    const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
+    const screens = readFileSync('src/ui/styles/screens.css', 'utf8');
+    const play = readFileSync('src/ui/styles/play.css', 'utf8');
+
+    expect(tokens).toMatch(
+      /body\s*\{[^}]*word-break:\s*keep-all[^}]*overflow-wrap:\s*normal[^}]*hyphens:\s*none/s,
+    );
+    expect(`${tokens}\n${screens}\n${play}`).not.toMatch(
+      /word-break:\s*break-all|overflow-wrap:\s*(?:anywhere|break-word)|hyphens:\s*auto/,
+    );
+  });
 });
 
 describe('effect-description markup', () => {
+  it('marks named Word Hand terms in both Emoji Tile locales', () => {
+    const expected = {
+      ambidextrous: ['Twin', '쌍둥이'],
+      thirdParty: ['Triplet', '트리플렛'],
+      mirrorImage: ['Palindrome', '회문'],
+      gathering: ['Vowel Flush', '모음 플러시'],
+      straightTalk: ['Straight', '스트레이트'],
+    } as const;
+
+    for (const [id, [english, korean]] of Object.entries(expected)) {
+      expect(LOCALES.en[`jokerdesc.${id}`]).toContain(`[e:${english}]`);
+      expect(LOCALES.ko[`jokerdesc.${id}`]).toContain(`[e:${korean}]`);
+    }
+  });
+
   it('marks every edition mention without treating property names as editions', () => {
     for (const [lang, dict] of Object.entries(LOCALES)) {
       for (const [key, value] of Object.entries(dict)) {

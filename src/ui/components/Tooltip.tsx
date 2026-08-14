@@ -9,7 +9,12 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { JokerRarity, PackSize } from '../../engine/types';
-import { referencedEditionTips, referencedFontTips, referencedMaterialTips } from '../descriptions';
+import {
+  referencedEditionTips,
+  referencedFontTips,
+  referencedMaterialTips,
+  referencedTermTips,
+} from '../descriptions';
 import { useI18n } from '../i18n';
 import { richText } from '../richtext';
 
@@ -112,6 +117,7 @@ export function TooltipSupplement({ body, sub }: SupplementProps) {
   const materialTips = referencedMaterialTips(copy.join('\n'), t);
   const fontTips = referencedFontTips(copy.join('\n'), t);
   const editionTips = referencedEditionTips(copy.join('\n'), t);
+  const termTips = referencedTermTips(copy.join('\n'), t);
   const explainsGibberish = copy
     .some((copy) => copy.includes('[g:'));
   if (
@@ -119,9 +125,10 @@ export function TooltipSupplement({ body, sub }: SupplementProps) {
     materialTips.length === 0 &&
     fontTips.length === 0 &&
     editionTips.length === 0 &&
+    termTips.length === 0 &&
     !explainsGibberish
   ) return null;
-  const supplements = [...details, ...materialTips, ...fontTips, ...editionTips];
+  const supplements = [...details, ...materialTips, ...fontTips, ...editionTips, ...termTips];
   if (explainsGibberish) {
     supplements.push({
         title: t('tooltip.gibberish.title'),
@@ -199,7 +206,8 @@ export function Tooltip({
     || subDetails.some((detail) => detail.body.includes('[g:'))
     || referencedMaterialTips(supplementCopy, t).length > 0
     || referencedFontTips(supplementCopy, t).length > 0
-    || referencedEditionTips(supplementCopy, t).length > 0;
+    || referencedEditionTips(supplementCopy, t).length > 0
+    || referencedTermTips(supplementCopy, t).length > 0;
 
   useEffect(() => {
     if (!disabled) return;

@@ -27,6 +27,20 @@ export function profileCollectionSize(
   return loadLifetime(slot).unlockAllApplied ? lexiconSize : collectionSize(slot);
 }
 
+/** Exact completion gate for totals that must stay secret until every current
+ * lexicon entry is discovered. A stale/removed word cannot fake completion. */
+export function isWordCollectionComplete(
+  lexicon: Lexicon,
+  slot: ProfileSlot = activeProfile(),
+): boolean {
+  if (loadLifetime(slot).unlockAllApplied) return true;
+  const collection = loadCollection(slot);
+  for (const word of lexicon.words()) {
+    if (collection[word] === undefined) return false;
+  }
+  return true;
+}
+
 /** Word-threshold progress used by Starting Pouch gates. */
 export function pouchUnlockWordCount(slot: ProfileSlot = activeProfile()): number {
   if (!loadLifetime(slot).unlockAllApplied) return collectionSize(slot);

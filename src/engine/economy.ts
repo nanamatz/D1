@@ -93,7 +93,11 @@ export function effectiveClearReward(
   const base = bossReward !== undefined
     ? bossReward
     : kind === 'small' && recordRemovesDraftReward(run) ? 0 : clearReward(kind);
-  return base +
+  const currentKind = (['small', 'big', 'boss'] as const)[run.blindIndex];
+  const nextBlindReward = kind === currentKind
+    ? (run.nextBlindBonus.clearRewardBonus ?? 0)
+    : 0;
+  return base + nextBlindReward +
     (includePending ? run.pendingClearReward : 0) +
     (kind === 'boss' ? (run.pendingBossReward ?? 0) : 0);
 }

@@ -68,7 +68,9 @@ describe('slice5 economy — shop costs (GDD §9.2)', () => {
   it('prices Emoji editions and Gambler cards, then recalculates sales at current discounts', () => {
     const fresh = newRun('prices');
     const discounted = { ...fresh, vouchers: ['newspaper' as const] };
-    expect(BALANCE.jokerPrice).toEqual({ common: 4, uncommon: 6, rare: 9, legendary: 15 });
+    expect(BALANCE.jokerPrice).toEqual({
+      common: 4, uncommon: 6, rare: 9, legendary: 15, primordial: 0,
+    });
     expect(emojiTileBuyPrice(fresh, BALANCE.jokerPrice.common, 'rainbow')).toBe(9);
     expect(emojiTileBuyPrice(discounted, BALANCE.jokerPrice.rare)).toBe(6);
     expect(emojiTileSellValue(discounted, BALANCE.jokerPrice.rare)).toBe(3);

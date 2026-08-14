@@ -99,7 +99,7 @@ describe('Blind Select skip presentation', () => {
   it('ships one transparent PNG asset for every Editorial Perk', () => {
     const files = readdirSync(new URL('../src/ui/assets/skip-rewards/', import.meta.url));
     const pngs = files.filter((name) => name.endsWith('.png'));
-    expect(pngs).toHaveLength(26);
+    expect(pngs).toHaveLength(30);
     expect(pngs).not.toContain('lead-story.png');
     for (const name of pngs) {
       const png = readFileSync(new URL(`../src/ui/assets/skip-rewards/${name}`, import.meta.url));

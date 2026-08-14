@@ -126,6 +126,17 @@ export function referencedEditionTips(
     : []);
 }
 
+/** Marked specialist terms get a short definition beside the main tooltip. */
+export function referencedTermTips(
+  copy: string,
+  t: Translate,
+): { title: string; body: string; kind: 'other' }[] {
+  const title = t('tooltip.anagram.title');
+  return copy.toLocaleLowerCase().includes(`[e:${title.toLocaleLowerCase()}]`)
+    ? [{ title, body: t('tooltip.anagram.body'), kind: 'other' }]
+    : [];
+}
+
 /**
  * feedback #5: a consumable whose effect references a material (or, later, a font)
  * carries a supplemental definition explaining that material/font. Its placement follows
@@ -160,6 +171,9 @@ export function grownValue(
   pouchRemaining?: number,
   run?: RunState,
 ): string | null {
+  if ((def.id === 'bald' || def.id === 'recycling') && owned?.state.letterCode) {
+    return t('joker.currentLetter', { letter: String.fromCharCode(owned.state.letterCode) });
+  }
   if (def.id === 'pouchTag' && pouchRemaining !== undefined) {
     return t('joker.currentChips', { value: pouchTagChips(pouchRemaining) });
   }

@@ -58,7 +58,7 @@ import { audio } from './audio';
 import { motionOff } from './motion';
 import { patternLevelBus } from './patternLevel';
 import { recordVoucherProgress, unlockedVoucherSet } from './voucherProgress';
-import { recordEmojiUnlockEvent, unlockedEmojiSet } from './emojiUnlocks';
+import { recordEmojiUnlockEvent, shopEmojiSet, unlockedEmojiSet } from './emojiUnlocks';
 import {
   canUseFable,
   canUseFableFromPack,
@@ -471,7 +471,7 @@ export interface UseGame {
   discard: (ids: string[]) => void;
   selectBlind: () => void;
   clearBlindEntryEffects: (event: BlindEntryEffectEvent) => void;
-  skipBlind: () => void;
+  skipBlind: (pythagoreanPath?: import('../engine/types').PythagoreanPath) => void;
   confirmCashout: () => void;
   /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
   markSettleComplete: () => void;
@@ -530,7 +530,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const items = prev.shop.items.map((item) => {
         if (!item || item.kind === 'tile') return item;
         const available = item.kind === 'joker'
-          ? canOwnJoker(prev.run, item.id) && unlockedEmojiSet().has(item.id)
+          ? canOwnJoker(prev.run, item.id) && shopEmojiSet().has(item.id)
           : canOwnConsumable(prev.run, item.id);
         if (available) return item;
         changed = true;
@@ -743,7 +743,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         advancedRun,
         rng,
         unlockedVoucherSet(),
-        unlockedEmojiSet(),
+        shopEmojiSet(),
+        import.meta.env.DEV,
       );
       advancedRun = preparedShop.run;
       const shop = preparedShop.shop;
@@ -801,7 +802,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const buy = useCallback((index: number) => {
     setState((prev) => {
       if (prev.phase !== 'shop' || !prev.shop) return prev;
-      const res = buyItem(prev.run, prev.shop, index, unlockedEmojiSet());
+      const res = buyItem(prev.run, prev.shop, index, shopEmojiSet());
       if (!res.ok) return prev;
       const item = prev.shop.items[index]!;
       if (item.kind !== 'joker') {
@@ -848,7 +849,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         prev.shop,
         rng,
         unlockedVoucherSet(),
-        unlockedEmojiSet(),
+        shopEmojiSet(),
       );
       if (!res.ok) return prev;
       recordVoucherProgress({ kind: 'reroll', spent: rerollCost(prev.shop.rerolls, rerollDiscount(prev.run)) });
@@ -974,11 +975,15 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   }, []);
 
   /** Skip Draft/Revision, grant its disclosed reward, and prepare the next blind. */
-  const skipBlind = useCallback(() => {
+  const skipBlind = useCallback((pythagoreanPath?: import('../engine/types').PythagoreanPath) => {
     setState((prev) => {
       if (prev.phase !== 'blindselect' || prev.run.blindIndex === 2) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
-      const reward = skipCurrentBlind(prev.run, rng);
+      const reward = skipCurrentBlind(
+        prev.run,
+        rng,
+        pythagoreanPath ? { pythagoreanPath } : {},
+      );
       const run = reward.run;
       const blind = reward.freePack
         ? prev.blind
@@ -1628,6 +1633,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         playedWords,
         playedLetterHands,
         letterHandPlayCounts,
+        discardedLetters,
+        discardedLetterCounts,
       } = result;
       const selectedIds = new Set(prev.selected);
       const heldTiles = prev.blind.hand.filter((tile) => !selectedIds.has(tile.id));
@@ -1671,6 +1678,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         playedWords,
         playedLetterHands,
         letterHandPlayCounts,
+        discardedLetters,
+        discardedLetterCounts,
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))
@@ -1834,7 +1843,17 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const staged = new Set(prev.selected);
       const valid = ids.filter((id) => !staged.has(id) && prev.blind.hand.some((t) => t.id === id));
       if (valid.length === 0) return prev; // no per-use tile cap (D-4)
-      const { blind, jokers, goldDelta, gained, slotsBlocked } = discardTiles(
+      const {
+        blind,
+        jokers,
+        goldDelta,
+        gained,
+        slotsBlocked,
+        discardedLetters,
+        discardedLetterCounts,
+        bag,
+        destroyedTiles,
+      } = discardTiles(
         prev.blind,
         prev.run,
         valid,
@@ -1844,11 +1863,17 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const nextRun: RunState = {
         ...prev.run,
         jokers,
+        bag,
+        discardedLetters,
+        discardedLetterCounts,
         gold: prev.run.gold + goldDelta,
         consumables: gained.length
           ? [...prev.run.consumables, ...gained]
           : prev.run.consumables,
       };
+      if (destroyedTiles.length > 0) {
+        recordPouchUnlockChanges(prev.run, nextRun);
+      }
       recordEmojiUnlockEvent({
         kind: 'discardUsed',
         run: nextRun,

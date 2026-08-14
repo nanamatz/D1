@@ -74,6 +74,8 @@ export interface EngineEvents {
     /** Seeded creation channel for effects that add permanent letter tiles. */
     rng?: Rng;
     createdTiles?: Tile[];
+    /** Dictionary access for word-transform effects such as Golem. */
+    lookup?: (word: string) => LexiconEntry | null;
   };
 
   /** boss legality/debuff checks have resolved, but a debuff has not zeroed the word yet */
@@ -134,10 +136,15 @@ export interface EngineEvents {
     tiles: Tile[];
     gained: number;
     slotsBlocked: number;
+    /** Permanently removed by discard-resolving Emoji Tiles. */
+    destroyedTiles: Tile[];
   };
 
   /** tiles were actually discarded, whether by the player or an external effect */
   tilesDiscarded: { run: RunState; blind: BlindState; tiles: Tile[] };
+
+  /** played tiles have left the hand; hooks may redirect their blind destination */
+  tilesPlayed: { run: RunState; blind: BlindState; tiles: Tile[] };
 
   /** a Draft/Revision was skipped and the run-wide skip count has advanced */
   blindSkipped: { run: RunState };
@@ -168,6 +175,15 @@ export interface EngineEvents {
 
   /** shop entered / left — for economy jokers */
   shopEnter: { run: RunState };
+
+  /** one paid shop item-stock reroll resolved */
+  shopRerolled: { run: RunState };
+
+  /** blind-clear interest is being calculated; hooks may add to the line item */
+  interestScoring: { run: RunState; interest: number };
+
+  /** final blind-clear interest after every modifier; observers bank this exact payout */
+  interestResolved: { run: RunState; interest: number };
 
   /** this Emoji Tile was sold; its hook may resolve against the remaining shelf */
   selfSold: { run: RunState; rng: Rng };

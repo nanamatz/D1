@@ -10,6 +10,7 @@ import {
   referencedEditionTips,
   referencedFontTips,
   referencedMaterialTips,
+  referencedTermTips,
 } from '../src/ui/descriptions';
 
 const t = (key: string | string[], params?: Record<string, string | number>): string => {
@@ -89,6 +90,19 @@ describe('shared consumable tooltip copy', () => {
       { title: ko['edition.white'], body: ko['editiondesc.white'], kind: 'edition' },
     ]);
     expect(referencedEditionTips(en['pouch.military.desc'], enT)).toEqual([]);
+  });
+
+  it('adds an Anagram definition for Temurah in both locales', () => {
+    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+
+    expect(referencedTermTips(en['jokerdesc.temurah'], translate(en))).toEqual([{
+      title: en['tooltip.anagram.title'], body: en['tooltip.anagram.body'], kind: 'other',
+    }]);
+    expect(referencedTermTips(ko['jokerdesc.temurah'], translate(ko))).toEqual([{
+      title: ko['tooltip.anagram.title'], body: ko['tooltip.anagram.body'], kind: 'other',
+    }]);
+    expect(referencedTermTips(en['jokerdesc.golem'], translate(en))).toEqual([]);
   });
 
   it('provides the live Fable 17 value only when applicable', () => {

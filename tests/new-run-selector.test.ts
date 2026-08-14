@@ -16,14 +16,16 @@ describe('New Run selector presentation', () => {
     expect(component).toContain("initialRecordId = 'whiteLp'");
   });
 
-  it('uses stacked arrow-panel-arrow rows with a compact Record tier', () => {
+  it('uses circular stacked arrow-panel-arrow rows with a compact Record tier', () => {
     const component = source('src/ui/components/NewRun.tsx');
     const css = source('src/ui/styles/screens.css');
 
     expect(component).toContain('className="run-choice-stage"');
     expect(component).toContain('className="carousel-dots"');
-    expect(component).toContain('disabled={disabled || index === 0}');
-    expect(component).toContain('disabled={disabled || index === ids.length - 1}');
+    expect(component).toContain('(index + delta + ids.length) % ids.length');
+    expect(component).toContain('disabled={disabled}');
+    expect(component).not.toContain('index === 0');
+    expect(component).not.toContain('index === ids.length - 1');
     expect(css).toMatch(
       /\.run-choice\s*\{[^}]*grid-template-columns:\s*50px minmax\(0, 1fr\) 50px/s,
     );

@@ -60,8 +60,7 @@ function Carousel<T extends string>({
   const index = Math.max(0, ids.indexOf(selected));
   const move = (delta: number) => {
     if (disabled) return;
-    const next = ids[index + delta];
-    if (next) onSelect(next);
+    onSelect(ids[(index + delta + ids.length) % ids.length]!);
   };
   return (
     <section
@@ -76,7 +75,7 @@ function Carousel<T extends string>({
       <button
         type="button"
         className="car-arrow"
-        disabled={disabled || index === 0}
+        disabled={disabled}
         onClick={() => move(-1)}
         aria-label={`${label}: previous`}
       >
@@ -101,7 +100,7 @@ function Carousel<T extends string>({
       <button
         type="button"
         className="car-arrow"
-        disabled={disabled || index === ids.length - 1}
+        disabled={disabled}
         onClick={() => move(1)}
         aria-label={`${label}: next`}
       >

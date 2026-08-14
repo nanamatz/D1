@@ -6,6 +6,8 @@ const COLLECTION_DESC_KEYS: Partial<Record<SkipRewardId, string>> = {
   houseStyle: 'skipReward.houseStyle.collectionDesc',
   handyTag: 'skipReward.handyTag.collectionDesc',
   garbageTag: 'skipReward.garbageTag.collectionDesc',
+  lipogramTag: 'skipReward.lipogramTag.collectionDesc',
+  scarletTag: 'skipReward.scarletTag.collectionDesc',
 };
 
 /** Collection has no live offer/run, so contextual rewards use truthful generic copy. */
@@ -32,5 +34,10 @@ export function skipRewardParams(
       : BALANCE.skipRewards.clearReward,
     score: BALANCE.skipRewards.startingScore,
     current: run ? (skipRewardLiveAmount(run, offer.id) ?? 0) : 0,
+    letter: offer.letter ?? '?',
+    lipogramPercent: Math.round((1 - BALANCE.skipRewards.lipogramTargetMultiplier) * 100),
+    widePercent: Math.round((1 - BALANCE.skipRewards.pythagoreanWideTargetMultiplier) * 100),
+    narrowPercent: Math.round((BALANCE.skipRewards.pythagoreanNarrowTargetMultiplier - 1) * 100),
+    narrowReward: BALANCE.skipRewards.pythagoreanNarrowReward,
   };
 }

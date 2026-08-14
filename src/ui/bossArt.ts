@@ -18,6 +18,9 @@ import contract from './assets/bosses/T_Contract.png';
 import burntPaper from './assets/bosses/T_BurntPaper.png';
 import whitePaper from './assets/bosses/T_WhitePaper.png';
 import will from './assets/bosses/T_will.png';
+import deadLetter from './assets/bosses/T_DeadLetter.png';
+import stereotypePlate from './assets/bosses/T_StereotypePlate.png';
+import orphanLine from './assets/bosses/T_OrphanLine.png';
 import cleaningSign from './assets/bosses/T_CleaningSign.png';
 import medusa from './assets/bosses/T_Medusa.png';
 import nokdoScript from './assets/bosses/T_NokdoScript.png';
@@ -41,6 +44,9 @@ export const BOSS_ART: Record<string, string> = {
   burntPaper,
   whitePaper,
   will,
+  deadLetter,
+  stereotypePlate,
+  orphanLine,
   cleaningSign,
   medusa,
   nokdoScript,

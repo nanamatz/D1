@@ -30,14 +30,16 @@ describe('random encounter laboratory', () => {
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
   });
 
-  it('names and explains all six samples in both languages', () => {
+  it('names and explains all ten samples in both languages', () => {
     const en: Record<string, string> = JSON.parse(source('locales/en.json'));
     const ko: Record<string, string> = JSON.parse(source('locales/ko.json'));
-    for (const kind of ['cup', 'pot', 'bell', 'check', 'waxBall', 'keycap']) {
+    for (const kind of ['cup', 'pot', 'bell', 'check', 'waxBall', 'keycap', 'shacoBox', 'fly', 'bulldog', 'launchButton']) {
       expect(en[`desk.encounter.${kind}.name`], kind).toBeTruthy();
       expect(en[`desk.encounter.${kind}.desc`], kind).toBeTruthy();
       expect(ko[`desk.encounter.${kind}.name`], kind).toBeTruthy();
       expect(ko[`desk.encounter.${kind}.desc`], kind).toBeTruthy();
     }
+    expect(en['desk.bulldog.tooth']).toBeTruthy();
+    expect(ko['desk.bulldog.tooth']).toBeTruthy();
   });
 });
