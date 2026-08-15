@@ -51,7 +51,15 @@ import { letterChips } from '../engine/scoring';
 import { findSpellableWords, type HintWord } from '../engine/hint';
 import type { Lexicon } from '../engine/lexicon';
 import { recordWord } from './collection';
-import { discoverLetterHand, recordBestRoundScore, recordEndlessEnd, recordRunEnd } from './lifetime';
+import {
+  discoverLetterHand,
+  isLetterHandDiscovered,
+  loadDiscoveredLetterHands,
+  recordBestRoundScore,
+  recordEndlessEnd,
+  recordRunEnd,
+} from './lifetime';
+import { LETTER_HAND_REGISTRY } from '../engine/letterHands';
 import { clearRun, loadRun, serializeRun, writeRun } from './persist';
 import { reorderIds, type MessageSpec, type Phase } from './game';
 import { audio } from './audio';
@@ -626,7 +634,16 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       );
       jokerChanceEffectBus.emit(chanceResults);
       recordPouchUnlockChanges(runWithPattern, runAfterJokers);
-      const outcome = resolveBlind(runAfterJokers, s.blind, settledScore);
+      const discoveredHands = loadDiscoveredLetterHands();
+      const eligibleRandomHands = LETTER_HAND_REGISTRY
+        .filter((hand) => isLetterHandDiscovered(hand.id, discoveredHands))
+        .map((hand) => hand.id);
+      const outcome = resolveBlind(
+        runAfterJokers,
+        s.blind,
+        settledScore,
+        eligibleRandomHands,
+      );
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
@@ -713,6 +730,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // Clearing the Deadline (boss) restocks the voucher for the next chapter
       // and unlocks the one-purchase-per-chapter slot (playtest-03 C).
       if (runWithMaterialGold.blindIndex === 2) {
+        const previousVoucherOffer = advancedRun.voucherOffer;
         const bossDraw = drawBossFromCycle(
           makeRng(`${s.seed}#boss-${advancedRun.ante}`),
           bossPoolForAnte(advancedRun.ante),
@@ -724,13 +742,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             advancedRun,
             makeRng(`${s.seed}#voucher-${advancedRun.ante}`),
             unlockedVoucherSet(),
+            previousVoucherOffer ? new Set([previousVoucherOffer]) : new Set(),
           ),
           voucherLocked: false,
           voucherBasesBoughtThisChapter: [],
           bossRerollsUsed: 0,
           chapterBossId: bossDraw.bossId,
           bossHistory: bossDraw.history,
-          wordsThisAnte: [], // new ante → Memoirs' pool resets (회고록)
+          wordsThisAnte: [], // new Chapter → boss word-history restrictions reset
           skippedThisChapter: [],
         };
         advancedRun = {
@@ -1697,8 +1716,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           .filter((t) => !destroyedTileIds.includes(t.id))
           .map(growWood)
           .concat(createdTiles),
-        // Track played words this ante for the Memoirs boss (회고록); gibberish is
-        // never tracked. Reset per ante in finalize when the chapter's Deadline clears.
+        // Track valid words this Chapter for Memoirs and Stereotype Plate;
+        // gibberish is never tracked. Reset when the Chapter's Deadline clears.
         wordsThisAnte: submission.isGibberish
           ? prev.run.wordsThisAnte
           : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],

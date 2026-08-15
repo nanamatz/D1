@@ -96,7 +96,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     voucherBasesBoughtThisChapter: [],
     chapterBossId: null, // drawn at chapter start (playtest-04 D-6)
     bossHistory: [],
-    wordsThisAnte: [], // reset per ante; read by Memoirs (회고록)
+    wordsThisAnte: [], // reset per Chapter; read by Memoirs and Stereotype Plate
     playedWords: [],
     playedLetterHands: [],
     letterHandPlayCounts: {},

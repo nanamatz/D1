@@ -582,17 +582,129 @@
   min-width: 44px;
   text-align: right;
 }
-.cashout-line.mastery .amt {
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0;
+.cashout-mastery {
+  min-height: 136px;
+  opacity: 0;
+  overflow: visible;
+  text-align: center;
+  transform: translateY(8px);
 }
-.cashout-line.mastery .amt b { color: var(--chips); }
-.cashout-line.mastery .amt em {
-  color: var(--gold);
-  font-family: 'Jersey 10';
-  font-size: var(--fs-md);
-  font-style: normal;
+.cashout-mastery.in {
+  animation: cashout-mastery-in .18s ease forwards;
+}
+.cashout-proof-stage {
+  position: relative;
+  width: min(100%, 280px);
+  height: 102px;
+  margin: 2px auto 0;
+}
+.cashout-proof-stamp {
+  position: absolute;
+  z-index: 2;
+  top: -26px;
+  left: 50%;
+  width: 118px;
+  height: 118px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  opacity: 0;
+  transform: translate(-50%, -105px) rotate(-8deg) scale(1.1);
+  transform-origin: 50% 82%;
+  filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .35));
+}
+.cashout-mastery.in .cashout-proof-stamp {
+  animation: cashout-stamp-slam .72s cubic-bezier(.2, .85, .22, 1.12) both;
+}
+.cashout-proof-mark {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 8px;
+  display: inline-flex;
+  min-width: 152px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 5px 14px;
+  border: 4px double #ef6f61;
+  color: #ef6f61;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-sm);
+  line-height: 1;
+  opacity: 0;
+  text-transform: uppercase;
+  transform: translateX(-50%) rotate(-3deg) scale(1.35);
+  filter: saturate(.9);
+}
+.cashout-mastery.in .cashout-proof-mark {
+  animation: cashout-proof-ink .22s steps(3, end) .39s both;
+}
+.cashout-proof-pips {
+  display: inline-flex;
+  max-width: 42px;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.cashout-proof-pips i {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  box-shadow: 1px 1px 0 rgba(60, 17, 18, .28);
+}
+.cashout-level-up {
+  position: relative;
+  z-index: 3;
+  width: max-content;
+  margin: -3px auto 0;
+  color: #9cffb2;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-lg);
+  line-height: 1;
+  letter-spacing: .06em;
+  opacity: 0;
+  text-shadow: 0 0 7px rgba(156, 255, 178, .92), 0 3px 0 rgba(0, 0, 0, .4);
+}
+.cashout-level-up::before,
+.cashout-level-up::after {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  color: #caffd5;
+  font-size: var(--fs-lg);
+}
+.cashout-level-up::before { right: calc(100% + 10px); }
+.cashout-level-up::after { left: calc(100% + 10px); }
+.cashout-mastery.in .cashout-level-up {
+  animation: cashout-level-up .52s cubic-bezier(.2, 1.6, .4, 1) .56s both;
+}
+@keyframes cashout-mastery-in {
+  to { opacity: 1; transform: none; }
+}
+@keyframes cashout-stamp-slam {
+  0% { opacity: 0; transform: translate(-50%, -105px) rotate(-8deg) scale(1.1); }
+  25% { opacity: 1; }
+  56% { opacity: 1; transform: translate(-50%, 18px) rotate(1deg) scale(.94, .78); }
+  68% { transform: translate(-50%, 8px) rotate(-1deg) scale(1.03, 1.08); }
+  100% { opacity: 1; transform: translate(-50%, -22px) rotate(-7deg) scale(.88); }
+}
+@keyframes cashout-proof-ink {
+  from { opacity: 0; transform: translateX(-50%) rotate(-3deg) scale(1.35); }
+  to { opacity: .9; transform: translateX(-50%) rotate(-3deg) scale(1); }
+}
+@keyframes cashout-level-up {
+  from { opacity: 0; transform: translateY(13px) scale(.55); filter: brightness(2); }
+  65% { opacity: 1; transform: translateY(-3px) scale(1.14); filter: brightness(1.5); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cashout-mastery,
+  .cashout-proof-stamp,
+  .cashout-proof-mark,
+  .cashout-level-up {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+  }
 }
 .coins {
   font-size: var(--fs-md);
@@ -4305,7 +4417,8 @@ body.cb-safe .tile.hint {
 }
 /* Each pattern row is wrapped in a tooltip anchor — make the anchor fill its grid
    cell so the row keeps its full-width layout. */
-.ri-patterns .tt-anchor {
+.ri-patterns .tt-anchor,
+.ri-hands .tt-anchor {
   display: flex;
 }
 .ri-body {
@@ -4893,6 +5006,32 @@ body.cb-safe .tile.hint {
   height: 52px;
   font-size: 32px;
 }
+.cfx-tile-change {
+  display: grid;
+  grid-template-columns: auto 24px auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  justify-items: center;
+  gap: 5px;
+}
+.cfx-change-arrow {
+  color: #9cffb2;
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--ds-sm);
+  text-shadow: 0 0 8px rgba(156, 255, 178, .8);
+  animation: cfx-change-arrow .42s steps(4, end) .48s both;
+}
+.cfx-change-label {
+  grid-column: 1 / -1;
+  padding: 2px 7px;
+  border: 2px solid #9cffb2;
+  color: #9cffb2;
+  background: var(--inset);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  animation: cfx-stat-in .4s ease .9s both;
+}
 .cfx-joker,
 .cfx-card-object {
   width: 52px;
@@ -4979,6 +5118,11 @@ body.cb-safe .tile.hint {
   font-size: var(--ds-2xl);
   line-height: 1;
   text-shadow: 0 3px 0 rgba(0, 0, 0, .42), 0 0 12px rgba(240, 178, 62, .35);
+}
+.cfx-stats .cfx-word-hand-level {
+  border-color: #9cffb2;
+  color: #9cffb2;
+  text-shadow: 0 0 7px rgba(156, 255, 178, .55);
 }
 .chance-results {
   display: inline-flex;
@@ -5071,6 +5215,10 @@ body.cb-safe .tile.hint {
   from { opacity: 0; transform: scale(.65); filter: brightness(2); }
   55% { transform: scale(1.24); filter: brightness(1.7); }
   to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes cfx-change-arrow {
+  from { opacity: 0; transform: translateX(-8px) scale(.7); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes cfx-create {
   from { opacity: 0; transform: translateY(18px) scale(.2); filter: brightness(2); }

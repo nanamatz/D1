@@ -12,7 +12,7 @@ import {
   remainingDiscardGold,
   remainingPhaseGold,
 } from './economy';
-import type { BlindKind, BlindState, RunState } from './types';
+import type { BlindKind, BlindState, LetterHandId, RunState } from './types';
 import { defaultJokerBus } from './jokers';
 import { awardBlindLetterHandStamps, type LetterHandStampReward } from './letterHands';
 import { makeRng } from './rng';
@@ -77,7 +77,12 @@ function advance(ante: number, blindIndex: 0 | 1 | 2): { ante: number; blindInde
  * target, pay reward + remaining-phase gold + interest and advance; otherwise
  * the run is over.
  */
-export function resolveBlind(run: RunState, blind: BlindState, finalScore: number): BlindOutcome {
+export function resolveBlind(
+  run: RunState,
+  blind: BlindState,
+  finalScore: number,
+  eligibleRandomLetterHands?: readonly LetterHandId[],
+): BlindOutcome {
   if (finalScore < blind.target) {
     return {
       cleared: false,
@@ -105,6 +110,7 @@ export function resolveBlind(run: RunState, blind: BlindState, finalScore: numbe
     run,
     blind,
     makeRng(`${run.seed}#word-hand-stamp-${run.ante}-${run.blindIndex}`),
+    eligibleRandomLetterHands,
   );
   const won =
     !run.victorySecured && run.ante === BALANCE.runAntes && run.blindIndex === 2;

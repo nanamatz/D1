@@ -46,7 +46,7 @@ export interface StagePreview {
   pos: string | null;
   /** the Word Hand this word matches (A-2), if any */
   letterHand: { id: LetterHandId; level: number; chips: number; mult: number } | null;
-  /** true if the active boss forbids this word (The Noun Lock) */
+  /** true if the active boss forbids this submission */
   blocked: boolean;
   /** true if the active boss accepts this word but reduces its score to 0 */
   debuffed: boolean;
@@ -68,7 +68,7 @@ export function stagePreview(
   const base = baseScore(tiles, lexicon);
   const hypothetical: WordSubmission = scoreWord(tiles, lexicon);
   const blocked = blind.bossId
-    ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(base.text, lexicon) ?? false)
+    ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(hypothetical, { run, blind, lexicon }) ?? false)
     : false;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   const debuffed =

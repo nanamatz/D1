@@ -186,13 +186,15 @@ export function rollExtraItem(
 
 /**
  * Roll the next chapter's voucher offer (playtest-03 C): a not-yet-owned voucher.
- * Purchased vouchers are in run.vouchers and thus never reappear; unpurchased
- * ones stay in the pool and may reappear in a later chapter.
+ * Purchased vouchers are in run.vouchers and thus never reappear; callers pass
+ * the immediately previous unpurchased offer in `excluded` so it cannot repeat
+ * on the next Chapter restock.
  */
 export function rollVoucherOffer(
   run: RunState,
   rng: Rng,
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
+  excluded: ReadonlySet<VoucherId> = new Set(),
 ): VoucherId | null {
   const boughtBases = new Set(run.voucherBasesBoughtThisChapter ?? []);
   // Legacy mid-chapter saves predate the explicit list. Their fixed, now-owned
@@ -206,7 +208,7 @@ export function rollVoucherOffer(
   ) boughtBases.add(run.voucherOffer);
   const available = availableVoucherIds(run, profileUnlocked).filter((id) => {
     const baseId = VOUCHER_REGISTRY.get(id)?.baseId;
-    return !baseId || !boughtBases.has(baseId);
+    return !excluded.has(id) && (!baseId || !boughtBases.has(baseId));
   });
   return available.length ? rng.shuffle(available)[0]! : null;
 }

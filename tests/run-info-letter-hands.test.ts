@@ -44,7 +44,9 @@ describe('Run Info Word Hands reference', () => {
     const runInfo = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
     const sidebar = readFileSync('src/ui/components/Sidebar.tsx', 'utf8');
     expect(runInfo).toContain("discovered ? t(`letterhand.${hand.id}`) : '???'");
-    expect(runInfo).toContain("discovered ? richText(t(`letterhand.${hand.id}.desc`)) : '???'");
+    expect(runInfo).toContain("body={discovered ? t(`letterhand.${hand.id}.desc`) : '???'}");
+    expect(runInfo).not.toContain("richText(t(`letterhand.${hand.id}.desc`))");
+    expect(readFileSync('src/ui/styles/screens.css', 'utf8')).toContain('.ri-hands .tt-anchor');
     expect(sidebar).toContain('isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)');
   });
 });

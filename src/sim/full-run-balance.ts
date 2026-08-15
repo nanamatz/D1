@@ -498,6 +498,7 @@ function simulateRun(
     }
     if (blindIndex === 2) {
       if (naturallyCleared) cohort.deadlinesCleared[chapter]! += 1;
+      const previousVoucherOffer = run.voucherOffer;
       const nextBoss = run.ante <= CHAPTERS
         ? drawBossFromCycle(
             makeRng(`${seed}#boss-${run.ante}`),
@@ -507,7 +508,12 @@ function simulateRun(
         : null;
       run = {
         ...run,
-        voucherOffer: rollVoucherOffer(run, makeRng(`${seed}#voucher-${run.ante}`)),
+        voucherOffer: rollVoucherOffer(
+          run,
+          makeRng(`${seed}#voucher-${run.ante}`),
+          new Set(),
+          previousVoucherOffer ? new Set([previousVoucherOffer]) : new Set(),
+        ),
         voucherLocked: false,
         bossRerollsUsed: 0,
         chapterBossId: nextBoss?.bossId ?? null,

@@ -13,6 +13,8 @@ import { foldingManuscript } from '../src/engine/jokers/foldingManuscript';
 import { dullingPencil } from '../src/engine/jokers/dullingPencil';
 import { handScholar } from '../src/engine/jokers/handScholar';
 import { blacksmith } from '../src/engine/jokers/blacksmith';
+import { storyteller } from '../src/engine/jokers/storyteller';
+import { JOKER_REGISTRY } from '../src/engine/jokers';
 import { newRun } from '../src/engine/run';
 import { grownValue } from '../src/ui/descriptions';
 import { resolve, type Lang } from '../src/ui/i18n';
@@ -20,7 +22,30 @@ import { resolve, type Lang } from '../src/ui/i18n';
 const t = (lang: Lang) => (key: string | string[], params?: Record<string, string | number>) =>
   resolve({ en, ko }, lang, key, params);
 
+const LIVE_GROWTH_IDS = [
+  'beehiveTile', 'biochemistry', 'blacksmith', 'bloodTypeA', 'cadmusTeeth',
+  'civilTongue', 'classicist', 'cubism', 'deadlineAuction', 'discardedDraft',
+  'dogFood', 'dryingInk', 'dullingPencil', 'foldingManuscript', 'handScholar',
+  'holePunch', 'host', 'interestGlutton', 'livingType', 'misbound',
+  'noiseCancelling', 'rewrite', 'scarletLetter', 'scrapDealer', 'serial',
+  'shuriken', 'stargazer', 'storyteller', 'streetCred', 'threeLeafClover',
+  'typeFoundry', 'voraciousReader', 'woodblockPress', 'wordHunter',
+] as const;
+
 describe('scaling Emoji Tile tooltip value', () => {
+  it('covers every accumulating or decaying Emoji Tile in the live-value roster', () => {
+    const actual = [...JOKER_REGISTRY.values()]
+      .filter((def) => def.growthDisplay)
+      .map((def) => def.id)
+      .sort();
+    expect(actual).toEqual([...LIVE_GROWTH_IDS].sort());
+    for (const id of LIVE_GROWTH_IDS) {
+      const def = JOKER_REGISTRY.get(id)!;
+      expect(grownValue(def, { defId: id, state: {} }, t('en'), 68, newRun(`growth-${id}`)))
+        .not.toBeNull();
+    }
+  });
+
   it('does not classify the blind-only Rhyme Chain streak as growth', () => {
     expect(grownValue(rhymeChain, undefined, t('ko'))).toBeNull();
   });
@@ -71,6 +96,19 @@ describe('scaling Emoji Tile tooltip value', () => {
       .toBe('(현재 [c:+24] 칩)');
     expect(grownValue(blacksmith, undefined, t('en')))
       .toBe('(Currently [c:+0] Chips)');
+  });
+
+  it('shows Storyteller current additive Mult', () => {
+    expect(grownValue(storyteller, {
+      defId: storyteller.id,
+      state: { mult: 3 * BALANCE.jokers.storyteller.multPerFable },
+    }, t('ko'))).toBe('(현재 [m:+3] 배수)');
+
+    const run = { ...newRun('storyteller-late-tooltip'), fablesUsed: 2 };
+    expect(grownValue(storyteller, {
+      defId: storyteller.id,
+      state: {},
+    }, t('en'), undefined, run)).toBe('(Currently [m:+2] Mult)');
   });
 
   it('shows Pouch Tag Chips from the live remaining-tile count', () => {

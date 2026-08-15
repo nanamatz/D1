@@ -15,7 +15,7 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { baseScore, spell, letterString, wordLengthMult } from './scoring';
+import { baseScore, scoreWord, letterString, wordLengthMult } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { applyEdition } from './editions';
 import { finalizeScore, judgeSentence, sentenceTotal } from './patterns';
@@ -1076,9 +1076,10 @@ export function submitWord(
   }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
 
-  // Boss legality (kept as infra; no current-roster boss blocks) + economy drains.
+  // Boss legality (Stereotype Plate) + economy drains.
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
-  if (boss?.blocks?.(spell(used), lexicon)) {
+  const bossSubmission = boss?.blocks ? scoreWord(used, lexicon) : null;
+  if (bossSubmission && boss?.blocks?.(bossSubmission, { run, blind, lexicon })) {
     throw new Error('boss: this word cannot be submitted');
   }
 

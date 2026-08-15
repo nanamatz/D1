@@ -154,6 +154,7 @@ describe('2026-08-12 requested Emoji Tiles', () => {
     const used = useFable('fable9', run, blind, [], makeRng('storyteller-use'));
     expect(used.ok).toBe(true);
     expect(used.run.fablesUsed).toBe(1);
+    expect(used.run.jokers[0]!.state.mult).toBe(BALANCE.jokers.storyteller.multPerFable);
     const ctx = scoring([tile('storyteller-a', 'A')]);
     bus.emit('wordScoring', { run: used.run, blind: used.blind, ctx }, used.run.jokers);
     expect(ctx.mult).toBe(1 + BALANCE.jokers.storyteller.multPerFable);

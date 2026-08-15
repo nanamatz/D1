@@ -11,6 +11,9 @@ export const scarletLetter: JokerDef = {
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
   multOperation: 'multiply',
   hooks: {
+    tilesDiscarded: ({ run }, self) => {
+      self.state.factor = factorFor(run.discardedLetterCounts?.A ?? 0);
+    },
     wordScoring: ({ run, ctx }, self) => {
       self.state.factor = factorFor(run.discardedLetterCounts?.A ?? 0);
       ctx.mult *= self.state.factor;

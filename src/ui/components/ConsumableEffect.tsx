@@ -8,6 +8,7 @@ import type { ConsumableId, OwnedJoker, Tile } from '../../engine/types';
 import { consumableEffectBus, type ConsumableEffectEvent } from '../consumableEffect';
 import {
   consumableTooltipBody,
+  grownValue,
   jokerTooltip,
 } from '../descriptions';
 import { tileTooltip } from '../game';
@@ -55,6 +56,7 @@ export function ConsumableEffect() {
     active.goldDelta !== 0 ||
     active.handSizeDelta !== 0 ||
     active.patternLevelsGained > 0 ||
+    active.wordHandProgress.length > 0 ||
     active.chanceResults.length > 0;
 
   const tileObject = (tile: Tile, mode: 'destroyed' | 'changed' | 'created') => (
@@ -63,6 +65,25 @@ export function ConsumableEffect() {
       {mode === 'destroyed' && <span className="cfx-shatter-fx" aria-hidden />}
     </div>
   );
+
+  const changedTileObject = ({ before, after }: ConsumableEffectEvent['changedTiles'][number]) => {
+    const editionChanged = (before.edition ?? 'base') !== (after.edition ?? 'base');
+    return (
+      <div key={`changed-${after.id}`} className="cfx-tile-change">
+        {tileObject(before, 'changed')}
+        <span className="cfx-change-arrow" aria-hidden>→</span>
+        {tileObject(after, 'created')}
+        {editionChanged && (
+          <span className="cfx-change-label">
+            {t('consumableFx.editionChange', {
+              from: t(`edition.${before.edition ?? 'base'}`),
+              to: t(`edition.${after.edition ?? 'base'}`),
+            })}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   const jokerObject = (joker: OwnedJoker, mode: 'destroyed' | 'created', index: number) => {
     const def = JOKER_REGISTRY.get(joker.defId);
@@ -74,6 +95,7 @@ export function ConsumableEffect() {
         key={`${mode}-${joker.defId}-${index}`}
         title={lang === 'ko' ? def.nameKo : def.nameEn}
         body={tip.body}
+        extra={grownValue(def, joker, t, active.run.bag.length, active.run)}
         rarity={def.rarity}
         tags={tip.tags}
         sub={tip.sub}
@@ -126,7 +148,7 @@ export function ConsumableEffect() {
           <div className="cfx-results">
             {active.removedTiles.map((tile) => tileObject(tile, 'destroyed'))}
             {active.removedJokers.map((joker, index) => jokerObject(joker, 'destroyed', index))}
-            {active.changedTiles.map((tile) => tileObject(tile, 'changed'))}
+            {active.changedTiles.map(changedTileObject)}
             {active.addedTiles.map((tile) => tileObject(tile, 'created'))}
             {active.addedJokers.map((joker, index) => jokerObject(joker, 'created', index))}
             {active.addedConsumables.map(consumableObject)}
@@ -143,6 +165,15 @@ export function ConsumableEffect() {
             {active.patternLevelsGained > 0 && (
               <span>{t('consumableFx.patternLevels', { n: active.patternLevelsGained })}</span>
             )}
+            {active.wordHandProgress.map((progress) => (
+              <span key={progress.hand} className="cfx-word-hand-level">
+                {t('consumableFx.wordHandLevel', {
+                  hand: t(`letterhand.${progress.hand}`),
+                  from: progress.fromLevel,
+                  to: progress.toLevel,
+                })}
+              </span>
+            ))}
             {!hasResults && <span>{t('settle.applied')}</span>}
           </div>
         </div>

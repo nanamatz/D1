@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { useGambler } from '../src/engine/gamblers';
+import { useFable } from '../src/engine/fables';
 import { startBlind } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
@@ -45,11 +46,40 @@ describe('shared consumable result animation', () => {
     const component = source('../src/ui/components/ConsumableEffect.tsx');
     const css = source('../src/ui/styles/screens.css');
     expect(component).toContain("tileObject(tile, 'destroyed')");
-    expect(component).toContain("tileObject(tile, 'changed')");
+    expect(component).toContain('active.changedTiles.map(changedTileObject)');
     expect(component).toContain("tileObject(tile, 'created')");
     expect(component).toContain('tooltip={tileTooltip(tile, t)}');
+    expect(component).toContain('extra={grownValue(def, joker, t, active.run.bag.length, active.run)}');
     expect(css).toContain('.cfx-destroyed');
     expect(css).toContain('.cfx-created');
+  });
+
+  it('reports exact Word Hand levels and letter-tile edition changes for Fables 19 and 20', () => {
+    const handRun = {
+      ...newRun('fable-19-fx'),
+      consumables: ['fable19' as const],
+      lastLetterHand: 'twin' as const,
+      letterHandLevels: { twin: 6 },
+      letterHandStamps: { twin: 1 },
+    };
+    const handBlind = startBlind(handRun, makeRng('fable-19-fx-blind'));
+    const handResult = useFable('fable19', handRun, handBlind, [], makeRng('fable-19-fx-use'));
+    expect(buildConsumableEffect('fable19', handRun, handResult.run).wordHandProgress)
+      .toEqual([expect.objectContaining({ hand: 'twin', fromLevel: 6, toLevel: 7 })]);
+
+    const editionRun = { ...newRun('fable-20-fx'), consumables: ['fable20' as const] };
+    const editionBlind = startBlind(editionRun, makeRng('fable-20-fx-blind'));
+    const target = editionBlind.hand[0]!;
+    const editionResult = useFable(
+      'fable20',
+      editionRun,
+      editionBlind,
+      [target.id],
+      makeRng('fable-20-fx-use'),
+    );
+    const change = buildConsumableEffect('fable20', editionRun, editionResult.run).changedTiles[0]!;
+    expect(change.before.edition).toBe('base');
+    expect(change.after.edition).not.toBe('base');
   });
 
   it('emphasizes economy and edition outcomes and shatters removed tiles', () => {

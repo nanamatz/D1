@@ -66,6 +66,17 @@ describe('Word Hand stamp progression', () => {
     expect(result.run.letterHandLevels?.twin).toBe(2);
   });
 
+  it('limits a random stamp to discovered hands and skips it when none are eligible', () => {
+    const run = newRun('stamp-discovery-pool');
+    const blind = blindWith(run, ['CAT']);
+    const eligible = awardBlindLetterHandStamps(run, blind, firstRng, ['vowelless']);
+    expect(eligible.reward).toMatchObject({ hand: 'vowelless', random: true });
+
+    const none = awardBlindLetterHandStamps(run, blind, firstRng, []);
+    expect(none.reward).toBeNull();
+    expect(none.run).toBe(run);
+  });
+
   it('awards stamps only after a successful clear', () => {
     const run = newRun('stamp-clear-only');
     const blind = { ...blindWith(run, ['BOOK']), target: 100 };

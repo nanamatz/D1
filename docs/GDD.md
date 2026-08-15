@@ -13,7 +13,7 @@ Version 0.2 — systems expansion
 - New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 15 regular bosses, and a six-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 30 Editorial Perks now ship (§8.2; alphabet-lore expansion 2026-08-12).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
 - Changed 2026-08-04: the Stationery Shop and pack economy adopt the Balatro-reference probability and price policy. Item weights are Emoji Tile 20 / Fable 4 / Constellation 4, voucher-gated letter tile 4, and Lucky-Pouch Gambler 2; pack type weights are 4/4/4/1.2/0.6 and sizes 8/4/1. Emoji Tile prices are the project override **$4/$6/$9/$15** by rarity (§9.2–§9.3, §11.8).
-- Changed 2026-08-14: Word Hands gain run-only levels. A cleared blind awards Proof Stamps equal to the most-played Word Hand's play count; a handless blind awards one seeded-random stamp. Level costs are 1 stamp through level 5, 3 through level 8, then 5. The Crow and the Pitcher joins the Fable roster as a two-stamp accelerator (§5.5, §10.1).
+- Changed 2026-08-14: Word Hands gain run-only levels. A cleared blind awards Proof Stamps equal to the most-played Word Hand's play count; a handless blind awards one seeded-random stamp from the profile's discovered hands only. Level costs are 1 stamp through level 5, 3 through level 8, then 5. The Crow and the Pitcher joins the Fable roster as a two-stamp accelerator (§5.5, §10.1).
 - Changed 2026-08-14: **Consumables** use 3 card families — Fable (20 implemented), Constellation (12 implemented), and Gambler (14 implemented). The Ass in the Lion's Skin completes the Fable roster with a targeted letter-tile edition effect (§10).
 - Changed 2026-07-27: the third card family's display name is **Gambler Cards / 노름꾼 카드** (was "Ink Cards / 잉크 카드"). The **Ink name moves to the pack**: a third consumable pack, the **Ink Pack / 잉크 팩**, is the source of Gambler cards, alongside the Fable and Constellation packs (§9.3, §10.3). Collection key `inkCards` and other engine ids are unchanged (display-only rename).
 - Changed 2026-08-03: all fourteen Gambler-card effects ship (`src/engine/gamblers.ts`) and the Ink Pack rolls them in the shop.
@@ -441,7 +441,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 - **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); every other Word Hand is valid-words-only. See §6.4.
 - **Knowledge tier (changed 2026-08-12).** Ranks 7–9 are difficult valid-word structures hidden until first completion. Y uses the shared vowel/consonant classification and is currently a consonant, so Vowelless starts at 5 physical letters. Type Economy and Grand Palindrome likewise use physical spelling length; Dummy Data's effective-length increase remains Longword-only.
 - **Collision policy.** The highest rank remains the one scored and recorded. An Emoji Tile whose text explicitly says a hand is **contained** checks raw structure independently of that winner: Grand Palindrome can trigger Mirror Image, and a Type Economy word containing all five vowels can trigger Gathering while only Type Economy supplies the base Word-Hand score.
-- **Run-only levels and Proof Stamps (changed 2026-08-14).** Every Word Hand starts at level 1. Clearing a blind awards the most-played scored hand one stamp per time it scored in that blind; if several hands tie, the latest tied hand wins. If no Word Hand scored, one of the nine receives one seeded-random stamp. A loss and a skipped blind award none. Advancing from current levels 1–5 costs 1 stamp, levels 6–8 cost 3, and level 9 onward costs 5; one award may cross multiple levels and keeps any remainder. Each level adds the hand row's rank-band Chips increment (+5 for ranks 1–3, +10 for ranks 4–6, +15 for ranks 7–9), while every third level gained adds +1 to its Mult factor. Fee Settlement reveals the awarded hand, stamp count, and any crossed levels; Run Info shows live level and stamp progress. Undiscovered knowledge-tier names remain `???` when a random award lands on them.
+- **Run-only levels and Proof Stamps (changed 2026-08-14).** Every Word Hand starts at level 1. Clearing a blind awards the most-played scored hand one stamp per time it scored in that blind; if several hands tie, the latest tied hand wins. If no Word Hand scored, one profile-discovered hand receives one seeded-random stamp; an undiscovered knowledge-tier hand never enters this random pool until its first completion. A loss and a skipped blind award none. Advancing from current levels 1–5 costs 1 stamp, levels 6–8 cost 3, and level 9 onward costs 5; one award may cross multiple levels and keeps any remainder. Each level adds the hand row's rank-band Chips increment (+5 for ranks 1–3, +10 for ranks 4–6, +15 for ranks 7–9), while every third level gained adds +1 to its Mult factor. Fee Settlement presents the award as a proof-stamp tool slamming onto the awarded hand's ink mark; multiple stamps use visual pips instead of a `+N` text line. Crossing a level shows only a light-green localized `LEVEL UP! / 레벨 업!` VFX below the stamp—no old/new level numerals. Run Info shows live level and stamp progress.
 
 | Rank | Hand | Condition | Example | Bonus | Gibberish |
 |---|---|---|---|---|---|
@@ -457,7 +457,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 
 - **Shipped-lexicon check (2026-08-12).** Among 172,251 valid entries, Vowelless has 60 candidates under the live Y-as-consonant rule (the hypothetical Y-as-vowel branch has 17), Type Economy has 10,164, and Grand Palindrome has 7. A seeded 100,000-hand upper-bound scan of the baseline 10-tile opening found at least one spellable candidate in roughly 1.56%, 7.56%, and 0.017% of hands respectively; these are perfect-dictionary-solver rates, not expected human completion rates.
 - **Preview, discovery & settle.** The original six always show by name. An undiscovered knowledge-tier match renders as `???` in both the staged-word status and Run Info name/condition; its score axes remain visible. Completing it writes the id into the active profile's `wj.lifetime`, and the settle stamp reveals the real name on that play. Profile → Reveal All marks all three discovered. The settle sequence otherwise stamps the matched name normally (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-14).** Run Info → Word Hands lists all nine ranks, current levels, live Chips/Mult bonuses, stamp progress, run-use counts, and their visible conditions. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
+- **In-game reference (changed 2026-08-14).** Run Info → Word Hands lists all nine ranks, current levels, live Chips/Mult bonuses, stamp progress, and run-use counts. As with sentence patterns, each condition/description lives in that row's shared portalled tooltip instead of inline copy. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
 - **Out of scope (for now):** dedicated Emoji Tiles keyed to Word Hand levels—see §12.4.
 
 ---
@@ -522,7 +522,7 @@ The Scrabble-style 2-letter floor is **removed**. Scrabble needs the floor becau
 - **"I" and "a" become budget sentence parts.** I (pronoun) + RUN (verb) = Simple in 2 phases. Opens a rush/sentence hybrid line; meshes with Emoji Tile C8 Short & Sharp.
 - **1-tile gibberish = a paid mini-discard.** Dumping one dead tile spends a phase (and leaves a hole) instead of discard budget — a deliberate discard↔phase↔hole currency triangle.
 
-The removed minimum-word-length floor stays removed globally. (It was once slated to return as a boss rule — "The Editor" — but the 2026-07-21 boss roster dropped that boss; no current boss re-imposes a length floor. §8.3.)
+The removed fixed minimum-word-length floor stays removed globally. Stereotype Plate is the sole conditional exception: during that Deadline it blocks a hand shorter than the longest valid word already played in the current Chapter (§8.3). This threshold comes from play history rather than a universal word-length rule.
 
 ### 6.6 Bag Depletion — the natural cap on long blinds
 
@@ -733,15 +733,21 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 | Boss | Effect | Targets / counters |
 |---|---|---|
 | Memoirs · 회고록 (`memoirs`) | Any word already played **this ante** (Draft + Revision + earlier Deadline phases) scores 0 | Punishes narrow vocab; rewards run-long breadth |
-| Stereotype Plate · 스테레오타입 판 (`stereotypePlate`) | A valid word whose physical tile length was already used this blind is debuffed to 0 | Vary word length; gibberish remains an escape valve |
+| Stereotype Plate · 스테레오타입 판 (`stereotypePlate`) | Only hands at least as long as the longest valid word already played this Chapter may be submitted | Keep the Chapter's earlier maximum manageable; once active, maintain or exceed it |
 
 **Debuff readability (changed 2026-07-29).** A word that an active boss will
 reduce to 0 remains playable, but the staged tiles receive a red **Not Allowed**
 tag before submission. Playing it shows the same warning and keeps the submitted
 word in the sentence tray with a disabled/desaturated treatment. This applies
-uniformly to Forbidden Paper, Memoirs, Burnt Paper, White Paper, Dead Letter,
-and Stereotype Plate; the boss data predicate is the source of truth for both
+uniformly to Forbidden Paper, Memoirs, Burnt Paper, White Paper, and Dead Letter;
+the boss data predicate is the source of truth for both
 scoring and preview UI.
+
+**Submission blocking (changed 2026-08-14).** Stereotype Plate is not a 0-score
+debuff. A staged hand below its current Chapter threshold is marked blocked, and
+Play is disabled; the headless submit path rejects the same hand. The threshold
+is derived only from valid words already recorded this Chapter, but once set it
+applies to every attempted hand, including gibberish.
 
 **Sentence attack**
 
@@ -844,7 +850,7 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
 - **Voucher Tag adds one extra purchase.** It shows a second, distinct Voucher in the next shop, and both choices may be redeemed there. The first redemption still sets the Chapter lock; the tagged survivor is the sole exception and disappears after its second redemption or on leaving the shop.
 - **Restock timing:** the voucher slot restocks when the Deadline (boss blind) ends — the *next* chapter's shop carries the new voucher. Within a chapter, the same voucher persists across the Draft/Revision/Deadline shops.
 - **Base→upgrade cooldown (changed 2026-08-04):** redeeming a base Voucher suppresses its unlocked upgrade from the immediately following Chapter restock. The upgrade returns to the ordinary uniform pool at the next restock after that. Voucher Tag applies this one-restock cooldown to each base it redeems.
-- **Reappearance (Balatro-style):** purchased vouchers never reappear this run; **unpurchased** vouchers stay in the pool and may reappear in a later chapter (preserves "buy now or gamble on later").
+- **Reappearance (Balatro-style, changed 2026-08-14):** purchased vouchers never reappear this run. An **unpurchased** voucher remains in the pool but cannot be the immediately next Chapter's offer; after at least one different Chapter offer, it may reappear.
 - **Redemption presentation (changed 2026-07-30):** Redeem shreds the voucher
   vertically from top to bottom: a cutter head descends, narrow cut lanes open
   behind it, and the separated strips drop away before the slot clears. Shop
@@ -997,6 +1003,12 @@ also available through the surrounding tooltip and accessible label.
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
 | 19 | The Crow and the Pitcher | Add 2 Proof Stamps to the most recently scored Word Hand |
 | 20 | The Ass in the Lion's Skin | Give 1 selected Base letter tile a seeded-random Gray/Violet/Rainbow edition at 50%/35%/15%; preserve its material and font |
+
+The Crow and the Pitcher's result vignette names the affected Word Hand and
+shows its exact `Lv before → Lv after`. The Ass in the Lion's Skin visibly
+previews the selected letter tile changing from its Base state to the rolled
+edition before or as the mutation commits; a generic `Applied` result is never
+the sole feedback for either card.
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
@@ -1597,8 +1609,6 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   Twin, Triplet, Palindrome, Vowel Flush, and Straight; future hands may expand it.
 - **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
   the active 150-tile public roster; the separate 97-tile redesign remains postponed.
-- **Letter-Hand leveling (if ever).** Constellation Cards level sentence patterns
-  only; whether Word Hands should ever level remains deferred.
 - **Touch long-press marking (playtest-03 F).** Right-click discard marking still
   needs a touch equivalent.
 - **Lexicon audit sampling.** Full ENABLE POS coverage shipped 2026-08-03. Future

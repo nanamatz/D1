@@ -1,23 +1,45 @@
-import type { ChanceResult, ConsumableId, OwnedJoker, RunState, Tile } from '../engine/types';
+import { LETTER_HAND_REGISTRY, letterHandLevel } from '../engine/letterHands';
+import type {
+  ChanceResult,
+  ConsumableId,
+  LetterHandId,
+  OwnedJoker,
+  RunState,
+  Tile,
+} from '../engine/types';
+
+export interface TileChange {
+  before: Tile;
+  after: Tile;
+}
+
+export interface WordHandProgress {
+  hand: LetterHandId;
+  fromLevel: number;
+  toLevel: number;
+  fromStamps: number;
+  toStamps: number;
+}
 
 export interface ConsumableEffectEvent {
   id: ConsumableId;
+  run: RunState;
   removedTiles: Tile[];
   addedTiles: Tile[];
-  changedTiles: Tile[];
+  changedTiles: TileChange[];
   removedJokers: OwnedJoker[];
   addedJokers: OwnedJoker[];
   addedConsumables: ConsumableId[];
   goldDelta: number;
   handSizeDelta: number;
   patternLevelsGained: number;
+  wordHandProgress: WordHandProgress[];
   chanceResults: ChanceResult[];
 }
 
 const jokerKey = (joker: OwnedJoker): string => JSON.stringify([
   joker.defId,
   joker.edition ?? 'base',
-  Object.entries(joker.state).sort(([a], [b]) => a.localeCompare(b)),
 ]);
 
 const subtractBy = <T,>(source: readonly T[], remove: readonly T[], key: (value: T) => string): T[] => {
@@ -41,11 +63,14 @@ export function buildConsumableEffect(
   const afterTiles = new Map(after.bag.map((tile) => [tile.id, tile]));
   return {
     id,
+    run: after,
     removedTiles: before.bag.filter((tile) => !afterTiles.has(tile.id)),
     addedTiles: after.bag.filter((tile) => !beforeTiles.has(tile.id)),
-    changedTiles: after.bag.filter((tile) => {
+    changedTiles: after.bag.flatMap((tile) => {
       const previous = beforeTiles.get(tile.id);
-      return previous !== undefined && JSON.stringify(previous) !== JSON.stringify(tile);
+      return previous !== undefined && JSON.stringify(previous) !== JSON.stringify(tile)
+        ? [{ before: previous, after: tile }]
+        : [];
     }),
     removedJokers: subtractBy(before.jokers, after.jokers, jokerKey),
     addedJokers: subtractBy(after.jokers, before.jokers, jokerKey),
@@ -57,6 +82,15 @@ export function buildConsumableEffect(
         sum + Math.max(0, level - (before.patternLevels[pattern as keyof typeof before.patternLevels] ?? 0)),
       0,
     ),
+    wordHandProgress: LETTER_HAND_REGISTRY.flatMap(({ id: hand }) => {
+      const fromLevel = letterHandLevel(before.letterHandLevels, hand);
+      const toLevel = letterHandLevel(after.letterHandLevels, hand);
+      const fromStamps = before.letterHandStamps?.[hand] ?? 0;
+      const toStamps = after.letterHandStamps?.[hand] ?? 0;
+      return fromLevel !== toLevel || fromStamps !== toStamps
+        ? [{ hand, fromLevel, toLevel, fromStamps, toStamps }]
+        : [];
+    }),
     chanceResults: [...chanceResults],
   };
 }

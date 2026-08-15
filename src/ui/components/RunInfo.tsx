@@ -119,29 +119,35 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                 const stamps = run.letterHandStamps?.[hand.id] ?? 0;
                 const discovered = isLetterHandDiscovered(hand.id, discoveredLetterHands);
                 return (
-                  <div className="ri-hand" key={hand.id}>
-                    <span className="ri-hand-rank">{hand.rank}</span>
-                    <span className="ri-hand-copy">
-                      <strong>{discovered ? t(`letterhand.${hand.id}`) : '???'}</strong>
-                      <span>{discovered ? richText(t(`letterhand.${hand.id}.desc`)) : '???'}</span>
-                    </span>
-                    <span className="ri-hand-score pcm">
-                      <b className="chips">+{bonus.chips}</b>
-                      {bonus.mult > 0 && (
-                        <>
-                          <span className="times">×</span>
-                          <b className="mult">{bonus.mult}</b>
-                        </>
-                      )}
-                    </span>
-                    <span className="ri-hand-level">
-                      <b>Lv {level}</b>
-                      <small>{t('runinfo.wordHandStamps', { n: stamps, cost: letterHandStampCost(level) })}</small>
-                    </span>
-                    <span className="ri-use-count">
-                      {t('runinfo.timesUsed', { n: run.letterHandPlayCounts?.[hand.id] ?? 0 })}
-                    </span>
-                  </div>
+                  <Tooltip
+                    key={hand.id}
+                    title={discovered ? t(`letterhand.${hand.id}`) : '???'}
+                    body={discovered ? t(`letterhand.${hand.id}.desc`) : '???'}
+                    down
+                  >
+                    <div className="ri-hand">
+                      <span className="ri-hand-rank">{hand.rank}</span>
+                      <span className="ri-hand-copy">
+                        <strong>{discovered ? t(`letterhand.${hand.id}`) : '???'}</strong>
+                      </span>
+                      <span className="ri-hand-score pcm">
+                        <b className="chips">+{bonus.chips}</b>
+                        {bonus.mult > 0 && (
+                          <>
+                            <span className="times">×</span>
+                            <b className="mult">{bonus.mult}</b>
+                          </>
+                        )}
+                      </span>
+                      <span className="ri-hand-level">
+                        <b>Lv {level}</b>
+                        <small>{t('runinfo.wordHandStamps', { n: stamps, cost: letterHandStampCost(level) })}</small>
+                      </span>
+                      <span className="ri-use-count">
+                        {t('runinfo.timesUsed', { n: run.letterHandPlayCounts?.[hand.id] ?? 0 })}
+                      </span>
+                    </div>
+                  </Tooltip>
                 );
               })}
             </div>

@@ -146,6 +146,7 @@ describe('requested Emoji Tile mechanics', () => {
 
   it('The Scarlet Letter counts physical discarded A tiles and includes earlier discards', () => {
     const run = newRun('scarlet-letter');
+    run.jokers = [createOwnedJoker(run, 'scarletLetter')];
     const blind = startBlind(run, makeRng('scarlet-letter'));
     const selected = tilesFor('AAB');
     const discarded = discardTiles(
@@ -155,6 +156,7 @@ describe('requested Emoji Tile mechanics', () => {
       makeRng('scarlet-letter-discard'),
     );
     expect(discarded.discardedLetterCounts).toMatchObject({ A: 2, B: 1 });
+    expect(discarded.jokers[0]!.state.factor).toBeCloseTo(1.2);
 
     const lateRun = {
       ...run,

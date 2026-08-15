@@ -161,6 +161,9 @@ export interface EngineEvents {
   /** a Constellation card was consumed */
   constellationUsed: { run: RunState };
 
+  /** a Fable card was successfully consumed */
+  fableUsed: { run: RunState };
+
   /** letter tiles left the permanent pouch */
   tilesDestroyed: { run: RunState; count: number };
 

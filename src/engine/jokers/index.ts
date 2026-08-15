@@ -363,6 +363,12 @@ export function onConstellationUsed(run: RunState): RunState {
   return next;
 }
 
+export function onFableUsed(run: RunState): RunState {
+  const next = mutableRun(run);
+  defaultJokerBus.emit('fableUsed', { run: next }, next.jokers);
+  return next;
+}
+
 export function onTilesDestroyed(run: RunState, count: number): RunState {
   if (count <= 0) return run;
   const next = mutableRun(run);

@@ -52,6 +52,16 @@ describe('playtest-03 C — voucher shop rules', () => {
     expect(rollShopStock(run, makeRng('s')).voucher).toBe('poetryBook');
   });
 
+  it('does not repeat the previous Chapter voucher in the next Chapter', () => {
+    const run: RunState = { ...richRun(), voucherOffer: 'storyBook' };
+    expect(rollVoucherOffer(
+      run,
+      preferVoucher('storyBook'),
+      new Set(),
+      new Set(['storyBook']),
+    )).not.toBe('storyBook');
+  });
+
   it('keeps a base voucher upgrade out of the immediately following restock', () => {
     const run: RunState = { ...richRun(), voucherOffer: 'historyBook' };
     const bought = buyVoucher(run, rollShopStock(run, makeRng('history-shop')));

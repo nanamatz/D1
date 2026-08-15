@@ -8,7 +8,7 @@
  *   setup           → mutate the blind at start (phases, discards, flags)
  *   wordScoring     → mutate chips/mult (after jokers); gets {run, blind, lexicon}
  *   voids           → an allowed-but-zero submission (Forbidden Paper single-suit lock)
- *   blocks          → an illegal submission (unused by the current roster; kept as infra)
+ *   blocks          → an illegal submission (Stereotype Plate length threshold)
  *   goldPerWord     → economy drain per hand played (Bond)
  *   goldPerDiscardedTile → economy drain per discarded tile (Cleaning Sign)
  *   discardOnPlay   → discard N random hand tiles after each play (Unopened Letter)
@@ -69,7 +69,7 @@ export interface BossDef {
     priorSequence: readonly WordSubmission[],
   ) => boolean;
   /** true → the submission is illegal and cannot be played */
-  blocks?: (word: string, lexicon: Lexicon) => boolean;
+  blocks?: (submission: WordSubmission, env: BossScoringEnv) => boolean;
   /** true → the submission is allowed but scores 0 */
   voids?: (submission: WordSubmission, priorSequence: readonly WordSubmission[]) => boolean;
   /** gold removed each time a hand is played */
@@ -200,10 +200,10 @@ const BOSSES: readonly BossDef[] = [
     nameEn: 'Stereotype Plate',
     nameKo: '스테레오타입 판',
     emoji: '▤',
-    debuffs: (submission, _env, prior) =>
-      !submission.isGibberish &&
-      prior.some((word) =>
-        !word.isGibberish && submissionLength(word) === submissionLength(submission)),
+    blocks: (submission, env) => {
+      const minimumLength = Math.max(0, ...(env.run.wordsThisAnte ?? []).map((word) => word.length));
+      return submissionLength(submission) < minimumLength;
+    },
   },
   {
     id: 'orphanLine',

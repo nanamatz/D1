@@ -97,12 +97,14 @@ export function addLetterHandStamps(
 }
 
 /** Clear reward: most-played scored hand gets its play count in stamps. If none
- * scored, one seeded-random hand gets one. A tie goes to the latest tied hand. */
+ * scored, one seeded-random eligible hand gets one. The UI supplies only hands
+ * discovered in the active profile. A tie goes to the latest tied hand. */
 export function awardBlindLetterHandStamps(
   run: RunState,
   blind: BlindState,
   rng: Pick<Rng, 'int'>,
-): { run: RunState; reward: LetterHandStampReward } {
+  eligibleRandomHands: readonly LetterHandId[] = LETTER_HAND_REGISTRY.map((hand) => hand.id),
+): { run: RunState; reward: LetterHandStampReward | null } {
   const played = blind.sequence.flatMap((submission) => {
     const match = evaluateLetterHand(
       submission.text.toUpperCase(),
@@ -115,8 +117,11 @@ export function awardBlindLetterHandStamps(
   for (const hand of played) counts[hand] = (counts[hand] ?? 0) + 1;
   const max = Math.max(0, ...Object.values(counts));
   const random = max === 0;
+  const registered = new Set(LETTER_HAND_REGISTRY.map((candidate) => candidate.id));
+  const randomPool = [...new Set(eligibleRandomHands)].filter((id) => registered.has(id));
+  if (random && randomPool.length === 0) return { run, reward: null };
   const hand = random
-    ? LETTER_HAND_REGISTRY[rng.int(LETTER_HAND_REGISTRY.length)]!.id
+    ? randomPool[rng.int(randomPool.length)]!
     : [...played].reverse().find((id) => counts[id] === max)!;
   const result = addLetterHandStamps(run, hand, random ? 1 : max);
   return { run: result.run, reward: { ...result.reward, random } };

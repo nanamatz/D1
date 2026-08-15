@@ -8,6 +8,7 @@ import { audio } from '../audio';
 import { useI18n } from '../i18n';
 import { isLetterHandDiscovered } from '../lifetime';
 import type { UseGame } from '../useGame';
+import proofStampArt from '../assets/icons/ui/proof-stamp.png';
 import { UiIcon } from './UiIcon';
 
 interface Line {
@@ -56,6 +57,8 @@ export function CashOut({
 
   const shown = useReveal(lines.length + (mastery ? 1 : 0));
   const total = useCountUp(shown >= lines.length ? e.total : 0, 500);
+  const masteryShown = !!mastery && shown > lines.length;
+  const leveledUp = !!mastery && mastery.toLevel > mastery.fromLevel;
 
   // Each payout line lands with the rising coin voice used by real gold gains,
   // so the Fee Settlement presentation is audibly monetary too.
@@ -66,6 +69,20 @@ export function CashOut({
       lastShown.current = shown;
     }
   }, [shown, lines.length]);
+
+  const stamped = useRef(false);
+  useEffect(() => {
+    if (!masteryShown) {
+      stamped.current = false;
+      return;
+    }
+    if (stamped.current) return;
+    stamped.current = true;
+    audio.play('stamp');
+    if (!leveledUp) return;
+    const timer = window.setTimeout(() => audio.play('multFill'), 360);
+    return () => window.clearTimeout(timer);
+  }, [masteryShown, leveledUp]);
 
   // A-2: overlay the darkened, still-visible board (like Game Over) — no swap.
   return (
@@ -87,20 +104,31 @@ export function CashOut({
             </div>
           ))}
           {mastery && (
-            <div className={['cashout-line', 'mastery', shown > lines.length && 'in'].filter(Boolean).join(' ')}>
-              <span className="desc">
-                {t(mastery.random ? 'cashout.wordHandStampsRandom' : 'cashout.wordHandStamps', {
-                  hand: isLetterHandDiscovered(mastery.hand, discoveredLetterHands)
+            <div
+              className={[
+                'cashout-mastery',
+                masteryShown && 'in',
+              ].filter(Boolean).join(' ')}
+              aria-label={t('cashout.proofStamp', {
+                hand: isLetterHandDiscovered(mastery.hand, discoveredLetterHands)
+                  ? t(`letterhand.${mastery.hand}`)
+                  : '???',
+              })}
+            >
+              <div className="cashout-proof-stage">
+                <span className="cashout-proof-mark">
+                  {isLetterHandDiscovered(mastery.hand, discoveredLetterHands)
                     ? t(`letterhand.${mastery.hand}`)
-                    : '???',
-                })}
-              </span>
-              <span className="amt">
-                <b>{t('cashout.stampAmount', { n: mastery.stamps })}</b>
-                {mastery.toLevel > mastery.fromLevel && (
-                  <em>{t('cashout.levelUp', { from: mastery.fromLevel, to: mastery.toLevel })}</em>
-                )}
-              </span>
+                    : '???'}
+                  <span className="cashout-proof-pips" aria-hidden>
+                    {Array.from({ length: Math.min(mastery.stamps, 8) }, (_, i) => (
+                      <i key={i} />
+                    ))}
+                  </span>
+                </span>
+                <img className="cashout-proof-stamp" src={proofStampArt} alt="" aria-hidden />
+              </div>
+              {leveledUp && <div className="cashout-level-up">{t('cashout.levelUp')}</div>}
             </div>
           )}
         </div>

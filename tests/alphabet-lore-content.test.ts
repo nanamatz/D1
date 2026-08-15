@@ -138,15 +138,21 @@ describe('alphabet-lore bosses', () => {
     expect(result.submission.settledScore).toBe(0);
   });
 
-  it('Stereotype Plate debuffs a reused valid physical length', () => {
-    const run = newRun('stereotype');
+  it('Stereotype Plate blocks hands shorter than the longest valid word this Chapter', () => {
+    const run = { ...newRun('stereotype'), wordsThisAnte: ['cat', 'stone'] };
     const blind = startBlind(run, makeRng('stereotype'), {
       kind: 'boss', bossId: 'stereotypePlate', target: 1_000_000,
     });
-    const cat = play(blind, run, 'cat');
-    const dog = play(cat.blind, { ...run, jokers: cat.jokers }, 'dog');
-    expect(dog.submission.debuffed).toBe(true);
-    expect(dog.submission.settledScore).toBe(0);
+    const staged = tilesFor('dog');
+    expect(stagePreview(
+      { ...blind, hand: staged },
+      run,
+      lex,
+      staged.map((tile) => tile.id),
+      String,
+    )?.blocked).toBe(true);
+    expect(() => play(blind, run, 'dog')).toThrow('boss: this word cannot be submitted');
+    expect(play(blind, run, 'stone').submission.settledScore).toBeGreaterThan(0);
   });
 
   it('Orphan Line excludes only the first word from pattern and Unison judgment', () => {

@@ -9,6 +9,7 @@ import {
   ALL_JOKERS,
   createOwnedJoker,
   JOKER_REGISTRY,
+  onFableUsed,
   onTilesDestroyed,
   onTilesEnhanced,
 } from './jokers';
@@ -177,13 +178,13 @@ export function useFableOnPouch(
   };
   const commit = (bag: Tile[]): { ok: true; run: RunState } => ({
     ok: true,
-    run: {
+    run: onFableUsed({
       ...run,
       bag,
       consumables: consumed(),
       lastFableOrConstellation: id,
       fablesUsed: (run.fablesUsed ?? 0) + 1,
-    },
+    }),
   });
 
   if (effect.kind === 'material') {
@@ -417,12 +418,12 @@ export function useFable(
   const index = run.consumables.indexOf(id);
   const consumables = run.consumables.slice();
   consumables.splice(index, 1);
-  let nextRun: RunState = {
+  let nextRun: RunState = onFableUsed({
     ...run,
     consumables,
     lastFableOrConstellation: id === 'fable2' ? (run.lastFableOrConstellation ?? null) : id,
     fablesUsed: (run.fablesUsed ?? 0) + 1,
-  };
+  });
   let nextBlind = blind;
   let requestHint = false;
   const chanceResults: ChanceResult[] = [];
