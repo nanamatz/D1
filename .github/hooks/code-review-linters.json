@@ -1,0 +1,62 @@
+[
+  {
+    "event": "PostToolUse",
+    "conditions": {
+      "tool": "edit",
+      "filePattern": "src/**/*.ts"
+    },
+    "hooks": [
+      {
+        "type": "command",
+        "description": "Run TypeScript compiler check on edited files",
+        "command": "npx tsc --noEmit {file}",
+        "timeout": 30,
+        "platform": "win32",
+        "failureMode": "warn"
+      },
+      {
+        "type": "command",
+        "description": "Run ESLint on edited files",
+        "command": "npx eslint {file} --fix --report-unused-disable-directives",
+        "timeout": 15,
+        "platform": "win32",
+        "failureMode": "warn"
+      }
+    ]
+  },
+  {
+    "event": "PostToolUse",
+    "conditions": {
+      "tool": "edit",
+      "filePattern": "src/**/*.tsx"
+    },
+    "hooks": [
+      {
+        "type": "command",
+        "description": "Run TypeScript compiler check on React files",
+        "command": "npx tsc --noEmit {file}",
+        "timeout": 30,
+        "failureMode": "warn"
+      },
+      {
+        "type": "command",
+        "description": "Run ESLint with React plugin",
+        "command": "npx eslint {file} --fix --report-unused-disable-directives",
+        "timeout": 15,
+        "failureMode": "warn"
+      }
+    ]
+  },
+  {
+    "event": "SessionStart",
+    "hooks": [
+      {
+        "type": "command",
+        "description": "Validate project setup: check tsc, eslint, node version",
+        "command": "npx tsc --version && npx eslint --version && node --version",
+        "timeout": 10,
+        "failureMode": "warn"
+      }
+    ]
+  }
+]
