@@ -440,7 +440,6 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
       <div className="word-tab-panel">
       {tab === 'registers' ? (
         <div className="register-score-view">
-          <p>{t('collection.register.intro')}</p>
           <div className="register-score-grid">
             {registerSuits.map((id) => (
               <div key={id} className={['register-score-card', id].join(' ')}>

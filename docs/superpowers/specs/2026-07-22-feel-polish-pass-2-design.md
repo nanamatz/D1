@@ -1,5 +1,7 @@
 # Feel & Polish Pass 2 — Design (2026-07-22)
 
+> **Superseded audio provenance (2026-08-19):** 17 Kenney Casino Audio 1.1 samples now cover pack opening, reroll, and chip sounds under CC0 1.0; all other SFX and BGM remain runtime synthesized. The current sources of truth are `assets/AUDIO_LICENSES.md` and `docs/screens-spec.md` §2.13. The historical design below is preserved unchanged.
+
 A batch of 7 presentation-only feel items from a Korean playtest review. One spec;
 each item is self-contained and UI-layer. **The headless engine is untouched** — no
 change under `src/engine/`. All work lives in `src/ui/` (audio facade, board

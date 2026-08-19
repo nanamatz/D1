@@ -1,5 +1,7 @@
 # Warmth + Punch Feel Polish Implementation Plan
 
+> **Superseded audio provenance (2026-08-19):** 17 Kenney Casino Audio 1.1 samples now cover pack opening, reroll, and chip sounds under CC0 1.0; all other SFX and BGM remain runtime synthesized. The current sources of truth are `assets/AUDIO_LICENSES.md` and `docs/screens-spec.md` §2.13. The historical plan below is preserved unchanged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Warm the thin/tinny synth audio (BGM, buy/sell, tile-select, tile-draw) and make the cursor-tracking card tilt stronger and more dynamic — all synth-only, UI-layer, no asset files, no engine changes.

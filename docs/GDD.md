@@ -37,7 +37,7 @@ Version 0.2 — systems expansion
 - Changed 2026-08-06: Rare Emoji Tile Blacksmith starts at +0 Chips and permanently gains +10 Chips whenever an existing letter tile receives a material, font, or edition enhancement. Held tile-targeting Fables may use the pouch candidates in either an open Fable Pack or Ink Pack (§9.3, §10.1, §11.4).
 - Changed 2026-08-06: Triplet now ranks above Longword, so a valid 6+ letter word containing the same letter three times triggers Triplet instead of being shadowed by Longword (§5.5).
 - Changed 2026-08-06: Cleaning Sign displays as `청소 표지판` in Korean and removes $2 for each tile discarded, rather than once per discard action (§8.4).
-- Changed 2026-08-06: register base Mult is Standard ×1, Formal ×3, Slang ×5, and Vulgar ×10 so the much rarer registers pay a meaningful premium after additive word-length Mult (§3.1).
+- Changed 2026-08-18: register base Mult is Standard ×1, Formal ×10, Slang ×5, and Vulgar ×7. Formal becomes the highest-authority reward while Vulgar's former jackpot is moderated. Profile register titles derive from unique current-lexicon discoveries and one earned title may be equipped cosmetically by stable semantic id in `wj.lifetime`; there is no gameplay effect or new save key (§3.1).
 - Changed 2026-08-06: sentence-pattern base Mult is compressed to ×1/×2/×3/×4 by rank band while base Chips stay unchanged. Every Constellation level now adds its fixed Chips increment and +1 Mult linearly; the former ×1.5 geometric growth is retired (§5.2–§5.4).
 - Changed 2026-08-07: sentence-pattern construction difficulty is classified independently from payout rank. Easy/Medium/Hard Constellation levels add +15/+30/+45 Chips respectively while every pattern continues to gain +1 Mult (§5.2–§5.4).
 - Changed 2026-08-07: Deer and Phoenix are Ink-Pack-only jackpots at 0.3% per choice each. The other 12 Gambler Cards roll uniformly; Lucky Pouch shop and starting-card routes, plus Comic Book replacements, exclude both jackpots (§9.3, §10.3, §12.2).
@@ -270,16 +270,16 @@ A completed word is classified into one of 4 types, like a Balatro suit. The cla
 
 ### 3.1 The Four Suits and Base Multipliers
 
-| Suit | Character | Rarity | Base multiplier (placeholder) | Position |
+| Suit | Character | Rarity | Base multiplier | Position |
 |---|---|---|---|---|
 | Standard | Everyday vocabulary | Overwhelming majority | ×1 | Safe main line |
-| Formal | Academic / literary | Fewer than majority | ×3 | Mid-game main candidate |
+| Formal | Academic / literary | Fewer than majority | ×10 | Highest-authority reward |
 | Slang | Generation/group/era-limited nonstandard speech | Few | ×5 | Strong when combined with emoji tiles |
-| Vulgar | Profanity / taboo | Fewest | ×10 | High-risk jackpot |
+| Vulgar | Profanity / taboo | Fewest | ×7 | Strong but moderated rare reward |
 
-> **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in *how easy they are to make* (Standard common → Vulgar rare). Treating this asymmetry as a resource rather than a defect, harder-to-make suits get higher base multipliers, embedding a risk-reward curve into the suit structure itself. On top of that, "suit-pushing emoji tiles" (layer 2) recreate Balatro-style build bias.
+> **Key design — Balatro suits are "symmetric," this game's are "asymmetric."** Balatro's 4 suits have equal counts in the deck, so no base-multiplier difference is applied. This game's suits differ in both availability and register identity. Standard remains the safe baseline; Slang and Vulgar reward rarer vocabulary; Formal sits highest because its academic/literary authority is the system's capstone rather than a strict rarity ranking. "Suit-pushing emoji tiles" (layer 2) recreate Balatro-style build bias on top of that asymmetric reward curve.
 
-> **Balance warning — keep the multiplier curve gentler than the rarity.** If Slang/Vulgar appear *too* rarely while only their multipliers are high, players will treat them as "suits I can't make anyway" and ignore them. Keep the multiplier gentler than the data rarity to hold the line at "hard but worth attempting." Vulgar has extremely few words, so design it not as a main build but as a "jackpot that explodes when conditions align," balanced by an adversarial relationship with censor-type bosses.
+> **Balance warning — reward identity, not rarity alone.** If nonstandard registers appear *too* rarely while only their multipliers are high, players will treat them as "suits I can't make anyway" and ignore them. Formal ×10 deliberately owns the highest-authority payoff, while Vulgar ×7 stays hard but worthwhile without its former swingy jackpot identity. Censor-type bosses still provide its adversarial build relationship.
 
 **Word length adds to Mult (2026-07-30).** A valid word's score is `letter chips × (suit multiplier + length × BALANCE.wordLength.multPerLetter)`, with `multPerLetter` = 1 — a 5-letter Standard word settles at `chips × 6.0`. Length is **added** to the suit multiplier, not multiplied by it, so the register asymmetry above keeps its weight instead of being swamped by a linear length term. Gibberish is excluded (§6.4): it stays at `chips × 1.0`, so dumping eight random tiles never competes with spelling. The length bonus is applied **after** per-tile materials, matching `loop.ts::scoreSubmission`; `scoreWord` follows the same order — this ordering is load-bearing because Glass multiplies Mult, and `(suitMult + length) × glassFactor` differs from `(suitMult × glassFactor) + length`. Sim: `src/sim/length-mult.ts`.
 
@@ -294,6 +294,35 @@ adding a save key; old settled-score records are recomputed from the word on rea
 The full dictionary total is secret: the category total, discovery record, and
 unfiltered Words pager show `???` until every eligible word has been discovered,
 then reveal the actual total. Search/filter result counts remain literal.
+
+Profile titles are cosmetic milestones derived from the unique keys already in
+that profile's `wj.collection`, classified by each word's original suit in the
+current lexicon. Repeated plays, gibberish, stale collection rows, and temporary
+suit rewrites do not count. One earned title may be equipped per profile; the
+stable semantic id (for example `standard.reader`, `formal.professor`, or `god`)
+lives in that slot's existing `wj.lifetime`, never a localized name or tier index.
+Equipping is cosmetic and changes no scoring, economy, RNG, or engine state. A
+stored title that is unknown or no longer earned resolves to no title and is
+reconciled to `null` when that profile is opened. The full-register tier uses the live lexicon total,
+which stays hidden until mastery; Reveal All's compact `unlockAllApplied` marker
+synthetically grants all four mastery titles and **God / 신** while Challenges
+remain disabled.
+
+Selecting a higher tier leaves every earned lower tier selectable. Profile shows
+one shared inline selector opened from the four register cards; God becomes a
+separate selectable badge only after all four registers are mastered. Reveal All
+unlocks the choices but never changes the equipped title. Inactive profile slots
+may choose independently without becoming active; Main Menu displays only the
+active slot's validated equipped title beneath its name.
+
+| Register | Discovery titles (threshold → title) | Full-register title |
+|---|---|---|
+| Standard | 50 Reader · 100 Speller · 200 Word Collector · 500 Wordsmith · 1,000 Editor · 10,000 Lexicographer · 100,000 Living Dictionary | Master of Standard / 표준어 정복자 |
+| Formal | 10 Scribe · 25 Essayist · 50 Scholar · 100 Rhetorician · 250 Orator · 500 Erudite / 박학다식 · 1,000 Doctor / 박사 | Professor / 교수 |
+| Slang | 5 Trickster · 10 Free Spirit · 25 Roughneck · 50 From the Streets · 100 Wild Life · 250 Brain Rot / 브레인 롯 · 500 Trend Setter | Influencer / 인플루언서 |
+| Vulgar | 1 Kid · 5 Elementary Schooler · 10 Middle Schooler · 25 Juvenile Delinquent · 50 Crank · 100 Rapper · 200 Gangster | Buddha / 부처 |
+
+Mastering all four registers grants **God / 신**.
 
 ### 3.2 Register Data Acquisition Pipeline
 
@@ -404,7 +433,7 @@ One rule replaces the v0.1 tone-overlay table:
 
 Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). A register-mult Unison therefore scales the committed blind score even when no sentence pattern matches. This preserves the flush role ("commit to one suit across phases → reward") while keeping all richer combination rules (Hypocrite, etc.) in emoji tiles.
 
-Note on Vulgar stacking: suit base ×10 plus Unison-Vulgar ×2 is an intentional double reward (jackpot identity). Exact values remain playtest material.
+Note on Vulgar stacking: suit base ×7 plus Unison-Vulgar ×2 remains a strong double reward, moderated below Formal's ×10 authority payoff. Exact values remain playtest material.
 
 ### 5.4 Constellation Mapping (level-up consumables)
 

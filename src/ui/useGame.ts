@@ -57,6 +57,7 @@ import {
   loadDiscoveredLetterHands,
   recordBestRoundScore,
   recordEndlessEnd,
+  recordJokerBlindCounts,
   recordRunEnd,
 } from './lifetime';
 import { LETTER_HAND_REGISTRY } from '../engine/letterHands';
@@ -102,6 +103,7 @@ import {
   VOUCHER_REGISTRY,
 } from '../engine/vouchers';
 import {
+  ALL_JOKERS,
   onBlindEndedWithDestroyedJokers,
   onConstellationUsed,
   onTilesDestroyed,
@@ -112,6 +114,7 @@ import {
   skipCurrentBlind,
 } from '../engine/skipRewards';
 import { GROWTH_POP_MS } from './timing';
+import { newRunObservationId } from './runObservation';
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -139,6 +142,7 @@ export interface RunStats {
   rerollsUsed: number;
   bestWord: { text: string; score: number } | null;
   patternCounts: Partial<Record<PatternId, number>>;
+  jokerBlindCounts: Partial<Record<string, number>>;
   /** words collected for the first time ever, during this run */
   discoveries: number;
 }
@@ -150,8 +154,11 @@ const freshStats = (): RunStats => ({
   rerollsUsed: 0,
   bestWord: null,
   patternCounts: {},
+  jokerBlindCounts: {},
   discoveries: 0,
 });
+
+const productionJokerIds = new Set(ALL_JOKERS.map((joker) => joker.id));
 
 const keepSelectedInHand = (selected: readonly string[], blind: BlindState): string[] => {
   const kept = selected.filter((id) => blind.hand.some((tile) => tile.id === id));
@@ -199,6 +206,8 @@ export interface BlindEntryEffectEvent {
 }
 
 export interface GameState {
+  /** Persisted UI observation identity; never participates in engine RNG. */
+  observationId: string;
   seed: string;
   rngCounter: number;
   run: RunState;
@@ -409,6 +418,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     ...(tutorial ? { openingLetters: TUTORIAL_WORD.split('') as Letter[] } : {}),
   });
   return {
+    observationId: newRunObservationId(),
     seed,
     rngCounter: 1,
     run,
@@ -557,11 +567,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       recordedGameOver.current = go;
       if (go.endlessRun && !go.won) {
         recordEndlessEnd({
+          observationId: state.observationId,
           ante: go.ante,
           bestScore: state.endlessBestScore,
+          patternCounts: state.stats.patternCounts,
         });
       } else {
         recordRunEnd({
+          observationId: state.observationId,
           ante: go.ante,
           gold: state.run.gold,
           bestWord: state.stats.bestWord,
@@ -572,19 +585,29 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           jokerIds: state.run.jokers
             .filter((joker) => joker.state.destroyed !== 1)
             .map((joker) => joker.defId),
+          patternCounts: state.stats.patternCounts,
         });
       }
     }
   }, [
     state.gameover,
+    state.observationId,
     state.run.gold,
     state.run.pouchId,
     state.run.recordId,
     state.run.customSeed,
     state.run.jokers,
     state.stats.bestWord,
+    state.stats.patternCounts,
     state.endlessBestScore,
   ]);
+
+  // Persist cumulative settled-blind totals. Lifetime's durable observation baseline
+  // absorbs StrictMode, reload, and write-order retries.
+  useEffect(() => {
+    if (!state.runStarted) return;
+    recordJokerBlindCounts(state.observationId, state.stats.jokerBlindCounts);
+  }, [state.observationId, state.runStarted, state.stats.jokerBlindCounts]);
 
   // Word collection (P2-2): record each non-gibberish play once it settles.
   // A globally-new word also bumps this run's discovery count (Game Over §2.7).
@@ -647,7 +670,13 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // Tally the finalized sentence pattern for "most played pattern" (§2.7).
       const patternCounts = { ...s.stats.patternCounts };
       if (p) patternCounts[p] = (patternCounts[p] ?? 0) + 1;
-      const stats: RunStats = { ...s.stats, patternCounts };
+      const jokerBlindCounts = { ...s.stats.jokerBlindCounts };
+      for (const id of new Set(runWithPattern.jokers
+        .filter((joker) => joker.state.destroyed !== 1 && productionJokerIds.has(joker.defId))
+        .map((joker) => joker.defId))) {
+        jokerBlindCounts[id] = (jokerBlindCounts[id] ?? 0) + 1;
+      }
+      const stats: RunStats = { ...s.stats, patternCounts, jokerBlindCounts };
       const roundedFinal = Math.round(settledScore);
       recordBestRoundScore(roundedFinal);
       const endlessBestScore = s.run.victorySecured

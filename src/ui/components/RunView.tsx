@@ -137,7 +137,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   useEffect(() => {
     if (phase !== 'playing' && phase !== 'shop' && phase !== 'blindselect') return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || e.repeat) return;
       // Never steal ESC from a text field (e.g. the collection's search box).
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {

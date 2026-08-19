@@ -18,6 +18,7 @@ import { readValue, remove, writeRaw } from './storage';
 import { isKnownConsumableId } from '../engine/consumables';
 import { JOKER_REGISTRY } from '../engine/jokers';
 import type { GameState } from './useGame';
+import { normalizeRunObservationId } from './runObservation';
 
 const KEY = 'wj.run';
 
@@ -25,7 +26,7 @@ const KEY = 'wj.run';
  * Bump whenever GameState's shape changes. Mismatched saves are DISCARDED, not
  * migrated — a stale save that half-fits is worse than a fresh run.
  */
-const VERSION = 11;
+const VERSION = 12;
 
 interface Envelope {
   version: number;
@@ -94,6 +95,11 @@ export function loadRun(): GameState | null {
   // Tile is then a data change, not a save-version bump that discards the run.
   return {
     ...s,
+    observationId: normalizeRunObservationId(s.observationId),
+    stats: {
+      ...s.stats,
+      jokerBlindCounts: s.stats?.jokerBlindCounts ?? {},
+    },
     shopTagRedemptions: s.shopTagRedemptions ?? [],
     blindEntryEffects: null,
     run: {

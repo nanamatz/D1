@@ -475,7 +475,6 @@ const CHIP_SAMPLES: Record<ChipSoundTier, readonly string[]> = {
   handle: [chipsHandle1, chipsHandle2, chipsHandle3, chipsHandle4],
   collide: [chipsCollide1, chipsCollide2, chipsCollide3, chipsCollide4],
 };
-
 /** Denser chip recordings track the magnitude of the Chips operation. */
 export function chipSoundTier(chips: number): ChipSoundTier {
   const amount = Math.abs(chips);
@@ -856,7 +855,7 @@ class Audio {
     void sound.play().catch(() => fallback?.());
   }
 
-  private playRecipe(name: SfxName, opts: { step?: number } | undefined): void {
+  private playRecipe(name: SfxName, opts?: { step?: number }): void {
     if (!this.busEnabled.sfx) return; // gated until SOUND is unlocked (C-6)
     if (!this.ctx || !this.unlocked) return; // pre-gesture / no Web Audio → drop
     const g = effectiveGain(name, this.vol);

@@ -1,28 +1,48 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Lexicon } from '../../engine/lexicon';
-import { collectionSize } from '../collection';
+import { collectionStatsPage, loadCollection, sortedCollectionStats, type Collection as WordCollection } from '../collection';
+import { ALL_JOKERS } from '../../engine/jokers';
 import { POUCH_IDS } from '../../engine/pouches';
 import { RECORD_IDS } from '../../engine/records';
 import {
   JOKER_RECORD_STICKER_TOTAL,
   jokerRecordStickerCount,
   loadLifetime,
+  mostPlayedPattern,
   recordWinCount,
 } from '../lifetime';
 import { useSettings } from '../settings';
 import { audio } from '../audio';
+import { isEmojiUnlocked, loadEmojiUnlockProgress } from '../emojiUnlocks';
 import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
+import { THIRD_PARTY_NOTICES } from '../legalNotices';
 import { voicedKeys } from '../mascots';
 import { Collection } from './Collection';
+import { Tooltip } from './Tooltip';
 import { UiIcon } from './UiIcon';
 
 type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
-type Tab = 'game' | 'video' | 'audio';
+type Tab = 'game' | 'video' | 'graphics' | 'audio';
+type StatsTab = 'overview' | 'words' | 'jokers';
 type CreditsTab = 'team' | 'visuals' | 'audio' | 'fonts';
 
 const CREDIT_TABS: readonly CreditsTab[] = ['team', 'visuals', 'audio', 'fonts'];
+
+export function collectionProgressPercent(
+  collection: WordCollection,
+  lexicon: Pick<Lexicon, 'size' | 'isWord'>,
+  unlockAllApplied: boolean,
+): number {
+  if (unlockAllApplied) return 100;
+  if (lexicon.size <= 0) return 0;
+  let discovered = 0;
+  for (const word of Object.keys(collection)) {
+    if (lexicon.isWord(word)) discovered += 1;
+  }
+  return Math.min(100, Math.round((discovered / lexicon.size) * 1000) / 10);
+}
 
 interface Props {
   lexicon: Lexicon;
@@ -107,49 +127,71 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
 }
 
 // ---------- reusable controls ----------
-function Slider({
+export function Slider({
   label,
   value,
   min,
   max,
   onChange,
+  tooltip,
+  tooltipDisabled,
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
   onChange: (v: number) => void;
+  tooltip: string;
+  tooltipDisabled: boolean;
 }) {
   return (
-    <div className="set-row">
-      <span className="set-label">{label}</span>
-      <div className="set-control">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-        />
-        <span className="set-badge">{value}</span>
+    <Tooltip title={label} body={tooltip} touchPin disabled={tooltipDisabled}>
+      <div className="set-row">
+        <span className="set-label">{label}</span>
+        <div className="set-control">
+          <input
+            aria-label={label}
+            type="range"
+            min={min}
+            max={max}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+          />
+          <span className="set-badge">{value}</span>
+        </div>
       </div>
-    </div>
+    </Tooltip>
   );
 }
 
-function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
+export function Toggle({
+  label,
+  on,
+  onChange,
+  tooltip,
+  tooltipDisabled,
+}: {
+  label: string;
+  on: boolean;
+  onChange: (v: boolean) => void;
+  tooltip: string;
+  tooltipDisabled: boolean;
+}) {
   return (
-    <div className="set-row">
-      <span className="set-label">{label}</span>
-      <button
-        className={['toggle', on ? 'on' : ''].filter(Boolean).join(' ')}
-        role="switch"
-        aria-checked={on}
-        onClick={() => onChange(!on)}
-      >
-        <span className="knob" />
-      </button>
-    </div>
+    <Tooltip title={label} body={tooltip} touchPin disabled={tooltipDisabled}>
+      <div className="set-row">
+        <span className="set-label">{label}</span>
+        <button
+          aria-label={label}
+          className={['toggle', on ? 'on' : ''].filter(Boolean).join(' ')}
+          role="switch"
+          aria-checked={on}
+          onClick={() => onChange(!on)}
+        >
+          <span className="knob" />
+        </button>
+      </div>
+    </Tooltip>
   );
 }
 
@@ -162,9 +204,9 @@ function SettingsView() {
   return (
     <>
       <h2 className="scr-title">{t('options.settings')}</h2>
-      <div className="tabs">
-        {(['game', 'video', 'audio'] as Tab[]).map((x) => (
-          <button key={x} className={['tab', x === tab ? 'on' : ''].filter(Boolean).join(' ')} onClick={() => setTab(x)}>
+      <div className="tabs" role="tablist" aria-label={t('options.settings')}>
+        {(['game', 'video', 'graphics', 'audio'] as Tab[]).map((x) => (
+          <button key={x} role="tab" aria-selected={x === tab} aria-controls={`settings-${x}`} className={['tab', x === tab ? 'on' : ''].filter(Boolean).join(' ')} onClick={() => setTab(x)}>
             {t(`settings.tab.${x}`)}
           </button>
         ))}
@@ -175,7 +217,8 @@ function SettingsView() {
           inactive ones are `visibility: hidden`, which also drops them from the
           tab order and the accessibility tree. */}
       <div className="panel set-panel">
-        <div className={['set-tabpanel', tab === 'game' ? 'on' : ''].filter(Boolean).join(' ')}>
+        <div id="settings-game" role="tabpanel" aria-hidden={tab !== 'game'} className={['set-tabpanel', tab === 'game' ? 'on' : ''].filter(Boolean).join(' ')}>
+          <Tooltip title={t('settings.gameSpeed')} body={t('settings.tooltip.gameSpeed')} touchPin disabled={tab !== 'game'}>
             <div className="set-row">
               <span className="set-label">{t('settings.gameSpeed')}</span>
               <div className="segmented">
@@ -190,8 +233,11 @@ function SettingsView() {
                 ))}
               </div>
             </div>
+          </Tooltip>
             <Slider
               label={t('settings.screenshake')}
+              tooltip={t('settings.tooltip.screenshake')}
+              tooltipDisabled={tab !== 'game'}
               value={settings.screenshake}
               min={0}
               max={100}
@@ -199,30 +245,40 @@ function SettingsView() {
             />
             <Toggle
               label={t('settings.reducedMotion')}
+              tooltip={t('settings.tooltip.reducedMotion')}
+              tooltipDisabled={tab !== 'game'}
               on={settings.reducedMotion}
               onChange={(v) => set('reducedMotion', v)}
             />
             <Toggle
               label={t('settings.colorBlind')}
+              tooltip={t('settings.tooltip.colorBlind')}
+              tooltipDisabled={tab !== 'game'}
               on={settings.colorBlind}
               onChange={(v) => set('colorBlind', v)}
             />
             <Toggle
               label={t('settings.tips')}
+              tooltip={t('settings.tooltip.tips')}
+              tooltipDisabled={tab !== 'game'}
               on={settings.tips}
               onChange={(v) => set('tips', v)}
             />
-            <div className="set-row">
-              <span className="set-label">{t('settings.language')}</span>
-              <button className="btn exchange sm" onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}>
-                {lang === 'en' ? 'English' : '한국어'}
-              </button>
-            </div>
+            <Tooltip title={t('settings.language')} body={t('settings.tooltip.language')} touchPin disabled={tab !== 'game'}>
+              <div className="set-row">
+                <span className="set-label">{t('settings.language')}</span>
+                <button className="btn exchange sm" onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}>
+                  {lang === 'en' ? 'English' : '한국어'}
+                </button>
+              </div>
+            </Tooltip>
         </div>
 
-        <div className={['set-tabpanel', tab === 'video' ? 'on' : ''].filter(Boolean).join(' ')}>
+        <div id="settings-video" role="tabpanel" aria-hidden={tab !== 'video'} className={['set-tabpanel', tab === 'video' ? 'on' : ''].filter(Boolean).join(' ')}>
             <Toggle
               label={t('settings.fullscreen')}
+              tooltip={t('settings.tooltip.fullscreen')}
+              tooltipDisabled={tab !== 'video'}
               on={settings.fullscreen}
               onChange={(v) => {
                 if (v) {
@@ -234,6 +290,8 @@ function SettingsView() {
             />
             <Slider
               label={t('settings.uiScale')}
+              tooltip={t('settings.tooltip.uiScale')}
+              tooltipDisabled={tab !== 'video'}
               value={settings.uiScale}
               min={80}
               max={120}
@@ -241,14 +299,20 @@ function SettingsView() {
             />
         </div>
 
-        <div className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>
+        <div id="settings-graphics" role="tabpanel" aria-hidden={tab !== 'graphics'} className={['set-tabpanel', tab === 'graphics' ? 'on' : ''].filter(Boolean).join(' ')}>
+          <Toggle label={t('settings.crtEnabled')} tooltip={t('settings.tooltip.crtEnabled')} tooltipDisabled={tab !== 'graphics'} on={settings.crtEnabled} onChange={(v) => set('crtEnabled', v)} />
+          <Slider label={t('settings.crtIntensity')} tooltip={t('settings.tooltip.crtIntensity')} tooltipDisabled={tab !== 'graphics'} value={settings.crtIntensity} min={0} max={100} onChange={(v) => set('crtIntensity', v)} />
+          <Toggle label={t('settings.crtBloom')} tooltip={t('settings.tooltip.crtBloom')} tooltipDisabled={tab !== 'graphics'} on={settings.crtBloom} onChange={(v) => set('crtBloom', v)} />
+        </div>
+
+        <div id="settings-audio" role="tabpanel" aria-hidden={tab !== 'audio'} className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>
             <p className="set-note">{t('settings.audioNote')}</p>
             {(!audio.isBusEnabled('sfx') || !audio.isBusEnabled('music')) && (
               <p className="set-note locked-hint"><UiIcon name="mutedSpeaker" className="inline-ui-icon" /> {t('settings.audioLockedHint')}</p>
             )}
-            <Slider label={t('settings.master')} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
-            <Slider label={t('settings.music')} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />
-            <Slider label={t('settings.sfx')} value={settings.sfx} min={0} max={100} onChange={(v) => set('sfx', v)} />
+            <Slider label={t('settings.master')} tooltip={t('settings.tooltip.master')} tooltipDisabled={tab !== 'audio'} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
+            <Slider label={t('settings.music')} tooltip={t('settings.tooltip.music')} tooltipDisabled={tab !== 'audio'} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />
+            <Slider label={t('settings.sfx')} tooltip={t('settings.tooltip.sfx')} tooltipDisabled={tab !== 'audio'} value={settings.sfx} min={0} max={100} onChange={(v) => set('sfx', v)} />
         </div>
       </div>
     </>
@@ -257,14 +321,44 @@ function SettingsView() {
 
 // ---------- Statistics ----------
 function StatsView({ lexicon }: { lexicon: Lexicon }) {
-  const { t } = useI18n();
-  const lt = loadLifetime();
-  const collPct = lexicon.size > 0 ? Math.round((collectionSize() / lexicon.size) * 1000) / 10 : 0;
+  const { t, lang } = useI18n();
+  const [tab, setTab] = useState<StatsTab>('overview');
+  const [wordPage, setWordPage] = useState(0);
+  const [snapshot] = useState(() => {
+    const collection = loadCollection();
+    return {
+      collection,
+      lifetime: loadLifetime(undefined, collection),
+      emojiProgress: loadEmojiUnlockProgress(),
+    };
+  });
+  const lt = snapshot.lifetime;
+  const topPattern = mostPlayedPattern(lt.patternPlayCounts);
+  const collectionCount = Object.keys(snapshot.collection).length;
+  const collPct = useMemo(
+    () => collectionProgressPercent(snapshot.collection, lexicon, lt.unlockAllApplied),
+    [snapshot.collection, lexicon, lt.unlockAllApplied],
+  );
+  const sortedWords = useMemo(
+    () => tab === 'words' ? sortedCollectionStats(snapshot.collection) : [],
+    [snapshot.collection, tab],
+  );
+  const words = useMemo(
+    () => tab === 'words' ? collectionStatsPage(sortedWords, wordPage) : null,
+    [sortedWords, tab, wordPage],
+  );
 
   return (
     <>
       <h2 className="scr-title">{t('options.statistics')}</h2>
-      <div className="stats-cols">
+      <div className="tabs" role="tablist" aria-label={t('options.statistics')}>
+        {(['overview', 'words', 'jokers'] as StatsTab[]).map((id) => (
+          <button key={id} role="tab" aria-selected={tab === id} aria-controls={`stats-${id}`} className={['tab', tab === id ? 'on' : ''].filter(Boolean).join(' ')} onClick={() => setTab(id)}>
+            {t(`stats.tab.${id}`)}
+          </button>
+        ))}
+      </div>
+      {tab === 'overview' && <div id="stats-overview" role="tabpanel" className="stats-cols">
         <div className="panel">
           <div className="label">{t('stats.records')}</div>
           <Stat k={t('stats.bestWord')} v={lt.bestWord ? `${lt.bestWord.toUpperCase()} · ${lt.bestWordScore}` : '—'} />
@@ -273,11 +367,13 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
           <Stat k={t('stats.bestEndlessScore')} v={lt.bestEndlessScore ? formatScore(lt.bestEndlessScore) : '—'} />
           <Stat k={t('stats.mostGold')} v={lt.mostGold ? `$${lt.mostGold}` : '—'} />
           <Stat k={t('stats.runs')} v={lt.runs} />
+          <Stat k={t('stats.wins')} v={lt.wins} />
+          <Stat k={t('stats.bestWinStreak')} v={lt.bestWinStreak} />
+          <Stat k={t('stats.mostPlayedPattern')} v={topPattern ? `${t(`pattern.${topPattern.id}`)} ×${topPattern.count}` : '—'} />
         </div>
         <div className="panel">
           <div className="label">{t('stats.progress')}</div>
           <Stat k={t('stats.collection')} v={`${collPct}%`} />
-          <Stat k={t('stats.challenges')} v="0/0" muted />
           <Stat
             k={t('stats.recordWins')}
             v={`${recordWinCount(lt)}/${POUCH_IDS.length * RECORD_IDS.length}`}
@@ -287,8 +383,27 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
             v={`${jokerRecordStickerCount(lt)}/${JOKER_RECORD_STICKER_TOTAL}`}
           />
         </div>
-      </div>
-      <p className="set-note">{t('stats.cardStubs')}</p>
+      </div>}
+      {tab === 'words' && words && <div id="stats-words" role="tabpanel" className="panel stats-detail">
+        {collectionCount === 0 ? <p className="set-note">{t('stats.noWords')}</p> : (
+          <table><thead><tr><th>{t('stats.word')}</th><th>{t('stats.plays')}</th><th>{t('stats.intrinsicChips')}</th><th>{t('stats.firstDiscovery')}</th></tr></thead>
+            <tbody>{words.entries.map(([word, entry]) => (
+              <tr key={word}><td>{word.toUpperCase()}</td><td>{entry.plays}</td><td>{entry.bestScore}</td><td>{entry.firstPlayedAt ? new Date(entry.firstPlayedAt).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US') : '—'}</td></tr>
+            ))}</tbody></table>
+        )}
+        {words.pages > 1 && <div className="stats-pager">
+          <button className="btn exchange sm" aria-label={t('stats.previousPage')} disabled={words.page === 0} onClick={() => setWordPage((page) => Math.max(0, page - 1))}>←</button>
+          <span>{words.page + 1}/{words.pages}</span>
+          <button className="btn exchange sm" aria-label={t('stats.nextPage')} disabled={words.page + 1 >= words.pages} onClick={() => setWordPage((page) => Math.min(words.pages - 1, page + 1))}>→</button>
+        </div>}
+      </div>}
+      {tab === 'jokers' && <div id="stats-jokers" role="tabpanel" className="panel stats-detail">
+        <table><thead><tr><th>{t('stats.emojiTile')}</th><th>{t('stats.blindsOwned')}</th></tr></thead>
+          <tbody>{ALL_JOKERS.map((def) => {
+            const unlocked = isEmojiUnlocked(def.id, snapshot.emojiProgress);
+            return <tr key={def.id}><td>{unlocked ? (lang === 'ko' ? def.nameKo : def.nameEn) : '???'}</td><td>{lt.jokerBlindsCompleted[def.id] ?? 0}</td></tr>;
+          })}</tbody></table>
+      </div>}
     </>
   );
 }
@@ -362,6 +477,15 @@ function CreditsView() {
             </>
           )}
         </div>
+        <details className="cr-legal">
+          <summary>{t('credits.legal.open')}</summary>
+          <div className="cr-legal-body">
+            <p>{t('credits.legal.intro')}</p>
+            <p className="cr-dim">{t('credits.legal.verbatim')}</p>
+            <pre>{THIRD_PARTY_NOTICES}</pre>
+          </div>
+        </details>
+        <p className="cr-copyright">© 2026 Ben Kim</p>
       </div>
     </>
   );

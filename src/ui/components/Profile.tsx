@@ -1,17 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Lexicon } from '../../engine/lexicon';
+import type { Suit } from '../../engine/types';
 import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
 import { RECORD_IDS } from '../../engine/records';
-import { loadLifetime, recordWinCount } from '../lifetime';
+import { recordWinCount } from '../lifetime';
 import { useI18n } from '../i18n';
 import {
   PROFILE_NAME_MAX,
+  REGISTER_TITLE_SUITS,
   createProfile,
   isProfileWorldComplete,
-  profileCollectionSize,
+  loadProfileViewSnapshot,
+  reconcileProfileTitleFromSnapshot,
   renameProfile,
+  selectProfileTitleFromSnapshot,
+  unlockedProfileTitle,
   unlockAllProfile,
 } from '../profile';
+import {
+  GOD_TITLE_DEF,
+  registerTitleDefs,
+  type ProfileTitleId,
+} from '../profileTitles';
 import {
   PROFILE_SLOTS,
   activeProfile,
@@ -41,15 +51,35 @@ export function Profile({ lexicon, onBack }: Props) {
   const { t } = useI18n();
   const currentSlot = activeProfile();
   const [selectedSlot, setSelectedSlot] = useState<ProfileSlot>(currentSlot);
-  const [, refresh] = useState(0);
-  const lifetime = loadLifetime(selectedSlot);
+  const [revision, refresh] = useState(0);
+  const snapshot = useMemo(
+    () => loadProfileViewSnapshot(lexicon, selectedSlot),
+    [lexicon, selectedSlot, revision],
+  );
+  const { lifetime, registerTitles } = snapshot;
   const [nameDraft, setNameDraft] = useState(lifetime.profileName);
   const [notice, setNotice] = useState<'unlock' | 'delete' | null>(null);
+  const [openRegister, setOpenRegister] = useState<Suit | null>(null);
+  const equippedTitle = registerTitles
+    ? unlockedProfileTitle(lifetime.equippedRegisterTitle, registerTitles)
+    : null;
 
   useEffect(() => {
     setNameDraft(lifetime.profileName);
     setNotice(null);
+    setOpenRegister(null);
   }, [selectedSlot, lifetime.profileName]);
+
+  useEffect(() => {
+    if (lifetime.profileCreated && registerTitles && reconcileProfileTitleFromSnapshot(
+      selectedSlot,
+      snapshot.rawEquippedTitle,
+      lifetime,
+      registerTitles,
+    )) {
+      refresh((value) => value + 1);
+    }
+  }, [selectedSlot, snapshot, lifetime, registerTitles]);
 
   const chooseSlot = (next: ProfileSlot) => setSelectedSlot(next);
 
@@ -67,6 +97,12 @@ export function Profile({ lexicon, onBack }: Props) {
     const profileName = renameProfile(selectedSlot, nameDraft);
     setNameDraft(profileName);
     refresh((value) => value + 1);
+  };
+
+  const chooseTitle = (id: ProfileTitleId | null) => {
+    if (registerTitles && selectProfileTitleFromSnapshot(selectedSlot, id, lifetime, registerTitles)) {
+      refresh((value) => value + 1);
+    }
   };
 
   const revealAll = () => {
@@ -141,7 +177,7 @@ export function Profile({ lexicon, onBack }: Props) {
     );
   }
 
-  const words = profileCollectionSize(lexicon.size, selectedSlot);
+  const words = lifetime.unlockAllApplied ? lexicon.size : Object.keys(snapshot.collection).length;
   const progress = {
     discoveredWords: words,
     pouchWins: new Set(lifetime.pouchWins),
@@ -163,7 +199,7 @@ export function Profile({ lexicon, onBack }: Props) {
   ];
   const totalHave = rows.reduce((sum, row) => sum + row.have, 0);
   const totalItems = rows.reduce((sum, row) => sum + row.total, 0);
-  const worldComplete = isProfileWorldComplete(selectedSlot, lexicon);
+  const worldComplete = isProfileWorldComplete(selectedSlot, lexicon, snapshot);
   const balanceWinRate =
     lifetime.balance.runs > 0
       ? Math.round((lifetime.balance.wins / lifetime.balance.runs) * 100)
@@ -178,17 +214,24 @@ export function Profile({ lexicon, onBack }: Props) {
     <div className="screen profile-screen">
       {slotTabs}
 
-      <input
-        className="profile-name profile-name-input"
-        value={nameDraft}
-        maxLength={PROFILE_NAME_MAX}
-        aria-label={t('profile.rename')}
-        onChange={(event) => setNameDraft(event.target.value)}
-        onBlur={commitName}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur();
-        }}
-      />
+      <div className="profile-identity">
+        <input
+          className="profile-name profile-name-input"
+          value={nameDraft}
+          maxLength={PROFILE_NAME_MAX}
+          aria-label={t('profile.rename')}
+          onChange={(event) => setNameDraft(event.target.value)}
+          onBlur={commitName}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') event.currentTarget.blur();
+          }}
+        />
+        <small className="profile-equipped-title">
+          {equippedTitle
+            ? t(equippedTitle.localeKey)
+            : t('profile.title.none')}
+        </small>
+      </div>
 
       <section className="panel profile-dashboard">
         <div className="profile-progress">
@@ -210,6 +253,88 @@ export function Profile({ lexicon, onBack }: Props) {
               );
             })}
           </div>
+          {registerTitles && (
+            <div className="profile-register-titles">
+              <div className="profile-register-title-head">
+                <span>{t('profile.registerTitles')}</span>
+                {registerTitles.god && (
+                  <button
+                    type="button"
+                    className={equippedTitle?.id === GOD_TITLE_DEF.id ? 'selected' : ''}
+                    aria-pressed={equippedTitle?.id === GOD_TITLE_DEF.id}
+                    onClick={() => chooseTitle(GOD_TITLE_DEF.id)}
+                  >
+                    {t(GOD_TITLE_DEF.localeKey)}
+                  </button>
+                )}
+              </div>
+              {REGISTER_TITLE_SUITS.map((suit) => {
+                const title = registerTitles.registers[suit];
+                const progressText = title.complete
+                  ? t('profile.registerTitle.complete')
+                  : title.next === 'all'
+                    ? t('profile.registerTitle.progressAll', { found: title.discovered })
+                    : t('profile.registerTitle.progress', {
+                        found: title.discovered,
+                        next: title.next ?? 0,
+                      });
+                return (
+                  <button
+                    type="button"
+                    className={[
+                      'profile-register-title', suit,
+                      equippedTitle?.suit === suit ? 'selected' : '',
+                    ].filter(Boolean).join(' ')}
+                    key={suit}
+                    aria-expanded={openRegister === suit}
+                    onClick={() => setOpenRegister(openRegister === suit ? null : suit)}
+                  >
+                    <span>{t(`suit.${suit}`)}</span>
+                    <strong>{title.tier === null
+                      ? t('profile.registerTitle.none')
+                      : t(`profile.registerTitle.${suit}.${title.tier}`)}</strong>
+                    <small>{progressText}</small>
+                  </button>
+                );
+              })}
+              {openRegister && (
+                <fieldset
+                  className="profile-title-drawer"
+                  aria-label={t('profile.title.select')}
+                >
+                  <label>
+                    <input
+                      type="radio"
+                      name={`profile-title-${selectedSlot}`}
+                      value=""
+                      checked={equippedTitle === null}
+                      autoFocus={equippedTitle === null || equippedTitle.suit !== openRegister}
+                      onChange={() => chooseTitle(null)}
+                    />
+                    <span>{t('profile.title.none')}</span>
+                  </label>
+                  {registerTitleDefs(openRegister)
+                    .filter((definition) => (
+                      registerTitles.registers[openRegister].tier !== null
+                      && definition.tier <= registerTitles.registers[openRegister].tier!
+                    ))
+                    .map((definition) => (
+                      <label key={definition.id}>
+                        <input
+                          type="radio"
+                          name={`profile-title-${selectedSlot}`}
+                          value={definition.id}
+                          checked={equippedTitle?.id === definition.id}
+                          autoFocus={equippedTitle?.id === definition.id}
+                          onChange={() => chooseTitle(definition.id)}
+                        />
+                        <span>{t(definition.localeKey)}</span>
+                      </label>
+                    ))}
+                </fieldset>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="profile-actions">

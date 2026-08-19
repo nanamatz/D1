@@ -45,6 +45,8 @@ interface Props {
   /** Use an existing DOM node without adding a layout wrapper. */
   anchorRef?: RefObject<HTMLElement | null>;
   disabled?: boolean;
+  /** Touch pointer-up toggles a pinned tooltip without consuming the control click. */
+  touchPin?: boolean;
   children?: ReactNode;
 }
 
@@ -71,6 +73,43 @@ const TOOLTIP_DETAIL_PRIORITY: Record<TooltipDetailKind, number> = {
   edition: 2,
   other: 3,
 };
+
+type TooltipMode = 'hover' | 'focus' | 'touch';
+const TOOLTIP_MODE_PRIORITY: Record<TooltipMode, number> = { hover: 0, focus: 1, touch: 1 };
+let activeTooltip: { id: string; mode: TooltipMode; close: () => void } | null = null;
+
+const claimTooltip = (id: string, mode: TooltipMode, close: () => void): boolean => {
+  if (activeTooltip?.id === id) {
+    if (mode !== 'hover' || activeTooltip.mode === 'hover') activeTooltip.mode = mode;
+    return true;
+  }
+  if (activeTooltip
+    && TOOLTIP_MODE_PRIORITY[activeTooltip.mode] > TOOLTIP_MODE_PRIORITY[mode]) return false;
+  const previous = activeTooltip;
+  activeTooltip = { id, mode, close };
+  previous?.close();
+  return true;
+};
+
+const releaseTooltip = (id: string, mode?: TooltipMode) => {
+  if (activeTooltip?.id === id && (!mode || activeTooltip.mode === mode)) activeTooltip = null;
+};
+
+const leaveFocusedTooltip = (id: string) => {
+  if (activeTooltip?.id === id && activeTooltip.mode === 'focus') activeTooltip.mode = 'hover';
+};
+
+export function consumeTooltipEscape(
+  event: Pick<KeyboardEvent, 'key' | 'preventDefault' | 'stopPropagation'>,
+  active: boolean,
+  close: () => void,
+): boolean {
+  if (event.key !== 'Escape' || !active) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  close();
+  return true;
+}
 
 /** Deduplicate and enforce material > font > edition before choosing the inline detail. */
 export function splitTooltipDetails(details: readonly TooltipDetail[]): {
@@ -189,6 +228,7 @@ export function Tooltip({
   status,
   anchorRef: externalAnchorRef,
   disabled = false,
+  touchPin = false,
   children,
 }: Props) {
   const { t } = useI18n();
@@ -197,8 +237,10 @@ export function Tooltip({
   const tooltipId = useId();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [touchPinned, setTouchPinned] = useState(false);
+  const [focusedTarget, setFocusedTarget] = useState<HTMLElement | null>(null);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const open = !disabled && (hovered || focused) && position !== null;
+  const open = !disabled && (hovered || focused || touchPinned) && position !== null;
   const subDetails = sub ? (Array.isArray(sub) ? sub : [sub]) : [];
   const supplementCopy = [body, ...subDetails.map((detail) => detail.body)].join('\n');
   const hasSupplement = subDetails.length > 0
@@ -209,11 +251,18 @@ export function Tooltip({
     || referencedEditionTips(supplementCopy, t).length > 0
     || referencedTermTips(supplementCopy, t).length > 0;
 
-  useEffect(() => {
-    if (!disabled) return;
+  const close = () => {
     setHovered(false);
     setFocused(false);
+    setTouchPinned(false);
+    setFocusedTarget(null);
     setPosition(null);
+    releaseTooltip(tooltipId);
+  };
+
+  useEffect(() => {
+    if (!disabled) return;
+    close();
   }, [disabled]);
 
   const anchor = () => externalAnchorRef?.current ?? anchorRef.current;
@@ -234,36 +283,85 @@ export function Tooltip({
     const node = anchor();
     if (!node || disabled) return;
     const showHover = () => {
+      if (!claimTooltip(tooltipId, 'hover', close)) return;
       setPosition(locate());
       setHovered(true);
     };
-    const hideHover = () => setHovered(false);
+    const hideHover = () => {
+      setHovered(false);
+      releaseTooltip(tooltipId, 'hover');
+    };
     const showFocus = (event: FocusEvent) => {
       const focusTarget = event.target;
-      if (!(focusTarget instanceof Element) || !focusTarget.matches(':focus-visible')) return;
+      if (!(focusTarget instanceof HTMLElement)) return;
+      setFocusedTarget(focusTarget);
+      if (!focusTarget.matches(':focus-visible')) return;
+      claimTooltip(tooltipId, 'focus', close);
       setPosition(locate());
       setFocused(true);
     };
     const hideFocus = (event: FocusEvent) => {
-      if (!node.contains(event.relatedTarget as Node | null)) setFocused(false);
+      if (!node.contains(event.relatedTarget as Node | null)) {
+        setFocused(false);
+        setFocusedTarget(null);
+        leaveFocusedTooltip(tooltipId);
+      }
     };
     const press = () => {
       setHovered(false);
       setFocused(false);
     };
+    const release = (event: PointerEvent) => {
+      if (!touchPin || event.pointerType === 'mouse') return;
+      claimTooltip(tooltipId, 'touch', close);
+      setPosition(locate());
+      setTouchPinned((pinned) => !pinned);
+    };
     node.addEventListener('pointerenter', showHover);
     node.addEventListener('pointerleave', hideHover);
     node.addEventListener('pointerdown', press);
+    node.addEventListener('pointerup', release);
     node.addEventListener('focusin', showFocus);
     node.addEventListener('focusout', hideFocus);
     return () => {
       node.removeEventListener('pointerenter', showHover);
       node.removeEventListener('pointerleave', hideHover);
       node.removeEventListener('pointerdown', press);
+      node.removeEventListener('pointerup', release);
       node.removeEventListener('focusin', showFocus);
       node.removeEventListener('focusout', hideFocus);
+      releaseTooltip(tooltipId);
     };
-  }, [disabled, down, externalAnchorRef]);
+  }, [disabled, down, externalAnchorRef, touchPin]);
+
+  useEffect(() => {
+    if (!open) {
+      releaseTooltip(tooltipId);
+      return;
+    }
+    return () => releaseTooltip(tooltipId);
+  }, [open, tooltipId]);
+
+  useEffect(() => {
+    if (!touchPinned) return;
+    const node = anchor();
+    const closeOutside = (event: PointerEvent) => {
+      if (!node?.contains(event.target as Node | null)) close();
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+    };
+  }, [touchPinned]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      consumeTooltipEscape(event, activeTooltip?.id === tooltipId, close);
+    };
+    window.addEventListener('keydown', closeOnEscape, true);
+    return () => window.removeEventListener('keydown', closeOnEscape, true);
+  }, [open, tooltipId]);
 
   useEffect(() => {
     if (!open) return;
@@ -296,7 +394,11 @@ export function Tooltip({
 
   useEffect(() => {
     if (!open) return;
-    const node = target();
+    const activeTarget = document.activeElement instanceof HTMLElement
+      && anchor()?.contains(document.activeElement)
+      ? document.activeElement
+      : null;
+    const node = focusedTarget ?? activeTarget;
     if (!node) return;
     const previous = node.getAttribute('aria-describedby');
     node.setAttribute(
@@ -307,7 +409,7 @@ export function Tooltip({
       if (previous === null) node.removeAttribute('aria-describedby');
       else node.setAttribute('aria-describedby', previous);
     };
-  }, [externalAnchorRef, open, tooltipId]);
+  }, [externalAnchorRef, focusedTarget, open, tooltipId]);
 
   const card = position && (
     <span

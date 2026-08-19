@@ -68,7 +68,16 @@ export const BALANCE = {
   } as Record<string, number>,
 
   // ----- Suit base multipliers (GDD §3.1) -----
-  suitMult: { standard: 1, formal: 3, slang: 5, vulgar: 10 },
+  suitMult: { standard: 1, formal: 10, slang: 5, vulgar: 7 },
+
+  // ----- Profile register-title discovery thresholds (GDD §3.1) -----
+  // Full-register mastery is derived from the current lexicon, not a number.
+  registerTitleThresholds: {
+    standard: [50, 100, 200, 500, 1_000, 10_000, 100_000],
+    formal: [10, 25, 50, 100, 250, 500, 1_000],
+    slang: [5, 10, 25, 50, 100, 250, 500],
+    vulgar: [1, 5, 10, 25, 50, 100, 200],
+  },
 
   // ----- Word length (GDD §3.1, 2026-07-30) — length ADDS to Mult, it does not
   //       multiply the suit multiplier: `chips × (suitMult + length × multPerLetter)`.

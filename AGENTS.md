@@ -11,6 +11,21 @@ Balatro-inspired word-building roguelite for the web. **The full design document
 5. **TypeScript strict mode.** The types in `src/engine/types.ts` encode GDD decisions (e.g. gibberish = `suit: null, posUsed: null`); keep them authoritative.
 6. **Keep docs internally consistent.** When a patch changes a number or a mechanic, grep the docs for stale cross-references and update them in the same pass (e.g. changing the tile total means fixing every "N tiles" mention, not just §2.1; changing the settle/clear flow means updating the pipeline summary, not just the trigger section). Doc drift has caused real contradictions here more than once — a value or rule must read the same everywhere it appears.
 
+## Codex subagent workflow
+
+For non-trivial gameplay, balance, implementation, or bug-fix work, the primary Codex agent is the **Project Manager**. It owns scope, sequencing, decisions, user communication, and the final integrated result. Use the project-scoped custom agents in `.codex/agents/`; do not imitate this workflow with ad-hoc role prompts when the named agent exists. Trivial documentation edits, factual questions, and isolated mechanical changes may stay single-agent.
+
+1. **Frame the work.** The Project Manager identifies the relevant GDD sections, checks the spec-conflict protocol, and defines one bounded delivery slice.
+2. **Plan in parallel.** Spawn `game_designer` for the design/balance brief and `qa` for the initial acceptance matrix. Give both the same scope and wait for both. Neither edits files in this phase.
+3. **Resolve before coding.** The Project Manager reconciles their outputs, surfaces any product decision that needs the user, and passes one approved brief plus acceptance criteria to `gameplay_programmer`.
+4. **Map, then implement.** For every non-trivial implementation, `gameplay_programmer` first delegates code-path discovery to the built-in `explorer`, waits for its map, then implements and runs targeted checks. Only one code-writing agent works on production files at a time.
+5. **Validate.** Send the completed implementation back to the existing `qa` thread. QA reproduces the behavior, adds minimal regression coverage when needed, and reports exact results; QA never fixes production code.
+6. **Review.** Spawn `code_reviewer` only after implementation and QA validation. Give it the approved design brief, diff, and QA report. It performs a read-only correctness, code-quality, GC, and performance review.
+7. **Close the loop.** Route production findings to `gameplay_programmer`, test gaps to `qa`, and design ambiguity to `game_designer`. Re-run the affected validation and review until no blocking finding remains or the Project Manager reports a genuine blocker.
+8. **Integrate.** The Project Manager inspects the final diff, confirms docs and tests agree with behavior, and returns one consolidated result to the user.
+
+Handoffs must be concise and evidence-based: `game_designer` returns rules, values, invariants, and acceptance criteria; `gameplay_programmer` returns changed files and checks; `qa` returns reproductions and results; `code_reviewer` returns severity-ranked findings or explicit approval. Read-heavy planning may run in parallel; write-heavy phases remain sequential to avoid shared-worktree conflicts.
+
 ## Key rules easy to get wrong (read before implementing)
 
 - **Two-layer settlement (GDD §7.1):** individual word scores commit immediately; the sentence bonus is a *projection* overwritten every phase and only finalized at blind end. Never accumulate sentence bonuses per phase.

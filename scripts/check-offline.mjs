@@ -22,11 +22,22 @@ import { pathToFileURL } from 'node:url';
  *   - w3.org: XML namespace identifiers, from bundled SVGs.
  *   - reactjs.org / react.dev: React's production error-decoder link. It is
  *     printed into an error message for a human to open, never requested.
+ *   - the exact project/license URLs below are static legal-notice text shown
+ *     inside Credits. The UI does not render them as links or navigate to them.
  */
 const URL_ALLOWLIST = [
   /^https?:\/\/www\.w3\.org\//,
   /^https?:\/\/reactjs\.org\//,
   /^https?:\/\/react\.dev\//,
+  /^https:\/\/github\.com\/indestructible-type\/Jost>?$/,
+  /^https:\/\/github\.com\/EkType\/Baloo2>?$/,
+  /^https:\/\/github\.com\/scfried\/soft-type-jersey>?$/,
+  /^https:\/\/raw\.githubusercontent\.com\/dolph\/dictionary\/master\/enable1\.txt>?$/,
+  /^https:\/\/www\.gutenberg\.org\/ebooks\/3203>?$/,
+  /^https:\/\/en\.wiktionary\.org\/wiki\/Category:English_terms_by_usage>?$/,
+  /^https:\/\/creativecommons\.org\/licenses\/by-sa\/4\.0\/>?$/,
+  /^https:\/\/en\.wiktionary\.org\/wiki\/Wiktionary:Copyrights>?$/,
+  /^http:\/\/scripts\.sil\.org\/OFL>?$/,
 ];
 
 const URL_RE = /https?:\/\/[^\s"'`)\\]+/g;

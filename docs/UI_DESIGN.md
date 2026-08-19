@@ -44,7 +44,7 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 
 ### Surface language (pixel-art / CRT)
 
-- **Pixel grid.** Author UI at a low virtual resolution and scale up with integer nearest-neighbor (`image-rendering: pixelated`) so edges stay crisp. Borders/shadows are 1–2 "big pixels" wide, not sub-pixel.
+- **Pixel grid.** Author raster art at fixed pixel resolutions and render it with `image-rendering: pixelated`. The 1440×966 interface itself uses responsive viewport-fit zoom plus the Settings UI-scale slider; it is intentionally not quantized to integer steps, avoiding excessive letterboxing or an undersized board. Borders/shadows are 1–2 "big pixels" wide, not sub-pixel.
 - **Hard offset shadow** stays the signature surface cue but as blocky pixel shadow: a solid dark step down-right (no blur), e.g. a 4–5px hard offset that reads as a chunk, not a soft `box-shadow`. Buttons depress on press (translate + shadow collapse).
 - Radius: panels and controls prefer squared or 1-step chamfered corners. **Card objects are the exception (changed 2026-07-30):** Emoji Tiles, consumables, sale offers, and vouchers share one rounded silhouette. Pack art keeps square corners.
 - Panels get a light top-edge pixel highlight (`--panel-edge`) and a dark bottom-edge for the stamped/embossed look.
@@ -329,11 +329,27 @@ Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle di
 with a compact four-card challenge strip: highest-scoring word (intrinsic
 letter-chip sum only), longest discovered word, most-played word, and total
 discoveries. Beneath it, **Words** and **Register Scores** tabs separate the
-searchable word gallery from the live ×1/×3/×5/×10 register reference. The
+searchable word gallery from the live Standard ×1 / Formal ×10 / Slang ×5 /
+Vulgar ×7 register reference. The explanatory formula paragraph above the
+register cards is removed; the cards retain multiplier, role, and discovery
+count. The
 dictionary total and unfiltered page total remain `???` until full discovery;
 filtered result counts stay literal. Every Collection pager is circular in both
 directions, including the Starting-Pouch carousel; New Run's Pouch and Record
 selectors use the same first↔last wrapping behavior.
+
+The Profile progress column also shows one compact keyboard-button card per
+register with that previewed slot's highest cosmetic title and progress toward
+the next numeric threshold (or `ALL`, never the secret lexicon total). Activating
+a card opens one shared inline drawer containing None plus every earned tier from
+low to high; native same-name radio inputs provide browser arrow-key behavior,
+the selected choice has a gold state, and opening focuses the selected or first choice.
+Full mastery of all four adds a selectable **God / 신** header badge. The current
+effective title appears directly below the editable profile name. These choices
+derive from the slot's existing word Collection and current lexicon; Reveal All
+exposes every choice but does not auto-equip one, and inactive preview slots remain
+independent. Main Menu shows the active profile's validated equipped title as a
+small second line beneath its name. Selection is cosmetic only.
 
 *D-7b pattern pictograms (added 2026-07-30):* the zodiac mark already engraved
 at the top of each Constellation card becomes the shared pictogram for its
@@ -361,8 +377,8 @@ third-party mascot silhouette, face, costume, or arcade-sprite composition.
 ## 5. Implementation notes (slice ⑥)
 
 - React + plain CSS custom properties (tokens above as `:root` vars). No Tailwind in the game screen — the styling is too bespoke; keep tokens in one `tokens.css`.
-- **Pixel-art rendering:** apply `image-rendering: pixelated` to sprite/tile layers; author art at a fixed virtual resolution and integer-scale. Avoid smooth CSS gradients/blurs on pixel surfaces (they break the aesthetic) — use dithering/stepped fills.
-- **CRT effect (implemented):** `<CrtOverlay/>` (`src/ui/components/CrtOverlay.tsx`) — three fixed, `pointer-events:none` layers mounted once in App above the app root (scanlines · vignette+barrel · a faint **neutral** bloom kept white so the B&W start stays colorless). Always-on for now; the Settings on/off + intensity toggle (screens §2.11 Graphics) is still to be wired. Scanline flicker is disabled under reduced motion. Because it sits outside the board containers, the chromatic `world-mono` greyscale never touches it.
+- **Pixel-art rendering:** apply `image-rendering: pixelated` to sprite/tile layers and author raster art at a fixed resolution. The surrounding interface uses responsive zoom. Avoid smooth CSS gradients/blurs on pixel surfaces (they break the aesthetic) — use dithering/stepped fills.
+- **CRT effect (implemented):** `<CrtOverlay/>` (`src/ui/components/CrtOverlay.tsx`) provides three fixed, `pointer-events:none` layers above the app root: scanlines · vignette/barrel · faint neutral bloom. Settings can disable the complete pass, scale scanline alpha from 0 to 0.12, and disable bloom independently. Reduced motion freezes only scanline flicker. Because the overlay sits outside the board containers, the chromatic `world-mono` greyscale never touches it.
 - Animation: CSS transitions/keyframes first; adopt a spring lib (framer-motion) only if the settle sequence demands it.
 - The engine stays headless: UI subscribes to engine state snapshots; the settle sequence is driven by a `ScoreEvent[]` log the engine already produces per submission (chips/mult steps), replayed with timing by the UI.
 - Shop, blind select, pack opening and tile modification reuse the play table rather than becoming separate screens. Only their work panels move, entering upward and leaving downward. Draft/Revision Blind Select cards place Select at the top and an `OR → image tag + Skip` group at the bottom. Each of the 26 seeded Editorial Perks uses its own effect-specific square pixel-art PNG, shared portalled tooltip, and pointer-driven 3D tilt/lift/sheen; upcoming offers remain visible but inactive. A skipped card gets a high-contrast striped/stamped state, while its source Tag is dimmed and non-interactive. Immediate Tags transfer into a focused `Tag Auto-Activated` beat, brighten/burst away, and only then reveal their effect; free-pack Tags continue directly into the ordinary pack-opening panel. Next-blind Tags wait in the maximum-two lower-right stack and burst on Play entry. Next-shop Tags remain in that stack through play and Fee Settlement, then flash `Shop Tag Applied` and burst only when the Shop stock (including a later reroll) actually consumes their effect; unresolved Tags remain. Deadline has no Skip (changed 2026-07-31, GDD §8.2; resolution-specific Tag timing added by feedback; Lead Story retired).

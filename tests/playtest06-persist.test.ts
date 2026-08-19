@@ -25,6 +25,7 @@ globalThis.localStorage = {
 /** A run caught mid-settle, with every transient field dirty. */
 const dirty = (): GameState =>
   ({
+    observationId: 'observation-1',
     seed: 'seed-1',
     rngCounter: 3,
     run: {
@@ -103,6 +104,7 @@ describe('run persistence', () => {
     const back = loadRun();
     expect(back).not.toBeNull();
     expect(back!.seed).toBe('seed-1');
+    expect(back!.observationId).toBe('observation-1');
     expect(back!.rngCounter).toBe(3);
     expect(back!.run.gold).toBe(7);
     expect(back!.run.ante).toBe(2);
@@ -110,6 +112,23 @@ describe('run persistence', () => {
     expect(back!.blind.committedScore).toBe(120);
     expect(back!.stats.wordsPlayed).toBe(4);
     expect(back!.runStarted).toBe(true);
+  });
+
+  it('defensively fills additive observation fields missing from a version-12 save', () => {
+    const env = JSON.parse(serializeRun(dirty()));
+    delete env.state.observationId;
+    delete env.state.stats.jokerBlindCounts;
+    writeRun(JSON.stringify(env));
+    const back = loadRun();
+    expect(back?.observationId).toMatch(/^([0-9a-f-]{36}|run-)/);
+    expect(back?.stats).toMatchObject({ wordsPlayed: 4, jokerBlindCounts: {} });
+  });
+
+  it('discards version-11 runs so pre-observation Game Over cannot double-count', () => {
+    const env = JSON.parse(serializeRun(dirty()));
+    env.version = 11;
+    writeRun(JSON.stringify(env));
+    expect(loadRun()).toBeNull();
   });
 
   it('returns null when there is no save', () => {

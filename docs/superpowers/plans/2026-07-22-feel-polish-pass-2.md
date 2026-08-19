@@ -1,5 +1,7 @@
 # Feel & Polish Pass 2 — Implementation Plan
 
+> **Superseded audio provenance (2026-08-19):** 17 Kenney Casino Audio 1.1 samples now cover pack opening, reroll, and chip sounds under CC0 1.0; all other SFX and BGM remain runtime synthesized. The current sources of truth are `assets/AUDIO_LICENSES.md` and `docs/screens-spec.md` §2.13. The historical plan below is preserved unchanged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Land 7 presentation-only feel items — lounge BGM (play/menu), coin-jingle buy/sell SFX, a "tak" tile-select SFX, a draw-from-pouch enter animation with a per-tile draw SFX, Balatro-style mouse-parallax hover on cards, and clearer Unison copy.

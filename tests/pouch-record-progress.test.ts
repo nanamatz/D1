@@ -1,17 +1,24 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { isRecordUnlocked } from '../src/engine/records';
+import { selectProfile } from '../src/ui/storage';
 import {
   JOKER_RECORD_STICKER_TOTAL,
   jokerRecordStickerCount,
   loadLifetime,
+  mostPlayedPattern,
   recordBestRoundScore,
+  recordEndlessEnd,
+  recordJokerBlindCounts,
   recordRunEnd,
   recordWinsForPouch,
 } from '../src/ui/lifetime';
+import { newRunObservationId } from '../src/ui/runObservation';
 
 class MemStorage {
   private store = new Map<string, string>();
+  readonly reads = new Map<string, number>();
   getItem(key: string) {
+    this.reads.set(key, (this.reads.get(key) ?? 0) + 1);
     return this.store.get(key) ?? null;
   }
   setItem(key: string, value: string) {
@@ -20,6 +27,7 @@ class MemStorage {
   removeItem(key: string) {
     this.store.delete(key);
   }
+  resetReads() { this.reads.clear(); }
 }
 
 beforeEach(() => {
@@ -144,8 +152,146 @@ describe('pouch and Record profile progress', () => {
       recordWins: [],
       recordWinsByPouch: {},
       jokerRecordStickers: {},
+      patternPlayCounts: {},
+      jokerBlindsCompleted: {},
+      currentWinStreak: 0,
+      bestWinStreak: 0,
+      lastRunObservation: null,
+      equippedRegisterTitle: null,
       balance: { version: 1, runs: 0, wins: 0, lossesByChapter: {} },
     });
+  });
+
+  it('records a completed run once across reload effects and separates repeated seeds by observation id', () => {
+    const firstId = newRunObservationId();
+    const secondId = newRunObservationId();
+    expect(secondId).not.toBe(firstId);
+    const result = {
+      observationId: firstId, ante: 3, gold: 4, bestWord: null, won: false,
+      patternCounts: { simple: 2 },
+    } as const;
+    recordRunEnd(result);
+    recordRunEnd(result);
+    recordRunEnd({ ...result, observationId: secondId });
+    expect(loadLifetime()).toMatchObject({
+      runs: 2,
+      wins: 0,
+      patternPlayCounts: { simple: 4 },
+      lastRunObservation: { id: secondId, runEndRecorded: true },
+    });
+  });
+
+  it('keeps a durable Chapter 8 pattern baseline through Endless reload/loss', () => {
+    const observationId = newRunObservationId();
+    const win = {
+      observationId, ante: 8, gold: 10, bestWord: null, won: true,
+      patternCounts: { simple: 2, complex: 1 },
+    } as const;
+    recordRunEnd(win);
+    recordRunEnd(win); // reloaded Chapter 8 Game Over
+    recordEndlessEnd({
+      observationId, ante: 10, bestScore: 500,
+      patternCounts: { simple: 3, complex: 2 },
+    });
+    recordEndlessEnd({
+      observationId, ante: 10, bestScore: 500,
+      patternCounts: { simple: 3, complex: 2 },
+    }); // reloaded Endless loss
+    expect(loadLifetime()).toMatchObject({
+      runs: 1,
+      wins: 1,
+      patternPlayCounts: { simple: 3, complex: 2 },
+      lastRunObservation: {
+        id: observationId,
+        runEndRecorded: true,
+        patternBaseline: { simple: 3, complex: 2 },
+      },
+    });
+  });
+
+  it('does not scan the word collection in finalized-blind hot mutations', () => {
+    const storage = localStorage as unknown as MemStorage;
+    localStorage.setItem('wj.lifetime', JSON.stringify({ bestWord: 'quiz', bestWordScore: 66 }));
+    localStorage.setItem('wj.collection', JSON.stringify(Object.fromEntries(
+      Array.from({ length: 5_000 }, (_, index) => [`word${index}`, Date.now()]),
+    )));
+    storage.resetReads();
+    recordBestRoundScore(123);
+    recordJokerBlindCounts('hot-path', { bookworm: 1 });
+    expect(storage.reads.get('wj.collection') ?? 0).toBe(0);
+    const raw = JSON.parse(localStorage.getItem('wj.lifetime')!);
+    const lifetime = raw.__wjProfileSlots ? raw.slots['1'] : raw;
+    expect(lifetime).toMatchObject({ bestWord: 'quiz', bestWordScore: 66 });
+  });
+
+  it('aggregates display stats for custom seeds, resets streaks, and uses rank ties', () => {
+    recordRunEnd({
+      ante: 8, gold: 0, bestWord: null, won: true, customSeed: true,
+      patternCounts: { simple: 2, complex: 2 },
+    });
+    recordRunEnd({
+      ante: 2, gold: 0, bestWord: null, won: true,
+      patternCounts: { simple: 1 },
+    });
+    recordJokerBlindCounts('display-one', { bookworm: 3, notAProductionJoker: 9 });
+    recordJokerBlindCounts('display-two', { bookworm: 1 });
+    let lifetime = loadLifetime();
+    expect(lifetime).toMatchObject({
+      wins: 2,
+      currentWinStreak: 2,
+      bestWinStreak: 2,
+      patternPlayCounts: { simple: 3, complex: 2 },
+      jokerBlindsCompleted: { bookworm: 4 },
+    });
+    expect(mostPlayedPattern({ simple: 2, complex: 2 })).toEqual({ id: 'complex', count: 2 });
+
+    recordRunEnd({ ante: 3, gold: 0, bestWord: null, won: false });
+    lifetime = loadLifetime();
+    expect(lifetime.currentWinStreak).toBe(0);
+    expect(lifetime.bestWinStreak).toBe(2);
+  });
+
+  it('durably reconciles cumulative Emoji counts across retries, stale saves, and new runs', () => {
+    recordJokerBlindCounts('run-a', { bookworm: 1 });
+    recordJokerBlindCounts('run-a', { bookworm: 2 }); // run.json ahead: recover +1
+    recordJokerBlindCounts('run-a', { bookworm: 2 }); // StrictMode/reload retry
+    recordJokerBlindCounts('run-a', { bookworm: 1 }); // stale run: no rollback
+    recordJokerBlindCounts('run-a', { bookworm: 3 }); // catch up only +1
+    expect(loadLifetime()).toMatchObject({
+      jokerBlindsCompleted: { bookworm: 3 },
+      lastRunObservation: { id: 'run-a', jokerBaseline: { bookworm: 3 } },
+    });
+
+    recordJokerBlindCounts('run-b', { bookworm: 1 }); // new run baseline resets
+    expect(loadLifetime()).toMatchObject({
+      jokerBlindsCompleted: { bookworm: 4 },
+      lastRunObservation: { id: 'run-b', jokerBaseline: { bookworm: 1 } },
+    });
+  });
+
+  it('keeps completed-blind Emoji Tile counts isolated by profile', () => {
+    selectProfile(1);
+    recordJokerBlindCounts('profile-one', { bookworm: 2 });
+    recordRunEnd({ observationId: 'profile-one', ante: 1, gold: 0, bestWord: null, won: false });
+    selectProfile(2);
+    recordJokerBlindCounts('profile-two', { alliterationSticker: 1 });
+    recordRunEnd({ observationId: 'profile-two', ante: 1, gold: 0, bestWord: null, won: false });
+    expect(loadLifetime(1).jokerBlindsCompleted).toEqual({ bookworm: 2 });
+    expect(loadLifetime(2).jokerBlindsCompleted).toEqual({ alliterationSticker: 1 });
+    expect(loadLifetime(1).lastRunObservation?.id).toBe('profile-one');
+    expect(loadLifetime(2).lastRunObservation?.id).toBe('profile-two');
+  });
+
+  it('normalizes equipped profile-title ids without depending on translated names', () => {
+    localStorage.setItem('wj.lifetime', JSON.stringify({
+      equippedRegisterTitle: 'formal.professor',
+    }));
+    expect(loadLifetime().equippedRegisterTitle).toBe('formal.professor');
+
+    localStorage.setItem('wj.lifetime', JSON.stringify({ equippedRegisterTitle: 'formal.unknown' }));
+    expect(loadLifetime().equippedRegisterTitle).toBeNull();
+    localStorage.setItem('wj.lifetime', JSON.stringify({ equippedRegisterTitle: 7 }));
+    expect(loadLifetime().equippedRegisterTitle).toBeNull();
   });
 
   it('keeps the Record ladder independent for every pouch', () => {

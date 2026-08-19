@@ -31,6 +31,11 @@ describe('slice1 lexicon — validity + baked lookup (GDD §3.2, §4.2)', () => 
     expect(e!.pos).toEqual([]);
   });
 
+  it('exposes immutable original-register totals at construction', () => {
+    expect(lex.registerTotals).toEqual({ standard: 2, formal: 0, slang: 1, vulgar: 0 });
+    expect(Object.isFrozen(lex.registerTotals)).toBe(true);
+  });
+
   it('returns null when looking up a non-word', () => {
     expect(lex.lookup('zzzzz')).toBeNull();
   });

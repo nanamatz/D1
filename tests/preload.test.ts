@@ -1,7 +1,39 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { preloadImagesWhenIdle } from '../src/ui/preload';
+import { preloadImagesWhenIdle, scheduleWhenIdle } from '../src/ui/preload';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+describe('idle task scheduling', () => {
+  it('defers and cancels an idle callback task', () => {
+    let callback: IdleRequestCallback | null = null;
+    const cancelIdle = vi.fn();
+    const task = vi.fn();
+    vi.stubGlobal('requestIdleCallback', (next: IdleRequestCallback) => {
+      callback = next;
+      return 7;
+    });
+    vi.stubGlobal('cancelIdleCallback', cancelIdle);
+
+    const cancel = scheduleWhenIdle(task);
+    expect(task).not.toHaveBeenCalled();
+    cancel();
+    expect(cancelIdle).toHaveBeenCalledWith(7);
+    callback!({ didTimeout: false, timeRemaining: () => 10 });
+    expect(task).not.toHaveBeenCalled();
+  });
+
+  it('uses a deferred timer fallback when idle callbacks are unavailable', () => {
+    vi.useFakeTimers();
+    const task = vi.fn();
+    scheduleWhenIdle(task);
+    expect(task).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(50);
+    expect(task).toHaveBeenCalledOnce();
+  });
+});
 
 describe('idle image preloading', () => {
   it('deduplicates URLs and decodes only one image per idle turn', async () => {

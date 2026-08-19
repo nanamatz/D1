@@ -1,6 +1,31 @@
 const decoded = new Set<string>();
 const pending = new Map<string, Promise<void>>();
 
+/** Schedule one background task without taking the current interaction turn. */
+export function scheduleWhenIdle(task: () => void): () => void {
+  let stopped = false;
+  let idleHandle: number | null = null;
+  let timerHandle: ReturnType<typeof setTimeout> | null = null;
+  const run = () => {
+    idleHandle = null;
+    timerHandle = null;
+    if (!stopped) task();
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    idleHandle = requestIdleCallback(run, { timeout: 1000 });
+  } else {
+    timerHandle = setTimeout(run, 50);
+  }
+  return () => {
+    stopped = true;
+    if (idleHandle !== null && typeof cancelIdleCallback === 'function') {
+      cancelIdleCallback(idleHandle);
+    }
+    if (timerHandle !== null) clearTimeout(timerHandle);
+  };
+}
+
 /** Fetch and decode one image without blocking the screen that will use it. */
 export function preloadImage(url: string): Promise<void> {
   if (decoded.has(url)) return Promise.resolve();
@@ -32,20 +57,13 @@ export function preloadImage(url: string): Promise<void> {
 export function preloadImagesWhenIdle(urls: readonly string[]): () => void {
   const queue = [...new Set(urls)].filter((url) => !decoded.has(url));
   let stopped = false;
-  let idleHandle: number | null = null;
-  let timerHandle: ReturnType<typeof setTimeout> | null = null;
+  let cancelScheduled = () => {};
 
   const schedule = () => {
     if (stopped || queue.length === 0) return;
-    if (typeof requestIdleCallback === 'function') {
-      idleHandle = requestIdleCallback(run, { timeout: 1000 });
-    } else {
-      timerHandle = setTimeout(run, 50);
-    }
+    cancelScheduled = scheduleWhenIdle(run);
   };
   const run = () => {
-    idleHandle = null;
-    timerHandle = null;
     const url = queue.shift();
     if (!url || stopped) return;
     void preloadImage(url).finally(schedule);
@@ -54,9 +72,6 @@ export function preloadImagesWhenIdle(urls: readonly string[]): () => void {
   schedule();
   return () => {
     stopped = true;
-    if (idleHandle !== null && typeof cancelIdleCallback === 'function') {
-      cancelIdleCallback(idleHandle);
-    }
-    if (timerHandle !== null) clearTimeout(timerHandle);
+    cancelScheduled();
   };
 }

@@ -16,8 +16,11 @@ import { RECORD_IDS } from '../engine/records';
 import { ALL_JOKERS } from '../engine/jokers';
 import { KNOWLEDGE_LETTER_HAND_IDS, isKnowledgeLetterHand } from '../engine/letterHands';
 import type { LetterHandId, PouchId, RecordId } from '../engine/types';
+import type { PatternId } from '../engine/types';
+import { BALANCE } from '../engine/balance';
 import { wordLetterChips } from '../engine/scoring';
-import { collectionHighlights, loadCollection } from './collection';
+import { collectionHighlights, loadCollection, type Collection } from './collection';
+import { isProfileTitleId, type ProfileTitleId } from './profileTitles';
 
 const KEY = 'wj.lifetime';
 
@@ -27,8 +30,17 @@ export interface Lifetime {
   unlockAllWarned: boolean;
   unlockAllApplied: boolean;
   challengesDisabled: boolean;
+  /** Cosmetic profile title stored by stable semantic id. */
+  equippedRegisterTitle: ProfileTitleId | null;
   runs: number;
   wins: number;
+  currentWinStreak: number;
+  bestWinStreak: number;
+  patternPlayCounts: Partial<Record<PatternId, number>>;
+  /** Finalized blinds completed while each production Emoji Tile was owned. */
+  jokerBlindsCompleted: Partial<Record<string, number>>;
+  /** Durable idempotency token and already-folded pattern total for the latest run. */
+  lastRunObservation: LifetimeRunObservation | null;
   highestAnte: number;
   highestEndlessAnte: number;
   bestRoundScore: number;
@@ -48,6 +60,13 @@ export interface Lifetime {
   balance: BalanceTelemetry;
 }
 
+export interface LifetimeRunObservation {
+  id: string;
+  runEndRecorded: boolean;
+  patternBaseline: Partial<Record<PatternId, number>>;
+  jokerBaseline: Partial<Record<string, number>>;
+}
+
 /** Unseeded human-run outcomes used for target/balance review. */
 export interface BalanceTelemetry {
   version: 1;
@@ -62,8 +81,14 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   unlockAllWarned: false,
   unlockAllApplied: false,
   challengesDisabled: false,
+  equippedRegisterTitle: null,
   runs: 0,
   wins: 0,
+  currentWinStreak: 0,
+  bestWinStreak: 0,
+  patternPlayCounts: {},
+  jokerBlindsCompleted: {},
+  lastRunObservation: null,
   highestAnte: 0,
   highestEndlessAnte: 0,
   bestRoundScore: 0,
@@ -148,6 +173,49 @@ function normalizeJokerRecordStickers(
   ));
 }
 
+function normalizePatternCounts(value: unknown): Partial<Record<PatternId, number>> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const result: Partial<Record<PatternId, number>> = {};
+  for (const id of Object.keys(BALANCE.patterns) as PatternId[]) {
+    const count = safeCount((value as Record<string, unknown>)[id]);
+    if (count > 0) result[id] = count;
+  }
+  return result;
+}
+
+function normalizeJokerCounts(value: unknown): Partial<Record<string, number>> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value)
+    .filter(([id, count]) => productionJokerIds.has(id) && safeCount(count) > 0)
+    .map(([id, count]) => [id, safeCount(count)]));
+}
+
+function normalizeRunObservation(value: unknown): LifetimeRunObservation | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const raw = value as Partial<LifetimeRunObservation>;
+  if (typeof raw.id !== 'string' || raw.id.length === 0) return null;
+  return {
+    id: raw.id,
+    runEndRecorded: raw.runEndRecorded === true,
+    patternBaseline: normalizePatternCounts(raw.patternBaseline),
+    jokerBaseline: normalizeJokerCounts(raw.jokerBaseline),
+  };
+}
+
+export function mostPlayedPattern(
+  counts: Partial<Record<PatternId, number>>,
+): { id: PatternId; count: number } | null {
+  let best: { id: PatternId; count: number } | null = null;
+  for (const id of Object.keys(BALANCE.patterns) as PatternId[]) {
+    const count = safeCount(counts[id]);
+    if (count > 0 && (!best || count > best.count ||
+      (count === best.count && BALANCE.patterns[id].rank > BALANCE.patterns[best.id].rank))) {
+      best = { id, count };
+    }
+  }
+  return best;
+}
+
 export function recordWinsForPouch(
   lifetime: Pick<Lifetime, 'recordWinsByPouch'>,
   pouchId: PouchId,
@@ -176,7 +244,19 @@ export function jokerRecordStickerCount(
   );
 }
 
-export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
+export function loadLifetime(
+  slot: ProfileSlot = activeProfile(),
+  collection: Collection = loadCollection(slot),
+): Lifetime {
+  return normalizeLifetime(slot, collection);
+}
+
+/** Mutation path: never scan/allocate the potentially huge word collection. */
+function loadLifetimeForMutation(slot: ProfileSlot = activeProfile()): Lifetime {
+  return normalizeLifetime(slot, null);
+}
+
+function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Lifetime {
   const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
   const empty = emptyLifetime(slot);
   if (!stored) {
@@ -190,7 +270,7 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
   const profileCreated = stored.profileCreated ?? true;
   const storedName = typeof stored.profileName === 'string' ? stored.profileName.trim() : '';
   const storedBestWord = typeof stored.bestWord === 'string' ? stored.bestWord : '';
-  const collectionBest = collectionHighlights(loadCollection(slot)).highestScore;
+  const collectionBest = collection ? collectionHighlights(collection).highestScore : null;
   const bestWord = collectionBest?.word ?? storedBestWord;
   const recordWins = normalizeRecordWins(stored.recordWins);
   const recordWinsByPouch = stored.recordWinsByPouch === undefined
@@ -204,9 +284,20 @@ export function loadLifetime(slot: ProfileSlot = activeProfile()): Lifetime {
     unlockAllWarned: stored.unlockAllWarned === true,
     unlockAllApplied: stored.unlockAllApplied === true,
     challengesDisabled: stored.challengesDisabled === true,
+    equippedRegisterTitle: isProfileTitleId(stored.equippedRegisterTitle)
+      ? stored.equippedRegisterTitle
+      : null,
+    runs: safeCount(stored.runs),
+    wins: safeCount(stored.wins),
+    currentWinStreak: safeCount(stored.currentWinStreak),
+    bestWinStreak: safeCount(stored.bestWinStreak),
+    patternPlayCounts: normalizePatternCounts(stored.patternPlayCounts),
+    jokerBlindsCompleted: normalizeJokerCounts(stored.jokerBlindsCompleted),
+    lastRunObservation: normalizeRunObservation(stored.lastRunObservation),
     bestRoundScore: safeCount(stored.bestRoundScore),
     bestWord,
-    bestWordScore: collectionBest?.value ?? wordLetterChips(bestWord),
+    bestWordScore: collectionBest?.value ??
+      (collection ? wordLetterChips(bestWord) : safeCount(stored.bestWordScore) || wordLetterChips(bestWord)),
     discoveredLetterHands: normalizeDiscoveredLetterHands(stored.discoveredLetterHands),
     pouchWins: Array.isArray(stored.pouchWins)
       ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId))
@@ -252,7 +343,7 @@ export function discoverLetterHand(
 
 /** Record one fully finalized blind score as soon as the round resolves. */
 export function recordBestRoundScore(score: number): void {
-  const lifetime = loadLifetime();
+  const lifetime = loadLifetimeForMutation();
   const bestRoundScore = Math.max(lifetime.bestRoundScore, safeCount(score));
   if (bestRoundScore !== lifetime.bestRoundScore) {
     writeLifetime({ ...lifetime, bestRoundScore });
@@ -260,6 +351,7 @@ export function recordBestRoundScore(score: number): void {
 }
 
 export interface RunResult {
+  observationId?: string;
   ante: number;
   gold: number;
   bestWord: { text: string; score: number } | null;
@@ -269,15 +361,22 @@ export interface RunResult {
   customSeed?: boolean;
   /** Production Emoji Tiles still owned after Chapter 8 blind-end hooks resolve. */
   jokerIds?: readonly string[];
+  patternCounts?: Partial<Record<PatternId, number>>;
 }
 
 /** Fold one finished run into the lifetime record (idempotency is the caller's job). */
 export function recordRunEnd(r: RunResult): void {
   const lt = loadLifetime();
+  if (r.observationId && lt.lastRunObservation?.id === r.observationId &&
+      lt.lastRunObservation.runEndRecorded) return;
   const pouchWins = new Set(lt.pouchWins);
   const recordWins = new Set(lt.recordWins);
   const recordWinsByPouch = { ...lt.recordWinsByPouch };
   const jokerRecordStickers = { ...lt.jokerRecordStickers };
+  const patternPlayCounts = { ...lt.patternPlayCounts };
+  for (const [id, count] of Object.entries(normalizePatternCounts(r.patternCounts))) {
+    patternPlayCounts[id as PatternId] = (patternPlayCounts[id as PatternId] ?? 0) + safeCount(count);
+  }
   if (r.won && !r.customSeed) {
     if (r.pouchId) pouchWins.add(r.pouchId);
     if (r.recordId) recordWins.add(r.recordId);
@@ -310,6 +409,9 @@ export function recordRunEnd(r: RunResult): void {
     ...lt,
     runs: lt.runs + 1,
     wins: lt.wins + (r.won ? 1 : 0),
+    currentWinStreak: r.won ? lt.currentWinStreak + 1 : 0,
+    bestWinStreak: r.won ? Math.max(lt.bestWinStreak, lt.currentWinStreak + 1) : lt.bestWinStreak,
+    patternPlayCounts,
     highestAnte: Math.max(lt.highestAnte, r.ante),
     bestWordScore: Math.max(lt.bestWordScore, r.bestWord?.score ?? 0),
     bestWord: (r.bestWord?.score ?? 0) > lt.bestWordScore ? (r.bestWord?.text ?? '') : lt.bestWord,
@@ -318,17 +420,90 @@ export function recordRunEnd(r: RunResult): void {
     recordWins: [...recordWins],
     recordWinsByPouch,
     jokerRecordStickers,
+    lastRunObservation: r.observationId ? {
+      id: r.observationId,
+      runEndRecorded: true,
+      patternBaseline: normalizePatternCounts(r.patternCounts),
+      jokerBaseline: lt.lastRunObservation?.id === r.observationId
+        ? lt.lastRunObservation.jokerBaseline
+        : {},
+    } : lt.lastRunObservation,
     balance,
   };
   writeLifetime(next);
 }
 
 /** Endless is a benchmark attached to an already-recorded win, not a second run. */
-export function recordEndlessEnd(r: { ante: number; bestScore: number }): void {
+export function recordEndlessEnd(r: {
+  observationId?: string;
+  ante: number;
+  bestScore: number;
+  patternCounts?: Partial<Record<PatternId, number>>;
+}): void {
   const lt = loadLifetime();
+  const previous = r.observationId && lt.lastRunObservation?.id === r.observationId
+    ? lt.lastRunObservation.patternBaseline
+    : {};
+  const totalPatternCounts = normalizePatternCounts(r.patternCounts);
+  const patternDelta: Partial<Record<PatternId, number>> = {};
+  for (const id of Object.keys(BALANCE.patterns) as PatternId[]) {
+    const delta = Math.max(0, (totalPatternCounts[id] ?? 0) - (previous[id] ?? 0));
+    if (delta > 0) patternDelta[id] = delta;
+  }
+  const patternPlayCounts = { ...lt.patternPlayCounts };
+  for (const [id, count] of Object.entries(patternDelta)) {
+    patternPlayCounts[id as PatternId] = (patternPlayCounts[id as PatternId] ?? 0) + safeCount(count);
+  }
   writeLifetime({
     ...lt,
     highestEndlessAnte: Math.max(lt.highestEndlessAnte, r.ante),
     bestEndlessScore: Math.max(lt.bestEndlessScore, r.bestScore),
+    patternPlayCounts,
+    lastRunObservation: r.observationId ? {
+      id: r.observationId,
+      runEndRecorded: true,
+      patternBaseline: totalPatternCounts,
+      jokerBaseline: lt.lastRunObservation?.id === r.observationId
+        ? lt.lastRunObservation.jokerBaseline
+        : {},
+    } : lt.lastRunObservation,
+  });
+}
+
+/** Persist finalized-blind observation immediately so abandoning a later blind loses nothing. */
+export function recordJokerBlindCounts(
+  observationId: string,
+  cumulativeTotal: Partial<Record<string, number>>,
+): void {
+  const total = normalizeJokerCounts(cumulativeTotal);
+  const lifetime = loadLifetimeForMutation();
+  const previousObservation = lifetime.lastRunObservation?.id === observationId
+    ? lifetime.lastRunObservation
+    : null;
+  const previous = previousObservation?.jokerBaseline ?? {};
+  const jokerBlindsCompleted = { ...lifetime.jokerBlindsCompleted };
+  const jokerBaseline = { ...previous };
+  let changed = previousObservation === null;
+  for (const id of productionJokerIds) {
+    const current = total[id] ?? 0;
+    const baseline = previous[id] ?? 0;
+    const delta = Math.max(0, current - baseline);
+    if (delta > 0) {
+      jokerBlindsCompleted[id] = (jokerBlindsCompleted[id] ?? 0) + delta;
+      changed = true;
+    }
+    // Never roll back a durable baseline when a stale run snapshot is loaded.
+    if (current > baseline) jokerBaseline[id] = current;
+  }
+  if (!changed) return;
+  writeLifetime({
+    ...lifetime,
+    jokerBlindsCompleted,
+    lastRunObservation: {
+      id: observationId,
+      runEndRecorded: previousObservation?.runEndRecorded ?? false,
+      patternBaseline: previousObservation?.patternBaseline ?? {},
+      jokerBaseline,
+    },
   });
 }

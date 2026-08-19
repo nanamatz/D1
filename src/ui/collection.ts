@@ -23,6 +23,24 @@ export interface WordCollectionEntry {
 /** word (lowercase) → lifetime profile stats. */
 export type Collection = Record<string, WordCollectionEntry>;
 
+export const WORD_STATS_PAGE_SIZE = 50;
+
+export function sortedCollectionStats(collection: Collection): [string, WordCollectionEntry][] {
+  return Object.entries(collection)
+    .sort((a, b) => b[1].plays - a[1].plays || a[0].localeCompare(b[0]));
+}
+
+export function collectionStatsPage(
+  sorted: readonly [string, WordCollectionEntry][],
+  page: number,
+  pageSize = WORD_STATS_PAGE_SIZE,
+): { entries: [string, WordCollectionEntry][]; page: number; pages: number } {
+  const size = Math.max(1, Math.floor(pageSize));
+  const pages = Math.max(1, Math.ceil(sorted.length / size));
+  const safePage = Math.min(pages - 1, Math.max(0, Math.floor(page)));
+  return { entries: sorted.slice(safePage * size, (safePage + 1) * size), page: safePage, pages };
+}
+
 export function loadCollection(slot: ProfileSlot = activeProfile()): Collection {
   const stored = readProfileValue<Record<string, unknown>>(KEY, slot);
   if (!stored || typeof stored !== 'object') return {};

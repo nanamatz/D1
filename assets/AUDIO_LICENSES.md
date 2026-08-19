@@ -6,11 +6,11 @@ sampled exceptions are listed below.
 
 | Sound id | Source | License |
 |---|---|---|
-| synthesized SFX (`SFX_NAMES` except sampled entries) | Original synthesis, no sample | CC0 / original |
-| all BGM tracks (`MUSIC_TRACKS`: menu / play) | Original synthesis, no sample | CC0 / original |
-| `packOpen` (`Audio/cards-pack-open-2.ogg`) | Casino Audio 1.1 by Kenney Vleugels (Kenney.nl) | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) |
-| `reroll` (`Audio/rollover1.ogg`) | Casino Audio 1.1 by Kenney Vleugels (Kenney.nl) | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) |
-| Chips magnitude set (`Audio/chip-lay-*.ogg`, `chips-stack-*.ogg`, `chips-handle-*.ogg`, `chips-collide-*.ogg`) | Casino Audio 1.1 by Kenney Vleugels (Kenney.nl) | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) |
+| synthesized SFX (`SFX_NAMES` except sampled entries) | Original synthesis, no sample | © 2026 Ben Kim — all rights reserved |
+| all BGM tracks (`MUSIC_TRACKS`: menu / play) | Original synthesis, no sample | © 2026 Ben Kim — all rights reserved |
+| `packOpen` (`Audio/cards-pack-open-2.ogg`) | Casino Audio 1.1 by Kenney Vleugels (Kenney.nl) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| `reroll` (`Audio/rollover1.ogg`) | Casino Audio 1.1 by Kenney Vleugels (Kenney.nl) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| Chips magnitude set (`Audio/chip-lay-*.ogg`, `chips-stack-*.ogg`, `chips-handle-*.ogg`, `chips-collide-*.ogg`) | Casino Audio 1.1 by Kenney Vleugels (Kenney.nl) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 
 Add future samples here with their source and license before committing them.
 The `audio.play(name)` / `audio.playMusic(track)` facades are the swap seam —

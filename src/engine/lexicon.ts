@@ -24,6 +24,8 @@ export interface LexiconEntryData {
 export interface Lexicon {
   /** number of valid words */
   readonly size: number;
+  /** immutable current-lexicon word totals by original register */
+  readonly registerTotals: Readonly<Record<Suit, number>>;
   isWord(text: string): boolean;
   /** baked entry, or null if `text` is not a valid word */
   lookup(text: string): LexiconEntry | null;
@@ -110,28 +112,35 @@ export function makeLexicon(
     valid.add(key); // a tagged word is always valid
   }
 
+  const lookup = (text: string): LexiconEntry | null => {
+    const key = norm(text);
+    if (!valid.has(key)) return null;
+    const direct = tagged.get(key);
+    if (direct) return { word: key, suit: direct.suit, pos: direct.pos };
+    // Inherit from a tagged lemma if this is an inflected form (P0-2).
+    for (const cand of lemmaCandidates(key)) {
+      const lemma = tagged.get(cand);
+      if (lemma) return { word: key, suit: lemma.suit, pos: lemma.pos };
+    }
+    return { word: key, suit: 'standard', pos: [] };
+  };
+
+  const totals: Record<Suit, number> = { standard: 0, formal: 0, slang: 0, vulgar: 0 };
+  for (const word of valid) totals[lookup(word)!.suit] += 1;
+  const registerTotals = Object.freeze(totals);
+
   return {
     get size() {
       return valid.size;
     },
+    registerTotals,
     words() {
       return valid.values();
     },
     isWord(text) {
       return valid.has(norm(text));
     },
-    lookup(text) {
-      const key = norm(text);
-      if (!valid.has(key)) return null;
-      const direct = tagged.get(key);
-      if (direct) return { word: key, suit: direct.suit, pos: direct.pos };
-      // Inherit from a tagged lemma if this is an inflected form (P0-2).
-      for (const cand of lemmaCandidates(key)) {
-        const lemma = tagged.get(cand);
-        if (lemma) return { word: key, suit: lemma.suit, pos: lemma.pos };
-      }
-      return { word: key, suit: 'standard', pos: [] };
-    },
+    lookup,
   };
 }
 

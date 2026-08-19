@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { consumeTooltipEscape } from '../src/ui/components/Tooltip';
 
 const source = (path: string) => readFileSync(path, 'utf8');
 
@@ -7,6 +8,11 @@ describe('shared tooltip accessibility', () => {
   it('opens from focus-visible and links the focused object to the portal', () => {
     const tooltip = source('src/ui/components/Tooltip.tsx');
     expect(tooltip).toContain("matches(':focus-visible')");
+    expect(tooltip).toContain('setFocusedTarget(focusTarget)');
+    expect(tooltip).toContain('document.activeElement instanceof HTMLElement');
+    expect(tooltip).toContain('anchor()?.contains(document.activeElement)');
+    expect(tooltip).toContain('const node = focusedTarget ?? activeTarget');
+    expect(tooltip).not.toContain('focusedTarget ?? target()');
     expect(tooltip).toContain("'aria-describedby'");
     expect(tooltip).toContain("createPortal(card, document.body)");
   });
@@ -36,9 +42,93 @@ describe('shared tooltip accessibility', () => {
 
   it('clears stale hover and focus when a tooltip is disabled', () => {
     const tooltip = source('src/ui/components/Tooltip.tsx');
-    expect(tooltip).toMatch(
-      /if \(!disabled\) return;\s+setHovered\(false\);\s+setFocused\(false\);\s+setPosition\(null\);/,
+    expect(tooltip).toMatch(/if \(!disabled\) return;\s+close\(\);/);
+    expect(tooltip).toMatch(/const close = \(\) => \{[\s\S]*setFocusedTarget\(null\);[\s\S]*releaseTooltip\(tooltipId\);/);
+  });
+
+  it('allows only one hover, focus, or touch tooltip to own the portal', () => {
+    const tooltip = source('src/ui/components/Tooltip.tsx');
+    expect(tooltip).toContain("type TooltipMode = 'hover' | 'focus' | 'touch'");
+    expect(tooltip).toContain('TOOLTIP_MODE_PRIORITY[activeTooltip.mode] > TOOLTIP_MODE_PRIORITY[mode]');
+    expect(tooltip).toContain('previous?.close()');
+    expect(tooltip.match(/claimTooltip\(tooltipId, '(?:hover|focus|touch)', close\)/g)).toHaveLength(3);
+    expect(tooltip).toContain('releaseTooltip(tooltipId)');
+  });
+
+  it('keeps focus and touch owners above incidental hover and releases on listener cleanup', () => {
+    const tooltip = source('src/ui/components/Tooltip.tsx');
+    expect(tooltip).toContain("{ hover: 0, focus: 1, touch: 1 }");
+    expect(tooltip).toContain("if (!claimTooltip(tooltipId, 'hover', close)) return");
+    expect(tooltip).toContain('leaveFocusedTooltip(tooltipId)');
+    const listenerCleanup = tooltip.slice(
+      tooltip.indexOf("node.removeEventListener('pointerenter'"),
+      tooltip.indexOf('}, [disabled, down, externalAnchorRef, touchPin])'),
     );
+    expect(listenerCleanup).toContain('releaseTooltip(tooltipId)');
+  });
+
+  it('keeps the actual focused control through repeated touch pins', () => {
+    const tooltip = source('src/ui/components/Tooltip.tsx');
+    const press = tooltip.slice(tooltip.indexOf('const press ='), tooltip.indexOf('const release ='));
+    expect(press).not.toContain('setFocusedTarget(null)');
+    expect(tooltip).toMatch(/const hideFocus[\s\S]*setFocusedTarget\(null\);/);
+    expect(tooltip).toContain('const node = focusedTarget ?? activeTarget');
+  });
+
+  it('pins on non-mouse pointer-up and closes on outside tap or Escape', () => {
+    const tooltip = source('src/ui/components/Tooltip.tsx');
+    expect(tooltip).toContain("event.pointerType === 'mouse'");
+    expect(tooltip).toContain('setTouchPinned((pinned) => !pinned)');
+    expect(tooltip).toContain("document.addEventListener('pointerdown', closeOutside)");
+    const pointerHandlers = tooltip.slice(
+      tooltip.indexOf('const press ='),
+      tooltip.indexOf("node.addEventListener('pointerenter'"),
+    );
+    expect(pointerHandlers).not.toContain('preventDefault()');
+    expect(pointerHandlers).not.toContain('stopPropagation()');
+  });
+
+  it('consumes only the first active-tooltip Escape before global Back/Pause', () => {
+    let active = true;
+    const close = vi.fn(() => { active = false; });
+    const downstream = vi.fn();
+    const unrelated = {
+      key: 'Enter',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+    expect(consumeTooltipEscape(unrelated, active, close)).toBe(false);
+    expect(unrelated.preventDefault).not.toHaveBeenCalled();
+    expect(unrelated.stopPropagation).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    const dispatch = () => {
+      const event = {
+        key: 'Escape',
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      };
+      if (!consumeTooltipEscape(event, active, close)) downstream();
+      return event;
+    };
+
+    const first = dispatch();
+    expect(first.preventDefault).toHaveBeenCalledOnce();
+    expect(first.stopPropagation).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
+    expect(downstream).not.toHaveBeenCalled();
+
+    const second = dispatch();
+    expect(second.preventDefault).not.toHaveBeenCalled();
+    expect(second.stopPropagation).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledOnce();
+    expect(downstream).toHaveBeenCalledOnce();
+  });
+
+  it('registers active-tooltip Escape before document capture and window bubble handlers', () => {
+    const tooltip = source('src/ui/components/Tooltip.tsx');
+    expect(tooltip).toContain("window.addEventListener('keydown', closeOnEscape, true)");
+    expect(tooltip).toContain("window.removeEventListener('keydown', closeOnEscape, true)");
+    expect(tooltip).not.toContain("document.addEventListener('keydown', closeOnEscape)");
   });
 
   it('stacks enhancement tags and folds only the highest-priority multi-detail inline', () => {

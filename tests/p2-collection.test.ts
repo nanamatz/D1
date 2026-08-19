@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   collectionHighlights,
+  collectionStatsPage,
   collectionSize,
   loadCollection,
   recordWord,
+  sortedCollectionStats,
 } from '../src/ui/collection';
 
 class MemStorage {
@@ -100,5 +102,19 @@ describe('P2-2 — word collection tracking', () => {
     expect(highlights.highestScore).toEqual({ word: 'pizza', value: 90 });
     expect(highlights.longest).toEqual({ word: 'alphabet', value: 8 });
     expect(highlights.mostPlayed).toEqual({ word: 'quiz', value: 7 });
+  });
+
+  it('sorts a large stats snapshot once and renders a bounded, clamped page', () => {
+    const collection = Object.fromEntries(Array.from({ length: 5_000 }, (_, index) => [
+      `word${String(index).padStart(4, '0')}`,
+      { firstPlayedAt: index, plays: index % 17, bestScore: index % 31 },
+    ]));
+    const sorted = sortedCollectionStats(collection);
+    const first = collectionStatsPage(sorted, 0);
+    const last = collectionStatsPage(sorted, 999_999);
+    expect(first.entries).toHaveLength(50);
+    expect(first.entries[0]![1].plays).toBeGreaterThanOrEqual(first.entries[49]![1].plays);
+    expect(last.page).toBe(last.pages - 1);
+    expect(last.entries.length).toBeLessThanOrEqual(50);
   });
 });

@@ -20,6 +20,8 @@ describe('P0-1 — real validity dictionary', () => {
 
   it('contains the 18-letter ENABLE pool plus tile-grammar exceptions', () => {
     expect(lex.size).toBe(172251);
+    expect(Object.values(lex.registerTotals).reduce((sum, count) => sum + count, 0))
+      .toBe(lex.size);
     expect([...lex.words()].every((word) => word.length <= BALANCE.wordLength.maxLetters)).toBe(true);
   });
 
@@ -84,5 +86,9 @@ describe('P0-2 — suit/POS inherited by lemma', () => {
 
   it('a partial fixture with no tagged lemma stays standard with no POS', () => {
     expect(lex.lookup('table')).toEqual({ word: 'table', suit: 'standard', pos: [] });
+  });
+
+  it('includes inherited and fallback words in original-register totals', () => {
+    expect(lex.registerTotals).toEqual({ standard: 5, formal: 2, slang: 2, vulgar: 0 });
   });
 });

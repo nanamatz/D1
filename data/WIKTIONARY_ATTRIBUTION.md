@@ -7,8 +7,10 @@ snapshot records the exact category roots and retrieval date in
 
 - Source: <https://en.wiktionary.org/wiki/Category:English_terms_by_usage>
 - Authors: Wiktionary contributors
+- Offline snapshot retrieved: 2026-08-03
 - Licenses: Creative Commons Attribution-ShareAlike 4.0 and GNU Free
-  Documentation License; see <https://en.wiktionary.org/wiki/Wiktionary:Copyrights>
+  Documentation License; see <https://creativecommons.org/licenses/by-sa/4.0/>
+  and <https://en.wiktionary.org/wiki/Wiktionary:Copyrights>
 
 Changes made for this project: usage-category entries were lowercased,
 restricted to unbroken ASCII alphabetic spellings, and intersected with the

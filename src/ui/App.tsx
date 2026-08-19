@@ -14,7 +14,7 @@ import { JokerChanceEffect } from './components/JokerChanceEffect';
 import { SaveHealthNotice } from './components/SaveHealthNotice';
 import { POUCH_ART } from './pouchArt';
 import { RECORD_ART } from './recordArt';
-import { preloadImagesWhenIdle } from './preload';
+import { preloadImagesWhenIdle, scheduleWhenIdle } from './preload';
 import type { Lexicon } from '../engine/lexicon';
 
 const NewRun = lazy(() =>
@@ -67,6 +67,12 @@ export function App() {
     }
     return lexiconPromiseRef.current;
   }, []);
+  const lexiconIdleCancelRef = useRef<(() => void) | null>(null);
+  const startLexiconLoad = useCallback((): Promise<Lexicon> => {
+    lexiconIdleCancelRef.current?.();
+    lexiconIdleCancelRef.current = null;
+    return ensureLexicon();
+  }, [ensureLexicon]);
   const g = useGame(getLexicon, lexiconReady);
   // D-4: preload assets behind a loading screen before the Main Menu. Falls through
   // immediately when everything is cached (LoadingScreen reports real progress).
@@ -75,6 +81,18 @@ export function App() {
     if (loading) return;
     return preloadImagesWhenIdle(NEW_RUN_ART);
   }, [loading]);
+  useEffect(() => {
+    if (loading) return;
+    const cancel = scheduleWhenIdle(() => {
+      lexiconIdleCancelRef.current = null;
+      void ensureLexicon().catch((error: unknown) => console.error('[lexicon] load failed', error));
+    });
+    lexiconIdleCancelRef.current = cancel;
+    return () => {
+      if (lexiconIdleCancelRef.current === cancel) lexiconIdleCancelRef.current = null;
+      cancel();
+    };
+  }, [ensureLexicon, loading]);
   // Mounted here so the persisted volumes (e.g. a saved master:0) reach the audio
   // mixer at startup on the menu screen, before Options or RunView ever mount.
   // `usePersistedState` is now backed by one shared store per key, so this
@@ -107,11 +125,11 @@ export function App() {
         setScreen(next);
         return;
       }
-      void ensureLexicon()
+      void startLexiconLoad()
         .then(() => setScreen(next))
         .catch((error: unknown) => console.error('[lexicon] load failed', error));
     },
-    [ensureLexicon],
+    [startLexiconLoad],
   );
   // `useGame` lives here, so leaving the run view (Options → Main Menu) keeps the
   // run intact, and it's persisted to localStorage so a reload keeps it too.
@@ -170,7 +188,7 @@ export function App() {
             initialPouchId={g.state.run.pouchId}
             initialRecordId={g.state.run.recordId}
             onStart={(config) => {
-              void ensureLexicon()
+              void startLexiconLoad()
                 .then(() => {
                   g.startRun(config);
                   setScreen('run');
@@ -189,7 +207,7 @@ export function App() {
                 : undefined
             }
             onContinue={canContinue ? () => {
-              void ensureLexicon()
+              void startLexiconLoad()
                 .then(() => setScreen('run'))
                 .catch((error: unknown) => console.error('[lexicon] load failed', error));
             } : undefined}
@@ -211,6 +229,7 @@ export function App() {
       default:
         return (
           <MainMenu
+            lexicon={lexiconRef.current}
             onPlay={() => openScreen('newrun')}
             onCollection={() => openScreen('collection')}
             onOptions={() => openScreen('options')}

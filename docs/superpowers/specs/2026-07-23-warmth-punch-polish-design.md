@@ -1,5 +1,7 @@
 # Warmth + Punch — feel polish pass (2026-07-23)
 
+> **Superseded audio provenance (2026-08-19):** 17 Kenney Casino Audio 1.1 samples now cover pack opening, reroll, and chip sounds under CC0 1.0; all other SFX and BGM remain runtime synthesized. The current sources of truth are `assets/AUDIO_LICENSES.md` and `docs/screens-spec.md` §2.13. The historical design below is preserved unchanged.
+
 ## Goal
 
 Two feel refinements requested in Korean, both UI-layer only. The **headless engine

@@ -28,12 +28,18 @@ describe('settings integrity', () => {
       uiScale: 999,
       master: Number.NaN,
       music: -1,
+      crtEnabled: 'yes',
+      crtIntensity: 999,
+      crtBloom: null,
       mascot: 'unknown',
     })).toMatchObject({
       gameSpeed: 1,
       uiScale: 120,
       master: 80,
       music: 0,
+      crtEnabled: true,
+      crtIntensity: 100,
+      crtBloom: true,
       mascot: 'woodak',
     });
   });

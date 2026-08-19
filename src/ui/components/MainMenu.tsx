@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { unseenCount } from '../collection';
+import { useMemo, useState } from 'react';
 import { useI18n } from '../i18n';
-import { loadLifetime } from '../lifetime';
 import { activeProfile } from '../storage';
+import type { Lexicon } from '../../engine/lexicon';
+import { loadMainMenuProfileBase, resolveMainMenuProfile } from '../profile';
 
 interface Props {
+  lexicon: Lexicon | null;
   onPlay: () => void;
   onCollection: () => void;
   onOptions: () => void;
@@ -13,11 +14,14 @@ interface Props {
 }
 
 /** Main Menu (spec §2.1). Our own logotype. */
-export function MainMenu({ onPlay, onCollection, onOptions, onProfile, onDeskLab }: Props) {
+export function MainMenu({ lexicon, onPlay, onCollection, onOptions, onProfile, onDeskLab }: Props) {
   const { t, lang, setLang } = useI18n();
-  const unseen = unseenCount();
   const slot = activeProfile();
-  const profileName = loadLifetime(slot).profileName || `P${slot}`;
+  const profileBase = useMemo(() => loadMainMenuProfileBase(slot), [slot]);
+  const profile = useMemo(
+    () => resolveMainMenuProfile(profileBase, lexicon),
+    [lexicon, profileBase],
+  );
   const [quit, setQuit] = useState(false);
 
   // Quit: try to close the window (works in a script-opened window or a desktop
@@ -71,7 +75,7 @@ export function MainMenu({ onPlay, onCollection, onOptions, onProfile, onDeskLab
           onClick={onCollection}
         >
           {t('menu.collection')}
-          {unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
+          {profile.unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
         </button>
         {import.meta.env.DEV && (
           <button className="btn menu-desk-lab" onClick={onDeskLab}>
@@ -88,10 +92,13 @@ export function MainMenu({ onPlay, onCollection, onOptions, onProfile, onDeskLab
           <span className="menu-mini-label">{t('menu.profile')}</span>
           <button
             className="btn menu-mini-button"
-            title={`${t('menu.profileHint')}: ${profileName}`}
+            title={`${t('menu.profileHint')}: ${profile.name}`}
             onClick={onProfile}
           >
-            {profileName}
+            <span>{profile.name}</span>
+            {profile.title && (
+              <small className="menu-profile-title">{t(profile.title.localeKey)}</small>
+            )}
           </button>
         </div>
         <div className="menu-mini-card language">

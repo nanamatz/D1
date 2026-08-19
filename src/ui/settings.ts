@@ -23,6 +23,9 @@ export interface Settings {
   tips: boolean;
   fullscreen: boolean;
   uiScale: number; // 80..120 (%)
+  crtEnabled: boolean;
+  crtIntensity: number; // 0..100
+  crtBloom: boolean;
   master: number; // 0..100
   music: number;
   sfx: number;
@@ -38,6 +41,9 @@ export const DEFAULT_SETTINGS: Settings = {
   tips: true,
   fullscreen: false,
   uiScale: 100,
+  crtEnabled: true,
+  crtIntensity: 100,
+  crtBloom: true,
   master: 80,
   music: 70,
   sfx: 80,
@@ -84,6 +90,7 @@ export function normalizeSettings(stored: unknown): Settings {
     gameSpeed: SPEEDS.includes(merged.gameSpeed) ? merged.gameSpeed : DEFAULT_SETTINGS.gameSpeed,
     screenshake: num(merged.screenshake, DEFAULT_SETTINGS.screenshake, 0, 100),
     uiScale: num(merged.uiScale, DEFAULT_SETTINGS.uiScale, 80, 120),
+    crtIntensity: num(merged.crtIntensity, DEFAULT_SETTINGS.crtIntensity, 0, 100),
     master: num(merged.master, DEFAULT_SETTINGS.master, 0, 100),
     music: num(merged.music, DEFAULT_SETTINGS.music, 0, 100),
     sfx: num(merged.sfx, DEFAULT_SETTINGS.sfx, 0, 100),
@@ -91,6 +98,8 @@ export function normalizeSettings(stored: unknown): Settings {
     colorBlind: bool(merged.colorBlind, DEFAULT_SETTINGS.colorBlind),
     tips: bool(merged.tips, DEFAULT_SETTINGS.tips),
     fullscreen: bool(merged.fullscreen, DEFAULT_SETTINGS.fullscreen),
+    crtEnabled: bool(merged.crtEnabled, DEFAULT_SETTINGS.crtEnabled),
+    crtBloom: bool(merged.crtBloom, DEFAULT_SETTINGS.crtBloom),
     mascot: isWooDakSkin(merged.mascot) ? merged.mascot : DEFAULT_SETTINGS.mascot,
   };
 }
@@ -127,6 +136,9 @@ export function useSettings() {
     const root = document.documentElement;
     root.style.setProperty('--ui-scale', String(settings.uiScale / 100));
     root.style.setProperty('--screen-shake', String(settings.screenshake / 100));
+    root.style.setProperty('--crt-scan-alpha', String(0.12 * settings.crtIntensity / 100));
+    root.classList.toggle('crt-off', !settings.crtEnabled);
+    root.classList.toggle('crt-bloom-off', !settings.crtBloom);
     document.body.classList.toggle('force-reduced-motion', settings.reducedMotion);
     document.body.classList.toggle('cb-safe', settings.colorBlind);
     // Mixer: push the persisted slider values into the audio facade (work order B).
@@ -134,7 +146,8 @@ export function useSettings() {
     // Chromatic unlocks are profile progress; never read a device-wide override.
     applyPresentation();
   }, [
-    settings.uiScale, settings.screenshake, settings.reducedMotion, settings.colorBlind,
+    settings.uiScale, settings.screenshake, settings.crtEnabled, settings.crtIntensity,
+    settings.crtBloom, settings.reducedMotion, settings.colorBlind,
     settings.master, settings.music, settings.sfx,
   ]);
 

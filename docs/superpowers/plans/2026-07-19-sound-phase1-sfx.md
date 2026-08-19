@@ -1,5 +1,7 @@
 # Sound Phase 1 (SFX) Implementation Plan
 
+> **Superseded audio provenance (2026-08-19):** 17 Kenney Casino Audio 1.1 samples now cover pack opening, reroll, and chip sounds under CC0 1.0; all other SFX and BGM remain runtime synthesized. The current sources of truth are `assets/AUDIO_LICENSES.md` and `docs/screens-spec.md` §2.13. The historical plan below is preserved unchanged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add chiptune/8-bit **SFX** for the core loop (settle sequence, interactions, shop) using a single swappable audio facade that **synthesizes** every sound with the Web Audio API — no binary assets, no new dependencies.

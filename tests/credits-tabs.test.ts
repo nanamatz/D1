@@ -13,8 +13,12 @@ describe('Credits tabs', () => {
     expect(component).toContain('role="tablist"');
     expect(component).toContain('role="tabpanel"');
     expect(component).toContain('Ben Kim');
-    expect(en['credits.aiTools']).toContain('ChatGPT by OpenAI · Claude by Anthropic');
-    expect(ko['credits.audioSource']).toContain('외부 샘플이나 제3자 오디오 파일은 사용하지 않았습니다');
+    expect(component).toContain('<details className="cr-legal">');
+    expect(component).toContain('<summary>{t(\'credits.legal.open\')}</summary>');
+    expect(component).toContain('© 2026 Ben Kim');
+    expect(en['credits.aiTools']).toBe('AI production tools: ChatGPT (OpenAI) · Claude (Anthropic)');
+    expect(ko['credits.audioSource']).toContain('Casino Audio 1.1');
+    expect(en['credits.audioSource']).not.toContain('No external samples');
     expect(en['credits.fontSource']).toContain('SIL Open Font License 1.1');
   });
 });

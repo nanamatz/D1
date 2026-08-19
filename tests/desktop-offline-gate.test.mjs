@@ -25,6 +25,11 @@ describe('findViolations', () => {
     expect(findViolations('assets/index-abc.js', js)).toEqual([]);
   });
 
+  it('allows only the exact inert URLs reproduced in bundled legal notices', () => {
+    expect(findViolations('assets/credits.js', 'https://creativecommons.org/licenses/by-sa/4.0/')).toEqual([]);
+    expect(findViolations('assets/credits.js', 'https://creativecommons.org/licenses/by-sa/4.0/script.js')).toHaveLength(1);
+  });
+
   it('still flags a CDN host that merely looks documentation-ish', () => {
     const js = 'const u="https://cdn.reactjs.org.evil.com/x.js";';
     expect(findViolations('assets/index-abc.js', js)).toHaveLength(1);
