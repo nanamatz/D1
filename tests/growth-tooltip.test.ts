@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import { BALANCE } from '../src/engine/balance';
@@ -32,7 +33,30 @@ const LIVE_GROWTH_IDS = [
   'typeFoundry', 'voraciousReader', 'woodblockPress', 'wordHunter',
 ] as const;
 
+const SPLIT_PERFORMANCE_IDS = [
+  'bookOfMargins',
+  'dullingPencil',
+  'dryingInk',
+  'foldingManuscript',
+  'shuriken',
+] as const;
+
 describe('scaling Emoji Tile tooltip value', () => {
+  it('separates standalone performance values from their descriptions in both locales', () => {
+    for (const locale of [en, ko] as const) {
+      const copy = locale as Record<string, string>;
+      const split = [...JOKER_REGISTRY.keys()]
+        .filter((id) => copy[`jokerdesc.${id}`]?.includes('\n'))
+        .sort();
+      expect(split).toEqual([...SPLIT_PERFORMANCE_IDS].sort());
+      for (const id of JOKER_REGISTRY.keys()) {
+        expect(copy[`jokerdesc.${id}`], id).toBeTypeOf('string');
+      }
+    }
+    expect(readFileSync('src/ui/styles/screens.css', 'utf8'))
+      .toMatch(/\.tt-body\s*\{[^}]*white-space:\s*pre-line/s);
+  });
+
   it('covers every accumulating or decaying Emoji Tile in the live-value roster', () => {
     const actual = [...JOKER_REGISTRY.values()]
       .filter((def) => def.growthDisplay)

@@ -15,7 +15,7 @@ import {
   type Tile,
   type WordSubmission,
 } from '../engine/types';
-import { collectionSize, loadCollection } from './collection';
+import { collectionEntry, collectionSize, loadCollection } from './collection';
 import { loadLifetime } from './lifetime';
 import {
   activeProfile,
@@ -376,7 +376,7 @@ function playedWord(
   if (!submission.isGibberish) {
     const collection = loadCollection();
     const unique = Object.keys(collection).length +
-      (collection[submission.text.toLowerCase()] ? 0 : 1);
+      (collectionEntry(collection, submission.text.toLowerCase()) ? 0 : 1);
     raise(progress, 'wordHunter', unique);
   }
   if (bossDiscarded > 0) {

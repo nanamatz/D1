@@ -102,7 +102,7 @@ export interface WordSubmission {
   settledScore: number;
   /** Effective played-word length after rule-changing Emoji Tiles. */
   scoringLength?: number;
-  /** Active boss accepted the play but debuffed it to 0. */
+  /** An active boss or Tag accepted the physical play but short-circuited scoring to 0. */
   debuffed?: boolean;
   /** Played Glass tiles permanently destroyed while this word scored. Kept on
    *  the submission so its tray tiles can remain visibly shattered. */

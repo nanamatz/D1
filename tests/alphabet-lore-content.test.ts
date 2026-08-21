@@ -172,6 +172,24 @@ describe('alphabet-lore bosses', () => {
     expect(end.judgment.match).toBeNull();
     expect(end.judgment.unison).toBeNull();
   });
+
+  it('Orphan Line removes the first raw submission before debuff filtering', () => {
+    const run = newRun('orphan-debuffed-first');
+    const orphan = {
+      ...startBlind(run, makeRng('orphan-debuffed-first'), {
+        kind: 'boss', bossId: 'orphanLine', target: 1_000_000,
+      }),
+      lipogramLetters: ['D' as const],
+    };
+    const first = play(orphan, run, 'dog');
+    const second = play(first.blind, run, 'cat');
+    const third = play(second.blind, run, 'run');
+    const end = endBlind(third.blind, run, lex);
+
+    expect(first.submission.debuffed).toBe(true);
+    expect(end.judgment.match?.pattern).toBe('simple');
+    expect(end.judgment.unison?.suit).toBe('standard');
+  });
 });
 
 describe('alphabet-lore Tags', () => {
@@ -204,7 +222,7 @@ describe('alphabet-lore Tags', () => {
       staged, skipped, lex, hand.map((tile) => tile.id), makeRng('lipogram-play'),
     );
     expect(result.submission.debuffed).toBe(true);
-    expect(result.events).toContainEqual(expect.objectContaining({ kind: 'tag', tagId: 'lipogramTag' }));
+    expect(result.events).toEqual([{ kind: 'settle', chips: 0, mult: 0, total: 0 }]);
   });
 
   it('Alpha & Omega replays first/last settled scores, counting identical text once', () => {
@@ -222,6 +240,17 @@ describe('alphabet-lore Tags', () => {
     expect(endBlind(blind, run, lex).finalScore).toBe(60);
     const same = { ...blind, committedScore: 20, sequence: [word('cat', 10), word('cat', 10)] };
     expect(endBlind(same, run, lex).finalScore).toBe(30);
+
+    const filtered = {
+      ...blind,
+      sequence: [
+        { ...word('ant', 0), debuffed: true },
+        word('cat', 10),
+        word('dog', 20),
+        { ...word('run', 0), debuffed: true },
+      ],
+    };
+    expect(endBlind(filtered, run, lex).finalScore).toBe(60);
   });
 
   it('Pythagorean Y applies the chosen next-blind risk/reward path', () => {

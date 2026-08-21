@@ -44,13 +44,15 @@ Suit colors (word frames & badges): standard `#B9C4CB` · formal `#7E96F2` · sl
 
 ### Surface language (pixel-art / CRT)
 
-- **Pixel grid.** Author raster art at fixed pixel resolutions and render it with `image-rendering: pixelated`. The 1440×966 interface itself uses responsive viewport-fit zoom plus the Settings UI-scale slider; it is intentionally not quantized to integer steps, avoiding excessive letterboxing or an undersized board. Borders/shadows are 1–2 "big pixels" wide, not sub-pixel.
+- **Pixel grid.** Author raster art at fixed pixel resolutions and render it with `image-rendering: pixelated`. Every shell-transition canvas—Main Menu, New Run, Run, Collection, Options, Profile, and Laboratory—shares the `1440×988` outer board (`--board-max` / `--board-h`) and responsive viewport-fit zoom plus the Settings UI-scale slider. Screens use that common minimum-height canvas while their existing inner content widths remain constrained; short viewports fit-scale and long content scrolls normally. This prevents the outgoing/incoming slide from clipping against mismatched screen heights. The scale is intentionally not quantized to integer steps, avoiding excessive letterboxing or an undersized board. Borders/shadows are 1–2 "big pixels" wide, not sub-pixel. (changed 2026-08-20)
 - **Hard offset shadow** stays the signature surface cue but as blocky pixel shadow: a solid dark step down-right (no blur), e.g. a 4–5px hard offset that reads as a chunk, not a soft `box-shadow`. Buttons depress on press (translate + shadow collapse).
 - Radius: panels and controls prefer squared or 1-step chamfered corners. **Card objects are the exception (changed 2026-07-30):** Emoji Tiles, consumables, sale offers, and vouchers share one rounded silhouette. Pack art keeps square corners.
 - Panels get a light top-edge pixel highlight (`--panel-edge`) and a dark bottom-edge for the stamped/embossed look.
 - **Modal frame (changed 2026-08-01):** every modal panel uses the Collection frame: `3px` `--panel-edge` outer border, `3px` inset `--inset-edge`, `18px` radius, and a hard `7px` down-right shadow. Nested Collection views render only their inner Collection frame, never a duplicate outer frame. Coach-mark mascot speech bubbles keep their separate pixel-tail grammar.
 - **CRT post-effect** (global, toggleable in Settings, GDD/screens §2.11): scanlines + slight bloom + subtle barrel/vignette. Ship it as a full-screen overlay/shader pass so any screen inherits it. Must be **disable-able** (accessibility + the reduced-motion/low-end path), and scanline intensity should be a slider (the reference build exposed a "CRT" strength + "CRT bloom" toggle).
+- **WooDak hand cursor (changed 2026-08-20):** fine-pointer devices use an original 32×32 pixel hand belonging to the selected, unlocked WooDak skin. Each skin ships normal, hover, and pressed/active poses with a `(3,3)` fingertip hotspot; locked, invalid, or missing-art selections fall back to WooDak, while Piyak never participates. Every pose has a matching monochrome derivative used during `world-mono`, then its colour master appears after the first colour unlock. Letter tiles keep the mascot hover pose at rest and the active pose throughout press/drag instead of switching to an OS grab cursor. The selected six files decode before the first interactive screen; later changes keep the previous mascot hand visible until the replacement set is decoded, preventing keyword-fallback flashes. Text, help, non-letter dragging, crosshair, not-allowed, Windows forced-colors, and coarse/no-hover environments retain system cursor semantics.
 - Background: `--bg-desk` + vignette; noise/texture rendered at the pixel grid, not as a smooth gradient. The Main Menu adds a low-resolution phosphor grid and one slow composited scan beam beneath the global CRT overlay; reduced motion freezes the beam. Its logotype uses stepped diagonal hard-shadow extrusion plus a slight perspective pitch for a 3D pixel-art silhouette, floats through eight discrete vertical/tilt steps, and periodically punches the red exclamation mark through a short three-frame accent. These title animations are Main-Menu-only and stop under either reduced-motion path.
+- **SHOP marquee (changed 2026-08-20):** the existing sidebar badge footprint and hit box stay fixed, while the light treatment runs around all four outer edges rather than occupying a single bottom row. Reduced motion keeps the complete perimeter visible and freezes only its blink cycle.
 
 > **Migration note.** Existing components keep their semantic tokens (`--chips`, `--mult`, `--gold`, suit colors) while adopting the pixel/CRT surface. The earlier “layout stays” constraint is retired by the 2026-07-28 persistent-table rebuild.
 
@@ -62,8 +64,9 @@ play hands and ordinary pack choices sit lower; Fable and Ink packs use two tier
 (ten candidate tiles above, card choices below) with pack information and Skip at
 the bottom. Fable cards have no resting button: selection reveals Use, or Select for
 a blind-only card. The ten pouch candidates are interactive as soon as either pack
-opens, so either a revealed targeting card or a compatible targeting Fable already
-held on the consumable shelf can use the same selection. Overlays such as Fee
+opens, so either a revealed targeting card or a compatible Fable/Gambler already
+held on the consumable shelf can use the same active field. Direct target changes
+preview before commit; field-wide/random results reuse the shared vignette. Overlays such as Fee
 Settlement and Options are the exception: they centre
 on the physical viewport.
 
@@ -138,6 +141,13 @@ badge stack. Inside the effect plate, a separate centred muted row always shows
 the live value, including before the first trigger: `(현재 ×1 배수)` for
 multiplicative growth or `(현재 +0 칩)` for additive Chips growth. The numeric
 value uses the matching Mult/Chips highlight colour.
+When an Emoji Tile has a standalone current performance/value followed by a
+separate rule, decay, or condition explanation, the localized base value ends
+its own line and the explanation starts on the next line (for example Drying
+Ink: `+15 Mult` then its vowel-decay rule). Copy whose value and condition form
+one inseparable rule stays inline. This explicit locale newline is shared by the
+Shop, owned shelf, opened packs, and Collection; the separate live-value row is
+unchanged. (changed 2026-08-20)
 Pouch Tag uses the same row for its conditional live payout, formatted as
 `(현재 +N 칩)` from the current remaining pouch count. Active/prepared blinds
 read `blind.bag`; the Shop reads the complete permanent `run.bag`.
@@ -165,6 +175,9 @@ Violet, Rainbow, and White edition names likewise use their edition colour in
 the copy and add that edition's canonical effect card; property/object names
 containing the same word do not count. *(Changed 2026-08-01: referenced editions
 join the count-aware supplemental-tooltip packing introduced by feedback3.)*
+Edition-granting consumable descriptions name their possible editions but hide
+the individual outcome weights; this does not alter internal seeded weights or
+a separate activation chance such as `1 in 4`. (changed 2026-08-20)
 *(Changed 2026-07-31: feedback3 compacted
 multi-definition stacks while preserving every explanation.)*
 The shared tooltip frame follows the reference as a scalable image-like panel:
@@ -277,6 +290,11 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
    Repeat independently after every sentence-bonus hook. The beat belongs to the
    score-event log and `settleDurationMs()`; never hide the transform or guess
    its duration. Reduced motion keeps the labeled stamp and snaps the values.
+   A debuffed submission is the explicit short-circuit: after pure word-rule
+   lookup it shows only a 0-point settle. It has no POS/Word Hand label or
+   tile/Emoji/global contribution beats and is removed before sentence-pattern
+   and Unison presentation, while remaining visible as a disabled tray play.
+   Normal eligible words on either side join for judgment. (changed 2026-08-20)
 2. **Pattern update**: after settle, the current-pattern symbol and name re-evaluate with a soft flip. Projected score updates internally; if it reaches the target, the score boxes ignite to signal the imminent **auto-settle** (a status cue, not a button — GDD §7.2).
 3. **Tile idle wobble**: each hand tile rotates ±1.2° on its own slow sine (staggered delays) — the "alive" feel. Fresh tiles fly from the live pouch position through `useFlip`; the visible origin is clamped one tile inside the work panel so a tile can never flash as a clipped fragment at the right/bottom edge. The hand row has no separate entrance translation. Wobble is suspended during the flight and starts from the flight's matching −1.2° landing angle, so entry never hands off through a visible extra hop. **Jokers & consumables share this wobble family (feature-02 D-4)**; the firing joker is excluded so its settle wiggle wins.
 4. **Card motion (changed 2026-07-30):** vouchers, packs, and every Fable, Constellation, and Gambler card idle with a slow 3px float plus ±0.45° sway. Pointer movement pauses the idle loop, lifts and scales the card, tilts it in 3D toward the cursor, and moves a radial sheen with the pointer; leaving eases flat and resumes the idle phase. Keyboard focus straightens, lifts, and adds a gold outline. Generic select = rise 10px + gold ring; shop-offer select raises the complete product/price/action layer by 59px (15px base + 44px action height). Collection pack entries keep the grid image-only—no persistent pack-type, grade, or coming-soon label—but restore the shared type/description/grade tooltip on hover or keyboard focus.
@@ -321,7 +339,7 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
     - **Click stability (feedback2, 2026-07-30):** a click or a drag released into the tile's original insertion slot is a complete no-op for hand order and must not switch an active auto-sort to manual. Only a drop that actually changes the displayed order enables manual ordering; that displayed order becomes the persisted hand order.
     - Reduced motion: keep instant, un-tweened positioning; drop tilt, overshoot, and proximity response.
 
-Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle disable wobble/shake, shared card idle, cursor tilt, and sheen (including joker/consumable idle) and reduce settle to fades · keyboard focus visible on tiles, cards, and buttons (gold outline) · every enabled button enlarges on pointer hover and presses down while held without replacing its component transform · all color-coded info (suits, chips/mult) doubled with a text label — never color alone. Every native scroll surface uses the shared pixel-pencil scrollbar (graphite, exposed wood, yellow barrel, ferrule, eraser), and uses `overflow: auto` so it appears only when content genuinely exceeds its surface; decorative or transient overflow is clipped instead. Sentence-pattern levels use yellow through 3, orange through 5, green through 8, blue through 12, purple through 16, then red; the same band colors the Constellation level-up reveal. Pattern rows reserve a fixed-width level field plus a 12px gap before the zodiac mark so level digit count never shifts the symbol/name column.
+Quality floor: `prefers-reduced-motion` and the in-game reduced-motion toggle disable wobble/shake, shared card idle, cursor tilt, and sheen (including joker/consumable idle) and reduce settle to fades · keyboard focus visible on tiles, cards, and buttons (gold outline) · every enabled button enlarges on pointer hover and presses down while held without replacing its component transform · all color-coded info (suits, chips/mult) doubled with a text label — never color alone. The mascot-hand cursor is presentation only: native semantic cursors and keyword fallbacks remain available, forced-colors uses system cursors, and touch/coarse-pointer devices do not load a custom cursor state. Every native scroll surface uses the shared pixel-pencil scrollbar (graphite, exposed wood, yellow barrel, ferrule, eraser), and uses `overflow: auto` so it appears only when content genuinely exceeds its surface; decorative or transient overflow is clipped instead. Sentence-pattern levels use yellow through 3, orange through 5, green through 8, blue through 12, purple through 16, then red; the same band colors the Constellation level-up reveal. Pattern rows reserve a fixed-width level field plus a 12px gap before the zodiac mark so level digit count never shifts the symbol/name column.
 
 **Other feature-02 D visuals.** *D-1 joker reorder:* the owned-joker shelf is drag-reorderable and **order = hook execution order** (GDD §11 intro). *D-5 tomato score icon:* the icon beside score numbers (blind-badge target, round score) is a **pixel tomato** (`src/ui/assets/tomato.png`, from `docs/T_Tomato.png`; tomatoes thrown at bad manuscripts) — the term "Chips" and the blue chips box are unchanged. The tomato is greyscaled until **RED** unlocks (it belongs to the red group). *D-6 retired 2026-07-30:* the main `.frame` is transparent; Draft/Revision/Deadline no longer paint per-stage backdrops. *D-7 (changed 2026-08-12):* Collection uses a centred framed modal. The left column is Emoji Tiles → Pouches → paired Vouchers/Tags → the inset Fable/Constellation/Gambler family panel; the right column is Enhanced Tiles → Editions → Card Packs → Palette → Mascots → Words → Blinds. Tags show all 30 effect-specific icons in a two-page 5×3 gallery with the same tooltips and motion used on Blind Select. Words and Blinds use the 84px category height; ordinary standalone categories and all three consumable buttons use the 75px Voucher height. Emoji Tiles expands to 164px with the space released by the consumable panel, keeping both columns equal in total height. Enhanced Tiles combines the former Materials and Fonts pages as two views behind the shared `< · page · >` pager, not tabs. Records no longer has a Collection category. All three consumable families keep high-detail, path-only, 32-color SVG authoring masters normalized without cropping to the Fable standard: a `500×700` 5:7 output canvas with a `250×350` logical pixel grid. Runtime surfaces use their pixel-identical `500×700` PNG derivatives to avoid parsing more than one million SVG path commands; `scripts/check-card-assets.mjs` verifies both forms. Card Packs follow the same master/runtime split at `244×400`, reducing their shipped runtime art bytes by about 69% while retaining editable path-only masters. They share the same framed SVG component in the 5-column, 10-per-page Collection galleries and in shop, pack, and held-card surfaces. Fable retains its original English title plates, while localized names remain available in tooltips and accessible labels. All fourteen Gambler effects, Ink Pack acquisition, and runtime tooltips ship. Detail modals have no shared fixed minimum height and instead size to their actual grid rows, except Card Packs, whose four eight-card pages (Tile, combined Charm + Ink, Fable, Constellation) share the same two-row gallery height. The orange Back bar spans the modal footer; mobile collapses the menu to one column. Where noted, icon/background art currently ships as an emoji/CSS placeholder pending the pixel-art pass.
 
@@ -333,8 +351,13 @@ searchable word gallery from the live Standard ×1 / Formal ×10 / Slang ×5 /
 Vulgar ×7 register reference. The explanatory formula paragraph above the
 register cards is removed; the cards retain multiplier, role, and discovery
 count. The
-dictionary total and unfiltered page total remain `???` until full discovery;
-filtered result counts stay literal. Every Collection pager is circular in both
+dictionary total and unfiltered page total remain `???` until full discovery.
+Undiscovered word slots render as neutral `???` with no spelling, register style,
+tooltip, or accessibility metadata; only successfully submitted valid words reveal
+their name and original register. Search and register filters use discovered words
+only, so filtered result counts stay literal without exposing hidden entries.
+Reveal All presents every entry as discovered but creates no synthetic play records.
+Every Collection pager is circular in both
 directions, including the Starting-Pouch carousel; New Run's Pouch and Record
 selectors use the same first↔last wrapping behavior.
 

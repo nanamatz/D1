@@ -29,6 +29,7 @@ import '@fontsource/noto-sans-kr/latin-700.css';
 import './ui/styles/tokens.css';
 import './ui/styles/play.css';
 import './ui/styles/screens.css';
+import './ui/styles/cursor.css';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('#root not found');

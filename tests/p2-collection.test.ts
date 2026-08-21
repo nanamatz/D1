@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  collectionEntry,
   collectionHighlights,
   collectionStatsPage,
   collectionSize,
@@ -53,6 +54,18 @@ describe('P2-2 — word collection tracking', () => {
       plays: 3,
       bestScore: 15,
     });
+  });
+
+  it('treats Object prototype names as ordinary discoverable words', () => {
+    expect(collectionEntry(loadCollection(), 'constructor')).toBeUndefined();
+    expect(recordWord('constructor', 1000)).toBe(true);
+    expect(collectionEntry(loadCollection(), 'constructor')).toEqual({
+      firstPlayedAt: 1000,
+      plays: 1,
+      bestScore: 45,
+    });
+    expect(recordWord('constructor', 2000)).toBe(false);
+    expect(collectionEntry(loadCollection(), 'constructor')?.plays).toBe(2);
   });
 
   it('accumulates distinct words across a session', () => {

@@ -129,7 +129,7 @@ function SubmittedWord({
     >
       {suitTags}
       {tiles}
-      <span className="pos">{posLabel(sub, lexicon, t)}</span>
+      {!sub.debuffed && <span className="pos">{posLabel(sub, lexicon, t)}</span>}
       {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
       {settling && <WordStamp />}
     </div>

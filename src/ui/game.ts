@@ -3,12 +3,12 @@
  * they contain NO game rules — every decision routes back through the engine
  * (scoreWord/etc). The React hook (useGame) owns the state.
  */
-import { baseScore, scoreWord, letterString } from '../engine/scoring';
+import { letterString } from '../engine/scoring';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
-import { tagDebuffsSubmission } from '../engine/skipRewards';
-import { isVowel } from '../engine/types';
+import { isSubmissionDebuffed, prepareWordSubmission } from '../engine/loop';
+import { isVowel, submissionLength } from '../engine/types';
 import { fontDescKey } from './descriptions';
 import type { Lexicon } from '../engine/lexicon';
 import type {
@@ -48,7 +48,7 @@ export interface StagePreview {
   letterHand: { id: LetterHandId; level: number; chips: number; mult: number } | null;
   /** true if the active boss forbids this submission */
   blocked: boolean;
-  /** true if the active boss accepts this word but reduces its score to 0 */
+  /** true if an active boss or Tag accepts this word but short-circuits scoring to 0 */
   debuffed: boolean;
 }
 
@@ -65,25 +65,35 @@ export function stagePreview(
 ): StagePreview | null {
   const tiles = tilesByIds(blind.hand, selectedIds);
   if (tiles.length === 0) return null;
-  const base = baseScore(tiles, lexicon);
-  const hypothetical: WordSubmission = scoreWord(tiles, lexicon);
+  const previewRun: RunState = {
+    ...run,
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
+  const { base, submission: hypothetical } =
+    prepareWordSubmission(tiles, lexicon, previewRun, blind);
   const blocked = blind.bossId
-    ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(hypothetical, { run, blind, lexicon }) ?? false)
+    ? (BOSS_REGISTRY.get(blind.bossId)?.blocks?.(
+        hypothetical,
+        { run: previewRun, blind, lexicon },
+      ) ?? false)
     : false;
-  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
-  const debuffed =
-    tagDebuffsSubmission(blind, hypothetical) ||
-    (boss?.debuffs?.(hypothetical, { run, blind, lexicon }, blind.sequence) ?? false) ||
-    (boss?.voids?.(hypothetical, blind.sequence) ?? false);
+  const debuffed = isSubmissionDebuffed(hypothetical, previewRun, blind, lexicon);
   const letters = letterString(tiles);
-  const letterHand = evaluateLetterHand(letters, base.isGibberish, letters.length, run.letterHandLevels);
+  const letterHand = debuffed
+    ? null
+    : evaluateLetterHand(
+        letters,
+        hypothetical.isGibberish,
+        submissionLength(hypothetical),
+        run.letterHandLevels,
+      );
   return {
-    text: base.text,
-    isGibberish: base.isGibberish,
-    suit: base.suit,
+    text: hypothetical.text,
+    isGibberish: hypothetical.isGibberish,
+    suit: hypothetical.suit,
     chips: base.chips,
     suitMult: base.mult,
-    pos: base.isGibberish ? null : posLabel(hypothetical, lexicon, t),
+    pos: hypothetical.isGibberish || debuffed ? null : posLabel(hypothetical, lexicon, t),
     letterHand: letterHand
       ? { id: letterHand.id, level: letterHand.level, chips: letterHand.chips, mult: letterHand.mult }
       : null,

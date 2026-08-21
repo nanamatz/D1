@@ -61,6 +61,8 @@ describe('persistent Balatro-style run table', () => {
     expect(sidebar).toContain('blindselect-prompt');
     expect(playCss).toMatch(/\.shop-phase-panel\s*\{[^}]*overflow:\s*visible/s);
     expect(playCss).toContain('@keyframes shop-sign-idle');
+    expect(playCss).toMatch(/\.shop-sign-lights\s*\{[^}]*inset:\s*8px[^}]*border:\s*5px dotted/s);
+    expect(playCss).toMatch(/\.shop-sign-lights i\s*\{[^}]*display:\s*none/s);
   });
 
   it('caps UI scale to a fixed-height board that cannot scroll the viewport', () => {
@@ -68,6 +70,9 @@ describe('persistent Balatro-style run table', () => {
     expect(tokensCss).toContain('--fit-safe-y: 4px');
     expect(playCss).toMatch(/\.frame\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
     expect(playCss).toMatch(/\.persistent-run \.main\s*\{[^}]*min-height:\s*calc\(var\(--board-h\)/s);
+    expect(screenCss).toMatch(/\.screen\s*\{[^}]*max-width:\s*var\(--board-max\)[^}]*min-height:\s*var\(--board-h\)/s);
+    expect(screenCss).toMatch(/\.screen-stack\s*\{[^}]*max-width:\s*var\(--board-max\)[^}]*min-height:\s*var\(--board-h\)/s);
+    expect(screenCss).toMatch(/\.screen-pane\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
     expect(screenCss).toContain('zoom: min(var(--ui-scale, 1), var(--fit-scale, 1))');
   });
 

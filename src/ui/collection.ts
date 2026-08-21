@@ -25,6 +25,14 @@ export type Collection = Record<string, WordCollectionEntry>;
 
 export const WORD_STATS_PAGE_SIZE = 50;
 
+/** Own-entry lookup avoids treating Object prototype names as discoveries. */
+export function collectionEntry(
+  collection: Collection,
+  word: string,
+): WordCollectionEntry | undefined {
+  return Object.hasOwn(collection, word) ? collection[word] : undefined;
+}
+
 export function sortedCollectionStats(collection: Collection): [string, WordCollectionEntry][] {
   return Object.entries(collection)
     .sort((a, b) => b[1].plays - a[1].plays || a[0].localeCompare(b[0]));
@@ -62,7 +70,7 @@ export function recordWord(word: string, now: number = Date.now()): boolean {
   if (!w) return false;
   const score = wordLetterChips(w);
   const collection = loadCollection();
-  const previous = collection[w];
+  const previous = collectionEntry(collection, w);
   collection[w] = previous
     ? {
         ...previous,

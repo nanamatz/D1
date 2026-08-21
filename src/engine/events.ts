@@ -55,11 +55,13 @@ export interface EngineEvents {
     triggers: BlindSelectedJokerTrigger[];
   };
 
-  /** mutable spelling projection before lexicon lookup; scoring still uses every submitted tile */
+  /** Pure mutable spelling projection before lexicon lookup; scoring still uses every
+   * submitted tile. The hook may mutate only spellingTiles, never run/blind/self state. */
   wordPrepare: { run: RunState; blind: BlindState; tiles: readonly Tile[]; spellingTiles: Tile[] };
 
   /** Rule-changing pass before shelf-ordered scoring hooks. It may rewrite
-   * submission.suit/scoringSuits; gibberish still keeps suit/POS null. */
+   * only ctx rule fields, never run/blind/self state; gibberish still keeps
+   * suit/POS null. This pass is shared by preview and submission. */
   wordRules: { run: RunState; blind: BlindState; ctx: WordScoringContext };
 
   /** a word's chips/mult are being computed — THE main scoring hook.
@@ -78,7 +80,7 @@ export interface EngineEvents {
     lookup?: (word: string) => LexiconEntry | null;
   };
 
-  /** boss legality/debuff checks have resolved, but a debuff has not zeroed the word yet */
+  /** An eligible word passed the debuff check and finished ordinary scoring. */
   wordChecked: {
     run: RunState;
     blind: BlindState;

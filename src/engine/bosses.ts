@@ -315,13 +315,14 @@ export const FINISHER_BOSS_IDS: readonly string[] = FINISHERS.map((boss) => boss
 export const ALL_BOSS_IDS: readonly string[] = [...CORE_BOSS_IDS, ...FINISHER_BOSS_IDS];
 export type BossPool = 'core' | 'finisher';
 
-/** Apply a boss's sentence-only transform without altering committed words. */
+/** Apply the boss transform to raw play history, then remove debuffed plays. */
 export function sentenceSequenceForBlind(
   blind: BlindState,
   sequence: readonly WordSubmission[] = blind.sequence,
 ): WordSubmission[] {
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
-  return boss?.sentenceSequence ? boss.sentenceSequence(sequence) : sequence.slice();
+  const transformed = boss?.sentenceSequence ? boss.sentenceSequence(sequence) : sequence.slice();
+  return transformed.filter((submission) => !submission.debuffed);
 }
 
 export const bossPoolForAnte = (ante: number): BossPool =>

@@ -1,9 +1,12 @@
 import type { FableId } from '../engine/fables';
+import type { GamblerId } from '../engine/gamblers';
 
 export interface HeldPackFableEvent {
-  id: FableId;
+  id: FableId | GamblerId;
   tileIds: string[];
+  rngKey: string;
   resolve: () => void;
+  cancel: () => void;
 }
 
 type Listener = (event: HeldPackFableEvent) => void;

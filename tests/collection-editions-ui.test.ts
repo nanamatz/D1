@@ -125,4 +125,29 @@ describe('Edition Collection page', () => {
     expect(component).toContain('const allWordsComplete = isWordCollectionComplete(lexicon);');
     expect(component).toContain("hideTotal={!allWordsComplete && !query.trim() && suit === 'all'}");
   });
+
+  it('masks undiscovered words and excludes them from search and register filters', () => {
+    const component = readFileSync(
+      new URL('../src/ui/components/Collection.tsx', import.meta.url),
+      'utf8',
+    );
+    const css = readFileSync(
+      new URL('../src/ui/styles/screens.css', import.meta.url),
+      'utf8',
+    );
+    const wordsView = component.slice(
+      component.indexOf('function WordsView('),
+      component.indexOf('// ---------- Jokers ----------'),
+    );
+
+    expect(wordsView).toContain('return all.filter((e) => e.found');
+    expect(wordsView).toContain('found: allWordsUnlocked || collectionEntry(collected, w) !== undefined');
+    expect(wordsView).not.toContain('collected[w] !== undefined');
+    expect(wordsView).toContain("e.found ? e.suit : ''");
+    expect(wordsView).toContain("e.found ? e.w : '???'");
+    expect(wordsView).not.toContain('aria-label={e.w}');
+    expect(wordsView).not.toContain('title={e.w}');
+    expect(wordsView).not.toContain('data-word={e.w}');
+    expect(css).toMatch(/\.word-chip\.locked\s*\{[^}]*border-left-color:\s*currentColor;/s);
+  });
 });

@@ -15,7 +15,7 @@ import { BALANCE } from './balance';
 import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
-import { baseScore, scoreWord, letterString, wordLengthMult } from './scoring';
+import { baseScore, letterString, wordLengthMult, type BaseScore } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { applyEdition } from './editions';
 import { finalizeScore, judgeSentence, sentenceTotal } from './patterns';
@@ -392,6 +392,123 @@ export interface SubmitResult {
   discardedLetterCounts: Partial<Record<Letter, number>>;
 }
 
+/** Resolve allowed-but-zero plays before any scoring hook or score RNG runs. */
+export function isSubmissionDebuffed(
+  submission: WordSubmission,
+  run: RunState,
+  blind: BlindState,
+  lexicon: Lexicon,
+  prior: readonly WordSubmission[] = blind.sequence,
+): boolean {
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  return tagDebuffsSubmission(blind, submission) ||
+    (boss?.debuffs?.(submission, { run, blind, lexicon }, prior) ?? false) ||
+    (boss?.voids?.(submission, prior) ?? false);
+}
+
+const pushGrowthEvents = (
+  target: ScoreEvent[],
+  growth: readonly JokerGrowthTrigger[],
+  tileId?: string,
+) => {
+  for (const trigger of growth) {
+    target.push({
+      kind: 'joker',
+      jokerId: trigger.jokerId,
+      chipsDelta: 0,
+      multDelta: 0,
+      growthKind: trigger.kind,
+      growthDelta: trigger.delta,
+      ...(tileId ? { tileId } : {}),
+    });
+  }
+};
+
+export interface PreparedWordSubmission {
+  base: BaseScore;
+  submission: WordSubmission;
+  ctx: WordScoringContext;
+  ruleEvents: Extract<ScoreEvent, { kind: 'joker' }>[];
+}
+
+/** Run only the pure spelling/rule pass shared by preview, legality, and scoring. */
+export function prepareWordSubmission(
+  tiles: readonly Tile[],
+  lexicon: Lexicon,
+  run: RunState,
+  blind: BlindState,
+): PreparedWordSubmission {
+  const ruleRun: RunState = {
+    ...run,
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
+  const ruleBlind = { ...blind };
+  const ruleEvents: Extract<ScoreEvent, { kind: 'joker' }>[] = [];
+  const prepared = { run: ruleRun, blind: ruleBlind, tiles, spellingTiles: tiles.slice() };
+  for (const joker of ruleRun.jokers) {
+    const before = prepared.spellingTiles.map((tile) => tile.id).join('\0');
+    const growth = defaultJokerBus.emit('wordPrepare', prepared, [joker]);
+    if (prepared.spellingTiles.map((tile) => tile.id).join('\0') !== before) {
+      ruleEvents.push({
+        kind: 'joker', jokerId: joker.defId, chipsDelta: 0, multDelta: 0,
+      });
+    }
+    pushGrowthEvents(ruleEvents, growth);
+  }
+  const base = baseScore(prepared.spellingTiles, lexicon);
+  const submission: WordSubmission = {
+    tiles: tiles.slice(),
+    text: base.text,
+    isGibberish: base.isGibberish,
+    suit: base.suit,
+    posUsed: null,
+    settledScore: 0,
+    scoringLength: tiles.length,
+  };
+  const ctx: WordScoringContext = {
+    submission,
+    spellingTiles: prepared.spellingTiles,
+    chips: 0,
+    mult: base.mult,
+    baseSuit: base.suit,
+    goldDelta: 0,
+    posTags: base.isGibberish ? [] : (lexicon.lookup(base.text)?.pos ?? []),
+    scoringVowels: new Set(VOWELS),
+    tileRetriggers: new Map(),
+    scoringSuits: new Set(base.suit ? [base.suit] : []),
+    scoreBonus: 0,
+  };
+  for (const joker of ruleRun.jokers) {
+    const before = JSON.stringify([
+      ctx.submission.suit,
+      ctx.submission.scoringLength,
+      [...(ctx.scoringVowels ?? [])],
+      [...(ctx.scoringSuits ?? [])],
+      [...(ctx.tileRetriggers ?? [])],
+    ]);
+    const growth = defaultJokerBus.emit(
+      'wordRules',
+      { run: ruleRun, blind: ruleBlind, ctx },
+      [joker],
+    );
+    const after = JSON.stringify([
+      ctx.submission.suit,
+      ctx.submission.scoringLength,
+      [...(ctx.scoringVowels ?? [])],
+      [...(ctx.scoringSuits ?? [])],
+      [...(ctx.tileRetriggers ?? [])],
+    ]);
+    if (after !== before) {
+      ruleEvents.push({
+        kind: 'joker', jokerId: joker.defId, chipsDelta: 0, multDelta: 0,
+      });
+    }
+    pushGrowthEvents(ruleEvents, growth);
+  }
+  submission.effectiveSuits = [...(ctx.scoringSuits ?? [])];
+  return { base, submission, ctx, ruleEvents };
+}
+
 /**
  * Layer 1 & 2: accumulate chips per tile, apply the suit mult, let jokers mutate
  * (wordScoring), settle chips × mult — recording an ordered ScoreEvent log along
@@ -400,7 +517,7 @@ export interface SubmitResult {
  * identical to the batch emit.
  */
 function scoreSubmission(
-  tiles: readonly Tile[],
+  prepared: PreparedWordSubmission,
   lexicon: Lexicon,
   run: RunState,
   blind: BlindState,
@@ -414,23 +531,6 @@ function scoreSubmission(
   grownWoodTileIds: string[];
   createdTiles: Tile[];
 } {
-  const pushGrowthEvents = (
-    target: ScoreEvent[],
-    growth: readonly JokerGrowthTrigger[],
-    tileId?: string,
-  ) => {
-    for (const trigger of growth) {
-      target.push({
-        kind: 'joker',
-        jokerId: trigger.jokerId,
-        chipsDelta: 0,
-        multDelta: 0,
-        growthKind: trigger.kind,
-        growthDelta: trigger.delta,
-        ...(tileId ? { tileId } : {}),
-      });
-    }
-  };
   const jokerScoreFactors = (
     jokerId: string,
     beforeChips: number,
@@ -448,64 +548,21 @@ function scoreSubmission(
         : {}),
     };
   };
-  const ruleEvents: Extract<ScoreEvent, { kind: 'joker' }>[] = [];
   const events: ScoreEvent[] = [];
-  const prepared = { run, blind, tiles, spellingTiles: tiles.slice() };
-  for (const joker of run.jokers) {
-    const before = prepared.spellingTiles.map((tile) => tile.id).join('\0');
-    const growth = defaultJokerBus.emit('wordPrepare', prepared, [joker]);
-    if (prepared.spellingTiles.map((tile) => tile.id).join('\0') !== before) {
-      ruleEvents.push({
-        kind: 'joker', jokerId: joker.defId, chipsDelta: 0, multDelta: 0,
-      });
-    }
-    pushGrowthEvents(ruleEvents, growth);
-  }
-  const b = baseScore(prepared.spellingTiles, lexicon);
-  const submission: WordSubmission = {
-    tiles: tiles.slice(),
-    text: b.text,
-    isGibberish: b.isGibberish,
-    suit: b.suit,
-    posUsed: null,
-    settledScore: 0,
-    scoringLength: tiles.length,
-  };
-  const ctx: WordScoringContext = {
-    submission,
-    spellingTiles: prepared.spellingTiles,
-    chips: 0,
-    mult: b.mult,
-    baseSuit: b.suit,
-    goldDelta: 0,
-    posTags: b.isGibberish ? [] : (lexicon.lookup(b.text)?.pos ?? []),
-    scoringVowels: new Set(VOWELS),
-    tileRetriggers: new Map(),
-    scoringSuits: new Set(b.suit ? [b.suit] : []),
-    scoreBonus: 0,
-  };
-  for (const joker of run.jokers) {
-    const before = JSON.stringify([
-      ctx.submission.suit,
-      ctx.submission.scoringLength,
-      [...(ctx.scoringVowels ?? [])],
-      [...(ctx.scoringSuits ?? [])],
-      [...(ctx.tileRetriggers ?? [])],
-    ]);
-    const growth = defaultJokerBus.emit('wordRules', { run, blind, ctx }, [joker]);
-    const after = JSON.stringify([
-      ctx.submission.suit,
-      ctx.submission.scoringLength,
-      [...(ctx.scoringVowels ?? [])],
-      [...(ctx.scoringSuits ?? [])],
-      [...(ctx.tileRetriggers ?? [])],
-    ]);
-    if (after !== before) {
-      ruleEvents.push({
-        kind: 'joker', jokerId: joker.defId, chipsDelta: 0, multDelta: 0,
-      });
-    }
-    pushGrowthEvents(ruleEvents, growth);
+  const { base: b, submission, ctx, ruleEvents } = prepared;
+  const tiles = submission.tiles;
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  if (isSubmissionDebuffed(submission, run, blind, lexicon)) {
+    submission.debuffed = true;
+    submission.posUsed = null;
+    return {
+      submission,
+      events: [{ kind: 'settle', chips: 0, mult: 0, total: 0 }],
+      materialGold: 0,
+      destroyedTileIds: [],
+      grownWoodTileIds: [],
+      createdTiles: [],
+    };
   }
   for (const tile of tiles) {
     const repeats = (blind.scarletLetters ?? []).filter((letter) => letter === tile.letter).length;
@@ -515,7 +572,6 @@ function scoreSubmission(
       ctx.tileRetriggers?.set(tile.id, sources);
     }
   }
-  submission.effectiveSuits = [...(ctx.scoringSuits ?? [])];
   let materialGold = 0;
   const destroyedTileIds: string[] = [];
   const grownWoodTileIds: string[] = [];
@@ -842,7 +898,6 @@ function scoreSubmission(
   }
 
   // Boss word-scoring effects run after jokers (GDD §8.3).
-  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   if (boss?.wordScoring) {
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
@@ -865,16 +920,11 @@ function scoreSubmission(
     }
   }
 
-  const lipogramDebuffed = tagDebuffsSubmission(blind, submission);
-  const debuffed =
-    lipogramDebuffed ||
-    (boss?.debuffs?.(submission, { run, blind, lexicon }, blind.sequence) ?? false) ||
-    (boss?.voids?.(submission, blind.sequence) ?? false);
   for (const joker of run.jokers) {
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
     const beforeGold = ctx.goldDelta ?? 0;
-    const growth = defaultJokerBus.emit('wordChecked', { run, blind, ctx, debuffed }, [joker]);
+    const growth = defaultJokerBus.emit('wordChecked', { run, blind, ctx, debuffed: false }, [joker]);
     const chipsDelta = ctx.chips - beforeChips;
     const multDelta = ctx.mult - beforeMult;
     const goldDelta = (ctx.goldDelta ?? 0) - beforeGold;
@@ -898,23 +948,6 @@ function scoreSubmission(
     ctx.chips = balanced.chips;
     ctx.mult = balanced.mult;
     events.push({ kind: 'pouch', pouchId: run.pouchId, chipsDelta, multDelta });
-  }
-
-  if (debuffed) {
-    const beforeChips = ctx.chips;
-    const beforeMult = ctx.mult;
-    ctx.chips = 0;
-    ctx.mult = 0;
-    submission.debuffed = true;
-    if (beforeChips !== 0 || beforeMult !== 0) {
-      events.push(lipogramDebuffed
-        ? {
-            kind: 'tag', tagId: 'lipogramTag', chipsDelta: -beforeChips, multDelta: -beforeMult,
-          }
-        : {
-            kind: 'boss', bossId: blind.bossId!, chipsDelta: -beforeChips, multDelta: -beforeMult,
-          });
-    }
   }
 
   for (const event of ruleEvents) {
@@ -987,8 +1020,13 @@ function scoreSentence(
   breakdown: SentenceBonusBreakdown;
 } {
   const base = finalizeScore(committed, judgment, run.patternLevels);
+  const scoringSequence = sentenceSequenceForBlind(blind, sequence);
+  // Preserve the legacy empty-sequence Broken Sentence case; only an actual
+  // all-debuffed play history suppresses sentence hooks.
+  const hasEligibleSubmission = sequence.length === 0 ||
+    sequence.some((submission) => !submission.debuffed);
   const ctx: SentenceScoringContext = {
-    sequence: sentenceSequenceForBlind(blind, sequence),
+    sequence: scoringSequence,
     match: judgment.match,
     unison: judgment.unison,
     totalBefore: committed,
@@ -996,22 +1034,26 @@ function scoreSentence(
     sentenceMult: base.sentenceMult,
     scoreBonus: (() => {
       const replays = blind.alphaOmegaReplays ?? 0;
-      const first = blind.sequence[0];
-      const last = blind.sequence[blind.sequence.length - 1];
+      const first = scoringSequence[0];
+      const last = scoringSequence[scoringSequence.length - 1];
       if (replays <= 0 || !first || !last) return 0;
       const lastScore = first.text === last.text ? 0 : last.settledScore;
       return (first.settledScore + lastScore) * replays;
     })(),
     jokerTriggers: [],
   };
-  defaultJokerBus.emit(
-    'sentenceScoring',
-    { run, blind, ctx, lookup: (word) => lexicon.lookup(word) },
-    run.jokers,
-  );
+  if (hasEligibleSubmission) {
+    defaultJokerBus.emit(
+      'sentenceScoring',
+      { run, blind, ctx, lookup: (word) => lexicon.lookup(word) },
+      run.jokers,
+    );
+  }
   ctx.sentenceMult *= constellationPassiveFactor(run, ctx.match?.pattern ?? null);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
-  if (blind.bossId) BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
+  if (hasEligibleSubmission && blind.bossId) {
+    BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
+  }
   const effectChips = ctx.sentenceChips - base.sentenceChips;
   const effectMult = ctx.sentenceMult / base.sentenceMult;
   const effectScore = ctx.scoreBonus ?? 0;
@@ -1076,17 +1118,18 @@ export function submitWord(
   }
   const used = takeFromHand(blind.hand, tileIds); // validates membership, keeps order
 
-  // Boss legality (Stereotype Plate) + economy drains.
-  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
-  const bossSubmission = boss?.blocks ? scoreWord(used, lexicon) : null;
-  if (bossSubmission && boss?.blocks?.(bossSubmission, { run, blind, lexicon })) {
-    throw new Error('boss: this word cannot be submitted');
-  }
-
   const scoringRun: RunState = {
     ...run,
     jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
   };
+  const prepared = prepareWordSubmission(used, lexicon, scoringRun, blind);
+
+  // Boss legality (Stereotype Plate) uses the same prepared word as scoring.
+  const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  if (boss?.blocks?.(prepared.submission, { run: scoringRun, blind, lexicon })) {
+    throw new Error('boss: this word cannot be submitted');
+  }
+
   const {
     submission,
     events,
@@ -1095,7 +1138,7 @@ export function submitWord(
     grownWoodTileIds,
     createdTiles,
   } = scoreSubmission(
-    used,
+    prepared,
     lexicon,
     scoringRun,
     blind,
@@ -1125,17 +1168,19 @@ export function submitWord(
     projectedScore: 0,
     phasesUsed: blind.phasesUsed + 1,
   };
-  defaultJokerBus.emit(
-    'tilesPlayed',
-    { run: scoringRun, blind: afterBlind, tiles: used },
-    scoringRun.jokers,
-  );
-  if (createdTiles.length > 0) {
+  if (!submission.debuffed) {
     defaultJokerBus.emit(
-      'tilesCreated',
-      { run: scoringRun, count: createdTiles.length },
+      'tilesPlayed',
+      { run: scoringRun, blind: afterBlind, tiles: used },
       scoringRun.jokers,
     );
+    if (createdTiles.length > 0) {
+      defaultJokerBus.emit(
+        'tilesCreated',
+        { run: scoringRun, count: createdTiles.length },
+        scoringRun.jokers,
+      );
+    }
   }
 
   // Unopened Letter (미개봉 편지): after each play, discard up to N random hand tiles;
@@ -1154,12 +1199,14 @@ export function submitWord(
       bag: refill.bag,
       discardedThisBlind: [...afterBlind.discardedThisBlind, ...dumped],
     };
-    Object.assign(scoringRun, withDiscardedLetters(scoringRun, dumped));
-    defaultJokerBus.emit(
-      'tilesDiscarded',
-      { run: scoringRun, blind: afterBlind, tiles: dumped },
-      scoringRun.jokers,
-    );
+    if (!submission.debuffed) {
+      Object.assign(scoringRun, withDiscardedLetters(scoringRun, dumped));
+      defaultJokerBus.emit(
+        'tilesDiscarded',
+        { run: scoringRun, blind: afterBlind, tiles: dumped },
+        scoringRun.jokers,
+      );
+    }
   }
 
   // Finisher state rotates only after the current word has fully scored. Nokdo
@@ -1177,15 +1224,17 @@ export function submitWord(
   );
   const priorWords = afterBoss.run.playedWords ?? [];
   const playedWord = submission.text.toLowerCase();
-  const playedWords = submission.isGibberish || priorWords.includes(playedWord)
+  const playedWords = submission.debuffed || submission.isGibberish || priorWords.includes(playedWord)
     ? priorWords
     : [...priorWords, playedWord];
   const priorHands = afterBoss.run.playedLetterHands ?? [];
-  const playedHand = evaluateLetterHand(
-    letterString(submission.tiles),
-    submission.isGibberish,
-    submission.scoringLength,
-  )?.id;
+  const playedHand = submission.debuffed
+    ? undefined
+    : evaluateLetterHand(
+        letterString(submission.tiles),
+        submission.isGibberish,
+        submission.scoringLength,
+      )?.id;
   const playedLetterHands = !playedHand || priorHands.includes(playedHand)
     ? priorHands
     : [...priorHands, playedHand];
@@ -1201,15 +1250,17 @@ export function submitWord(
     lastLetterHand: playedHand ?? afterBoss.run.lastLetterHand ?? null,
     counters: {
       ...afterBoss.run.counters,
-      totalWords: afterBoss.run.counters.totalWords + 1,
+      totalWords: afterBoss.run.counters.totalWords + (submission.debuffed ? 0 : 1),
     },
   };
   afterBlind = afterBoss.blind;
-  defaultJokerBus.emit(
-    'wordScored',
-    { run: postBossRun, blind: afterBlind, index: afterBlind.sequence.length - 1 },
-    postBossRun.jokers,
-  );
+  if (!submission.debuffed) {
+    defaultJokerBus.emit(
+      'wordScored',
+      { run: postBossRun, blind: afterBlind, index: afterBlind.sequence.length - 1 },
+      postBossRun.jokers,
+    );
+  }
   const committedScore = afterBlind.committedScore;
   const sequence = afterBlind.sequence;
 

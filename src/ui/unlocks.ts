@@ -50,6 +50,7 @@ export const UNLOCKS: readonly UnlockDef[] = [
 
 const BY_WORD = new Map(UNLOCKS.map((u) => [u.word, u]));
 const KEY = 'wj.unlocks';
+export const PRESENTATION_CHANGED_EVENT = 'wj:presentation-changed';
 
 /** The set of ids the player has actually PLAYED (celebrated + recorded). */
 export function loadPlayed(slot: ProfileSlot = activeProfile()): Set<string> {
@@ -142,6 +143,9 @@ export function applyPresentation(): void {
     // so the art must too — one filter, driven by the same active set.
     const chroma = document.querySelector('#unlock-chroma feColorMatrix');
     if (chroma) chroma.setAttribute('values', chromaMatrix(active));
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(PRESENTATION_CHANGED_EVENT));
   }
   audio.setBusEnabled('sfx', active.has('SOUND'));
   audio.setBusEnabled('music', active.has('MUSIC'));

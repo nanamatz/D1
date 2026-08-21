@@ -80,9 +80,19 @@ describe('latest feedback UI regressions', () => {
   it('marks boss-debuffed staged tiles and submitted words without blocking Play', () => {
     const stage = source('src/ui/components/StagePanel.tsx');
     const tray = source('src/ui/components/SentenceTray.tsx');
+    const useGame = source('src/ui/useGame.ts');
     expect(stage).toContain('invalid={!!preview?.debuffed}');
     expect(stage).not.toContain('disabled={!g.canPlay || !!preview?.blocked || !!preview?.debuffed');
     expect(tray).toContain("'boss-debuffed'");
+    expect(tray).toContain('!sub.debuffed && <span className="pos">');
+    expect(source('src/ui/game.ts')).toContain('hypothetical.isGibberish || debuffed ? null');
+    expect(source('src/ui/game.ts')).toContain('const letterHand = debuffed');
+    expect(useGame).toContain('if (!submission.debuffed) {\n        recordEmojiUnlockEvent({');
+    expect(useGame).toContain('!submission.isGibberish && !submission.debuffed && (!best || wordScore > best.score)');
+    expect(useGame).toMatch(
+      /lastPlayed:\s*\{\s*text:\s*submission\.text,\s*isGibberish:\s*submission\.isGibberish,\s*score:\s*wordScore,/s,
+    );
+    expect(useGame).toContain('if (lp && !lp.isGibberish && recordWord(lp.text))');
     expect(play).toContain('.boss-invalid-tag');
     expect(play).toContain('.word.boss-debuffed');
   });

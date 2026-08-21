@@ -207,21 +207,16 @@
   animation: shop-sign-idle 2.6s ease-in-out infinite;
 }
 .shop-sign-lights {
-  width: min(82%, 270px);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.shop-sign-lights i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #fff3b0;
-  box-shadow: 0 0 8px 2px var(--gold);
+  position: absolute;
+  inset: 8px;
+  z-index: 3;
+  pointer-events: none;
+  border: 5px dotted #fff3b0;
+  box-shadow: inset 0 0 8px 2px var(--gold), 0 0 8px 2px var(--gold);
   animation: shop-bulb-idle 1.35s steps(2, end) infinite;
 }
-.shop-sign-lights i:nth-child(even) {
-  animation-delay: -.68s;
+.shop-sign-lights i {
+  display: none;
 }
 @keyframes shop-sign-idle {
   0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
@@ -764,7 +759,7 @@
     animation: none;
   }
   .shop-sign-word,
-  .shop-sign-lights i,
+  .shop-sign-lights,
   .blindselect-caret {
     animation: none;
   }

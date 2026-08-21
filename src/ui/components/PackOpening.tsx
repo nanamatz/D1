@@ -271,13 +271,20 @@ export function PackOpening({
   }, [opening]);
 
   useEffect(() => {
-    if (!pack || pack.offer.type !== 'consumable') return;
+    if (!pack || (pack.offer.type !== 'consumable' && pack.offer.type !== 'ink')) return;
     let timer: number | undefined;
+    let activeEvent: Parameters<typeof packFableFxBus.emit>[0] | null = null;
     const off = packFableFxBus.on((event) => {
-      const effectKind = FABLE_REGISTRY.get(event.id)?.effect.kind;
+      if (timer) clearTimeout(timer);
+      activeEvent?.cancel();
+      activeEvent = event;
+      const effectKind = isFableId(event.id)
+        ? FABLE_REGISTRY.get(event.id)?.effect.kind
+        : GAMBLER_REGISTRY.get(event.id)?.effect.kind;
       const kind =
         effectKind === 'material' || effectKind === 'rankUp' || effectKind === 'destroy' || effectKind === 'tileEdition'
           ? effectKind === 'tileEdition' ? 'edition' : effectKind
+          : effectKind === 'font' ? 'font'
           : 'other';
       const effectMs = motionOff() ? 120 : 900;
       const key = `held:${event.id}`;
@@ -292,15 +299,18 @@ export function PackOpening({
             .filter((tile) => event.tileIds.includes(tile.id))
             .map((tile) => [
               tile.id,
-              previewFableTile(
-                event.id,
-                tile,
-                makeRng(`${g.state.seed}#${g.state.rngCounter}`),
-              ),
+              isFableId(event.id)
+                ? previewFableTile(
+                    event.id,
+                    tile,
+                    makeRng(event.rngKey),
+                  )
+                : previewGamblerTile(event.id, tile),
             ]),
         ),
       });
       timer = window.setTimeout(() => {
+        activeEvent = null;
         event.resolve();
         setTileFx(null);
         setPicking(null);
@@ -309,6 +319,8 @@ export function PackOpening({
     });
     return () => {
       off();
+      activeEvent?.cancel();
+      activeEvent = null;
       if (timer) clearTimeout(timer);
     };
   }, [pack, onSelectedCandidatesChange]);
@@ -409,7 +421,7 @@ export function PackOpening({
   const close = () => {
     if (closing || picking) return;
     setClosing(true);
-    window.setTimeout(g.closePack, 360);
+    g.closePack(360);
   };
 
   const optionName = (o: PackOption): string => {

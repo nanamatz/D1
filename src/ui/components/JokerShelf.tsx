@@ -531,7 +531,9 @@ export function JokerShelf({
                           setMenuIdx(null);
                           // Targeted Fables used against an open pack stay on the shelf
                           // until the pack-owned transformation animation commits them.
-                          if (deferTargetFableUse && isFableId(c) && fableTargetsTiles(c)) {
+                          if (deferTargetFableUse && (
+                            (isFableId(c) && fableTargetsTiles(c)) || isGamblerId(c)
+                          )) {
                             onUseConsumable(c);
                           } else {
                             beginLeave('consumable', i, 'use', () => onUseConsumable(c));

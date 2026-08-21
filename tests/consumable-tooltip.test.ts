@@ -92,6 +92,25 @@ describe('shared consumable tooltip copy', () => {
     expect(referencedEditionTips(en['pouch.military.desc'], enT)).toEqual([]);
   });
 
+  it('hides edition outcome weights without hiding activation chance or edition tips', () => {
+    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    for (const dict of [en, ko] as const) {
+      const editionTitles = [dict['edition.gray'], dict['edition.violet'], dict['edition.rainbow']];
+      for (const id of ['fable15', 'fable20'] as const) {
+        const copy = dict[`consumabledesc.${id}`];
+        expect(copy).not.toMatch(/(?:50|35|15)%/);
+        expect(referencedEditionTips(copy, translate(dict)).map((tip) => tip.title))
+          .toEqual(editionTitles);
+      }
+    }
+    expect(en['consumabledesc.fable15']).toContain('[n:1] in [n:4]');
+    expect(ko['consumabledesc.fable15']).toContain('[n:1]/[n:4]');
+    expect(en['consumabledesc.fable15']).toContain('[G:Gray]');
+    expect(en['consumabledesc.fable15']).toContain('[v:Violet]');
+    expect(en['consumabledesc.fable15']).toContain('[r:Rainbow]');
+  });
+
   it('adds an Anagram definition for Temurah in both locales', () => {
     const translate = (dict: Record<string, string>) => (key: string | string[]) =>
       dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
@@ -117,6 +136,7 @@ describe('shared consumable tooltip copy', () => {
       'src/ui/components/JokerShelf.tsx',
       'src/ui/components/PackOpening.tsx',
       'src/ui/components/Collection.tsx',
+      'src/ui/components/ConsumableEffect.tsx',
     ];
     for (const file of files) {
       expect(readFileSync(file, 'utf8'), file).toContain('consumableTooltipBody');

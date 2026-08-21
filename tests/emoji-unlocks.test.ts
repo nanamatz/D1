@@ -14,6 +14,7 @@ import {
   unlockedEmojiSet,
   writeEmojiUnlockProgress,
 } from '../src/ui/emojiUnlocks';
+import { recordWord } from '../src/ui/collection';
 import { resetStorageCache } from '../src/ui/storage';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
@@ -168,5 +169,35 @@ describe('Emoji Tile profile unlocks', () => {
     });
     const progress = loadEmojiUnlockProgress();
     expect(progress.unlocked).toContain('handScholar');
+  });
+
+  it('counts a prototype-named word once before its collection row is recorded', () => {
+    const run = newRun('prototype-word');
+    const blind = startBlind(run, makeRng('prototype-word-blind'));
+    const submission = {
+      text: 'constructor',
+      tiles: blind.hand,
+      isGibberish: false,
+      suit: 'standard' as const,
+      posUsed: null,
+      settledScore: 0,
+    };
+    const event = {
+      kind: 'wordPlayed' as const,
+      run,
+      blind,
+      submission,
+      letterHandId: null,
+      heldTiles: [],
+      bossDiscarded: 0,
+    };
+
+    recordEmojiUnlockEvent({ kind: 'newRun', run });
+    recordEmojiUnlockEvent(event);
+    expect(loadEmojiUnlockProgress().values.wordHunter).toBe(1);
+
+    recordWord('constructor');
+    recordEmojiUnlockEvent(event);
+    expect(loadEmojiUnlockProgress().values.wordHunter).toBe(1);
   });
 });

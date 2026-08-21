@@ -482,9 +482,11 @@ export interface UseGame {
   usePackGambler: (index: number, tileIds: string[]) => void;
   /** Use a Constellation directly from its pack, without occupying a slot. */
   usePackConstellation: (index: number) => void;
-  /** Use an owned tile-targeting Fable on the open Fable pack's pouch candidates. */
+  /** Use an owned tile-targeting Fable on open Fable/Ink pack candidates. */
   useHeldPackFable: (id: import('../engine/fables').FableId, tileIds: string[]) => void;
-  closePack: () => void;
+  /** Use an owned Gambler against an open Fable/Ink pack's pouch candidates. */
+  useHeldPackGambler: (id: GamblerId, tileIds: string[]) => void;
+  closePack: (delayMs?: number) => void;
   playWord: (heldOrder?: string[]) => void;
   discard: (ids: string[]) => void;
   selectBlind: () => void;
@@ -500,6 +502,10 @@ export interface UseGame {
   startRun: (options: RunStartOptions) => void;
 }
 
+interface HeldPackCloseTransaction {
+  timer: ReturnType<typeof setTimeout> | null;
+}
+
 export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGame {
   // Resume a saved run if there is one; otherwise the idle bootstrap run.
   const [state, setState] = useState<GameState>(() =>
@@ -507,7 +513,25 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   );
   const stateRef = useRef(state);
   stateRef.current = state;
-  const heldPackFablePending = useRef(false);
+  const heldPackConsumablePending = useRef(false);
+  const heldPackConsumableCancel = useRef<(() => void) | null>(null);
+  const heldPackCloseTransaction = useRef<HeldPackCloseTransaction | null>(null);
+
+  const cancelHeldPackClose = useCallback((
+    transaction = heldPackCloseTransaction.current,
+  ) => {
+    if (!transaction || heldPackCloseTransaction.current !== transaction) return;
+    heldPackCloseTransaction.current = null;
+    if (transaction.timer !== null) {
+      clearTimeout(transaction.timer);
+      transaction.timer = null;
+    }
+  }, []);
+  const cancelPackTransactions = useCallback(() => {
+    heldPackConsumableCancel.current?.();
+    cancelHeldPackClose();
+  }, [cancelHeldPackClose]);
+  useEffect(() => () => cancelPackTransactions(), [cancelPackTransactions]);
 
   // Persist the run so it survives a reload (the Continue tab resumes it).
   // Dedupe on the serialized bytes: most state churn (staging a tile, hovering)
@@ -882,6 +906,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // Jokers can be sold from the shop AND mid-blind (item 1) — like consumables,
   // which sell in any phase. selling is phase-agnostic in the engine (sellJoker).
   const sell = useCallback((index: number) => {
+    if (heldPackConsumablePending.current) return;
     setState((prev) => {
       if (prev.phase !== 'shop' && prev.phase !== 'playing') return prev;
       const res = sellJoker(prev.run, index, makeRng(`${prev.seed}#${prev.rngCounter}`));
@@ -1113,9 +1138,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   }, []);
 
   const endRun = useCallback(() => {
+    cancelPackTransactions();
     clearRun();
     setState((prev) => ({ ...prev, runStarted: false }));
-  }, []);
+  }, [cancelPackTransactions]);
 
   const buyVoucherAction = useCallback((slot: 'base' | 'bonus' = 'base') => {
     setState((prev) => {
@@ -1369,28 +1395,54 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const useHeldPackFable = useCallback(
     (id: import('../engine/fables').FableId, tileIds: string[]) => {
       const current = stateRef.current;
+      const candidateIds = new Set((current.pack?.candidateTiles ?? []).map((tile) => tile.id));
       if (
-        heldPackFablePending.current ||
+        heldPackConsumablePending.current ||
+        heldPackCloseTransaction.current !== null ||
         current.phase !== 'shop' ||
         (current.pack?.offer.type !== 'consumable' && current.pack?.offer.type !== 'ink') ||
         !fableTargetsTiles(id) ||
+        !tileIds.every((tileId) => candidateIds.has(tileId)) ||
         !canUseFableOnPouch(id, current.run, tileIds)
       ) {
         return;
       }
-      heldPackFablePending.current = true;
-      let resolved = false;
+      const actionSeed = current.seed;
+      const actionCounter = current.rngCounter;
+      const rngKey = `${actionSeed}#${actionCounter}`;
+      heldPackConsumablePending.current = true;
+      let settled = false;
+      const cancel = () => {
+        if (settled) return;
+        settled = true;
+        if (heldPackConsumableCancel.current === cancel) {
+          heldPackConsumableCancel.current = null;
+          heldPackConsumablePending.current = false;
+        }
+      };
+      heldPackConsumableCancel.current = cancel;
       const accepted = packFableFxBus.emit({
         id,
         tileIds: tileIds.slice(),
+        rngKey,
+        cancel,
         resolve: () => {
-          if (resolved) return;
-          resolved = true;
+          if (settled) return;
+          settled = true;
+          if (heldPackConsumableCancel.current === cancel) {
+            heldPackConsumableCancel.current = null;
+            heldPackConsumablePending.current = false;
+          }
           setState((prev) => {
-            heldPackFablePending.current = false;
+            const activeCandidateIds = new Set(
+              (prev.pack?.candidateTiles ?? []).map((tile) => tile.id),
+            );
             if (
+              prev.seed !== actionSeed ||
+              prev.rngCounter !== actionCounter ||
               prev.phase !== 'shop' ||
               (prev.pack?.offer.type !== 'consumable' && prev.pack?.offer.type !== 'ink') ||
+              !tileIds.every((tileId) => activeCandidateIds.has(tileId)) ||
               !canUseFableOnPouch(id, prev.run, tileIds)
             ) {
               return prev;
@@ -1399,10 +1451,10 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
               id,
               prev.run,
               tileIds,
-              makeRng(`${prev.seed}#${prev.rngCounter}`),
+              makeRng(rngKey),
             );
             if (!result.ok) return prev;
-            const candidateTiles = syncCandidates(prev.pack.candidateTiles, result.run);
+            const candidateTiles = syncCandidates(prev.pack.candidateTiles ?? [], result.run);
             audio.play('consumableUse');
             recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
             recordPouchUnlockChanges(prev.run, result.run);
@@ -1417,14 +1469,120 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           });
         },
       });
-      if (!accepted) heldPackFablePending.current = false;
+      if (!accepted) cancel();
     },
     [],
   );
 
-  const closePack = useCallback(() => setState((prev) =>
-    completePendingPackTransition({ ...prev, pack: null }),
-  ), []);
+  const useHeldPackGambler = useCallback((id: GamblerId, tileIds: string[]) => {
+    const current = stateRef.current;
+    const field = current.pack?.candidateTiles ?? [];
+    const targets = gamblerTargetsTiles(id) ? tileIds : [];
+    if (
+      heldPackConsumablePending.current ||
+      heldPackCloseTransaction.current !== null ||
+      current.phase !== 'shop' ||
+      (current.pack?.offer.type !== 'consumable' && current.pack?.offer.type !== 'ink') ||
+      !canUseGambler(id, current.run, field, targets, unlockedEmojiSet())
+    ) {
+      return;
+    }
+    const actionSeed = current.seed;
+    const actionCounter = current.rngCounter;
+    const rngKey = `${actionSeed}#${actionCounter}`;
+    heldPackConsumablePending.current = true;
+    let settled = false;
+    const cancel = () => {
+      if (settled) return;
+      settled = true;
+      if (heldPackConsumableCancel.current === cancel) {
+        heldPackConsumableCancel.current = null;
+        heldPackConsumablePending.current = false;
+      }
+    };
+    heldPackConsumableCancel.current = cancel;
+    const accepted = packFableFxBus.emit({
+      id,
+      tileIds: targets.slice(),
+      rngKey,
+      cancel,
+      resolve: () => {
+        if (settled) return;
+        settled = true;
+        if (heldPackConsumableCancel.current === cancel) {
+          heldPackConsumableCancel.current = null;
+          heldPackConsumablePending.current = false;
+        }
+        setState((prev) => {
+          if (
+            prev.seed !== actionSeed ||
+            prev.rngCounter !== actionCounter ||
+            prev.phase !== 'shop' ||
+            (prev.pack?.offer.type !== 'consumable' && prev.pack?.offer.type !== 'ink')
+          ) {
+            return prev;
+          }
+          const activeField = prev.pack.candidateTiles ?? [];
+          const activeTargets = gamblerTargetsTiles(id) ? tileIds : [];
+          if (!canUseGambler(
+            id,
+            prev.run,
+            activeField,
+            activeTargets,
+            unlockedEmojiSet(),
+          )) {
+            return prev;
+          }
+          const result = useGambler(
+            id,
+            prev.run,
+            prev.blind,
+            activeField,
+            activeTargets,
+            makeRng(rngKey),
+            unlockedEmojiSet(),
+          );
+          if (!result.ok) return prev;
+          const candidateTiles = syncCandidates(activeField, result.run);
+          audio.play('consumableUse');
+          recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' });
+          recordPouchUnlockChanges(prev.run, result.run);
+          recordEmojiUnlockEvent({ kind: 'consumableUsed', run: result.run, family: 'gambler' });
+          recordEditionedJokers(result.run);
+          if (GAMBLER_REGISTRY.get(id)?.effect.kind !== 'font') {
+            consumableEffectBus.emit(id, prev.run, result.run);
+          }
+          return {
+            ...prev,
+            run: result.run,
+            blind: result.blind,
+            pack: { ...prev.pack, candidateTiles },
+            message: null,
+            rngCounter: prev.rngCounter + 1,
+          };
+        });
+      },
+    });
+    if (!accepted) cancel();
+  }, []);
+
+  const closePack = useCallback((delayMs = 0) => {
+    if (heldPackCloseTransaction.current !== null) return;
+    const transaction: HeldPackCloseTransaction = { timer: null };
+    heldPackCloseTransaction.current = transaction;
+    heldPackConsumableCancel.current?.();
+    const commit = () => {
+      if (heldPackCloseTransaction.current !== transaction) return;
+      transaction.timer = null;
+      heldPackCloseTransaction.current = null;
+      setState((prev) => completePendingPackTransition({ ...prev, pack: null }));
+    };
+    if (delayMs > 0) {
+      transaction.timer = setTimeout(commit, delayMs);
+    } else {
+      commit();
+    }
+  }, []);
 
   const toggleTile = useCallback((id: string) => {
     setState((prev) => {
@@ -1470,6 +1628,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // (loop.ts iterates run.jokers), so this is strategic (additive-before-
   // multiplicative). Persisted in run state; index-based since jokers can dup.
   const reorderJokers = useCallback((from: number, to: number) => {
+    if (heldPackConsumablePending.current) return;
     setState((prev) => {
       const jokers = prev.run.jokers;
       if (from < 0 || to < 0 || from >= jokers.length || to >= jokers.length || from === to) {
@@ -1595,7 +1754,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   );
 
   const useConsumable = useCallback(
-    (id: ConsumableId) =>
+    (id: ConsumableId) => {
+      if (heldPackConsumablePending.current) return;
       setState((prev) => {
         const pattern = CONSUMABLE_PATTERN[id];
         const from = pattern ? (prev.run.patternLevels[pattern] ?? 1) : 0;
@@ -1615,7 +1775,8 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           });
         }
         return stalled ? { ...next, pendingEnd: true } : next;
-      }),
+      });
+    },
     [applyConsumable],
   );
 
@@ -1755,19 +1916,21 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       recordPouchUnlockChanges(prev.run, nextRun);
       const letterHandId = events.find((event) => event.kind === 'letterHand')?.hand ?? null;
       if (letterHandId) discoverLetterHand(letterHandId);
-      recordEmojiUnlockEvent({
-        kind: 'wordPlayed',
-        run: nextRun,
-        blind,
-        submission,
-        letterHandId,
-        heldTiles,
-        bossDiscarded: bossDiscardedTiles.length,
-      });
+      if (!submission.debuffed) {
+        recordEmojiUnlockEvent({
+          kind: 'wordPlayed',
+          run: nextRun,
+          blind,
+          submission,
+          letterHandId,
+          heldTiles,
+          bossDiscarded: bossDiscardedTiles.length,
+        });
+      }
       const wordScore = letterChips(submission.tiles);
       const best = prev.stats.bestWord;
       const bestWord =
-        !submission.isGibberish && (!best || wordScore > best.score)
+        !submission.isGibberish && !submission.debuffed && (!best || wordScore > best.score)
           ? { text: submission.text, score: wordScore }
           : best;
       const next: GameState = {
@@ -1958,6 +2121,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
 
   /** Sell a held consumable for half its price (C-4 Use/Sell menu). */
   const sellConsumable = useCallback((index: number) => {
+    if (heldPackConsumablePending.current) return;
     setState((prev) => {
       const c = prev.run.consumables[index];
       if (!c) return prev;
@@ -2005,17 +2169,19 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   }, []);
 
   const newGame = useCallback(() => {
+    cancelPackTransactions();
     const next = { ...bootstrap(), runStarted: true };
     recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
     recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
-  }, []);
+  }, [cancelPackTransactions]);
   const startRun = useCallback((options: RunStartOptions) => {
+    cancelPackTransactions();
     const next = { ...bootstrap(options), runStarted: true };
     recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
     recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
-  }, []);
+  }, [cancelPackTransactions]);
 
   return {
     state,
@@ -2086,6 +2252,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     usePackGambler,
     usePackConstellation,
     useHeldPackFable,
+    useHeldPackGambler,
     closePack,
     playWord,
     discard,

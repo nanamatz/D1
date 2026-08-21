@@ -17,6 +17,7 @@ import type {
   VoucherId,
 } from '../../engine/types';
 import {
+  collectionEntry,
   collectionHighlights,
   loadCollection,
   markCollectionSeen,
@@ -355,8 +356,8 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
   const allWordsComplete = isWordCollectionComplete(lexicon);
   const records = useMemo(() => collectionHighlights(collected), [collected]);
 
-  // Item 1: list the WHOLE dictionary, not just what's been played — words never
-  // played render `locked` (dimmed) so the collection reads as something to fill in.
+  // Keep one slot per dictionary entry, but never expose an undiscovered entry's
+  // spelling or register. Reveal All marks every slot found without fake play rows.
   // Built once per lexicon (~173k entries): plain `<` beats localeCompare at this
   // size, and the collection is read once rather than per word.
   const all = useMemo(() => {
@@ -365,16 +366,18 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
       .map((w) => ({
         w,
         suit: lexicon.lookup(w)?.suit ?? 'standard',
-        found: allWordsUnlocked || collected[w] !== undefined,
+        found: allWordsUnlocked || collectionEntry(collected, w) !== undefined,
       }));
   }, [lexicon, collected, allWordsUnlocked]);
 
-  // Search + suit filter. With the whole dictionary listed, search is the only
-  // practical way to reach a specific word (800+ pages otherwise).
+  // Search and register filters operate only on discovered entries so neither can
+  // be used to probe the hidden dictionary.
   const words = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q && suit === 'all') return all;
-    return all.filter((e) => (suit === 'all' || e.suit === suit) && (!q || e.w.includes(q)));
+    return all.filter((e) => e.found
+      && (suit === 'all' || e.suit === suit)
+      && (!q || e.w.includes(q)));
   }, [all, suit, query]);
 
   const pages = Math.max(1, Math.ceil(words.length / PAGE));
@@ -493,9 +496,9 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
               {slice.map((e) => (
                 <span
                   key={e.w}
-                  className={['word-chip', e.suit, !e.found && 'locked'].filter(Boolean).join(' ')}
+                  className={['word-chip', e.found ? e.suit : '', !e.found && 'locked'].filter(Boolean).join(' ')}
                 >
-                  {e.w}
+                  {e.found ? e.w : '???'}
                 </span>
               ))}
             </div>

@@ -28,7 +28,7 @@ import { BossIntro } from './BossIntro';
 import { BlindEntryEffects } from './BlindEntryEffects';
 import { canUseFableOnPouch, fableTargetsTiles, isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
-import { isGamblerId } from '../../engine/gamblers';
+import { canUseGambler, gamblerTargetsTiles, isGamblerId } from '../../engine/gamblers';
 import { jokerArt } from '../jokerArt';
 import { constellationArt } from '../constellationArt';
 import { fableArt } from '../fableArt';
@@ -40,6 +40,7 @@ import { SKIP_REWARD_ART } from '../skipRewardArt';
 import { mascotSrc } from '../mascots';
 import { preloadImagesWhenIdle } from '../preload';
 import { loadDiscoveredLetterHands } from '../lifetime';
+import { unlockedEmojiSet } from '../emojiUnlocks';
 
 interface Props {
   g: UseGame;
@@ -113,6 +114,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   useEffect(() => {
     if (!g.state.pack) setPackCandidateIds([]);
   }, [g.state.pack]);
+
+  useEffect(() => {
+    const available = new Set((g.state.pack?.candidateTiles ?? []).map((tile) => tile.id));
+    setPackCandidateIds((ids) => ids.filter((id) => available.has(id)));
+  }, [g.state.pack?.candidateTiles]);
 
   // A boss-debuffed submission is allowed, but its warning is a transient
   // workspace announcement rather than persistent game-state copy. The message
@@ -275,14 +281,27 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             onUseConsumable={(id) => {
               if (candidatePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 g.useHeldPackFable(id, packCandidateIds);
+              } else if (candidatePackOpen && isGamblerId(id)) {
+                g.useHeldPackGambler(id, packCandidateIds);
               } else {
                 g.useConsumable(id);
               }
             }}
-            canUseConsumable={(id) =>
-              candidatePackOpen && isFableId(id) && fableTargetsTiles(id)
-                ? canUseFableOnPouch(id, run, packCandidateIds)
-                : g.canUseConsumable(id)}
+            canUseConsumable={(id) => {
+              if (candidatePackOpen && isFableId(id) && fableTargetsTiles(id)) {
+                return canUseFableOnPouch(id, run, packCandidateIds);
+              }
+              if (candidatePackOpen && isGamblerId(id)) {
+                return canUseGambler(
+                  id,
+                  run,
+                  g.state.pack?.candidateTiles ?? [],
+                  gamblerTargetsTiles(id) ? packCandidateIds : [],
+                  unlockedEmojiSet(),
+                );
+              }
+              return g.canUseConsumable(id);
+            }}
             deferTargetFableUse={candidatePackOpen}
             onSellConsumable={g.sellConsumable}
             onSellJoker={g.sell}

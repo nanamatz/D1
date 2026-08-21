@@ -93,6 +93,20 @@ describe('registry — GDD §10.3', () => {
       'boar', 'craneAndSun', 'deer', 'phoenix', 'rainman', 'sakeCup',
     ]);
   });
+
+  it('accepts all eight field-dependent cards on an eligible pouch-candidate field', () => {
+    const field = newRun('gambler-pack-field').bag.slice(0, 5);
+    const direct = ['barnSwallow', 'bushWarbler', 'cuckoo', 'curtain', 'geese'] as const;
+    for (const id of direct) {
+      const run = held(newRun(`held-${id}`), id);
+      expect(canUseGambler(id, run, field, [field[0]!.id]), id).toBe(true);
+      expect(canUseGambler(id, run, field, ['outside-pack']), id).toBe(false);
+    }
+    for (const id of ['bridge', 'butterflies', 'fullMoon'] as const) {
+      const run = held(newRun(`held-${id}`), id);
+      expect(canUseGambler(id, run, field, []), id).toBe(true);
+    }
+  });
 });
 
 describe('font cards — #1 / #4 / #7 / #11', () => {

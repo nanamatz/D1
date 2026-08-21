@@ -3,9 +3,10 @@
 
 /* ---------- generic centered screen ---------- */
 .screen {
-  max-width: 860px;
+  width: 100%;
+  max-width: var(--board-max);
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: var(--board-h);
   padding: 32px 16px;
   display: flex;
   flex-direction: column;
@@ -1691,7 +1692,6 @@ body.cb-safe .tile.hint {
   isolation: isolate;
   box-sizing: border-box;
   width: 100%;
-  max-width: none;
   overflow: hidden;
   gap: 26px;
 }
@@ -2801,7 +2801,6 @@ body.cb-safe .tile.hint {
   justify-content: flex-start;
   gap: 16px;
   width: 100%;
-  max-width: none;
   padding-top: 24px;
   padding-bottom: 24px;
 }
@@ -3175,9 +3174,9 @@ body.cb-safe .tile.hint {
 .word-chip.vulgar {
   border-left-color: var(--suit-vulgar);
 }
-/* Item 1: the grid lists every dictionary word; ones never played read as locked —
-   dimmed and desaturated, but still legible (they're the goal, not a spoiler). */
+/* Undiscovered word slots are deliberately neutral: no spelling or register leaks. */
 .word-chip.locked {
+  border-left-color: currentColor;
   opacity: 0.42;
   filter: saturate(0.35);
 }
@@ -4796,6 +4795,10 @@ body.cb-safe .tile.hint {
    Reduced motion → a plain crossfade. */
 .screen-stack {
   position: relative;
+  width: 100%;
+  max-width: var(--board-max);
+  min-height: var(--board-h);
+  margin: 0 auto;
 }
 /* Mask the incoming panel while it sits off-screen. `clip` rather than `hidden` so
    no scroll container is created, and only while transitioning so anything that
@@ -4806,6 +4809,8 @@ body.cb-safe .tile.hint {
 /* Deliberately NOT `.screen` — that token is the generic centered-screen layout
    above; a transition pane is a full-bleed wrapper around whatever it holds. */
 .screen-pane {
+  width: 100%;
+  min-height: var(--board-h);
   background: var(--bg-desk);
 }
 /* Outgoing: frozen in place, beneath the incoming panel, and inert. */

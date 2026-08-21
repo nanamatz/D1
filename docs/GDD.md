@@ -100,7 +100,7 @@ Version 0.2 — systems expansion
 | High card | Gibberish submission | Non-word tile dump; letter chips only |
 | Blind (Small/Big/Boss) | Blind | One round: phases + discard budget + target score |
 | Ante | Ante | 3 blinds; base target rises per ante |
-| Tarot cards | Fable Cards | 19 one-shot tile/economy/tool effects |
+| Tarot cards | Fable Cards | 20 one-shot tile/economy/tool effects |
 | Planet cards | Constellation Cards | Sentence-pattern level-up consumables |
 | Spectral cards | Gambler Cards | Third family (delivered by the Ink Pack, §9.3); 14 implemented |
 | Vouchers | Vouchers | 16 base + 16 upgraded permanent run effects |
@@ -291,9 +291,16 @@ edition, Mult, Emoji Tile, boss, and sentence effects are excluded), longest
 discovered word, most-played word, and total discoveries. `wj.collection`
 stores each word's first-play time, play count, and intrinsic score without
 adding a save key; old settled-score records are recomputed from the word on read.
-The full dictionary total is secret: the category total, discovery record, and
+Only successfully submitted valid words reveal their spelling and original
+register; gibberish, previews, and blocked submissions do not. Replays update the
+existing play record without adding another discovery. Undiscovered dictionary
+slots render as neutral `???` entries and expose no spelling or register through
+tooltips or accessibility metadata. Search and register filters operate only on
+discovered entries, so their result counts remain literal without leaking hidden
+dictionary facts. The full dictionary total is secret: the category total and
 unfiltered Words pager show `???` until every eligible word has been discovered,
-then reveal the actual total. Search/filter result counts remain literal.
+then reveal the actual total; the discovery record continues to show the literal
+number found so far.
 
 Profile titles are cosmetic milestones derived from the unique keys already in
 that profile's `wj.collection`, classified by each word's original suit in the
@@ -370,7 +377,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.1 Matching Rules
 
-1. **Whole-sequence match.** The entire phase sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) anywhere in the sequence voids all pattern matches — Correction Tape is the current counter.
+1. **Whole-sequence match.** Apply any boss sentence transform to the raw submission history first (so Orphan Line always removes the literal first submitted word), then remove every debuffed submission and join the remaining eligible words in their original order. A debuffed word is not a hole and contributes neither POS nor register to Pattern/Unison judgment. The resulting entire sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) remains in that eligible sequence and voids all pattern matches — Correction Tape is the current counter. (changed 2026-08-20: debuffed words are removed rather than zeroed after scoring)
 2. **Highest single pattern only.** If a sequence satisfies multiple patterns, only the highest-value one applies (a full house does not also pay as a pair).
 3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; **each absorbed modifier adds +15 Chips to the sentence bonus's Chips side** (uniform across all patterns — placeholder). This keeps the table small while making longer sentences naturally more valuable.
 
@@ -755,7 +762,7 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 | Boss | Effect | Targets / counters |
 |---|---|---|
 | White Paper · 백지 (`whitePaper`) | Vulgar-suit words score 0 (debuffed) | Counter to Tyrant builds |
-| Burnt Paper · 그을린 종이 (`burntPaper`) | Verb-POS words score 0 (debuffed) | Blocks Imperative/verb lines; noun & Wild-POS builds shine |
+| Burnt Paper · 그을린 종이 (`burntPaper`) | Verb-POS words score 0 (debuffed) | Wastes the verb play; the remaining eligible words may still form a sentence |
 
 **Repetition attack**
 
@@ -767,10 +774,13 @@ Balatro bosses work because they (1) attack **one system at a time** (readable),
 **Debuff readability (changed 2026-07-29).** A word that an active boss will
 reduce to 0 remains playable, but the staged tiles receive a red **Not Allowed**
 tag before submission. Playing it shows the same warning and keeps the submitted
-word in the sentence tray with a disabled/desaturated treatment. This applies
+word in the sentence tray with a disabled/desaturated treatment and no POS or
+Word Hand label. This applies
 uniformly to Forbidden Paper, Memoirs, Burnt Paper, White Paper, and Dead Letter;
 the boss data predicate is the source of truth for both
-scoring and preview UI.
+scoring and preview UI. The physical play, phase, draw, boss after-play action,
+Collection/presentation discovery, and Chapter word history still resolve; all
+score hooks, score-side RNG, score/progress ledgers, and Emoji Tile progress stop.
 
 **Submission blocking (changed 2026-08-14).** Stereotype Plate is not a 0-score
 debuff. A staged hand below its current Chapter threshold is marked blocked, and
@@ -839,7 +849,7 @@ the same cycle, so rerolling never bypasses the rule.
 six finishers are periodic build checks. Memoirs remains scoped to the chapter;
 the old Proofreader/Babel finishers remain retired.
 
-**Debuff convention.** "Debuffed" (White Paper, Burnt Paper, Memoirs) means the affected word scores **0** — its Chips and Mult are both zeroed after emoji tiles, mirroring Balatro's disabled cards (decision 2026-07-21).
+**Debuff convention (changed 2026-08-20).** "Debuffed" (including boss and Lipogram Tag predicates) means an allowed physical play whose scoring pipeline stops immediately after pure word preparation/rule lookup. It produces one 0-point settle and never runs tile/material/font/edition scoring, Word Hands, played/held/owned Emoji Tile scoring hooks, `wordChecked`, `tilesPlayed`, `wordScored`, Briefcase balancing, score bonuses, score-side chance RNG, or score/progress mutations. The submission keeps `posUsed = null` and is removed before Pattern and Unison judgment, so normal words before and after it become adjacent. It remains visible as a disabled tray record; physical tile/phase consumption, draw, boss `afterPlay`, actual-play Collection/chromatic/mascot discovery, and `wordsThisAnte` remain intact. Gibberish is unchanged: it scores its normal layer-1 payout and remains a sentence hole.
 
 ---
 
@@ -928,8 +938,8 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 |---|---|---|
 | 별자리 팩 / **Constellation Pack** | Constellation cards — selected and **used immediately inside the pack** to level up their sentence pattern (§5.4), independent of held-slot capacity | Celestial |
 | 부적 팩 / **Charm Pack** | Emoji tile choices | Buffoon |
-| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the candidate field for tile-targeting Fable effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Comic Book may add one ordinary Gambler card. | Arcana |
-| 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the candidate field for tile-targeting Gambler effects and compatible held Fables | Spectral |
+| 우화 팩 / **Fable Pack** | Fable card choices (§10.1) plus ten seeded pouch tiles used as the active candidate field for compatible dealt or held Fable/Gambler effects. Fables resolve inside the opened pack; blind-only Fables are selected into a held slot instead. Comic Book may add one ordinary Gambler card. | Arcana |
+| 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the active candidate field for compatible dealt or held Fable/Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
 **Sizes:** Tile/Fable/Constellation Packs show **3/5/5** choices at Basic/Classic/Premium; Charm/Ink Packs show **2/4/4**. The player may take up to **1/1/2**, respectively. Prices are **$4/$6/$8** by size (`balance.ts` `pack.size`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence: the illustrated pack top tears away along a jagged seam, pixel card backs and hard-edged ink debris pour out, then the real choices settle into their fan (changed 2026-08-02).
@@ -940,7 +950,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 
 **Ink-only jackpots and ordinary rolls (changed 2026-08-07).** Every Ink choice reserves an independent **0.3% Phoenix** band and **0.3% Deer** band. The remaining 99.4% is divided uniformly among the 12 ordinary Gambler Cards, so each ordinary card has an **8.2833% base chance on the first fully eligible choice**. Ordinary choices are drawn without replacement inside one pack; later-choice odds therefore normalize over the remaining eligible pool. If a rolled jackpot is ineligible, its band falls back to an ordinary card and never increases the other jackpot's chance. Fable and Constellation Packs never roll either jackpot. Comic Book gives each Fable choice a **5%** chance to become an ordinary Gambler card, capped at one replacement per pack. Constellation choices exclude cards already held in the consumable shelf; B&W Photo's forced favorite remains the explicit inclusion exception. All rolls use the seeded RNG and values live in `balance.ts` (`pack.phoenixChance`, `pack.deerChance`, `pack.gamblerInFableChance`).
 
-> **Impl note (updated 2026-08-14).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 19 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. A compatible held tile-targeting Fable may resolve against either pack's candidates. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
+> **Impl note (updated 2026-08-20).** All **five** engine pack types × 3 sizes ship (weights, prices, opening UI). Tile/Charm are complete; the Fable pool contains 20 implemented cards; Constellation offers 12 zodiac cards; the **Ink Pack** offers the 12 ordinary Gambler cards plus the per-choice Phoenix/Deer jackpots (§10.3) and deals the same ten-tile pouch candidate field a Fable Pack does. Compatible held tile-targeting Fables and held Gamblers may resolve against either pack's candidates. Selecting a Constellation in its pack reveals **Use**; it levels the mapped pattern directly and never enters the held consumable zone. A Gambler chosen in a pack follows the Fable confirm-then-**Use** flow and resolves against those candidates. Code ids stay semantic (`PackType` = `pattern | joker | consumable | tile | ink`); display names are i18n-only.
 
 ### 9.4 Vouchers — 16 base + 16 upgraded
 
@@ -983,13 +993,13 @@ Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
 blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired
 from shop item slots and packs.
 
-**Fable/Ink Pack pouch-candidate resolution (changed 2026-08-06).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field is selectable immediately when either a Fable Pack or Ink Pack opens. While either pack is open, a compatible tile-targeting Fable already held on the consumable shelf may also use those selected pouch candidates; this is the only shop-phase exception to the normal staged-hand targeting rule. Enabled and disabled Use states occupy the same fixed position. Using previews the resulting letter/material/font/edition on every target and plays the complete card-to-target application animation; the transformed candidate image remains in that committed state instead of reverting when the preview ends. Only after that animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). The Fable resolves without occupying a held slot. A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+**Fable/Ink Pack pouch-candidate resolution (changed 2026-08-20).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field is selectable immediately when either a Fable Pack or Ink Pack opens. While either pack is open, a compatible tile-targeting Fable or held Gambler on the consumable shelf may also use that active field. Direct-target Gamblers require exactly one eligible selected candidate; Bridge, Butterflies, and Full Moon use the whole field and ignore selection; the remaining field-independent Gamblers ignore the candidates and retain their ordinary preconditions. This is the only shop-phase exception to normal blind-hand targeting. A held use revalidates the live candidate row immediately before commit, consumes only the held card, synchronizes changed or removed candidates, clears selection, and leaves the pack options, pick count, and open state untouched; created or copied tiles enter the pouch but not the fixed candidate row. Preview and delayed commit replay the same seeded action key, block conflicting shelf mutations until resolution, and advance RNG exactly once only after success; cancellation consumes neither the card nor RNG. A pack close request immediately blocks new held uses, cancels a pending one, and still completes the pack transition after its close animation. Enabled and disabled Use states occupy the same fixed position. Direct letter/material/font/edition changes preview before commit, while other outcomes use the shared result vignette. Only after the animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
 
 **Constellation Pack resolution (changed 2026-07-29).** A revealed Constellation follows the same select-then-confirm interaction, but its action is always named **Use**, never Select. Use immediately levels the mapped sentence pattern, plays the full Constellation level-up sequence, ignores held-consumable capacity, and does not place the card in a held slot.
 
 **Held-slot presentation (changed 2026-07-31).** A held consumable is the supplied card illustration acting directly as an interactive foreground object. The shelf slot reserves transparent space only: it does not add a second card background, inset image frame, persistent name, or crop. Sell and Use belong to the same mouse-interaction transform as the image, so idle motion, pointer tilt, rotation, scaling, and lift move the card and buttons together without reflowing the shelf. Sell is vertically centred at the image's right and Use sits beneath it; both match the shop Buy button's dimensions. An owned Emoji Tile and its Sell button use the same centred position, dimensions, and shared pointer transform.
 
-### 10.1 Fable Cards (Tarot-equivalent), 19
+### 10.1 Fable Cards (Tarot-equivalent), 20
 
 Held targeted effects normally use the tiles currently staged on the board. A
 target-requiring held card cannot be consumed until one to its listed maximum valid
@@ -998,7 +1008,7 @@ target the pack's immediately active ten seeded pouch candidates under the same
 range. Random creation
 respects the destination slot cap.
 
-**Art rendering (changed 2026-08-14).** All 19 supplied pixel illustrations keep
+**Art rendering (changed 2026-08-14).** All 20 supplied pixel illustrations keep
 high-detail, path-only SVG masters normalized to one `500×700` canvas (fixed 5:7
 ratio, 32-color palette, `250×350` logical pixel grid). Every source illustration
 is stretched to the full common image bounds established by The North Wind and
@@ -1032,6 +1042,8 @@ also available through the surrounding tooltip and accessible label.
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
 | 19 | The Crow and the Pitcher | Add 2 Proof Stamps to the most recently scored Word Hand |
 | 20 | The Ass in the Lion's Skin | Give 1 selected Base letter tile a seeded-random Gray/Violet/Rainbow edition at 50%/35%/15%; preserve its material and font |
+
+The edition outcome weights above remain authoritative internal tuning. Player-facing descriptions list Gray, Violet, and Rainbow without their individual 50%/35%/15% weights; The Cowherd and the Weaver Girl still discloses its separate 1-in-4 activation chance. (Changed 2026-08-20.)
 
 The Crow and the Pitcher's result vignette names the affected Word Hand and
 shows its exact `Lv before → Lv after`. The Ass in the Lion's Skin visibly
@@ -1093,10 +1105,10 @@ eligible Fable choice, maximum one per pack. Lucky Pouch's starting card and
 shop family also use only the uniformly distributed ordinary 12. All rolls use
 the seeded RNG.
 
-**Target field.** A held Gambler card used during a blind targets the current
-hand. A tile-targeting Gambler used directly from a pack instead targets that
-pack's seeded pouch-candidate field, following the same preview-before-commit
-discipline as Fables. Font changes overwrite only the font axis and cannot target Stone. Letter
+**Target field (changed 2026-08-20).** A held Gambler card used during a blind targets the current
+hand. A Gambler dealt by or already held while either a Fable or Ink Pack is open instead uses that
+pack's seeded pouch-candidate field. Direct font changes follow the same preview-before-commit
+discipline as Fables; other mutations use the shared result vignette. Font changes overwrite only the font axis and cannot target Stone. Letter
 duplication/change preserves material, font, edition, hidden Stone letter, and
 per-tile Wood growth unless the individual effect says otherwise. Created tiles
 receive new ids and enter the run's pouch permanently.
@@ -1518,8 +1530,8 @@ the already-committed word total in the mean. Keep the arithmetic mean at full p
 integer step in the transform. The UI may format a value without mutating the
 headless value. Thus `100 × 50` becomes `75 × 75 = 5,625`. Gibberish participates
 as its final `Chips × 1.0` axes; this Pouch is the explicit exception to the
-ordinary fixed `×1.0` gibberish payout in §6.4. A full boss debuff remains zero
-because `0 × 0` balances to `0 × 0`.
+ordinary fixed `×1.0` gibberish payout in §6.4. A debuffed play never reaches
+Briefcase balancing and remains zero.
 
 This creates Briefcase's distinct curve: by the arithmetic-mean/geometric-mean
 relationship, uneven positive axes gain more than already-balanced axes. Early
@@ -1662,9 +1674,9 @@ The game begins **desaturated and silent**; playing specific words permanently u
 | BLUE | blue token group — `--chips`, blue buttons |
 | MUSIC | BGM bus enabled (wraps the feature-01 mixer's music bus) |
 | SOUND | SFX bus enabled (wraps the SFX bus) |
-| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). ALIEN/GHOST/TURTLE use original local character designs that visibly match their unlock theme while sharing only the project's pixel-art treatment; recognizable third-party character or arcade-sprite features are prohibited (art replaced 2026-08-02). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
+| ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). The selected, unlocked skin also supplies the game's normal/hover/active hand cursor; a locked, invalid, or missing-art selection falls back to WooDak, and Piyak never supplies a cursor. ALIEN/GHOST/TURTLE use original local character designs that visibly match their unlock theme while sharing only the project's pixel-art treatment; recognizable third-party character or arcade-sprite features are prohibited (art replaced 2026-08-02). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
 
-**"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces and the blind badge) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. The main `.frame` itself is transparent as of 2026-07-30; the former per-stage backdrops are retired. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable.
+**"Grayscale" = full token desaturation + a monochrome guard (C-3, revised).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Because some fills are hard-coded (material tile faces and the blind badge) beyond the tokens' reach, a **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked* — guaranteeing a truly colorless start — and is dropped the moment any color is played, after which token desaturation carries the reveal. Native cursor images sit outside that filtered board, so every mascot hand has a matching monochrome derivative used while `world-mono` is present and switches to its colour master after the first colour group unlocks. The main `.frame` itself is transparent as of 2026-07-30; the former per-stage backdrops are retired. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. The chips/mult info floor is safe — color is never the sole info channel (a11y rule) — so the monochrome start is playable.
 
 **Audio gating (C-6).** MUSIC/SOUND gate the shipped real mixer's buses — **default off** (the game starts silent) until the word is played or the override is on. Color groups are independent.
 
@@ -1681,8 +1693,8 @@ word Collection, Palette/audio/mascot registry, Starting Pouch wins, Record wins
 Emoji Tile Record stickers, and upgraded-voucher registry, and marks Challenges
 disabled for that profile.
 The word Collection uses the per-profile applied marker to present every
-dictionary entry as discovered; it does not fabricate 50,000 play-count or score
-records.
+dictionary entry as discovered, including its spelling, original register,
+search, and filter visibility; it does not fabricate play-count or score records.
 The operation is permanently isolated to the selected profile slot and never
 changes another slot.
 After the escape hatch is applied, its button is permanently replaced by

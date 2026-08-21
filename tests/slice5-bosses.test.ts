@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { newRun } from '../src/engine/run';
-import { startBlind, submitWord } from '../src/engine/loop';
+import { endBlind, startBlind, submitWord } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
 import { BALANCE } from '../src/engine/balance';
 import { drawBoss, CORE_BOSS_IDS } from '../src/engine/bosses';
+import { createOwnedJoker } from '../src/engine/jokers';
+import { stagePreview } from '../src/ui/game';
 import type { BlindState, Letter, RunState, Tile } from '../src/engine/types';
 
 const lex = makeLexicon(['bright'], {
@@ -62,7 +64,7 @@ describe('slice5 bosses — scoring effects', () => {
     const result = play(bossBlind(r, 'whitePaper'), r, 'damn');
     expect(result.submission.settledScore).toBe(0);
     expect(result.submission.debuffed).toBe(true);
-    expect(result.events.some((event) => event.kind === 'boss')).toBe(true);
+    expect(result.events).toEqual([{ kind: 'settle', chips: 0, mult: 0, total: 0 }]);
   });
   it('Burnt Paper (그을린 종이): verb words score 0; nouns score normally', () => {
     const r = bossRun();
@@ -86,6 +88,109 @@ describe('slice5 bosses — scoring effects', () => {
     const r = { ...bossRun(), wordsThisAnte: ['cat'] };
     expect(play(bossBlind(r, 'memoirs'), r, 'cat').submission.settledScore).toBe(0);
     expect(play(bossBlind(r, 'memoirs'), r, 'run').submission.settledScore).toBeGreaterThan(0);
+  });
+
+  it('short-circuits every score effect and score RNG for a debuffed play', () => {
+    const r = bossRun();
+    r.jokers = ['dullingPencil', 'zombie', 'rotaryPress']
+      .map((id) => createOwnedJoker(r, id));
+    const hand = tilesFor('damn').map((tile, index) => index === 0
+      ? { ...tile, material: 'glass' as const, font: 'black' as const, edition: 'rainbow' as const }
+      : tile);
+    const started = bossBlind(r, 'whitePaper');
+    const blind = {
+      ...started,
+      hand,
+      bag: [],
+      phasesUsed: started.phasesTotal - 1,
+    };
+    const noScoreRng = {
+      next: () => { throw new Error('score RNG must not run'); },
+      int: () => { throw new Error('score RNG must not run'); },
+      shuffle: <T,>(_items: readonly T[]): T[] => { throw new Error('score RNG must not run'); },
+    };
+    const result = submitWord(blind, r, lex, hand.map((tile) => tile.id), noScoreRng);
+
+    expect(result.events).toEqual([{ kind: 'settle', chips: 0, mult: 0, total: 0 }]);
+    expect(result.goldDelta).toBe(0);
+    expect(result.destroyedTileIds).toEqual([]);
+    expect(result.grownWoodTileIds).toEqual([]);
+    expect(result.createdTiles).toEqual([]);
+    expect(result.blind.bag).toEqual([]); // Zombie did not return the played tiles.
+    expect(result.jokers).toEqual(r.jokers);
+    expect(result.counters.totalWords).toBe(r.counters.totalWords);
+    expect(result.playedWords).toEqual(r.playedWords);
+    expect(result.playedLetterHands).toEqual(r.playedLetterHands);
+    expect(result.letterHandPlayCounts).toEqual(r.letterHandPlayCounts);
+    expect(result.lastLetterHand).toBe(r.lastLetterHand);
+  });
+
+  it('shares Tower of Babel rule preparation between preview and White Paper submit', () => {
+    const r = bossRun();
+    r.jokers = [createOwnedJoker(r, 'towerOfBabel')];
+    const hand = tilesFor('cat');
+    const blind = { ...bossBlind(r, 'whitePaper'), hand };
+    const before = JSON.stringify(r);
+    const preview = stagePreview(blind, r, lex, hand.map((tile) => tile.id), String);
+    const result = submitWord(blind, r, lex, hand.map((tile) => tile.id), makeRng('tower-white'));
+
+    expect(preview).toMatchObject({ debuffed: true, pos: null, letterHand: null });
+    expect(result.submission.debuffed).toBe(true);
+    expect(result.submission.effectiveSuits).toContain('vulgar');
+    expect(JSON.stringify(r)).toBe(before);
+
+    const normalHand = tilesFor('cat');
+    const normal = submitWord(
+      { ...bossBlind(r, 'contract'), hand: normalHand },
+      r,
+      lex,
+      normalHand.map((tile) => tile.id),
+      makeRng('tower-normal'),
+    );
+    expect(normal.events.filter(
+      (event) => event.kind === 'joker' && event.jokerId === 'towerOfBabel',
+    )).toHaveLength(1);
+  });
+
+  it('shares Stone Tongue spelling preparation between preview and Burnt Paper submit', () => {
+    const r = bossRun();
+    r.jokers = [createOwnedJoker(r, 'stoneTongue')];
+    const hand: Tile[] = [
+      ...tilesFor('run'),
+      { id: `b${idc++}`, letter: null, material: 'stone', font: 'medium' },
+    ];
+    const blind = { ...bossBlind(r, 'burntPaper'), hand };
+    const ids = hand.map((tile) => tile.id);
+    const preview = stagePreview(blind, r, lex, ids, String);
+    const result = submitWord(blind, r, lex, ids, makeRng('stone-burnt'));
+
+    expect(preview).toMatchObject({
+      text: 'RUN', isGibberish: false, debuffed: true, pos: null, letterHand: null,
+    });
+    expect(result.submission).toMatchObject({ text: 'RUN', isGibberish: false, debuffed: true });
+  });
+
+  it('removes debuffed words before pattern and Unison judgment', () => {
+    const r = bossRun();
+    const first = play(bossBlind(r, 'whitePaper'), r, 'cat');
+    const debuffed = play(first.blind, r, 'damn');
+    const last = play(debuffed.blind, r, 'run');
+    const end = endBlind(last.blind, r, lex);
+
+    expect(debuffed.submission.debuffed).toBe(true);
+    expect(end.judgment.match?.pattern).toBe('simple');
+    expect(end.judgment.unison?.suit).toBe('standard');
+  });
+
+  it('does not award no-pattern Emoji score when every play is debuffed', () => {
+    const r = bossRun();
+    r.jokers = [createOwnedJoker(r, 'brokenSentence')];
+    const result = play(bossBlind(r, 'whitePaper'), r, 'damn');
+    const end = endBlind(result.blind, { ...r, jokers: result.jokers }, lex);
+
+    expect(result.blind.projectedScore).toBe(0);
+    expect(end.finalScore).toBe(0);
+    expect(end.breakdown.jokerTriggers).toBeUndefined();
   });
 });
 

@@ -14,7 +14,9 @@ import { JokerChanceEffect } from './components/JokerChanceEffect';
 import { SaveHealthNotice } from './components/SaveHealthNotice';
 import { POUCH_ART } from './pouchArt';
 import { RECORD_ART } from './recordArt';
-import { preloadImagesWhenIdle, scheduleWhenIdle } from './preload';
+import { preloadImage, preloadImagesWhenIdle, scheduleWhenIdle } from './preload';
+import { applyMascotCursor, mascotCursorUrls } from './mascots';
+import { activeUnlocks, PRESENTATION_CHANGED_EVENT } from './unlocks';
 import type { Lexicon } from '../engine/lexicon';
 
 const NewRun = lazy(() =>
@@ -98,7 +100,26 @@ export function App() {
   // `usePersistedState` is now backed by one shared store per key, so this
   // instance stays live with Options' and RunView's rather than freezing at
   // page-load values — which is what used to let it write a stale snapshot back.
-  useSettings();
+  const { settings } = useSettings();
+  useEffect(() => {
+    let live = true;
+    let request = 0;
+    const syncMascotCursor = () => {
+      const current = ++request;
+      const active = activeUnlocks();
+      void Promise.all(mascotCursorUrls(settings.mascot, active).map(preloadImage)).then(() => {
+        if (live && current === request) {
+          applyMascotCursor(document.documentElement, settings.mascot, active);
+        }
+      });
+    };
+    syncMascotCursor();
+    window.addEventListener(PRESENTATION_CHANGED_EVENT, syncMascotCursor);
+    return () => {
+      live = false;
+      window.removeEventListener(PRESENTATION_CHANGED_EVENT, syncMascotCursor);
+    };
+  }, [settings.mascot]);
   const [screen, setScreen] = useState<Screen>('menu');
 
   // Escape follows the visible Back button's real stack. Capture phase matters:

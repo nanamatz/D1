@@ -39,8 +39,6 @@ describe('feedback 3 UI regressions', () => {
   it('preloads only first-interaction art', () => {
     const loading = source('src/ui/components/LoadingScreen.tsx');
     expect(loading).not.toContain('import.meta.glob');
-    expect(loading).toContain(
-      "const ASSET_URLS = [mascotSrc('woodak'), pouchUrl, recordUrl, draftUrl]",
-    );
+    expect(loading).toContain('...activeMascotCursorUrls()');
   });
 });

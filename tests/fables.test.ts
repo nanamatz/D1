@@ -345,9 +345,19 @@ describe('Fable registry', () => {
 
     const pouchRun = { ...newRun('lion-skin-pouch'), consumables: ['fable20' as const] };
     const pouchTarget = pouchRun.bag[0]!;
-    const pouchResult = useFableOnPouch('fable20', pouchRun, [pouchTarget.id], highRng);
+    // A held pack action captures the post-action counter in one key. Preview and
+    // delayed commit each replay a fresh RNG from that same key.
+    const actionKey = `${pouchRun.seed}#1`;
+    const pouchPreview = previewFableTile('fable20', pouchTarget, makeRng(actionKey));
+    const pouchResult = useFableOnPouch(
+      'fable20',
+      pouchRun,
+      [pouchTarget.id],
+      makeRng(actionKey),
+    );
     expect(pouchResult.ok).toBe(true);
-    expect(pouchResult.run.bag.find((tile) => tile.id === pouchTarget.id)?.edition).toBe('rainbow');
+    expect(pouchResult.run.bag.find((tile) => tile.id === pouchTarget.id)?.edition)
+      .toBe(pouchPreview.edition);
 
     const editionedBlind = {
       ...blind,

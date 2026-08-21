@@ -288,7 +288,7 @@
 }
 .force-reduced-motion .crt-scan { animation: none; }
 
-/* Item 9: the board is laid out at a fixed design size (--board-max wide, 966px
+/* Item 9: the board is laid out at a fixed design size (--board-max wide, 988px
    tall) and scaled to fit — it is a single-screen board, so it must never scroll.
    Stepped via media queries because `zoom` needs a unitless number and CSS cannot
    derive one from vw/vh (calc(100vw / 1440) is a length, not a ratio). Composes

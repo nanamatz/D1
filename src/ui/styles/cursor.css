@@ -1,0 +1,184 @@
+/* Selected WooDak-skin hand cursors. Native CSS cursor positioning stays exact;
+   touch/mobile and semantic tool cursors remain owned by the operating system. */
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --game-cursor-normal: var(--mascot-cursor-normal-mono, default);
+    --game-cursor-hover: var(--mascot-cursor-hover-mono, pointer);
+    --game-cursor-active: var(--mascot-cursor-active-mono, pointer);
+  }
+  :root:not(.world-mono) {
+    --game-cursor-normal: var(--mascot-cursor-normal-color, default);
+    --game-cursor-hover: var(--mascot-cursor-hover-color, pointer);
+    --game-cursor-active: var(--mascot-cursor-active-color, pointer);
+  }
+
+  html,
+  body {
+    cursor: var(--game-cursor-normal);
+  }
+  /* The selected six cursors decode behind this non-interactive screen. */
+  .loading-screen,
+  .loading-screen * {
+    cursor: none !important;
+  }
+
+  /* Existing explicit pointer surfaces plus native interactive controls. */
+  .btn,
+  .tab,
+  .car-arrow,
+  .sidenav-btn,
+  .filter-pill,
+  .langbtn,
+  .shop-offer-card,
+  .shop-offer-select,
+  .desk-object,
+  .desk-bulldog-tooth,
+  .joker,
+  .owned-object-select,
+  .consumable.use,
+  .consumable-object,
+  .tile,
+  .sortbtn,
+  .consumable-menu button,
+  .profile-register-title-head button,
+  .profile-register-title,
+  .profile-title-drawer label,
+  .seed-toggle,
+  .cat-btn,
+  .word-tab,
+  .emoji-tile-collection,
+  .coll-card.mascot-card:not(.locked),
+  .seg,
+  .toggle,
+  .cr-legal summary,
+  .ov-close,
+  .pouch-widget,
+  .ri-tab,
+  button,
+  a[href],
+  [role='button'],
+  label[for],
+  select,
+  summary,
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='range'] {
+    cursor: var(--game-cursor-hover);
+  }
+
+  :where(
+    .btn,
+    .tab,
+    .car-arrow,
+    .sidenav-btn,
+    .filter-pill,
+    .langbtn,
+    .shop-offer-card,
+    .shop-offer-select,
+    .desk-object,
+    .desk-bulldog-tooth,
+    .joker,
+    .owned-object-select,
+    .consumable.use,
+    .consumable-object,
+    .tile,
+    .sortbtn,
+    .consumable-menu button,
+    .profile-register-title-head button,
+    .profile-register-title,
+    .profile-title-drawer label,
+    .seed-toggle,
+    .cat-btn,
+    .word-tab,
+    .emoji-tile-collection,
+    .coll-card.mascot-card:not(.locked),
+    .seg,
+    .toggle,
+    .cr-legal summary,
+    .ov-close,
+    .pouch-widget,
+    .ri-tab,
+    button,
+    a[href],
+    [role='button'],
+    label[for],
+    select,
+    summary,
+    input[type='button'],
+    input[type='submit'],
+    input[type='reset'],
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='range']
+  ):active {
+    cursor: var(--game-cursor-active) !important;
+  }
+
+  /* Preserve operating-system semantic cursors for editing and special tools. */
+  input:not([type]),
+  input[type='text'],
+  input[type='email'],
+  input[type='search'],
+  input[type='url'],
+  input[type='tel'],
+  input[type='password'],
+  input[type='number'],
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'],
+  input[type='month'],
+  input[type='week'],
+  textarea,
+  [contenteditable]:not([contenteditable='false']) {
+    cursor: text !important;
+  }
+  .bs-tag-icon,
+  .run-tag-icon,
+  .run-choice-art {
+    cursor: help !important;
+  }
+  .desk-check-sign-zone {
+    cursor: crosshair !important;
+  }
+  .tile.draggable {
+    cursor: var(--game-cursor-hover) !important;
+  }
+  .tile.draggable:active,
+  .tile.grabbed {
+    cursor: var(--game-cursor-active) !important;
+  }
+  .joker-slot.grabbed {
+    cursor: grabbing !important;
+  }
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  [aria-disabled='true'],
+  .tile.locked,
+  .consumable-menu button:disabled {
+    cursor: not-allowed !important;
+  }
+  .shop-offer.empty .shop-offer-card,
+  .pack-candidate-row .tile.locked,
+  .desk-bulldog,
+  .desk-bulldog-tooth:disabled,
+  .tile.mini,
+  .bs-card.skipped .bs-tag-icon {
+    cursor: var(--game-cursor-normal) !important;
+  }
+  .joker-slot.grabbed * {
+    cursor: grabbing !important;
+  }
+}
+
+/* High-contrast mode disables image cursors without erasing semantic keywords. */
+@media (forced-colors: active) {
+  :root {
+    --game-cursor-normal: default !important;
+    --game-cursor-hover: pointer !important;
+    --game-cursor-active: pointer !important;
+  }
+}

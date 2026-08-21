@@ -38,6 +38,115 @@ describe('feedback 2 UI regressions', () => {
     expect(game).toContain("prev.pack?.offer.type !== 'ink'");
   });
 
+  it('routes every held Gambler through the live Fable/Ink candidate field', () => {
+    const pack = source('src/ui/components/PackOpening.tsx');
+    const run = source('src/ui/components/RunView.tsx');
+    const shelf = source('src/ui/components/JokerShelf.tsx');
+    const game = source('src/ui/useGame.ts');
+    expect(pack).toContain("pack.offer.type !== 'consumable' && pack.offer.type !== 'ink'");
+    expect(pack).toContain("effectKind === 'font' ? 'font'");
+    expect(pack).toContain('previewGamblerTile(event.id, tile)');
+    expect(run).toContain('g.useHeldPackGambler(id, packCandidateIds)');
+    expect(run).toContain('gamblerTargetsTiles(id) ? packCandidateIds : []');
+    expect(shelf).toContain('(isFableId(c) && fableTargetsTiles(c)) || isGamblerId(c)');
+    const heldRoute = game.slice(
+      game.indexOf('const useHeldPackGambler = useCallback'),
+      game.indexOf('const closePack = useCallback'),
+    );
+    expect(heldRoute.match(/canUseGambler\(/g)).toHaveLength(2);
+    expect(heldRoute).toContain('const activeField = prev.pack.candidateTiles ?? []');
+    expect(heldRoute).toContain('const activeTargets = gamblerTargetsTiles(id) ? tileIds : []');
+    expect(heldRoute).toContain('candidateTiles = syncCandidates(activeField, result.run)');
+    expect(heldRoute).toContain("recordVoucherProgress({ kind: 'consumableUsed', family: 'gambler' })");
+    expect(heldRoute).toContain('recordPouchUnlockChanges(prev.run, result.run)');
+    expect(heldRoute).toContain("recordEmojiUnlockEvent({ kind: 'consumableUsed'");
+    expect(heldRoute).toContain("audio.play('consumableUse')");
+    expect(heldRoute).toContain('pack: { ...prev.pack, candidateTiles }');
+    expect(heldRoute).toContain('rngCounter: prev.rngCounter + 1');
+    expect(heldRoute).not.toContain('consumePackOption');
+    expect(heldRoute).not.toContain('picksLeft');
+  });
+
+  it('shares one reserved RNG key across held-pack preview and commit', () => {
+    const bus = source('src/ui/packFableFx.ts');
+    const pack = source('src/ui/components/PackOpening.tsx');
+    const game = source('src/ui/useGame.ts');
+    const listener = pack.slice(
+      pack.indexOf('const off = packFableFxBus.on'),
+      pack.indexOf('if (!pack) return null'),
+    );
+    const heldRoutes = game.slice(
+      game.indexOf('const useHeldPackFable = useCallback'),
+      game.indexOf('const closePack = useCallback'),
+    );
+
+    expect(bus).toContain('rngKey: string');
+    expect(bus).toContain('cancel: () => void');
+    expect(listener).toContain('makeRng(event.rngKey)');
+    expect(listener).not.toContain('g.state.rngCounter');
+    expect(listener).toContain('activeEvent?.cancel()');
+    expect(listener).toContain('activeEvent = null');
+    expect(listener).toContain('onSelectedCandidatesChange([])');
+    expect(listener).toContain('const effectMs = motionOff() ? 120 : 900');
+    expect(heldRoutes.match(/makeRng\(rngKey\)/g)).toHaveLength(2);
+    expect(heldRoutes.match(/prev\.seed !== actionSeed/g)).toHaveLength(2);
+    expect(heldRoutes.match(/prev\.rngCounter !== actionCounter/g)).toHaveLength(2);
+    expect(heldRoutes.match(/if \(!accepted\) cancel\(\)/g)).toHaveLength(2);
+    expect(heldRoutes.match(/rngCounter: prev\.rngCounter \+ 1/g)).toHaveLength(2);
+
+    for (const action of ['sell', 'reorderJokers', 'useConsumable', 'sellConsumable']) {
+      const start = game.indexOf(`const ${action} = useCallback`);
+      expect(game.slice(start, start + 220), action)
+        .toContain('if (heldPackConsumablePending.current) return;');
+    }
+  });
+
+  it('cancels a pending held action and always commits a requested pack close', () => {
+    const pack = source('src/ui/components/PackOpening.tsx');
+    const game = source('src/ui/useGame.ts');
+    const heldRoutes = game.slice(
+      game.indexOf('const useHeldPackFable = useCallback'),
+      game.indexOf('const closePack = useCallback'),
+    );
+    const closeRoute = game.slice(
+      game.indexOf('const closePack = useCallback'),
+      game.indexOf('const toggleTile = useCallback'),
+    );
+
+    expect(heldRoutes.match(/heldPackConsumableCancel\.current = cancel/g)).toHaveLength(2);
+    expect(heldRoutes.match(/heldPackConsumableCancel\.current === cancel/g)).toHaveLength(4);
+    expect(closeRoute.indexOf('heldPackConsumableCancel.current?.()'))
+      .toBeLessThan(closeRoute.indexOf('setState('));
+    expect(closeRoute).toContain('heldPackCloseTransaction.current = transaction');
+    expect(closeRoute).toContain('heldPackCloseTransaction.current !== transaction');
+    expect(closeRoute).toContain('transaction.timer = setTimeout(commit, delayMs)');
+    expect(closeRoute).toContain('heldPackCloseTransaction.current = null');
+    expect(closeRoute).toContain('completePendingPackTransition({ ...prev, pack: null })');
+    expect(pack).toContain('g.closePack(360)');
+    expect(pack).toContain('activeEvent?.cancel()');
+    expect(heldRoutes.match(/heldPackCloseTransaction\.current !== null/g)).toHaveLength(2);
+  });
+
+  it('cancels close timers before run replacement and on hook unmount', () => {
+    const game = source('src/ui/useGame.ts');
+    const cancelClose = game.slice(
+      game.indexOf('const cancelHeldPackClose = useCallback'),
+      game.indexOf('const cancelPackTransactions = useCallback'),
+    );
+    expect(cancelClose).toContain('heldPackCloseTransaction.current !== transaction');
+    expect(cancelClose).toContain('clearTimeout(transaction.timer)');
+    expect(cancelClose).toContain('transaction.timer = null');
+    expect(game).toContain('useEffect(() => () => cancelPackTransactions()');
+
+    for (const action of ['endRun', 'newGame', 'startRun']) {
+      const start = game.indexOf(`const ${action} = useCallback`);
+      const body = game.slice(start, start + 500);
+      expect(body.indexOf('cancelPackTransactions()'), action).toBeGreaterThan(0);
+      const replacement = action === 'endRun' ? body.indexOf('clearRun()') : body.indexOf('setState(next)');
+      expect(body.indexOf('cancelPackTransactions()'), action).toBeLessThan(replacement);
+    }
+  });
+
   it('previews target-axis changes and keeps tile score feedback at the source', () => {
     const pack = source('src/ui/components/PackOpening.tsx');
     const tile = source('src/ui/components/Tile.tsx');
