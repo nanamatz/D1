@@ -687,7 +687,7 @@
   25% { opacity: 1; }
   56% { opacity: 1; transform: translate(-50%, 18px) rotate(1deg) scale(.94, .78); }
   68% { transform: translate(-50%, 8px) rotate(-1deg) scale(1.03, 1.08); }
-  100% { opacity: 1; transform: translate(-50%, -22px) rotate(-7deg) scale(.88); }
+  100% { opacity: 0; transform: translate(-50%, -78px) rotate(-7deg) scale(.88); }
 }
 @keyframes cashout-proof-ink {
   from { opacity: 0; transform: translateX(-50%) rotate(-3deg) scale(1.35); }
@@ -1023,39 +1023,6 @@
     0 0 24px color-mix(in srgb, var(--gold) 65%, transparent);
   pointer-events: none;
   animation: skip-tag-auto-redeem 1.05s steps(10, end) both;
-}
-.pythagorean-choice {
-  position: fixed;
-  inset: 0;
-  z-index: 195;
-  display: grid;
-  place-items: center;
-  background: rgba(4, 8, 18, .72);
-}
-.pythagorean-choice-card {
-  width: min(430px, calc(100vw - 32px));
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  padding: 20px;
-  color: var(--text);
-  background: var(--panel);
-  border: 4px solid var(--gold);
-  box-shadow: 8px 8px 0 var(--ink);
-  font-family: var(--ctl-font);
-  text-align: center;
-}
-.pythagorean-choice-card > img {
-  width: 88px;
-  height: 88px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-.pythagorean-choice-actions {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
 }
 .skip-tag-auto-redeem img {
   width: 72px;
@@ -1432,6 +1399,7 @@
   font-size: var(--fs-sm);
   font-weight: 700;
   line-height: 1.35;
+  text-wrap: balance;
   padding: 8px 10px;
   border: 2px solid var(--tile-ink);
   box-shadow: var(--shadow);

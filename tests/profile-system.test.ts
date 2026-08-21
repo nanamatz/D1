@@ -4,7 +4,6 @@ import { KNOWLEDGE_LETTER_HAND_IDS } from '../src/engine/letterHands';
 import { makeLexicon } from '../src/engine/lexicon';
 import { POUCH_IDS } from '../src/engine/pouches';
 import { RECORD_IDS } from '../src/engine/records';
-import { ALL_JOKERS } from '../src/engine/jokers';
 import { collectionSize } from '../src/ui/collection';
 import {
   discoverLetterHand,
@@ -122,6 +121,10 @@ describe('profile-scoped unlock all', () => {
 
   it('unlocks every implemented registry on the second press without touching P2', () => {
     createProfile(2, 'Second');
+    writeLifetime({
+      ...loadLifetime(1),
+      jokerRecordStickers: { bookworm: 'redLp' },
+    }, 1);
     expect(unlockAllProfile(1, lexicon)).toBe('warning');
     expect(unlockAllProfile(1, lexicon)).toBe('unlocked');
 
@@ -141,9 +144,7 @@ describe('profile-scoped unlock all', () => {
     expect(loadLifetime(1).recordWinsByPouch).toEqual(
       Object.fromEntries(POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]])),
     );
-    expect(loadLifetime(1).jokerRecordStickers).toEqual(
-      Object.fromEntries(ALL_JOKERS.map((joker) => [joker.id, 'dvd'])),
-    );
+    expect(loadLifetime(1).jokerRecordStickers).toEqual({ bookworm: 'redLp' });
     expect(loadLifetime(1).discoveredLetterHands).toEqual([...KNOWLEDGE_LETTER_HAND_IDS]);
     expect(loadLifetime(1).unlockAllApplied).toBe(true);
     expect(loadLifetime(1).challengesDisabled).toBe(true);

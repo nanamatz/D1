@@ -20,6 +20,7 @@ import { useEntering } from './ScreenTransition';
 import { useStageDrag, type StageDragCallbacks } from '../drag';
 import { UiIcon } from './UiIcon';
 import { bossAllowsDiscard } from '../../engine/bosses';
+import { PosTags } from './PosTags';
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
@@ -280,7 +281,7 @@ export function StagePanel({
           current pattern formed by words that have already been submitted. */}
       {preview && !preview.isGibberish && preview.pos && (
         <div className="stage-preview">
-          <span className="sp-pos">{preview.pos}</span>
+          <PosTags candidates={preview.pos} className="sp-pos" />
         </div>
       )}
 

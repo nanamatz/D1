@@ -41,16 +41,16 @@ const TABS: readonly { id: Tab; label: string }[] = [
 
 const PATTERN_ORDER: PatternId[] = [
   'outcry',
-  'imperative',
-  'chant',
   'simple',
-  'descriptive',
+  'imperative',
   'transitive',
+  'negative',
+  'interrogative',
+  'descriptive',
+  'chant',
+  'objectComplement',
   'ditransitive',
   'compound',
-  'objectComplement',
-  'interrogative',
-  'negative',
   'complex',
 ];
 

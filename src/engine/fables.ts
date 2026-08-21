@@ -138,6 +138,11 @@ const rollFableTileEdition = (rng: Pick<Rng, 'next'>): TileEdition => {
     : roll < weights.gray + weights.violet ? 'violet' : 'rainbow';
 };
 
+const rollLionSkinEdition = (rng: Pick<Rng, 'next'>): TileEdition | null =>
+  rng.next() < BALANCE.fables.lionSkinEditionChance
+    ? rollFableTileEdition(rng)
+    : null;
+
 /** Live payout shared by The Heavenly Maiden and the Woodcutter's tooltip and
  * effect resolution, so the displayed amount can never drift from the award. */
 export const jokerSellGoldValue = (run: RunState): number =>
@@ -167,16 +172,16 @@ export function useFableOnPouch(
   run: RunState,
   tileIds: readonly string[],
   rng: Pick<Rng, 'next'>,
-): { ok: boolean; run: RunState } {
+): { ok: boolean; run: RunState; chanceResults: ChanceResult[] } {
   const effect = FABLE_REGISTRY.get(id)?.effect;
-  if (!effect || !canUseFableOnPouch(id, run, tileIds)) return { ok: false, run };
+  if (!effect || !canUseFableOnPouch(id, run, tileIds)) return { ok: false, run, chanceResults: [] };
   const ids = new Set(tileIds);
   const consumed = (): ConsumableId[] => {
     const c = run.consumables.slice();
     c.splice(c.indexOf(id), 1);
     return c;
   };
-  const commit = (bag: Tile[]): { ok: true; run: RunState } => ({
+  const commit = (bag: Tile[]): { ok: true; run: RunState; chanceResults: ChanceResult[] } => ({
     ok: true,
     run: onFableUsed({
       ...run,
@@ -185,6 +190,7 @@ export function useFableOnPouch(
       lastFableOrConstellation: id,
       fablesUsed: (run.fablesUsed ?? 0) + 1,
     }),
+    chanceResults: [],
   });
 
   if (effect.kind === 'material') {
@@ -211,11 +217,22 @@ export function useFableOnPouch(
     return { ...result, run: onTilesDestroyed(result.run, ids.size) };
   }
   if (effect.kind === 'tileEdition') {
-    const edition = rollFableTileEdition(rng);
-    const result = commit(run.bag.map((tile) => ids.has(tile.id) ? { ...tile, edition } : tile));
-    return { ...result, run: onTilesEnhanced(result.run, ids.size) };
+    const edition = rollLionSkinEdition(rng);
+    const result = commit(edition
+      ? run.bag.map((tile) => ids.has(tile.id) ? { ...tile, edition } : tile)
+      : run.bag);
+    const chanceResults: ChanceResult[] = [{
+      chance: BALANCE.fables.lionSkinEditionChance,
+      label: 'edition',
+      outcome: edition ? 'success' : 'failure',
+    }];
+    return {
+      ...result,
+      chanceResults,
+      run: edition ? onTilesEnhanced(result.run, ids.size) : result.run,
+    };
   }
-  return { ok: false, run };
+  return { ok: false, run, chanceResults: [] };
 }
 
 /** Pure validation twin of useFableOnPouch, used to gate a pack's Use button. */
@@ -361,7 +378,8 @@ export function previewFableTile(id: FableId, tile: Tile, rng?: Pick<Rng, 'next'
     };
   }
   if (effect?.kind === 'tileEdition' && rng) {
-    return { ...tile, edition: rollFableTileEdition(rng) };
+    const edition = rollLionSkinEdition(rng);
+    return edition ? { ...tile, edition } : tile;
   }
   return tile;
 }
@@ -488,15 +506,22 @@ export function useFable(
   } else if (effect.kind === 'wordHandStamps') {
     nextRun = addLetterHandStamps(nextRun, run.lastLetterHand!, effect.count).run;
   } else if (effect.kind === 'tileEdition') {
-    const ids = new Set(selectedIds);
-    const edition = rollFableTileEdition(rng);
-    ({ run: nextRun, blind: nextBlind } = patchTiles(
-      nextRun,
-      nextBlind,
-      ids,
-      (tile) => ({ ...tile, edition }),
-    ));
-    nextRun = onTilesEnhanced(nextRun, selectedIds.length);
+    const edition = rollLionSkinEdition(rng);
+    chanceResults.push({
+      chance: BALANCE.fables.lionSkinEditionChance,
+      label: 'edition',
+      outcome: edition ? 'success' : 'failure',
+    });
+    if (edition) {
+      const ids = new Set(selectedIds);
+      ({ run: nextRun, blind: nextBlind } = patchTiles(
+        nextRun,
+        nextBlind,
+        ids,
+        (tile) => ({ ...tile, edition }),
+      ));
+      nextRun = onTilesEnhanced(nextRun, selectedIds.length);
+    }
   }
 
   return { ok: true, run: nextRun, blind: nextBlind, requestHint, chanceResults };

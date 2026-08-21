@@ -131,7 +131,7 @@ describe('slice5 bosses — scoring effects', () => {
     const hand = tilesFor('cat');
     const blind = { ...bossBlind(r, 'whitePaper'), hand };
     const before = JSON.stringify(r);
-    const preview = stagePreview(blind, r, lex, hand.map((tile) => tile.id), String);
+    const preview = stagePreview(blind, r, lex, hand.map((tile) => tile.id));
     const result = submitWord(blind, r, lex, hand.map((tile) => tile.id), makeRng('tower-white'));
 
     expect(preview).toMatchObject({ debuffed: true, pos: null, letterHand: null });
@@ -161,7 +161,7 @@ describe('slice5 bosses — scoring effects', () => {
     ];
     const blind = { ...bossBlind(r, 'burntPaper'), hand };
     const ids = hand.map((tile) => tile.id);
-    const preview = stagePreview(blind, r, lex, ids, String);
+    const preview = stagePreview(blind, r, lex, ids);
     const result = submitWord(blind, r, lex, ids, makeRng('stone-burnt'));
 
     expect(preview).toMatchObject({

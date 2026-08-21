@@ -53,6 +53,14 @@ const OBJECT_COMPLEMENT_VERBS = new Set([
   'elect', 'elects', 'elected',
   'paint', 'paints', 'painted',
 ]);
+const DITRANSITIVE_VERBS = new Set([
+  'give', 'gives', 'gave', 'given', 'giving',
+  'tell', 'tells', 'told', 'telling',
+  'send', 'sends', 'sent', 'sending',
+  'show', 'shows', 'showed', 'shown', 'showing',
+]);
+const DITRANSITIVE: Slot = (word) =>
+  can(word, 'verbTransitive') && DITRANSITIVE_VERBS.has(word.text.toLowerCase());
 const QUESTION_OPENERS = new Set([
   'who', 'whom', 'whose', 'what', 'which', 'when', 'where', 'why', 'how',
   'am', 'is', 'are', 'was', 'were',
@@ -108,7 +116,7 @@ const CLAUSE_SKELETONS: readonly Slot[][] = [
   [NOUN, ANYVERB], // simple
   [NOUN, LINKING, ADJ], // descriptive
   [NOUN, ANYVERB, NOUN], // transitive
-  [NOUN, ANYVERB, NOUN, NOUN], // ditransitive
+  [NOUN, DITRANSITIVE, NOUN, NOUN], // ditransitive
   [NOUN, ANYVERB, ANYVERB], // auxiliary + lexical verb
 ];
 
@@ -212,7 +220,7 @@ function candidates(words: readonly POSWord[]): Candidate[] {
   push('simple', matchSkeleton(words, [NOUN, ANYVERB]));
   push('descriptive', matchSkeleton(words, [NOUN, LINKING, ADJ]));
   push('transitive', matchSkeleton(words, [NOUN, ANYVERB, NOUN]));
-  push('ditransitive', matchSkeleton(words, [NOUN, ANYVERB, NOUN, NOUN]));
+  push('ditransitive', matchSkeleton(words, [NOUN, DITRANSITIVE, NOUN, NOUN]));
 
   const chant = matchChant(words);
   if (chant !== null) push('chant', 0, chant);
@@ -226,6 +234,35 @@ function candidates(words: readonly POSWord[]): Candidate[] {
   push('complex', matchComplex(words));
 
   return out;
+}
+
+/** Highest-ranked candidate. Pattern ranks are unique, so no tie-break is needed. */
+function winningCandidate(words: readonly POSWord[]): Candidate | null {
+  let best: Candidate | null = null;
+  for (const candidate of candidates(words)) {
+    if (
+      best === null ||
+      BALANCE.patterns[candidate.id].rank > BALANCE.patterns[best.id].rank
+    ) best = candidate;
+  }
+  return best;
+}
+
+/** Union of POS choices that preserve the exact winning pattern outcome. */
+function compatiblePos(
+  words: readonly POSWord[],
+  winning: Candidate,
+): readonly (readonly POS[])[] {
+  return words.map((word, wordIndex) => word.pos.filter((pos) => {
+    const constrained = words.map((candidate, index) =>
+      index === wordIndex ? { ...candidate, pos: [pos] } : candidate,
+    );
+    return candidates(constrained).some((candidate) =>
+      candidate.id === winning.id &&
+      candidate.absorbed === winning.absorbed &&
+      candidate.repeats === winning.repeats,
+    );
+  }));
 }
 
 /** Unison (§5.3): 2+ words sharing at least one final non-null register. */
@@ -245,7 +282,11 @@ export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexi
   // Rule 1: any gibberish hole voids all pattern matches.
   const hasHole = sequence.some((w) => w.isGibberish);
   if (hasHole || sequence.length === 0) {
-    return { match: null, unison: hasHole ? null : judgeUnison(sequence) };
+    return {
+      match: null,
+      unison: hasHole ? null : judgeUnison(sequence),
+      compatiblePos: null,
+    };
   }
 
   const words: POSWord[] = sequence.map((w) => ({
@@ -253,19 +294,27 @@ export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexi
     pos: lexicon.lookup(w.text)?.pos ?? [],
   }));
 
-  const cands = candidates(words);
-  let best: PatternMatch | null = null;
-  for (const c of cands) {
-    const rank = BALANCE.patterns[c.id].rank;
-    if (best === null || rank > best.rank) {
-      best =
-        c.repeats === undefined
-          ? { pattern: c.id, rank, absorbedModifiers: c.absorbed }
-          : { pattern: c.id, rank, absorbedModifiers: c.absorbed, repeats: c.repeats };
-    }
-  }
+  const winning = winningCandidate(words);
+  const best: PatternMatch | null = winning === null
+    ? null
+    : winning.repeats === undefined
+      ? {
+          pattern: winning.id,
+          rank: BALANCE.patterns[winning.id].rank,
+          absorbedModifiers: winning.absorbed,
+        }
+      : {
+          pattern: winning.id,
+          rank: BALANCE.patterns[winning.id].rank,
+          absorbedModifiers: winning.absorbed,
+          repeats: winning.repeats,
+        };
 
-  return { match: best, unison: judgeUnison(sequence) };
+  return {
+    match: best,
+    unison: judgeUnison(sequence),
+    compatiblePos: winning ? compatiblePos(words, winning) : null,
+  };
 }
 
 // ---------- Scoring the judgment (GDD §5.2, §7.3–7.4) ----------

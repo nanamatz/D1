@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/engine/balance';
-import { JOKER_REGISTRY } from '../src/engine/jokers';
+import { ALL_JOKERS, createOwnedJoker, JOKER_REGISTRY } from '../src/engine/jokers';
 import { startBlind, submitWord } from '../src/engine/loop';
 import { makeLexicon } from '../src/engine/lexicon';
 import { resolveBlind } from '../src/engine/progression';
@@ -124,20 +124,111 @@ describe('new blind-skip tags: immediate and blind-delayed effects', () => {
     expect(afterBoss.run.counters.unusedDiscards).toBe(5);
   });
 
-  it('applies Juggler to the next played blind and Economy doubles current gold', () => {
-    expect(BALANCE.skipRewards.jugglerHandSize).toBe(1);
+  it('applies Juggler +2 to the next played blind', () => {
+    expect(BALANCE.skipRewards.jugglerHandSize).toBe(2);
     const juggler = skipCurrentBlind(withDraftTag('jugglerTag'), makeRng('juggler')).run;
-    const economy = skipCurrentBlind(
-      withDraftTag('economyTag', { gold: 13 }),
-      makeRng('economy'),
-    ).run;
 
     expect(juggler.nextBlindBonus.handSize).toBe(BALANCE.skipRewards.jugglerHandSize);
-    expect(economy.gold).toBe(26);
+  });
+
+  it.each([
+    [0, 0], [1, 2], [24, 48], [25, 50], [26, 51], [100, 125],
+  ])('Economy gains current Fee with a $25 cap: $%i -> $%i', (gold, expected) => {
+    const economy = skipCurrentBlind(
+      withDraftTag('economyTag', { gold }),
+      makeRng(`economy-${gold}`),
+    ).run;
+    expect(economy.gold).toBe(expected);
+  });
+
+  it('Supply creates up to two eligible Base Common Emoji Tiles within capacity', () => {
+    const commonIds = ALL_JOKERS.filter((def) => def.rarity === 'common')
+      .slice(0, 3)
+      .map((def) => def.id);
+    const profileEligible = new Set(commonIds);
+    const supplied = skipCurrentBlind(
+      withDraftTag('pythagoreanYTag'),
+      makeRng('supply-two'),
+      { profileEligible },
+    ).run;
+    expect(supplied.jokers).toHaveLength(2);
+    expect(new Set(supplied.jokers.map((joker) => joker.defId)).size).toBe(2);
+    expect(supplied.jokers.every((joker) =>
+      profileEligible.has(joker.defId) && joker.edition === 'base')).toBe(true);
+
+    const oneSlot = skipCurrentBlind(
+      withDraftTag('pythagoreanYTag', { jokerSlots: 1 }),
+      makeRng('supply-one'),
+      { profileEligible },
+    ).run;
+    expect(oneSlot.jokers).toHaveLength(1);
+
+    const noSlots = skipCurrentBlind(
+      withDraftTag('pythagoreanYTag', { jokerSlots: 0 }),
+      makeRng('supply-none'),
+      { profileEligible },
+    ).run;
+    expect(noSlots.jokers).toHaveLength(0);
+  });
+
+  it('Supply never copies an already owned Common, even with Copy Editor', () => {
+    const base = withDraftTag('pythagoreanYTag');
+    const commonId = ALL_JOKERS.find((def) => def.rarity === 'common')!.id;
+    const run = {
+      ...base,
+      jokers: [
+        createOwnedJoker(base, 'copyEditor'),
+        createOwnedJoker(base, commonId),
+      ],
+    };
+    const supplied = skipCurrentBlind(
+      run,
+      makeRng('supply-unowned-only'),
+      { profileEligible: new Set([commonId]) },
+    ).run;
+
+    expect(supplied.jokers.filter((joker) => joker.defId === commonId)).toHaveLength(1);
   });
 });
 
 describe('new blind-skip tags: next-shop effects', () => {
+  it('Reroll Tag starts the next shop progression at $0, then $1, then $2', () => {
+    const run = withDraftTag('alphaOmegaTag', {
+      gold: 10,
+      pendingShopTags: ['alphaOmegaTag'],
+    });
+    const prepared = applyPendingShopTags(run, emptyShop(), makeRng('reroll-tag-entry'));
+    expect(prepared.appliedTags).toEqual(['alphaOmegaTag']);
+    expect(prepared.run.pendingShopTags).toEqual([]);
+    expect(prepared.shop.rerollBase).toBe(0);
+
+    const first = rerollShop(prepared.run, prepared.shop, makeRng('reroll-tag-0'));
+    const second = rerollShop(first.run, first.shop, makeRng('reroll-tag-1'));
+    const third = rerollShop(second.run, second.shop, makeRng('reroll-tag-2'));
+    expect([first.ok, second.ok, third.ok]).toEqual([true, true, true]);
+    expect([first.run.gold, second.run.gold, third.run.gold]).toEqual([10, 9, 7]);
+  });
+
+  it('applies the Reroll Tag base before voucher discount and keeps the $0 floor', () => {
+    const run = withDraftTag('alphaOmegaTag', {
+      gold: 10,
+      vouchers: ['fashionBook'],
+      pendingShopTags: ['alphaOmegaTag'],
+    });
+    const prepared = applyPendingShopTags(run, emptyShop(), makeRng('reroll-tag-voucher-entry'));
+    expect(prepared.shop.rerollBase).toBe(BALANCE.skipRewards.rerollStartCost);
+
+    const results = [];
+    let current = { run: prepared.run, shop: prepared.shop };
+    for (let index = 0; index < 5; index += 1) {
+      const result = rerollShop(current.run, current.shop, makeRng(`reroll-tag-voucher-${index}`));
+      expect(result.ok).toBe(true);
+      results.push(result.run.gold);
+      current = result;
+    }
+    expect(results).toEqual([10, 10, 10, 9, 7]);
+  });
+
   it.each([
     ['uncommonTag', 'uncommon'],
     ['rareTag', 'rare'],

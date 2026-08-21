@@ -234,7 +234,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const settling = phase === 'cashout';
   const boardKey = `${run.ante}-${run.blindIndex}`;
   const preview =
-    phase === 'playing' ? stagePreview(blind, run, lexicon, selected, t) : null;
+    phase === 'playing' ? stagePreview(blind, run, lexicon, selected) : null;
   const sidebarMode =
     phase === 'shop' ? 'shop' : phase === 'blindselect' ? 'blindselect' : 'blind';
   const boardVisible = phase === 'playing' || settling || ending;

@@ -2,13 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { BALANCE } from '../../engine/balance';
-import { rerollCost } from '../../engine/economy';
-import { canBuyVoucher } from '../../engine/shop';
+import { canBuyVoucher, currentRerollCost } from '../../engine/shop';
 import {
   canAddJoker,
   canOwnConsumable,
   discountedPrice,
-  rerollDiscount,
 } from '../../engine/vouchers';
 import { motionOff } from '../motion';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
@@ -235,7 +233,7 @@ export function Shop({ g }: { g: UseGame }) {
         (run.consumables.length < run.consumableSlots && canOwnConsumable(run, item.id));
   };
 
-  const cost = rerollCost(shop.rerolls, rerollDiscount(run));
+  const cost = currentRerollCost(run, shop);
   const redeemVoucher = (slot: 'base' | 'bonus', price: number) => {
     if (redeemingVoucher || !canBuyVoucher(run, shop, slot) || run.gold < price) return;
     setRedeemingVoucher(slot);

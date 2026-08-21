@@ -306,7 +306,14 @@ export function applyPendingShopTags(
   let items = shop.items.slice();
   let packs = shop.packs.slice();
   let bonusVoucher = shop.bonusVoucher ?? null;
+  let rerollBase = shop.rerollBase;
   const consumed = new Set<number>();
+
+  tags.forEach((tag, tagIndex) => {
+    if (tag !== 'alphaOmegaTag') return;
+    rerollBase = BALANCE.skipRewards.rerollStartCost;
+    consumed.add(tagIndex);
+  });
 
   // Guaranteed-rarity tags add inventory first, so a later edition tag can
   // enhance that newly-added base Emoji Tile when ordinary stock has none.
@@ -370,7 +377,13 @@ export function applyPendingShopTags(
       ...run,
       pendingShopTags: tags.filter((_, index) => !consumed.has(index)),
     },
-    shop: { ...shop, items, packs, bonusVoucher },
+    shop: {
+      ...shop,
+      items,
+      packs,
+      bonusVoucher,
+      ...(rerollBase === undefined ? {} : { rerollBase }),
+    },
     appliedTags: tags.filter((_, index) => consumed.has(index)),
   };
 }
@@ -526,6 +539,9 @@ export function buyVoucher(
 }
 
 /** Reroll the item slots only, for the escalating (voucher-discounted) cost (GDD §9.2). */
+export const currentRerollCost = (run: RunState, shop: ShopState): number =>
+  rerollCost(shop.rerolls, rerollDiscount(run), shop.rerollBase);
+
 export function rerollShop(
   run: RunState,
   shop: ShopState,
@@ -533,7 +549,7 @@ export function rerollShop(
   profileUnlocked: ReadonlySet<VoucherId> = new Set(),
   profileEligible?: ReadonlySet<string>,
 ): BuyResult {
-  const cost = rerollCost(shop.rerolls, rerollDiscount(run));
+  const cost = currentRerollCost(run, shop);
   if (run.gold < cost) return { run, shop, ok: false };
   const nextRun = {
     ...run,

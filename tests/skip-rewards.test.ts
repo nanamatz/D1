@@ -74,6 +74,7 @@ describe('blind skip rewards', () => {
       'grayTag',
       'voucherTag',
       'couponTag',
+      'alphaOmegaTag',
     ]);
     for (const id of SKIP_REWARD_IDS) {
       expect(isNextShopSkipReward(id), id).toBe(NEXT_SHOP_SKIP_REWARD_IDS.includes(
@@ -124,7 +125,6 @@ describe('blind skip rewards', () => {
       handSize: 0,
       targetMultiplier: 1,
       startingScore: 0,
-      alphaOmegaReplays: 0,
       lipogramLetters: [],
       scarletLetters: [],
       clearRewardBonus: 0,

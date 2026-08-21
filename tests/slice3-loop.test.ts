@@ -51,9 +51,9 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     // EATS settled = 12 × (1.0 + 4) = 60; FISH settled = 30 × (1.0 + 4) = 150
     // committed = 60 + 150 = 210. Sentence bonus is unaffected by word length
     // (pattern/unison values are fixed in BALANCE, not derived from letter chips):
-    // both standard → Unison standard (+50 chips); Imperative base 25 chips × mult 1.
+    // both standard → Unison standard (+50 chips); Imperative base 40 chips × mult 1.
     expect(b.committedScore).toBe(210);
-    expect(b.projectedScore).toBe(285); // (210 + 25 + 50) × 1
+    expect(b.projectedScore).toBe(300); // (210 + 40 + 50) × 1
   });
 
   it('builds a Transitive sentence across phases and multiplies the total', () => {
@@ -68,7 +68,7 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     // committed = 60 + 60 + 150 = 270. Sentence bonus is unaffected by word length:
     // all standard → Unison standard (+50 chips) folds into the current round Chips.
     expect(b.committedScore).toBe(270);
-    expect(b.projectedScore).toBe(760); // (270 + 60 + 50) × 2
+    expect(b.projectedScore).toBe(740); // (270 + 50 + 50) × 2
   });
 
   it('a gibberish hole collapses the sentence bonus — projected falls back to committed', () => {
@@ -107,8 +107,8 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     expect(result.judgment.match?.pattern).toBe('transitive');
     expect(result.judgment.unison?.suit).toBe('standard');
     // committed 270 (CAT 60 + EATS 60 + FISH 150, see above), then
-    // (270 + 60 pattern + 50 unison) × 2 transitive = 760
-    expect(result.finalScore).toBe(760);
+    // (270 + 50 pattern + 50 unison) × 2 transitive = 740
+    expect(result.finalScore).toBe(740);
     expect(result.phasesLeft).toBe(b.phasesTotal - b.phasesUsed); // 5 - 3 = 2
   });
 
@@ -119,11 +119,11 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
     ({ blind: b } = play(b, run, 'eats'));
     ({ blind: b } = play(b, run, 'fish'));
     const result = endBlind(b, run, lex);
-    // Transitive pattern chips 60 + Unison standard 50 = 110; Transitive mult 2.
-    expect(result.sentenceChips).toBe(110);
+    // Transitive pattern chips 50 + Unison standard 50 = 100; Transitive mult 2.
+    expect(result.sentenceChips).toBe(100);
     expect(result.sentenceMult).toBe(2);
-    expect(result.bonus).toBe(490);
-    expect(result.finalScore).toBe(760); // (committed 270 + sentence Chips 110) × 2
+    expect(result.bonus).toBe(470);
+    expect(result.finalScore).toBe(740); // (committed 270 + sentence Chips 100) × 2
     expect(result.breakdown).toEqual({
       modifierCount: 0,
       modifierChips: 0,

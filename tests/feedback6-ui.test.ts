@@ -84,7 +84,8 @@ describe('latest feedback UI regressions', () => {
     expect(stage).toContain('invalid={!!preview?.debuffed}');
     expect(stage).not.toContain('disabled={!g.canPlay || !!preview?.blocked || !!preview?.debuffed');
     expect(tray).toContain("'boss-debuffed'");
-    expect(tray).toContain('!sub.debuffed && <span className="pos">');
+    expect(tray).toContain('!sub.debuffed && (');
+    expect(tray).toContain('<PosTags candidates={posCandidates(sub, lexicon)} active={activePos} />');
     expect(source('src/ui/game.ts')).toContain('hypothetical.isGibberish || debuffed ? null');
     expect(source('src/ui/game.ts')).toContain('const letterHand = debuffed');
     expect(useGame).toContain('if (!submission.debuffed) {\n        recordEmojiUnlockEvent({');
@@ -95,6 +96,21 @@ describe('latest feedback UI regressions', () => {
     expect(useGame).toContain('if (lp && !lp.isGibberish && recordWord(lp.text))');
     expect(play).toContain('.boss-invalid-tag');
     expect(play).toContain('.word.boss-debuffed');
+  });
+
+  it('renders separate, color-coded rectangular POS chips and maps winning parses to raw history', () => {
+    const tags = source('src/ui/components/PosTags.tsx');
+    const tray = source('src/ui/components/SentenceTray.tsx');
+    const stage = source('src/ui/components/StagePanel.tsx');
+    expect(tags).not.toContain('pos-marker');
+    expect(tags).toContain('role="listitem"');
+    expect(tray).toContain('sentenceSequenceForBlind(blind)');
+    expect(tray).toContain('judgment.compatiblePos?.[eligible.indexOf(sub)]');
+    expect(stage).toContain('<PosTags candidates={preview.pos} className="sp-pos" />');
+    expect(play).toMatch(/\.pos-tags\s*\{[^}]*flex-wrap:\s*wrap/s);
+    expect(play).toMatch(/\.pos-tags\s*\{[^}]*max-width:/s);
+    expect(play).toContain('.pos-tag.alternative');
+    expect(play).not.toMatch(/\.pos-tag\.alternative\s*\{[^}]*opacity:/s);
   });
 
   it('shows Not Allowed as a transient text-only workspace notice', () => {
@@ -121,5 +137,31 @@ describe('latest feedback UI regressions', () => {
     expect(pack).toContain('const targetIds = fableTargetsTiles(fableId) ? tileIds : [];');
     expect(pack).toContain('consumableTooltipExtra(o.id, g.state.run, t)');
     expect(pack).toContain('tip.extra ? { extra: tip.extra }');
+  });
+
+  it('keeps canonical English gameplay terms consistent', () => {
+    const en = JSON.parse(source('locales/en.json')) as Record<string, string>;
+    const currencyNameExceptions = new Set(['pouch.coinPurse.name', 'unlock.body.yellow']);
+
+    expect(
+      Object.entries(en).filter(
+        ([key, value]) =>
+          !currencyNameExceptions.has(key) && /\b(gold|money|coins?)\b/i.test(value.replace(/\{gold\}/gi, '')),
+      ),
+    ).toEqual([]);
+    expect(
+      Object.entries(en).filter(([, value]) => /\bshops?\b/i.test(value.replace(/Stationery Shops?/gi, ''))),
+    ).toEqual([]);
+    expect(
+      Object.entries(en).filter(([, value]) => /\bemoji tiles?\b/i.test(value.replace(/Emoji Tiles?/g, ''))),
+    ).toEqual([]);
+
+    expect(en['skipReward.jugglerTag.desc']).toContain('next blind');
+    expect(en['voucherdesc.oldBook']).toContain('per blind');
+    expect(en['voice.piyak.enc.shopFirstVisit']).not.toContain('aynthing');
+
+    const voucherProgress = source('src/ui/voucherProgress.ts').replace(/Stationery Shops?/g, '');
+    expect(voucherProgress).not.toMatch(/conditionEn: '[^']*\bshops?\b/i);
+    expect(voucherProgress).not.toMatch(/conditionEn: '[^']*\bCharm cards?\b/i);
   });
 });

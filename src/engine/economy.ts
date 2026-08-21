@@ -123,8 +123,12 @@ export const remainingDiscardGold = (run: RunState, discardsLeft: number): numbe
   discardsLeft * pouchDiscardGoldRate(run);
 
 /** Reroll cost: base + increment per reroll, minus any voucher discount, floored at 0. */
-export function rerollCost(rerollsDone: number, discount = 0): number {
-  return Math.max(0, BALANCE.shop.rerollBase + BALANCE.shop.rerollIncrement * rerollsDone - discount);
+export function rerollCost(
+  rerollsDone: number,
+  discount = 0,
+  base: number = BALANCE.shop.rerollBase,
+): number {
+  return Math.max(0, base + BALANCE.shop.rerollIncrement * rerollsDone - discount);
 }
 
 /** Half the supplied current price, rounded down, with the shared $1 floor. */

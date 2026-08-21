@@ -19,6 +19,23 @@ const L = makeLexicon([], {
   feels: { suit: 'standard', pos: ['verbIntransitive', 'verbLinking'] },
   i: { suit: 'standard', pos: ['noun'] },
   give: { suit: 'standard', pos: ['verbTransitive'] },
+  gives: { suit: 'standard', pos: ['verbTransitive'] },
+  gave: { suit: 'standard', pos: ['verbTransitive'] },
+  given: { suit: 'standard', pos: ['verbTransitive'] },
+  giving: { suit: 'standard', pos: ['verbTransitive'] },
+  tell: { suit: 'standard', pos: ['verbTransitive'] },
+  tells: { suit: 'standard', pos: ['verbTransitive'] },
+  told: { suit: 'standard', pos: ['verbTransitive'] },
+  telling: { suit: 'standard', pos: ['verbTransitive'] },
+  send: { suit: 'standard', pos: ['verbTransitive'] },
+  sends: { suit: 'standard', pos: ['verbTransitive'] },
+  sent: { suit: 'standard', pos: ['verbTransitive'] },
+  sending: { suit: 'standard', pos: ['verbTransitive'] },
+  show: { suit: 'standard', pos: ['verbTransitive'] },
+  shows: { suit: 'standard', pos: ['verbTransitive'] },
+  showed: { suit: 'standard', pos: ['verbTransitive'] },
+  shown: { suit: 'standard', pos: ['verbTransitive'] },
+  showing: { suit: 'standard', pos: ['verbTransitive'] },
   him: { suit: 'standard', pos: ['noun'] },
   and: { suit: 'standard', pos: ['conjunction'] },
   dogs: { suit: 'standard', pos: ['noun'] },
@@ -116,10 +133,19 @@ describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
     expect(pattern(['I', 'GIVE', 'HIM', 'FISH'])).toBe('ditransitive');
   });
 
-  it('eases the base skeletons by accepting any verb subtype', () => {
+  it.each([
+    'GIVE', 'GIVES', 'GAVE', 'GIVEN', 'GIVING',
+    'TELL', 'TELLS', 'TOLD', 'TELLING',
+    'SEND', 'SENDS', 'SENT', 'SENDING',
+    'SHOW', 'SHOWS', 'SHOWED', 'SHOWN', 'SHOWING',
+  ])('recognizes the approved Ditransitive family inflection %s', (verb) => {
+    expect(pattern(['I', verb, 'HIM', 'FISH'])).toBe('ditransitive');
+  });
+
+  it('accepts any verb subtype except for the controlled Ditransitive verb slot', () => {
     expect(pattern(['CAT', 'EATS'])).toBe('simple');
     expect(pattern(['CAT', 'FLY', 'FISH'])).toBe('transitive');
-    expect(pattern(['I', 'FLY', 'HIM', 'FISH'])).toBe('ditransitive');
+    expect(pattern(['I', 'FLY', 'HIM', 'FISH'])).toBeNull();
   });
 
   it('Compound: clause + conjunction + clause (CATS RUN AND DOGS SLEEP)', () => {
@@ -149,10 +175,17 @@ describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
     expect(pattern(['HE', 'NEVER', 'LIES'])).toBe('negative');
   });
 
+  it('resolves overlaps by the approved rank order', () => {
+    expect(pattern(['DO', 'YOU', 'NOT', 'KNOW'])).toBe('interrogative');
+    expect(pattern(['SHE', 'EATS', 'NOT', 'FISH'])).toBe('negative');
+    expect(pattern(['RUN', 'HOME'])).toBe('imperative');
+  });
+
   it('Complex: subordinator + subordinate clause + main clause', () => {
     expect(pattern(['BECAUSE', 'IT', 'RAINED', 'I', 'STAYED', 'HOME'])).toBe('complex');
     expect(pattern(['WHEN', 'HE', 'ARRIVED', 'WE', 'STARTED'])).toBe('complex');
     expect(pattern(['IF', 'YOU', 'STUDY', 'YOU', 'WILL', 'PASS'])).toBe('complex');
+    expect(pattern(['WHEN', 'HE', 'ARRIVED', 'STARTED'])).not.toBe('complex');
   });
 });
 
@@ -180,7 +213,40 @@ describe('slice3 patterns — matching rules (GDD §5.1)', () => {
   });
 
   it('no match for a bare noun', () => {
-    expect(pattern(['CAT'])).toBeNull();
+    const judgment = judgeSentence(seq(['CAT']), L);
+    expect(judgment.match).toBeNull();
+    expect(judgment.compatiblePos).toBeNull();
+  });
+
+  it('exposes only POS choices compatible with the highest pattern', () => {
+    const judgment = judgeSentence(seq(['CAT', 'FEELS', 'GOOD']), L);
+    expect(judgment.match?.pattern).toBe('descriptive');
+    expect(judgment.compatiblePos).toEqual([
+      ['noun'],
+      ['verbLinking'],
+      ['adjective'],
+    ]);
+  });
+
+  it('keeps the union of equivalent ANYVERB parses active', () => {
+    const judgment = judgeSentence(seq(['BIRDS', 'RUN']), L);
+    expect(judgment.match?.pattern).toBe('simple');
+    expect(judgment.compatiblePos).toEqual([
+      ['noun'],
+      ['verbIntransitive', 'verbTransitive'],
+    ]);
+  });
+
+  it('resolves absorbed modifiers without changing their pattern score', () => {
+    const judgment = judgeSentence(seq(['THE', 'BIG', 'CAT', 'EATS', 'FISH']), L);
+    expect(judgment.match?.absorbedModifiers).toBe(2);
+    expect(judgment.compatiblePos).toEqual([
+      ['article'],
+      ['adjective'],
+      ['noun'],
+      ['verbTransitive'],
+      ['noun'],
+    ]);
   });
 });
 

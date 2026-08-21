@@ -129,7 +129,6 @@ export function startBlind(run: RunState, rng: Rng, opts: StartBlindOptions = {}
     deadLetter: null,
     lipogramLetters: [...(nextBonus.lipogramLetters ?? [])],
     scarletLetters: [...(nextBonus.scarletLetters ?? [])],
-    alphaOmegaReplays: nextBonus.alphaOmegaReplays ?? 0,
     clearRewardBonus: nextBonus.clearRewardBonus ?? 0,
   };
 
@@ -1032,14 +1031,7 @@ function scoreSentence(
     totalBefore: committed,
     sentenceChips: base.sentenceChips,
     sentenceMult: base.sentenceMult,
-    scoreBonus: (() => {
-      const replays = blind.alphaOmegaReplays ?? 0;
-      const first = scoringSequence[0];
-      const last = scoringSequence[scoringSequence.length - 1];
-      if (replays <= 0 || !first || !last) return 0;
-      const lastScore = first.text === last.text ? 0 : last.settledScore;
-      return (first.settledScore + lastScore) * replays;
-    })(),
+    scoreBonus: 0,
     jokerTriggers: [],
   };
   if (hasEligibleSubmission) {

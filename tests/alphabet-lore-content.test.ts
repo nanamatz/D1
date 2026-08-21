@@ -4,7 +4,6 @@ import { BOSS_REGISTRY, enterBossBlind } from '../src/engine/bosses';
 import { createOwnedJoker } from '../src/engine/jokers';
 import { discardTiles, endBlind, startBlind, submitWord } from '../src/engine/loop';
 import { makeLexicon } from '../src/engine/lexicon';
-import { resolveBlind } from '../src/engine/progression';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import {
@@ -12,7 +11,7 @@ import {
   skipCurrentBlind,
 } from '../src/engine/skipRewards';
 import { stagePreview } from '../src/ui/game';
-import type { BlindState, Letter, RunState, Tile, WordSubmission } from '../src/engine/types';
+import type { BlindState, Letter, RunState, Tile } from '../src/engine/types';
 
 const lex = makeLexicon([], {
   ant: { suit: 'standard', pos: ['noun'] },
@@ -149,7 +148,6 @@ describe('alphabet-lore bosses', () => {
       run,
       lex,
       staged.map((tile) => tile.id),
-      String,
     )?.blocked).toBe(true);
     expect(() => play(blind, run, 'dog')).toThrow('boss: this word cannot be submitted');
     expect(play(blind, run, 'stone').submission.settledScore).toBeGreaterThan(0);
@@ -216,7 +214,7 @@ describe('alphabet-lore Tags', () => {
     expect(tagged.target).toBe(Math.round(plain.target * BALANCE.skipRewards.lipogramTargetMultiplier));
     const hand = tilesFor('cat');
     const staged = { ...tagged, hand };
-    expect(stagePreview(staged, skipped, lex, hand.map((tile) => tile.id), (key) => key)?.debuffed)
+    expect(stagePreview(staged, skipped, lex, hand.map((tile) => tile.id))?.debuffed)
       .toBe(true);
     const result = submitWord(
       staged, skipped, lex, hand.map((tile) => tile.id), makeRng('lipogram-play'),
@@ -225,49 +223,6 @@ describe('alphabet-lore Tags', () => {
     expect(result.events).toEqual([{ kind: 'settle', chips: 0, mult: 0, total: 0 }]);
   });
 
-  it('Alpha & Omega replays first/last settled scores, counting identical text once', () => {
-    const word = (text: string, score: number): WordSubmission => ({
-      text, tiles: tilesFor(text), isGibberish: false, suit: 'standard', posUsed: null,
-      settledScore: score, effectiveSuits: [],
-    });
-    const run = newRun('alpha-omega');
-    const blind = {
-      ...startBlind(run, makeRng('alpha-omega')),
-      alphaOmegaReplays: 1,
-      committedScore: 30,
-      sequence: [word('cat', 10), word('dog', 20)],
-    };
-    expect(endBlind(blind, run, lex).finalScore).toBe(60);
-    const same = { ...blind, committedScore: 20, sequence: [word('cat', 10), word('cat', 10)] };
-    expect(endBlind(same, run, lex).finalScore).toBe(30);
-
-    const filtered = {
-      ...blind,
-      sequence: [
-        { ...word('ant', 0), debuffed: true },
-        word('cat', 10),
-        word('dog', 20),
-        { ...word('run', 0), debuffed: true },
-      ],
-    };
-    expect(endBlind(filtered, run, lex).finalScore).toBe(60);
-  });
-
-  it('Pythagorean Y applies the chosen next-blind risk/reward path', () => {
-    const offer = (seed: string): RunState => ({
-      ...newRun(seed),
-      skipOffers: [{ id: 'pythagoreanYTag' }, { id: 'copyPass' }],
-    });
-    const wide = skipCurrentBlind(offer('wide'), makeRng('wide'), { pythagoreanPath: 'wide' }).run;
-    expect(wide.nextBlindBonus.targetMultiplier).toBe(BALANCE.skipRewards.pythagoreanWideTargetMultiplier);
-
-    const narrow = skipCurrentBlind(offer('narrow'), makeRng('narrow'), { pythagoreanPath: 'narrow' }).run;
-    const blind = startBlind(narrow, makeRng('narrow-blind'), { target: 1 });
-    const active = consumeNextBlindBonus(narrow);
-    const outcome = resolveBlind(active, blind, blind.target);
-    expect(blind.target).toBe(BALANCE.skipRewards.pythagoreanNarrowTargetMultiplier);
-    expect(outcome.earned.tagReward).toBe(BALANCE.skipRewards.pythagoreanNarrowReward);
-  });
 });
 
 describe('alphabet-lore content registries', () => {

@@ -156,6 +156,9 @@ export interface SentenceJudgment {
   match: PatternMatch | null;
   /** unison bonus if 2+ words share one suit, else null */
   unison: UnisonResult | null;
+  /** Per eligible word, the lexical POS choices compatible with an equivalent
+   * winning parse. Ephemeral judgment output; never persisted on submissions. */
+  compatiblePos?: readonly (readonly POS[])[] | null;
 }
 
 // ---------- Scoring (GDD §7) ----------
@@ -269,7 +272,7 @@ export interface SentenceBonusBreakdown {
   /** Post-pattern effects from Emoji Tiles, vouchers, or bosses. */
   effectChips: number;
   effectMult: number;
-  /** Flat post-sentence score from effects such as Omega Tag. */
+  /** Flat post-sentence score from data-driven effects. */
   effectScore?: number;
   jokerTriggers?: SentenceJokerTrigger[];
   /** Final Starting-Pouch axis transform, kept separate from ordinary effects. */
@@ -315,8 +318,6 @@ export type SkipRewardId =
   | 'scarletTag'
   | 'pythagoreanYTag';
 
-export type PythagoreanPath = 'wide' | 'narrow';
-
 /** The reward is rolled and fully disclosed before the player chooses to skip. */
 export interface SkipRewardOffer {
   id: SkipRewardId;
@@ -333,8 +334,6 @@ export interface NextBlindBonus {
   handSize: number;
   targetMultiplier: number;
   startingScore: number;
-  /** Final-score replays of the first and last individual word. */
-  alphaOmegaReplays: number;
   /** Disclosed letters whose valid words are debuffed in the next played blind. */
   lipogramLetters: Letter[];
   /** Disclosed letters whose physical tiles retrigger in the next played blind. */
@@ -400,7 +399,6 @@ export interface BlindState {
   /** Next-blind Tag state copied in before the carry is consumed. */
   lipogramLetters?: Letter[];
   scarletLetters?: Letter[];
-  alphaOmegaReplays?: number;
   clearRewardBonus?: number;
 }
 
@@ -542,6 +540,8 @@ export interface ShopState {
   packs: (PackSlot | null)[];
   /** rerolls done this visit — drives the escalating reroll cost */
   rerolls: number;
+  /** Reroll Tag changes this visit's cost progression to $0, $1, $2... */
+  rerollBase?: number;
 }
 
 // ---------- Jokers (GDD §11) ----------

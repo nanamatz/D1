@@ -20,7 +20,6 @@ import {
   loadEmojiUnlockProgress,
   revealAllEmojiTiles,
 } from './emojiUnlocks';
-import { ALL_JOKERS } from '../engine/jokers';
 import {
   GOD_TITLE_DEF,
   REGISTER_TITLE_SUITS,
@@ -400,9 +399,6 @@ export function unlockAllProfile(slot: ProfileSlot, lexicon: Lexicon): UnlockAll
     recordWins: [...RECORD_IDS],
     recordWinsByPouch: Object.fromEntries(
       POUCH_IDS.map((pouchId) => [pouchId, [...RECORD_IDS]]),
-    ),
-    jokerRecordStickers: Object.fromEntries(
-      ALL_JOKERS.map((joker) => [joker.id, 'dvd' as const]),
     ),
     discoveredLetterHands: [...KNOWLEDGE_LETTER_HAND_IDS],
     unlockAllApplied: true,

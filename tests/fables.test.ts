@@ -29,6 +29,14 @@ const highRng: Rng = {
   int: () => 0,
   shuffle: <T>(items: readonly T[]) => items.slice(),
 };
+const sequenceRng = (...values: number[]): Rng => {
+  let index = 0;
+  return {
+    next: () => values[index++] ?? 0,
+    int: (max) => Math.floor((values[index++] ?? 0) * max),
+    shuffle: <T>(items: readonly T[]) => items.slice(),
+  };
+};
 
 function setup(id: (typeof FABLE_IDS)[number]): { run: RunState; blind: BlindState } {
   const run = { ...newRun('fables'), consumables: [id] };
@@ -328,36 +336,60 @@ describe('Fable registry', () => {
     expect(result.run.letterHandStamps?.twin).toBe(0);
   });
 
-  it('gives one selected Base letter tile a seeded random edition', () => {
+  it('has a seeded 1/4 chance to edition one selected Base letter tile', () => {
     const { run, blind } = setup('fable20');
     const target = blind.hand[0]!;
     expect(fableTargetsTiles('fable20')).toBe(true);
     expect(fablePickCount('fable20')).toEqual({ min: 1, max: 1 });
     expect(canUseFable('fable20', run, blind, [target.id])).toBe(true);
 
-    const preview = previewFableTile('fable20', target, highRng);
-    const result = useFable('fable20', run, blind, [target.id], highRng);
+    const preview = previewFableTile('fable20', target, sequenceRng(0.1, 0.99));
+    const result = useFable('fable20', run, blind, [target.id], sequenceRng(0.1, 0.99));
     const enhanced = result.blind.hand.find((tile) => tile.id === target.id)!;
     expect(enhanced.edition).toBe('rainbow');
     expect(enhanced.edition).toBe(preview.edition);
     expect(enhanced.material).toBe(target.material);
     expect(enhanced.font).toBe(target.font);
+    expect(result.chanceResults).toEqual([{
+      chance: BALANCE.fables.lionSkinEditionChance,
+      label: 'edition',
+      outcome: 'success',
+    }]);
+
+    const missed = useFable('fable20', run, blind, [target.id], sequenceRng(0.25));
+    expect(missed.ok).toBe(true);
+    expect(missed.run.consumables).not.toContain('fable20');
+    expect(missed.blind.hand.find((tile) => tile.id === target.id)?.edition).toBe(target.edition);
+    expect(missed.chanceResults[0]?.outcome).toBe('failure');
 
     const pouchRun = { ...newRun('lion-skin-pouch'), consumables: ['fable20' as const] };
     const pouchTarget = pouchRun.bag[0]!;
     // A held pack action captures the post-action counter in one key. Preview and
     // delayed commit each replay a fresh RNG from that same key.
-    const actionKey = `${pouchRun.seed}#1`;
-    const pouchPreview = previewFableTile('fable20', pouchTarget, makeRng(actionKey));
+    const pouchPreview = previewFableTile('fable20', pouchTarget, sequenceRng(0.1, 0.6));
     const pouchResult = useFableOnPouch(
       'fable20',
       pouchRun,
       [pouchTarget.id],
-      makeRng(actionKey),
+      sequenceRng(0.1, 0.6),
     );
     expect(pouchResult.ok).toBe(true);
     expect(pouchResult.run.bag.find((tile) => tile.id === pouchTarget.id)?.edition)
       .toBe(pouchPreview.edition);
+    expect(pouchResult.chanceResults[0]?.outcome).toBe('success');
+
+    const pouchMissPreview = previewFableTile('fable20', pouchTarget, sequenceRng(0.25));
+    const pouchMiss = useFableOnPouch(
+      'fable20',
+      pouchRun,
+      [pouchTarget.id],
+      sequenceRng(0.25),
+    );
+    expect(pouchMiss.ok).toBe(true);
+    expect(pouchMiss.run.consumables).not.toContain('fable20');
+    expect(pouchMiss.run.bag.find((tile) => tile.id === pouchTarget.id)?.edition)
+      .toBe(pouchMissPreview.edition);
+    expect(pouchMiss.chanceResults[0]?.outcome).toBe('failure');
 
     const editionedBlind = {
       ...blind,

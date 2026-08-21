@@ -9,7 +9,7 @@ describe('sentence-pattern level growth', () => {
     expect(BALANCE.patterns.simple).toMatchObject({
       difficulty: 'easy', levelChips: 15, levelMult: 1,
     });
-    expect(patternChipsMult('simple', 3)).toEqual({ chips: 70, mult: 4 });
+    expect(patternChipsMult('simple', 3)).toEqual({ chips: 65, mult: 3 });
   });
 
   it('classifies construction difficulty independently from payout rank', () => {
@@ -20,9 +20,9 @@ describe('sentence-pattern level growth', () => {
       },
       {},
     )).toEqual({
-      easy: ['outcry', 'imperative', 'simple', 'interrogative'],
-      hard: ['chant', 'ditransitive', 'compound', 'objectComplement', 'complex'],
-      medium: ['descriptive', 'transitive', 'negative'],
+      easy: ['outcry', 'simple', 'imperative', 'interrogative'],
+      medium: ['transitive', 'negative', 'descriptive'],
+      hard: ['chant', 'objectComplement', 'ditransitive', 'compound', 'complex'],
     });
   });
 
@@ -37,14 +37,14 @@ describe('sentence-pattern level growth', () => {
 
   it('keeps representative Easy/Medium/Hard curves at Lv1, Lv5, and Lv10', () => {
     expect([1, 5, 10].map((level) => patternChipsMult('outcry', level))).toEqual([
-      { chips: 15, mult: 1 },
-      { chips: 75, mult: 5 },
-      { chips: 150, mult: 10 },
+      { chips: 25, mult: 1 },
+      { chips: 85, mult: 5 },
+      { chips: 160, mult: 10 },
     ]);
     expect([1, 5, 10].map((level) => patternChipsMult('descriptive', level))).toEqual([
-      { chips: 45, mult: 2 },
-      { chips: 165, mult: 6 },
-      { chips: 315, mult: 11 },
+      { chips: 75, mult: 3 },
+      { chips: 195, mult: 7 },
+      { chips: 345, mult: 12 },
     ]);
     expect([1, 5, 10].map((level) => patternChipsMult('complex', level))).toEqual([
       { chips: 195, mult: 4 },
@@ -66,8 +66,8 @@ describe('sentence-pattern level growth', () => {
     };
 
     expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets[0])).toBe(6);
-    expect(firstLevelAtLeast('imperative', BALANCE.anteBaseTargets[0])).toBe(6);
-    expect(firstLevelAtLeast('simple', BALANCE.anteBaseTargets[0])).toBe(5);
+    expect(firstLevelAtLeast('imperative', BALANCE.anteBaseTargets[0])).toBe(5);
+    expect(firstLevelAtLeast('simple', BALANCE.anteBaseTargets[0])).toBe(6);
     expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets.at(-1)!)).toBe(5);
   });
 

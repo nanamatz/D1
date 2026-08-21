@@ -3,17 +3,20 @@ import {
   submissionSuits,
   type BlindState,
   type PatternId,
+  type POS,
   type SentenceJudgment,
   type WordSubmission,
 } from '../../engine/types';
 import type { Lexicon } from '../../engine/lexicon';
-import { posLabel, suitClass, tileTooltip } from '../game';
+import { sentenceSequenceForBlind } from '../../engine/bosses';
+import { posCandidates, suitClass, tileTooltip } from '../game';
 import { useI18n } from '../i18n';
 import { useSettleView } from '../settle';
 import { TileView } from './Tile';
 import { PatternIcon } from './UiIcon';
 import { patternLevelClass } from '../patternLevel';
 import { Tooltip } from './Tooltip';
+import { PosTags } from './PosTags';
 
 function PatternChip({
   judgment,
@@ -77,10 +80,12 @@ function SubmittedWord({
   sub,
   settling,
   lexicon,
+  activePos,
 }: {
   sub: WordSubmission;
   settling: boolean;
   lexicon: Lexicon;
+  activePos: readonly POS[] | null;
 }) {
   const { t } = useI18n();
   const settle = useSettleView();
@@ -129,7 +134,9 @@ function SubmittedWord({
     >
       {suitTags}
       {tiles}
-      {!sub.debuffed && <span className="pos">{posLabel(sub, lexicon, t)}</span>}
+      {!sub.debuffed && (
+        <PosTags candidates={posCandidates(sub, lexicon)} active={activePos} />
+      )}
       {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
       {settling && <WordStamp />}
     </div>
@@ -155,6 +162,7 @@ export function SentenceTray({ blind, judgment, lexicon, patternLevels }: Props)
   const { t } = useI18n();
   const settle = useSettleView();
   const last = blind.sequence.length - 1;
+  const eligible = sentenceSequenceForBlind(blind);
   return (
     <div className="tray">
       <div className="label">{t('tray.title')}</div>
@@ -165,6 +173,9 @@ export function SentenceTray({ blind, judgment, lexicon, patternLevels }: Props)
           sub={sub}
           settling={settle.active && i === last}
           lexicon={lexicon}
+          activePos={judgment.match
+            ? (judgment.compatiblePos?.[eligible.indexOf(sub)] ?? null)
+            : null}
         />
       ))}
       {blind.sequence.length > 0 && (

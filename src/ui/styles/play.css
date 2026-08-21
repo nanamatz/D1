@@ -3424,6 +3424,8 @@
   border-radius: 12px;
   padding: 10px 10px 6px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 4px;
   background: rgba(0, 0, 0, 0.18);
 }
@@ -3440,19 +3442,75 @@
 .word.vulgar {
   border-color: var(--suit-vulgar);
 }
-.word .pos {
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, 0);
-  bottom: -11px;
-  background: #0f1b22;
-  border: 1px solid var(--inset-edge);
-  color: var(--ink-dim);
+.word > .pos-tags {
+  margin-bottom: -17px;
+}
+.pos-tags {
+  display: flex;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 48px));
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.pos-tag {
+  --pos-tone: var(--ink-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 2px solid color-mix(in srgb, var(--pos-tone) 68%, var(--inset-edge));
+  background: color-mix(in srgb, var(--pos-tone) 20%, #0f1b22);
+  color: var(--ink);
+  border-radius: 2px;
   font-size: var(--fs-2xs);
   font-weight: 700;
-  border-radius: 8px;
-  padding: 0 8px;
+  line-height: 1.25;
   white-space: nowrap;
+}
+.pos-tag.pos-noun {
+  --pos-tone: var(--chips);
+}
+.pos-tag:is(.pos-verbIntransitive, .pos-verbTransitive, .pos-verbLinking) {
+  --pos-tone: var(--mult);
+}
+.pos-tag:is(.pos-adjective, .pos-adverb, .pos-article) {
+  --pos-tone: var(--gold);
+}
+.pos-tag:is(.pos-conjunction, .pos-preposition) {
+  --pos-tone: var(--btn-green);
+}
+.pos-tag.pos-interjection {
+  --pos-tone: var(--gold);
+}
+.pos-tag.active {
+  border-style: solid;
+  border-color: var(--pos-tone);
+  background: color-mix(in srgb, var(--pos-tone) 40%, #0f1b22);
+  color: #fff;
+}
+.pos-tag.alternative {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--pos-tone) 30%, var(--inset-edge));
+  background: color-mix(in srgb, var(--pos-tone) 8%, #0f1b22);
+  color: var(--ink-dim);
+}
+@media (forced-colors: active) {
+  .pos-tag {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .pos-tag.active {
+    border-style: solid;
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+  .pos-tag.alternative {
+    border-style: dashed;
+    outline: none;
+  }
 }
 .word .suit-tags,
 .hole .suit-tags {
@@ -4813,7 +4871,6 @@
   font-weight: 700;
 }
 .sp-pos {
-  color: var(--ink-dim);
   text-transform: lowercase;
   letter-spacing: 0.02em;
 }

@@ -6,7 +6,8 @@
 
 import { BALANCE } from './balance';
 import { bossPoolForId, drawBossFromCycle } from './bosses';
-import { defaultJokerBus } from './jokers';
+import { ALL_JOKERS, createOwnedJoker, defaultJokerBus } from './jokers';
+import { canAddJoker } from './vouchers';
 import type { Rng } from './rng';
 import type {
   BlindState,
@@ -15,7 +16,6 @@ import type {
   PackSlot,
   PackType,
   PatternId,
-  PythagoreanPath,
   Letter,
   RunState,
   SkipRewardId,
@@ -88,6 +88,7 @@ export const NEXT_SHOP_SKIP_REWARD_IDS = [
   'grayTag',
   'voucherTag',
   'couponTag',
+  'alphaOmegaTag',
 ] as const satisfies readonly SkipRewardId[];
 
 const NEXT_SHOP_SKIP_REWARDS = new Set<SkipRewardId>(NEXT_SHOP_SKIP_REWARD_IDS);
@@ -102,7 +103,6 @@ export const EMPTY_NEXT_BLIND_BONUS: NextBlindBonus = {
   handSize: 0,
   targetMultiplier: 1,
   startingScore: 0,
-  alphaOmegaReplays: 0,
   lipogramLetters: [],
   scarletLetters: [],
   clearRewardBonus: 0,
@@ -153,8 +153,6 @@ function withBlindBonus(
       targetMultiplier:
         run.nextBlindBonus.targetMultiplier * (bonus.targetMultiplier ?? 1),
       startingScore: run.nextBlindBonus.startingScore + (bonus.startingScore ?? 0),
-      alphaOmegaReplays:
-        (run.nextBlindBonus.alphaOmegaReplays ?? 0) + (bonus.alphaOmegaReplays ?? 0),
       lipogramLetters: [
         ...(run.nextBlindBonus.lipogramLetters ?? []),
         ...(bonus.lipogramLetters ?? []),
@@ -203,7 +201,7 @@ export interface SkipRewardResult {
 export function skipCurrentBlind(
   run: RunState,
   rng: Rng,
-  options: { pythagoreanPath?: PythagoreanPath } = {},
+  options: { profileEligible?: ReadonlySet<string> } = {},
 ): SkipRewardResult {
   if (run.blindIndex === 2) throw new Error('Deadline cannot be skipped');
   const skippedIndex = run.blindIndex;
@@ -254,6 +252,7 @@ export function skipCurrentBlind(
     case 'grayTag':
     case 'voucherTag':
     case 'couponTag':
+    case 'alphaOmegaTag':
       next = {
         ...next,
         pendingShopTags: [...(next.pendingShopTags ?? []), offer.id],
@@ -308,11 +307,11 @@ export function skipCurrentBlind(
     case 'economyTag':
       next = {
         ...next,
-        gold: next.gold * BALANCE.skipRewards.economyGoldMultiplier,
+        gold: next.gold + Math.min(
+          next.gold * (BALANCE.skipRewards.economyGoldMultiplier - 1),
+          BALANCE.skipRewards.economyGoldCap,
+        ),
       };
-      break;
-    case 'alphaOmegaTag':
-      next = withBlindBonus(next, { alphaOmegaReplays: 1 });
       break;
     case 'lipogramTag':
       if (!offer.letter) throw new Error('Lipogram Tag offer is missing its disclosed letter');
@@ -326,17 +325,19 @@ export function skipCurrentBlind(
       next = withBlindBonus(next, { scarletLetters: [offer.letter] });
       break;
     case 'pythagoreanYTag':
-      if (!options.pythagoreanPath) {
-        throw new Error('Y Tag requires a disclosed path choice');
+      for (let i = 0; i < BALANCE.skipRewards.supplyCommonJokers; i += 1) {
+        const eligible = ALL_JOKERS.filter((def) =>
+          def.rarity === 'common' &&
+          !next.jokers.some((owned) => owned.defId === def.id) &&
+          canAddJoker(next, def.id, 'base', options.profileEligible),
+        );
+        if (eligible.length === 0) break;
+        const def = eligible[rng.int(eligible.length)]!;
+        next = {
+          ...next,
+          jokers: [...next.jokers, createOwnedJoker(next, def.id, 'base')],
+        };
       }
-      next = options.pythagoreanPath === 'wide'
-        ? withBlindBonus(next, {
-            targetMultiplier: BALANCE.skipRewards.pythagoreanWideTargetMultiplier,
-          })
-        : withBlindBonus(next, {
-            targetMultiplier: BALANCE.skipRewards.pythagoreanNarrowTargetMultiplier,
-            clearRewardBonus: BALANCE.skipRewards.pythagoreanNarrowReward,
-          });
       break;
   }
 

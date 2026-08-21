@@ -365,7 +365,9 @@ In each phase the player makes one word. As phases accumulate, the words line up
 
 **Noun (incl. pronoun) · Verb (subtypes: intransitive / transitive / linking) · Adjective · Adverb · Article/Determiner · Conjunction · Preposition · Interjection.**
 
-Verb subtypes remain in the lexicon for Descriptive and Object Complement judgment, but the Simple, Transitive, and Ditransitive base skeletons accept any verb subtype (ease pass 2026-08-04).
+Verb subtypes remain in the lexicon for Descriptive and Object Complement judgment. Simple and Transitive accept any verb subtype, while Ditransitive requires the controlled `GIVE`/`TELL`/`SEND`/`SHOW` family and its baked inflections (changed 2026-08-21).
+
+Multi-POS words keep every lexical candidate visible as a separate localized tag. When a highest-ranked pattern exists, its judgment also returns the ephemeral compatible POS set for each eligible word: a uniquely required candidate is selected, while candidates used by any equivalent winning parse remain selected as a union. This presentation result never mutates or persists the submission. With no pattern, candidates remain equal and unselected. (changed 2026-08-21)
 
 > **Data note — POS tags are nearly free.** The cost of adding POS tags to the register pipeline is low. POS has many clean sources (Wiktionary, WordNet), making it easier than register. The "one word, multiple POS" problem (taste = noun/verb, sick = adjective/noun) has the same structure as suit resolution, and in a game it is actually an opportunity — let the same tile take a different POS depending on which slot it is placed in, adding a strategic axis.
 
@@ -380,6 +382,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 1. **Whole-sequence match.** Apply any boss sentence transform to the raw submission history first (so Orphan Line always removes the literal first submitted word), then remove every debuffed submission and join the remaining eligible words in their original order. A debuffed word is not a hole and contributes neither POS nor register to Pattern/Unison judgment. The resulting entire sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) remains in that eligible sequence and voids all pattern matches — Correction Tape is the current counter. (changed 2026-08-20: debuffed words are removed rather than zeroed after scoring)
 2. **Highest single pattern only.** If a sequence satisfies multiple patterns, only the highest-value one applies (a full house does not also pay as a pair).
 3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; **each absorbed modifier adds +15 Chips to the sentence bonus's Chips side** (uniform across all patterns — placeholder). This keeps the table small while making longer sentences naturally more valuable.
+4. **POS compatibility follows the winner.** POS highlighting is derived from the same highest-pattern judgment, never reconstructed in the UI. For each eligible word, every lexical POS candidate that preserves the exact winning pattern outcome (including its modifier/repeat result) remains active; this keeps the union of equivalent parses instead of choosing an arbitrary verb subtype. Boss-transformed or debuffed-out raw words have no selected POS. This compatibility trace is ephemeral and does not change scoring, rank, or stored submissions. (changed 2026-08-21)
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
@@ -403,26 +406,26 @@ the symbol/name columns aligned.
 
 | # | Pattern | Difficulty | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|---|
-| 1 | Outcry | Easy | Interjection alone | SHH / WOW | 1 | 15 × 1 | +15, +1 |
-| 2 | Imperative | Easy | Verb + Noun | EAT FISH | 2 | 25 × 1 | +15, +1 |
-| 3 | Chant | Hard | Same verb ×2+ | EAT EAT | 2+ | 25 × 1, **+10 Chips per repeat beyond the 2nd** | +45, +1 (repeat bonus +10/level) |
-| 4 | Simple | Easy | Noun + Verb | BIRDS FLY | 2 | 40 × 2 | +15, +1 |
-| 5 | Descriptive | Medium | Noun + linking V + Adj | PIZZA SEEMS TASTY | 3 | 45 × 2 | +30, +1 |
-| 6 | Transitive | Medium | Noun + Verb + Noun | CAT EATS FISH | 3 | 60 × 2 | +30, +1 |
-| 7 | Ditransitive | Hard | Noun + Verb + Noun + Noun | I GIVE HIM FISH | 4 | 75 × 3 | +45, +1 |
-| 8 | Compound | Hard | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 90 × 3 | +45, +1 |
+| 1 | Outcry | Easy | Interjection alone | SHH / WOW | 1 | 25 × 1 | +15, +1 |
+| 2 | Simple | Easy | Noun + Verb | BIRDS FLY | 2 | 35 × 1 | +15, +1 |
+| 3 | Imperative | Easy | Verb + Noun | EAT FISH | 2 | 40 × 1 | +15, +1 |
+| 4 | Transitive | Medium | Noun + Verb + Noun | CAT EATS FISH | 3 | 50 × 2 | +30, +1 |
+| 5 | Negative | Medium | subject + predicate containing a negative marker or contraction | SHE ISNT HERE | 3+ | 55 × 2 | +30, +1 |
+| 6 | Interrogative | Easy | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 60 × 2 | +15, +1 |
+| 7 | Descriptive | Medium | Noun + linking V + Adj | PIZZA SEEMS TASTY | 3 | 75 × 3 | +30, +1 |
+| 8 | Chant | Hard | Same verb ×2+ | EAT EAT | 2+ | 90 × 3, **+10 Chips per repeat beyond the 2nd** | +45, +1 (repeat bonus +10/level) |
 | 9 | Object Complement (5형식) | Hard | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 3 | +45, +1 |
-| 10 | Interrogative | Easy | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 135 × 3 | +15, +1 |
-| 11 | Negative | Medium | clause containing NOT/NEVER or a negative contraction | SHE ISNT HERE | 3+ | 165 × 4 | +30, +1 |
+| 10 | Ditransitive | Hard | Noun + controlled giving V + Noun + Noun | I GIVE HIM FISH | 4 | 135 × 3 | +45, +1 |
+| 11 | Compound | Hard | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 165 × 4 | +45, +1 |
 | 12 | Complex | Hard | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 4 | +45, +1 |
 
-(Values live in `balance.ts` under `patterns`; the 2026-08-07 difficulty pass keeps base Chips/Mult unchanged and retunes only per-level Chips growth.)
+(Values live in `balance.ts` under `patterns`; changed 2026-08-21 to follow the approved construction-difficulty rank, with the bottom five patterns raised by +10 base Chips. Difficulty-tier level growth remains unchanged.)
 
 Design intent:
 
 - **Outcry** gives vowel-less interjections (shh, brr) a home in the pattern table.
 - **Imperative requires an object (verb + noun)** — a bare verb no longer scores (changed: "RUN" alone once counted as a 1-phase high-card, but in play a lone verb tile spiked the projection off a single submission, so the pattern now needs at least a verb and a noun). The fun of verb repetition still has a home in **Chant**, which now starts at two consecutive copies of the same verb.
-- **Simple, Transitive, and Ditransitive accept any verb subtype** (ease pass 2026-08-04). Their word count and order stay fixed; Descriptive and Object Complement retain their specialized verb checks.
+- **Simple and Transitive accept any verb subtype. Ditransitive uses a controlled giving-verb family** (`GIVE/GIVES/GAVE/GIVEN/GIVING`, `TELL/TELLS/TOLD/TELLING`, `SEND/SENDS/SENT/SENDING`, `SHOW/SHOWS/SHOWED/SHOWN/SHOWING`). Its word count and order stay fixed; Descriptive and Object Complement retain their specialized verb checks.
 - **The Chips×Mult ladder climbs together** — both sides grow from #1→#12, so structural sentences add more Chips and apply a stronger factor to the committed blind score. The "structural sentences pay off big" principle from §7.3 lives directly in both axes.
 - **The Hard tier is tight in the base 5 phases** — especially Compound and Complex at 5+ words; phase-extension effects create room for modifiers or longer clause forms.
 - **Construction difficulty is independent of payout rank.** Easy = a short, broad lexical skeleton (Outcry, Imperative, Simple, Interrogative); Medium = three-word structure or a required negative marker (Descriptive, Transitive, Negative); Hard = exact repetition, four-object structure, a controlled verb, or two full clauses (Chant, Ditransitive, Compound, Object Complement, Complex). Outcry is structurally Easy even though its one-word sequence must also clear the blind to survive; target viability is measured separately in simulation.
@@ -430,6 +433,7 @@ Design intent:
 - **Interrogative does not require a Question Mark tile.** An interrogative word or auxiliary opener is sufficient. This preserves the alphabet-only pouch rule (§2.1).
 - **Elliptical WHY questions count.** `WHY ME` is parsed as `WHY [IS IT] ME`; the understood predicate need not be played.
 - **Negative contractions omit apostrophes on tiles:** `DONT`, `ISNT`, `ARENT`, `CANT`, etc. are valid words for pattern judgment.
+- **Overlap is highest-only, never additive.** Interrogative outranks Negative, Negative outranks Transitive, and Imperative outranks Simple; those priorities resolve shared parses deterministically.
 - **Complex requires two complete clauses** after an initial subordinator such as `BECAUSE`, `WHEN`, or `IF`.
 
 ### 5.3 Unison Bonus (the flush substitute)
@@ -447,25 +451,25 @@ Note on Vulgar stacking: suit base ×7 plus Unison-Vulgar ×2 remains a strong d
 Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is **linear**: each use adds the §5.2 right-column's difficulty-tier Chips increment and +1 Mult.
 
 **Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
-engraved at the top of its paired card as its pictogram: Outcry ♎, Imperative
-♌, Chant ♒, Simple ♈, Descriptive ♉, Transitive ♊, Ditransitive ♋, Compound
-♍, Object Complement ♏, Interrogative ♐, Negative ♑, Complex ♓. Pattern
+engraved at the top of its paired card as its pictogram: Outcry ♎, Simple ♈,
+Imperative ♌, Transitive ♊, Negative ♑, Interrogative ♐, Descriptive ♉,
+Chant ♒, Object Complement ♏, Ditransitive ♋, Compound ♍, Complex ♓. Pattern
 status, preview, Run Info, settlement, run summary, and Constellation tooltips
 all show this same mark, so the mapping is readable before effect prose.
 
 | Constellation | Levels up | Increment per level |
 |---|---|---|
 | Libra / 천칭자리 | Outcry | +15 Chips, +1 Mult |
-| Leo / 사자자리 | Imperative | +15 Chips, +1 Mult |
-| Aquarius / 물병자리 | Chant | +45 Chips, +1 Mult (repeat bonus +10 Chips/level) |
 | Aries / 양자리 | Simple | +15 Chips, +1 Mult |
-| Taurus / 황소자리 | Descriptive | +30 Chips, +1 Mult |
+| Leo / 사자자리 | Imperative | +15 Chips, +1 Mult |
 | Gemini / 쌍둥이자리 | Transitive | +30 Chips, +1 Mult |
+| Capricorn / 염소자리 | Negative | +30 Chips, +1 Mult |
+| Sagittarius / 궁수자리 | Interrogative | +15 Chips, +1 Mult |
+| Taurus / 황소자리 | Descriptive | +30 Chips, +1 Mult |
+| Aquarius / 물병자리 | Chant | +45 Chips, +1 Mult (repeat bonus +10 Chips/level) |
+| Scorpio / 전갈자리 | Object Complement | +45 Chips, +1 Mult |
 | Cancer / 게자리 | Ditransitive | +45 Chips, +1 Mult |
 | Virgo / 처녀자리 | Compound | +45 Chips, +1 Mult |
-| Scorpio / 전갈자리 | Object Complement | +45 Chips, +1 Mult |
-| Sagittarius / 궁수자리 | Interrogative | +15 Chips, +1 Mult |
-| Capricorn / 염소자리 | Negative | +30 Chips, +1 Mult |
 | Pisces / 물고기자리 | Complex | +45 Chips, +1 Mult |
 
 ### 5.5 Word Hands (단어 족보) — per-word structure bonuses (playtest-02 A-2)
@@ -477,7 +481,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 - **Gibberish eligibility.** Vowel Flush and Straight **fire on gibberish too** (a deliberate jackpot — e.g. dumping Q-R-S-T-U-V); every other Word Hand is valid-words-only. See §6.4.
 - **Knowledge tier (changed 2026-08-12).** Ranks 7–9 are difficult valid-word structures hidden until first completion. Y uses the shared vowel/consonant classification and is currently a consonant, so Vowelless starts at 5 physical letters. Type Economy and Grand Palindrome likewise use physical spelling length; Dummy Data's effective-length increase remains Longword-only.
 - **Collision policy.** The highest rank remains the one scored and recorded. An Emoji Tile whose text explicitly says a hand is **contained** checks raw structure independently of that winner: Grand Palindrome can trigger Mirror Image, and a Type Economy word containing all five vowels can trigger Gathering while only Type Economy supplies the base Word-Hand score.
-- **Run-only levels and Proof Stamps (changed 2026-08-14).** Every Word Hand starts at level 1. Clearing a blind awards the most-played scored hand one stamp per time it scored in that blind; if several hands tie, the latest tied hand wins. If no Word Hand scored, one profile-discovered hand receives one seeded-random stamp; an undiscovered knowledge-tier hand never enters this random pool until its first completion. A loss and a skipped blind award none. Advancing from current levels 1–5 costs 1 stamp, levels 6–8 cost 3, and level 9 onward costs 5; one award may cross multiple levels and keeps any remainder. Each level adds the hand row's rank-band Chips increment (+5 for ranks 1–3, +10 for ranks 4–6, +15 for ranks 7–9), while every third level gained adds +1 to its Mult factor. Fee Settlement presents the award as a proof-stamp tool slamming onto the awarded hand's ink mark; multiple stamps use visual pips instead of a `+N` text line. Crossing a level shows only a light-green localized `LEVEL UP! / 레벨 업!` VFX below the stamp—no old/new level numerals. Run Info shows live level and stamp progress.
+- **Run-only levels and Proof Stamps (changed 2026-08-21).** Every Word Hand starts at level 1. Clearing a blind awards the most-played scored hand one stamp per time it scored in that blind; if several hands tie, the latest tied hand wins. If no Word Hand scored, one profile-discovered hand receives one seeded-random stamp; an undiscovered knowledge-tier hand never enters this random pool until its first completion. A loss and a skipped blind award none. Advancing from current levels 1–5 costs 1 stamp, levels 6–8 cost 3, and level 9 onward costs 5; one award may cross multiple levels and keeps any remainder. Each level adds the hand row's rank-band Chips increment (+5 for ranks 1–3, +10 for ranks 4–6, +15 for ranks 7–9), while every third level gained adds +1 to its Mult factor. Fee Settlement presents the award as a proof-stamp tool slamming onto the awarded hand's ink mark, then rebounding and fading away so the hand name remains unobscured; multiple stamps use visual pips instead of a `+N` text line. Crossing a level shows only a light-green localized `LEVEL UP! / 레벨 업!` VFX below the stamp—no old/new level numerals. Run Info shows live level and stamp progress.
 
 | Rank | Hand | Condition | Example | Bonus | Gibberish |
 |---|---|---|---|---|---|
@@ -699,7 +703,7 @@ Chapter gating in this first balance slice.
 | Rainbow Tag · 레인보우 태그 | The next base-edition shop Emoji Tile becomes **free + Rainbow** |
 | Gray Tag · 그레이 태그 | The next base-edition shop Emoji Tile becomes **free + Gray** |
 | Investment Tag · 투자 태그 | Add **$25** to the next successfully cleared Deadline reward; its held Tag activates and disappears only when that Deadline reaches Fee Settlement |
-| Voucher Tag · 바우처 태그 | Add one extra Voucher choice to the next shop; both choices may be purchased in that shop |
+| Voucher Tag · 바우처 태그 | Add one Voucher to the next shop; both choices may be purchased in that shop |
 | Boss Tag · 보스 태그 | Immediately reroll the scheduled Deadline from its correct regular/finisher pool |
 | Tile Tag · 타일 태그 | Immediately open a free **Premium Tile Pack** |
 | Fable Tag · 우화 태그 | Immediately open a free **Premium Fable Pack** |
@@ -709,12 +713,12 @@ Chapter gating in this first balance slice.
 | Garbage Tag · 쓰레기 태그 | Gain **$1 per unused Discard banked on successful blind clears this run** |
 | Ink Tag · 잉크 태그 | Immediately open a free **Basic Ink Pack** |
 | Coupon Tag · 쿠폰 태그 | The next shop's **initial item stock and card packs are free**; rerolled stock is normally priced |
-| Juggler Tag · 저글러 태그 | The next blind actually played gets **+1 hand size** |
-| Economy Tag · 경제 태그 | Immediately **double current gold** |
-| Omega Tag · 오메가 태그 | At the next played blind's end, add the settled score of its first and last word once each; if their text is identical, add it only once |
+| Juggler Tag · 저글러 태그 | The next blind actually played gets **+2 hand size** |
+| Economy Tag · 경제 태그 | Immediately gain current Fee again, capped at **+$25** |
+| Reroll Tag · 리롤 태그 | The next shop's item-reroll progression starts at **$0**, then rises by $1 per reroll |
 | Lipogram Tag · 리포그램 태그 | Disclose one seeded letter; the next played blind has a **30% lower target**, but valid words containing that letter are debuffed to 0 |
 | Scarlet Tag · 주홍 태그 | Disclose one seeded letter; every physical tile of that letter retriggers once in the next played blind |
-| Y Tag · Y 태그 | On acquisition choose **Wide** (next target −10%) or **Narrow** (next target +20%, clear reward +$12) |
+| Supply Tag · 보급 태그 | Immediately create up to **2 Base Common Emoji Tiles**, stopping at the effective slot limit and shared ownership/profile gates |
 
 Next-blind effects stack and survive another skip; they are consumed only when
 the player selects Play. Publicity, Investment, and next-shop effects persist
@@ -722,7 +726,9 @@ until their named successful resolution. An edition tag waits through a stock
 roll with no base-edition Emoji Tile and may resolve on a reroll. Shop-facing Tag
 icons remain visible through the played blind and Fee Settlement. They burst away
 on the Shop screen only when `applyPendingShopTags` returns them in `appliedTags`;
-an unresolved Tag stays visible and may redeem on a later reroll/shop. Rewards classified
+an unresolved Tag stays visible and may redeem on a later reroll/shop. Reroll Tag
+resolves on shop entry, then its visit-local $0/$1/$2 progression persists through
+that shop's rerolls. Rewards classified
 by `isImmediateSkipReward` are first presented as an acquired Tag, then auto-activate
 and burst away; only after that sequence completes does the existing skip-reward
 path mutate the run. Free-pack Tags enter the ordinary Pack Opening flow after the
@@ -873,7 +879,7 @@ These are explicit line-item overrides; all unaffected income streams remain.
 
 ### 9.2 Shop Layout — five stalls
 
-Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. The first Stationery Shop actually entered in a run guarantees one **Basic Charm Pack**; skipped blinds do not consume this guarantee. Voucher Tag may add one temporary second Voucher choice, and rarity tags may append their guaranteed free Emoji Tile; these are disclosed reward exceptions, not changes to ordinary stock counts. Available item-family weights are **Emoji Tile 20 · Fable 4 · Constellation 4** (`balance.ts` `shop.itemWeights`). EN-KO Dictionary adds letter tiles at weight **4**; Encyclopedia lets those shop tiles roll material and edition, but no font. **Lucky Pouch** adds implemented Gambler Cards as a separate weight-**2** family (§12.2). Unavailable families are removed and the remaining weights normalize automatically. Story Book/Novel and Bible/The Law multiply the corresponding base weight by **×2/×8**. **Reroll:** base 5 gold, +1 per reroll, refreshes item slots only; packs and the Voucher are unchanged.
+Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher slot ×1**. The first Stationery Shop actually entered in a run guarantees one **Basic Charm Pack**; skipped blinds do not consume this guarantee. Voucher Tag may add one temporary second Voucher choice, and rarity tags may append their guaranteed free Emoji Tile; these are disclosed reward exceptions, not changes to ordinary stock counts. Available item-family weights are **Emoji Tile 20 · Fable 4 · Constellation 4** (`balance.ts` `shop.itemWeights`). EN-KO Dictionary adds letter tiles at weight **4**; Encyclopedia lets those shop tiles roll material and edition, but no font. **Lucky Pouch** adds implemented Gambler Cards as a separate weight-**2** family (§12.2). Unavailable families are removed and the remaining weights normalize automatically. Story Book/Novel and Bible/The Law multiply the corresponding base weight by **×2/×8**. **Reroll:** base 5 Fee, +1 per reroll, refreshes item slots only; packs and the Voucher are unchanged. Reroll Tag changes that next visited shop's base to 0, producing $0, $1, $2… before ordinary discounts/floors.
 
 **Offer interaction (pack rollback 2026-07-30).** Shop stalls are image-first. Emoji Tiles, consumables, and the vertical voucher use the shared rounded `124×165px` stage. Sale packs use the requested older `131×229px` foreground with square corners. Their row slots match the 131px art width, preserving the normal 12px gap between packs, and the pack panel reserves enough lower space for the attached Open button to remain inside the persistent run layer. The price tag shares one foreground layer with the product and action. Selecting an offer raises that complete layer by 59px — the 15px base lift plus the 44px action-button height — and reveals the attached action: **Buy** for ordinary stock, **Redeem** for the voucher, and **Open** for packs. This does not reflow the stall layout. When an instant-use option exists, Buy remains below while **Use now** appears vertically centred outside the product's right edge. Product animation is never clipped. Voucher and pack background panels retain a `273px` minimum height. Only one offer action is expanded at a time; sold stalls render as empty placeholders.
 
@@ -1041,9 +1047,9 @@ also available through the surrounding tooltip and accessible label.
 | 17 | The Heavenly Maiden and the Woodcutter | Gain the total sell value of all owned Emoji Tiles, capped at +$50; its tooltip shows the live capped payout from the currently owned Emoji Tiles |
 | 18 | Shim Cheong | Destroy 1–2 selected tiles, removing them from the run's pouch |
 | 19 | The Crow and the Pitcher | Add 2 Proof Stamps to the most recently scored Word Hand |
-| 20 | The Ass in the Lion's Skin | Give 1 selected Base letter tile a seeded-random Gray/Violet/Rainbow edition at 50%/35%/15%; preserve its material and font |
+| 20 | The Ass in the Lion's Skin | 1/4 chance to give 1 selected Base letter tile a seeded-random Gray/Violet/Rainbow edition at 50%/35%/15%; preserve its material and font |
 
-The edition outcome weights above remain authoritative internal tuning. Player-facing descriptions list Gray, Violet, and Rainbow without their individual 50%/35%/15% weights; The Cowherd and the Weaver Girl still discloses its separate 1-in-4 activation chance. (Changed 2026-08-20.)
+The edition outcome weights above remain authoritative internal tuning. Player-facing descriptions list Gray, Violet, and Rainbow without their individual 50%/35%/15% weights; both The Cowherd and the Weaver Girl and The Ass in the Lion's Skin disclose their separate 1-in-4 activation chances. A failed Ass attempt still consumes the Fable and fires the ordinary Fable-use/chance presentation, but does not mutate or count the tile as enhanced. (Changed 2026-08-21.)
 
 The Crow and the Pitcher's result vignette names the affected Word Hand and
 shows its exact `Lv before → Lv after`. The Ass in the Lion's Skin visibly
@@ -1623,8 +1629,9 @@ upper-right sticker and explains the exact Record in the shared tooltip. The
 The Statistics total is therefore `150 Emoji Tiles × 8 Records = 1,200`.
 Stickers are profile-scoped mastery marks with no gameplay effect, never enter
 `RunState`, and custom-seed or post-victory Endless play cannot award them.
-Profile Reveal All fills the current production roster with DVD stickers while
-disabling Challenges through its existing rule.
+Profile Reveal All exposes the current production roster but never fabricates
+Record stickers. Already-earned stickers remain intact while Challenges are
+disabled through its existing rule.
 
 ### 12.4 Open Questions & Next Steps
 
@@ -1690,7 +1697,7 @@ change. Both paths still pass through the SOUND-gated SFX bus.
 override. The first press changes no unlock or discovery state and only persists
 that the selected profile saw the warning. A later press fills that profile's
 word Collection, Palette/audio/mascot registry, Starting Pouch wins, Record wins,
-Emoji Tile Record stickers, and upgraded-voucher registry, and marks Challenges
+upgraded-voucher registry, and marks Challenges
 disabled for that profile.
 The word Collection uses the per-profile applied marker to present every
 dictionary entry as discovered, including its spelling, original register,

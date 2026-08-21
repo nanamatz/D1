@@ -9,6 +9,15 @@ import { newRun } from '../src/engine/run';
 import { buildConsumableEffect } from '../src/ui/consumableEffect';
 import { chanceFraction } from '../src/ui/components/ChanceBadges';
 
+const sequenceRng = (...values: number[]) => {
+  let index = 0;
+  return {
+    next: () => values[index++] ?? 0,
+    int: (max: number) => Math.floor((values[index++] ?? 0) * max),
+    shuffle: <T>(items: readonly T[]) => items.slice(),
+  };
+};
+
 const source = (relative: string): string =>
   readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
 
@@ -75,7 +84,7 @@ describe('shared consumable result animation', () => {
       editionRun,
       editionBlind,
       [target.id],
-      makeRng('fable-20-fx-use'),
+      sequenceRng(0.1, 0.99),
     );
     const change = buildConsumableEffect('fable20', editionRun, editionResult.run).changedTiles[0]!;
     expect(change.before.edition).toBe('base');
@@ -119,7 +128,7 @@ describe('shared consumable result animation', () => {
   it('wires held, shop, and non-target pack consumables to the shared effect bus', () => {
     const game = source('../src/ui/useGame.ts');
     expect(game.match(/consumableEffectBus\.emit/g)?.length).toBeGreaterThanOrEqual(5);
-    expect(game).toContain('if (!fableTargetsTiles(id)) consumableEffectBus.emit');
+    expect(game).toContain('consumableEffectBus.emit(id, prev.run, run, chanceResults);');
     expect(game).toContain("GAMBLER_REGISTRY.get(id)?.effect.kind !== 'font'");
   });
 

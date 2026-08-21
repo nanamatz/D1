@@ -28,6 +28,8 @@ export function skipRewardParams(
     phases: BALANCE.skipRewards.phases,
     discards: BALANCE.skipRewards.discards,
     handSize: BALANCE.skipRewards.jugglerHandSize,
+    cap: BALANCE.skipRewards.economyGoldCap,
+    count: BALANCE.skipRewards.supplyCommonJokers,
     percent: Math.round((1 - BALANCE.skipRewards.targetMultiplier) * 100),
     reward: offer.id === 'investmentTag'
       ? BALANCE.skipRewards.investmentReward
@@ -36,8 +38,5 @@ export function skipRewardParams(
     current: run ? (skipRewardLiveAmount(run, offer.id) ?? 0) : 0,
     letter: offer.letter ?? '?',
     lipogramPercent: Math.round((1 - BALANCE.skipRewards.lipogramTargetMultiplier) * 100),
-    widePercent: Math.round((1 - BALANCE.skipRewards.pythagoreanWideTargetMultiplier) * 100),
-    narrowPercent: Math.round((BALANCE.skipRewards.pythagoreanNarrowTargetMultiplier - 1) * 100),
-    narrowReward: BALANCE.skipRewards.pythagoreanNarrowReward,
   };
 }

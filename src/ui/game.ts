@@ -13,6 +13,7 @@ import { fontDescKey } from './descriptions';
 import type { Lexicon } from '../engine/lexicon';
 import type {
   BlindState,
+  POS,
   RunState,
   Suit,
   Tile,
@@ -43,7 +44,7 @@ export interface StagePreview {
   chips: number;
   suitMult: number;
   /** POS of the staged word (item 6) — its tagged set, shown before submitting */
-  pos: string | null;
+  pos: readonly POS[] | null;
   /** the Word Hand this word matches (A-2), if any */
   letterHand: { id: LetterHandId; level: number; chips: number; mult: number } | null;
   /** true if the active boss forbids this submission */
@@ -52,16 +53,12 @@ export interface StagePreview {
   debuffed: boolean;
 }
 
-/** A translate fn (i18n `t`) — POS keys carry no params, so a key→string is enough. */
-export type PosTranslate = (key: string) => string;
-
 /** Preview the staged word: validity, suit, chips, POS, and Word Hand. */
 export function stagePreview(
   blind: BlindState,
   run: RunState,
   lexicon: Lexicon,
   selectedIds: readonly string[],
-  t: PosTranslate,
 ): StagePreview | null {
   const tiles = tilesByIds(blind.hand, selectedIds);
   if (tiles.length === 0) return null;
@@ -93,7 +90,7 @@ export function stagePreview(
     suit: hypothetical.suit,
     chips: base.chips,
     suitMult: base.mult,
-    pos: hypothetical.isGibberish || debuffed ? null : posLabel(hypothetical, lexicon, t),
+    pos: hypothetical.isGibberish || debuffed ? null : posCandidates(hypothetical, lexicon),
     letterHand: letterHand
       ? { id: letterHand.id, level: letterHand.level, chips: letterHand.chips, mult: letterHand.mult }
       : null,
@@ -102,13 +99,10 @@ export function stagePreview(
   };
 }
 
-/** POS label shown under a played word (resolved-if-known, else the tagged set).
- *  Localised via i18n `pos.<value>` keys (Korean/English). */
-export function posLabel(sub: WordSubmission, lexicon: Lexicon, t: PosTranslate): string {
-  if (sub.isGibberish) return t('pos.gibberish');
-  const entry = lexicon.lookup(sub.text);
-  if (!entry || entry.pos.length === 0) return t('pos.unknown');
-  return entry.pos.map((p) => t(`pos.${p}`)).join(' / ');
+/** Lexical POS candidates for presentation. Pattern compatibility stays headless. */
+export function posCandidates(sub: WordSubmission, lexicon: Lexicon): readonly POS[] {
+  if (sub.isGibberish) return [];
+  return lexicon.lookup(sub.text)?.pos ?? [];
 }
 
 /** Letter chip value for a tile (display only). Stone has no letter → 0. */
