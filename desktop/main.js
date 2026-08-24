@@ -17,7 +17,7 @@ import { MIN_SIZE, loadState, restoreBounds, saveState } from './window-state.js
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 
-/** Electron userData is keyed by appName on every OS. Renaming this orphans every save. */
+/** Electron userData is keyed by appName. Renaming this orphans every save. */
 app.setName('Play the World');
 
 /** Matches the game's dark background so no white flash shows before first paint. */

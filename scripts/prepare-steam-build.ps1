@@ -7,9 +7,6 @@ param(
     [long]$WindowsDepotId,
 
     [Parameter(Mandatory = $true)]
-    [long]$MacDepotId,
-
-    [Parameter(Mandatory = $true)]
     [string]$Version,
 
     [Parameter(Mandatory = $true)]
@@ -27,7 +24,6 @@ $arguments = @(
     (Join-Path $PSScriptRoot 'prepare-steam-build.mjs'),
     '--app-id', $AppId.ToString(),
     '--windows-depot-id', $WindowsDepotId.ToString(),
-    '--mac-depot-id', $MacDepotId.ToString(),
     '--version', $Version,
     '--commit', $Commit
 )

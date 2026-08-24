@@ -1,12 +1,5 @@
 # File-Based Saves — Design (2026-07-29)
 
-> **Cross-platform amendment (2026-08-24):** The same JSON format now ships on
-> Windows x64 and macOS Universal. Electron's fixed `Play the World` userData
-> name resolves to `%APPDATA%/Play the World/saves/` on Windows and
-> `~/Library/Application Support/Play the World/saves/` on macOS. Steam
-> Auto-Cloud maps these as one logical cross-OS save set; see
-> `docs/STEAM_RELEASE.md`.
-
 Move player progress out of `localStorage` and into plain JSON files on disk, so
 Steam Cloud has something it can sync.
 
@@ -153,11 +146,7 @@ impossible by construction; the check is defence in depth.
 
 ## File layout
 
-Windows: `%APPDATA%/Play the World/saves/`
-
-macOS: `~/Library/Application Support/Play the World/saves/`
-
-Both locations contain the same cross-platform JSON format:
+`%APPDATA%/Play the World/saves/`
 
 ```
 run.json        run.json.bak

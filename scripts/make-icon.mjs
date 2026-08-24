@@ -1,5 +1,5 @@
 /**
- * Generate Windows, macOS, and web icons from one source PNG.
+ * Generate the Windows app icon and web favicon from one source PNG.
  *
  * A .ico is an ICONDIR header plus one ICONDIRENTRY per size; since Vista each
  * entry may carry raw PNG bytes, so pngjs (already a devDependency) is enough.
@@ -13,24 +13,9 @@ import { dirname } from 'node:path';
 import { PNG } from 'pngjs';
 
 const SOURCE = 'docs/Arts/Icons/AppIcon.png';
-const ICO_OUTPUTS = ['desktop/icon.ico', 'public/favicon.ico'];
-const ICNS_OUTPUT = 'desktop/icon.icns';
+const OUTPUTS = ['desktop/icon.ico', 'public/favicon.ico'];
 /** electron-builder requires a 256px entry; the smaller ones are for the taskbar and Explorer. */
-const ICO_SIZES = [16, 32, 48, 256];
-/** PNG-backed ICNS elements, including the high-DPI variants Apple recognises. */
-const ICNS_ELEMENTS = [
-  ['icp4', 16],
-  ['icp5', 32],
-  ['icp6', 64],
-  ['ic07', 128],
-  ['ic08', 256],
-  ['ic09', 512],
-  ['ic10', 1024],
-  ['ic11', 32],
-  ['ic12', 64],
-  ['ic13', 256],
-  ['ic14', 512],
-];
+const SIZES = [16, 32, 48, 256];
 
 /** Pad to a centred square with transparency. */
 function toSquare(src) {
@@ -114,28 +99,11 @@ function buildIco(pngBuffers) {
   return Buffer.concat([header, entries, ...pngBuffers.map((p) => p.data)]);
 }
 
-function buildIcns(elements) {
-  const chunks = elements.map(({ type, data }) => {
-    const header = Buffer.alloc(8);
-    header.write(type, 0, 4, 'ascii');
-    header.writeUInt32BE(8 + data.length, 4);
-    return Buffer.concat([header, data]);
-  });
-  const header = Buffer.alloc(8);
-  header.write('icns', 0, 4, 'ascii');
-  header.writeUInt32BE(8 + chunks.reduce((sum, chunk) => sum + chunk.length, 0), 4);
-  return Buffer.concat([header, ...chunks]);
-}
-
 const source = toSquare(PNG.sync.read(readFileSync(SOURCE)));
-const sizes = [...new Set([...ICO_SIZES, ...ICNS_ELEMENTS.map(([, size]) => size)])];
-const pngBySize = new Map(sizes.map((size) => [size, PNG.sync.write(resize(source, size))]));
-const ico = buildIco(ICO_SIZES.map((size) => ({ size, data: pngBySize.get(size) })));
-for (const output of ICO_OUTPUTS) {
+const images = SIZES.map((size) => ({ size, data: PNG.sync.write(resize(source, size)) }));
+const ico = buildIco(images);
+for (const output of OUTPUTS) {
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, ico);
 }
-const icns = buildIcns(ICNS_ELEMENTS.map(([type, size]) => ({ type, data: pngBySize.get(size) })));
-mkdirSync(dirname(ICNS_OUTPUT), { recursive: true });
-writeFileSync(ICNS_OUTPUT, icns);
-console.log(`Wrote ${[...ICO_OUTPUTS, ICNS_OUTPUT].join(', ')} from ${SOURCE}`);
+console.log(`Wrote ${OUTPUTS.join(', ')} (${SIZES.join(', ')}px) from ${SOURCE}`);

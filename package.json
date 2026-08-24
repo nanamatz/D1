@@ -41,9 +41,8 @@
     "desktop:run": "electron .",
     "assets:icons": "node scripts/make-icon.mjs",
     "build:desktop:prepare": "npm run assets:icons && npm run build && node scripts/check-offline.mjs",
-    "build:desktop": "npm run build:desktop:prepare && electron-builder --dir",
-    "build:desktop:win": "npm run build:desktop:prepare && electron-builder --win dir --x64",
-    "build:desktop:mac": "npm run build:desktop:prepare && electron-builder --mac dir --universal"
+    "build:desktop": "npm run build:desktop:prepare && electron-builder --win dir --x64",
+    "build:desktop:win": "npm run build:desktop:prepare && electron-builder --win dir --x64"
   },
   "build": {
     "appId": "com.kdg0711.playtheworld",
@@ -59,14 +58,6 @@
     "win": {
       "target": "dir",
       "icon": "desktop/icon.ico"
-    },
-    "mac": {
-      "target": "dir",
-      "icon": "desktop/icon.icns",
-      "category": "public.app-category.games",
-      "minimumSystemVersion": "13.0",
-      "hardenedRuntime": true,
-      "notarize": true
     }
   },
   "devDependencies": {

@@ -7,14 +7,14 @@ const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 
 function usage() {
   return `Usage: node scripts/prepare-steam-build.mjs \\
-  --app-id ID --windows-depot-id ID --mac-depot-id ID \\
+  --app-id ID --windows-depot-id ID \\
   --version VERSION --commit SHA [--content-root PATH] [--upload]`;
 }
 
 function parseArgs(argv) {
   const values = {};
   const known = new Set([
-    '--app-id', '--windows-depot-id', '--mac-depot-id', '--version', '--commit', '--content-root',
+    '--app-id', '--windows-depot-id', '--version', '--commit', '--content-root',
   ]);
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
@@ -63,9 +63,8 @@ export function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const appId = requirePositiveId(args['--app-id'], 'AppID');
   const windowsDepotId = requirePositiveId(args['--windows-depot-id'], 'Windows DepotID');
-  const macDepotId = requirePositiveId(args['--mac-depot-id'], 'Mac DepotID');
-  if (new Set([appId, windowsDepotId, macDepotId]).size !== 3) {
-    throw new Error('AppID, Windows DepotID, and Mac DepotID must be distinct.');
+  if (appId === windowsDepotId) {
+    throw new Error('AppID and Windows DepotID must be distinct.');
   }
 
   const version = args['--version']?.trim();
@@ -82,10 +81,6 @@ export function main(argv = process.argv.slice(2)) {
     throw new Error(`Content root is not a directory: ${contentRoot}`);
   }
   assertFile(resolve(contentRoot, 'win-unpacked', 'Play the World.exe'), 'Windows packaged executable');
-  assertFile(
-    resolve(contentRoot, 'mac-universal', 'Play the World.app', 'Contents', 'MacOS', 'Play the World'),
-    'macOS packaged executable',
-  );
 
   // Keep generated VDFs and SteamPipe build output outside the shared content root.
   const outputRoot = resolve(REPO_ROOT, '..', 'D1-steampipe');
@@ -98,15 +93,12 @@ export function main(argv = process.argv.slice(2)) {
   const templateRoot = resolve(REPO_ROOT, 'steam');
   const appTemplate = readFileSync(resolve(templateRoot, 'app_build.template.vdf'), 'utf8');
   const windowsTemplate = readFileSync(resolve(templateRoot, 'depot_build_windows.template.vdf'), 'utf8');
-  const macTemplate = readFileSync(resolve(templateRoot, 'depot_build_macos.template.vdf'), 'utf8');
   const appOutput = resolve(outputRoot, 'app_build.vdf');
   const windowsOutput = resolve(outputRoot, 'depot_build_windows.vdf');
-  const macOutput = resolve(outputRoot, 'depot_build_macos.vdf');
   for (const [path, label] of [
     [contentRoot, 'Content root'],
     [buildOutput, 'Build output'],
     [windowsOutput, 'Windows depot script'],
-    [macOutput, 'Mac depot script'],
   ]) {
     assertSafeVdfPath(path, label);
   }
@@ -114,26 +106,21 @@ export function main(argv = process.argv.slice(2)) {
   const appVdf = replaceAll(appTemplate, {
     __APP_ID__: String(appId),
     __WINDOWS_DEPOT_ID__: String(windowsDepotId),
-    __MAC_DEPOT_ID__: String(macDepotId),
     __VERSION__: version,
     __COMMIT__: commit,
     __BUILD_OUTPUT__: buildOutput,
     __CONTENT_ROOT__: contentRoot,
     __WINDOWS_DEPOT_SCRIPT__: windowsOutput,
-    __MAC_DEPOT_SCRIPT__: macOutput,
   }, 'App template').replace('"Preview" "1"', `"Preview" "${args.upload ? '0' : '1'}"`);
   const windowsVdf = replaceAll(windowsTemplate, { __DEPOT_ID__: String(windowsDepotId) }, 'Windows depot template');
-  const macVdf = replaceAll(macTemplate, { __DEPOT_ID__: String(macDepotId) }, 'Mac depot template');
 
   mkdirSync(buildOutput, { recursive: true });
   writeFileSync(appOutput, appVdf, 'utf8');
   writeFileSync(windowsOutput, windowsVdf, 'utf8');
-  writeFileSync(macOutput, macVdf, 'utf8');
 
   console.log(`Prepared SteamPipe VDFs (Preview ${args.upload ? '0' : '1'}):`);
   console.log(`  ${appOutput}`);
   console.log(`  ${windowsOutput}`);
-  console.log(`  ${macOutput}`);
   console.log(`Content root: ${contentRoot}`);
   if (args.upload) console.log('Upload configuration prepared. SteamCMD was not started; no credentials were accepted.');
 } catch (error) {
