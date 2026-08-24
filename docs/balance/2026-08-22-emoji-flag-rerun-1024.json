@@ -1,0 +1,322 @@
+{
+  "schema": 1,
+  "config": {
+    "ids": [
+      "biochemistry",
+      "bloodTypeA",
+      "classicist",
+      "wordHunter"
+    ],
+    "authoredGoldIds": [],
+    "seeds": 1024,
+    "seedStart": 384,
+    "seedPrefix": "selective-v1",
+    "source": {
+      "path": "docs/balance/2026-08-22-board-verification-full.json",
+      "sha256": "4a080ebbf03748151b2db0cd253a625e3cd87961a63101c08bc35051079ef29c"
+    }
+  },
+  "opportunityNote": "Owned words are an exposure proxy, not per-effect condition opportunities.",
+  "rows": [
+    {
+      "id": "biochemistry",
+      "selectionReason": "semantic-outlier",
+      "pairs": 1024,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.046875,
+          "lower95": 0.03392219506084536,
+          "upper95": 0.05982780493915464
+        },
+        "scoreTargetDelta": {
+          "mean": 0.1873929092649428,
+          "lower95": 0.17118927082548951,
+          "upper95": 0.20359654770439606
+        },
+        "goldDelta": {
+          "mean": 5.0869140625,
+          "lower95": 4.502882859336609,
+          "upper95": 5.670945265663391
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.05078125,
+            "scoreTargetDelta": 0.1811793046254961,
+            "goldDelta": 5.2265625
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.0625,
+            "scoreTargetDelta": 0.20880066421750987,
+            "goldDelta": 5.19140625
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.03125,
+            "scoreTargetDelta": 0.18113850911458346,
+            "goldDelta": 4.96484375
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.04296875,
+            "scoreTargetDelta": 0.1784531591021824,
+            "goldDelta": 4.96484375
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 68313,
+        "ownedWordOpportunityProxy": 90871,
+        "triggerRatePerOwnedWord": 0.7517579865963839
+      }
+    },
+    {
+      "id": "bloodTypeA",
+      "selectionReason": "semantic-outlier",
+      "pairs": 1024,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.0322265625,
+          "lower95": 0.02140444873499938,
+          "upper95": 0.04304867626500062
+        },
+        "scoreTargetDelta": {
+          "mean": 0.22514475988963295,
+          "lower95": 0.21109657867101744,
+          "upper95": 0.23919294110824846
+        },
+        "goldDelta": {
+          "mean": 16.9521484375,
+          "lower95": 15.71854400012262,
+          "upper95": 18.18575287487738
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.0234375,
+            "scoreTargetDelta": 0.210844187127976,
+            "goldDelta": 16.75
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.05078125,
+            "scoreTargetDelta": 0.24113610181051587,
+            "goldDelta": 17.55078125
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.0234375,
+            "scoreTargetDelta": 0.2280306098090277,
+            "goldDelta": 15.92578125
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.03125,
+            "scoreTargetDelta": 0.22056814081101192,
+            "goldDelta": 17.58203125
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 135883,
+        "ownedWordOpportunityProxy": 81077,
+        "triggerRatePerOwnedWord": 1.6759746907261
+      }
+    },
+    {
+      "id": "classicist",
+      "selectionReason": "semantic-outlier",
+      "pairs": 1024,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.0439453125,
+          "lower95": 0.03138455298941558,
+          "upper95": 0.05650607201058442
+        },
+        "scoreTargetDelta": {
+          "mean": 0.31871895771329395,
+          "lower95": 0.30258901356324086,
+          "upper95": 0.33484890186334704
+        },
+        "goldDelta": {
+          "mean": 22.380859375,
+          "lower95": 21.066766929347377,
+          "upper95": 23.694951820652623
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.0390625,
+            "scoreTargetDelta": 0.30651632254464317,
+            "goldDelta": 21.5
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.05859375,
+            "scoreTargetDelta": 0.3315219323536707,
+            "goldDelta": 23.546875
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.0390625,
+            "scoreTargetDelta": 0.3219789465525793,
+            "goldDelta": 22.06640625
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.0390625,
+            "scoreTargetDelta": 0.31485862940228176,
+            "goldDelta": 22.41015625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 99096,
+        "ownedWordOpportunityProxy": 75386,
+        "triggerRatePerOwnedWord": 1.3145146313639138
+      }
+    },
+    {
+      "id": "wordHunter",
+      "selectionReason": "semantic-outlier",
+      "pairs": 1024,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.1484375,
+          "lower95": 0.12665045480537662,
+          "upper95": 0.17022454519462338
+        },
+        "scoreTargetDelta": {
+          "mean": 0.37943636513361834,
+          "lower95": 0.35322615883025854,
+          "upper95": 0.40564657143697813
+        },
+        "goldDelta": {
+          "mean": 25.314453125,
+          "lower95": 23.84425013725866,
+          "upper95": 26.78465611274134
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.140625,
+            "scoreTargetDelta": 0.368539250062004,
+            "goldDelta": 24.2421875
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.15234375,
+            "scoreTargetDelta": 0.3924466685267855,
+            "goldDelta": 26.16796875
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.15234375,
+            "scoreTargetDelta": 0.39237155722966244,
+            "goldDelta": 25.62890625
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 256,
+          "axes": {
+            "winDelta": 0.1484375,
+            "scoreTargetDelta": 0.36438798471602185,
+            "goldDelta": 25.21875
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 134622,
+        "ownedWordOpportunityProxy": 71109,
+        "triggerRatePerOwnedWord": 1.893178078724212
+      }
+    }
+  ]
+}

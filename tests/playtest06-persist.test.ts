@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { serializeRun, writeRun, loadRun, clearRun } from '../src/ui/persist';
+import { newRun } from '../src/engine/run';
 import type { GameState } from '../src/ui/useGame';
 
 /**
@@ -122,6 +123,34 @@ describe('run persistence', () => {
     const back = loadRun();
     expect(back?.observationId).toMatch(/^([0-9a-f-]{36}|run-)/);
     expect(back?.stats).toMatchObject({ wordsPlayed: 4, jokerBlindCounts: {} });
+    expect(back?.run.challengeId).toBeNull();
+  });
+
+  it('round-trips a valid Challenge preset and rejects invalid Challenge saves', () => {
+    const env = JSON.parse(serializeRun(dirty()));
+    env.state.run = newRun('challenge-save', { challengeId: 'redPen' });
+    writeRun(JSON.stringify(env));
+    expect(loadRun()?.run.challengeId).toBe('redPen');
+
+    env.state.run.challengeId = 'retiredChallenge';
+    writeRun(JSON.stringify(env));
+    expect(loadRun()).toBeNull();
+
+    env.state.run.challengeId = 'redPen';
+    env.state.run.customSeed = true;
+    writeRun(JSON.stringify(env));
+    expect(loadRun()).toBeNull();
+
+    env.state.run = newRun('challenge-save', { challengeId: 'redPen' });
+    env.state.run.recordId = 'whiteLp';
+    writeRun(JSON.stringify(env));
+    expect(loadRun()).toBeNull();
+
+    env.state.run = newRun('challenge-save', { challengeId: 'redPen' });
+    env.state.pendingRun = newRun('challenge-pending', { challengeId: 'risingQuota' });
+    env.state.pendingRun.pouchId = 'yellow';
+    writeRun(JSON.stringify(env));
+    expect(loadRun()).toBeNull();
   });
 
   it('discards version-11 runs so pre-observation Game Over cannot double-count', () => {

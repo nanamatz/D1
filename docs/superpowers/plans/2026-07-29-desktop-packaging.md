@@ -2,7 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Package the existing web build as an offline-capable Windows desktop application via Electron, producing a Steam-ready unpacked folder.
+**Historical goal:** Package the original Windows build. Current scope adds a
+Steam-ready macOS Universal app as described by the amendment below.
 
 **Architecture:** A new `desktop/` directory at the repository root holds an Electron main process that opens one window and loads `dist/index.html` over `file://`. It imports no game code — the dependency direction is one-way (`desktop/ → dist/`). Two changes make the web build loadable offline: fonts move from the Google Fonts CDN to self-hosted npm packages, and Vite's `base` becomes relative. A build gate script scans the built output and fails the build if either regresses.
 
@@ -10,10 +11,20 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-29-desktop-packaging-design.md`
 
+> **ARCHIVED PLATFORM AMENDMENT (2026-08-24):** This implementation plan's
+> Windows-only constraints are historical. The current supported targets are
+> Windows x64 and macOS Universal (`x86_64` + `arm64`), minimum macOS 13.0;
+> Linux remains unsupported. Use `package.json`, the amended design spec, and
+> `docs/STEAM_RELEASE.md` for current commands, artifacts, signing, and validation.
+
 ## Global Constraints
 
-- **Platform: Windows only.** Do not add macOS or Linux build targets.
-- **App name is `Play the World`, fixed via `app.setName()`.** Electron stores localStorage under `%APPDATA%/<appName>/`; renaming later orphans every player's save. This string must never change. It is distinct from the window title "Play the Wor!d", which comes from `index.html`'s `<title>`.
+- **Current platform rule:** Windows x64 and macOS Universal are supported;
+  Linux remains unsupported. Mac release builds run on macOS.
+- **App name is `Play the World`, fixed via `app.setName()`.** Electron keys its
+  per-OS userData directory by this name; renaming later orphans saves. This
+  string must never change. It is distinct from the window title "Play the Wor!d",
+  which comes from `index.html`'s `<title>`.
 - **`desktop/` must not import anything from `src/` or `data/`.** It reads only the built `dist/`.
 - **No preload script.** The renderer needs zero Node APIs in this scope. `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
 - **No installer target.** Steam copies a depot folder and runs the exe. Only `--dir` output.

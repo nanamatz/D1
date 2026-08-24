@@ -66,11 +66,13 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [paused, setPaused] = useState(false);
   const [pouchHovered, setPouchHovered] = useState(false);
   const [packCandidateIds, setPackCandidateIds] = useState<string[]>([]);
+  const [packInteractionLocked, setPackInteractionLocked] = useState(true);
   const [introOpen, setIntroOpen] = useState(false);
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
   const candidatePackOpen = phase === 'shop' &&
     (g.state.pack?.offer.type === 'consumable' || g.state.pack?.offer.type === 'ink');
+  const heldPackUseLocked = candidatePackOpen && packInteractionLocked;
 
   // The shop is rolled before Fee Settlement. Warm only that exact stock while
   // the player reads/collects, leaving gallery-scale registries on demand.
@@ -253,9 +255,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       >
       <SettleProvider
         events={g.state.lastEvents}
+        submission={blind.sequence.at(-1) ?? null}
         settleId={g.state.settleId}
         speed={settings.gameSpeed}
         screenShake={settings.screenshake}
+        reducedMotion={settings.reducedMotion}
         onComplete={g.markSettleComplete}
       >
         <Sidebar
@@ -279,6 +283,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             {...(!g.state.settleComplete ? { animatedGrowthEvents: g.state.lastEvents } : {})}
             bonusJokerTriggers={g.state.sentenceBonus?.jokerTriggers ?? []}
             onUseConsumable={(id) => {
+              if (heldPackUseLocked && (
+                (isFableId(id) && fableTargetsTiles(id)) || isGamblerId(id)
+              )) return;
               if (candidatePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 g.useHeldPackFable(id, packCandidateIds);
               } else if (candidatePackOpen && isGamblerId(id)) {
@@ -288,6 +295,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
               }
             }}
             canUseConsumable={(id) => {
+              if (heldPackUseLocked && (
+                (isFableId(id) && fableTargetsTiles(id)) || isGamblerId(id)
+              )) return false;
               if (candidatePackOpen && isFableId(id) && fableTargetsTiles(id)) {
                 return canUseFableOnPouch(id, run, packCandidateIds);
               }
@@ -347,6 +357,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
                         g={g}
                         selectedCandidates={packCandidateIds}
                         onSelectedCandidatesChange={setPackCandidateIds}
+                        onInteractionLockChange={setPackInteractionLocked}
                       />
                     </div>
                   )

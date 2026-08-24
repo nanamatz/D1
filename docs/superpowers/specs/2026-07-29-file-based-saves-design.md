@@ -1,5 +1,12 @@
 # File-Based Saves — Design (2026-07-29)
 
+> **Cross-platform amendment (2026-08-24):** The same JSON format now ships on
+> Windows x64 and macOS Universal. Electron's fixed `Play the World` userData
+> name resolves to `%APPDATA%/Play the World/saves/` on Windows and
+> `~/Library/Application Support/Play the World/saves/` on macOS. Steam
+> Auto-Cloud maps these as one logical cross-OS save set; see
+> `docs/STEAM_RELEASE.md`.
+
 Move player progress out of `localStorage` and into plain JSON files on disk, so
 Steam Cloud has something it can sync.
 
@@ -15,7 +22,7 @@ atomic writes and one generation of backup; a one-time import of existing
 `localStorage` data.
 
 **Out of scope:** Steamworks APIs and Steam Cloud configuration (cell 3); save
-export/import UI; multiple save slots; cross-device conflict resolution;
+export/import UI; cross-device conflict resolution;
 multi-generation backups or a restore screen; changes to `src/engine/`.
 
 ## Why files at all
@@ -27,10 +34,10 @@ at it would sync half-written binary state and break on Electron upgrades.
 
 ## What counts as save data
 
-Eight keys are save data and move to files on desktop:
+Nine keys are save data and move to files on desktop:
 
 `wj.run`, `wj.collection`, `wj.collectionSeen`, `wj.lifetime`, `wj.unlocks`,
-`wj.vouchers`, `wj.tutorial`, `wj.tutorialIntro`
+`wj.vouchers`, `wj.emojiUnlocks`, `wj.tutorial`, `wj.tutorialIntro`
 
 Three keys are machine-local preferences and stay in `localStorage` everywhere:
 
@@ -87,7 +94,8 @@ Routing is one explicit list inside the adapter:
 ```ts
 const SAVE_KEYS = new Set([
   'wj.run', 'wj.collection', 'wj.collectionSeen', 'wj.lifetime',
-  'wj.unlocks', 'wj.vouchers', 'wj.tutorial', 'wj.tutorialIntro',
+  'wj.unlocks', 'wj.vouchers', 'wj.emojiUnlocks', 'wj.tutorial',
+  'wj.tutorialIntro',
 ]);
 ```
 
@@ -124,7 +132,7 @@ contextBridge.exposeInMainWorld('wj', {
 ```
 
 `contextIsolation`, `nodeIntegration` and `sandbox` keep their cell 1 values. The
-renderer still has no `fs` and no `require` — only read/write/remove over eight
+renderer still has no `fs` and no `require` — only read/write/remove over nine
 keys.
 
 **The `.cjs` extension is required, not a slip.** Cell 1 made the shell ESM
@@ -135,8 +143,8 @@ CommonJS** — Electron does not support an ESM preload when `sandbox: true`. Un
 `sendSync` blocks the main process, but only once, before page load.
 Every subsequent write is fire-and-forget.
 
-Main-process logic lives in a new `desktop/save-store.js` (ESM). `main.js` keeps
-its cell 1 responsibility — windows only — and merely registers the handlers.
+Main-process logic lives in `desktop/save-store.js` (ESM). `main.js` keeps its
+platform-neutral cell 1 responsibility and merely registers the handlers.
 
 **Main does not trust keys from the renderer.** It validates against the same
 `SAVE_KEYS` list and silently drops anything else. Keys never become filenames
@@ -145,7 +153,11 @@ impossible by construction; the check is defence in depth.
 
 ## File layout
 
-`%APPDATA%/Play the World/saves/`
+Windows: `%APPDATA%/Play the World/saves/`
+
+macOS: `~/Library/Application Support/Play the World/saves/`
+
+Both locations contain the same cross-platform JSON format:
 
 ```
 run.json        run.json.bak
@@ -205,7 +217,7 @@ previous file instead of breaking.
 
 The desktop app already holds real data from cell 1's manual verification. Main
 reports `fresh: true` alongside the snapshot when the `saves/` directory did not
-exist at boot. **Only when `fresh`**, the adapter reads the eight save keys from
+exist at boot. **Only when `fresh`**, the adapter reads the nine save keys from
 `localStorage`, writes them through the bridge, **and deletes the originals**.
 
 Gating on `fresh` rather than on "the file has no value for this key" matters: the

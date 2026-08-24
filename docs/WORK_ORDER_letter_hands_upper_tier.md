@@ -70,9 +70,12 @@ Verified collision behavior:
 - **무모음 vs 긴 단어/트리플렛** — #8 wins; `SYZYGY` is the headline Triplet collision.
 - **무모음 vs 스트레이트** — a gibberish straight fails #8's valid-word gate, so it lands on #6 as before.
 
-### A-5. Leveling — resolved
+### A-5. Leveling — superseded by the shipped Proof Stamp system
 
-Letter Hands have no leveling path today; Constellation Cards level sentence patterns only. All nine ship as static values. Future leveling remains deferred in GDD §5.5.
+All nine Letter Hands now have run-only levels per GDD §5.5. Cleared blinds award
+Proof Stamps, level thresholds scale from 1 to 3 to 5 stamps, each level adds the
+hand's rank-band Chips increment, and every third gained level adds ×1 Mult. The
+original static-only decision in this work order is retained only as history.
 
 ### A-6. Discovery — hidden until first completed
 
@@ -104,7 +107,7 @@ Hand #8 ships without a dedicated tile; a Vowelless counterpart is a follow-up d
 
 ## C. Lexicon verification (do this before tuning)
 
-Counts against the shipped 172,251-entry lexicon:
+Counts against the shipped 172,255-entry lexicon (the four curated MVP/VIP noun surfaces add no candidates here):
 
 1. Vowelless: **60 live Y=consonant / 17 hypothetical Y=vowel**
 2. Words of ≥8 letters with zero repeated letters: **10,164**

@@ -68,6 +68,11 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
             ✕
           </button>
         </div>
+        {run.challengeId && (
+          <div className="ri-challenge">
+            {t('challenge.current', { name: t(`challenge.${run.challengeId}.name`) })}
+          </div>
+        )}
 
         <div className="ri-tabs" role="tablist">
           {TABS.map(({ id, label }) => (

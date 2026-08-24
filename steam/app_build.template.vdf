@@ -1,0 +1,14 @@
+"AppBuild"
+{
+    "AppID" "__APP_ID__"
+    "Desc" "Play the Wor!d Windows x64 + macOS Universal __VERSION__ __COMMIT__"
+    "BuildOutput" "__BUILD_OUTPUT__"
+    "ContentRoot" "__CONTENT_ROOT__"
+    "Preview" "1"
+
+    "Depots"
+    {
+        "__WINDOWS_DEPOT_ID__" "__WINDOWS_DEPOT_SCRIPT__"
+        "__MAC_DEPOT_ID__" "__MAC_DEPOT_SCRIPT__"
+    }
+}

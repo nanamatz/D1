@@ -174,29 +174,39 @@ export function App() {
   // One delegated listener covers every native and ARIA button, including future
   // screens. audio.play() still respects the SOUND palette unlock and SFX slider.
   useEffect(() => {
+    const playButtonPress = () => {
+      if (audio.isUnlocked()) audio.play('buttonPress');
+      else void audio.unlock().then(() => audio.play('buttonPress'));
+    };
     const enabledControl = (target: EventTarget | null): Element | null => {
       if (!(target instanceof Element)) return null;
       const control = target.closest(
         'button, [role="button"], input[type="checkbox"], input[type="radio"]',
       );
-      return control?.matches(':disabled, [aria-disabled="true"], .desk-object') ? null : control;
+      return !control ||
+        control.closest('.desk-object') ||
+        control.matches(':disabled, [aria-disabled="true"]')
+        ? null
+        : control;
     };
-    const click = (event: MouseEvent) => {
-      if (enabledControl(event.target)) audio.play('buttonPress');
+    const pointer = (event: PointerEvent) => {
+      if (event.isPrimary && event.button === 0 && enabledControl(event.target)) {
+        playButtonPress();
+      }
     };
     const key = (event: KeyboardEvent) => {
       if (
         !event.repeat &&
         (event.key === 'Enter' || event.key === ' ') &&
-        enabledControl(event.target)?.matches('[role="button"]:not(button)')
+        enabledControl(event.target)
       ) {
-        audio.play('buttonPress');
+        playButtonPress();
       }
     };
-    document.addEventListener('click', click, true);
+    document.addEventListener('pointerdown', pointer, true);
     document.addEventListener('keydown', key, true);
     return () => {
-      document.removeEventListener('click', click, true);
+      document.removeEventListener('pointerdown', pointer, true);
       document.removeEventListener('keydown', key, true);
     };
   }, []);
@@ -224,6 +234,7 @@ export function App() {
                     blindKind: g.state.blind.kind,
                     gold: g.state.run.gold,
                     seed: g.state.seed,
+                    challengeId: g.state.run.challengeId ?? null,
                   }
                 : undefined
             }

@@ -5,7 +5,8 @@
  * governs the option pool. rollPack builds the offer; applyPackPick folds a pick
  * into the run. The UI controller resolves ordinary Fables immediately against
  * their pack candidates; applyPackPick remains the low-level "take this object"
- * fold used by tiles, jokers, Constellations, and blind-only Fables.
+ * fold used by tiles, jokers, and held blind-only Fables. Constellations level
+ * their mapped pattern immediately through the controller's use path.
  */
 
 import { BALANCE, packSizeRules } from './balance';

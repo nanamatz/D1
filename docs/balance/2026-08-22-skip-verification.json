@@ -1,0 +1,685 @@
+{
+  "schema": 1,
+  "config": {
+    "profile": "baseline",
+    "seeds": 8,
+    "seedStart": 0,
+    "seedPrefix": "skip-v1"
+  },
+  "policy": {
+    "name": "neutral-single-decision-counterfactual",
+    "order": [
+      "chapter8Win",
+      "furthestBlind",
+      "terminalScoreTarget",
+      "gold"
+    ],
+    "ties": "play",
+    "proxyOnly": true,
+    "humanSkipTarget": [
+      0.2,
+      0.35
+    ]
+  },
+  "decisionsReached": 74,
+  "selected": 43,
+  "skipRate": 0.581081081081081,
+  "timingBuckets": {
+    "immediate": 12,
+    "nextBlind": 7,
+    "nextShop": 9,
+    "nextClear": 1,
+    "nextDeadline": 1
+  },
+  "rows": [
+    {
+      "id": "advancePayment",
+      "timing": "immediate",
+      "offered": 2,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": 0.22562222222222217,
+      "meanGoldDelta": 2
+    },
+    {
+      "id": "houseStyle",
+      "timing": "immediate",
+      "offered": 1,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 0,
+      "meanTerminalScoreTargetDelta": 0.43875,
+      "meanGoldDelta": -4
+    },
+    {
+      "id": "extraPages",
+      "timing": "nextBlind",
+      "offered": 2,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.6484493055555556,
+      "meanGoldDelta": 0
+    },
+    {
+      "id": "copyPass",
+      "timing": "nextBlind",
+      "offered": 1,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 4,
+      "meanTerminalScoreTargetDelta": -0.6390555555555555,
+      "meanGoldDelta": 9
+    },
+    {
+      "id": "quotaRelief",
+      "timing": "nextBlind",
+      "offered": 4,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 0,
+      "meanTerminalScoreTargetDelta": 0.22568749999999999,
+      "meanGoldDelta": 10
+    },
+    {
+      "id": "publicity",
+      "timing": "nextClear",
+      "offered": 3,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1.5,
+      "meanTerminalScoreTargetDelta": 0.28834374999999995,
+      "meanGoldDelta": 6
+    },
+    {
+      "id": "coverQuote",
+      "timing": "nextBlind",
+      "offered": 4,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.33662743055555555,
+      "meanGoldDelta": 15.5
+    },
+    {
+      "id": "uncommonTag",
+      "timing": "nextShop",
+      "offered": 3,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 0,
+      "meanTerminalScoreTargetDelta": 0.12364444444444445,
+      "meanGoldDelta": -2
+    },
+    {
+      "id": "rareTag",
+      "timing": "nextShop",
+      "offered": 1,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 3,
+      "meanTerminalScoreTargetDelta": 0.13793749999999994,
+      "meanGoldDelta": -1
+    },
+    {
+      "id": "whiteTag",
+      "timing": "nextShop",
+      "offered": 6,
+      "selected": 4,
+      "resolved": 3,
+      "pending": 1,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1.5,
+      "meanTerminalScoreTargetDelta": 0.00019548611111110115,
+      "meanGoldDelta": 13.25
+    },
+    {
+      "id": "violetTag",
+      "timing": "nextShop",
+      "offered": 3,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.2357238952020202,
+      "meanGoldDelta": 11.5
+    },
+    {
+      "id": "rainbowTag",
+      "timing": "nextShop",
+      "offered": 0,
+      "selected": 0,
+      "resolved": 0,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": null,
+      "meanFurthestBlindDelta": null,
+      "meanTerminalScoreTargetDelta": null,
+      "meanGoldDelta": null
+    },
+    {
+      "id": "grayTag",
+      "timing": "nextShop",
+      "offered": 2,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1.5,
+      "meanTerminalScoreTargetDelta": -0.09651565656565653,
+      "meanGoldDelta": 16
+    },
+    {
+      "id": "investmentTag",
+      "timing": "nextDeadline",
+      "offered": 3,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 2.5,
+      "meanTerminalScoreTargetDelta": -0.017296527777777793,
+      "meanGoldDelta": 18.5
+    },
+    {
+      "id": "voucherTag",
+      "timing": "nextShop",
+      "offered": 4,
+      "selected": 2,
+      "resolved": 1,
+      "pending": 1,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 0.5,
+      "meanTerminalScoreTargetDelta": -0.11189131944444447,
+      "meanGoldDelta": 1
+    },
+    {
+      "id": "bossTag",
+      "timing": "immediate",
+      "offered": 4,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 3,
+      "meanTerminalScoreTargetDelta": 0.27845833333333336,
+      "meanGoldDelta": 6
+    },
+    {
+      "id": "tileTag",
+      "timing": "immediate",
+      "offered": 1,
+      "selected": 0,
+      "resolved": 0,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": null,
+      "meanFurthestBlindDelta": null,
+      "meanTerminalScoreTargetDelta": null,
+      "meanGoldDelta": null
+    },
+    {
+      "id": "fableTag",
+      "timing": "immediate",
+      "offered": 2,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.020377777777777828,
+      "meanGoldDelta": -4
+    },
+    {
+      "id": "constellationTag",
+      "timing": "immediate",
+      "offered": 0,
+      "selected": 0,
+      "resolved": 0,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": null,
+      "meanFurthestBlindDelta": null,
+      "meanTerminalScoreTargetDelta": null,
+      "meanGoldDelta": null
+    },
+    {
+      "id": "charmTag",
+      "timing": "immediate",
+      "offered": 2,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.030722222222222206,
+      "meanGoldDelta": 20
+    },
+    {
+      "id": "handyTag",
+      "timing": "immediate",
+      "offered": 5,
+      "selected": 3,
+      "resolved": 3,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 2,
+      "meanTerminalScoreTargetDelta": -0.24210856481481483,
+      "meanGoldDelta": 19.666666666666668
+    },
+    {
+      "id": "garbageTag",
+      "timing": "immediate",
+      "offered": 2,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 0.5,
+      "meanTerminalScoreTargetDelta": 0.00140624999999997,
+      "meanGoldDelta": -3
+    },
+    {
+      "id": "inkTag",
+      "timing": "immediate",
+      "offered": 1,
+      "selected": 0,
+      "resolved": 0,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": null,
+      "meanFurthestBlindDelta": null,
+      "meanTerminalScoreTargetDelta": null,
+      "meanGoldDelta": null
+    },
+    {
+      "id": "couponTag",
+      "timing": "nextShop",
+      "offered": 2,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 3,
+      "meanTerminalScoreTargetDelta": 0.13793749999999994,
+      "meanGoldDelta": -11
+    },
+    {
+      "id": "jugglerTag",
+      "timing": "nextBlind",
+      "offered": 2,
+      "selected": 1,
+      "resolved": 1,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.6425326388888889,
+      "meanGoldDelta": 12
+    },
+    {
+      "id": "economyTag",
+      "timing": "immediate",
+      "offered": 1,
+      "selected": 0,
+      "resolved": 0,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": null,
+      "meanFurthestBlindDelta": null,
+      "meanTerminalScoreTargetDelta": null,
+      "meanGoldDelta": null
+    },
+    {
+      "id": "alphaOmegaTag",
+      "timing": "nextShop",
+      "offered": 5,
+      "selected": 5,
+      "resolved": 5,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1.2,
+      "meanTerminalScoreTargetDelta": -0.0277640277777778,
+      "meanGoldDelta": 1.6
+    },
+    {
+      "id": "lipogramTag",
+      "timing": "nextBlind",
+      "offered": 4,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.025550000000000017,
+      "meanGoldDelta": 12.5
+    },
+    {
+      "id": "scarletTag",
+      "timing": "nextBlind",
+      "offered": 0,
+      "selected": 0,
+      "resolved": 0,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": null,
+      "meanFurthestBlindDelta": null,
+      "meanTerminalScoreTargetDelta": null,
+      "meanGoldDelta": null
+    },
+    {
+      "id": "pythagoreanYTag",
+      "timing": "immediate",
+      "offered": 4,
+      "selected": 2,
+      "resolved": 2,
+      "pending": 0,
+      "unresolved": 0,
+      "meanWinDelta": 0,
+      "meanFurthestBlindDelta": 1,
+      "meanTerminalScoreTargetDelta": -0.24095,
+      "meanGoldDelta": -1.5
+    }
+  ],
+  "forcedCoverage": [
+    {
+      "id": "advancePayment",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "houseStyle",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "extraPages",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "copyPass",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "quotaRelief",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "publicity",
+      "timing": "nextClear",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "coverQuote",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "uncommonTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "rareTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "whiteTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "violetTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "rainbowTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "grayTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "investmentTag",
+      "timing": "nextDeadline",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "voucherTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "bossTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "tileTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": true
+    },
+    {
+      "id": "fableTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": true
+    },
+    {
+      "id": "constellationTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": true
+    },
+    {
+      "id": "charmTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": true
+    },
+    {
+      "id": "handyTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "garbageTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "inkTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": true
+    },
+    {
+      "id": "couponTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "jugglerTag",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "economyTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "alphaOmegaTag",
+      "timing": "nextShop",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "lipogramTag",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "scarletTag",
+      "timing": "nextBlind",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    },
+    {
+      "id": "pythagoreanYTag",
+      "timing": "immediate",
+      "resolved": true,
+      "pending": false,
+      "unresolved": false,
+      "freePackOpened": false
+    }
+  ],
+  "invariants": {
+    "exactRoster": true,
+    "deadlineRejected": true,
+    "noOfferRepeat": true,
+    "consecutiveSelected": [
+      "extraPages",
+      "copyPass"
+    ],
+    "consecutiveResolved": [
+      "extraPages",
+      "copyPass"
+    ],
+    "endlessComplete": true,
+    "peakChapter": 38,
+    "noChapter39": true,
+    "finite": true
+  }
+}

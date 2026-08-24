@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
-import { BALANCE } from '../../engine/balance';
 import { canBuyVoucher, currentRerollCost } from '../../engine/shop';
+import { packBuyPrice } from '../../engine/economy';
 import {
   canAddJoker,
   canOwnConsumable,
-  discountedPrice,
 } from '../../engine/vouchers';
 import { motionOff } from '../motion';
 import type { ConsumableId, JokerRarity, ShopItem } from '../../engine/types';
@@ -433,9 +432,7 @@ export function Shop({ g }: { g: UseGame }) {
                   entry.p !== null)
                 .map(({ p, i }) => {
                 const tip = packTooltip(p.type, p.size, t);
-                const price = p.free
-                  ? 0
-                  : discountedPrice(run, BALANCE.pack.size[p.size].price);
+                const price = packBuyPrice(run, p);
                 const offerKey = `pack-${i}`;
                 const art = packArt(p.type, p.size, p.artVariant);
                 return (

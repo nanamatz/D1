@@ -222,6 +222,7 @@ export function StagePanel({
     reorderStaged: (fromId, toId) => {
       g.reorderStaged(fromId, toId);
     },
+    mark: toggleMark,
     playGrab: () => audio.play('tilePick'),
     playDrop: () => audio.play('dragSnap'),
   };
@@ -320,7 +321,6 @@ export function StagePanel({
           className="btn blue play-btn"
           onClick={() => {
             captureBossDiscardOrigins();
-            audio.play('submitThock');
             // Freeze held-tile scoring in the order currently shown to the player.
             g.playWord(hand.map((tile) => tile.id));
           }}

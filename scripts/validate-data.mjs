@@ -17,14 +17,20 @@ const posOverrides = JSON.parse(readFileSync(
   resolve(root, 'lexicon-pipeline/pos-overrides.json'),
   'utf8',
 ));
+const curatedAbbreviations = JSON.parse(readFileSync(
+  resolve(root, 'lexicon-pipeline/curated-abbreviations.json'),
+  'utf8',
+));
 const dictionary = readFileSync(resolve(root, 'data/dictionary.txt'), 'utf8')
   .split(/\r?\n/)
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
 const maxWordLength = 18;
-const dictionaryTarget = 172228; // eligible ENABLE words + 13 tile-grammar exceptions
-const lexiconTarget = 172251; // dictionary + 23 retained pre-existing entries
+const dictionaryTarget = 172232; // ENABLE + tile-grammar exceptions + 4 curated acronym surfaces
+const lexiconTarget = 172255; // dictionary + 23 retained pre-existing entries
+const curatedTarget = ['mvp', 'mvps', 'vip', 'vips'];
 const suits = new Set(['standard', 'formal', 'slang', 'vulgar']);
+const suitTargets = { standard: 168467, formal: 2669, slang: 879, vulgar: 240 };
 const parts = new Set([
   'noun',
   'verbIntransitive',
@@ -39,6 +45,53 @@ const parts = new Set([
 ]);
 
 const errors = [];
+if (!Array.isArray(curatedAbbreviations)) {
+  errors.push('curated abbreviations: expected an array');
+} else {
+  const seen = new Set();
+  const dictionaryWords = new Set(dictionary);
+  for (const [index, entry] of curatedAbbreviations.entries()) {
+    const label = entry?.word ?? `row ${index}`;
+    if (!entry || typeof entry !== 'object') {
+      errors.push(`curated abbreviations: invalid ${label}`);
+      continue;
+    }
+    if (!/^[a-z]{2,18}$/.test(entry.word ?? '')) {
+      errors.push(`curated abbreviations: invalid word ${label}`);
+    }
+    if (seen.has(entry.word)) errors.push(`curated abbreviations: duplicate ${label}`);
+    seen.add(entry.word);
+    const previousWord = curatedAbbreviations[index - 1]?.word;
+    if (index > 0 && typeof previousWord === 'string' && typeof entry.word === 'string'
+      && previousWord.localeCompare(entry.word) > 0) {
+      errors.push('curated abbreviations: entries are not sorted');
+    }
+    const hasExpansion = typeof entry.expansion === 'string' && entry.expansion.trim().length > 0;
+    const hasLemma = typeof entry.lemma === 'string' && /^[a-z]{2,18}$/.test(entry.lemma);
+    if (hasExpansion === hasLemma) {
+      errors.push(`${label}: expected exactly one expansion or lemma`);
+    }
+    if (!suits.has(entry.suit)) errors.push(`${label}: invalid curated suit ${entry.suit}`);
+    if (!Array.isArray(entry.pos) || entry.pos.length === 0 || entry.pos.some((pos) => !parts.has(pos))) {
+      errors.push(`${label}: invalid curated POS`);
+    }
+    if (typeof entry.reason !== 'string' || entry.reason.trim().length === 0) {
+      errors.push(`${label}: missing curated reason`);
+    }
+    if (hasLemma && !seen.has(entry.lemma)) errors.push(`${label}: unknown or later lemma ${entry.lemma}`);
+    if (!dictionaryWords.has(entry.word)) errors.push(`${label}: missing from dictionary`);
+    if (!table[entry.word]) errors.push(`${label}: missing from lexicon`);
+    else if (
+      table[entry.word].suit !== entry.suit ||
+      JSON.stringify(table[entry.word].pos) !== JSON.stringify(entry.pos)
+    ) {
+      errors.push(`${label}: curated suit/POS drift`);
+    }
+  }
+  if (JSON.stringify([...seen]) !== JSON.stringify(curatedTarget)) {
+    errors.push(`curated abbreviations: expected exactly ${curatedTarget.join(', ')}`);
+  }
+}
 if (dictionary.length !== dictionaryTarget) {
   errors.push(`dictionary: expected ${dictionaryTarget} words, found ${dictionary.length}`);
 }
@@ -87,6 +140,11 @@ for (const [word, pos] of Object.entries(posOverrides)) {
 
 const suitCounts = Object.fromEntries([...suits].map((suit) => [suit, 0]));
 for (const entry of Object.values(table)) suitCounts[entry.suit] += 1;
+for (const suit of suits) {
+  if (suitCounts[suit] !== suitTargets[suit]) {
+    errors.push(`${suit}: expected ${suitTargets[suit]} entries, found ${suitCounts[suit]}`);
+  }
+}
 if (registerAudit.schema !== 2) {
   errors.push(`register audit: expected schema 2, found ${registerAudit.schema}`);
 }

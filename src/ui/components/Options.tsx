@@ -5,6 +5,7 @@ import { collectionStatsPage, loadCollection, sortedCollectionStats, type Collec
 import { ALL_JOKERS } from '../../engine/jokers';
 import { POUCH_IDS } from '../../engine/pouches';
 import { RECORD_IDS } from '../../engine/records';
+import { CHALLENGE_DEFS } from '../../engine/challenges';
 import {
   JOKER_RECORD_STICKER_TOTAL,
   jokerRecordStickerCount,
@@ -381,6 +382,12 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
           <Stat
             k={t('stats.jokerRecordStickers')}
             v={`${jokerRecordStickerCount(lt)}/${JOKER_RECORD_STICKER_TOTAL}`}
+          />
+          <Stat
+            k={t('stats.challenges')}
+            v={lt.challengesDisabled
+              ? t('challenge.disabledShort')
+              : `${lt.completedChallenges.length}/${CHALLENGE_DEFS.length}`}
           />
         </div>
       </div>}

@@ -324,7 +324,8 @@ legendary 항목 자체가 없음 = 가중치 0). 획득 경로는 노름꾼 **�
 
 - 새 키 **2개**: `wj.emojiUnlocks` (해금된 id 집합) · `wj.emojiProgress` (카운터 맵).
 - 둘 다 **플레이어 진행도**이므로 `src/ui/storage.ts`의 `SAVE_KEYS`에 넣고, 데스크톱에서는
-  `%APPDATA%/Play the World/saves/profile.json`으로 간다.
+  Windows의 `%APPDATA%/Play the World/saves/profile.json` 또는 macOS의
+  `~/Library/Application Support/Play the World/saves/profile.json`으로 간다.
 - `desktop/save-store.js`의 `SAVE_KEYS` **중복 목록도 같이 갱신**해야 한다 (`desktop/`은
   `src/`를 import할 수 없어 복제되어 있고, 어긋나면 테스트가 실패한다).
 - `wj.unlocks`(색 해금)와 **합치지 않는다.** 다른 시스템이고 다른 판정 규칙을 쓴다.

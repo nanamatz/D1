@@ -22,6 +22,7 @@ import type {
   BlindKind,
   BlindState,
   ChanceResult,
+  ChallengeId,
   ConsumableId,
   Letter,
   PatternId,
@@ -45,7 +46,7 @@ import {
   rollVoucherOffer,
   rollExtraItem,
 } from '../engine/shop';
-import { consumableSellValue } from '../engine/economy';
+import { consumableSellValue, packBuyPrice } from '../engine/economy';
 import { rollPack, applyPackPick, type PackOffer } from '../engine/packs';
 import { BALANCE } from '../engine/balance';
 import { letterChips } from '../engine/scoring';
@@ -98,7 +99,6 @@ import {
   canOwnConsumable,
   canOwnJoker,
   CONSUMABLE_PATTERN,
-  discountedPrice,
   interestCap,
   VOUCHER_REGISTRY,
 } from '../engine/vouchers';
@@ -389,6 +389,7 @@ export interface RunStartOptions {
   pouchId: PouchId;
   recordId: RecordId;
   customSeed: boolean;
+  challengeId?: ChallengeId | null;
 }
 
 function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
@@ -398,6 +399,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     pouchId: options.pouchId ?? 'yellow',
     recordId: options.recordId ?? 'whiteLp',
     customSeed: options.customSeed ?? false,
+    challengeId: options.challengeId ?? null,
   });
   // Chapter 1's voucher offer + Deadline boss (fixed per chapter; playtest-03 C, 04 D-6).
   const bossDraw = drawBossFromCycle(makeRng(`${seed}#boss-1`), bossPoolForAnte(1));
@@ -606,6 +608,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           pouchId: state.run.pouchId,
           recordId: state.run.recordId,
           customSeed: state.run.customSeed,
+          challengeId: state.run.challengeId ?? null,
           jokerIds: state.run.jokers
             .filter((joker) => joker.state.destroyed !== 1)
             .map((joker) => joker.defId),
@@ -620,6 +623,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     state.run.pouchId,
     state.run.recordId,
     state.run.customSeed,
+    state.run.challengeId,
     state.run.jokers,
     state.stats.bestWord,
     state.stats.patternCounts,
@@ -1187,9 +1191,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (prev.phase !== 'shop' || !prev.shop) return prev;
       const slot = prev.shop.packs[index];
       if (!slot) return prev;
-      const price = slot.free
-        ? 0
-        : discountedPrice(prev.run, BALANCE.pack.size[slot.size].price);
+      const price = packBuyPrice(prev.run, slot);
       if (prev.run.gold < price) return prev;
       const rng = makeRng(`${prev.seed}#${prev.rngCounter}`);
       const offer = rollPack(slot, prev.run, rng, prev.shop.items, unlockedEmojiSet());

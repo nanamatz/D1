@@ -1,5 +1,17 @@
 # File-Based Saves Implementation Plan
 
+> **ARCHIVED — DO NOT EXECUTE. Historical amendment (2026-08-23):** This is the
+> original implementation plan. The shipped contract now has nine progress keys (including
+> `wj.emojiUnlocks`) multiplexed through three profile slots. That current
+> contract supersedes stale eight-key and single-slot examples below; see the
+> design spec and `AGENTS.md` for the maintained source of truth.
+> All eight-key and single-slot examples in this archived body are preserved
+> only as implementation history and are not current requirements.
+> The 2026-08-24 desktop amendment also adds macOS. Current save roots are
+> `%APPDATA%/Play the World/saves/` on Windows and
+> `~/Library/Application Support/Play the World/saves/` on macOS; the JSON
+> format is shared and Steam Auto-Cloud treats them as one cross-OS save set.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Move the eight player-progress keys out of `localStorage` into plain JSON files on disk, so Steam Cloud has something it can sync.

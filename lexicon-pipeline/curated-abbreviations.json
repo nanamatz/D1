@@ -1,0 +1,30 @@
+[
+  {
+    "word": "mvp",
+    "expansion": "most valuable player",
+    "suit": "standard",
+    "pos": ["noun"],
+    "reason": "Widely understood initialism playable without punctuation"
+  },
+  {
+    "word": "mvps",
+    "lemma": "mvp",
+    "suit": "standard",
+    "pos": ["noun"],
+    "reason": "Regular plural of the curated MVP surface"
+  },
+  {
+    "word": "vip",
+    "expansion": "very important person",
+    "suit": "standard",
+    "pos": ["noun"],
+    "reason": "Widely understood initialism playable without punctuation"
+  },
+  {
+    "word": "vips",
+    "lemma": "vip",
+    "suit": "standard",
+    "pos": ["noun"],
+    "reason": "Regular plural of the curated VIP surface"
+  }
+]

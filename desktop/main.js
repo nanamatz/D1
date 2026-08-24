@@ -17,7 +17,7 @@ import { MIN_SIZE, loadState, restoreBounds, saveState } from './window-state.js
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 
-/** localStorage lives in %APPDATA%/<appName>/. Renaming this orphans every save. */
+/** Electron userData is keyed by appName on every OS. Renaming this orphans every save. */
 app.setName('Play the World');
 
 /** Matches the game's dark background so no white flash shows before first paint. */
@@ -32,7 +32,7 @@ function createWindow() {
     ...bounds,
     // Packaged builds take the icon from the exe (electron-builder win.icon);
     // this is what gives `npm run desktop:run` the same one instead of Electron's.
-    icon: path.join(DIR, 'icon.ico'),
+    ...(process.platform === 'win32' ? { icon: path.join(DIR, 'icon.ico') } : {}),
     minWidth: MIN_SIZE.width,
     minHeight: MIN_SIZE.height,
     useContentSize: true,

@@ -792,10 +792,10 @@
   margin-top: 8px;
   min-height: 82px;
 }
-.pack-opening.revealed .pack-candidate-tile {
+.pack-opening:is(.opening, .revealed) .pack-candidate-tile {
   position: relative;
   animation: candidate-deal .36s cubic-bezier(.34, 1.56, .64, 1) both;
-  animation-delay: calc(var(--candidate-i) * 45ms);
+  animation-delay: calc(1.5s + var(--candidate-i) * 45ms);
 }
 .pack-candidate-row .tile {
   width: 64px;
@@ -819,8 +819,8 @@
 /* Hide the real content while the burst plays; it flies in on reveal. */
 .pack-opening.preparing .shop-head,
 .pack-opening.preparing > .panel,
-.pack-opening.opening .shop-head,
-.pack-opening.opening > .panel { visibility: hidden; }
+.pack-opening.opening .shop-head { visibility: hidden; }
+.pack-opening.opening > .panel { pointer-events: none; }
 
 .pack-open-fx {
   position: absolute;
@@ -868,18 +868,6 @@
   );
   transform-origin: 8% 21%;
   animation: packTopTear .82s .28s cubic-bezier(.18, .8, .3, 1) both;
-}
-.pack-open-tear-line {
-  position: absolute;
-  z-index: 6;
-  top: 20%;
-  left: -3px;
-  width: calc(100% + 6px);
-  height: 7px;
-  background: repeating-linear-gradient(90deg, #fff 0 8px, var(--gold) 8px 13px, transparent 13px 17px);
-  clip-path: polygon(0 45%, 12% 10%, 22% 80%, 34% 22%, 45% 88%, 57% 20%, 68% 82%, 80% 12%, 91% 72%, 100% 35%, 100% 65%, 91% 100%, 80% 42%, 68% 100%, 57% 48%, 45% 100%, 34% 52%, 22% 100%, 12% 38%, 0 75%);
-  transform-origin: left;
-  animation: packTearLine .98s .12s steps(7, end) both;
 }
 .pack-open-tear-flash {
   position: absolute;
@@ -963,8 +951,6 @@
 .pack-open-spill-card:nth-child(3) { --spill-x: -62px; --spill-out-x: -94px; --spill-r: -13deg; animation-delay: .54s; }
 .pack-open-spill-card:nth-child(4) { --spill-x: 48px; --spill-out-x: 78px; --spill-r: 11deg; animation-delay: .6s; }
 .pack-open-spill-card:nth-child(5) { --spill-x: -154px; --spill-out-x: -218px; --spill-r: -31deg; animation-delay: .66s; }
-.pack-open-spill-card:nth-child(6) { --spill-x: 138px; --spill-out-x: 202px; --spill-r: 28deg; animation-delay: .72s; }
-.pack-open-spill-card:nth-child(7) { --spill-x: 0px; --spill-out-x: 18px; --spill-r: 4deg; animation-delay: .78s; }
 .pack-open-particles {
   position: absolute;
   left: 50%;
@@ -1105,13 +1091,14 @@
 }
 /* Choice shells fall into place after the VFX clears. The outer wrapper keeps
    ownership of its inline fan arc. */
-.pack-opening.revealed .pack-fan-card > .pack-option-shell {
+.pack-opening:is(.opening, .revealed) .pack-fan-card > .pack-option-shell {
   animation: packChoiceSettle .48s cubic-bezier(.2, .86, .3, 1.18) backwards;
+  animation-delay: 1.1s;
 }
-.pack-opening.revealed .pack-fan-card:nth-child(2) > .pack-option-shell { animation-delay: .06s; }
-.pack-opening.revealed .pack-fan-card:nth-child(3) > .pack-option-shell { animation-delay: .12s; }
-.pack-opening.revealed .pack-fan-card:nth-child(4) > .pack-option-shell { animation-delay: .18s; }
-.pack-opening.revealed .pack-fan-card:nth-child(5) > .pack-option-shell { animation-delay: .24s; }
+.pack-opening:is(.opening, .revealed) .pack-fan-card:nth-child(2) > .pack-option-shell { animation-delay: 1.16s; }
+.pack-opening:is(.opening, .revealed) .pack-fan-card:nth-child(3) > .pack-option-shell { animation-delay: 1.22s; }
+.pack-opening:is(.opening, .revealed) .pack-fan-card:nth-child(4) > .pack-option-shell { animation-delay: 1.28s; }
+.pack-opening:is(.opening, .revealed) .pack-fan-card:nth-child(5) > .pack-option-shell { animation-delay: 1.34s; }
 /* Selection reaction (§2.6.1, the actual complaint): the chosen card lifts out of the
    arc, pulses, and holds a gold outline for the pick beat before it applies. Held with
    `forwards` so it stays lifted until the card is taken. Overrides TiltCard's idle
@@ -1330,16 +1317,13 @@
 }
 
 @keyframes packTearRattle {
-  0%, 100% { transform: translate(0) rotate(0); }
-  18% { transform: translate(-5px, 1px) rotate(-2deg); }
-  36% { transform: translate(5px, -1px) rotate(2deg); }
-  54% { transform: translate(-4px, -2px) rotate(-1deg); }
-  72% { transform: translate(4px, 1px) rotate(1deg); }
-}
-@keyframes packTearLine {
-  from { opacity: 0; transform: scaleX(0); }
-  40%, 58% { opacity: 1; transform: scaleX(1); }
-  to { opacity: 0; transform: scaleX(1); }
+  0% { transform: translate(0) rotate(0) scale(1); }
+  18% { transform: translate(-5px, 1px) rotate(-2deg) scale(1.03, .97); }
+  36% { transform: translate(5px, -1px) rotate(2deg) scale(.98, 1.03); }
+  54% { transform: translate(-4px, 2px) rotate(-1deg) scale(1.08, .86); }
+  72% { transform: translate(4px, 4px) rotate(1deg) scale(1.12, .74); }
+  88% { transform: translate(0, -3px) rotate(0) scale(.94, 1.08); }
+  100% { transform: translate(0) rotate(0) scale(1); }
 }
 @keyframes packTopTear {
   0%, 14% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
@@ -1381,7 +1365,6 @@
   .pack-opening.revealed .shop-row .shopitem { animation: none; }
   .pack-open-stage,
   .pack-open-piece,
-  .pack-open-tear-line,
   .pack-open-tear-flash,
   .pack-open-ink-burst,
   .pack-open-spill-card,
@@ -3430,9 +3413,165 @@
   background: rgba(0, 0, 0, 0.18);
 }
 .submitted-tiles {
-  display: flex;
+  display: inline-flex;
   gap: 4px;
+  position: relative;
+  transform-origin: 50% 100%;
 }
+.submitted-tiles.play-impact-group {
+  animation: play-impact-group var(--play-impact-ms, 650ms) steps(5, end) both;
+}
+.submitted-tiles .tile.play-impact {
+  z-index: 12;
+  overflow: visible;
+}
+.submitted-tiles.play-impact-contact::after {
+  content: '';
+  position: absolute;
+  z-index: 11;
+  left: 5%;
+  right: 5%;
+  bottom: -8px;
+  height: 5px;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, #fff 0 8px, transparent 8px 13px);
+  opacity: var(--play-impact-intensity, .6);
+  animation: play-impact-row-burst var(--play-impact-vfx-ms, 260ms) steps(4, end) both;
+}
+.submitted-tiles.play-impact-reduced {
+  outline: 2px solid rgba(255, 255, 255, .72);
+  outline-offset: 3px;
+}
+.tile.play-impact > .tile-material-texture {
+  overflow: visible;
+}
+.tile.play-impact > .tile-material-texture::before,
+.tile.play-impact > .tile-material-texture::after {
+  content: '';
+  position: absolute;
+  z-index: 9;
+  pointer-events: none;
+  animation-duration: var(--play-impact-vfx-ms, 260ms);
+  animation-timing-function: steps(4, end);
+  animation-fill-mode: both;
+}
+/* Ceramic / Porcelain / Ivory: dry press dust and a broken square halo. */
+.tile.play-impact.impact-paper > .tile-material-texture::before {
+  left: 50%;
+  bottom: -4px;
+  width: 4px;
+  height: 4px;
+  background: #fff6d6;
+  box-shadow: -24px -2px #dfcda5, -15px 5px #fff, -7px -5px #bda97f,
+    9px 3px #fff6d6, 18px -5px #d6c08f, 26px 2px #fff;
+  animation-name: play-impact-dust;
+}
+.tile.play-impact.impact-paper > .tile-material-texture::after {
+  inset: -8px;
+  border: 3px dashed #fff1bd;
+  animation-name: play-impact-ring;
+}
+/* Polished / Lead Plate / Brass: type-metal resonance plus a hard glint. */
+.tile.play-impact.impact-metal > .tile-material-texture::before {
+  inset: -10px;
+  border: 3px solid #ffe47d;
+  border-radius: 50%;
+  animation-name: play-impact-ring;
+}
+.tile.play-impact.impact-metal > .tile-material-texture::after {
+  top: -13px;
+  right: -13px;
+  width: 7px;
+  height: 7px;
+  background: #fff;
+  box-shadow: 0 -9px #ffe47d, 0 9px #ffe47d, -9px 0 #fff, 9px 0 #fff;
+  animation-name: play-impact-glint;
+}
+/* Glass stays intact here: this is an angular light flash, never destruction. */
+.tile.play-impact.impact-brittle > .tile-material-texture::before {
+  inset: -11px;
+  background: #d9f8ff;
+  clip-path: polygon(50% 0, 58% 36%, 100% 22%, 68% 50%, 100% 78%, 58% 64%, 50% 100%, 42% 64%, 0 78%, 32% 50%, 0 22%, 42% 36%);
+  animation-name: play-impact-angular;
+}
+.tile.play-impact.impact-brittle > .tile-material-texture::after {
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  box-shadow: -25px -15px #8ed9ee, 23px -19px #fff, -20px 18px #d9f8ff, 27px 14px #79bed6;
+  animation-name: play-impact-debris;
+}
+/* Stone / Wood: square blocks and short grain-like debris. */
+.tile.play-impact.impact-block > .tile-material-texture::before {
+  left: 50%;
+  bottom: -5px;
+  width: 6px;
+  height: 6px;
+  background: #9b7852;
+  box-shadow: -27px -4px #666963, -16px 5px #c8a16e, 14px 3px #5b3920, 26px -6px #b7a58b;
+  animation-name: play-impact-debris;
+}
+.tile.play-impact.impact-block > .tile-material-texture::after {
+  left: -8px;
+  right: -8px;
+  bottom: -9px;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, #c8a16e 0 7px, transparent 7px 12px);
+  animation-name: play-impact-ground;
+}
+@keyframes play-impact-group {
+  0% { transform: translateY(0) scale(1); }
+  14% { transform: translateY(calc(-5px * var(--play-impact-intensity, .6))) scale(.98, 1.02); }
+  30% { transform: translateY(calc(-13px * var(--play-impact-intensity, .6))) scale(.99, 1.01); }
+  40% { transform: translateY(calc(7px * var(--play-impact-intensity, .6))) scale(1.03, .88); }
+  72% { transform: translateY(calc(-3px * var(--play-impact-intensity, .6))) scale(.99, 1.04); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes play-impact-row-burst {
+  from { transform: scaleX(.35); opacity: var(--play-impact-intensity, .6); }
+  to { transform: scaleX(1.18); opacity: 0; }
+}
+@keyframes play-impact-dust {
+  from { opacity: 1; transform: translate(-50%, 0) scale(.6); }
+  to { opacity: 0; transform: translate(-50%, -14px) scale(1.25); }
+}
+@keyframes play-impact-ring {
+  from { opacity: 1; transform: scale(.58); }
+  to { opacity: 0; transform: scale(1.28); }
+}
+@keyframes play-impact-glint {
+  0%, 20% { opacity: 0; transform: scale(.2) rotate(0); }
+  45% { opacity: 1; transform: scale(1) rotate(45deg); }
+  100% { opacity: 0; transform: scale(1.7) rotate(45deg); }
+}
+@keyframes play-impact-angular {
+  from { opacity: .9; transform: scale(.62) rotate(0); }
+  to { opacity: 0; transform: scale(1.22) rotate(12deg); }
+}
+@keyframes play-impact-debris {
+  from { opacity: 1; transform: translate(-50%, 0) rotate(0); }
+  to { opacity: 0; transform: translate(-50%, -18px) rotate(18deg); }
+}
+@keyframes play-impact-ground {
+  from { opacity: 1; transform: scaleX(.35); }
+  to { opacity: 0; transform: scaleX(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .submitted-tiles.play-impact-group,
+  .submitted-tiles.play-impact-contact::after,
+  .tile.play-impact > .tile-material-texture::before,
+  .tile.play-impact > .tile-material-texture::after,
+  .word:has(.word-stamp.letterHand)::after,
+  .hole:has(.word-stamp.letterHand)::after { animation: none !important; }
+}
+.force-reduced-motion .submitted-tiles.play-impact-group,
+.force-reduced-motion .submitted-tiles.play-impact-contact::after,
+.force-reduced-motion .tile.play-impact > .tile-material-texture::before,
+.force-reduced-motion .tile.play-impact > .tile-material-texture::after,
+.force-reduced-motion .word:has(.word-stamp.letterHand)::after,
+.force-reduced-motion .hole:has(.word-stamp.letterHand)::after { animation: none !important; }
 .word.formal {
   border-color: var(--suit-formal);
 }
@@ -3613,6 +3752,19 @@
 .word-stamp.suit {
   background: var(--ink);
   color: #15242c;
+}
+.word:has(.word-stamp.letterHand)::after,
+.hole:has(.word-stamp.letterHand)::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border: 4px solid var(--gold);
+  pointer-events: none;
+  animation: word-hand-impact .3s steps(4, end) both;
+}
+@keyframes word-hand-impact {
+  from { opacity: 1; transform: scale(.72); }
+  to { opacity: 0; transform: scale(1.2); }
 }
 @keyframes stampIn {
   0% { transform: scale(2) rotate(-12deg); opacity: 0; }
@@ -5546,7 +5698,7 @@
 }
 @keyframes settle-screen-shake {
   0%, 100% { translate: 0 0; }
-  25% { translate: calc(-3px * var(--screen-shake, .5)) calc(2px * var(--screen-shake, .5)); }
-  50% { translate: calc(3px * var(--screen-shake, .5)) calc(-2px * var(--screen-shake, .5)); }
-  75% { translate: calc(-2px * var(--screen-shake, .5)) calc(-1px * var(--screen-shake, .5)); }
+  25% { translate: calc(-3px * var(--screen-shake, .5) * var(--settle-impact, 1)) calc(2px * var(--screen-shake, .5) * var(--settle-impact, 1)); }
+  50% { translate: calc(3px * var(--screen-shake, .5) * var(--settle-impact, 1)) calc(-2px * var(--screen-shake, .5) * var(--settle-impact, 1)); }
+  75% { translate: calc(-2px * var(--screen-shake, .5) * var(--settle-impact, 1)) calc(-1px * var(--screen-shake, .5) * var(--settle-impact, 1)); }
 }

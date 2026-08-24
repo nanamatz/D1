@@ -1,0 +1,206 @@
+{
+  "schema": 1,
+  "kind": "post-tune-paired",
+  "config": {
+    "ids": [
+      "biochemistry",
+      "wordHunter"
+    ],
+    "authoredGoldIds": [],
+    "seeds": 1024,
+    "seedStart": 384,
+    "seedPrefix": "selective-v1",
+    "source": {
+      "path": "docs/balance/2026-08-22-board-verification-full.json",
+      "sha256": "4a080ebbf03748151b2db0cd253a625e3cd87961a63101c08bc35051079ef29c"
+    }
+  },
+  "before": {
+    "path": "docs/balance/2026-08-22-emoji-flag-rerun-1024.json",
+    "sha256": "6c0eb8c5297a29ea2fb921f6ac871f23c1beb1248c60b07ce505052844950d27"
+  },
+  "values": {
+    "biochemistry": {
+      "old": 0.5,
+      "current": 0.45
+    },
+    "wordHunter": {
+      "old": 0.1,
+      "current": 0.09
+    }
+  },
+  "rows": [
+    {
+      "id": "biochemistry",
+      "pairs": 1024,
+      "oldVsControl": {
+        "winDelta": {
+          "mean": 0.046875,
+          "lower95": 0.03392219506084536,
+          "upper95": 0.05982780493915464
+        },
+        "scoreTargetDelta": {
+          "mean": 0.1873929092649428,
+          "lower95": 0.17118927082548951,
+          "upper95": 0.20359654770439606
+        },
+        "goldDelta": {
+          "mean": 5.0869140625,
+          "lower95": 4.502882859336609,
+          "upper95": 5.670945265663391
+        }
+      },
+      "newVsControl": {
+        "winDelta": {
+          "mean": 0.03515625,
+          "lower95": 0.023870042762259187,
+          "upper95": 0.04644245723774081
+        },
+        "scoreTargetDelta": {
+          "mean": 0.16971701259068087,
+          "lower95": 0.15465292043537598,
+          "upper95": 0.18478110474598575
+        },
+        "goldDelta": {
+          "mean": 4.484375,
+          "lower95": 3.9384368728779533,
+          "upper95": 5.030313127122047
+        }
+      },
+      "newMinusOld": {
+        "winDelta": {
+          "mean": -0.01171875,
+          "lower95": -0.018847938520260697,
+          "upper95": -0.004589561479739303
+        },
+        "scoreTargetDelta": {
+          "mean": -0.01767589667426215,
+          "lower95": -0.021252014532000218,
+          "upper95": -0.014099778816524083
+        },
+        "goldDelta": {
+          "mean": -0.6025390625,
+          "lower95": -0.8022617953349757,
+          "upper95": -0.40281632966502434
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 256,
+          "scoreTargetMean": -0.02054958906870038
+        },
+        {
+          "block": 2,
+          "seeds": 256,
+          "scoreTargetMean": -0.014604258820064456
+        },
+        {
+          "block": 3,
+          "seeds": 256,
+          "scoreTargetMean": -0.020085667472718224
+        },
+        {
+          "block": 4,
+          "seeds": 256,
+          "scoreTargetMean": -0.015464071335565458
+        }
+      ],
+      "scoreTargetEffectReduction": 0.09432532289293351,
+      "acceptance": {
+        "pairedMeanBelowZero": true,
+        "everyBlockBelowZero": true,
+        "pairedUpper95BelowZero": true,
+        "reductionAtMost15Percent": true,
+        "newVsControlWinLower95AboveZero": true,
+        "newVsControlScoreLower95AboveZero": true
+      }
+    },
+    {
+      "id": "wordHunter",
+      "pairs": 1024,
+      "oldVsControl": {
+        "winDelta": {
+          "mean": 0.1484375,
+          "lower95": 0.12665045480537662,
+          "upper95": 0.17022454519462338
+        },
+        "scoreTargetDelta": {
+          "mean": 0.37943636513361834,
+          "lower95": 0.35322615883025854,
+          "upper95": 0.40564657143697813
+        },
+        "goldDelta": {
+          "mean": 25.314453125,
+          "lower95": 23.84425013725866,
+          "upper95": 26.78465611274134
+        }
+      },
+      "newVsControl": {
+        "winDelta": {
+          "mean": 0.13671875,
+          "lower95": 0.11566601866647463,
+          "upper95": 0.15777148133352537
+        },
+        "scoreTargetDelta": {
+          "mean": 0.3602020614730595,
+          "lower95": 0.3352882971887258,
+          "upper95": 0.38511582575739317
+        },
+        "goldDelta": {
+          "mean": 24.2861328125,
+          "lower95": 22.828275846295956,
+          "upper95": 25.743989778704044
+        }
+      },
+      "newMinusOld": {
+        "winDelta": {
+          "mean": -0.01171875,
+          "lower95": -0.02067213266342558,
+          "upper95": -0.0027653673365744206
+        },
+        "scoreTargetDelta": {
+          "mean": -0.01923430366055931,
+          "lower95": -0.023795121479789374,
+          "upper95": -0.014673485841329246
+        },
+        "goldDelta": {
+          "mean": -1.0283203125,
+          "lower95": -1.2471349241175353,
+          "upper95": -0.8095057008824648
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 256,
+          "scoreTargetMean": -0.018546390702504984
+        },
+        {
+          "block": 2,
+          "seeds": 256,
+          "scoreTargetMean": -0.019509414527529783
+        },
+        {
+          "block": 3,
+          "seeds": 256,
+          "scoreTargetMean": -0.02200750992063495
+        },
+        {
+          "block": 4,
+          "seeds": 256,
+          "scoreTargetMean": -0.016873899491567486
+        }
+      ],
+      "scoreTargetEffectReduction": 0.050691777141037835,
+      "acceptance": {
+        "pairedMeanBelowZero": true,
+        "everyBlockBelowZero": true,
+        "pairedUpper95BelowZero": true,
+        "reductionAtMost15Percent": true,
+        "newVsControlWinLower95AboveZero": true,
+        "newVsControlScoreLower95AboveZero": true
+      }
+    }
+  ]
+}

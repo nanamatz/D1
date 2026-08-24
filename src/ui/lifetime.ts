@@ -13,9 +13,14 @@ import {
 } from './storage';
 import { POUCH_IDS } from '../engine/pouches';
 import { RECORD_IDS } from '../engine/records';
+import {
+  CHALLENGE_IDS,
+  isChallengeId,
+  isChallengeUnlocked,
+} from '../engine/challenges';
 import { ALL_JOKERS } from '../engine/jokers';
 import { KNOWLEDGE_LETTER_HAND_IDS, isKnowledgeLetterHand } from '../engine/letterHands';
-import type { LetterHandId, PouchId, RecordId } from '../engine/types';
+import type { ChallengeId, LetterHandId, PouchId, RecordId } from '../engine/types';
 import type { PatternId } from '../engine/types';
 import { BALANCE } from '../engine/balance';
 import { wordLetterChips } from '../engine/scoring';
@@ -30,6 +35,7 @@ export interface Lifetime {
   unlockAllWarned: boolean;
   unlockAllApplied: boolean;
   challengesDisabled: boolean;
+  completedChallenges: ChallengeId[];
   /** Cosmetic profile title stored by stable semantic id. */
   equippedRegisterTitle: ProfileTitleId | null;
   runs: number;
@@ -81,6 +87,7 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   unlockAllWarned: false,
   unlockAllApplied: false,
   challengesDisabled: false,
+  completedChallenges: [],
   equippedRegisterTitle: null,
   runs: 0,
   wins: 0,
@@ -140,6 +147,18 @@ function normalizeRecordWins(value: unknown): RecordId[] {
   return Array.isArray(value)
     ? value.filter((id): id is RecordId => RECORD_IDS.includes(id as RecordId))
     : [];
+}
+
+function normalizeCompletedChallenges(value: unknown): ChallengeId[] {
+  const completed = new Set(
+    Array.isArray(value) ? value.filter(isChallengeId) : [],
+  );
+  const normalized: ChallengeId[] = [];
+  for (const id of CHALLENGE_IDS) {
+    if (!completed.has(id)) break;
+    normalized.push(id);
+  }
+  return normalized;
 }
 
 function normalizeDiscoveredLetterHands(value: unknown): LetterHandId[] {
@@ -284,6 +303,7 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
     unlockAllWarned: stored.unlockAllWarned === true,
     unlockAllApplied: stored.unlockAllApplied === true,
     challengesDisabled: stored.challengesDisabled === true,
+    completedChallenges: normalizeCompletedChallenges(stored.completedChallenges),
     equippedRegisterTitle: isProfileTitleId(stored.equippedRegisterTitle)
       ? stored.equippedRegisterTitle
       : null,
@@ -311,6 +331,17 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
 
 export function writeLifetime(lifetime: Lifetime, slot: ProfileSlot = activeProfile()): void {
   writeProfileValue(KEY, slot, lifetime);
+}
+
+/** Cheap Challenge UI read; avoids scanning the word collection. */
+export function loadChallengeProgress(
+  slot: ProfileSlot = activeProfile(),
+): Pick<Lifetime, 'challengesDisabled' | 'completedChallenges'> {
+  const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
+  return {
+    challengesDisabled: stored?.challengesDisabled === true,
+    completedChallenges: normalizeCompletedChallenges(stored?.completedChallenges),
+  };
 }
 
 /** Cheap profile read for render paths: avoids the collection scan in loadLifetime(). */
@@ -359,6 +390,7 @@ export interface RunResult {
   pouchId?: PouchId;
   recordId?: RecordId;
   customSeed?: boolean;
+  challengeId?: ChallengeId | null;
   /** Production Emoji Tiles still owned after Chapter 8 blind-end hooks resolve. */
   jokerIds?: readonly string[];
   patternCounts?: Partial<Record<PatternId, number>>;
@@ -373,11 +405,13 @@ export function recordRunEnd(r: RunResult): void {
   const recordWins = new Set(lt.recordWins);
   const recordWinsByPouch = { ...lt.recordWinsByPouch };
   const jokerRecordStickers = { ...lt.jokerRecordStickers };
+  const completedChallenges = new Set(lt.completedChallenges);
   const patternPlayCounts = { ...lt.patternPlayCounts };
   for (const [id, count] of Object.entries(normalizePatternCounts(r.patternCounts))) {
     patternPlayCounts[id as PatternId] = (patternPlayCounts[id as PatternId] ?? 0) + safeCount(count);
   }
-  if (r.won && !r.customSeed) {
+  const standardWin = r.won && !r.customSeed && r.challengeId == null;
+  if (standardWin) {
     if (r.pouchId) pouchWins.add(r.pouchId);
     if (r.recordId) recordWins.add(r.recordId);
     if (r.pouchId && r.recordId) {
@@ -396,8 +430,18 @@ export function recordRunEnd(r: RunResult): void {
       }
     }
   }
+  if (
+    r.won &&
+    r.ante === BALANCE.runAntes &&
+    !r.customSeed &&
+    isChallengeId(r.challengeId) &&
+    !lt.challengesDisabled &&
+    isChallengeUnlocked(r.challengeId, completedChallenges)
+  ) {
+    completedChallenges.add(r.challengeId);
+  }
   const balance = { ...lt.balance, lossesByChapter: { ...lt.balance.lossesByChapter } };
-  if (!r.customSeed) {
+  if (!r.customSeed && r.challengeId == null) {
     balance.runs += 1;
     balance.wins += r.won ? 1 : 0;
     if (!r.won) {
@@ -420,6 +464,7 @@ export function recordRunEnd(r: RunResult): void {
     recordWins: [...recordWins],
     recordWinsByPouch,
     jokerRecordStickers,
+    completedChallenges: CHALLENGE_IDS.filter((id) => completedChallenges.has(id)),
     lastRunObservation: r.observationId ? {
       id: r.observationId,
       runEndRecorded: true,

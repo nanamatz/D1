@@ -1,5 +1,5 @@
-# ENABLE words up to 18 letters plus apostrophe-free tile-grammar exceptions.
-# Source: ENABLE (dolph/dictionary). See data/README.md.
+# ENABLE words up to 18 letters plus tile-grammar exceptions and curated abbreviations.
+# Sources: ENABLE (dolph/dictionary) and lexicon-pipeline/curated-abbreviations.json.
 # Regenerate: node scripts/build-dictionary.mjs <enable.txt> <out.txt>
 aa
 aah
@@ -95936,6 +95936,8 @@ muzzlers
 muzzles
 muzzling
 muzzy
+mvp
+mvps
 my
 myalgia
 myalgias
@@ -166463,12 +166465,14 @@ violones
 viols
 viomycin
 viomycins
+vip
 viper
 viperine
 viperish
 viperous
 viperously
 vipers
+vips
 viraginous
 virago
 viragoes

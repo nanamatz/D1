@@ -13,6 +13,10 @@ if (!enablePath || !outPath) {
 
 const isWord = (word) => /^[a-z]+$/.test(word);
 const MAX_WORD_LENGTH = 18;
+const curated = JSON.parse(readFileSync(
+  new URL('../lexicon-pipeline/curated-abbreviations.json', import.meta.url),
+  'utf8',
+));
 const words = new Set(
   readFileSync(enablePath, 'utf8')
     .split(/\r?\n/)
@@ -27,11 +31,12 @@ for (const word of [
 ]) {
   if (word.length <= MAX_WORD_LENGTH) words.add(word);
 }
+for (const { word } of curated) words.add(word);
 
 const sorted = [...words].sort();
 const header = [
-  `# ENABLE words up to ${MAX_WORD_LENGTH} letters plus apostrophe-free tile-grammar exceptions.`,
-  '# Source: ENABLE (dolph/dictionary). See data/README.md.',
+  `# ENABLE words up to ${MAX_WORD_LENGTH} letters plus tile-grammar exceptions and curated abbreviations.`,
+  '# Sources: ENABLE (dolph/dictionary) and lexicon-pipeline/curated-abbreviations.json.',
   '# Regenerate: node scripts/build-dictionary.mjs <enable.txt> <out.txt>',
   '',
 ].join('\n');

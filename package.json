@@ -21,13 +21,29 @@
     "sim:materials": "tsx src/sim/materials.ts",
     "sim:patterns": "tsx src/sim/patterns12.ts",
     "sim:full-run": "tsx src/sim/full-run-balance.ts",
+    "sim:board-smoke": "tsx src/sim/board-verification.ts --profile=smoke",
+    "sim:board-baseline": "tsx src/sim/board-verification.ts --profile=baseline --json=docs/balance/2026-08-22-board-verification.json --markdown=docs/balance/2026-08-22-board-verification.md",
+    "sim:board-full": "tsx src/sim/board-verification.ts --profile=full --json=docs/balance/2026-08-22-board-verification-full.json --markdown=docs/balance/2026-08-22-board-verification-full.md",
+    "sim:emoji-flag": "tsx src/sim/emoji-flag-rerun.ts",
+    "sim:emoji-flag-smoke": "tsx src/sim/emoji-flag-rerun.ts --ids=bald,houseStyle --seeds=4 --source=docs/balance/2026-08-22-board-verification-full.json",
+    "sim:emoji-flag-selected": "tsx src/sim/emoji-flag-rerun.ts --ids=wordHunter,classicist,bloodTypeA,biochemistry,dummyData,voraciousReader,streetCred,censorsBane,deadlineAuction,royaltyContract,formalInvitation,tipJar --authored-gold=formalInvitation,tipJar --seeds=256 --seed-start=128 --seed-prefix=selective-v1 --source=docs/balance/2026-08-22-board-verification-full.json --json=tmp/emoji-flag-rerun-current.json",
+    "sim:emoji-flag-1024": "tsx src/sim/emoji-flag-rerun.ts --ids=wordHunter,classicist,bloodTypeA,biochemistry --seeds=1024 --seed-start=384 --seed-prefix=selective-v1 --source=docs/balance/2026-08-22-board-verification-full.json --json=tmp/emoji-flag-rerun-1024-current.json",
+    "sim:emoji-tuning-post": "tsx src/sim/emoji-flag-rerun.ts --ids=wordHunter,biochemistry --seeds=1024 --seed-start=384 --seed-prefix=selective-v1 --source=docs/balance/2026-08-22-board-verification-full.json --before=docs/balance/2026-08-22-emoji-flag-rerun-1024.json --json=docs/balance/2026-08-22-emoji-tuning-post.json",
+    "sim:skip-smoke": "tsx src/sim/skip-verification.ts --profile=smoke",
+    "sim:skip-baseline": "tsx src/sim/skip-verification.ts --profile=baseline --json=docs/balance/2026-08-22-skip-verification.json --markdown=docs/balance/2026-08-22-skip-verification.md",
+    "sim:skip-full": "tsx src/sim/skip-verification.ts --profile=full --json=docs/balance/2026-08-22-skip-verification-full.json --markdown=docs/balance/2026-08-22-skip-verification-full.md",
+    "sim:skip-full-correction": "tsx src/sim/skip-verification.ts --profile=full --factor-snapshot=pre-tune --json=docs/balance/2026-08-22-skip-verification-full-pre-tune-corrected.json --markdown=docs/balance/2026-08-22-skip-verification-full-pre-tune-corrected.md",
     "sim:emoji-sample": "tsx src/sim/emoji-sample.ts",
     "sim:emoji-bank": "tsx src/sim/emoji-bank.ts",
     "assets:vouchers": "node scripts/build-voucher-assets.mjs",
     "normalize:packs": "node scripts/normalize-pack-art.mjs",
     "deploy": "npm run build && gh-pages -d dist",
     "desktop:run": "electron .",
-    "build:desktop": "npm run build && node scripts/check-offline.mjs && electron-builder --dir"
+    "assets:icons": "node scripts/make-icon.mjs",
+    "build:desktop:prepare": "npm run assets:icons && npm run build && node scripts/check-offline.mjs",
+    "build:desktop": "npm run build:desktop:prepare && electron-builder --dir",
+    "build:desktop:win": "npm run build:desktop:prepare && electron-builder --win dir --x64",
+    "build:desktop:mac": "npm run build:desktop:prepare && electron-builder --mac dir --universal"
   },
   "build": {
     "appId": "com.kdg0711.playtheworld",
@@ -43,6 +59,14 @@
     "win": {
       "target": "dir",
       "icon": "desktop/icon.ico"
+    },
+    "mac": {
+      "target": "dir",
+      "icon": "desktop/icon.icns",
+      "category": "public.app-category.games",
+      "minimumSystemVersion": "13.0",
+      "hardenedRuntime": true,
+      "notarize": true
     }
   },
   "devDependencies": {
