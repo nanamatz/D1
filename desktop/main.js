@@ -13,6 +13,7 @@ import { app, BrowserWindow, Menu, globalShortcut, ipcMain, screen } from 'elect
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSaveStore } from './save-store.js';
+import { initializeSteamSync, validateSteamPayload } from './steam-achievements.js';
 import { MIN_SIZE, loadState, restoreBounds, saveState } from './window-state.js';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -87,10 +88,37 @@ app.whenReady().then(() => {
   ipcMain.on('wj:write', (_event, key, json) => saves.set(key, json));
   ipcMain.on('wj:remove', (_event, key) => saves.remove(key));
 
+  let queuedSteamPayload;
+  let steamSync;
+  ipcMain.on('wj:steam-sync', (event, payload) => {
+    if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) return;
+    if (!validateSteamPayload(payload)) return;
+    if (steamSync) steamSync.submit(payload);
+    else if (!queuedSteamPayload) queuedSteamPayload = payload;
+    else {
+      for (const [key, value] of Object.entries(payload)) {
+        if (key !== 'version') queuedSteamPayload[key] = Math.max(queuedSteamPayload[key], value);
+      }
+    }
+  });
+
   // Writes are debounced; make sure the last action reaches disk.
-  app.on('before-quit', () => saves.flush());
+  app.on('before-quit', () => {
+    saves.flush();
+    void steamSync?.flush();
+  });
 
   win = createWindow();
+
+  void initializeSteamSync({
+    packaged: app.isPackaged,
+    platform: process.platform,
+    arch: process.arch,
+  }).then((sync) => {
+    steamSync = sync;
+    if (steamSync && queuedSteamPayload) steamSync.submit(queuedSteamPayload);
+    queuedSteamPayload = undefined;
+  });
 
   globalShortcut.register('F11', () => {
     win.setFullScreen(!win.isFullScreen());

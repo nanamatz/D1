@@ -9,6 +9,9 @@ import {
   profileHasData,
   readProfileValue,
   writeProfileValue,
+  PROFILE_SLOTS,
+  syncSteamStats,
+  steamSyncAvailable,
   type ProfileSlot,
 } from './storage';
 import { POUCH_IDS } from '../engine/pouches';
@@ -26,6 +29,13 @@ import { BALANCE } from '../engine/balance';
 import { wordLetterChips } from '../engine/scoring';
 import { collectionHighlights, loadCollection, type Collection } from './collection';
 import { isProfileTitleId, type ProfileTitleId } from './profileTitles';
+import {
+  aggregateSteamEligible,
+  emptySteamEligible,
+  normalizeSteamEligible,
+  recordSteamEligibleRun,
+  type SteamEligibleV1,
+} from './steamAchievements';
 
 const KEY = 'wj.lifetime';
 
@@ -63,6 +73,7 @@ export interface Lifetime {
   recordWinsByPouch: Partial<Record<PouchId, RecordId[]>>;
   /** Highest Record cleared while each production Emoji Tile remained owned. */
   jokerRecordStickers: Partial<Record<string, RecordId>>;
+  steamEligible: SteamEligibleV1;
   balance: BalanceTelemetry;
 }
 
@@ -108,6 +119,7 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   recordWins: [],
   recordWinsByPouch: {},
   jokerRecordStickers: {},
+  steamEligible: emptySteamEligible(),
   balance: {
     version: 1,
     runs: 0,
@@ -295,6 +307,15 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
   const recordWinsByPouch = stored.recordWinsByPouch === undefined
     ? (recordWins.length > 0 ? { yellow: recordWins } : {})
     : normalizeRecordWinsByPouch(stored.recordWinsByPouch);
+  const balance = normalizeBalance(stored.balance);
+  const completedChallenges = normalizeCompletedChallenges(stored.completedChallenges);
+  const pouchWins = Array.isArray(stored.pouchWins)
+    ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId)) : [];
+  const jokerRecordStickers = normalizeJokerRecordStickers(stored.jokerRecordStickers);
+  const steamEligible = normalizeSteamEligible(stored.steamEligible, {
+    unlockAllApplied: stored.unlockAllApplied === true,
+    balance, pouchWins, recordWins, recordWinsByPouch, completedChallenges, jokerRecordStickers,
+  });
   return {
     ...empty,
     ...stored,
@@ -303,7 +324,7 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
     unlockAllWarned: stored.unlockAllWarned === true,
     unlockAllApplied: stored.unlockAllApplied === true,
     challengesDisabled: stored.challengesDisabled === true,
-    completedChallenges: normalizeCompletedChallenges(stored.completedChallenges),
+    completedChallenges,
     equippedRegisterTitle: isProfileTitleId(stored.equippedRegisterTitle)
       ? stored.equippedRegisterTitle
       : null,
@@ -319,18 +340,33 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
     bestWordScore: collectionBest?.value ??
       (collection ? wordLetterChips(bestWord) : safeCount(stored.bestWordScore) || wordLetterChips(bestWord)),
     discoveredLetterHands: normalizeDiscoveredLetterHands(stored.discoveredLetterHands),
-    pouchWins: Array.isArray(stored.pouchWins)
-      ? stored.pouchWins.filter((id): id is PouchId => POUCH_IDS.includes(id as PouchId))
-      : [],
+    pouchWins,
     recordWins,
     recordWinsByPouch,
-    jokerRecordStickers: normalizeJokerRecordStickers(stored.jokerRecordStickers),
-    balance: normalizeBalance(stored.balance),
+    jokerRecordStickers,
+    steamEligible,
+    balance,
   };
 }
 
 export function writeLifetime(lifetime: Lifetime, slot: ProfileSlot = activeProfile()): void {
   writeProfileValue(KEY, slot, lifetime);
+}
+
+function syncSteamProgress(): void {
+  if (!steamSyncAvailable()) return;
+  syncSteamStats(aggregateSteamEligible(
+    PROFILE_SLOTS.map((slot) => normalizeLifetime(slot, null).steamEligible),
+  ));
+}
+
+export function initializeSteamAchievements(): void {
+  for (const slot of PROFILE_SLOTS) {
+    const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
+    if (!stored || stored.steamEligible?.version === 1) continue;
+    writeProfileValue(KEY, slot, normalizeLifetime(slot, null));
+  }
+  syncSteamProgress();
 }
 
 /** Cheap Challenge UI read; avoids scanning the word collection. */
@@ -430,6 +466,7 @@ export function recordRunEnd(r: RunResult): void {
       }
     }
   }
+  let challengeCompleted = false;
   if (
     r.won &&
     r.ante === BALANCE.runAntes &&
@@ -439,6 +476,7 @@ export function recordRunEnd(r: RunResult): void {
     isChallengeUnlocked(r.challengeId, completedChallenges)
   ) {
     completedChallenges.add(r.challengeId);
+    challengeCompleted = true;
   }
   const balance = { ...lt.balance, lossesByChapter: { ...lt.balance.lossesByChapter } };
   if (!r.customSeed && r.challengeId == null) {
@@ -465,6 +503,15 @@ export function recordRunEnd(r: RunResult): void {
     recordWinsByPouch,
     jokerRecordStickers,
     completedChallenges: CHALLENGE_IDS.filter((id) => completedChallenges.has(id)),
+    steamEligible: recordSteamEligibleRun(lt.steamEligible, {
+      won: r.won === true,
+      standard: !lt.unlockAllApplied && !r.customSeed && r.challengeId == null,
+      ...(r.pouchId ? { pouchId: r.pouchId } : {}),
+      ...(r.recordId ? { recordId: r.recordId } : {}),
+      ...(r.jokerIds ? { jokerIds: r.jokerIds } : {}),
+      ...(r.challengeId !== undefined ? { challengeId: r.challengeId } : {}),
+      challengeCompleted,
+    }),
     lastRunObservation: r.observationId ? {
       id: r.observationId,
       runEndRecorded: true,
@@ -476,6 +523,7 @@ export function recordRunEnd(r: RunResult): void {
     balance,
   };
   writeLifetime(next);
+  syncSteamProgress();
 }
 
 /** Endless is a benchmark attached to an already-recorded win, not a second run. */

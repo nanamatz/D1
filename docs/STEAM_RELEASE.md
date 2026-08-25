@@ -2,9 +2,9 @@
 
 This runbook covers the supported desktop target: Windows x64. macOS, Linux,
 SteamOS, and Android are unsupported. One Windows depot is assembled into the
-Steam App build. Steam SDK integration, achievements, overlay, leaderboards,
-installers, CI upload, code signing, and Dynamic Cloud Sync are not implemented
-and must not be claimed on the store page.
+Steam App build. Steam stat-backed achievements are implemented for packaged
+Windows x64 Steam launches. Overlay forcing, leaderboards, installers, CI upload,
+code signing, and Dynamic Cloud Sync are not implemented and must not be claimed.
 
 ## 1. Schedule and partner setup
 
@@ -23,6 +23,14 @@ and must not be claimed on the store page.
    store-page and build reviews normally take **3-5 business days**. Submit the
    [store page for review](https://partner.steampowered.com/doc/store/review_process)
    before submitting the build review.
+
+### Achievement Partner configuration
+
+Create the eight integer stats and link the 16 public achievements with
+Partner's automatic stat-progress unlocks. GDD §14 and
+`desktop/steam-achievements.js` are the authoritative ids and thresholds. Do not
+add renderer-side activation or expose arbitrary achievement ids through IPC.
+Publish the stat and achievement changes before beta testing.
 
 ## 2. Store page
 
@@ -66,12 +74,20 @@ npm.cmd ci
 npm.cmd test
 npm.cmd run e2e:smoke
 npm.cmd run build:desktop:win
+node scripts/check-steam-package.mjs ../D1-release/win-unpacked --app-id $env:STEAM_APP_ID
 ```
 
 `npm run build:desktop` is an exact Windows x64 alias and may be used
 interchangeably. Confirm `../D1-release/win-unpacked/Play the World.exe` exists.
-Launch the packaged executable and verify start, save, quit, resume, fullscreen,
-audio, input, and offline play.
+`build:desktop:win` automatically runs the artifact check. Set
+`$env:STEAM_APP_ID` and `$env:STEAM_WINDOWS_DEPOT_ID` to their positive numeric
+values outside the repository; the shown explicit check also rejects the real
+AppID literal from tracked source and the artifact. Launch the
+packaged executable and verify start, save, quit, resume, fullscreen, audio,
+input, and offline play. The artifact check verifies the unpacked build has
+the Windows x64 native module plus `steam_api64.dll` and no `steam_appid.txt`.
+Never commit or package a real AppID; production reads only the AppID supplied by
+the Steam launch environment, while development AppIDs stay external.
 
 ## 4. Prepare and upload the Windows depot
 
@@ -79,8 +95,8 @@ Generate a safe preview configuration:
 
 ```powershell
 node scripts/prepare-steam-build.mjs `
-  --app-id 123456 `
-  --windows-depot-id 123457 `
+  --app-id $env:STEAM_APP_ID `
+  --windows-depot-id $env:STEAM_WINDOWS_DEPOT_ID `
   --version 1.0.0 `
   --commit abc1234
 ```
@@ -95,7 +111,8 @@ PowerShell users may alternatively use the compatibility wrapper:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-steam-build.ps1 `
-  -AppId 123456 -WindowsDepotId 123457 -Version 1.0.0 -Commit abc1234
+  -AppId $env:STEAM_APP_ID -WindowsDepotId $env:STEAM_WINDOWS_DEPOT_ID `
+  -Version 1.0.0 -Commit abc1234
 ```
 
 Configure this Steamworks launch option:
@@ -140,7 +157,17 @@ the game does not handle files changing while it is running.
 Test Cloud in both directions with two PCs or isolated Windows user-data
 environments. Also test a corrupt primary recovering from `.bak`. Local saves
 are keyed by Windows user rather than Steam account, so use separate Windows
-users for account-isolation testing.
+users for account-isolation testing. Steam's remote maximum prevents stat
+regression, but the save set remains Windows-user-scoped; validate Steam-account
+isolation explicitly in beta before considering account-owner metadata.
+
+### Achievement beta validation
+
+From a password-protected Steam beta on Windows x64, verify first-run init,
+stat-linked unlocks at every threshold, P1-P3 aggregation, reinstall/Cloud
+reconcile, offline launch followed by retry, and custom-seed/Reveal-All
+exclusions. Launch the executable directly and verify silent no-op. Validate the
+overlay without enabling a code-level overlay flag; that decision is outside v1.
 
 ## 6. Review, release, and rollback
 

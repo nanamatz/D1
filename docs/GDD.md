@@ -75,6 +75,7 @@ Version 0.2 — systems expansion
 11. [Emoji Tiles](#11-emoji-tiles)
 12. [Starting Pouches & Records](#12-starting-pouches--records)
 13. [Chromatic Unlocks](#13-chromatic-unlocks--writing-the-world-into-color)
+14. [Steam Achievements](#14-steam-achievements)
 
 ---
 
@@ -1804,3 +1805,41 @@ precedence over natural-completion presentation.
 The build-step copy also notes that during normal play, right-clicking a hand
 tile marks it for discard. This adds no step, and discard stays locked during
 the lesson. (Changed 2026-08-25.)
+
+---
+
+## 14. Steam Achievements
+
+Steam Achievement v1 is presentation/persistence integration only; it never
+enters `RunState` or the headless engine. It is active only in a packaged Windows
+x64 build launched by Steam. Browser builds, direct executable launches, missing
+Steam, and initialization failures silently retain ordinary play and saves.
+
+Each profile's optional `steamEligible` v1 ledger records only semantic evidence:
+unseeded standard runs/wins, Pouch/Record/pair wins, genuine Challenge completions,
+and the highest genuinely earned Record sticker per Emoji Tile. Custom seeds and
+Profile Reveal All never add evidence. A legacy profile receives one conservative
+backfill from existing balance, Challenge, and sticker progress; Pouch/Record
+unlock backfill is omitted when Reveal All was applied. P1-P3 are aggregated by
+run/win sum, set union, and per-Emoji maximum sticker rank, with int32 clamping.
+
+The renderer sends one versioned payload containing exactly eight non-negative
+integer stats. The Electron main process validates the sender and fixed schema,
+then reconciles every value as `max(local, Steam)` so progress never decreases.
+It coalesces writes and retries independently of save health. Achievement ids
+remain main-process-only and are unlocked through Steam Partner stat progress:
+
+| Steam stat | Achievement thresholds |
+|---|---|
+| `std_runs` | `ACH_FIRST_DRAFT` 1; `ACH_REGULAR_COLUMN` 10 |
+| `std_wins` | `ACH_PUBLISHED` 1; `ACH_TEN_PRINTINGS` 10; `ACH_TWENTY_FIVE_PRINTINGS` 25 |
+| `pouches_won` | `ACH_PACK_LIGHT` 3; `ACH_POUCH_CABINET` 7; `ACH_WORLD_IN_A_BAG` 14 |
+| `records_won` | `ACH_B_SIDE` 4; `ACH_FULL_DISCOGRAPHY` 8 |
+| `pouch_record_pairs` | `ACH_CROSS_PRESS` 16 |
+| `challenges_completed` | `ACH_CHALLENGE_ACCEPTED` 1; `ACH_SIX_ASSIGNMENTS` 6 |
+| `emoji_mastered` | `ACH_FIRST_PROOF` 1; `ACH_EMOJI_BOARD` 25 |
+| `emoji_record_sticker_tiers` | `ACH_STICKER_ALBUM` 100 |
+
+No AppID or `steam_appid.txt` ships in the repository or depot; production uses
+only the AppID supplied by the Steam launch environment. Overlay forcing and
+Steam-account owner metadata are deferred to beta validation. (Added 2026-08-25.)

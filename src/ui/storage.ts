@@ -54,6 +54,15 @@ export interface StorageBridge {
   write(key: string, json: string): void;
   remove(key: string): void;
   onSaveStatus?(listener: (ok: boolean) => void): void;
+  syncSteam?(payload: import('./steamAchievements').SteamStatPayload): void;
+}
+
+export function syncSteamStats(payload: import('./steamAchievements').SteamStatPayload): void {
+  getBridge()?.syncSteam?.(payload);
+}
+
+export function steamSyncAvailable(): boolean {
+  return typeof getBridge()?.syncSteam === 'function';
 }
 
 let cache: Map<string, string> | null = null;

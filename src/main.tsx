@@ -30,9 +30,11 @@ import './ui/styles/tokens.css';
 import './ui/styles/play.css';
 import './ui/styles/screens.css';
 import './ui/styles/cursor.css';
+import { initializeSteamAchievements } from './ui/lifetime';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('#root not found');
+initializeSteamAchievements();
 createRoot(rootEl).render(
   <StrictMode>
     <I18nProvider>

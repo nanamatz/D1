@@ -11,6 +11,7 @@ import {
   recordJokerBlindCounts,
   recordRunEnd,
   recordWinsForPouch,
+  writeLifetime,
 } from '../src/ui/lifetime';
 import { newRunObservationId } from '../src/ui/runObservation';
 
@@ -36,6 +37,40 @@ beforeEach(() => {
 });
 
 describe('pouch and Record profile progress', () => {
+  it('never adds Steam evidence after Reveal All, including a continued standard win', () => {
+    const result = {
+      observationId: 'continued-standard-win',
+      ante: 8,
+      gold: 20,
+      bestWord: null,
+      won: true,
+      pouchId: 'yellow' as const,
+      recordId: 'greenLp' as const,
+      customSeed: false,
+      jokerIds: ['bookworm'],
+    };
+    recordRunEnd(result);
+    expect(loadLifetime(1).steamEligible).toMatchObject({
+      standardRuns: 1,
+      standardWins: 1,
+      pouchWins: ['yellow'],
+      recordWins: ['greenLp'],
+      pouchRecordWins: ['yellow:greenLp'],
+      emojiRecordRanks: { bookworm: 'greenLp' },
+    });
+
+    selectProfile(2);
+    writeLifetime({
+      ...loadLifetime(2),
+      profileCreated: true,
+      unlockAllApplied: true,
+      challengesDisabled: true,
+    }, 2);
+    const before = loadLifetime(2).steamEligible;
+    recordRunEnd({ ...result, observationId: 'continued-after-reveal' });
+    expect(loadLifetime(2).steamEligible).toEqual(before);
+  });
+
   it('keeps the highest finalized round score for the active profile', () => {
     recordBestRoundScore(12_345);
     recordBestRoundScore(9_999);
