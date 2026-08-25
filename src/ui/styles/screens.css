@@ -5812,3 +5812,22 @@ body.cb-safe .tile.hint {
 .save-health-notice span {
   display: block;
 }
+
+.steam-owner-overlay {
+  z-index: 10001;
+}
+
+.steam-owner-card {
+  max-width: 520px;
+  text-align: center;
+}
+
+.steam-owner-card p {
+  margin: 14px 0 20px;
+}
+
+.steam-owner-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}

@@ -15,9 +15,14 @@ const loaded = ipcRenderer.sendSync('wj:load');
 contextBridge.exposeInMainWorld('wj', {
   snapshot: loaded.snapshot,
   fresh: loaded.fresh,
+  steamStatus: loaded.steamStatus,
   write: (key, json) => ipcRenderer.send('wj:write', key, json),
   remove: (key) => ipcRenderer.send('wj:remove', key),
   syncSteam: (payload) => ipcRenderer.send('wj:steam-sync', payload),
+  decideSteamClaim: (decision) => ipcRenderer.send('wj:steam-claim', decision),
+  onSteamStatus: (listener) => {
+    ipcRenderer.on('wj:steam-status', (_event, status) => listener(status));
+  },
   onSaveStatus: (listener) => {
     ipcRenderer.on('wj:save-status', (_event, ok) => listener(ok));
   },

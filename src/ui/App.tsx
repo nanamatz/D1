@@ -12,6 +12,7 @@ import { PatternLevelUp } from './components/PatternLevelUp';
 import { ConsumableEffect } from './components/ConsumableEffect';
 import { JokerChanceEffect } from './components/JokerChanceEffect';
 import { SaveHealthNotice } from './components/SaveHealthNotice';
+import { SteamOwnershipNotice } from './components/SteamOwnershipNotice';
 import { POUCH_ART } from './pouchArt';
 import { RECORD_ART } from './recordArt';
 import { preloadImage, preloadImagesWhenIdle, scheduleWhenIdle } from './preload';
@@ -127,6 +128,7 @@ export function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.repeat) return;
+      if (document.querySelector('.steam-owner-card')) return;
       const back = document.querySelector<HTMLButtonElement>(
         '.collection-overlay .back-bar, .pause-overlay .back-bar, '
           + '.screen-pane.screen-in .back-bar, .screen-pane.screen-in .desk-lab-back',
@@ -304,6 +306,7 @@ export function App() {
       </svg>
       <CrtOverlay />
       <SaveHealthNotice />
+      <SteamOwnershipNotice />
     </>
   );
 }

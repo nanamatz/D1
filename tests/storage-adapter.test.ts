@@ -7,6 +7,10 @@ import {
   resetActiveProfile,
   resetStorageCache,
   selectProfile,
+  decideSteamClaim,
+  steamEvidenceEligible,
+  steamAggregateSyncAllowed,
+  steamOwnershipSnapshot,
   storageHealthSnapshot,
   writeRaw,
   writeValue,
@@ -29,14 +33,23 @@ function fakeBridge(snapshot: Record<string, string> = {}, fresh = false) {
   const writes: [string, string][] = [];
   const removes: string[] = [];
   let statusListener: ((ok: boolean) => void) | undefined;
+  let steamListener: ((status: import('../src/ui/storage').SteamOwnershipStatus) => void) | undefined;
+  const decisions: string[] = [];
   const bridge: StorageBridge = {
     snapshot,
     fresh,
     write: (k, j) => { writes.push([k, j]); },
     remove: (k) => { removes.push(k); },
     onSaveStatus: (listener) => { statusListener = listener; },
+    steamStatus: 'pending',
+    decideSteamClaim: (decision) => { decisions.push(decision); },
+    onSteamStatus: (listener) => { steamListener = listener; },
   };
-  return { bridge, writes, removes, emitStatus: (ok: boolean) => statusListener?.(ok) };
+  return {
+    bridge, writes, removes, decisions,
+    emitStatus: (ok: boolean) => statusListener?.(ok),
+    emitSteam: (status: import('../src/ui/storage').SteamOwnershipStatus) => steamListener?.(status),
+  };
 }
 
 function installBridge(b: StorageBridge | null) {
@@ -102,6 +115,22 @@ describe('web backend (no bridge)', () => {
 });
 
 describe('desktop backend (bridge present)', () => {
+  it('exposes only coarse Steam ownership state and claim decisions', () => {
+    const { bridge, decisions, emitSteam } = fakeBridge();
+    installBridge(bridge);
+    readValue('wj.lifetime');
+    expect(steamOwnershipSnapshot()).toBe('pending');
+    expect(steamEvidenceEligible()).toBe(false);
+    expect(steamAggregateSyncAllowed()).toBe(true);
+    emitSteam('eligible');
+    expect(steamOwnershipSnapshot()).toBe('eligible');
+    expect(steamEvidenceEligible()).toBe(true);
+    expect(steamAggregateSyncAllowed()).toBe(true);
+    decideSteamClaim('accept');
+    decideSteamClaim('decline');
+    expect(decisions).toEqual(['accept', 'decline']);
+    expect(JSON.stringify(bridge)).not.toContain('steamId64');
+  });
   it('sends a save key to the bridge, not localStorage', () => {
     const { bridge, writes } = fakeBridge();
     installBridge(bridge);

@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -16,6 +16,14 @@ describe('loadSaveFile / saveSaveFile', () => {
   it('round-trips entries', () => {
     const file = path.join(dir(), 'profile.json');
     saveSaveFile(file, { 'wj.lifetime': '{"runs":3}' });
+    expect(loadSaveFile(file)).toEqual({ 'wj.lifetime': '{"runs":3}' });
+  });
+
+  it('keeps Steam owner metadata out of renderer entries', () => {
+    const file = path.join(dir(), 'profile.json');
+    saveSaveFile(file, { 'wj.lifetime': '{"runs":3}' }, {
+      version: 1, steamId64: '76561198000000001',
+    });
     expect(loadSaveFile(file)).toEqual({ 'wj.lifetime': '{"runs":3}' });
   });
 
@@ -75,6 +83,61 @@ describe('loadSaveFile / saveSaveFile', () => {
 });
 
 describe('createSaveStore', () => {
+  it('durably claims primary and backup without exposing or generically mutating owner', () => {
+    const d = path.join(dir(), 'saves');
+    const store = createSaveStore(d);
+    store.set('wj.lifetime', '{"runs":1}');
+    store.flush();
+    expect(store.claimSteamOwner('76561198000000001')).toBe(true);
+    expect(store.snapshot()).toEqual({ 'wj.lifetime': '{"runs":1}' });
+    store.set('steamOwner', '{"version":1,"steamId64":"76561198000000002"}');
+    store.remove('steamOwner');
+    store.set('wj.lifetime', '{"runs":2}');
+    store.flush();
+    for (const name of ['profile.json', 'profile.json.bak']) {
+      expect(JSON.parse(readFileSync(path.join(d, name), 'utf8')).steamOwner)
+        .toEqual({ version: 1, steamId64: '76561198000000001' });
+    }
+  });
+
+  it('recovers owner and entries together from backup and rejects malformed owner', () => {
+    const d = path.join(dir(), 'saves');
+    const store = createSaveStore(d);
+    store.set('wj.lifetime', '{"runs":1}');
+    store.flush();
+    expect(store.claimSteamOwner('76561198000000001')).toBe(true);
+    writeFileSync(path.join(d, 'profile.json'), '{bad', 'utf8');
+    const recovered = createSaveStore(d);
+    expect(recovered.steamOwner()).toEqual({
+      state: 'owned', owner: { version: 1, steamId64: '76561198000000001' },
+    });
+    expect(recovered.snapshot()).toEqual({ 'wj.lifetime': '{"runs":1}' });
+
+    writeFileSync(path.join(d, 'profile.json'), JSON.stringify({
+      schema: 1, steamOwner: { version: 1, steamId64: 'bad' },
+    }), 'utf8');
+    expect(createSaveStore(d).steamOwner()).toEqual({ state: 'invalid' });
+  });
+
+  it('fails a durable owner claim when the profile cannot be written', () => {
+    const root = dir();
+    const blocker = path.join(root, 'file-not-directory');
+    writeFileSync(blocker, 'x', 'utf8');
+    expect(createSaveStore(path.join(blocker, 'saves'))
+      .claimSteamOwner('76561198000000001')).toBe(false);
+  });
+
+  it('stays unowned in memory and after reload when the backup claim step fails', () => {
+    const d = path.join(dir(), 'saves');
+    const store = createSaveStore(d);
+    store.set('wj.lifetime', '{"runs":1}');
+    store.flush();
+    mkdirSync(path.join(d, 'profile.json.bak'));
+
+    expect(store.claimSteamOwner('76561198000000001')).toBe(false);
+    expect(store.steamOwner().state).not.toBe('owned');
+    expect(createSaveStore(d).steamOwner().state).not.toBe('owned');
+  });
   it('reports fresh when the directory does not exist yet', () => {
     const d = path.join(dir(), 'saves');
     expect(createSaveStore(d).fresh).toBe(true);

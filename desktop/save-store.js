@@ -50,26 +50,41 @@ const SCHEMA = 1;
 /** Collapsing bursts: wj.run is written on nearly every action. */
 const DEBOUNCE_MS = 300;
 
+export function validSteamOwner(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value) &&
+    value.version === 1 && typeof value.steamId64 === 'string' &&
+    /^[1-9]\d{16,19}$/.test(value.steamId64) && Object.keys(value).length === 2;
+}
+
+function loadSaveDocument(file) {
+  for (const candidate of [file, file + '.bak']) {
+    try {
+      const parsed = JSON.parse(readFileSync(candidate, 'utf8'));
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
+      const entries = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (key === 'schema' || key === 'steamOwner') continue;
+        entries[key] = JSON.stringify(value);
+      }
+      return {
+        entries,
+        ownerRaw: Object.hasOwn(parsed, 'steamOwner') ? parsed.steamOwner : undefined,
+        ownerState: !Object.hasOwn(parsed, 'steamOwner') ? 'unowned'
+          : validSteamOwner(parsed.steamOwner) ? 'owned' : 'invalid',
+      };
+    } catch {
+      /* try backup */
+    }
+  }
+  return { entries: {}, ownerRaw: undefined, ownerState: 'unowned' };
+}
+
 /**
  * @param {string} file
  * @returns {Record<string, string>} key → JSON string; {} when missing or corrupt
  */
 export function loadSaveFile(file) {
-  for (const candidate of [file, file + '.bak']) {
-    try {
-      const parsed = JSON.parse(readFileSync(candidate, 'utf8'));
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
-      const out = {};
-      for (const [key, value] of Object.entries(parsed)) {
-        if (key === 'schema') continue;
-        out[key] = JSON.stringify(value);
-      }
-      return out;
-    } catch {
-      /* try the backup, then give up */
-    }
-  }
-  return {};
+  return loadSaveDocument(file).entries;
 }
 
 /**
@@ -82,8 +97,9 @@ export function loadSaveFile(file) {
  * @param {string} file
  * @param {Record<string, string>} entries key → JSON string
  */
-export function saveSaveFile(file, entries) {
+function writeSaveFile(file, entries, ownerRaw, backupCurrent) {
   const doc = { schema: SCHEMA };
+  if (ownerRaw !== undefined) doc.steamOwner = ownerRaw;
   for (const [key, json] of Object.entries(entries)) {
     try {
       doc[key] = JSON.parse(json);
@@ -102,13 +118,17 @@ export function saveSaveFile(file, entries) {
     } finally {
       closeSync(fd);
     }
-    if (existsSync(file)) copyFileSync(file, file + '.bak');
+    if (backupCurrent && existsSync(file)) copyFileSync(file, file + '.bak');
     renameSync(tmp, file);
     return true;
   } catch {
     /* disk full, permissions, a watcher holding a handle — keep playing */
     return false;
   }
+}
+
+export function saveSaveFile(file, entries, ownerRaw) {
+  return writeSaveFile(file, entries, ownerRaw, true);
 }
 
 /** wj.run lives alone; everything else is profile data. */
@@ -125,10 +145,13 @@ export function createSaveStore(dir, onStatus = () => {}) {
   const fresh = !existsSync(dir);
 
   const pathFor = (name) => path.join(dir, name + '.json');
+  const profileDoc = loadSaveDocument(pathFor('profile'));
   const data = {
     run: loadSaveFile(pathFor('run')),
-    profile: loadSaveFile(pathFor('profile')),
+    profile: profileDoc.entries,
   };
+  let ownerRaw = profileDoc.ownerRaw;
+  let ownerState = profileDoc.ownerState;
   /** @type {Record<string, ReturnType<typeof setTimeout> | undefined>} */
   const timers = {};
   const healthy = { run: true, profile: true };
@@ -137,7 +160,7 @@ export function createSaveStore(dir, onStatus = () => {}) {
     clearTimeout(timers[name]);
     timers[name] = undefined;
     const before = healthy.run && healthy.profile;
-    healthy[name] = saveSaveFile(pathFor(name), data[name]);
+    healthy[name] = saveSaveFile(pathFor(name), data[name], name === 'profile' ? ownerRaw : undefined);
     const after = healthy.run && healthy.profile;
     if (before !== after) onStatus(after);
   }
@@ -151,6 +174,28 @@ export function createSaveStore(dir, onStatus = () => {}) {
     fresh,
 
     snapshot: () => ({ ...data.run, ...data.profile }),
+
+    steamOwner: () => ({ state: ownerState, ...(ownerState === 'owned' ? { owner: ownerRaw } : {}) }),
+
+    claimSteamOwner(steamId64) {
+      const next = { version: 1, steamId64 };
+      if (!validSteamOwner(next) || ownerState !== 'unowned') return false;
+      clearTimeout(timers.profile);
+      timers.profile = undefined;
+      const file = pathFor('profile');
+      // Establish a fail-closed marker through the ordinary backup transition.
+      // From here onward any crash/reload sees invalid, never a half-claimed owner.
+      const incomplete = { version: 1, claimIncomplete: true };
+      if (!saveSaveFile(file, data.profile, incomplete)) return false;
+      ownerRaw = incomplete;
+      ownerState = 'invalid';
+      // Finalize backup first, then primary, without creating another generation.
+      if (!writeSaveFile(file + '.bak', data.profile, next, false)) return false;
+      if (!writeSaveFile(file, data.profile, next, false)) return false;
+      ownerRaw = next;
+      ownerState = 'owned';
+      return true;
+    },
 
     set(key, json) {
       if (!SAVE_KEYS.has(key) || typeof json !== 'string') return;

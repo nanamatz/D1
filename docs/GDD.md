@@ -1841,5 +1841,16 @@ remain main-process-only and are unlocked through Steam Partner stat progress:
 | `emoji_record_sticker_tiers` | `ACH_STICKER_ALBUM` 100 |
 
 No AppID or `steam_appid.txt` ships in the repository or depot; production uses
-only the AppID supplied by the Steam launch environment. Overlay forcing and
-Steam-account owner metadata are deferred to beta validation. (Added 2026-08-25.)
+only the AppID supplied by the Steam launch environment. Overlay forcing remains
+deferred. `profile.json` has one main-process-only root
+`steamOwner:{version:1,steamId64}` outside every profile slot and renderer save
+snapshot. It protects Steam statistics/evidence from cross-account contamination;
+it does not promise account-specific isolation of the whole Cloud file.
+
+Only a matching owner may add `steamEligible` evidence or send stats. An unowned
+zero-stat save binds automatically after both primary and backup are durably
+written. Positive legacy evidence requires one explicit permanent-link prompt;
+decline disables Steam progress for the session. Mismatch, malformed ownership,
+direct launch, initialization failure, pending decision, and failed owner writes
+all fail closed while ordinary play and saves continue unchanged. The Steam id
+never reaches renderer state, UI copy, or logs. (Ownership added 2026-08-25.)

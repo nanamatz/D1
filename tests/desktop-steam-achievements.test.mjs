@@ -42,7 +42,10 @@ describe('desktop Steam achievement boundary', () => {
   });
 
   it('initializes only from a packaged Windows x64 Steam launch AppID', async () => {
-    const init = vi.fn(() => ({ stats: { getInt: () => 0, setInt: () => {}, store: () => {} } }));
+    const init = vi.fn(() => ({
+      stats: { getInt: () => 0, setInt: () => {}, store: () => {} },
+      localplayer: { getSteamId: () => ({ steamId64: 76561198000000001n }) },
+    }));
     const load = vi.fn(async () => ({ default: { init } }));
     expect(await initializeSteamSync({ packaged: false, platform: 'win32', arch: 'x64',
       env: { SteamAppId: '123' }, load })).toBeNull();
@@ -50,8 +53,16 @@ describe('desktop Steam achievement boundary', () => {
       env: {}, load })).toBeNull();
     const sync = await initializeSteamSync({ packaged: true, platform: 'win32', arch: 'x64',
       env: { SteamAppId: '123' }, load });
-    expect(sync).not.toBeNull();
+    expect(sync).toMatchObject({ steamId64: '76561198000000001' });
+    expect(sync.sync.submit).toBeTypeOf('function');
     expect(init).toHaveBeenCalledWith(123);
+    const invalid = await initializeSteamSync({
+      packaged: true, platform: 'win32', arch: 'x64', env: { SteamAppId: '123' },
+      load: async () => ({ default: { init: () => ({
+        stats: {}, localplayer: { getSteamId: () => ({ steamId64: 'bad' }) },
+      }) } }),
+    });
+    expect(invalid).toBeNull();
   });
 
   it('coalesces bursts into one store and never decreases remote values', async () => {

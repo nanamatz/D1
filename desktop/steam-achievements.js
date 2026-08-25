@@ -141,11 +141,16 @@ export async function initializeSteamSync({
     const steamworks = module.default ?? module;
     // No id is embedded or read from a file: use only Steam's launch environment.
     const client = steamworks.init(Number(suppliedAppId));
-    return createSteamSync({
-      getInt: (name) => client.stats.getInt(name),
-      setInt: (name, value) => client.stats.setInt(name, value),
-      store: () => client.stats.store(),
-    });
+    const steamId64 = client.localplayer.getSteamId().steamId64.toString();
+    if (!/^[1-9]\d{16,19}$/.test(steamId64)) return null;
+    return {
+      steamId64,
+      sync: createSteamSync({
+        getInt: (name) => client.stats.getInt(name),
+        setInt: (name, value) => client.stats.setInt(name, value),
+        store: () => client.stats.store(),
+      }),
+    };
   } catch {
     return null;
   }

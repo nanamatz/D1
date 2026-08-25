@@ -14,6 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSaveStore } from './save-store.js';
 import { initializeSteamSync, validateSteamPayload } from './steam-achievements.js';
+import { createSteamOwnershipController } from './steam-ownership.js';
 import { MIN_SIZE, loadState, restoreBounds, saveState } from './window-state.js';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -71,7 +72,7 @@ function createWindow() {
   return win;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Player progress lives in <userData>/saves/, NOT the userData root, which is
   // full of Chromium's own Cache/Local Storage/GPUCache directories. This folder
   // is what Steam Cloud will point at.
@@ -80,45 +81,46 @@ app.whenReady().then(() => {
     path.join(app.getPath('userData'), 'saves'),
     (ok) => win?.webContents.send('wj:save-status', ok),
   );
+  const steamSession = await initializeSteamSync({
+    packaged: app.isPackaged,
+    platform: process.platform,
+    arch: process.arch,
+  });
+  const steamOwnership = createSteamOwnershipController({
+    session: steamSession,
+    store: saves,
+    onState: (state) => win?.webContents.send('wj:steam-status', state),
+  });
 
   // Registered before createWindow: the preload calls wj:load synchronously.
   ipcMain.on('wj:load', (event) => {
-    event.returnValue = { snapshot: saves.snapshot(), fresh: saves.fresh };
+    event.returnValue = {
+      snapshot: saves.snapshot(),
+      fresh: saves.fresh,
+      steamStatus: steamOwnership.state(),
+    };
   });
   ipcMain.on('wj:write', (_event, key, json) => saves.set(key, json));
   ipcMain.on('wj:remove', (_event, key) => saves.remove(key));
 
-  let queuedSteamPayload;
-  let steamSync;
   ipcMain.on('wj:steam-sync', (event, payload) => {
     if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) return;
     if (!validateSteamPayload(payload)) return;
-    if (steamSync) steamSync.submit(payload);
-    else if (!queuedSteamPayload) queuedSteamPayload = payload;
-    else {
-      for (const [key, value] of Object.entries(payload)) {
-        if (key !== 'version') queuedSteamPayload[key] = Math.max(queuedSteamPayload[key], value);
-      }
-    }
+    steamOwnership.submit(payload);
+  });
+  ipcMain.on('wj:steam-claim', (event, decision) => {
+    if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) return;
+    if (decision === 'accept') steamOwnership.accept();
+    else if (decision === 'decline') steamOwnership.decline();
   });
 
   // Writes are debounced; make sure the last action reaches disk.
   app.on('before-quit', () => {
     saves.flush();
-    void steamSync?.flush();
+    void steamOwnership.flush();
   });
 
   win = createWindow();
-
-  void initializeSteamSync({
-    packaged: app.isPackaged,
-    platform: process.platform,
-    arch: process.arch,
-  }).then((sync) => {
-    steamSync = sync;
-    if (steamSync && queuedSteamPayload) steamSync.submit(queuedSteamPayload);
-    queuedSteamPayload = undefined;
-  });
 
   globalShortcut.register('F11', () => {
     win.setFullScreen(!win.isFullScreen());

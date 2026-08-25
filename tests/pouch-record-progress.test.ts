@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { isRecordUnlocked } from '../src/engine/records';
-import { selectProfile } from '../src/ui/storage';
+import { resetStorageCache, selectProfile } from '../src/ui/storage';
 import {
   JOKER_RECORD_STICKER_TOTAL,
   jokerRecordStickerCount,
@@ -34,10 +34,17 @@ class MemStorage {
 beforeEach(() => {
   (globalThis as unknown as { localStorage: Storage }).localStorage =
     new MemStorage() as unknown as Storage;
+  delete (globalThis as { wj?: unknown }).wj;
+  resetStorageCache();
 });
 
 describe('pouch and Record profile progress', () => {
   it('never adds Steam evidence after Reveal All, including a continued standard win', () => {
+    (globalThis as unknown as { wj: unknown }).wj = {
+      snapshot: {}, fresh: false, steamStatus: 'eligible',
+      write: () => {}, remove: () => {}, syncSteam: () => {},
+    };
+    resetStorageCache();
     const result = {
       observationId: 'continued-standard-win',
       ante: 8,
@@ -69,6 +76,24 @@ describe('pouch and Record profile progress', () => {
     const before = loadLifetime(2).steamEligible;
     recordRunEnd({ ...result, observationId: 'continued-after-reveal' });
     expect(loadLifetime(2).steamEligible).toEqual(before);
+  });
+
+  it('keeps every profile Steam ledger unchanged in a mismatched session', () => {
+    let syncs = 0;
+    (globalThis as unknown as { wj: unknown }).wj = {
+      snapshot: {}, fresh: false, steamStatus: 'mismatch',
+      write: () => {}, remove: () => {}, syncSteam: () => { syncs += 1; },
+    };
+    resetStorageCache();
+    const before = [1, 2, 3].map((slot) => loadLifetime(slot as 1 | 2 | 3).steamEligible);
+    recordRunEnd({
+      observationId: 'mismatch-standard-win', ante: 8, gold: 20,
+      bestWord: null, won: true, pouchId: 'yellow', recordId: 'greenLp',
+      jokerIds: ['bookworm'],
+    });
+    expect([1, 2, 3].map((slot) => loadLifetime(slot as 1 | 2 | 3).steamEligible))
+      .toEqual(before);
+    expect(syncs).toBe(0);
   });
 
   it('keeps the highest finalized round score for the active profile', () => {

@@ -55,7 +55,40 @@ export interface StorageBridge {
   remove(key: string): void;
   onSaveStatus?(listener: (ok: boolean) => void): void;
   syncSteam?(payload: import('./steamAchievements').SteamStatPayload): void;
+  steamStatus?: SteamOwnershipStatus;
+  decideSteamClaim?(decision: 'accept' | 'decline'): void;
+  onSteamStatus?(listener: (status: SteamOwnershipStatus) => void): void;
 }
+
+export type SteamOwnershipStatus =
+  | 'pending' | 'claim-required' | 'eligible' | 'unavailable'
+  | 'mismatch' | 'invalid' | 'declined';
+const STEAM_STATUSES = new Set<SteamOwnershipStatus>([
+  'pending', 'claim-required', 'eligible', 'unavailable',
+  'mismatch', 'invalid', 'declined',
+]);
+let steamStatus: SteamOwnershipStatus = 'unavailable';
+const steamStatusListeners = new Set<() => void>();
+
+export const steamOwnershipSnapshot = (): SteamOwnershipStatus => {
+  getBridge();
+  return steamStatus;
+};
+export const subscribeSteamOwnership = (listener: () => void): (() => void) => {
+  steamStatusListeners.add(listener);
+  return () => steamStatusListeners.delete(listener);
+};
+export const decideSteamClaim = (decision: 'accept' | 'decline'): void => {
+  getBridge()?.decideSteamClaim?.(decision);
+};
+export const steamEvidenceEligible = (): boolean => {
+  getBridge();
+  return steamStatus === 'eligible';
+};
+export const steamAggregateSyncAllowed = (): boolean => {
+  getBridge();
+  return steamStatus === 'pending' || steamStatus === 'eligible';
+};
 
 export function syncSteamStats(payload: import('./steamAchievements').SteamStatPayload): void {
   getBridge()?.syncSteam?.(payload);
@@ -98,6 +131,13 @@ function getBridge(): StorageBridge | null {
   const bridge = (globalThis as { wj?: StorageBridge }).wj ?? null;
   if (bridge && bridge !== boundBridge) {
     boundBridge = bridge;
+    steamStatus = STEAM_STATUSES.has(bridge.steamStatus as SteamOwnershipStatus)
+      ? bridge.steamStatus as SteamOwnershipStatus : 'unavailable';
+    bridge.onSteamStatus?.((status) => {
+      if (!STEAM_STATUSES.has(status) || steamStatus === status) return;
+      steamStatus = status;
+      steamStatusListeners.forEach((listener) => listener());
+    });
     bridge.onSaveStatus?.((ok) => {
       if (ok) clearStorageFailure('desktop');
       else setStorageFailure({ backend: 'desktop' });
@@ -149,6 +189,8 @@ export function resetStorageCache(): void {
   cache = null;
   boundBridge = null;
   setStorageFailure(null);
+  steamStatus = 'unavailable';
+  steamStatusListeners.clear();
 }
 
 /** The selected slot is a machine-local preference; the slot contents are saves. */

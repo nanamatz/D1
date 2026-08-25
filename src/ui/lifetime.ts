@@ -12,6 +12,9 @@ import {
   PROFILE_SLOTS,
   syncSteamStats,
   steamSyncAvailable,
+  steamEvidenceEligible,
+  steamAggregateSyncAllowed,
+  subscribeSteamOwnership,
   type ProfileSlot,
 } from './storage';
 import { POUCH_IDS } from '../engine/pouches';
@@ -354,19 +357,29 @@ export function writeLifetime(lifetime: Lifetime, slot: ProfileSlot = activeProf
 }
 
 function syncSteamProgress(): void {
-  if (!steamSyncAvailable()) return;
+  if (!steamSyncAvailable() || !steamAggregateSyncAllowed()) return;
   syncSteamStats(aggregateSteamEligible(
     PROFILE_SLOTS.map((slot) => normalizeLifetime(slot, null).steamEligible),
   ));
 }
 
-export function initializeSteamAchievements(): void {
-  for (const slot of PROFILE_SLOTS) {
-    const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
-    if (!stored || stored.steamEligible?.version === 1) continue;
-    writeProfileValue(KEY, slot, normalizeLifetime(slot, null));
-  }
+export function initializeSteamAchievements(): () => void {
+  const migrateMissingLedgers = () => {
+    if (!steamEvidenceEligible()) return;
+    for (const slot of PROFILE_SLOTS) {
+      const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
+      if (!stored || stored.steamEligible?.version === 1) continue;
+      writeProfileValue(KEY, slot, normalizeLifetime(slot, null));
+    }
+  };
+  const unsubscribe = subscribeSteamOwnership(() => {
+    if (!steamEvidenceEligible()) return;
+    migrateMissingLedgers();
+    syncSteamProgress();
+  });
+  migrateMissingLedgers();
   syncSteamProgress();
+  return unsubscribe;
 }
 
 /** Cheap Challenge UI read; avoids scanning the word collection. */
@@ -503,7 +516,7 @@ export function recordRunEnd(r: RunResult): void {
     recordWinsByPouch,
     jokerRecordStickers,
     completedChallenges: CHALLENGE_IDS.filter((id) => completedChallenges.has(id)),
-    steamEligible: recordSteamEligibleRun(lt.steamEligible, {
+    steamEligible: steamEvidenceEligible() ? recordSteamEligibleRun(lt.steamEligible, {
       won: r.won === true,
       standard: !lt.unlockAllApplied && !r.customSeed && r.challengeId == null,
       ...(r.pouchId ? { pouchId: r.pouchId } : {}),
@@ -511,7 +524,7 @@ export function recordRunEnd(r: RunResult): void {
       ...(r.jokerIds ? { jokerIds: r.jokerIds } : {}),
       ...(r.challengeId !== undefined ? { challengeId: r.challengeId } : {}),
       challengeCompleted,
-    }),
+    }) : lt.steamEligible,
     lastRunObservation: r.observationId ? {
       id: r.observationId,
       runEndRecorded: true,

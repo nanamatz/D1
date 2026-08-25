@@ -28,8 +28,9 @@ code signing, and Dynamic Cloud Sync are not implemented and must not be claimed
 
 Create the eight integer stats and link the 16 public achievements with
 Partner's automatic stat-progress unlocks. GDD §14 and
-`desktop/steam-achievements.js` are the authoritative ids and thresholds. Do not
-add renderer-side activation or expose arbitrary achievement ids through IPC.
+`desktop/steam-achievements.js` are the authoritative ids and thresholds. Enter
+the localized copy and art from `docs/STEAM_PARTNER_CONFIG.md`; do not add
+renderer-side activation or expose arbitrary achievement ids through IPC.
 Publish the stat and achievement changes before beta testing.
 
 ## 2. Store page
@@ -155,11 +156,12 @@ profile preference. Do not configure a Root Override. Do not enable
 the game does not handle files changing while it is running.
 
 Test Cloud in both directions with two PCs or isolated Windows user-data
-environments. Also test a corrupt primary recovering from `.bak`. Local saves
-are keyed by Windows user rather than Steam account, so use separate Windows
-users for account-isolation testing. Steam's remote maximum prevents stat
-regression, but the save set remains Windows-user-scoped; validate Steam-account
-isolation explicitly in beta before considering account-owner metadata.
+environments. Also test a corrupt primary recovering from `.bak`. The main-only
+`steamOwner` root in `profile.json` prevents Steam stat/evidence contamination;
+it does not make the entire Cloud file account-private. Local save bytes remain
+keyed by Windows user, so use separate Windows users whenever full save isolation
+is required. The renderer snapshot and generic save IPC never expose or mutate
+the owner root.
 
 ### Achievement beta validation
 
@@ -168,6 +170,12 @@ stat-linked unlocks at every threshold, P1-P3 aggregation, reinstall/Cloud
 reconcile, offline launch followed by retry, and custom-seed/Reveal-All
 exclusions. Launch the executable directly and verify silent no-op. Validate the
 overlay without enabling a code-level overlay flag; that decision is outside v1.
+Run the account matrix on one disposable Windows user: earn evidence as A, launch
+as B and confirm mismatch adds/uploads nothing, then return to A and confirm its
+existing evidence reconciles without decrease. Separately test zero-stat
+auto-bind, positive legacy accept/decline, malformed owner fail-closed, owner
+write failure, and primary-to-backup recovery. Repeat Cloud-file tests with
+separate Windows users to distinguish byte isolation from statistics isolation.
 
 ## 6. Review, release, and rollback
 
