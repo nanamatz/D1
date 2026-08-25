@@ -161,6 +161,7 @@ export function JokerShelf({
     mult: number;
     gold: number;
     stat: number;
+    playSound: boolean;
     id: number;
   }>>([]);
   useEffect(() => {
@@ -196,6 +197,7 @@ export function JokerShelf({
         mult: display.kind === 'mult' || display.kind === 'multAdd' ? delta : 0,
         gold: display.kind === 'gold' ? delta : 0,
         stat: display.kind === 'handSize' ? delta : 0,
+        playSound: display.playSound !== false,
         id: growthId.current++,
       });
     });
@@ -203,14 +205,17 @@ export function JokerShelf({
     if (pops.length === 0) return;
     if (growthTimer.current) clearTimeout(growthTimer.current);
     setGrowthPops(pops);
-    audio.play(
-      pops.some((pop) => pop.gold !== 0)
-        ? 'coinGain'
-        : pops.some((pop) => pop.mult !== 0)
-          ? 'jokerMult'
-          : pops.some((pop) => pop.chips !== 0) ? 'jokerChips' : 'jokerEffect',
-    );
-    audio.chips(pops.reduce((total, pop) => total + Math.abs(pop.chips), 0));
+    const soundingPops = pops.filter((pop) => pop.playSound);
+    if (soundingPops.length > 0) {
+      audio.play(
+        soundingPops.some((pop) => pop.gold !== 0)
+          ? 'coinGain'
+          : soundingPops.some((pop) => pop.mult !== 0)
+            ? 'jokerMult'
+            : soundingPops.some((pop) => pop.chips !== 0) ? 'jokerChips' : 'jokerEffect',
+      );
+      audio.chips(soundingPops.reduce((total, pop) => total + Math.abs(pop.chips), 0));
+    }
     growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
   }, [run.jokers, animatedGrowthEvents]);
   useEffect(() => () => {

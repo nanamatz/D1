@@ -117,4 +117,10 @@ describe('guided intro copy coverage', () => {
       }
     }
   });
+
+  it('adds bilingual right-click discard guidance without changing the 3-step lesson', () => {
+    expect(en['intro.step.build.body']).toMatch(/right-click.*hand tile.*discard/i);
+    expect(ko['intro.step.build.body']).toMatch(/핸드 타일.*우클릭.*버리기/);
+    expect(INTRO_STEPS.map((step) => step.advance)).toEqual(['next', 'staged', 'played']);
+  });
 });

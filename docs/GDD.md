@@ -1056,7 +1056,7 @@ also available through the surrounding tooltip and accessible label.
 | 7 | The Fox and the Sour Grapes | Turn 2 selected tiles into Porcelain (+30 Chips) |
 | 8 | The Lion and the Mouse | Turn 1 selected tile into Glass |
 | 9 | The Goose That Laid the Golden Eggs | Gain gold equal to current gold, capped at +$20 |
-| 10 | The Town Mouse and the Country Mouse | Create up to 2 random Constellation cards while slots are available |
+| 10 | The Town Mouse and the Country Mouse | Create up to 2 distinct random Constellation cards while slots are available; cards created by one use never duplicate each other |
 | 11 | The Bear and the Travelers | Turn 1 selected tile into Ivory |
 | 12 | Belling the Cat | Turn 1 selected tile into Brass |
 | 13 | The Wolf and the Crane | Turn 1 selected tile into Wood |
@@ -1253,6 +1253,11 @@ tilt/sheen directly to that image.
 current payout as `(Currently +N Chips)` / `(현재 +N 칩)`. The value uses the
 same scoring helper as its hook: `blind.bag` during active/prepared blinds and
 the complete permanent `run.bag` in the Shop.
+
+**Type Orchestra (changed 2026-08-25).** Each distinct non-Medium font in the
+submitted word applies ×1.25 Mult once, on that font's first tile in word order.
+Medium never contributes; repeated copies of one enhanced font still contribute
+only once.
 
 ### 11.1 Roles by Rarity
 
@@ -1795,3 +1800,7 @@ by **Your world is complete / 당신의 세상이 완성됨**. The escape-hatch 
 precedence over natural-completion presentation.
 
 **Discoverability (C-5).** New Collection category **팔레트 (Palette)** — locked entries are grey silhouettes with a letter-count hint ("R _ _"), unlocked entries show the word in its group color. The first-run tutorial (2026-07-21) is a scripted, **hard-locked YELLOW lesson**: the opening hand is rigged to contain Y‑E‑L‑L‑O‑W. The target is **not** lowered — it stays the normal ante-1 value, so submitting YELLOW (252 under the §3.1 length bonus) ends the *lesson* but does **not** clear the blind; the board then unlocks and the player plays on to reach the target (the old `TUTORIAL_TARGET`=10 override was retired 2026-07-22). A WooDak coach-mark frames the grey world (so it never reads as a rendering bug), then the player builds and submits YELLOW — the yellow palette washes in ("Gold floods back in.") teaching word-building, submission, and the Palette by doing. `anteBaseTargets[0]` must stay above a single YELLOW score; `tests/yellow-lesson.test.ts` guards it. See `docs/superpowers/specs/2026-07-21-yellow-first-lesson-design.md`.
+
+The build-step copy also notes that during normal play, right-clicking a hand
+tile marks it for discard. This adds no step, and discard stays locked during
+the lesson. (Changed 2026-08-25.)

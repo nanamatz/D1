@@ -45,17 +45,18 @@ describe('Emoji Tile trigger popup', () => {
     expect(jokerEvent('equilibrist', 'at').multFactor).toBeUndefined();
   });
 
-  it('fires Type Orchestra once per distinct font instead of one aggregate beat', () => {
+  it('fires Type Orchestra once per distinct non-Medium font', () => {
     const run = newRun('type-orchestra-beats');
     run.jokers = [{ defId: 'typeOrchestra', state: {} }];
-    const hand = tilesFor('cat');
+    const hand = tilesFor('cats');
     hand[0]!.font = 'medium';
     hand[1]!.font = 'bold';
-    hand[2]!.font = 'inline';
+    hand[2]!.font = 'bold';
+    hand[3]!.font = 'inline';
     const result = submitWord(
       { ...startBlind(run, makeRng(run.seed)), hand },
       run,
-      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      makeLexicon([], { cats: { suit: 'standard', pos: ['noun'] } }),
       hand.map((tile) => tile.id),
       makeRng('type-orchestra-play'),
     );
@@ -63,13 +64,27 @@ describe('Emoji Tile trigger popup', () => {
       (event) => event.kind === 'joker' && event.jokerId === 'typeOrchestra',
     );
 
-    expect(beats).toHaveLength(3);
+    expect(beats).toHaveLength(2);
+    expect(beats.reduce((factor, beat) =>
+      factor * (beat.kind === 'joker' ? beat.multFactor ?? 1 : 1), 1)).toBe(1.5625);
     for (let index = 0; index < beats.length; index += 1) {
       const beat = beats[index]!;
       expect(beat.kind === 'joker' ? beat.multFactor : undefined)
         .toBe(BALANCE.jokers.typeOrchestra.factorPerFont);
-      expect(beat.kind === 'joker' ? beat.tileId : undefined).toBe(hand[index]!.id);
+      expect(beat.kind === 'joker' ? beat.tileId : undefined).toBe(hand[[1, 3][index]!]!.id);
     }
+
+    const mediumHand = tilesFor('cat');
+    const mediumResult = submitWord(
+      { ...startBlind(run, makeRng(run.seed)), hand: mediumHand },
+      run,
+      makeLexicon([], { cat: { suit: 'standard', pos: ['noun'] } }),
+      mediumHand.map((tile) => tile.id),
+      makeRng('type-orchestra-medium'),
+    );
+    expect(mediumResult.events.filter(
+      (event) => event.kind === 'joker' && event.jokerId === 'typeOrchestra',
+    )).toHaveLength(0);
   });
 
   it('attributes every played-tile Emoji effect to the tile that triggered it', () => {
@@ -120,7 +135,7 @@ describe('Emoji Tile trigger popup', () => {
         prepare: (tiles) => { tiles[0]!.font = 'bold'; },
       },
       {
-        jokerId: 'typeOrchestra', word: 'cat', expected: [0, 1],
+        jokerId: 'typeOrchestra', word: 'cat', expected: [1],
         prepare: (tiles) => { tiles[1]!.font = 'bold'; },
       },
       {

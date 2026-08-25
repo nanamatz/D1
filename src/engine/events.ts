@@ -178,6 +178,9 @@ export interface EngineEvents {
   /** blind ended. early=true when ended via the projected≥target trigger */
   blindEnd: { run: RunState; blind: BlindState; early: boolean; phasesLeft: number; rng: Rng; chanceResults: ChanceResult[] };
 
+  /** Post-blind state cleanup, emitted after temporary boss debuffs are removed. */
+  blindCleanup: { run: RunState; blind: BlindState };
+
   /** shop entered / left — for economy jokers */
   shopEnter: { run: RunState };
 
@@ -249,6 +252,8 @@ export interface JokerDef {
     showInTooltip?: boolean;
     /** Opt in when a mechanic's live-value loss should play as a trigger beat. */
     showDecrease?: boolean;
+    /** False when another shared watcher already owns this state change's sound. */
+    playSound?: boolean;
   };
   hooks: JokerHooks;
 }

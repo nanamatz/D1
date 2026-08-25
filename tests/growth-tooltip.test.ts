@@ -59,7 +59,7 @@ describe('scaling Emoji Tile tooltip value', () => {
 
   it('covers every accumulating or decaying Emoji Tile in the live-value roster', () => {
     const actual = [...JOKER_REGISTRY.values()]
-      .filter((def) => def.growthDisplay)
+      .filter((def) => def.growthDisplay && def.growthDisplay.showInTooltip !== false)
       .map((def) => def.id)
       .sort();
     expect(actual).toEqual([...LIVE_GROWTH_IDS].sort());
@@ -68,6 +68,20 @@ describe('scaling Emoji Tile tooltip value', () => {
       expect(grownValue(def, { defId: id, state: {} }, t('en'), 68, newRun(`growth-${id}`)))
         .not.toBeNull();
     }
+  });
+
+  it('keeps trigger-only Wastebasket state out of its tooltip', () => {
+    const def = JOKER_REGISTRY.get('wastebasket')!;
+    expect(def.growthDisplay).toMatchObject({
+      kind: 'gold', showInTooltip: false, playSound: false,
+    });
+    expect(JOKER_REGISTRY.get('threeLeafClover')?.growthDisplay?.playSound).not.toBe(false);
+    expect(grownValue(def, { defId: def.id, state: { paid: 2 } }, t('en'))).toBeNull();
+    const shelf = readFileSync('src/ui/components/JokerShelf.tsx', 'utf8');
+    expect(shelf).toContain('gold: display.kind === \'gold\' ? delta : 0');
+    expect(shelf).toContain('playSound: display.playSound !== false');
+    expect(shelf).toContain('const soundingPops = pops.filter((pop) => pop.playSound)');
+    expect(shelf).toMatch(/soundingPops\.some\(\(pop\) => pop\.gold !== 0\)[\s\S]*?coinGain/);
   });
 
   it('does not classify the blind-only Rhyme Chain streak as growth', () => {

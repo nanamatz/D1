@@ -130,7 +130,7 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                     body={discovered ? t(`letterhand.${hand.id}.desc`) : '???'}
                     down
                   >
-                    <div className="ri-hand">
+                    <div className={['ri-hand', patternLevelClass(level)].join(' ')}>
                       <span className="ri-hand-rank">{hand.rank}</span>
                       <span className="ri-hand-copy">
                         <strong>{discovered ? t(`letterhand.${hand.id}`) : '???'}</strong>

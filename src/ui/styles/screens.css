@@ -4725,7 +4725,7 @@ body.cb-safe .tile.hint {
   min-width: 70px;
   flex-direction: column;
   align-items: flex-end;
-  color: var(--gold);
+  color: var(--pattern-level-color, var(--gold));
   font-family: 'Jersey 10';
   font-size: var(--ds-xs);
   line-height: 1;

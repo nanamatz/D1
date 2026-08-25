@@ -411,6 +411,7 @@ function resolveBlindEndJokers(
     chanceResults,
   }, next.jokers);
   const cleared = clearBossJokerDebuffs(next);
+  defaultJokerBus.emit('blindCleanup', { run: cleared, blind }, cleared.jokers);
   const destroyedJokers = cleared.jokers.flatMap(
     (joker, index) => joker.state.destroyed === 1 ? [{ joker, index }] : [],
   );

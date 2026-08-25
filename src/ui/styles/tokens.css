@@ -370,6 +370,7 @@
 *::-webkit-scrollbar-button { display: none; }
 *::-webkit-scrollbar-corner { background: var(--inset); }
 
+.pattern-level-white { --pattern-level-color: var(--ink); }
 .pattern-level-yellow { --pattern-level-color: #f0b23e; }
 .pattern-level-orange { --pattern-level-color: #e97835; }
 .pattern-level-green { --pattern-level-color: #55b867; }

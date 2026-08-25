@@ -11,9 +11,10 @@ export interface PatternLevelEvent {
   to: number;
 }
 
-export type PatternLevelTone = 'yellow' | 'orange' | 'green' | 'blue' | 'purple' | 'red';
+export type PatternLevelTone = 'white' | 'yellow' | 'orange' | 'green' | 'blue' | 'purple' | 'red';
 
 export function patternLevelTone(level: number): PatternLevelTone {
+  if (level <= 1) return 'white';
   if (level <= 3) return 'yellow';
   if (level <= 5) return 'orange';
   if (level <= 8) return 'green';

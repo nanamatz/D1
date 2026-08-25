@@ -100,9 +100,9 @@ describe('sentence-pattern level growth', () => {
     }
   });
 
-  it('uses the requested six level-colour bands', () => {
-    expect([1, 3, 4, 5, 6, 8, 9, 12, 13, 16, 17].map(patternLevelTone)).toEqual([
-      'yellow', 'yellow', 'orange', 'orange', 'green', 'green',
+  it('uses the requested seven level-colour bands', () => {
+    expect([1, 2, 3, 4, 5, 6, 8, 9, 12, 13, 16, 17].map(patternLevelTone)).toEqual([
+      'white', 'yellow', 'yellow', 'orange', 'orange', 'green', 'green',
       'blue', 'blue', 'purple', 'purple', 'red',
     ]);
   });

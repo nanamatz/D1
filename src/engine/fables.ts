@@ -413,6 +413,20 @@ const addRandomConsumables = (
   return { ...run, consumables: [...run.consumables, ...add] };
 };
 
+const addDistinctRandomConsumables = (
+  run: RunState,
+  pool: readonly ConsumableId[],
+  count: number,
+  rng: Pick<Rng, 'int'>,
+): RunState => {
+  const remaining = [...pool];
+  const free = Math.max(0, run.consumableSlots - run.consumables.length);
+  const add = Array.from({ length: Math.min(count, free, remaining.length) }, () =>
+    remaining.splice(rng.int(remaining.length), 1)[0]!,
+  );
+  return { ...run, consumables: [...run.consumables, ...add] };
+};
+
 export interface UseFableResult {
   ok: boolean;
   run: RunState;
@@ -452,7 +466,7 @@ export function useFable(
   } else if (effect.kind === 'createFable') {
     nextRun = addRandomConsumables(nextRun, FABLE_IDS, 2, rng);
   } else if (effect.kind === 'createConstellation') {
-    nextRun = addRandomConsumables(nextRun, CONSTELLATION_IDS, 2, rng);
+    nextRun = addDistinctRandomConsumables(nextRun, CONSTELLATION_IDS, 2, rng);
   } else if (effect.kind === 'material') {
     const ids = new Set(selectedIds);
     ({ run: nextRun, blind: nextBlind } = patchTiles(

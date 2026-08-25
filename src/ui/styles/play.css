@@ -4537,17 +4537,25 @@
   transform: scale(.61);
 }
 /* Void's expanded ink closes the native G counter until it resembles O.
-   Restore an exaggerated horizontal bar plus terminal outside the bowl. */
+   Restore a compact horizontal bar plus terminal inside the tile footprint. */
 .tile.f-bold .tile-letter[data-letter='G']::after {
   content: '';
   position: absolute;
   top: 53%;
-  right: -.34em;
-  width: .64em;
-  height: .34em;
+  right: .02em;
+  width: .48em;
+  height: .3em;
   box-sizing: border-box;
   border-top: .16em solid currentColor;
   border-right: .16em solid currentColor;
+}
+.tile.mini.f-bold .tile-letter[data-letter='G']::after {
+  top: 54%;
+  right: .04em;
+  width: .42em;
+  height: .26em;
+  border-top-width: .13em;
+  border-right-width: .13em;
 }
 .tile.f-black {
   font-weight: 900;

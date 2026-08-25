@@ -24,6 +24,15 @@ describe('Run Info Word Hands reference', () => {
     expect(styles).toMatch(/\.ri-pat \.pcm,\s*\.ri-hand \.pcm\s*\{/);
   });
 
+  it('uses the sentence-pattern level colour class for Word Hands', () => {
+    const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
+    const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
+    const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
+    expect(source).toContain("className={['ri-hand', patternLevelClass(level)].join(' ')}");
+    expect(styles).toMatch(/\.ri-hand-level\s*\{[^}]*color:\s*var\(--pattern-level-color/s);
+    expect(tokens).toContain('.pattern-level-white { --pattern-level-color: var(--ink); }');
+  });
+
   it('shows boxed run-use counts after both score readouts', () => {
     const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
     const styles = readFileSync('src/ui/styles/screens.css', 'utf8');

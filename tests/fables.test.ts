@@ -13,6 +13,7 @@ import {
   useFableOnPouch,
 } from '../src/engine/fables';
 import { applyTileMaterial } from '../src/engine/materials';
+import { CONSTELLATION_IDS } from '../src/engine/constellations';
 import { startBlind } from '../src/engine/loop';
 import { makeRng, type Rng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
@@ -118,10 +119,25 @@ describe('Fable registry', () => {
     expect(result.run.consumables).toEqual(['fable1', 'fable1']);
   });
 
-  it('creates Constellation cards in available consumable slots', () => {
+  it('creates distinct seeded Constellation cards in available consumable slots', () => {
     const { run, blind } = setup('fable10');
     const result = useFable('fable10', run, blind, [], zeroRng);
-    expect(result.run.consumables).toEqual(['libra', 'libra']);
+    expect(result.run.consumables).toEqual(['libra', 'leo']);
+    expect(new Set(result.run.consumables)).toHaveProperty('size', 2);
+    expect(result.run.consumables.every((id) =>
+      CONSTELLATION_IDS.some((constellationId) => constellationId === id))).toBe(true);
+    const replay = setup('fable10');
+    expect(useFable('fable10', replay.run, replay.blind, [], zeroRng).run.consumables)
+      .toEqual(['libra', 'leo']);
+
+    const oneSlot = useFable(
+      'fable10',
+      { ...run, consumableSlots: 1 },
+      blind,
+      [],
+      zeroRng,
+    );
+    expect(oneSlot.run.consumables).toEqual(['libra']);
   });
 
   it('copies the last Fable or Constellation card', () => {

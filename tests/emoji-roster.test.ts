@@ -18,7 +18,7 @@ import {
   onBlindEndedWithDestroyedJokers,
   onTilesEnhanced,
 } from '../src/engine/jokers';
-import { startBlind } from '../src/engine/loop';
+import { discardTiles, startBlind } from '../src/engine/loop';
 import { resolveBlind } from '../src/engine/progression';
 import { makeRng, type Rng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
@@ -267,6 +267,28 @@ describe('Uncommon — §11.3', () => {
       run.jokers,
     );
     expect(run.gold).toBe(2 * BALANCE.jokers.hollowPromise.gold);
+  });
+
+  it('Wastebasket pays and presents only the first discard of each blind', () => {
+    const run = runWith('wastebasket', { gold: 0 });
+    const blind = blindFor(run);
+    const payload = { run, blind, tiles: [], gained: 0, slotsBlocked: 0, destroyedTiles: [] };
+    expect(bus.emit('discardUsed', payload, run.jokers)).toEqual([{
+      jokerId: 'wastebasket', kind: 'gold', delta: 2,
+    }]);
+    expect(run.gold).toBe(2);
+    expect(bus.emit('discardUsed', payload, run.jokers)).toEqual([]);
+    expect(run.gold).toBe(2);
+    run.jokers[0]!.state.bossDisabled = 1;
+    const after = onBlindEnded(run, blind, fixedRng(0));
+    expect(after.jokers[0]!.state).not.toHaveProperty('bossDisabled');
+    expect(after.jokers[0]!.state.paid).toBe(0);
+    const nextBlind = blindFor(after, 'wastebasket-next');
+    const discard = discardTiles(
+      nextBlind, after, [nextBlind.hand[0]!.id], makeRng('wastebasket-discard'),
+    );
+    expect(discard.goldDelta).toBe(2);
+    expect(discard.jokers[0]!.state.paid).toBe(2);
   });
 
   it('Literary Judge pays on Formal, including a virtual Formal', () => {

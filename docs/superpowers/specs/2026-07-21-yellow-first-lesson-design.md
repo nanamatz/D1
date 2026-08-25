@@ -85,8 +85,8 @@ gated-step hint string (e.g. `intro.hint.build`, `intro.hint.submit`) shown wher
 
 ## Out of scope (YAGNI)
 
-- No re-teaching of discard/sort/target as passive steps (dropped with the rebuild; can return as
-  encounters later).
+- No extra discard/sort/target steps. The existing build-step copy briefly notes
+  right-click-to-mark-for-discard during normal play; discard remains locked in the lesson.
 - No change to non-tutorial runs.
 - No new palette/Collection screen tour — the wash + reveal teach the concept.
 

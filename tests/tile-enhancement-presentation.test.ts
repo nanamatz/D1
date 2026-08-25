@@ -81,7 +81,10 @@ describe('tile enhancement presentation', () => {
     );
     expect(tileView).toContain('className="tile-letter" data-letter={tileGlyph(tile)}');
     expect(css).toMatch(
-      /\.tile\.f-bold \.tile-letter\[data-letter='G'\]::after\s*\{[^}]*border-top:[^}]*border-right:/s,
+      /\.tile\.f-bold \.tile-letter\[data-letter='G'\]::after\s*\{[^}]*right:\s*\.02em[^}]*border-top:[^}]*border-right:/s,
+    );
+    expect(css).toMatch(
+      /\.tile\.mini\.f-bold \.tile-letter\[data-letter='G'\]::after\s*\{[^}]*right:\s*\.04em[^}]*border-top-width:[^}]*border-right-width:/s,
     );
   });
 });
