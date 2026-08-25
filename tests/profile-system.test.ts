@@ -124,6 +124,7 @@ describe('profile-scoped unlock all', () => {
     writeLifetime({
       ...loadLifetime(1),
       jokerRecordStickers: { bookworm: 'redLp' },
+      completedChallenges: ['redPen'],
     }, 1);
     expect(unlockAllProfile(1, lexicon)).toBe('warning');
     expect(unlockAllProfile(1, lexicon)).toBe('unlocked');
@@ -148,6 +149,7 @@ describe('profile-scoped unlock all', () => {
     expect(loadLifetime(1).discoveredLetterHands).toEqual([...KNOWLEDGE_LETTER_HAND_IDS]);
     expect(loadLifetime(1).unlockAllApplied).toBe(true);
     expect(loadLifetime(1).challengesDisabled).toBe(true);
+    expect(loadLifetime(1).completedChallenges).toEqual(['redPen']);
     const titles = profileRegisterTitles(lexicon, 1);
     expect(titles.god).toBe(true);
     expect(Object.values(titles.registers).every((title) => title.complete)).toBe(true);
@@ -165,6 +167,7 @@ describe('profile-scoped unlock all', () => {
       unlockAllWarned: false,
       unlockAllApplied: false,
       challengesDisabled: false,
+      completedChallenges: [],
     });
   });
 });

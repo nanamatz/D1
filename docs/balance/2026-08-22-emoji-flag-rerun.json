@@ -1,0 +1,913 @@
+{
+  "schema": 1,
+  "config": {
+    "ids": [
+      "biochemistry",
+      "bloodTypeA",
+      "censorsBane",
+      "classicist",
+      "deadlineAuction",
+      "dummyData",
+      "formalInvitation",
+      "royaltyContract",
+      "streetCred",
+      "tipJar",
+      "voraciousReader",
+      "wordHunter"
+    ],
+    "authoredGoldIds": [
+      "formalInvitation",
+      "tipJar"
+    ],
+    "seeds": 256,
+    "seedStart": 128,
+    "seedPrefix": "selective-v1",
+    "source": {
+      "path": "docs/balance/2026-08-22-board-verification-full.json",
+      "sha256": "4a080ebbf03748151b2db0cd253a625e3cd87961a63101c08bc35051079ef29c"
+    }
+  },
+  "opportunityNote": "Owned words are an exposure proxy, not per-effect condition opportunities.",
+  "rows": [
+    {
+      "id": "biochemistry",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.03125,
+          "lower95": 0.009894150592365362,
+          "upper95": 0.05260584940763464
+        },
+        "scoreTargetDelta": {
+          "mean": 0.18328379681299603,
+          "lower95": 0.15353048789469545,
+          "upper95": 0.2130371057312966
+        },
+        "goldDelta": {
+          "mean": 6.3515625,
+          "lower95": 5.115840010893841,
+          "upper95": 7.587284989106159
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.03125,
+            "scoreTargetDelta": 0.178878621031746,
+            "goldDelta": 6.125
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.046875,
+            "scoreTargetDelta": 0.18259366939484134,
+            "goldDelta": 6.5625
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.03125,
+            "scoreTargetDelta": 0.20331272321428576,
+            "goldDelta": 6.984375
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.1683501736111111,
+            "goldDelta": 5.734375
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 17199,
+        "ownedWordOpportunityProxy": 22576,
+        "triggerRatePerOwnedWord": 0.7618267186392629
+      }
+    },
+    {
+      "id": "bloodTypeA",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.01953125,
+          "lower95": 0.0025461589714310187,
+          "upper95": 0.03651634102856898
+        },
+        "scoreTargetDelta": {
+          "mean": 0.20456633649553554,
+          "lower95": 0.1789497301117877,
+          "upper95": 0.2301829428792834
+        },
+        "goldDelta": {
+          "mean": 17.28125,
+          "lower95": 14.70773508582515,
+          "upper95": 19.85476491417485
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.18508895089285712,
+            "goldDelta": 16.625
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.03125,
+            "scoreTargetDelta": 0.204722978670635,
+            "goldDelta": 20.875
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.2175974702380952,
+            "goldDelta": 17.109375
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.2108559461805556,
+            "goldDelta": 14.515625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 33960,
+        "ownedWordOpportunityProxy": 20289,
+        "triggerRatePerOwnedWord": 1.6738133964217063
+      }
+    },
+    {
+      "id": "censorsBane",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.01171875,
+          "lower95": -0.0014901576485674,
+          "upper95": 0.0249276576485674
+        },
+        "scoreTargetDelta": {
+          "mean": 0.11512947358630952,
+          "lower95": 0.09844230755117675,
+          "upper95": 0.1318166396214423
+        },
+        "goldDelta": {
+          "mean": 7.71484375,
+          "lower95": 6.181588300076395,
+          "upper95": 9.248099199923605
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.10888136160714287,
+            "goldDelta": 8.21875
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.11255772569444442,
+            "goldDelta": 9.375
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.11775291418650795,
+            "goldDelta": 6
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.12132589285714286,
+            "goldDelta": 7.265625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 6481,
+        "ownedWordOpportunityProxy": 23087,
+        "triggerRatePerOwnedWord": 0.28072075193832025
+      }
+    },
+    {
+      "id": "classicist",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.0390625,
+          "lower95": 0.015282405869861758,
+          "upper95": 0.06284259413013824
+        },
+        "scoreTargetDelta": {
+          "mean": 0.3115302858382938,
+          "lower95": 0.27820850432051614,
+          "upper95": 0.34485206735607143
+        },
+        "goldDelta": {
+          "mean": 23.18359375,
+          "lower95": 20.446362211565173,
+          "upper95": 25.920825288434827
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.0625,
+            "scoreTargetDelta": 0.31560744047619044,
+            "goldDelta": 23.25
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.046875,
+            "scoreTargetDelta": 0.2810341889880952,
+            "goldDelta": 24.8125
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.31897519841269845,
+            "goldDelta": 22.53125
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.03125,
+            "scoreTargetDelta": 0.3305043154761906,
+            "goldDelta": 22.140625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 24757,
+        "ownedWordOpportunityProxy": 18782,
+        "triggerRatePerOwnedWord": 1.318123735491428
+      }
+    },
+    {
+      "id": "deadlineAuction",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.01953125,
+          "lower95": 0.0025461589714310187,
+          "upper95": 0.03651634102856898
+        },
+        "scoreTargetDelta": {
+          "mean": 0.12040808159722226,
+          "lower95": 0.09365429125132714,
+          "upper95": 0.14716187194311736
+        },
+        "goldDelta": {
+          "mean": -144.78125,
+          "lower95": -150.71621691218868,
+          "upper95": -138.84628308781132
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.11707150545634919,
+            "goldDelta": -138.59375
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.09647820436507935,
+            "goldDelta": -153.671875
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.046875,
+            "scoreTargetDelta": 0.12939840773809527,
+            "goldDelta": -135.640625
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.1386842088293651,
+            "goldDelta": -151.21875
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 19271,
+        "ownedWordOpportunityProxy": 21139,
+        "triggerRatePerOwnedWord": 0.9116325275557027
+      }
+    },
+    {
+      "id": "dummyData",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0,
+          "lower95": 0,
+          "upper95": 0
+        },
+        "scoreTargetDelta": {
+          "mean": 0.19425716455853173,
+          "lower95": 0.17681699505898316,
+          "upper95": 0.2116973340580803
+        },
+        "goldDelta": {
+          "mean": 24.61328125,
+          "lower95": 21.531112639806384,
+          "upper95": 27.695449860193616
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.18066469494047627,
+            "goldDelta": 23.671875
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.19179052579365077,
+            "goldDelta": 27.84375
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.20153441220238089,
+            "goldDelta": 24.8125
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.20303902529761905,
+            "goldDelta": 22.125
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 18584,
+        "ownedWordOpportunityProxy": 19254,
+        "triggerRatePerOwnedWord": 0.9652020359405837
+      }
+    },
+    {
+      "id": "formalInvitation",
+      "selectionReason": "direct-authored-gold-extreme",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0,
+          "lower95": 0,
+          "upper95": 0
+        },
+        "scoreTargetDelta": {
+          "mean": -0.0009153180803571427,
+          "lower95": -0.006580955103749614,
+          "upper95": 0.0047503189430353285
+        },
+        "goldDelta": {
+          "mean": 70.3515625,
+          "lower95": 66.35184464579828,
+          "upper95": 74.35128035420172
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.0012231026785714293,
+            "goldDelta": 72.609375
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.0029731150793650797,
+            "goldDelta": 68.84375
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.01107170138888889,
+            "goldDelta": 74.875
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.0032142113095238096,
+            "goldDelta": 65.078125
+          }
+        }
+      ],
+      "consistentAxes": [
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 4769,
+        "ownedWordOpportunityProxy": 24357,
+        "triggerRatePerOwnedWord": 0.19579586977049718
+      }
+    },
+    {
+      "id": "royaltyContract",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0,
+          "lower95": 0,
+          "upper95": 0
+        },
+        "scoreTargetDelta": {
+          "mean": -0.0036758308531746023,
+          "lower95": -0.010428890899547062,
+          "upper95": 0.0030772291931978565
+        },
+        "goldDelta": {
+          "mean": 195.07421875,
+          "lower95": 190.1772366030627,
+          "upper95": 199.9712008969373
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.0021259796626984114,
+            "goldDelta": 198.53125
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.0014426587301587287,
+            "goldDelta": 197.390625
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.009893613591269841,
+            "goldDelta": 199.484375
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.0012410714285714286,
+            "goldDelta": 184.890625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 22200,
+        "ownedWordOpportunityProxy": 24405,
+        "triggerRatePerOwnedWord": 0.9096496619545175
+      }
+    },
+    {
+      "id": "streetCred",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.01171875,
+          "lower95": -0.0014901576485674,
+          "upper95": 0.0249276576485674
+        },
+        "scoreTargetDelta": {
+          "mean": 0.1408301835317461,
+          "lower95": 0.12136060511800222,
+          "upper95": 0.16029976194548995
+        },
+        "goldDelta": {
+          "mean": 12.46484375,
+          "lower95": 10.594353786476537,
+          "upper95": 14.335333713523463
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.13232826140873016,
+            "goldDelta": 11.453125
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.12819463045634918,
+            "goldDelta": 13.3125
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.16031700148809522,
+            "goldDelta": 14.953125
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.1424808407738095,
+            "goldDelta": 10.140625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 21581,
+        "ownedWordOpportunityProxy": 21755,
+        "triggerRatePerOwnedWord": 0.9920018386577798
+      }
+    },
+    {
+      "id": "tipJar",
+      "selectionReason": "direct-authored-gold-extreme",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0,
+          "lower95": 0,
+          "upper95": 0
+        },
+        "scoreTargetDelta": {
+          "mean": -0.0027524987599206346,
+          "lower95": -0.009443286215522605,
+          "upper95": 0.003938288695681335
+        },
+        "goldDelta": {
+          "mean": 65.50390625,
+          "lower95": 61.259106159378476,
+          "upper95": 69.74870634062152
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.0025210689484126978,
+            "goldDelta": 67.75
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.0013961557539682527,
+            "goldDelta": 67.984375
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.007012090773809525,
+            "goldDelta": 68.765625
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": -0.00008067956349206351,
+            "goldDelta": 57.515625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 6030,
+        "ownedWordOpportunityProxy": 24356,
+        "triggerRatePerOwnedWord": 0.24757759894892428
+      }
+    },
+    {
+      "id": "voraciousReader",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.01171875,
+          "lower95": -0.0014901576485674,
+          "upper95": 0.0249276576485674
+        },
+        "scoreTargetDelta": {
+          "mean": 0.17797125806051572,
+          "lower95": 0.15587197999740307,
+          "upper95": 0.20007053612362838
+        },
+        "goldDelta": {
+          "mean": 14.81640625,
+          "lower95": 12.689348002297333,
+          "upper95": 16.943464497702667
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.16272394593253964,
+            "goldDelta": 16.078125
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.17537416914682538,
+            "goldDelta": 16.734375
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.015625,
+            "scoreTargetDelta": 0.18748209325396833,
+            "goldDelta": 13.546875
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0,
+            "scoreTargetDelta": 0.18630482390873015,
+            "goldDelta": 12.90625
+          }
+        }
+      ],
+      "consistentAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 40292,
+        "ownedWordOpportunityProxy": 20970,
+        "triggerRatePerOwnedWord": 1.9214115402956604
+      }
+    },
+    {
+      "id": "wordHunter",
+      "selectionReason": "semantic-outlier",
+      "pairs": 256,
+      "outcomes": {
+        "winDelta": {
+          "mean": 0.12890625,
+          "lower95": 0.08777656178944102,
+          "upper95": 0.17003593821055898
+        },
+        "scoreTargetDelta": {
+          "mean": 0.3643944304935517,
+          "lower95": 0.31652373199596673,
+          "upper95": 0.41226512899113665
+        },
+        "goldDelta": {
+          "mean": 24.8046875,
+          "lower95": 21.52680879685841,
+          "upper95": 28.08256620314159
+        }
+      },
+      "blocks": [
+        {
+          "block": 1,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.125,
+            "scoreTargetDelta": 0.3240661966765873,
+            "goldDelta": 22.8125
+          }
+        },
+        {
+          "block": 2,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.171875,
+            "scoreTargetDelta": 0.37947939980158724,
+            "goldDelta": 26.375
+          }
+        },
+        {
+          "block": 3,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.125,
+            "scoreTargetDelta": 0.370095009920635,
+            "goldDelta": 27.03125
+          }
+        },
+        {
+          "block": 4,
+          "seeds": 64,
+          "axes": {
+            "winDelta": 0.09375,
+            "scoreTargetDelta": 0.3839371155753968,
+            "goldDelta": 23
+          }
+        }
+      ],
+      "consistentAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "strongStableAxes": [
+        "winDelta",
+        "scoreTargetDelta",
+        "goldDelta"
+      ],
+      "activation": {
+        "triggers": 33699,
+        "ownedWordOpportunityProxy": 17754,
+        "triggerRatePerOwnedWord": 1.898107468739439
+      }
+    }
+  ]
+}

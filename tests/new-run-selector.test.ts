@@ -83,4 +83,35 @@ describe('New Run selector presentation', () => {
     expect(Object.keys(en).some((key) => /^record\..+\.unlock$/.test(key))).toBe(false);
     expect(Object.keys(ko).some((key) => /^record\..+\.unlock$/.test(key))).toBe(false);
   });
+
+  it('ships the accessible three-tab Challenge surface with localized progress', () => {
+    const component = source('src/ui/components/NewRun.tsx');
+    const app = source('src/ui/App.tsx');
+    const runInfo = source('src/ui/components/RunInfo.tsx');
+    const gameOver = source('src/ui/components/GameOver.tsx');
+    const options = source('src/ui/components/Options.tsx');
+    const en = JSON.parse(source('locales/en.json')) as Record<string, string>;
+    const ko = JSON.parse(source('locales/ko.json')) as Record<string, string>;
+
+    expect(component).toContain('role="tablist"');
+    expect(component).toContain('role="tab"');
+    expect(component).toContain('aria-selected={active === id}');
+    expect(component).toContain('aria-controls={`newrun-panel-${id}`}');
+    expect(component.match(/role="tabpanel"/g)).toHaveLength(3);
+    expect(component).toContain('aria-pressed={challengeId === def.id}');
+    expect(component).toContain('disabled={lifetime.challengesDisabled}');
+    expect(component).toContain('customSeed: false');
+    expect(component).not.toContain('challengeSeed');
+    expect(app).toContain('challengeId: g.state.run.challengeId ?? null');
+    expect(runInfo).toContain("t(`challenge.${run.challengeId}.name`)");
+    expect(gameOver).toContain('challenge-complete-banner');
+    expect(options).toContain('lt.completedChallenges.length');
+
+    for (const id of ['redPen', 'risingQuota', 'narrowDesk', 'threePasses', 'balancedBurden', 'randomFinal']) {
+      expect(en[`challenge.${id}.name`]).toBeTruthy();
+      expect(en[`challenge.${id}.desc`]).toBeTruthy();
+      expect(ko[`challenge.${id}.name`]).toBeTruthy();
+      expect(ko[`challenge.${id}.desc`]).toBeTruthy();
+    }
+  });
 });

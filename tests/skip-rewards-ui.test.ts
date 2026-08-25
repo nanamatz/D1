@@ -130,6 +130,6 @@ describe('Blind Select skip presentation', () => {
     expect(shop).toContain("['bonus', shop.bonusVoucher]");
     expect(shop).toContain('g.buyVoucher(slot)');
     expect(shop).toContain('canBuyVoucher(run, shop, slot)');
-    expect(shop).toMatch(/const price = p\.free\s*\? 0/s);
+    expect(shop).toContain('const price = packBuyPrice(run, p)');
   });
 });

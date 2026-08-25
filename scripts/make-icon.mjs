@@ -1,5 +1,5 @@
 /**
- * Generate the app icon and the web favicon from one source PNG.
+ * Generate the Windows app icon and web favicon from one source PNG.
  *
  * A .ico is an ICONDIR header plus one ICONDIRENTRY per size; since Vista each
  * entry may carry raw PNG bytes, so pngjs (already a devDependency) is enough.

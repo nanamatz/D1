@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **Platform: Windows only.** Do not add macOS or Linux build targets.
+- **Platform: Windows x64 only.** Do not add macOS or Linux build targets.
 - **App name is `Play the World`, fixed via `app.setName()`.** Electron stores localStorage under `%APPDATA%/<appName>/`; renaming later orphans every player's save. This string must never change. It is distinct from the window title "Play the Wor!d", which comes from `index.html`'s `<title>`.
 - **`desktop/` must not import anything from `src/` or `data/`.** It reads only the built `dist/`.
 - **No preload script.** The renderer needs zero Node APIs in this scope. `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.

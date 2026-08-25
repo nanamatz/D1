@@ -172,7 +172,7 @@ describe('promoted Emoji Tile hooks', () => {
     expect(ctx.mult).toBe(BALANCE.jokers.exactingCritic.factorPerUncommon ** 2);
   });
 
-  it('Word Hunter starts at its configured base and grows on a new word', () => {
+  it('Word Hunter grows by ×0.09 per unique word and preserves a saved factor', () => {
     const run = newRun('word-hunter');
     run.jokers = [owned('wordHunter')];
     const blind = startBlind(run, makeRng('word-hunter'));
@@ -181,5 +181,19 @@ describe('promoted Emoji Tile hooks', () => {
     expect(ctx.mult).toBeCloseTo(
       BALANCE.jokers.wordHunter.baseFactor + BALANCE.jokers.wordHunter.factorPerNewWord,
     );
+
+    const repeat = wordCtx(word('CAT'));
+    bus.emit('wordScoring', { run, blind, ctx: repeat }, run.jokers);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(2.09);
+
+    const next = wordCtx(word('DOG'));
+    bus.emit('wordScoring', { run, blind, ctx: next }, run.jokers);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(2.18);
+
+    run.jokers[0]!.state.factor = 3.7;
+    const saved = wordCtx(word('SUN'));
+    bus.emit('wordScoring', { run, blind, ctx: saved }, run.jokers);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(3.79);
+    expect(saved.mult).toBeCloseTo(3.79);
   });
 });

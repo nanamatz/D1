@@ -8,6 +8,7 @@ import { BALANCE } from './balance';
 import { buildBag } from './bag';
 import { applyStartingPouch } from './pouches';
 import { applyStartingRecord } from './records';
+import { challengeDef, isChallengeId } from './challenges';
 import { makeRng } from './rng';
 import {
   EMPTY_NEXT_BLIND_BONUS,
@@ -15,6 +16,7 @@ import {
 } from './skipRewards';
 import type {
   PatternId,
+  ChallengeId,
   PouchId,
   RecordId,
   RunState,
@@ -57,14 +59,23 @@ export interface NewRunOptions {
   pouchId?: PouchId;
   recordId?: RecordId;
   customSeed?: boolean;
+  challengeId?: ChallengeId | null;
 }
 
 /** A brand-new run at ante 1 with the selected pouch and cumulative Record. */
 export function newRun(seed: string, options: NewRunOptions = {}): RunState {
+  if (options.challengeId != null && !isChallengeId(options.challengeId)) {
+    throw new Error(`Unknown challenge: ${String(options.challengeId)}`);
+  }
+  if (options.challengeId != null && options.customSeed) {
+    throw new Error('Challenges cannot use a custom seed');
+  }
+  const challenge = options.challengeId ? challengeDef(options.challengeId) : null;
   const run: RunState = {
-    pouchId: options.pouchId ?? 'yellow',
-    recordId: options.recordId ?? 'whiteLp',
-    customSeed: options.customSeed ?? false,
+    pouchId: challenge?.pouchId ?? options.pouchId ?? 'yellow',
+    recordId: challenge?.recordId ?? options.recordId ?? 'whiteLp',
+    challengeId: challenge?.id ?? null,
+    customSeed: challenge ? false : options.customSeed ?? false,
     seed,
     ante: 1,
     victorySecured: false,

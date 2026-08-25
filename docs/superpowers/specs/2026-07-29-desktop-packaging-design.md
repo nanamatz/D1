@@ -2,6 +2,9 @@
 
 > **Superseded audio provenance (2026-08-19):** 17 Kenney Casino Audio 1.1 samples now cover pack opening, reroll, and chip sounds under CC0 1.0; all other SFX and BGM remain runtime synthesized. The current sources of truth are `assets/AUDIO_LICENSES.md` and `docs/screens-spec.md` §2.13. The historical design below is preserved unchanged.
 
+> **Platform decision (2026-08-24):** A proposed macOS release was withdrawn.
+> The supported Steam desktop target remains Windows x64 only.
+
 Package the web build as an installable Windows desktop application, as the first
 step toward a Steam release.
 
@@ -28,8 +31,7 @@ platforms other than Windows.
 
 ## Decisions
 
-**Target: Windows only.** macOS/Linux are not built or verified. Nothing in the
-design forecloses adding them later, but no effort is spent enabling them now.
+**Target: Windows x64 only.** macOS/Linux are not built or verified.
 
 **Shell: Electron, unpacked-directory output.** Chosen over Tauri because the
 destination is Steam:

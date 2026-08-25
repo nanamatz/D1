@@ -36,15 +36,63 @@ export interface StageDragCallbacks {
   reorderHand: (fromId: string, toId: string | null) => void;
   /** reorder within the staged row */
   reorderStaged: (fromId: string, toId: string | null) => void;
+  /** mark an unstaged hand tile for discard */
+  mark?: (id: string) => void;
   /** small sounds; the controller fires grab/drop, callers keep their own */
   playGrab?: () => void;
   playDrop?: () => void;
 }
 
 const THRESHOLD = 5; // px of movement before a press becomes a drag (else it's a click)
+export const TOUCH_MARK_HOLD_MS = 500;
+export const TOUCH_SYNTHETIC_SUPPRESSION_MS = 750;
 const STIFF = 0.32; // spring follow factor per frame
 const ROT_K = 0.75; // deg per px/frame of horizontal velocity
 const ROT_MAX = 12;
+
+export function stageDragThresholdReached(dx: number, dy: number): boolean {
+  return Math.hypot(dx, dy) >= THRESHOLD;
+}
+
+export function touchSyntheticSuppressionMatches(
+  suppressedId: string | null,
+  targetId: string | undefined,
+  expiresAt: number,
+  now: number,
+): boolean {
+  return !!suppressedId && suppressedId === targetId && now <= expiresAt;
+}
+
+export interface TouchHoldArbitration {
+  readonly id: string;
+  readonly startedAt: number;
+  resolved: boolean;
+  cancelled: boolean;
+}
+
+export function startTouchHoldArbitration(id: string, startedAt: number): TouchHoldArbitration {
+  return { id, startedAt, resolved: false, cancelled: false };
+}
+
+export function completeTouchHoldArbitration(
+  hold: TouchHoldArbitration | null,
+  id: string,
+  now: number,
+): boolean {
+  if (
+    !hold ||
+    hold.cancelled ||
+    hold.resolved ||
+    hold.id !== id ||
+    now - hold.startedAt < TOUCH_MARK_HOLD_MS
+  ) return false;
+  hold.resolved = true;
+  return true;
+}
+
+export function cancelTouchHoldArbitration(hold: TouchHoldArbitration | null): void {
+  if (hold) hold.cancelled = true;
+}
 
 /**
  * Wire spring-physics dragging onto the `.stage` container. Tiles must carry
@@ -67,6 +115,14 @@ export function useStageDrag(
     let raf = 0;
     let dragging = false;
     let justDragged = false;
+    let touchHoldTimer = 0;
+    let touchHold: TouchHoldArbitration | null = null;
+    let longPressed = false;
+    let touchGestureCancelled = false;
+    let suppressedTouchTileId: string | null = null;
+    let suppressClick = false;
+    let suppressContextMenu = false;
+    let suppressionExpiresAt = 0;
     let el: HTMLElement | null = null;
     let pointerId = -1;
     let zone: 'hand' | 'staged' = 'hand';
@@ -92,6 +148,70 @@ export function useStageDrag(
 
     const zoneOf = (node: HTMLElement): 'hand' | 'staged' =>
       (node.dataset.zone as 'hand' | 'staged') ?? 'hand';
+
+    const cancelTouchHold = () => {
+      if (touchHoldTimer) window.clearTimeout(touchHoldTimer);
+      touchHoldTimer = 0;
+      cancelTouchHoldArbitration(touchHold);
+    };
+
+    const clearTouchSuppression = () => {
+      suppressedTouchTileId = null;
+      suppressClick = false;
+      suppressContextMenu = false;
+      suppressionExpiresAt = 0;
+    };
+
+    const armTouchSuppression = (id: string) => {
+      suppressedTouchTileId = id;
+      suppressClick = true;
+      suppressContextMenu = true;
+      suppressionExpiresAt = Date.now() + TOUCH_SYNTHETIC_SUPPRESSION_MS;
+    };
+
+    const consumeTouchSynthetic = (e: Event, kind: 'click' | 'contextmenu'): boolean => {
+      const now = Date.now();
+      if (!suppressedTouchTileId || now > suppressionExpiresAt) {
+        clearTouchSuppression();
+        return false;
+      }
+      const target = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tile-id]');
+      if (!touchSyntheticSuppressionMatches(
+        suppressedTouchTileId,
+        target?.dataset.tileId,
+        suppressionExpiresAt,
+        now,
+      )) return false;
+      if (kind === 'click' ? !suppressClick : !suppressContextMenu) return false;
+      if (kind === 'click') suppressClick = false;
+      else suppressContextMenu = false;
+      if (!suppressClick && !suppressContextMenu) clearTouchSuppression();
+      return true;
+    };
+
+    const touchHoldStillEligible = (): boolean => !!(
+      el &&
+      touchHold &&
+      stage.contains(el) &&
+      el.dataset.tileId === touchHold.id &&
+      el.dataset.zone === 'hand' &&
+      !el.classList.contains('discard-locked') &&
+      !el.classList.contains('locked') &&
+      cbRef.current.mark
+    );
+
+    const cancelChangedTouchGesture = () => {
+      cancelTouchHold();
+      touchGestureCancelled = true;
+      const id = el?.dataset.tileId ?? touchHold?.id;
+      if (id) armTouchSuppression(id);
+    };
+
+    const finishTouchHold = (id: string) => {
+      longPressed = true;
+      armTouchSuppression(id);
+      cbRef.current.mark?.(id);
+    };
 
     // Split the space halfway between both rows. Unlike the old unbounded Y test,
     // dragging above the board or far below it still resolves to the nearest row.
@@ -217,6 +337,14 @@ export function useStageDrag(
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' && !e.isPrimary) return;
+      if (el && e.pointerId !== pointerId) return;
+      // A fresh physical input must never inherit suppression from the prior hold.
+      clearTouchSuppression();
+      cancelTouchHold();
+      touchHold = null;
+      longPressed = false;
+      touchGestureCancelled = false;
       if (e.button !== 0) return; // left button only (right-click = discard mark)
       const t = (e.target as HTMLElement).closest<HTMLElement>('[data-tile-id]');
       if (!t || !stage.contains(t)) return;
@@ -237,12 +365,50 @@ export function useStageDrag(
       cardW = t.offsetWidth + 8; // local px, for the neighbour shift
       rot = 0;
       dragging = false;
+      if (
+        e.pointerType === 'touch' &&
+        e.isPrimary &&
+        t.dataset.zone === 'hand' &&
+        cbRef.current.mark &&
+        !t.classList.contains('discard-locked') &&
+        !t.classList.contains('locked')
+      ) {
+        const heldNode = t;
+        const heldId = t.dataset.tileId!;
+        const heldPointerId = e.pointerId;
+        touchHold = startTouchHoldArbitration(heldId, Date.now());
+        touchHoldTimer = window.setTimeout(() => {
+          touchHoldTimer = 0;
+          if (
+            el !== heldNode ||
+            pointerId !== heldPointerId ||
+            !stage.contains(heldNode) ||
+            heldNode.dataset.tileId !== heldId ||
+            heldNode.dataset.zone !== 'hand' ||
+            heldNode.classList.contains('discard-locked') ||
+            heldNode.classList.contains('locked') ||
+            !cbRef.current.mark
+          ) {
+            cancelChangedTouchGesture();
+            return;
+          }
+          if (completeTouchHoldArbitration(touchHold, heldId, Date.now())) {
+            finishTouchHold(heldId);
+          }
+        }, TOUCH_MARK_HOLD_MS);
+      }
     };
 
     const onPointerMove = (e: PointerEvent) => {
       if (!el || e.pointerId !== pointerId) return;
+      if (touchHold && !touchHoldStillEligible()) cancelChangedTouchGesture();
+      if (longPressed || touchGestureCancelled) return;
       if (!dragging) {
-        if (Math.hypot(e.clientX - startX, e.clientY - startY) < THRESHOLD) return;
+        if (!stageDragThresholdReached(e.clientX - startX, e.clientY - startY)) return;
+        const touchDragId = e.pointerType === 'touch' ? touchHold?.id : null;
+        cancelTouchHold();
+        touchHold = null;
+        if (touchDragId) armTouchSuppression(touchDragId);
         // Threshold crossed → begin the drag.
         dragging = true;
         try { el.setPointerCapture(pointerId); } catch { /* ignore */ }
@@ -281,7 +447,13 @@ export function useStageDrag(
     };
 
     const resetDrag = () => {
-      if (!el) return;
+      cancelTouchHold();
+      if (!el) {
+        touchHold = null;
+        longPressed = false;
+        touchGestureCancelled = false;
+        return;
+      }
       const node = el;
       try { node.releasePointerCapture(pointerId); } catch { /* ignore */ }
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
@@ -294,6 +466,9 @@ export function useStageDrag(
       node.style.removeProperty('transform');
       node.style.transition = '';
       dragging = false;
+      touchHold = null;
+      longPressed = false;
+      touchGestureCancelled = false;
       el = null;
       pointerId = -1;
       insertBefore = null;
@@ -301,6 +476,12 @@ export function useStageDrag(
 
     const onPointerUp = (e: PointerEvent) => {
       if (!el || e.pointerId !== pointerId) return;
+      if (touchHold && !touchHoldStillEligible()) cancelChangedTouchGesture();
+      if (longPressed || touchGestureCancelled) {
+        // Consume the hold before Tooltip's target-level pointerup handler.
+        e.preventDefault();
+        e.stopPropagation();
+      }
       const wasDragging = dragging;
       if (wasDragging) {
         // A real drag doesn't fire a click in most browsers, but pointer capture can
@@ -321,30 +502,62 @@ export function useStageDrag(
 
     const onPointerCancel = (e: PointerEvent) => {
       if (!el || e.pointerId !== pointerId) return;
+      if (e.pointerType === 'touch' && el.dataset.tileId) {
+        armTouchSuppression(el.dataset.tileId);
+      }
       resetDrag();
     };
 
     // Swallow the click that follows a real drag so it doesn't also toggle selection.
     const onClickCapture = (e: MouseEvent) => {
-      if (justDragged) {
+      if (justDragged || consumeTouchSynthetic(e, 'click')) {
         e.stopPropagation();
         e.preventDefault();
         justDragged = false;
       }
     };
 
+    const onContextMenuCapture = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tile-id]');
+      const id = target?.dataset.tileId;
+      if (
+        id &&
+        touchHold &&
+        !touchHold.cancelled &&
+        !touchHold.resolved &&
+        touchHold.id === id
+      ) {
+        // Mobile may dispatch contextmenu at the hold boundary before the timer task.
+        // Own it here: early events are only blocked; a ready hold resolves once.
+        e.stopPropagation();
+        e.preventDefault();
+        if (!touchHoldStillEligible()) {
+          cancelChangedTouchGesture();
+          return;
+        }
+        if (completeTouchHoldArbitration(touchHold, id, Date.now())) finishTouchHold(id);
+        return;
+      }
+      if (!consumeTouchSynthetic(e, 'contextmenu')) return;
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
     stage.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointerup', onPointerUp, true);
     window.addEventListener('pointercancel', onPointerCancel);
     stage.addEventListener('click', onClickCapture, true);
+    stage.addEventListener('contextmenu', onContextMenuCapture, true);
     return () => {
       stage.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointerup', onPointerUp, true);
       window.removeEventListener('pointercancel', onPointerCancel);
       stage.removeEventListener('click', onClickCapture, true);
+      stage.removeEventListener('contextmenu', onContextMenuCapture, true);
       resetDrag();
+      clearTouchSuppression();
     };
     // cb is read through cbRef so it is intentionally not a dependency (re-attaching
     // the pointer listeners every render would drop an in-flight drag).
@@ -465,7 +678,7 @@ export function useShelfDrag(
     const onPointerMove = (e: PointerEvent) => {
       if (!el || e.pointerId !== pointerId) return;
       if (!dragging) {
-        if (Math.hypot(e.clientX - startX, e.clientY - startY) < THRESHOLD) return;
+        if (!stageDragThresholdReached(e.clientX - startX, e.clientY - startY)) return;
         dragging = true;
         try { el.setPointerCapture(pointerId); } catch { /* ignore */ }
         el.classList.add('grabbed');

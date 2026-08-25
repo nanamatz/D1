@@ -70,15 +70,20 @@ A shared CSS idle on every pack image (gallery cards + shop pack cards):
 don't move in unison. Disabled under `prefers-reduced-motion` and
 `body.force-reduced-motion`.
 
-## Part D — Shared pack-opening sequence *(revised 2026-08-02)*
+## Part D — Shared pack-opening sequence *(revised 2026-08-22)*
 
 `PackOpening` gains a phase machine: `opening → revealed`.
-1. `opening`: the selected pack illustration rattles briefly, then splits across
-   a jagged seam near its top edge.
-2. The illustrated top strip peels away while seven navy pixel-card backs pour
-   out with rectangular gold/blue/red ink debris; the seam fades together with
-   the top/body pieces as the empty wrapper collapses.
-3. `revealed`: the real option objects fall into their final fan, staggered.
+1. `opening`: inside the restored 2265ms input gate, independent of game speed, the
+   selected pack illustration rattles, compresses toward its lower anchor, and rebounds
+   into the burst over 420ms; the wrapper pieces finish by 1100ms, with no
+   highlighted seam line drawn across the pack.
+2. From 420ms, one navy pixel-card back per actual option (2–5) pours for 700ms with
+   a 60ms stagger; rectangular gold/blue/red debris runs from 400–1120ms.
+3. The existing real option objects—not duplicates—land on their final fan paths
+   from 1100–1820ms at 60ms intervals. The shortest two-choice fake spill lasts through
+   1180ms, so it overlaps the incoming real shells without a blank transition or duplicate
+   landing. Ten candidates still begin at 1500ms, use 45ms intervals, and finish exactly
+   at 2265ms; `revealed` opens input without replaying either landing.
 
 CSS keyframes + `useState` phase + timers (no new dependency). Under reduced-motion,
 skip straight to `revealed`. Common to all types.

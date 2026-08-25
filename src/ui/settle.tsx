@@ -16,9 +16,14 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { ChanceResult, ScoreEvent } from '../engine/types';
+import type {
+  ChanceResult,
+  ScoreEvent,
+  TileMaterial,
+  WordSubmission,
+} from '../engine/types';
 import { audio, type SfxName } from './audio';
-import { motionOff as reducedMotion } from './motion';
+import { motionOff } from './motion';
 
 /**
  * feedback: when a tile's MATERIAL / FONT / EDITION triggers during scoring, make the
@@ -70,8 +75,9 @@ function animateTileCreation(event: TileCreationEvent, duration: number): () => 
   );
   const sourceRect = source?.getBoundingClientRect();
   const cleanups: Array<() => void> = [];
+  let disposed = false;
 
-  source?.animate(
+  const sourceAnimation = source?.animate(
     [
       { filter: 'brightness(1)' },
       { filter: 'brightness(2.4) drop-shadow(0 0 12px #fff)' },
@@ -79,6 +85,9 @@ function animateTileCreation(event: TileCreationEvent, duration: number): () => 
     ],
     { duration: Math.min(duration, 420), easing: 'steps(4, end)' },
   );
+  if (sourceAnimation) {
+    cleanups.push(() => sourceAnimation.cancel());
+  }
 
   event.createdTileIds.forEach((id, index) => {
     const target = handTile(id);
@@ -128,6 +137,7 @@ function animateTileCreation(event: TileCreationEvent, duration: number): () => 
       },
     );
     let landed = false;
+    let landingAnimation: Animation | null = null;
     const reveal = () => {
       if (landed) return;
       landed = true;
@@ -135,9 +145,10 @@ function animateTileCreation(event: TileCreationEvent, duration: number): () => 
       ghost.remove();
     };
     animation.addEventListener('finish', () => {
+      if (disposed) return;
       reveal();
       audio.play('tileDeal');
-      target.animate(
+      landingAnimation = target.animate(
         [
           { transform: 'scale(.78)', filter: 'brightness(1.8)' },
           { transform: 'scale(1.1)', filter: 'brightness(1.25)' },
@@ -149,30 +160,43 @@ function animateTileCreation(event: TileCreationEvent, duration: number): () => 
     animation.addEventListener('cancel', reveal, { once: true });
     cleanups.push(() => {
       animation.cancel();
+      landingAnimation?.cancel();
       reveal();
     });
   });
 
-  return () => cleanups.forEach((cleanup) => cleanup());
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    cleanups.forEach((cleanup) => cleanup());
+  };
 }
 
 /** Restart the board-level score impact. Amplitude comes from the Settings
  * slider's `--screen-shake` variable; reduced motion never reaches this path. */
-function triggerScreenShake(): void {
-  if (typeof document === 'undefined') return;
+function triggerScreenShake(intensity = 1): () => void {
+  if (typeof document === 'undefined') return () => {};
   const surfaces = document.querySelectorAll<HTMLElement>(
     '.persistent-run > .sidebar, .persistent-run > .main',
   );
+  const cleanups: Array<() => void> = [];
   for (const surface of surfaces) {
     surface.classList.remove('settle-shake');
+    surface.style.setProperty('--settle-impact', String(intensity));
     void surface.offsetWidth;
     surface.classList.add('settle-shake');
-    surface.addEventListener(
-      'animationend',
-      () => surface.classList.remove('settle-shake'),
-      { once: true },
-    );
+    let active = true;
+    const cleanup = () => {
+      if (!active) return;
+      active = false;
+      surface.removeEventListener('animationend', cleanup);
+      surface.classList.remove('settle-shake');
+      surface.style.removeProperty('--settle-impact');
+    };
+    surface.addEventListener('animationend', cleanup, { once: true });
+    cleanups.push(cleanup);
   }
+  return () => cleanups.forEach((cleanup) => cleanup());
 }
 
 export interface SettleView {
@@ -247,24 +271,102 @@ const IDLE: SettleView = {
 const SettleCtx = createContext<SettleView>(IDLE);
 export const useSettleView = (): SettleView => useContext(SettleCtx);
 
-// ms per beat at 1× speed. Matches the 0.55s trigger pops so each one *finishes*
-// before the next beat fires — at 150ms the pops overlapped
-// three-deep and the whole tally read as one blur (playtest-06 item 1). Players
-// need to see each contribution land one at a time; game speed (1/2/4×) scales it.
-// Feedback 5: each contribution needs enough time to read and land before the
-// next tile/effect fires. 600ms at 1× keeps the sequence readable; game speed
-// still scales this single timing source to 2×/4×.
+// ms per beat at 1× speed; game speed (1/2/4×) scales this single timing source.
 const BASE_STEP = 600;
-// The visible trigger keeps the ordinary duration; the unused remainder is
-// separation before the next score beat, so adjacent effects do not blur together.
+// Enhanced Emoji beats keep their longer separation relative to ordinary beats.
 const ENHANCED_JOKER_STEP = 1000;
-// A Lead Plate probability badge otherwise unmounts after 150ms at 4×, before
+// A Lead Plate probability badge would otherwise unmount after 75ms at 4×, before
 // its delayed reveal can be read. Chance-bearing material beats keep this
 // real-time floor; settle completion uses the same duration helper below.
 const CHANCE_MATERIAL_STEP_MIN = 600;
 const TILE_CREATION_STEP_MIN = 480;
 const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
+const PLAY_IMPACT_DURATION_1X = 650;
+const PLAY_IMPACT_DURATION_2X = 400;
+const PLAY_IMPACT_DURATION_4X = 280;
+const PLAY_IMPACT_CONTACT_RATIO = 0.4;
+const PLAY_IMPACT_INTENSITY_BASE = 0.6;
+const PLAY_IMPACT_INTENSITY_STEP = 0.07;
+const PLAY_IMPACT_INTENSITY_TILE_CAP = 7;
+
+export type PlayImpactFamily = 'paper' | 'metal' | 'brittle' | 'block';
+
+/** Local impact silhouette for each physical material; presentation only. */
+export function playImpactFamily(material: TileMaterial): PlayImpactFamily {
+  switch (material) {
+    case 'ceramic':
+    case 'porcelain':
+    case 'ivory':
+      return 'paper';
+    case 'polished':
+    case 'leadPlate':
+    case 'brass':
+      return 'metal';
+    case 'glass':
+      return 'brittle';
+    case 'stone':
+    case 'wood':
+      return 'block';
+  }
+}
+
+/** UI-only physical-play prologue before score beat zero. */
+export function playImpactDurationMs(
+  tileCount: number,
+  speed: number,
+  reduce: boolean,
+): number {
+  if (reduce || tileCount <= 0) return 0;
+  if (speed === 4) return PLAY_IMPACT_DURATION_4X;
+  if (speed === 2) return PLAY_IMPACT_DURATION_2X;
+  return PLAY_IMPACT_DURATION_1X;
+}
+
+/** Row-level physical weight; seven or more tiles share the capped maximum. */
+export function playImpactIntensity(tileCount: number): number {
+  if (tileCount <= 0) return 0;
+  const count = Math.min(tileCount, PLAY_IMPACT_INTENSITY_TILE_CAP);
+  return Math.min(
+    1,
+    PLAY_IMPACT_INTENSITY_BASE + PLAY_IMPACT_INTENSITY_STEP * (count - 1),
+  );
+}
+
+const PLAY_IMPACT_CLASSES = [
+  'play-impact',
+  'impact-paper',
+  'impact-metal',
+  'impact-brittle',
+  'impact-block',
+] as const;
+
+const PLAY_IMPACT_ROW_CLASSES = [
+  'play-impact-group',
+  'play-impact-contact',
+  'play-impact-reduced',
+] as const;
+
+function submittedTile(tileId: string): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  const matches = document.querySelectorAll<HTMLElement>(
+    `.submitted-tiles [data-tile-id="${CSS.escape(tileId)}"]`,
+  );
+  return matches.item(matches.length - 1);
+}
+
+function clearPlayImpact(el: HTMLElement): void {
+  el.classList.remove(...PLAY_IMPACT_CLASSES);
+  el.style.removeProperty('--play-impact-vfx-ms');
+}
+
+function clearPlayImpactRow(row: HTMLElement | null): void {
+  if (!row) return;
+  row.classList.remove(...PLAY_IMPACT_ROW_CLASSES);
+  row.style.removeProperty('--play-impact-ms');
+  row.style.removeProperty('--play-impact-vfx-ms');
+  row.style.removeProperty('--play-impact-intensity');
+}
 
 const beatDurationMs = (event: ScoreEvent): number =>
   event.kind === 'edition' && event.jokerId ? ENHANCED_JOKER_STEP : BASE_STEP;
@@ -365,11 +467,13 @@ export function settleDurationMs(
   events: readonly ScoreEvent[],
   speed: number,
   reduce: boolean,
+  impactTileCount = 0,
 ): number {
   if (reduce) return REDUCED_HOLD;
+  const impact = playImpactDurationMs(impactTileCount, speed, false);
   const beats = events.filter((e) => e.kind !== 'settle').length;
-  if (beats === 0) return 0;
-  return events
+  if (beats === 0) return impact;
+  return impact + events
     .filter((event) => event.kind !== 'settle')
     .reduce((total, event) => total + scaledBeatDurationMs(event, speed), 0) + FINAL_HOLD / speed;
 }
@@ -381,16 +485,20 @@ export function settleDurationMs(
  */
 export function SettleProvider({
   events,
+  submission,
   settleId,
   speed,
   screenShake,
+  reducedMotion,
   onComplete,
   children,
 }: {
   events: readonly ScoreEvent[];
+  submission: WordSubmission | null;
   settleId: number;
   speed: number;
   screenShake: number;
+  reducedMotion: boolean;
   onComplete?: () => void;
   children: ReactNode;
 }) {
@@ -398,18 +506,52 @@ export function SettleProvider({
   // Latest onComplete, read from the timeline effect without retriggering it.
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const screenShakeRef = useRef(screenShake);
+  screenShakeRef.current = screenShake;
+  const activeSettleIdRef = useRef<number | null>(null);
+  const impactContactSettleIdRef = useRef<number | null>(null);
+  const reduce = reducedMotion || motionOff();
+  const previousReduceRef = useRef({ settleId, reduce });
+  const [reducedRestart, setReducedRestart] = useState(0);
 
   // Precompute the ordered beats (skip the final 'settle' bookkeeping frame).
   const beats = useMemo(() => events.filter((e) => e.kind !== 'settle'), [events]);
 
+  // Only ON interrupts an active submission. OFF applies to the next settle so
+  // the same submission is never replayed as a full-motion timeline.
+  useLayoutEffect(() => {
+    const previous = previousReduceRef.current;
+    if (
+      previous.settleId === settleId &&
+      !previous.reduce &&
+      reduce &&
+      activeSettleIdRef.current === settleId
+    ) {
+      setReducedRestart((value) => value + 1);
+    }
+    previousReduceRef.current = { settleId, reduce };
+  }, [settleId, reduce]);
+
   // useLayoutEffect (not useEffect) so the settle activates BEFORE paint — the
   // round number never flashes the final committed value for a frame (A-1).
   useLayoutEffect(() => {
-    if (settleId === 0 || beats.length === 0) {
+    if (settleId === 0 || (beats.length === 0 && !submission)) {
+      activeSettleIdRef.current = null;
+      impactContactSettleIdRef.current = null;
       setView(IDLE);
       return;
     }
-    if (reducedMotion()) {
+    activeSettleIdRef.current = settleId;
+    const settleSpeed = speed;
+    const impactTiles = submission?.tiles.map((tile) => ({
+      el: submittedTile(tile.id),
+      family: playImpactFamily(tile.material),
+    })) ?? [];
+    const impactRow = impactTiles
+      .find(({ el }) => el !== null)
+      ?.el?.closest<HTMLElement>('.submitted-tiles') ?? null;
+
+    if (reduce) {
       // Collapse to an instant fill, then reset to idle 0×0.
       let chips = 0;
       let mult = 0;
@@ -422,29 +564,76 @@ export function SettleProvider({
         ({ chips, mult } = accumulate(chips, mult, e));
       }
       setView({ ...IDLE, active: true, chips, mult, tilePops: pops, destroyedTileIds });
+      clearPlayImpactRow(impactRow);
+      impactTiles.forEach(({ el }) => { if (el) clearPlayImpact(el); });
+      if (impactRow && impactTiles.length > 0) impactRow.classList.add('play-impact-reduced');
       if (destroyedTileIds.length > 0) audio.play('matGlassBreak');
       audio.chips(chips);
       audio.play('totalRoll');
       const off = setTimeout(() => {
+        clearPlayImpactRow(impactRow);
+        activeSettleIdRef.current = null;
         setView(IDLE);
         onCompleteRef.current?.();
-      }, settleDurationMs(events, speed, true));
-      return () => clearTimeout(off);
+      }, settleDurationMs(events, settleSpeed, true, submission?.tiles.length ?? 0));
+      return () => {
+        clearTimeout(off);
+        if (activeSettleIdRef.current === settleId) activeSettleIdRef.current = null;
+        clearPlayImpactRow(impactRow);
+        impactTiles.forEach(({ el }) => { if (el) clearPlayImpact(el); });
+      };
     }
 
     const timers: ReturnType<typeof setTimeout>[] = [];
     const creationCleanups: Array<() => void> = [];
+    const shakeCleanups: Array<() => void> = [];
     setCreatedTilesPending(beats, true);
+    setView({ ...IDLE, active: true });
     let chips = 0;
     let mult = 0;
     const pops: Record<string, number> = {};
     const destroyedTileIds = new Set<string>();
     let tickStep = 0;
 
-    let elapsed = 0;
+    const impactDuration = playImpactDurationMs(impactTiles.length, settleSpeed, false);
+    const impactIntensity = playImpactIntensity(impactTiles.length);
+    const contactAt = impactDuration * PLAY_IMPACT_CONTACT_RATIO;
+    const contactVfxDuration = impactDuration - contactAt;
+    clearPlayImpactRow(impactRow);
+    impactTiles.forEach(({ el }) => { if (el) clearPlayImpact(el); });
+    if (impactRow && impactDuration > 0) {
+      void impactRow.offsetWidth;
+      impactRow.style.setProperty('--play-impact-ms', `${impactDuration}ms`);
+      impactRow.style.setProperty('--play-impact-vfx-ms', `${contactVfxDuration}ms`);
+      impactRow.style.setProperty('--play-impact-intensity', String(impactIntensity));
+      impactRow.classList.add('play-impact-group');
+    }
+    if (impactDuration > 0) {
+      timers.push(setTimeout(() => {
+        impactRow?.classList.add('play-impact-contact');
+        impactTiles.forEach(({ el, family }) => {
+          if (!el) return;
+          el.style.setProperty('--play-impact-vfx-ms', `${contactVfxDuration}ms`);
+          el.classList.add('play-impact', `impact-${family}`);
+        });
+        if (impactContactSettleIdRef.current !== settleId) {
+          impactContactSettleIdRef.current = settleId;
+          audio.play('submitThock');
+          if (screenShakeRef.current > 0) {
+            shakeCleanups.push(triggerScreenShake(impactIntensity));
+          }
+        }
+      }, contactAt));
+      timers.push(setTimeout(() => {
+        clearPlayImpactRow(impactRow);
+        impactTiles.forEach(({ el }) => { if (el) clearPlayImpact(el); });
+      }, impactDuration));
+    }
+
+    let elapsed = impactDuration;
     beats.forEach((e, i) => {
       const startsAt = elapsed;
-      elapsed += scaledBeatDurationMs(e, speed);
+      elapsed += scaledBeatDurationMs(e, settleSpeed);
       timers.push(
         setTimeout(() => {
           const prevChips = chips;
@@ -470,7 +659,7 @@ export function SettleProvider({
           } else if (e.kind === 'joker') {
             audio.play(emojiTriggerSfx(e));
             if (hasTileCreation(e)) {
-              creationCleanups.push(animateTileCreation(e, scaledBeatDurationMs(e, speed)));
+              creationCleanups.push(animateTileCreation(e, scaledBeatDurationMs(e, settleSpeed)));
             }
             if (e.tileId) triggerTile(e.tileId);
           } else if (e.kind === 'font') {
@@ -502,7 +691,9 @@ export function SettleProvider({
                   id: i,
                 }
               : null;
-          if (scorePop && screenShake > 0) triggerScreenShake();
+          if (scorePop && screenShakeRef.current > 0) {
+            shakeCleanups.push(triggerScreenShake());
+          }
           const base: SettleView = {
             active: true,
             chips,
@@ -657,17 +848,22 @@ export function SettleProvider({
       setTimeout(() => {
         setCreatedTilesPending(beats, false);
         audio.play('totalRoll');
+        activeSettleIdRef.current = null;
         setView(IDLE);
         onCompleteRef.current?.();
-      }, settleDurationMs(events, speed, false)),
+      }, settleDurationMs(events, settleSpeed, false, submission?.tiles.length ?? 0)),
     );
     return () => {
       timers.forEach(clearTimeout);
       creationCleanups.forEach((cleanup) => cleanup());
+      shakeCleanups.forEach((cleanup) => cleanup());
       setCreatedTilesPending(beats, false);
+      if (activeSettleIdRef.current === settleId) activeSettleIdRef.current = null;
+      clearPlayImpactRow(impactRow);
+      impactTiles.forEach(({ el }) => { if (el) clearPlayImpact(el); });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settleId, speed, screenShake]);
+  }, [settleId, reducedRestart]);
 
   return <SettleCtx.Provider value={view}>{children}</SettleCtx.Provider>;
 }

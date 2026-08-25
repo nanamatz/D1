@@ -19,7 +19,11 @@ import {
   recordTargetMultiplier,
 } from './records';
 import { discountedPrice, emojiTileShopPrice, interestCap } from './vouchers';
-import type { BlindKind, ConsumableId, JokerEdition, RunState, Tile } from './types';
+import type { BlindKind, ConsumableId, JokerEdition, PackSlot, RunState, Tile } from './types';
+
+/** Actual checkout price for a Pack slot; Coupon-tagged slots bypass the $1 discount floor. */
+export const packBuyPrice = (run: RunState, slot: PackSlot): number =>
+  slot.free ? 0 : discountedPrice(run, BALANCE.pack.size[slot.size].price);
 
 /**
  * The score needed to clear a blind (GDD §8.2): per-ante base × kind multiplier

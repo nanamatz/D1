@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import type { ConsumableId, JokerRarity, Tile } from '../../engine/types';
 import type { PackOption } from '../../engine/packs';
@@ -207,17 +207,19 @@ function OptionCard({
 }
 
 
-const BURST_MS = 1500;
+const PACK_READY_MS = 2265;
 
 /** Pack selection screen (GDD §9.3): pick up to `pick` of the shown options. */
 export function PackOpening({
   g,
   selectedCandidates,
   onSelectedCandidatesChange,
+  onInteractionLockChange,
 }: {
   g: UseGame;
   selectedCandidates: string[];
   onSelectedCandidatesChange: (ids: string[]) => void;
+  onInteractionLockChange: (locked: boolean) => void;
 }) {
   const { t, lang } = useI18n();
   const pack = g.state.pack;
@@ -259,14 +261,14 @@ export function PackOpening({
     if (entering || !started || !hasRainbowOption) return;
     const timer = window.setTimeout(
       () => audio.play('rainbowShimmer'),
-      motionOff() ? 0 : BURST_MS,
+      motionOff() ? 0 : PACK_READY_MS,
     );
     return () => window.clearTimeout(timer);
   }, [entering, started, hasRainbowOption]);
 
   useEffect(() => {
     if (!opening) return;
-    const id = setTimeout(() => setOpening(false), BURST_MS);
+    const id = setTimeout(() => setOpening(false), PACK_READY_MS);
     return () => clearTimeout(id);
   }, [opening]);
 
@@ -325,11 +327,19 @@ export function PackOpening({
     };
   }, [pack, onSelectedCandidatesChange]);
 
+  const interactionLocked = !pack || entering || !started || opening || closing || !!picking;
+  // The persistent held-card shelf is a sibling, so publish the same gate before
+  // paint; default/cleanup locked prevents a first-frame gap between packs.
+  useLayoutEffect(() => {
+    onInteractionLockChange(interactionLocked);
+  }, [interactionLocked, onInteractionLockChange]);
+  useEffect(() => () => onInteractionLockChange(true), [onInteractionLockChange]);
+
   if (!pack) return null;
 
   const PICK_BEAT = motionOff() ? 0 : 320;
   const doPick = (key: string, resolvePick: () => void) => {
-    if (picking) return; // one selection resolving at a time
+    if (interactionLocked) return; // one selection/opening transition at a time
     audio.play('packPick'); // confirm SFX on selection (A-4 / C)
     setPicking(key);
     window.setTimeout(() => {
@@ -352,7 +362,7 @@ export function PackOpening({
     previewTile: (tile: Tile) => Tile,
     resolvePick: () => void,
   ) => {
-    if (picking) return;
+    if (interactionLocked) return;
     const effectMs = motionOff() ? 120 : 900;
     audio.play('packPick');
     setPicking(key);
@@ -419,7 +429,7 @@ export function PackOpening({
     resolvePick,
   );
   const close = () => {
-    if (closing || picking) return;
+    if (interactionLocked) return;
     setClosing(true);
     g.closePack(360);
   };
@@ -502,7 +512,7 @@ export function PackOpening({
       ? gamblerPickCount(selectedGamblerTargetId).max
       : candidateTiles.length;
   const toggleCandidate = (tileId: string) => {
-    if (!candidatesActive || picking) return;
+    if (!candidatesActive || interactionLocked) return;
     if (selectedCandidates.includes(tileId)) {
       onSelectedCandidatesChange(selectedCandidates.filter((id) => id !== tileId));
     } else if (selectedCandidates.length < candidateMax) {
@@ -518,15 +528,17 @@ export function PackOpening({
         closing ? 'phase-panel-leaving' :
         entering || !started ? 'preparing' : opening ? 'opening' : 'revealed',
       ].join(' ')}
+      aria-busy={interactionLocked}
+      {...(interactionLocked ? { inert: '' } as Record<string, string> : {})}
     >
-      {/* The pack tears across its top, sheds pixel debris, and pours card backs out.
-          Real choices settle into the fan after this overlay clears. */}
+      {/* The pack tears across its top and pours one back per real option; the
+          existing choice shells land behind that spill before the ready gate opens. */}
       {opening && (
         <div className="pack-open-fx" aria-hidden>
           <div className="pack-open-ink-burst" />
           <div className="pack-open-stage">
             <div className="pack-open-card-stream">
-              {Array.from({ length: 7 }).map((_, i) => (
+              {Array.from({ length: pack.offer.options.length }).map((_, i) => (
                 <span key={i} className="pack-open-spill-card" />
               ))}
             </div>
@@ -541,7 +553,6 @@ export function PackOpening({
                 <span className="pack-open-piece pack-open-top generic" />
               </>
             )}
-            <span className="pack-open-tear-line" />
             <span className="pack-open-tear-flash" />
           </div>
           <div className="pack-open-particles">
@@ -665,12 +676,12 @@ export function PackOpening({
                   tip={optionTip(o)}
                   selected={selected}
                   actionVisible={actionVisible}
-                  actionDisabled={actionDisabled}
+                  actionDisabled={actionDisabled || interactionLocked}
                   picked={picking === key}
                   effecting={tileFx?.key === key}
                   hoverOnlyAction={o.kind === 'tile' || o.kind === 'joker'}
                   onSelect={needsConfirmation ? () => {
-                    if (picking) return;
+                    if (interactionLocked) return;
                     setSelectedFable(selected ? null : key);
                   } : undefined}
                   onAction={() => {
@@ -717,7 +728,7 @@ export function PackOpening({
         <div className="money">
           {t('pack.pickOf', { n: pack.picksLeft, m: pack.offer.options.length })}
         </div>
-        <button className="btn cash" onClick={close} disabled={closing || !!picking}>
+        <button className="btn cash" onClick={close} disabled={interactionLocked}>
           {t('pack.skip')}
         </button>
       </div>

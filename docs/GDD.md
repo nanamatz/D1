@@ -30,6 +30,7 @@ Version 0.2 — systems expansion
   circular emblem (§12.2).
 - Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, and ordinary Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3). The 2026-08-07 acquisition pass makes Deer and Phoenix Ink-Pack-only.
 - Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. After the 2026-08-12 roster additions and duplicate-condition cleanup, the 150-tile public roster starts with 76 ordinary tiles plus all 5 Legendary definitions profile-eligible; 69 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
+- Changed 2026-08-22: the deterministic headless board-verification harness now covers all 150 public Emoji Tiles, paired control/focal cohorts, actual Chapter 38 completion, market exposure, and the 14×8 Pouch/Record matrix. Bounded baseline and full-budget artifacts ship in `docs/balance/`; a separate skip-reward counterfactual harness verifies all 30 Editorial Perks. These are measurement only and do not retune any value (§12.4).
 - Changed 2026-08-06: Term Insurance permanently prevents letter-tile destruction while owned and gives ×2 Mult on every prevention. Its four-use limit and self-destruction are retired (§11.4).
 - Changed 2026-08-06: Hand Scholar starts at ×1 and increases its multiplicative factor by ×0.5 per distinct Word Hand recorded this run, with an explicit ×4 cap. Hands played before acquisition count immediately. Every run-history Emoji Tile seeds and reconciles from the authoritative run-wide ledger (§11.6).
 - Changed 2026-08-12: Word Hands add the hidden knowledge tier Type Economy, Vowelless, and Grand Palindrome above the original six. All three require valid dictionary words and persist their first discovery per profile; Hand Scholar unlocks after eight distinct hands in one run (§5.5, §11.4).
@@ -38,14 +39,16 @@ Version 0.2 — systems expansion
 - Changed 2026-08-06: Triplet now ranks above Longword, so a valid 6+ letter word containing the same letter three times triggers Triplet instead of being shadowed by Longword (§5.5).
 - Changed 2026-08-06: Cleaning Sign displays as `청소 표지판` in Korean and removes $2 for each tile discarded, rather than once per discard action (§8.4).
 - Changed 2026-08-18: register base Mult is Standard ×1, Formal ×10, Slang ×5, and Vulgar ×7. Formal becomes the highest-authority reward while Vulgar's former jackpot is moderated. Profile register titles derive from unique current-lexicon discoveries and one earned title may be equipped cosmetically by stable semantic id in `wj.lifetime`; there is no gameplay effect or new save key (§3.1).
+- Changed 2026-08-22: the curated acronym families MVP and VIP ship as the four noun surfaces `mvp`, `mvps`, `vip`, and `vips`. Punctuation and unlisted initialisms remain invalid; the canonical offline source is `lexicon-pipeline/curated-abbreviations.json` (§3.2).
 - Changed 2026-08-06: sentence-pattern base Mult is compressed to ×1/×2/×3/×4 by rank band while base Chips stay unchanged. Every Constellation level now adds its fixed Chips increment and +1 Mult linearly; the former ×1.5 geometric growth is retired (§5.2–§5.4).
 - Changed 2026-08-07: sentence-pattern construction difficulty is classified independently from payout rank. Easy/Medium/Hard Constellation levels add +15/+30/+45 Chips respectively while every pattern continues to gain +1 Mult (§5.2–§5.4).
 - Changed 2026-08-07: Deer and Phoenix are Ink-Pack-only jackpots at 0.3% per choice each. The other 12 Gambler Cards roll uniformly; Lucky Pouch shop and starting-card routes, plus Comic Book replacements, exclude both jackpots (§9.3, §10.3, §12.2).
 - Changed 2026-08-07: The Cowherd and the Weaver Girl keeps its 25% success chance, then selects Gray/Violet/Rainbow at 50%/35%/15% (§10.1).
 - Changed 2026-07-29: the Rare roster is replaced by 11 confirmed tiles and the
   Legendary roster by Book of Margins, Tyrant, Type Foundry, Tower of Babel, and
-  Misbound. Common 32 and Uncommon 35 remain a review baseline with additional
-  deduplicated candidates in `docs/EMOJI_TILE_IDEA_BANK.md` (§11).
+  Misbound. The historical candidate review is preserved in
+  `docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md`; it is not an
+  implementation source (§11).
 - Changed 2026-07-29: Emoji Tile art uses the shared **124×165px (near-3:4)**
   runtime card footprint. Existing 84×112 pixel masters scale into it with
   nearest-neighbour rendering; the family still does not reuse the 5:7
@@ -80,7 +83,7 @@ Version 0.2 — systems expansion
 **Core concept.** A roguelite where you score with *word combinations* instead of poker hands. Players use *alphabet tiles* instead of cards, and the structure of Balatro — deck, suits, enhancements, jokers, blinds, antes — is ported into the grammar of a word game. Built on a Scrabble-style letter-scoring base, it differentiates itself with two meta-layers Balatro does not have: the **register suit** and the **part-of-speech / sentence system**.
 
 **Language.** English (confirmed).
-**Art direction.** Pixel-art with a CRT finish, in the Balatro lineage (the earlier "ceramic letterpress, deliberately un-Balatro" direction is retired). Tile materials/fonts (§2.2–2.3) and the publishing-world fiction (§1.2) are unchanged in *design* — only their *rendering style* is pixel-art. Full visual spec in `docs/UI_DESIGN.md`; a pixel-art shop mascot — 삐약이 (Piyak), the tuxedo cat proprietor — lives in the Stationery Shop (art: docs/Piyak.png). A second mascot, **우땅 (WooDak)** — a pixel-art orangutan, the player's ally/editor-mentor — appears on the run-end screen with tips and discovery mentions, and will later host tutorials and notifications (art: docs/WooDak.png).
+**Art direction.** Pixel-art with a CRT finish, in the Balatro lineage (the earlier "ceramic letterpress, deliberately un-Balatro" direction is retired). Tile materials/fonts (§2.2–2.3) and the publishing-world fiction (§1.2) are unchanged in *design* — only their *rendering style* is pixel-art. Full visual spec in `docs/UI_DESIGN.md`; a pixel-art shop mascot — 삐약이 (Piyak), the tuxedo cat proprietor — lives in the Stationery Shop (`src/ui/assets/piyak.png`). A second mascot, **우땅 (WooDak)** — a pixel-art orangutan and the player's ally/editor-mentor — appears on the run-end screen with tips and discovery mentions and hosts every tutorial encounter except Piyak's shop greeting (`src/ui/assets/woodak.png`). A broader notification role is not currently specified.
 **Special characters.** Excluded as playable tiles (punctuation-shaped pattern levels return as Constellation cards; see §10). *Re-examined and re-affirmed in playtest-05 D:* wildcard/blank tiles and `?`/`!` mood-marker tiles were both explored and **dropped**, because each duplicated a system we already have — alphabet sculpting now belongs to Fable #16 and the pouch's draft-flavored tools; mood markers overlap the Constellation cards and would force a large change to the §5 pattern system. Revisit only if a concrete need appears that no existing system covers.
 
 ### 1.1 Balatro → This Game Mapping
@@ -340,7 +343,7 @@ A "clean English word set with register labels" does not exist. So this is a pro
 - **Representative meaning only.** Wiktionary usage categories locate candidate words, then the first English dictionary definition's usage label is checked—not every sense on the page. The mapping is Vulgar = vulgar/taboo/obscene/offensive/slur; Slang = slang/internet slang/AAVE/dialect slang; Formal = formal/literary/archaic/technical/legal/poetic/officialese. Informal, colloquial, pejorative, rare, difficult, dialectal, or unmarked alone remain Standard. Explicit boundary examples in the criteria document override source disagreement. Only POS-compatible inflections inherit a non-standard lemma tag, and every non-standard evidence path is baked into `data/register-audit.json`.
 - **Precedence applies after representative-meaning selection.** If that one meaning matches multiple classes, resolve **Vulgar > Slang > Formal > Standard**. Do not promote a common Standard meaning because a secondary sense is slang, vulgar, or technical.
 - **Bake public lexical sources offline.** Moby POS supplies broad POS labels and Princeton WordNet 3.0 supplies complementary POS plus verb frames. Exact-headword source tags augment legacy LLM tags; explicit curated POS overrides win. Bake the merged result into a table rather than doing any classification at runtime.
-- **Use the playable ENABLE subset (changed 2026-08-03).** The validity pool contains every ENABLE word of **18 letters or fewer** plus 13 apostrophe-free tile-grammar exceptions (172,228 dictionary words; 172,251 baked lexicon entries including 23 retained entries outside ENABLE). The 608 longer ENABLE words are excluded because 18 is the designed playable-word ceiling after Copy Editor is considered. The former 50k frequency cutoff remains retired; it excluded valid base words such as `uremia` while retaining derivatives such as `uremic`.
+- **Use the playable ENABLE subset plus curated acronym families (changed 2026-08-22).** The validity pool contains every ENABLE word of **18 letters or fewer**, 13 apostrophe-free tile-grammar exceptions, and exactly four curated acronym surfaces: `mvp`, `mvps`, `vip`, and `vips` (172,232 dictionary words; 172,255 baked lexicon entries including 23 retained entries outside the dictionary). Acronyms use lowercase canonical keys, render through the existing uppercase tile spelling, and are Standard nouns; punctuation and unlisted initialisms such as CEO remain invalid. `lexicon-pipeline/curated-abbreviations.json` is their one canonical offline source and both baked outputs consume it. The 608 longer ENABLE words are excluded because 18 is the designed playable-word ceiling after Copy Editor is considered. The former 50k frequency cutoff remains retired; it excluded valid base words such as `uremia` while retaining derivatives such as `uremic`.
 - **Inflected forms are IN; every baked word has POS (playtest-01 P0; changed 2026-08-06).** Plurals, past tense, -ing, and comparatives validate when they remain within the 18-letter ceiling (do not lemmatize eligible forms away). Exact-headword public-domain Moby POS and Princeton WordNet 3.0 tags augment legacy classifications; explicit curated POS overrides remain authoritative. Missing words use the same sources, including transitive/intransitive verb frames, with deterministic morphology/fallback for obscure residual forms. Register words without a non-standard tag still default to Standard; production data validation forbids an empty POS list.
 
 > **One word = one suit.** Choose the word's most frequent/representative meaning; if that cannot be determined reliably, use the general dictionary's first sense. Classify only that meaning in the numbered order Vulgar → Slang → Formal → Standard, and fall back to Standard when ambiguous. Thus `sick` (ill) and `lit` (set alight) remain Standard even though each has a Slang secondary sense.
@@ -495,7 +498,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 | 8 | Vowelless | 5+ physical letters, no A/E/I/O/U | CRYPT | +120 Chips, ×7 Mult | no |
 | 9 | Grand Palindrome | valid palindrome, 7+ physical letters | ROTATOR | +150 Chips, ×8 Mult | no |
 
-- **Shipped-lexicon check (2026-08-12).** Among 172,251 valid entries, Vowelless has 60 candidates under the live Y-as-consonant rule (the hypothetical Y-as-vowel branch has 17), Type Economy has 10,164, and Grand Palindrome has 7. A seeded 100,000-hand upper-bound scan of the baseline 10-tile opening found at least one spellable candidate in roughly 1.56%, 7.56%, and 0.017% of hands respectively; these are perfect-dictionary-solver rates, not expected human completion rates.
+- **Shipped-lexicon check (2026-08-22).** Among 172,255 valid entries, Vowelless has 60 candidates under the live Y-as-consonant rule (the hypothetical Y-as-vowel branch has 17), Type Economy has 10,164, and Grand Palindrome has 7. The four curated acronym surfaces qualify for none of these hands, so the sampled candidate counts and seeded 100,000-hand upper-bound rates remain roughly 1.56%, 7.56%, and 0.017% respectively; these are perfect-dictionary-solver rates, not expected human completion rates.
 - **Preview, discovery & settle.** The original six always show by name. An undiscovered knowledge-tier match renders as `???` in both the staged-word status and Run Info name/condition; its score axes remain visible. Completing it writes the id into the active profile's `wj.lifetime`, and the settle stamp reveals the real name on that play. Profile → Reveal All marks all three discovered. The settle sequence otherwise stamps the matched name normally (UI_DESIGN §4).
 - **In-game reference (changed 2026-08-14).** Run Info → Word Hands lists all nine ranks, current levels, live Chips/Mult bonuses, stamp progress, and run-use counts. As with sentence patterns, each condition/description lives in that row's shared portalled tooltip instead of inline copy. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
 - **Out of scope (for now):** dedicated Emoji Tiles keyed to Word Hand levels—see §12.4.
@@ -538,6 +541,15 @@ Discarded tiles return to the bag only when the blind ends. (Earlier design
 returned tiles to the bag immediately; that was dropped in favor of the
 Balatro-aligned semantics so a discarded letter can't be redrawn within the same
 blind.)
+
+**Discard marking input (shipped 2026-08-22).** Right-click marks an eligible
+unstaged hand tile. On touch, holding that tile for **500ms** calls the same mark
+toggle exactly once; moving **5px or more** first cancels the hold and continues
+the existing drag, while a shorter hold remains the ordinary staging tap. A
+successful hold cannot become a drag before release and consumes its same-tile
+compatibility click/context menu. Staged, disabled, boss-locked, and guided-lesson
+tiles do not gain a long-press mark. Reduced Motion keeps the same 500ms input
+dwell because it is not an animation.
 
 The budget is **per blind, not per phase** — this is the point. Sharing the budget across phases creates inter-phase resource management ("burn discards now or save them for later phases"). A per-phase allowance would reduce it to a resetting convenience with no strategic weight.
 
@@ -583,6 +595,8 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 
 > **Displayed round score = committed ONLY (playtest-04 A; changed 2026-07-31).** The big round number on screen is the **committed** score (layer 1) and **never decreases** — it climbs during each word's settle. Beside it, the UI shows the **current highest valid sentence pattern** and its live sentence-bonus score as `pattern name : score` (for example, `의문문 : 120`). That score is still a projection which may be overwritten as the sentence changes; it is never folded into the round number during play. The engine uses the same projected score for auto-clear, and the bonus resolves visibly in the settle sequence (§7.2) when it is the deciding factor.
 
+> **Presentation speed baseline (group slam changed 2026-08-23).** Ordinary score beats use 600ms, enhanced Emoji beats 1000ms, and the final hold is 650ms. Before beat zero, every submitted tile moves as one rigid row through a single anticipation/drop/contact/recoil desk slam; its length-independent duration is 650ms/400ms/280ms at 1×/2×/4×. The shared contact tick applies every material-family burst simultaneously and fires at most one settings-scaled screen shake and one `submitThock`; later score-event ordering, audio, and shake remain unchanged. Lead Plate chance beats keep a 600ms real-time minimum, tile creation keeps 480ms, reduced motion stays fixed at 700ms with only a static contact highlight, and pack opening stays fixed at 2265ms. `settleDurationMs()` remains the single source for the settle-complete signal. Speed and screen-shake edits never replay an in-flight submission: speed is snapshotted for that submission, Reduced Motion ON cancels outstanding work and switches it to the fixed 700ms branch, and OFF applies from the next submission. (This user-approved group treatment supersedes the 2026-08-22 per-tile stagger.)
+
 > **Why "overwrite"? — resolving the double-counting problem.** Committing the sentence bonus every phase creates double-counting/cancellation problems. Instead, separate the committed score and the projected score, and re-judge the entire sequence wholesale each time. Re-judgment cost is negligible (short sequences). Fully compatible with variable phases: whatever the phase count, only the end-of-blind sequence matters.
 
 ### 7.2 Auto-Settle & Phase Economy (playtest-03 B — replaces the early-end button)
@@ -595,7 +609,7 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
   Fee Settlement line item (§9.1). Purple Pouch replaces this with $2 per phase
   and adds $1 per remaining discard (§12.2).
 - **Redefinitions.** *Early end* := a blind cleared with ≥1 phase remaining (now automatic, not chosen). A 1-phase clear of a 5-phase blind still pays more remaining-phase gold than a last-phase clear; the confirmed Rare/Legendary roster no longer adds the retired Rush Specialist or Loan Shark bonuses.
-- **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 18-boss roster (§8.3–§8.4, 2026-08-05) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
+- **Boss exceptions.** The auto-settle machinery keeps two dormant hooks for boss variations that don't yet exist in the roster: `earlyEndDisabled` (would force a single settlement check after all phases are used — the old "Perfectionist") and `previewHidden` (would hide the projection so the auto-clear arrives unpredictably — the old "Blindfold"). The current 21-boss roster (§8.3–§8.4, 2026-08-20) sets neither; the flags remain in the engine so such a boss can be added without re-plumbing. Ancient Paper (`ancientPaper`) is a *different* info attack — it hides only vowel-tile identities, not the projection.
 
 ### 7.3 Sentence Pattern = add Chips, then multiply Mult
 
@@ -661,6 +675,11 @@ All v0.1 uses of "ante" in the scoring chapter meant "blind" and are corrected t
 ### 8.2 Scaling & Run Length
 
 Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**. **A run's victory point is Chapter 8, followed by optional Endless Mode.** Clearing the Chapter-8 Deadline opens the Published screen. **New Run** ends the run; **Endless Mode →** preserves the already-earned win and continues through the normal Fee Settlement → shop flow into Chapter 9.
+
+For an active Challenge, that same Chapter-8 Deadline clear is its sole
+completion boundary. Endless play, a later loss, abandoning, and skipped blinds
+cannot grant or revoke completion. The Published screen adds a compact Challenge
+Complete line when the profile is eligible to record it (§12.1).
 
 **Endless curve (implemented 2026-07-31).** For Chapter `a ≥ 9`, let `c = a − 8`. The base target is `105000 × (1.6 + (0.75c)^(1+0.2c))^c`, truncated downward to two significant digits before blind, Pouch, Record, and boss multipliers apply. This double-exponential curve deliberately outruns slot-limited scaling. Chapter 38 is the explicit finite-number endpoint: clearing its Deadline ends the endless run; Chapter 39 is never created. UI score text switches to compact scientific notation at one billion. Profile statistics track the best finalized blind score across every mode; Lifetime statistics separately track the highest Endless Chapter and best finalized Endless blind score.
 
@@ -948,7 +967,7 @@ Tile acquisition is pack-select by default. **EN-KO Dictionary** also allows ind
 | 잉크 팩 / **Ink Pack** | Gambler card choices (§10.3), plus ten seeded pouch tiles as the active candidate field for compatible dealt or held Fable/Gambler effects | Spectral |
 | 타일 팩 / **Tile Pack** | Letter tiles; enhanced (material/font) variants may appear pre-attached | Standard |
 
-**Sizes:** Tile/Fable/Constellation Packs show **3/5/5** choices at Basic/Classic/Premium; Charm/Ink Packs show **2/4/4**. The player may take up to **1/1/2**, respectively. Prices are **$4/$6/$8** by size (`balance.ts` `pack.size`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and a shared open sequence: the illustrated pack top tears away along a jagged seam, pixel card backs and hard-edged ink debris pour out, then the real choices settle into their fan (changed 2026-08-02).
+**Sizes:** Tile/Fable/Constellation Packs show **3/5/5** choices at Basic/Classic/Premium; Charm/Ink Packs show **2/4/4**. The player may take up to **1/1/2**, respectively. Prices are **$4/$6/$8** by size (`balance.ts` `pack.size`). **All five families have supplied art** (`src/ui/packArt.ts`): **Tile** 8 (Basic ×4, Classic ×2, Premium ×2), **Charm** 4 (Basic ×2, Classic, Premium), **Fable** 8 (Basic ×4, Classic ×2, Premium ×2), **Constellation** 8 (Basic ×4, Classic ×2, Premium ×2), and **Ink** 4 (Basic ×2, Classic, Premium). All 32 illustrations keep 32-color, path-only SVG masters normalized to a shared `244×400` canvas and `122×200` logical grid, while runtime surfaces load pixel-identical `244×400` PNG derivatives; original source PNGs remain in `docs/Arts/CardPacks`. `scripts/check-card-assets.mjs` verifies both forms. Each pack has an idle animation and one game-speed-independent **2265ms** locked open sequence: the illustrated pack rattles, compresses toward its lower anchor, and rebounds into the burst over the first 420ms; its top then tears away, exactly one fake back per real choice (2–5) pours out, and the existing real choice shells start landing directly on their final fan paths at 1100ms and finish by 1820ms. Even the shortest two-choice fake spill remains visible until 1180ms, overlapping the incoming real shells so there is no blank flash or second landing; all ten candidates still begin at 1500ms and finish by the 2265ms ready point. Reduced motion reveals and enables the fan immediately (changed 2026-08-22).
 
 **Appearance weights (changed 2026-08-04).** Type weights (`pack.typeWeights`) are **Fable 4 · Constellation 4 · Tile 4 · Charm 1.2 · Ink 0.6**. Size weights (`pack.sizeWeights`) are **Basic 8 · Classic 4 · Premium 1**. A type/size pair's weight is their product; the two shop pack slots draw without replacement, so duplicate pairs cannot appear together.
 
@@ -999,7 +1018,7 @@ Three families mapping Balatro's trio, themed for a word game. **Held slots: 2**
 blinds** — essential: Correction Tape and Shift only matter mid-blind. Acquired
 from shop item slots and packs.
 
-**Fable/Ink Pack pouch-candidate resolution (changed 2026-08-20).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field is selectable immediately when either a Fable Pack or Ink Pack opens. While either pack is open, a compatible tile-targeting Fable or held Gambler on the consumable shelf may also use that active field. Direct-target Gamblers require exactly one eligible selected candidate; Bridge, Butterflies, and Full Moon use the whole field and ignore selection; the remaining field-independent Gamblers ignore the candidates and retain their ordinary preconditions. This is the only shop-phase exception to normal blind-hand targeting. A held use revalidates the live candidate row immediately before commit, consumes only the held card, synchronizes changed or removed candidates, clears selection, and leaves the pack options, pick count, and open state untouched; created or copied tiles enter the pouch but not the fixed candidate row. Preview and delayed commit replay the same seeded action key, block conflicting shelf mutations until resolution, and advance RNG exactly once only after success; cancellation consumes neither the card nor RNG. A pack close request immediately blocks new held uses, cancels a pending one, and still completes the pack transition after its close animation. Enabled and disabled Use states occupy the same fixed position. Direct letter/material/font/edition changes preview before commit, while other outcomes use the shared result vignette. Only after the animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
+**Fable/Ink Pack pouch-candidate resolution (changed 2026-08-21).** A revealed Fable initially has no action button. Selecting its card reveals **Use**; tile-targeting Fables keep Use disabled until at least one and no more than the effect's listed maximum candidate-tile count is selected from the ten seeded pouch tiles, while non-tile effects ignore candidate selection and never animate candidate targets. The candidate field appears during opening but becomes selectable only when the shared 2265ms pack-ready gate opens. Compatible held tile-targeting Fable and held Gambler Use actions on the persistent sibling shelf share that lock during opening, option/held-use resolution, and closing; once ready, they may use the active field. Direct-target Gamblers require exactly one eligible selected candidate; Bridge, Butterflies, and Full Moon use the whole field and ignore selection; the remaining field-independent Gamblers ignore the candidates and retain their ordinary preconditions. This is the only shop-phase exception to normal blind-hand targeting. A held use revalidates the live candidate row immediately before commit, consumes only the held card, synchronizes changed or removed candidates, clears selection, and leaves the pack options, pick count, and open state untouched; created or copied tiles enter the pouch but not the fixed candidate row. Preview and delayed commit replay the same seeded action key, block conflicting shelf mutations until resolution, and advance RNG exactly once only after success; cancellation consumes neither the card nor RNG. A pack close request immediately blocks new held uses, cancels a pending one, and still completes the pack transition after its close animation. Enabled and disabled Use states occupy the same fixed position. Direct letter/material/font/edition changes preview before commit, while other outcomes use the shared result vignette. Only after the animation ends does a pack-dealt Fable hold for 0.5 seconds and close (or reflow for another Mega-pack pick). A blind-only Fable is the exception: selecting it reveals **Select** instead of Use, and Select moves it into a held consumable slot for later blind use (disabled when no slot is free). No additional instant/blind-only classification is added to the card tooltip.
 
 **Constellation Pack resolution (changed 2026-07-29).** A revealed Constellation follows the same select-then-confirm interaction, but its action is always named **Use**, never Select. Use immediately levels the mapped sentence pattern, plays the full Constellation level-up sequence, ignores held-consumable capacity, and does not place the card in a held slot.
 
@@ -1148,10 +1167,9 @@ tile-targeting Fable. A field-free Gambler shows **Use now** only when its other
 preconditions pass. Gambler use counts toward no voucher unlock: Comic Book
 counts Fables and Yearbook counts Constellations (§9.4).
 
-The larger, non-canonical Emoji Tile candidate pool and the design questions left
-open by Bridge, Full Moon, and pack targeting live in
-`docs/EMOJI_TILE_IDEA_BANK.md`. No candidate in that document becomes canonical
-until it is moved into §11.
+The historical, non-canonical 97-tile candidate review lives in
+`docs/superpowers/specs/2026-07-29-emoji-tile-roster-design.md`. It remains
+postponed and no candidate there is canonical unless it is moved into §11.
 
 ---
 
@@ -1323,7 +1341,7 @@ the complete 150-entry public roster.
 | R57 | Alphabet Poet · 알파벳 시인 | If at least three sentence-word initials are strictly ascending, multiply sentence-bonus Mult by ×3.5 | 3 | — |
 | R58 | Iota Stroke · 이오타 획 | If this and the previous valid word have equal length and differ in exactly one position, ×4 Mult | 1 | — |
 | R59 | Zombie · 좀비 | After a play, return every played physical letter tile to the current blind's undrawn pouch | 1 | rule change |
-| R60 | Biochemistry · 생화학 | Starts at ×1; when a currently most-played Word Hand is repeated consecutively, permanently gain +0.5 ×Mult | 1 | ×Mult |
+| R60 | Biochemistry · 생화학 | Starts at ×1; when a currently most-played Word Hand is repeated consecutively, permanently gain +0.45 ×Mult | 1 | ×Mult |
 | R61 | Ambidextrous · 양손잡이 | If the played hand contains Twin, ×2 Mult | 1 | ×Mult |
 | R62 | Third Party · 제3자 | If the played hand contains Triplet, ×3 Mult | 1 | ×Mult |
 | R63 | Mirror Image · 거울상 | If the played hand contains Palindrome, ×3 Mult | 1 | ×Mult |
@@ -1362,7 +1380,10 @@ only events observed after acquisition. Buying Noise Cancelling, Voracious
 Reader, Hand Scholar, Word Hunter, or Royalty Contract later therefore includes
 all earlier qualifying skips, words, and Word Hands immediately. Hand Scholar's
 current multiplicative factor is `1 + distinct Word Hands × 0.5`, capped
-explicitly at ×4 even though the registry now contains nine entries.
+explicitly at ×4 even though the registry now contains nine entries. Word Hunter
+(R31) starts at ×2 and permanently gains +0.09 to its factor per unique valid
+word first played this run; its reconstructed history never overwrites a larger
+factor already stored by an existing run.
 
 | Scaling axis | Emoji Tiles |
 |---|---|
@@ -1475,6 +1496,13 @@ numbers in reducers or components.
   played and reproduced, but its win cannot satisfy a Pouch win condition or
   advance the Record ladder. Ordinary unseeded wins may satisfy every matching
   condition at once.
+- **Challenge rule.** Challenges and custom seeds are mutually exclusive.
+  Starting one Challenge uses a fresh ordinary `randomSeed()`, replaces the one
+  existing `wj.run` slot like New Run, and stores its known `challengeId` beside
+  the seed so Continue reproduces it. An ordinary run stores `null`/no active id;
+  an unknown non-null saved id is rejected rather than silently loaded as a
+  normal run. Challenge presets bypass Pouch/Record profile locks only inside
+  the Challenge start path and never unlock those choices in ordinary New Run.
 - **Seeded starting randomness.** Lucky Pouch's starting card and Coin Purse's
   letters consume the run's single seeded RNG stream. The same Pouch, Record,
   and seed must reproduce the same start. No Starting Pouch effect may call
@@ -1487,6 +1515,32 @@ Useful composition checks:
 - Five-Color Lucky Pouch + Blue LP: `10 + 1 − 1 = 10` hand size.
 - Five-Color Lucky Pouch + CD: `5 − 1 − 1 = 3` Emoji Tile slots.
 - Leather Pouch + CD: `5 + 1 − 1 = 5` Emoji Tile slots.
+
+**Challenges v1 (implemented 2026-08-22).** Challenges are six headless fixed
+Pouch + cumulative Record presets. They introduce no new effect, balance number,
+currency, reward, or art; construction uses the same Pouch-then-Record order and
+`BALANCE` values above.
+
+| # | Challenge (ko / en) | Pouch | Record |
+|---:|---|---|---|
+| 1 | **빨간 펜 / Red Pen** | Yellow Pouch | Red LP |
+| 2 | **치솟는 할당량 / Rising Quota** | Green Pouch | Green LP |
+| 3 | **좁은 책상 / Narrow Desk** | Five-Color Lucky Pouch | Yellow LP |
+| 4 | **세 번의 교정 / Three Passes** | Leather Pouch | Clear LP |
+| 5 | **균형의 부담 / Balanced Burden** | Briefcase | CD |
+| 6 | **무작위 최종고 / Random Final** | Coin Purse | DVD |
+
+Challenge 1 is available by default; completing N unlocks N+1, and completed
+entries remain replayable. Only a Chapter-8 Deadline victory records completion.
+Challenges 1–5 grant only the next unlock; Challenge 6 displays `6/6 Mastered`;
+there is no separate reward. Challenge runs still count genuine word plays and
+Collection discoveries, Palette/audio/mascot and secret Word-Hand discovery,
+Emoji/Voucher achievements, and ordinary lifetime run/win/streak/pattern/owned-
+Emoji statistics. They do **not** award Starting-Pouch wins, advance any
+Pouch-specific Record ladder, stamp Emoji Tiles, or enter balance telemetry.
+Therefore standard win rewards require `!customSeed && challengeId == null`.
+Completion ids live, known-only and deduplicated, in the active profile's existing
+`wj.lifetime`; no save key or run-save version is added.
 
 ### 12.2 Starting Pouches — 14
 
@@ -1628,7 +1682,7 @@ Collection -> Emoji Tiles renders that Record's existing art as a small
 upper-right sticker and explains the exact Record in the shared tooltip. The
 The Statistics total is therefore `150 Emoji Tiles × 8 Records = 1,200`.
 Stickers are profile-scoped mastery marks with no gameplay effect, never enter
-`RunState`, and custom-seed or post-victory Endless play cannot award them.
+`RunState`, and custom-seed, Challenge, or post-victory Endless play cannot award them.
 Profile Reveal All exposes the current production roster but never fabricates
 Record stickers. Already-earned stickers remain intact while Challenges are
 disabled through its existing rule.
@@ -1645,20 +1699,42 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 - **Value balancing across the board.** Emoji Tiles, patterns, Unison, vouchers,
   prices, target curves, Pouch effects, and Record penalties need simulation and
   playtest tuning without changing §12's confirmed identities.
-- **Blind skip & Editorial Perk balance.** The 30-entry uniform pool
-  ships without timing gates. Measure the §8.2 target skip rate (20–35%) before
-  adding early-Chapter exclusions, a chaining reward, or skip-synergy Emoji Tiles.
-- **Acronyms in the lexicon.** MVP/VIP-class abbreviations need a separate curated
-  list feeding §3.2; uppercase tiles already support them mechanically.
+- **Blind skip & Editorial Perk balance (harness + full proxy sweep shipped
+  2026-08-22).** `src/sim/skip-verification.ts` verifies all 30 ids and timing
+  buckets, engine-owned free-pack/next-blind/next-shop/delayed resolution,
+  consecutive skips, offer no-repeat, the Deadline guard, and Chapter 38 without
+  Chapter 39. The bounded baseline and the 2,000-seed
+  `2026-08-22-skip-verification-full.{json,md}` artifact use a neutral
+  single-decision counterfactual proxy; they are not player behavior or a tuning
+  claim. The pre-correction JSON is retained as an immutable provenance archive;
+  `2026-08-22-skip-verification-full-pre-tune-corrected.{json,md}` replays its
+  original Emoji-factor snapshot with corrected Coupon/free-pack semantics, while
+  the main full artifact records the current tuned snapshot. Human playtests must
+  still measure the
+  §8.2 target skip rate (20–35%) before any timing gate, chaining reward, or
+  skip-synergy Emoji Tile is considered.
 - **Register/POS dataset refresh.** The complete baked table and reproducible
   register audit exist (§3.2, §4.2); refresh the licensed offline snapshots when
   source dictionaries or the authoritative classification criteria change.
 - **Emoji Tiles keyed to Word Hands (§5.5).** The dedicated family now covers
   Twin, Triplet, Palindrome, Vowel Flush, and Straight; future hands may expand it.
-- **Emoji Tile balance verification.** Run 8-Chapter and endless simulations over
-  the active 150-tile public roster; the separate 97-tile redesign remains postponed.
-- **Touch long-press marking (playtest-03 F).** Right-click discard marking still
-  needs a touch equivalent.
+- **Emoji Tile balance verification (full sweep shipped 2026-08-22).**
+  `src/sim/board-verification.ts` now verifies the exact 150-tile public roster,
+  deterministic paired control/focal traversal, market exposure, Chapter 38
+  completion without Chapter 39, and the 14×8 Pouch/Record matrix. The committed
+  baseline and `2026-08-22-board-verification-full.{json,md}` artifacts record the
+  bounded and exact full budgets. Outlier flags require two independent semantic
+  axes and never auto-retune values. The separate 256-pair
+  `2026-08-22-emoji-flag-rerun.json` screens twelve approved candidates with
+  mean 95% intervals and four-block sign stability; Formal Invitation and Tip Jar
+  are explicitly direct-authored-gold screens, not semantic outliers. The
+  source-hashed `2026-08-22-emoji-flag-rerun-1024.json` adds a 1,024-pair
+  confirmation for Word Hunter, Classicist, Blood Type A, and Biochemistry.
+  That screen approved a bounded first tuning pass: Word Hunter's unique-word
+  gain is +0.09 and Biochemistry's consecutive-hand gain is +0.45; the paired
+  post-tune artifact records their effect reduction without changing saved
+  factors in existing runs. Further tuning decisions and the separate 97-tile
+  redesign remain open.
 - **Lexicon audit sampling.** Full ENABLE POS coverage shipped 2026-08-03. Future
   work is quality sampling/correction of obscure fallback entries; authoritative
   corrections remain baked data and the loader format stays stable.
@@ -1688,7 +1764,11 @@ The game begins **desaturated and silent**; playing specific words permanently u
 **Audio gating (C-6).** MUSIC/SOUND gate the shipped real mixer's buses — **default off** (the game starts silent) until the word is played or the override is on. Color groups are independent.
 
 All enabled native buttons and ARIA button controls play the shared button-press
-SFX through one delegated UI listener. Shell navigation, Collection/Options
+SFX through one delegated UI listener. A primary pointer press fires it once on
+`pointerdown`, synchronized with the mascot cursor's active frame; Enter or Space
+fires it once on `keydown`, with repeat and the following native synthetic click
+ignored. Disabled/`aria-disabled` controls, right-clicks, and desk objects with
+their own semantic sounds stay silent on this shared path. Shell navigation, Collection/Options
 sub-screens, and in-run phase panels play the transition whoosh on destination
 change. Both paths still pass through the SOUND-gated SFX bus.
 
@@ -1697,8 +1777,11 @@ change. Both paths still pass through the SOUND-gated SFX bus.
 override. The first press changes no unlock or discovery state and only persists
 that the selected profile saw the warning. A later press fills that profile's
 word Collection, Palette/audio/mascot registry, Starting Pouch wins, Record wins,
-upgraded-voucher registry, and marks Challenges
-disabled for that profile.
+upgraded-voucher registry, and marks Challenges disabled for that profile. It
+never fills or alters `completedChallenges`: the Challenge list and prior genuine
+completions remain visible, but every Start action is disabled. A Challenge run
+saved before Reveal All may still Continue, while its eventual win records no
+Challenge completion.
 The word Collection uses the per-profile applied marker to present every
 dictionary entry as discovered, including its spelling, original register,
 search, and filter visibility; it does not fabricate play-count or score records.

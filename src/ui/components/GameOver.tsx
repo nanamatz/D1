@@ -8,6 +8,8 @@ import { WooDakMascot } from './WooDakMascot';
 import { UNLOCKS } from '../unlocks';
 import { formatScore } from '../formatScore';
 import { PatternIcon, UiIcon } from './UiIcon';
+import { isChallengeUnlocked } from '../../engine/challenges';
+import { loadChallengeProgress } from '../lifetime';
 
 /** The most-frequent finalized sentence pattern this run, with its count. */
 function topPattern(counts: Partial<Record<PatternId, number>>): { id: PatternId; n: number } | null {
@@ -37,6 +39,10 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
   const top = topPattern(stats.patternCounts);
   const bestWord = stats.bestWord;
   const won = gameover.won;
+  const challengeId = g.state.run.challengeId ?? null;
+  const lifetime = loadChallengeProgress();
+  const challengeComplete = !!challengeId && won && !lifetime.challengesDisabled &&
+    isChallengeUnlocked(challengeId, new Set(lifetime.completedChallenges));
   const endless = gameover.endlessRun;
   const titleKey = gameover.endlessComplete
     ? 'gameover.endlessCompleteTitle'
@@ -66,6 +72,11 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
       <WooDakMascot stats={stats} won={won || gameover.endlessComplete} unlocked={unlocks.length} />
       <div className={['overlay-card', 'gameover', won || gameover.endlessComplete ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
       <div className="go-title">{t(titleKey)}</div>
+      {challengeComplete && (
+        <div className="challenge-complete-banner">
+          {t('challenge.completeBanner', { name: t(`challenge.${challengeId}.name`) })}
+        </div>
+      )}
 
       <div className="panel go-defeat">
         <span className="label">{t(won || gameover.endlessComplete ? 'gameover.wonBy' : 'gameover.defeatedBy')}</span>

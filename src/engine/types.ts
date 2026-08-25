@@ -370,6 +370,15 @@ export type RecordId =
   | 'cd'
   | 'dvd';
 
+/** Fixed Pouch + Record challenge preset. */
+export type ChallengeId =
+  | 'redPen'
+  | 'risingQuota'
+  | 'narrowDesk'
+  | 'threePasses'
+  | 'balancedBurden'
+  | 'randomFinal';
+
 export interface BlindState {
   kind: BlindKind;
   bossId: string | null; // from data/bosses, only when kind === 'boss'
@@ -405,6 +414,8 @@ export interface BlindState {
 export interface RunState {
   pouchId: PouchId;
   recordId: RecordId;
+  /** Active fixed challenge preset; null/absent legacy values are ordinary runs. */
+  challengeId?: ChallengeId | null;
   /** Explicit seed entered on New Run; these runs grant no pouch/record unlocks. */
   customSeed: boolean;
   seed: string; // seeded RNG — reproducible runs (roguelite requirement)

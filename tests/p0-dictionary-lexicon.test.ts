@@ -18,8 +18,14 @@ describe('P0-1 — real validity dictionary', () => {
     }
   });
 
-  it('contains the 18-letter ENABLE pool plus tile-grammar exceptions', () => {
-    expect(lex.size).toBe(172251);
+  it('contains the 18-letter ENABLE pool plus documented exceptions', () => {
+    expect(lex.size).toBe(172255);
+    expect(lex.registerTotals).toEqual({
+      standard: 168467,
+      formal: 2669,
+      slang: 879,
+      vulgar: 240,
+    });
     expect(Object.values(lex.registerTotals).reduce((sum, count) => sum + count, 0))
       .toBe(lex.size);
     expect([...lex.words()].every((word) => word.length <= BALANCE.wordLength.maxLetters)).toBe(true);

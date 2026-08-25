@@ -17,6 +17,7 @@
 import { readValue, remove, writeRaw } from './storage';
 import { isKnownConsumableId } from '../engine/consumables';
 import { JOKER_REGISTRY } from '../engine/jokers';
+import { challengeDef, isChallengeId } from '../engine/challenges';
 import type { GameState } from './useGame';
 import { normalizeRunObservationId } from './runObservation';
 
@@ -31,6 +32,13 @@ const VERSION = 12;
 interface Envelope {
   version: number;
   state: GameState;
+}
+
+function hasValidChallengePreset(run: GameState['run'] | null | undefined): boolean {
+  if (run?.challengeId == null) return true;
+  if (!isChallengeId(run.challengeId) || run.customSeed) return false;
+  const preset = challengeDef(run.challengeId);
+  return run.pouchId === preset.pouchId && run.recordId === preset.recordId;
 }
 
 /**
@@ -89,6 +97,9 @@ export function loadRun(): GameState | null {
   ) {
     return null;
   }
+  if (!hasValidChallengePreset(s.run) || !hasValidChallengePreset(s.pendingRun)) {
+    return null;
+  }
   // `sentenceBonus` is presentation-only. Older v4 snapshots could accidentally
   // retain it mid-landing; clearing it also prevents loading the pre-breakdown shape.
   // Drop anything the current build cannot resolve. Retiring a card or an Emoji
@@ -104,11 +115,15 @@ export function loadRun(): GameState | null {
     blindEntryEffects: null,
     run: {
       ...s.run,
+      challengeId: s.run.challengeId ?? null,
       jokers: s.run.jokers.filter(
         (joker) => JOKER_REGISTRY.has(joker.defId) && joker.state.destroyed !== 1,
       ),
       consumables: (s.run.consumables ?? []).filter(isKnownConsumableId),
     },
+    pendingRun: s.pendingRun
+      ? { ...s.pendingRun, challengeId: s.pendingRun.challengeId ?? null }
+      : null,
     sentenceBonus: null,
   };
 }

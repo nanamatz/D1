@@ -18,6 +18,7 @@ const PRIMARY = args.primary ?? 'lexicon-pipeline/wiktionary-primary-registers.j
 const OVERRIDES = args.overrides ?? 'lexicon-pipeline/register-overrides.json';
 const OUT = args.out ?? LEXICON;
 const AUDIT = args.audit ?? 'data/register-audit.json';
+const CURATED = args.curated ?? 'lexicon-pipeline/curated-abbreviations.json';
 const MAX_WORD_LENGTH = 18;
 const SUITS = ['standard', 'formal', 'slang', 'vulgar'];
 const STRENGTH = Object.fromEntries(SUITS.map((suit, index) => [suit, index]));
@@ -28,6 +29,35 @@ const lexicon = Object.fromEntries(
 );
 const primary = JSON.parse(fs.readFileSync(PRIMARY, 'utf8'));
 const overrides = JSON.parse(fs.readFileSync(OVERRIDES, 'utf8'));
+const curated = JSON.parse(fs.readFileSync(CURATED, 'utf8'));
+const curatedByWord = new Map(curated.map((entry) => [entry.word, entry]));
+for (const entry of curated) {
+  lexicon[entry.word] = { suit: entry.suit, pos: entry.pos };
+}
+
+if (args.curatedOnly === 'true') {
+  const sortedLexicon = Object.fromEntries(
+    Object.entries(lexicon).sort(([a], [b]) => a.localeCompare(b)),
+  );
+  const previousAudit = JSON.parse(fs.readFileSync(AUDIT, 'utf8'));
+  const counts = Object.fromEntries(SUITS.map((suit) => [suit, 0]));
+  for (const entry of Object.values(sortedLexicon)) counts[entry.suit] += 1;
+  const assignments = { ...previousAudit.assignments };
+  assignments['default-standard'] = Object.keys(sortedLexicon).length
+    - assignments['primary-sense']
+    - assignments['criteria-example']
+    - assignments.inflection;
+  const report = {
+    ...previousAudit,
+    reviewedWords: Object.keys(sortedLexicon).length,
+    counts,
+    assignments,
+  };
+  fs.writeFileSync(OUT, `${JSON.stringify(sortedLexicon)}\n`);
+  fs.writeFileSync(AUDIT, `${JSON.stringify(report)}\n`);
+  console.log(`merged ${curated.length} curated abbreviations into ${OUT} and ${AUDIT}`);
+  process.exit(0);
+}
 const decisions = new Map();
 
 for (const [word, entry] of Object.entries(primary.words)) {
@@ -141,7 +171,7 @@ const auditWords = {};
 for (const [word, entry] of Object.entries(lexicon)) {
   const direct = decisions.get(word);
   const inheritance = inherited.get(word);
-  const suit = direct?.suit ?? inheritance?.suit ?? 'standard';
+  const suit = curatedByWord.get(word)?.suit ?? direct?.suit ?? inheritance?.suit ?? 'standard';
   entry.suit = suit;
   counts[suit] += 1;
   assignmentCounts[direct?.assignment ?? (inheritance ? 'inflection' : 'default-standard')] += 1;

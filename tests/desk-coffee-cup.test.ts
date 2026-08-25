@@ -208,7 +208,7 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('className="desk-keycap-effect"');
     expect(component).not.toContain("onPointerDown={encounter.kind === 'keycap'");
     expect(component).toContain('onClick={interactSimpleEncounter}');
-    expect(app).toContain("[aria-disabled=\"true\"], .desk-object");
+    expect(app).toContain("control.closest('.desk-object')");
     expect(css).toContain('.desk-waxBall.desk-interacting .desk-wax-broken');
     expect(css).toContain('.desk-keycap.desk-interacting .desk-keycap-art');
     expect(css).toContain('.desk-keycap.desk-interacting .desk-keycap-effect');

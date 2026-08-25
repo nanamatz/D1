@@ -631,7 +631,7 @@ class Audio {
     // Install the one-shot unlock gesture listener as soon as this module loads
     // in a browser. Guarded for Node/SSR where `window` is undefined.
     if (typeof window !== 'undefined') {
-      const onGesture = () => this.unlock();
+      const onGesture = () => { void this.unlock(); };
       window.addEventListener('pointerdown', onGesture, { once: true });
       window.addEventListener('keydown', onGesture, { once: true });
     }
@@ -642,11 +642,11 @@ class Audio {
     return window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ?? null;
   }
 
-  unlock(): void {
+  unlock(): Promise<void> {
     const AC = this.AC();
-    if (!AC) return; // no Web Audio (Node/tests) — stay a no-op
+    if (!AC) return Promise.resolve(); // no Web Audio (Node/tests) — stay a no-op
     if (!this.ctx) {
-      try { this.ctx = new AC(); } catch { return; }
+      try { this.ctx = new AC(); } catch { return Promise.resolve(); }
     }
     const done = () => {
       this.unlocked = true;
@@ -654,9 +654,10 @@ class Audio {
       // double call, so the sync + async paths are safe).
       if (this.pendingTrack) this.playMusic(this.pendingTrack);
     };
-    void this.ctx.resume().then(done).catch(() => {});
+    const resumed = this.ctx.resume().then(done).catch(() => {});
     // Some browsers resume synchronously; reflect that immediately too.
     if (this.ctx.state === 'running') done();
+    return resumed;
   }
 
   isUnlocked(): boolean { return this.unlocked; }

@@ -25,6 +25,7 @@ const WORDNET = args.wordnet;
 const MOBY = args.moby;
 const OUT = args.out ?? EXISTING;
 const POS_OVERRIDES = args.posOverrides ?? 'lexicon-pipeline/pos-overrides.json';
+const CURATED = args.curated ?? 'lexicon-pipeline/curated-abbreviations.json';
 const MAX_WORD_LENGTH = 18;
 
 if (!WORDNET || !MOBY) {
@@ -45,6 +46,7 @@ const existing = fs.existsSync(EXISTING)
 const posOverrides = fs.existsSync(POS_OVERRIDES)
   ? JSON.parse(fs.readFileSync(POS_OVERRIDES, 'utf8'))
   : {};
+const curated = JSON.parse(fs.readFileSync(CURATED, 'utf8'));
 
 const wordnet = new Map();
 const moby = new Map();
@@ -262,6 +264,12 @@ for (const word of dictionary) {
 for (const [word, pos] of Object.entries(posOverrides)) {
   if (!output[word] || !Array.isArray(pos) || pos.length === 0) continue;
   output[word] = { ...output[word], pos: POS_ORDER.filter((value) => pos.includes(value)) };
+}
+for (const entry of curated) {
+  if (!dictionary.includes(entry.word)) {
+    throw new Error(`curated abbreviation missing from dictionary: ${entry.word}`);
+  }
+  output[entry.word] = { suit: entry.suit, pos: entry.pos };
 }
 
 const sorted = Object.fromEntries(Object.entries(output).sort(([a], [b]) => a.localeCompare(b)));

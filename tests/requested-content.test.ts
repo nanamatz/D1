@@ -75,7 +75,7 @@ describe('requested Emoji Tile mechanics', () => {
     expect(ctx.mult).toBe(BALANCE.jokers.strawberryJam.factor);
   });
 
-  it('Biochemistry grows by ×0.5 for consecutive repeats of a most-played hand', () => {
+  it('Biochemistry grows by ×0.45 only for consecutive repeats of a most-played hand', () => {
     const run = runWith('biochemistry');
     run.letterHandPlayCounts = { twin: 4 };
     const firstBlind = {
@@ -84,8 +84,8 @@ describe('requested Emoji Tile mechanics', () => {
     };
     const first = context(submission('CCD'));
     bus.emit('wordScoring', { run, blind: firstBlind, ctx: first }, run.jokers);
-    expect(first.mult).toBe(1.5);
-    expect(run.jokers[0]!.state.factor).toBe(1.5);
+    expect(first.mult).toBeCloseTo(1.45);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(1.45);
 
     const second = context(submission('EEF'));
     bus.emit('wordScoring', {
@@ -93,8 +93,26 @@ describe('requested Emoji Tile mechanics', () => {
       blind: { ...firstBlind, sequence: [...firstBlind.sequence, first.submission] },
       ctx: second,
     }, run.jokers);
-    expect(second.mult).toBe(2);
-    expect(run.jokers[0]!.state.factor).toBe(2);
+    expect(second.mult).toBeCloseTo(1.9);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(1.9);
+
+    const brokenChain = context(submission('ABC'));
+    bus.emit('wordScoring', {
+      run,
+      blind: { ...firstBlind, sequence: [...firstBlind.sequence, second.submission] },
+      ctx: brokenChain,
+    }, run.jokers);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(1.9);
+
+    run.jokers[0]!.state.factor = 3.2;
+    const saved = context(submission('GGH'));
+    bus.emit('wordScoring', {
+      run,
+      blind: { ...firstBlind, sequence: [submission('DDF')] },
+      ctx: saved,
+    }, run.jokers);
+    expect(run.jokers[0]!.state.factor).toBeCloseTo(3.65);
+    expect(saved.mult).toBeCloseTo(3.65);
   });
 
   it('Bald chooses a seeded letter each blind and multiplies every matching scored tile', () => {

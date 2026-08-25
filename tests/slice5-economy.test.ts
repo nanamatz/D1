@@ -6,6 +6,7 @@ import {
   emojiTileBuyPrice,
   emojiTileSellValue,
   interest,
+  packBuyPrice,
   rerollCost,
   sellValue,
 } from '../src/engine/economy';
@@ -39,6 +40,14 @@ describe('slice5 economy — gold streams (GDD §9.1)', () => {
     expect(clearReward('small')).toBe(3);
     expect(clearReward('big')).toBe(4);
     expect(clearReward('boss')).toBe(5);
+  });
+
+  it('prices Coupon-tagged Pack slots at zero without applying the $1 floor', () => {
+    const run = newRun('pack-price');
+    expect(packBuyPrice(run, { type: 'joker', size: 'normal', artVariant: 0, free: true }))
+      .toBe(0);
+    expect(packBuyPrice(run, { type: 'joker', size: 'normal', artVariant: 0 }))
+      .toBe(BALANCE.pack.size.normal.price);
   });
 
   it('interest is 1 per 5 held, capped at 5 (GDD §9.1)', () => {
