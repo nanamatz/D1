@@ -64,6 +64,12 @@ Use these common properties for every row:
 
 ## Icon brief
 
+Steam upload files are `256x256` RGB JPGs. Steam accepts icons down to `64x64`,
+but the larger size is the recommended authoring target. Lossless PNG sources
+live in `steam/graphical-assets/source/achievements/`; the 32 upload files live
+in `steam/graphical-assets/ready-to-upload/achievements/` and use the API ID
+plus `_achieved` / `_unachieved` suffixes.
+
 Create square pixel-art masters with hard nearest-neighbor edges. Use the
 project's deep navy ground and an off-white/red/yellow/cyan-led 3–5-color
 palette. Prefer one large publishing-themed silhouette with sparse crop marks,
@@ -71,8 +77,11 @@ registration marks, or CRT scanlines. Do not use gradients, soft shadows,
 photo texture, Steam logos, third-party characters, maze layouts, or copied
 arcade sprites.
 
-The unachieved icon must keep the same composition in charcoal/gray and omit
-the success mark. Do not replace it with an unrelated lock.
+Achieved icons are colorful. The unachieved icon must keep the same composition
+in charcoal/gray, omit the success mark, and remain fully grayscale. Do not
+replace it with an unrelated lock. Every name and icon must remain appropriate
+for all ages and audiences under Steam's
+[community content guidelines](https://help.steampowered.com/faqs/view/6862-8119-C23E-EA7B).
 
 | API ID | Achieved icon | Unachieved icon |
 |---|---|---|
@@ -100,5 +109,6 @@ the success mark. Do not replace it with an unrelated lock.
 2. Upload all 16 achieved and 16 unachieved icons and inspect them at Steam's
    smallest preview size.
 3. Preview English and Korean independently; check truncation and punctuation.
-4. Publish the stat and achievement configuration before assigning the beta
-   BuildID.
+4. In Store Page Info, select `Steam Achievements` under `Supported Features`.
+5. Publish the stat, achievement, and Store Page Info changes before assigning
+   the beta BuildID.

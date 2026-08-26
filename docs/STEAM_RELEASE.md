@@ -29,9 +29,12 @@ code signing, and Dynamic Cloud Sync are not implemented and must not be claimed
 Create the eight integer stats and link the 16 public achievements with
 Partner's automatic stat-progress unlocks. GDD §14 and
 `desktop/steam-achievements.js` are the authoritative ids and thresholds. Enter
-the localized copy and art from `docs/STEAM_PARTNER_CONFIG.md`; do not add
-renderer-side activation or expose arbitrary achievement ids through IPC.
-Publish the stat and achievement changes before beta testing.
+the localized copy and the 32 `256x256` JPG upload files from
+`docs/STEAM_PARTNER_CONFIG.md`; do not add renderer-side activation or expose
+arbitrary achievement ids through IPC. In Store Page Info, select
+`Steam Achievements` under `Supported Features`, then publish the stat,
+achievement, and Store Page Info changes before beta testing. This checkbox is
+also required to complete the release checklist.
 
 ## 2. Store page
 
