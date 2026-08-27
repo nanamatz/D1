@@ -18,6 +18,7 @@ import { RECORD_ART } from './recordArt';
 import { preloadImage, preloadImagesWhenIdle, scheduleWhenIdle } from './preload';
 import { applyMascotCursor, mascotCursorUrls } from './mascots';
 import { activeUnlocks, PRESENTATION_CHANGED_EVENT } from './unlocks';
+import type { UnlockNotice } from './unlockRecap';
 import type { Lexicon } from '../engine/lexicon';
 
 const NewRun = lazy(() =>
@@ -41,9 +42,25 @@ const DeskEncounterLab = import.meta.env.DEV
         .then(({ DeskEncounterLab: component }) => ({ default: component })),
     )
   : null;
+const UnlockRecapPreview = import.meta.env.DEV
+  ? lazy(() =>
+      import('./components/UnlockRecap')
+        .then(({ UnlockRecap: component }) => ({ default: component })),
+    )
+  : null;
 
-type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile' | 'deskLab';
+type Screen = 'menu' | 'newrun' | 'run' | 'collection' | 'options' | 'profile' | 'deskLab' | 'unlockRecap';
 const NEW_RUN_ART = [...Object.values(POUCH_ART), ...Object.values(RECORD_ART)];
+const UNLOCK_RECAP_PREVIEW: readonly UnlockNotice[] = [
+  { category: 'palette', id: 'DOG' },
+  { category: 'emoji', id: 'redPencil' },
+  { category: 'voucher', id: 'oldBook' },
+  { category: 'pouch', id: 'green' },
+  { category: 'record', contextId: 'yellow', id: 'redLp' },
+  { category: 'challenge', id: 'risingQuota' },
+  { category: 'palette', id: 'ALIEN' },
+  { category: 'emoji', id: 'handScholar' },
+];
 
 export function App() {
   const lexiconRef = useRef<Lexicon | null>(null);
@@ -259,6 +276,15 @@ export function App() {
         return DeskEncounterLab
           ? <DeskEncounterLab onBack={() => setScreen('menu')} />
           : null;
+      case 'unlockRecap':
+        return UnlockRecapPreview
+          ? (
+              <UnlockRecapPreview
+                g={{ ...g, acknowledgeUnlocks: () => setScreen('menu') }}
+                notices={UNLOCK_RECAP_PREVIEW}
+              />
+            )
+          : null;
       case 'menu':
       default:
         return (
@@ -269,6 +295,7 @@ export function App() {
             onOptions={() => openScreen('options')}
             onProfile={() => openScreen('profile')}
             onDeskLab={() => setScreen('deskLab')}
+            onUnlockRecap={() => setScreen('unlockRecap')}
           />
         );
     }

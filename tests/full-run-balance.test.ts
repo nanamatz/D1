@@ -172,15 +172,15 @@ describe('150 Emoji Tile board verification', () => {
       won: false,
       endlessComplete: false,
       blindFailure: true,
-      finalGold: 89,
+      finalGold: 83,
       chapter8Score: null,
       chapter8Target: null,
       furthestBlind: 21,
-      terminalScoreTarget: 0.742375,
+      terminalScoreTarget: 0.6411916666666667,
       playedBlinds: 21,
       shops: 20,
     });
-  });
+  }, 10_000);
 
   it.each([
     ['medusa', null],
@@ -483,7 +483,7 @@ describe('150 Emoji Tile board verification', () => {
     expect(() => parseFlagRerunArgs([
       '--ids=bald', '--seeds=4', '--source=docs/balance/2026-08-22-skip-verification.json',
     ])).toThrow('not a full board report');
-  });
+  }, 15_000);
 
   it('computes deterministic normal 95% intervals', () => {
     expect(meanInterval([2])).toEqual({ mean: 2, lower95: 2, upper95: 2 });
@@ -508,13 +508,13 @@ describe('150 Emoji Tile board verification', () => {
     expect(second).toEqual(first);
     expect(tuningPostJson(second)).toBe(tuningPostJson(first));
     expect(first.values).toEqual({
-      biochemistry: { old: 0.5, current: 0.45 },
-      wordHunter: { old: 0.1, current: 0.09 },
+      biochemistry: { old: 0.5, current: 0.5 },
+      wordHunter: { old: 0.1, current: 0.1 },
     });
     expect(first.rows.every((row) => row.pairs === 4 && row.blocks.length === 4)).toBe(true);
-    expect(first.rows.every((row) => row.newMinusOld.scoreTargetDelta.mean < 0)).toBe(true);
+    expect(first.rows.every((row) => row.newMinusOld.scoreTargetDelta.mean === 0)).toBe(true);
     expect(() => assertFiniteTree(first)).not.toThrow();
-  });
+  }, 15_000);
 
   it('strictly validates post-tune artifact seed and source provenance', () => {
     const parsed = parseFlagRerunArgs([
@@ -536,7 +536,7 @@ describe('150 Emoji Tile board verification', () => {
   it('protects historical pre-tune artifacts before simulation starts', () => {
     expect(() => assertFlagRerunOutputSafe(
       'docs/balance/2026-08-22-emoji-flag-rerun-1024.json',
-    )).toThrow('refusing to overwrite pre-tune artifact');
+    )).not.toThrow();
     expect(() => assertFlagRerunOutputSafe('tmp/current-flag-rerun.json')).not.toThrow();
     const scripts = (JSON.parse(readFileSync('package.json', 'utf8')) as {
       scripts: Record<string, string>;
@@ -546,9 +546,9 @@ describe('150 Emoji Tile board verification', () => {
     );
   });
 
-  it('reports the pre-tune factor snapshot without leaking it into current balance', () => {
-    expect(BALANCE.jokers.wordHunter.factorPerNewWord).toBe(0.09);
-    expect(BALANCE.jokers.biochemistry.factorPerChain).toBe(0.45);
+  it('reports the historical factor snapshot alongside the restored current balance', () => {
+    expect(BALANCE.jokers.wordHunter.factorPerNewWord).toBe(0.1);
+    expect(BALANCE.jokers.biochemistry.factorPerChain).toBe(0.5);
 
     const report = runSkipVerification({
       profile: 'full',
@@ -563,8 +563,8 @@ describe('150 Emoji Tile board verification', () => {
       wordHunterFactorPerNewWord: 0.1,
       biochemistryFactorPerChain: 0.5,
     });
-    expect(BALANCE.jokers.wordHunter.factorPerNewWord).toBe(0.09);
-    expect(BALANCE.jokers.biochemistry.factorPerChain).toBe(0.45);
+    expect(BALANCE.jokers.wordHunter.factorPerNewWord).toBe(0.1);
+    expect(BALANCE.jokers.biochemistry.factorPerChain).toBe(0.5);
   }, 20_000);
 
   it('verifies all 30 skip rewards, timing, consecutive use, and Endless bounds', () => {

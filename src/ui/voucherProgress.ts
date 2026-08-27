@@ -3,6 +3,7 @@
  * headless engine; only aggregate counters/unlocked upgrade ids are persisted.
  */
 import type { VoucherId } from '../engine/types';
+import { BALANCE } from '../engine/balance';
 import { CORE_BOSS_IDS } from '../engine/bosses';
 import {
   activeProfile,
@@ -35,6 +36,8 @@ export interface VoucherProgress {
   currentRunVoucherUses: number;
   maxRunVoucherUses: number;
   maxEditionedJokersOwned: number;
+  /** False for custom-seeded runs, whose play never advances Voucher achievements. */
+  currentRunEligible: boolean;
 }
 
 const EMPTY: VoucherProgress = {
@@ -58,10 +61,12 @@ const EMPTY: VoucherProgress = {
   currentRunVoucherUses: 0,
   maxRunVoucherUses: 0,
   maxEditionedJokersOwned: 0,
+  currentRunEligible: true,
 };
 
 export type VoucherProgressEvent =
-  | { kind: 'newRun'; handSize: number }
+  | { kind: 'newRun'; handSize: number; customSeed: boolean }
+  | { kind: 'resumeRun'; customSeed: boolean }
   | { kind: 'shopBuy'; item: 'fable' | 'constellation' | 'tile' | 'other'; spent: number }
   | { kind: 'reroll'; spent: number }
   | { kind: 'packBuy'; spent: number }
@@ -84,22 +89,22 @@ export interface VoucherUnlockRule {
 }
 
 export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
-  { id: 'novel', conditionEn: 'Buy 50 Fable cards from the Stationery Shop', conditionKo: '문방구에서 우화 카드 50장 구매', met: (p) => p.fableBought >= 50 },
-  { id: 'theLaw', conditionEn: 'Buy 50 Constellation cards from the Stationery Shop', conditionKo: '문방구에서 별자리 카드 50장 구매', met: (p) => p.constellationBought >= 50 },
-  { id: 'fashionMagazine', conditionEn: 'Reroll the Stationery Shop 100 times', conditionKo: '문방구 새로고침 100회', met: (p) => p.shopRerolls >= 100 },
-  { id: 'wantedPoster', conditionEn: 'Own 5 editioned Emoji Tiles at once', conditionKo: '에디션 이모지 타일 5장 동시 보유', met: (p) => p.maxEditionedJokersOwned >= 5 },
-  { id: 'papyrus', conditionEn: 'Use 10 vouchers in one run', conditionKo: '한 번의 런에서 바우처 10장 사용', met: (p) => p.maxRunVoucherUses >= 10 },
-  { id: 'notebook', conditionEn: 'Play 5,000 tiles', conditionKo: '타일 5,000장 플레이', met: (p) => p.tilesPlayed >= 5000 },
-  { id: 'sheetMusic', conditionEn: 'Discard 5,000 tiles', conditionKo: '카드 5,000장 버리기', met: (p) => p.tilesDiscarded >= 5000 },
-  { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '핸드 크기를 8장으로 감소', met: (p) => p.lowestHandSize !== null && p.lowestHandSize <= 8 },
-  { id: 'encyclopedia', conditionEn: 'Buy 20 tiles from the Stationery Shop', conditionKo: '문방구에서 타일 20장 구매', met: (p) => p.tilesBought >= 20 },
-  { id: 'householdLedger', conditionEn: 'Reach maximum interest for 10 consecutive rounds', conditionKo: '10라운드 연속 최대 이자 획득', met: (p) => p.maxInterestStreak >= 10 },
-  { id: 'portrait', conditionEn: 'Discover all 15 regular boss blinds', conditionKo: '일반 보스 블라인드 15종 발견', met: (p) => CORE_BOSS_IDS.every((id) => p.bossesSeen.includes(id)) },
-  { id: 'couponBook', conditionEn: 'Spend $2,500 in Stationery Shops', conditionKo: '문방구에서 총 $2,500 지출', met: (p) => p.goldSpent >= 2500 },
-  { id: 'oldBook', conditionEn: 'Win a run', conditionKo: '8장 마감 승리', met: (p) => p.wins >= 1 },
-  { id: 'kungfuManual', conditionEn: 'Use Blank Paper 10 times', conditionKo: '백지 10회 사용', met: (p) => p.blankPaperUses >= 10 },
-  { id: 'yearBook', conditionEn: 'Use 100 Constellation cards', conditionKo: '별자리 카드 100장 사용', met: (p) => p.constellationUsed >= 100 },
-  { id: 'comicBook', conditionEn: 'Use 50 Fable cards', conditionKo: '우화 카드 50장 사용', met: (p) => p.fableUsed >= 50 },
+  { id: 'novel', conditionEn: 'Buy 50 Fable cards from the Stationery Shop', conditionKo: '문방구에서 우화 카드 50장 구매', met: (p) => p.fableBought >= BALANCE.voucher.unlockTargets.novel },
+  { id: 'theLaw', conditionEn: 'Buy 50 Constellation cards from the Stationery Shop', conditionKo: '문방구에서 별자리 카드 50장 구매', met: (p) => p.constellationBought >= BALANCE.voucher.unlockTargets.theLaw },
+  { id: 'fashionMagazine', conditionEn: 'Reroll the Stationery Shop 100 times', conditionKo: '문방구 새로고침 100회', met: (p) => p.shopRerolls >= BALANCE.voucher.unlockTargets.fashionMagazine },
+  { id: 'wantedPoster', conditionEn: 'Own 5 editioned Emoji Tiles at once', conditionKo: '에디션 이모지 타일 5장 동시 보유', met: (p) => p.maxEditionedJokersOwned >= BALANCE.voucher.unlockTargets.wantedPoster },
+  { id: 'papyrus', conditionEn: 'Use 10 vouchers in one run', conditionKo: '한 번의 런에서 바우처 10장 사용', met: (p) => p.maxRunVoucherUses >= BALANCE.voucher.unlockTargets.papyrus },
+  { id: 'notebook', conditionEn: 'Play 5,000 tiles', conditionKo: '타일 5,000장 플레이', met: (p) => p.tilesPlayed >= BALANCE.voucher.unlockTargets.notebook },
+  { id: 'sheetMusic', conditionEn: 'Discard 5,000 tiles', conditionKo: '카드 5,000장 버리기', met: (p) => p.tilesDiscarded >= BALANCE.voucher.unlockTargets.sheetMusic },
+  { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '핸드 크기를 8장으로 감소', met: (p) => p.lowestHandSize !== null && p.lowestHandSize <= BALANCE.voucher.unlockTargets.pictureDiary },
+  { id: 'encyclopedia', conditionEn: 'Buy 20 tiles from the Stationery Shop', conditionKo: '문방구에서 타일 20장 구매', met: (p) => p.tilesBought >= BALANCE.voucher.unlockTargets.encyclopedia },
+  { id: 'householdLedger', conditionEn: 'Reach maximum interest for 10 consecutive rounds', conditionKo: '10라운드 연속 최대 이자 획득', met: (p) => p.maxInterestStreak >= BALANCE.voucher.unlockTargets.householdLedger },
+  { id: 'portrait', conditionEn: 'Discover all 15 regular boss blinds', conditionKo: '일반 보스 블라인드 15종 발견', met: (p) => CORE_BOSS_IDS.filter((id) => p.bossesSeen.includes(id)).length >= BALANCE.voucher.unlockTargets.portrait },
+  { id: 'couponBook', conditionEn: 'Spend $2,500 in Stationery Shops', conditionKo: '문방구에서 총 $2,500 지출', met: (p) => p.goldSpent >= BALANCE.voucher.unlockTargets.couponBook },
+  { id: 'oldBook', conditionEn: 'Win a run', conditionKo: '8장 마감 승리', met: (p) => p.wins >= BALANCE.voucher.unlockTargets.oldBook },
+  { id: 'kungfuManual', conditionEn: 'Use Blank Paper 10 times', conditionKo: '백지 10회 사용', met: (p) => p.blankPaperUses >= BALANCE.voucher.unlockTargets.kungfuManual },
+  { id: 'yearBook', conditionEn: 'Use 100 Constellation cards', conditionKo: '별자리 카드 100장 사용', met: (p) => p.constellationUsed >= BALANCE.voucher.unlockTargets.yearBook },
+  { id: 'comicBook', conditionEn: 'Use 50 Fable cards', conditionKo: '우화 카드 50장 사용', met: (p) => p.fableUsed >= BALANCE.voucher.unlockTargets.comicBook },
 ];
 
 export function loadVoucherProgress(slot: ProfileSlot = activeProfile()): VoucherProgress {
@@ -125,11 +130,20 @@ export function unlockedVoucherSet(): Set<VoucherId> {
 
 export function recordVoucherProgress(event: VoucherProgressEvent): VoucherProgress {
   const p = loadVoucherProgress();
+  if (event.kind !== 'newRun' && event.kind !== 'resumeRun' && !p.currentRunEligible) return p;
   const next: VoucherProgress = { ...p, bossesSeen: [...p.bossesSeen], unlocked: [...p.unlocked] };
+  if (event.kind === 'resumeRun') {
+    next.currentRunEligible = !event.customSeed;
+    store(next);
+    return next;
+  }
   switch (event.kind) {
     case 'newRun':
       next.currentRunVoucherUses = 0;
-      next.lowestHandSize = Math.min(next.lowestHandSize ?? event.handSize, event.handSize);
+      next.currentRunEligible = !event.customSeed;
+      if (next.currentRunEligible) {
+        next.lowestHandSize = Math.min(next.lowestHandSize ?? event.handSize, event.handSize);
+      }
       break;
     case 'shopBuy':
       next.goldSpent += event.spent;
@@ -182,6 +196,10 @@ export function recordVoucherProgress(event: VoucherProgressEvent): VoucherProgr
     case 'editionedJokers':
       next.maxEditionedJokersOwned = Math.max(next.maxEditionedJokersOwned, event.count);
       break;
+  }
+  if (!next.currentRunEligible) {
+    store(next);
+    return next;
   }
   for (const rule of VOUCHER_UNLOCK_RULES) {
     if (rule.met(next) && !next.unlocked.includes(rule.id)) next.unlocked.push(rule.id);

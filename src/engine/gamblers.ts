@@ -13,12 +13,13 @@ import { BALANCE } from './balance';
 import { GAMBLER_IDS, isGamblerId, type GamblerId } from './gamblerIds';
 import { patchTiles, removeIds } from './fables';
 import {
-  createOwnedJoker,
+  addOwnedJoker,
   LEGENDARY_JOKERS,
   RARE_JOKERS,
   onTilesCreated,
   onTilesDestroyed,
   onTilesEnhanced,
+  nextOwnedJokerInstanceId,
 } from './jokers';
 import type { Rng } from './rng';
 import type {
@@ -267,7 +268,10 @@ export function useGambler(
         { length: BALANCE.gambler.curtainCopies },
         (_, i): Tile => ({ ...source, id: newTileId(rng, i) }),
       );
-      nextRun = { ...nextRun, bag: [...nextRun.bag, ...copies] };
+      nextRun = onTilesCreated(
+        { ...nextRun, bag: [...nextRun.bag, ...copies] },
+        copies.length,
+      );
       break;
     }
     case 'copyJoker': {
@@ -276,11 +280,16 @@ export function useGambler(
       const edition = kept.edition ?? 'base';
       const copy = {
         ...kept,
+        instanceId: nextOwnedJokerInstanceId(nextRun),
         // Gray/Violet/Rainbow copy; a White original yields a Base copy.
         edition: edition === 'white' ? ('base' as const) : edition,
         state: { ...kept.state },
       };
-      nextRun = { ...nextRun, jokers: [kept, copy] };
+      nextRun = {
+        ...nextRun,
+        jokers: [kept, copy],
+        nextJokerInstanceId: copy.instanceId + 1,
+      };
       break;
     }
     case 'jokerEdition': {
@@ -364,8 +373,7 @@ export function useGambler(
       );
       const def = pool[rng.int(pool.length)]!;
       nextRun = {
-        ...nextRun,
-        jokers: [...nextRun.jokers, createOwnedJoker(nextRun, def.id)],
+        ...addOwnedJoker(nextRun, def.id),
         ...(effect.zeroGold ? { gold: 0 } : {}),
       };
       break;

@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const typeFoundry: JokerDef = {
+  scoresGibberish: true,
   id: 'typeFoundry',
   gddNumber: 3,
   nameKo: '활자 주조소',

@@ -6,10 +6,8 @@ export const stoneTongue: JokerDef = {
   emoji: '🪨', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   hooks: {
     wordPrepare: ({ spellingTiles }) => {
-      for (let ignored = 0; ignored < BALANCE.jokers.stoneTongue.ignoredPerWord; ignored += 1) {
-        const index = spellingTiles.findIndex((tile) => tile.material === 'stone');
-        if (index < 0) break;
-        spellingTiles.splice(index, 1);
+      for (let index = spellingTiles.length - 1; index >= 0; index -= 1) {
+        if (spellingTiles[index]!.material === 'stone') spellingTiles.splice(index, 1);
       }
     },
   },

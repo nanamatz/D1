@@ -228,7 +228,7 @@ describe('slice5 shop — sell & reroll', () => {
       { kind: 'consumable', id: 'fable1', price: 3 },
       { kind: 'punctuation', id: 'libra', pattern: 'simple', price: 3 },
       { kind: 'tile', tile: run().bag[0]!, price: 1 },
-      { kind: 'joker', id: 'copyEditor', edition: 'base', price: 0 },
+      { kind: 'joker', id: 'copyEditor', edition: 'base', price: 0, free: true },
     ];
     const newspaper = buyVoucher(run({ gold: 30 }), shopWith(items, 0, 'newspaper'));
     expect(newspaper.shop.items.map((item) => item?.price)).toEqual([3, 2, 2, 1, 0]);

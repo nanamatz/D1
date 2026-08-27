@@ -4,6 +4,7 @@ import type { JokerDef } from '../events';
 export const badReview: JokerDef = {
   id: 'badReview', gddNumber: 37, nameKo: '악평', nameEn: 'Bad Review',
   emoji: '🍅', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
+  scoresGibberish: true,
   hooks: {
     wordScoring: ({ ctx }) => {
       if (!ctx.submission.isGibberish) return;

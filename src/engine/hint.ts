@@ -7,8 +7,9 @@
 
 import { BALANCE } from './balance';
 import type { Lexicon } from './lexicon';
-import { wordLengthMult } from './scoring';
-import type { Letter, Tile } from './types';
+import { prepareWordSubmission } from './loop';
+import { tileBaseChips, wordLengthMult } from './scoring';
+import type { BlindState, Letter, RunState, Tile } from './types';
 
 export interface HintWord {
   word: string;
@@ -17,12 +18,6 @@ export interface HintWord {
   /** base score (letter chips × (suit multiplier + length bonus), no jokers) — for ranking */
   score: number;
 }
-
-const letterChips = (word: string): number => {
-  let sum = 0;
-  for (const ch of word) sum += BALANCE.letterChips[ch.toUpperCase()] ?? 0;
-  return sum;
-};
 
 /** One valid tile assignment for a word from letter→tiles buckets. */
 function assign(word: string, byLetter: Map<Letter, Tile[]>): string[] {
@@ -44,18 +39,29 @@ export function findSpellableWords(
   hand: readonly Tile[],
   lexicon: Lexicon,
   max = 3,
+  context?: { run: RunState; blind: BlindState },
 ): HintWord[] {
+  const spellingTiles = context
+    ? (prepareWordSubmission(hand, lexicon, context.run, context.blind).ctx.spellingTiles ?? hand)
+    : hand;
+  const physicalById = new Map(hand.map((tile) => [tile.id, tile]));
   const byLetter = new Map<Letter, Tile[]>();
-  for (const t of hand) {
+  for (const t of spellingTiles) {
     if (t.letter === null) continue; // a Stone tile can spell nothing (GDD §2.2)
     const bucket = byLetter.get(t.letter);
     if (bucket) bucket.push(t);
     else byLetter.set(t.letter, [t]);
   }
   const avail = new Map<Letter, number>();
-  for (const [letter, tiles] of byLetter) avail.set(letter, tiles.length);
+  for (const [letter, tiles] of byLetter) {
+    tiles.sort((a, b) =>
+      tileBaseChips(physicalById.get(b.id) ?? b) -
+      tileBaseChips(physicalById.get(a.id) ?? a),
+    );
+    avail.set(letter, tiles.length);
+  }
 
-  const candidates: Array<{ word: string; score: number }> = [];
+  const candidates: Array<HintWord> = [];
   const need = new Map<Letter, number>();
   for (const word of lexicon.words()) {
     if (word.length === 0) continue;
@@ -75,16 +81,15 @@ export function findSpellableWords(
     // Only real dictionary words reach here (they came from lexicon.words()), so
     // the length bonus always applies — same rule as the live pipeline (GDD §3.1).
     const mult = (entry ? BALANCE.suitMult[entry.suit] : 1) + wordLengthMult(word.length, false);
-    candidates.push({ word, score: letterChips(word) * mult });
+    const tileIds = assign(word, byLetter);
+    const selected = new Set(tileIds);
+    const chips = hand.filter((tile) => selected.has(tile.id)).reduce((sum, tile) => sum + tileBaseChips(tile), 0);
+    candidates.push({ word, score: chips * mult, tileIds });
   }
 
   candidates.sort(
     (a, b) => b.score - a.score || b.word.length - a.word.length || a.word.localeCompare(b.word),
   );
 
-  return candidates.slice(0, max).map(({ word, score }) => ({
-    word,
-    score,
-    tileIds: assign(word, byLetter),
-  }));
+  return candidates.slice(0, max);
 }

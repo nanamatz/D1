@@ -13,10 +13,11 @@ export const rhymeChain: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     wordScoring: ({ blind, ctx }, self) => {
-      const previous = blind.sequence.at(-1)?.text.toLowerCase();
+      const prior = blind.sequence.at(-1);
+      const previous = prior?.text.toLowerCase();
       const current = ctx.submission.text.toLowerCase();
       const matched =
-        !!previous &&
+        !ctx.submission.isGibberish && !!prior && !prior.isGibberish && !prior.debuffed && !!previous &&
         previous.length >= 2 &&
         current.length >= 2 &&
         previous.slice(-2) === current.slice(-2);

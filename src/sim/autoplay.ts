@@ -54,6 +54,8 @@ function main(): void {
     if (result.destroyedTileIds.length) {
       run.bag = run.bag.filter((t) => !result.destroyedTileIds.includes(t.id));
     }
+    const updatedById = new Map(result.updatedTiles.map((tile) => [tile.id, tile]));
+    run.bag = run.bag.map((tile) => updatedById.get(tile.id) ?? tile);
     if (result.createdTiles.length) run.bag.push(...result.createdTiles);
     blind = after;
     const tag = submission.isGibberish ? 'GIBBERISH (hole)' : `[${submission.suit} suit]`;

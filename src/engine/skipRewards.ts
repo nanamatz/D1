@@ -6,7 +6,7 @@
 
 import { BALANCE } from './balance';
 import { bossPoolForId, drawBossFromCycle } from './bosses';
-import { ALL_JOKERS, createOwnedJoker, defaultJokerBus } from './jokers';
+import { ALL_JOKERS, addOwnedJoker, defaultJokerBus } from './jokers';
 import { canAddJoker } from './vouchers';
 import type { Rng } from './rng';
 import type {
@@ -334,8 +334,7 @@ export function skipCurrentBlind(
         if (eligible.length === 0) break;
         const def = eligible[rng.int(eligible.length)]!;
         next = {
-          ...next,
-          jokers: [...next.jokers, createOwnedJoker(next, def.id, 'base')],
+          ...addOwnedJoker(next, def.id, 'base'),
         };
       }
       break;

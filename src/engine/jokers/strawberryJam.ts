@@ -1,11 +1,11 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 import { evaluateLetterHand } from '../letterHands';
-import { letterString } from '../scoring';
+import { submissionLetterString } from '../scoring';
 
 const handOf = (submission: import('../types').WordSubmission) =>
   evaluateLetterHand(
-    letterString(submission.tiles),
+    submissionLetterString(submission),
     submission.isGibberish,
     submission.scoringLength,
   )?.id;
@@ -17,7 +17,8 @@ export const strawberryJam: JokerDef = {
   hooks: {
     wordScoring: ({ blind, ctx }) => {
       const hand = handOf(ctx.submission);
-      if (hand && blind.sequence.some((word) => handOf(word) === hand)) {
+      if (hand && blind.sequence.some((word) =>
+        !word.isGibberish && !word.debuffed && handOf(word) === hand)) {
         ctx.mult *= BALANCE.jokers.strawberryJam.factor;
       }
     },

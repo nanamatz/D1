@@ -71,7 +71,9 @@ function animateTileCreation(event: TileCreationEvent, duration: number): () => 
   const source = document.querySelector<HTMLElement>(
     `.submitted-tiles [data-tile-id="${CSS.escape(event.sourceTileId)}"]`,
   ) ?? document.querySelector<HTMLElement>(
-    `.joker-slot[data-joker-id="${CSS.escape(event.jokerId)}"] .joker`,
+    event.jokerInstanceId !== undefined
+      ? `.joker-slot[data-joker-instance="${event.jokerInstanceId}"] .joker`
+      : `.joker-slot[data-joker-id="${CSS.escape(event.jokerId)}"] .joker`,
   );
   const sourceRect = source?.getBoundingClientRect();
   const cleanups: Array<() => void> = [];
@@ -224,6 +226,7 @@ export interface SettleView {
   destroyedTileIds: readonly string[];
   /** joker currently wiggling */
   activeJokerId: string | null;
+  activeJokerInstanceId: number | null;
   /** Edition enhancement beat on an Emoji Tile; its timeline slot leaves a readable gap. */
   activeJokerEnhanced: boolean;
   /** the firing joker's contribution, for its popup */
@@ -262,6 +265,7 @@ const IDLE: SettleView = {
   tileEffectPop: null,
   destroyedTileIds: [],
   activeJokerId: null,
+  activeJokerInstanceId: null,
   activeJokerEnhanced: false,
   jokerPop: null,
   stamp: null,
@@ -703,6 +707,7 @@ export function SettleProvider({
             tileEffectPop: null,
             destroyedTileIds: [...destroyedTileIds],
             activeJokerId: null,
+            activeJokerInstanceId: null,
             activeJokerEnhanced: false,
             jokerPop: null,
             stamp: null,
@@ -746,6 +751,7 @@ export function SettleProvider({
               ...base,
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId,
+              activeJokerInstanceId: e.jokerInstanceId ?? null,
               activeJokerEnhanced: false,
               jokerPop: {
                 jokerId: e.jokerId,
@@ -811,6 +817,7 @@ export function SettleProvider({
               tilePops: { ...pops },
               activeTileId: e.tileId ?? null,
               activeJokerId: e.jokerId ?? null,
+              activeJokerInstanceId: e.jokerInstanceId ?? null,
               activeJokerEnhanced: e.jokerId !== undefined,
               jokerPop: e.jokerId
                 ? {

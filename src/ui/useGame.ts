@@ -40,6 +40,7 @@ import {
   prepareShop,
   buyItem,
   sellJoker,
+  repriceShop,
   rerollShop,
   currentRerollCost,
   buyVoucher,
@@ -106,7 +107,6 @@ import {
   ALL_JOKERS,
   onBlindEndedWithDestroyedJokers,
   onConstellationUsed,
-  onTilesDestroyed,
 } from '../engine/jokers';
 import {
   consumeNextBlindBonus,
@@ -115,6 +115,14 @@ import {
 } from '../engine/skipRewards';
 import { GROWTH_POP_MS } from './timing';
 import { newRunObservationId } from './runObservation';
+import {
+  acknowledgeUnlockLedger,
+  captureUnlockSnapshot,
+  createUnlockLedger,
+  finalizeUnlockLedger,
+  normalizeUnlockLedger,
+  resetUnlockRecapTerminal,
+} from './unlockRecap';
 
 /** Snapshot of the losing blind, for the Game Over screen (spec §2.7). */
 export interface GameOverInfo {
@@ -450,7 +458,7 @@ function bootstrap(options: Partial<RunStartOptions> = {}): GameState {
     sentenceBonus: null,
     runStarted: false,
     showIntro: tutorial,
-    runUnlocks: [],
+    runUnlocks: createUnlockLedger(),
   };
 }
 
@@ -498,6 +506,7 @@ export interface UseGame {
   /** SettleProvider's completion signal — the settle timeline has finished (05 A). */
   markSettleComplete: () => void;
   continueEndless: () => void;
+  acknowledgeUnlocks: () => void;
   endRun: () => void;
   newGame: () => void;
   /** Start a fresh run with the New Run screen's pouch, record, and seed choices. */
@@ -510,11 +519,21 @@ interface HeldPackCloseTransaction {
 
 export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGame {
   // Resume a saved run if there is one; otherwise the idle bootstrap run.
-  const [state, setState] = useState<GameState>(() =>
-    completePendingPackTransition(loadRun() ?? bootstrap()),
-  );
+  const [state, setState] = useState<GameState>(() => {
+    const initial = completePendingPackTransition(loadRun() ?? bootstrap());
+    return {
+      ...initial,
+      runUnlocks: normalizeUnlockLedger(initial.runUnlocks ?? [], captureUnlockSnapshot()),
+    };
+  });
   const stateRef = useRef(state);
   stateRef.current = state;
+  useEffect(() => {
+    const resumed = stateRef.current;
+    if (resumed.runStarted) {
+      recordVoucherProgress({ kind: 'resumeRun', customSeed: resumed.run.customSeed });
+    }
+  }, []);
   const heldPackConsumablePending = useRef(false);
   const heldPackConsumableCancel = useRef<(() => void) | null>(null);
   const heldPackCloseTransaction = useRef<HeldPackCloseTransaction | null>(null);
@@ -615,6 +634,19 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           patternCounts: state.stats.patternCounts,
         });
       }
+      // recordRunEnd writes synchronously. Freeze the post-write delta into state so
+      // GameOver rerenders with an exact, reload-safe recap payload.
+      setState((prev) => {
+        if (prev.gameover !== go) return prev;
+        const runUnlocks = finalizeUnlockLedger(
+          prev.runUnlocks,
+          prev.run,
+          captureUnlockSnapshot(),
+        );
+        return runUnlocks.join('\n') === prev.runUnlocks.join('\n')
+          ? prev
+          : { ...prev, runUnlocks };
+      });
     }
   }, [
     state.gameover,
@@ -917,7 +949,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       if (!res.ok) return prev;
       recordEmojiUnlockEvent({ kind: 'jokerSold', run: res.run });
       audio.play('sell');
-      return { ...prev, run: res.run, rngCounter: prev.rngCounter + 1 };
+      return {
+        ...prev,
+        run: res.run,
+        shop: prev.shop ? repriceShop(res.run, prev.shop) : prev.shop,
+        rngCounter: prev.rngCounter + 1,
+      };
     });
   }, []);
 
@@ -1136,9 +1173,20 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             phase: 'cashout',
             gameover: null,
             endlessBestScore: 0,
+            runUnlocks: resetUnlockRecapTerminal(prev.runUnlocks),
           }
         : prev,
     );
+  }, []);
+
+  const acknowledgeUnlocks = useCallback(() => {
+    const prev = stateRef.current;
+    const runUnlocks = acknowledgeUnlockLedger(prev.runUnlocks);
+    if (runUnlocks.join('\n') === prev.runUnlocks.join('\n')) return;
+    const next = { ...prev, runUnlocks };
+    // Confirmation must survive even an immediate reload; the regular save effect follows.
+    writeRun(serializeRun(next));
+    setState(next);
   }, []);
 
   const endRun = useCallback(() => {
@@ -1641,7 +1689,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const next = jokers.slice();
       const [moved] = next.splice(from, 1);
       next.splice(to, 0, moved!);
-      return { ...prev, run: { ...prev.run, jokers: next } };
+      const run = { ...prev.run, jokers: next };
+      return {
+        ...prev,
+        run,
+        shop: prev.shop ? repriceShop(run, prev.shop) : prev.shop,
+      };
     });
   }, []);
 
@@ -1710,7 +1763,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         recordEditionedJokers(result.run);
         consumableEffectBus.emit(id, prev.run, result.run, result.chanceResults);
         const hint = result.requestHint
-          ? findSpellableWords(blind.hand, getLexicon(), 3)
+          ? findSpellableWords(blind.hand, getLexicon(), 3, { run: result.run, blind })
           : prev.hint;
         const next = {
           ...prev,
@@ -1748,7 +1801,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         };
       }
       recordVoucherProgress({ kind: 'consumableUsed', family: 'fable' });
-      const hint = id === 'magnifier' ? findSpellableWords(prev.blind.hand, getLexicon(), 3) : prev.hint;
+      const hint = id === 'magnifier'
+        ? findSpellableWords(prev.blind.hand, getLexicon(), 3, { run: prev.run, blind: prev.blind })
+        : prev.hint;
       const run = { ...prev.run, consumables };
       recordEmojiUnlockEvent({ kind: 'consumableUsed', run, family: 'fable' });
       consumableEffectBus.emit(id, prev.run, run);
@@ -1849,6 +1904,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         destroyedTileIds,
         grownWoodTileIds,
         createdTiles,
+        updatedTiles,
         bossDiscardedTiles,
         jokers,
         destroyedJokers,
@@ -1871,14 +1927,15 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
                 BALANCE.materials.wood.chipsPerPlay,
             }
           : tile;
-      const blind = grownWoodTileIds.length
-        ? {
-            ...result.blind,
-            hand: result.blind.hand.map(growWood),
-            bag: result.blind.bag.map(growWood),
-            discardedThisBlind: result.blind.discardedThisBlind.map(growWood),
-          }
-        : result.blind;
+      const updatedById = new Map(updatedTiles.map((tile) => [tile.id, tile]));
+      const updateTile = (tile: import('../engine/types').Tile) =>
+        growWood(updatedById.get(tile.id) ?? tile);
+      const blind = {
+        ...result.blind,
+        hand: result.blind.hand.map(updateTile),
+        bag: result.blind.bag.map(updateTile),
+        discardedThisBlind: result.blind.discardedThisBlind.map(updateTile),
+      };
       recordVoucherProgress({ kind: 'tilesPlayed', count: submission.tiles.length });
       if (submission.isGibberish) tutorialBus.fire('firstGibberish');
       // Chromatic unlocks (feature-02 C): a VALID word may write a presentation
@@ -1895,7 +1952,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       // explain Word Hands the first time one actually scores. The event is
       // only present when a hand triggered (loop.ts), so its presence is the signal.
       if (events.some((e) => e.kind === 'letterHand')) tutorialBus.fire('firstLetterHand');
-      const nextRun = onTilesDestroyed({
+      const nextRun = {
         ...prev.run,
         jokers,
         counters,
@@ -1908,14 +1965,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         gold: Math.max(0, prev.run.gold + goldDelta),
         bag: prev.run.bag
           .filter((t) => !destroyedTileIds.includes(t.id))
-          .map(growWood)
+          .map(updateTile)
           .concat(createdTiles),
         // Track valid words this Chapter for Memoirs and Stereotype Plate;
         // gibberish is never tracked. Reset when the Chapter's Deadline clears.
         wordsThisAnte: submission.isGibberish
           ? prev.run.wordsThisAnte
           : [...prev.run.wordsThisAnte, submission.text.toLowerCase()],
-      }, destroyedTileIds.length);
+      };
       const visibleNextRun = withDestroyedJokers(nextRun, destroyedJokers);
       recordPouchUnlockChanges(prev.run, nextRun);
       const letterHandId = events.find((event) => event.kind === 'letterHand')?.hand ?? null;
@@ -2071,6 +2128,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const valid = ids.filter((id) => !staged.has(id) && prev.blind.hand.some((t) => t.id === id));
       if (valid.length === 0) return prev; // no per-use tile cap (D-4)
       const {
+        run: discardRun,
         blind,
         jokers,
         goldDelta,
@@ -2088,7 +2146,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       );
       recordVoucherProgress({ kind: 'tilesDiscarded', count: valid.length });
       const nextRun: RunState = {
-        ...prev.run,
+        ...discardRun,
         jokers,
         bag,
         discardedLetters,
@@ -2175,14 +2233,18 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   const newGame = useCallback(() => {
     cancelPackTransactions();
     const next = { ...bootstrap(), runStarted: true };
-    recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+    recordVoucherProgress({
+      kind: 'newRun', handSize: next.run.handSize, customSeed: next.run.customSeed,
+    });
     recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
   }, [cancelPackTransactions]);
   const startRun = useCallback((options: RunStartOptions) => {
     cancelPackTransactions();
     const next = { ...bootstrap(options), runStarted: true };
-    recordVoucherProgress({ kind: 'newRun', handSize: next.run.handSize });
+    recordVoucherProgress({
+      kind: 'newRun', handSize: next.run.handSize, customSeed: next.run.customSeed,
+    });
     recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
   }, [cancelPackTransactions]);
@@ -2266,6 +2328,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     confirmCashout,
     markSettleComplete,
     continueEndless,
+    acknowledgeUnlocks,
     endRun,
     newGame,
     startRun,

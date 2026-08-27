@@ -11,11 +11,13 @@ export const rotaryPress: JokerDef = {
   layer: 3,
   price: BALANCE.jokerPrice.rare,
   hooks: {
-    wordScoring: ({ blind, ctx }) => {
+    wordScoring: ({ blind, ctx, scoreBeats }) => {
       if (blind.phasesUsed !== blind.phasesTotal - 1) return;
-      ctx.scoreBonus =
-        (ctx.scoreBonus ?? 0) +
-        blind.sequence.reduce((sum, word) => sum + word.settledScore, 0);
+      for (const word of blind.sequence) {
+        if (word.isGibberish || word.debuffed) continue;
+        ctx.scoreBonus = (ctx.scoreBonus ?? 0) + word.settledScore;
+        scoreBeats?.push({ chipsDelta: 0, multDelta: 0, scoreDelta: word.settledScore });
+      }
     },
   },
 };

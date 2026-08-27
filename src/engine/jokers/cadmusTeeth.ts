@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const cadmusTeeth: JokerDef = {
+  scoresGibberish: true,
   id: 'cadmusTeeth', gddNumber: 54, nameKo: '카드모스의 이빨', nameEn: "Cadmus's Teeth",
   emoji: '🦷', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
   initialState: (run) => ({

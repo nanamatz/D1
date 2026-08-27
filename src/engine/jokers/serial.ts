@@ -3,6 +3,7 @@ import type { JokerDef } from '../events';
 import { submissionLength } from '../types';
 
 export const serial: JokerDef = {
+  initialState: () => ({ chips: 0, revision20260826: 1 }),
   id: 'serial', gddNumber: 42, nameKo: '연재물', nameEn: 'Serial',
   emoji: '📰', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
   growthDisplay: { kind: 'chips', stateKey: 'chips', initial: 0 },
@@ -12,11 +13,11 @@ export const serial: JokerDef = {
       if (
         previous &&
         !previous.isGibberish &&
+        !previous.debuffed &&
         !ctx.submission.isGibberish &&
         submissionLength(previous) === submissionLength(ctx.submission)
       ) self.state.chips = (self.state.chips ?? 0) + BALANCE.jokers.serial.chipsPerMatch;
       ctx.chips += self.state.chips ?? 0;
     },
-    blindEnd: (_payload, self) => { self.state.chips = 0; },
   },
 };

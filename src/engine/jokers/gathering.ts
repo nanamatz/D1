@@ -1,7 +1,7 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 import { matchesLetterHand } from '../letterHands';
-import { letterString } from '../scoring';
+import { submissionLetterString } from '../scoring';
 
 export const gathering: JokerDef = {
   id: 'gathering', gddNumber: 64, nameKo: '모임', nameEn: 'Gathering',
@@ -9,7 +9,7 @@ export const gathering: JokerDef = {
   multOperation: 'multiply', multDisplayFactor: BALANCE.jokers.gathering.factor,
   hooks: {
     wordScoring: ({ ctx }) => {
-      if (matchesLetterHand('vowelFlush', letterString(ctx.submission.tiles), ctx.submission.isGibberish, ctx.submission.scoringLength)) {
+      if (matchesLetterHand('vowelFlush', submissionLetterString(ctx.submission), ctx.submission.isGibberish, ctx.submission.scoringLength)) {
         ctx.mult *= BALANCE.jokers.gathering.factor;
       }
     },

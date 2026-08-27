@@ -192,29 +192,57 @@ export const constellationPassiveFactor = (run: RunState, pattern: PatternId | n
   return Math.pow(BALANCE.edition.rainbowFactor, copies);
 };
 
+type JokerCapability = {
+  slots?: number;
+  shopDiscount?: number;
+  allowsDuplicates?: boolean;
+};
+
+const JOKER_CAPABILITIES: Readonly<Record<string, JokerCapability>> = {
+  bookOfMargins: { slots: BALANCE.jokers.bookOfMargins.slots },
+  carteBlanche: { shopDiscount: BALANCE.jokers.carteBlanche.shopDiscount },
+  copyEditor: { allowsDuplicates: true },
+};
+
+/** Resolve passive definition capabilities at each physical shelf position.
+ * Echo chains walk right; target identity/edition is never copied. */
+const effectiveJokerCapabilities = (run: RunState): JokerCapability[] => {
+  const resolveAt = (index: number, visited: Set<number>): JokerCapability | null => {
+    const owner = run.jokers[index];
+    if (!owner || owner.state.destroyed === 1 || owner.state.bossDisabled === 1) return null;
+    const identity = owner.instanceId ?? -(index + 1);
+    if (visited.has(identity)) return null;
+    visited.add(identity);
+    if (owner.defId === 'towerOfBabel') return null;
+    if (owner.defId === 'echoChamber') return resolveAt(index + 1, visited);
+    return JOKER_CAPABILITIES[owner.defId] ?? null;
+  };
+  return run.jokers.flatMap((_, index) => {
+    const capability = resolveAt(index, new Set());
+    return capability ? [capability] : [];
+  });
+};
+
 export const jokerSlotLimit = (run: RunState): number =>
   run.jokerSlots +
-  run.jokers.filter((j) => j.edition === 'white').length +
-  run.jokers.reduce(
-    (sum, joker) =>
-      sum +
-      (joker.defId === 'bookOfMargins'
-          ? BALANCE.jokers.bookOfMargins.slots
-          : 0),
-    0,
-  );
+  run.jokers.filter((joker) =>
+    joker.edition === 'white' && joker.state.destroyed !== 1 && joker.state.bossDisabled !== 1
+  ).length +
+  effectiveJokerCapabilities(run).reduce((sum, capability) => sum + (capability.slots ?? 0), 0);
 
 export const emojiTileShopPrice = (run: RunState, price: number): number =>
   Math.max(
     0,
     price -
-      run.jokers.filter((joker) => joker.defId === 'carteBlanche').length *
-        BALANCE.jokers.carteBlanche.shopDiscount,
+      effectiveJokerCapabilities(run).reduce(
+        (sum, capability) => sum + (capability.shopDiscount ?? 0),
+        0,
+      ),
   );
 
 /** Copy Editor is the sole persistent exception to ordinary ownership uniqueness. */
 export const allowsDuplicateOffers = (run: RunState): boolean =>
-  run.jokers.some((joker) => joker.defId === 'copyEditor');
+  effectiveJokerCapabilities(run).some((capability) => capability.allowsDuplicates);
 
 /** Central duplicate rule for ordinary Emoji Tile offers and acquisitions. */
 export const canOwnJoker = (run: RunState, defId: string): boolean =>

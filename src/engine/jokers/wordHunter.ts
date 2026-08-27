@@ -11,6 +11,7 @@ const stateFromPlayedWords = (words: readonly string[]): Record<string, number> 
 };
 
 export const wordHunter: JokerDef = {
+  scoresGibberish: true,
   id: 'wordHunter', gddNumber: 31, nameKo: '단어 사냥꾼', nameEn: 'Word Hunter',
   emoji: '🦋', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   initialState: (run) => stateFromPlayedWords(run.playedWords ?? []),
@@ -22,10 +23,7 @@ export const wordHunter: JokerDef = {
       for (const [key, value] of Object.entries(history)) {
         if (key !== 'factor') self.state[key] = value;
       }
-      self.state.factor = Math.max(
-        self.state.factor ?? BALANCE.jokers.wordHunter.baseFactor,
-        history.factor ?? BALANCE.jokers.wordHunter.baseFactor,
-      );
+      self.state.factor = history.factor ?? BALANCE.jokers.wordHunter.baseFactor;
       const word = ctx.submission.text.toLowerCase();
       if (!ctx.submission.isGibberish && !self.state[`seen:${word}`]) {
         self.state[`seen:${word}`] = 1;

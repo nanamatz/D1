@@ -7,8 +7,9 @@ export const bookmark: JokerDef = {
   emoji: '🔖', rarity: 'common', layer: 3, price: BALANCE.jokerPrice.common,
   hooks: {
     wordScoring: ({ blind, ctx }) => {
-      if (blind.sequence.at(-1) &&
-          submissionLength(blind.sequence.at(-1)!) === submissionLength(ctx.submission)) {
+      const previous = blind.sequence.at(-1);
+      if (!ctx.submission.isGibberish && previous && !previous.isGibberish && !previous.debuffed &&
+          submissionLength(previous) === submissionLength(ctx.submission)) {
         ctx.chips += BALANCE.jokers.bookmark.chips;
       }
     },

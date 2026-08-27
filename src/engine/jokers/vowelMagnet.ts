@@ -1,5 +1,5 @@
 import { BALANCE } from '../balance';
-import type { JokerDef } from '../events';
+import { scoringLetter, type JokerDef } from '../events';
 import { isConsonant, isVowel } from '../types';
 
 /** U9 (GDD §11.3) — ×Mult when the word holds more vowels than consonants.
@@ -17,8 +17,8 @@ export const vowelMagnet: JokerDef = {
   hooks: {
     wordScoring: ({ ctx }) => {
       const tiles = ctx.submission.tiles;
-      const vowels = tiles.filter((tile) => isVowel(tile.letter)).length;
-      const consonants = tiles.filter((tile) => isConsonant(tile.letter)).length;
+      const vowels = tiles.filter((tile) => isVowel(scoringLetter(ctx, tile))).length;
+      const consonants = tiles.filter((tile) => isConsonant(scoringLetter(ctx, tile))).length;
       if (vowels > consonants) ctx.mult *= BALANCE.jokers.vowelMagnet.factor;
     },
   },

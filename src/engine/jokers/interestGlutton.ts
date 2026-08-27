@@ -6,6 +6,7 @@ import type { JokerDef } from '../events';
  * then spends it as additive Mult over the next round.
  */
 export const interestGlutton: JokerDef = {
+  scoresGibberish: true,
   id: 'interestGlutton',
   gddNumber: 10,
   nameKo: '이자 탐식가',
@@ -19,8 +20,12 @@ export const interestGlutton: JokerDef = {
     wordScoring: ({ ctx }, self) => {
       ctx.mult += self.state.mult ?? 0;
     },
-    interestResolved: ({ interest }, self) => {
-      self.state.mult = interest * BALANCE.jokers.interestGlutton.multPerGold;
+    interestResolved: ({ interest }, self, env) => {
+      self.state.mult = 0;
+      for (let gold = 0; gold < interest; gold += 1) {
+        self.state.mult += BALANCE.jokers.interestGlutton.multPerGold;
+        env.grow('multAdd', BALANCE.jokers.interestGlutton.multPerGold);
+      }
     },
   },
 };

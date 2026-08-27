@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const discardedDraft: JokerDef = {
+  scoresGibberish: true,
   id: 'discardedDraft', gddNumber: 28, nameKo: '버린 초고', nameEn: 'Discarded Draft',
   emoji: '🗞️', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
   growthDisplay: { kind: 'chips', stateKey: 'chips', initial: 0 },

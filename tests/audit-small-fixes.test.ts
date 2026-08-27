@@ -112,4 +112,31 @@ describe('locale completeness (COPY-03 / U-4)', () => {
     });
     expect(untranslated).toEqual([]);
   });
+
+  it('uses N장 with numbers and 챕터 when Chapter stands alone', () => {
+    const K = ko as Record<string, string>;
+    expect(K['jokerunlock.spareDrawer']).toContain('2장');
+    expect(K['collection.joker.recordStickerDesc']).toContain('8장');
+    for (const key of [
+      'sidebar.chapter',
+      'bossdesc.memoirs',
+      'bossdesc.stereotypePlate',
+      'skipReward.bossTag.desc',
+      'voucherdesc.sketchBook',
+      'voucherdesc.historyBook',
+      'voucherdesc.oldBook',
+      'profile.balanceCommonLoss',
+      'challenge.risingQuota.desc',
+      'record.greenLp.desc',
+      'collection.targetCurve',
+      'collection.ante',
+      'stats.highestAnte',
+      'stats.highestEndlessAnte',
+      'voice.dog.enc.firstVoucher',
+      'voice.ghost.enc.firstVoucher',
+      'voice.turtle.enc.firstVoucher',
+    ]) {
+      expect(K[key], key).toContain('챕터');
+    }
+  });
 });

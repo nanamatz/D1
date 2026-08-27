@@ -1,5 +1,5 @@
 import { BALANCE } from '../balance';
-import { isScoringVowel, type JokerDef } from '../events';
+import { isScoringVowel, scoringLetter, type JokerDef } from '../events';
 
 export const dryingInk: JokerDef = {
   id: 'dryingInk', gddNumber: 43, nameKo: '마르는 잉크', nameEn: 'Drying Ink',
@@ -14,7 +14,7 @@ export const dryingInk: JokerDef = {
     wordScoring: ({ ctx }, self) => {
       const current = self.state.mult ?? BALANCE.jokers.dryingInk.mult;
       ctx.mult += current;
-      if (ctx.submission.tiles.some((tile) => isScoringVowel(ctx, tile.letter))) {
+      if (ctx.submission.tiles.some((tile) => isScoringVowel(ctx, scoringLetter(ctx, tile)))) {
         self.state.mult = Math.max(0, current - BALANCE.jokers.dryingInk.multLostPerVowelWord);
         if (self.state.mult === 0) self.state.destroyed = 1;
       }

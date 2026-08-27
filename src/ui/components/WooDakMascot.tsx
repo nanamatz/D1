@@ -24,12 +24,10 @@ function pickLine(stats: RunStats): { id: string; params?: Record<string, number
 export function WooDakMascot({ stats, won, unlocked = 0 }: { stats: RunStats; won: boolean; unlocked?: number }) {
   const { t } = useI18n();
   const [line] = useState(() => pickLine(stats));
-  // feedback #2: lead with the unlock shout (a plain line, not a per-skin voice key),
-  // then a win note, then the usual contextual tip.
-  const text =
-    (unlocked > 0 ? `${t('gameover.unlockedLine')} ` : '') +
-    (won ? `${t(voicedKeys('won'))} ` : '') +
-    t(voicedKeys(line.id), line.params);
+  // The recap needs one large, readable line; the ordinary summary owns win/tip copy.
+  const text = unlocked > 0
+    ? t(voicedKeys('unlocked'))
+    : (won ? `${t(voicedKeys('won'))} ` : '') + t(voicedKeys(line.id), line.params);
   return (
     <div className="mascot go-mascot">
       <div className="mascot-bubble">{text}</div>

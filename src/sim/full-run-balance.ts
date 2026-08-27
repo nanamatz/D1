@@ -412,6 +412,7 @@ export function mergeSubmitResult(
       gold: Math.max(0, run.gold + result.goldDelta),
       bag: run.bag
         .filter((tile) => !result.destroyedTileIds.includes(tile.id))
+        .map((tile) => result.updatedTiles.find((updated) => updated.id === tile.id) ?? tile)
         .map(grow)
         .concat(result.createdTiles),
       wordsThisAnte: result.submission.isGibberish

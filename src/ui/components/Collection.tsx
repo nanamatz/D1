@@ -49,6 +49,7 @@ import {
 import { Tooltip } from './Tooltip';
 import { TileView } from './Tile';
 import { VoucherCard } from './VoucherCard';
+import { Pager } from './Pager';
 import { voucherArt } from '../voucherArt';
 import { loadVoucherProgress } from '../voucherProgress';
 import { FABLE_DEFS } from '../../engine/fables';
@@ -1076,37 +1077,5 @@ function GamblerCardsView() {
       name={(card) => (lang === 'ko' ? card.nameKo : card.nameEn)}
       body={(card) => t(consumableDescKey(card.id))}
     />
-  );
-}
-
-// ---------- shared pager ----------
-function Pager({
-  page,
-  pages,
-  onPage,
-  hideTotal = false,
-}: {
-  page: number;
-  pages: number;
-  onPage: (p: number) => void;
-  hideTotal?: boolean;
-}) {
-  const { t } = useI18n();
-  if (pages <= 1) return null;
-  const move = (delta: number) => onPage((page + delta + pages) % pages);
-  return (
-    <div className="pager">
-      <button className="car-arrow" onClick={() => move(-1)}>
-        ‹
-      </button>
-      <span className="pager-label">
-        {hideTotal
-          ? t('collection.pageUnknown', { n: page + 1 })
-          : t('collection.page', { n: page + 1, m: pages })}
-      </span>
-      <button className="car-arrow" onClick={() => move(1)}>
-        ›
-      </button>
-    </div>
   );
 }

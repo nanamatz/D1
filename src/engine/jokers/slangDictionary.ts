@@ -6,8 +6,10 @@ export const slangDictionary: JokerDef = {
   emoji: '📖', rarity: 'uncommon', layer: 2, price: BALANCE.jokerPrice.uncommon,
   hooks: {
     wordRules: ({ ctx }, self) => {
-      const tile = ctx.submission.tiles[0];
-      if (tile && hasScoringSuit(ctx, 'slang')) addTileRetrigger(ctx, tile.id, self.defId);
+      if (!hasScoringSuit(ctx, 'slang')) return;
+      for (const tile of ctx.submission.tiles) {
+        addTileRetrigger(ctx, tile.id, self.defId, self.instanceId);
+      }
     },
   },
 };

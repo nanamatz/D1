@@ -1,7 +1,7 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 import { evaluateLetterHand } from '../letterHands';
-import { letterString } from '../scoring';
+import { submissionLetterString } from '../scoring';
 
 const factorFor = (count: number): number => Math.min(
   BALANCE.jokers.handScholar.maxFactor,
@@ -32,6 +32,7 @@ const syncPlayedHands = (
 };
 
 export const handScholar: JokerDef = {
+  scoresGibberish: true,
   id: 'handScholar', gddNumber: 30, nameKo: '족보 학자', nameEn: 'Hand Scholar',
   emoji: '🎓', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   initialState: (run) => stateFromPlayedHands(run.playedLetterHands ?? []),
@@ -40,7 +41,7 @@ export const handScholar: JokerDef = {
   hooks: {
     wordScoring: ({ run, ctx }, self) => {
       const hand = evaluateLetterHand(
-        letterString(ctx.submission.tiles),
+        submissionLetterString(ctx.submission),
         ctx.submission.isGibberish,
         ctx.submission.scoringLength,
       );

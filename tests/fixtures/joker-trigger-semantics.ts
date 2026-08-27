@@ -1,0 +1,41 @@
+/** Exhaustive public-roster classification for the per-qualifying-unit contract. */
+export const JOKER_TRIGGER_SEMANTICS = {
+  atomicImmediate: [
+    'ceramicArtisan', 'alphabetSoup', 'redPencil', 'woodpecker', 'proofEraser',
+    'megalith', 'recycling', 'rareEarth', 'glasswork', 'formalInvitation',
+    'slangDictionary', 'growthRings', 'materialSampler', 'lightTouch', 'heavyPress',
+    'hollowPromise', 'doubleImpression', 'fullDesk', 'royaltyContract', 'modifierStack',
+    'gematria', 'bald', 'earthquake', 'delisting', 'rotaryPress', 'alphabetPress',
+    'vowelChoir', 'consonantChoir', 'blackletterEngine', 'glassCannon',
+    'loadedLeadDice', 'materialPrism', 'typeOrchestra', 'longFormSerial',
+    'typesettingMachine', 'goldenType', 'counterfeit', 'twentyFifthBlessing', 'golem',
+    'zombie', 'bookworm', 'miser', 'pouchTag', 'bagCounter', 'fableHoard', 'outOfPrint',
+    'scrapDealer', 'exactingCritic', 'bookOfMargins', 'greatDepression', 'glassInsurance',
+  ],
+  storedGrowthApplyOnce: [
+    'dullingPencil', 'threeLeafClover', 'scarletLetter', 'storyteller', 'beehiveTile',
+    'cubism', 'voraciousReader', 'classicist', 'streetCred', 'civilTongue',
+    'discardedDraft', 'rewrite', 'serial', 'dryingInk', 'foldingManuscript',
+    'noiseCancelling', 'stargazer', 'host', 'cadmusTeeth', 'shuriken', 'leak',
+    'rhymeChain', 'interestGlutton', 'woodblockPress', 'handScholar', 'wordHunter',
+    'livingType', 'holePunch', 'deadlineAuction', 'termInsurance', 'bloodTypeA',
+    'blacksmith', 'biochemistry', 'typeFoundry', 'misbound', 'dogFood',
+  ],
+  booleanOrAggregate: [
+    'acrosticPoet', 'alliterationSticker', 'alphabeticalOrder', 'ambidextrous',
+    'anonymous', 'assonance', 'badReview', 'bestsellerBand', 'bookmark',
+    'brokenSentence', 'censorsBane', 'cleanCopy', 'clearDesk', 'comboArtist',
+    'correctionMark', 'dadaist', 'equilibrist', 'everydayHero', 'fillInTheBlank',
+    'gathering', 'hotOffThePress', 'houseStyle', 'hypocrite', 'iotaStroke', 'lastSort',
+    'leftMargin', 'literaryJudge', 'longWordFan', 'mirrorImage', 'monomaterial',
+    'nightOwl', 'oneVoice', 'pageNumber', 'peddler', 'plagiarist', 'pocketDictionary',
+    'porcelainCat', 'rightMargin', 'royalWe', 'sentenceOpener', 'shortAndSharp',
+    'stenographer', 'straightTalk', 'strawberryJam', 'syllableScale', 'temurah',
+    'thirdParty', 'tipJar', 'tongueTwister', 'tyrant', 'uncensored', 'verbEngine',
+    'vowelMagnet', 'wastebasket',
+  ],
+  noTriggerRulePassive: [
+    'spareDrawer', 'sometimesY', 'carteBlanche', 'echoChamber', 'stoneTongue',
+    'copyEditor', 'dummyData', 'alphabetPoet', 'towerOfBabel',
+  ],
+} as const;

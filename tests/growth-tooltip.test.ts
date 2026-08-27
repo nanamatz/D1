@@ -27,10 +27,10 @@ const LIVE_GROWTH_IDS = [
   'beehiveTile', 'biochemistry', 'blacksmith', 'bloodTypeA', 'cadmusTeeth',
   'civilTongue', 'classicist', 'cubism', 'deadlineAuction', 'discardedDraft',
   'dogFood', 'dryingInk', 'dullingPencil', 'foldingManuscript', 'handScholar',
-  'holePunch', 'host', 'interestGlutton', 'livingType', 'misbound',
-  'noiseCancelling', 'rewrite', 'scarletLetter', 'scrapDealer', 'serial',
+  'holePunch', 'host', 'interestGlutton', 'leak', 'livingType', 'misbound',
+  'noiseCancelling', 'rewrite', 'scarletLetter', 'serial',
   'shuriken', 'stargazer', 'storyteller', 'streetCred', 'threeLeafClover',
-  'typeFoundry', 'voraciousReader', 'woodblockPress', 'wordHunter',
+  'termInsurance', 'typeFoundry', 'voraciousReader', 'woodblockPress', 'wordHunter',
 ] as const;
 
 const SPLIT_PERFORMANCE_IDS = [
@@ -39,6 +39,7 @@ const SPLIT_PERFORMANCE_IDS = [
   'dryingInk',
   'foldingManuscript',
   'shuriken',
+  'tyrant',
 ] as const;
 
 describe('scaling Emoji Tile tooltip value', () => {
@@ -79,9 +80,12 @@ describe('scaling Emoji Tile tooltip value', () => {
     expect(grownValue(def, { defId: def.id, state: { paid: 2 } }, t('en'))).toBeNull();
     const shelf = readFileSync('src/ui/components/JokerShelf.tsx', 'utf8');
     expect(shelf).toContain('gold: display.kind === \'gold\' ? delta : 0');
-    expect(shelf).toContain('playSound: display.playSound !== false');
-    expect(shelf).toContain('const soundingPops = pops.filter((pop) => pop.playSound)');
-    expect(shelf).toMatch(/soundingPops\.some\(\(pop\) => pop\.gold !== 0\)[\s\S]*?coinGain/);
+    expect(shelf).toContain('playSound: display?.playSound !== false');
+    expect(shelf).toContain('if (index < 0) {');
+    expect(shelf).toContain('growthQueue.current?.enqueue(pops)');
+    expect(shelf).toContain('growthQueue.current?.setPaused(!settleComplete)');
+    expect(shelf).toContain('const visibleGrowthPop = settleComplete ? growthPop : undefined');
+    expect(shelf).toMatch(/audio\.play\(pop\.gold !== 0 \? 'coinGain'/);
   });
 
   it('does not classify the blind-only Rhyme Chain streak as growth', () => {

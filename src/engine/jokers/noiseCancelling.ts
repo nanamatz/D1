@@ -6,6 +6,7 @@ export const noiseCancellingFactor = (skippedBlinds: number): number =>
   + skippedBlinds * BALANCE.jokers.noiseCancelling.factorPerSkippedBlind;
 
 export const noiseCancelling: JokerDef = {
+  scoresGibberish: true,
   id: 'noiseCancelling', gddNumber: 45, nameKo: '노이즈캔슬링', nameEn: 'Noise Cancelling',
   emoji: '🎧', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
   initialState: (run) => ({ factor: noiseCancellingFactor(run.skippedBlinds) }),

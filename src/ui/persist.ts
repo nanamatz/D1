@@ -16,10 +16,11 @@
  */
 import { readValue, remove, writeRaw } from './storage';
 import { isKnownConsumableId } from '../engine/consumables';
-import { JOKER_REGISTRY } from '../engine/jokers';
+import { JOKER_REGISTRY, normalizeOwnedJokerInstanceIds } from '../engine/jokers';
 import { challengeDef, isChallengeId } from '../engine/challenges';
 import type { GameState } from './useGame';
 import { normalizeRunObservationId } from './runObservation';
+import { sanitizeUnlockLedger } from './unlockRecap';
 
 const KEY = 'wj.run';
 
@@ -41,6 +42,18 @@ function hasValidChallengePreset(run: GameState['run'] | null | undefined): bool
   return run.pouchId === preset.pouchId && run.recordId === preset.recordId;
 }
 
+function normalizeRun(run: NonNullable<GameState['run']>): NonNullable<GameState['run']> {
+  return normalizeOwnedJokerInstanceIds({
+    ...run,
+    lifecycleGrowthEvents: [],
+    challengeId: run.challengeId ?? null,
+    jokers: run.jokers.filter(
+      (joker) => JOKER_REGISTRY.has(joker.defId) && joker.state.destroyed !== 1,
+    ),
+    consumables: (run.consumables ?? []).filter(isKnownConsumableId),
+  });
+}
+
 /**
  * Strip the transient/animation-only fields so a save is always a resting state.
  * `pendingEnd` is deliberately kept: a blind caught mid-resolution still resolves
@@ -50,10 +63,7 @@ function hasValidChallengePreset(run: GameState['run'] | null | undefined): bool
 function atRest(state: GameState): GameState {
   return {
     ...state,
-    run: {
-      ...state.run,
-      jokers: state.run.jokers.filter((joker) => joker.state.destroyed !== 1),
-    },
+    run: normalizeRun(state.run),
     selected: state.blind.forcedTileId ? [state.blind.forcedTileId] : [],
     message: null,
     hint: null,
@@ -106,6 +116,7 @@ export function loadRun(): GameState | null {
   // Tile is then a data change, not a save-version bump that discards the run.
   return {
     ...s,
+    runUnlocks: sanitizeUnlockLedger(s.runUnlocks),
     observationId: normalizeRunObservationId(s.observationId),
     stats: {
       ...s.stats,
@@ -113,16 +124,9 @@ export function loadRun(): GameState | null {
     },
     shopTagRedemptions: s.shopTagRedemptions ?? [],
     blindEntryEffects: null,
-    run: {
-      ...s.run,
-      challengeId: s.run.challengeId ?? null,
-      jokers: s.run.jokers.filter(
-        (joker) => JOKER_REGISTRY.has(joker.defId) && joker.state.destroyed !== 1,
-      ),
-      consumables: (s.run.consumables ?? []).filter(isKnownConsumableId),
-    },
+    run: normalizeRun(s.run),
     pendingRun: s.pendingRun
-      ? { ...s.pendingRun, challengeId: s.pendingRun.challengeId ?? null }
+      ? normalizeRun(s.pendingRun)
       : null,
     sentenceBonus: null,
   };

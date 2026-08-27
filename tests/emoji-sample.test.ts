@@ -162,14 +162,14 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(run.jokers[0]?.state.factor).toBe(2.25);
   });
 
-  it('Scrap Dealer multiplies Mult for Brass tiles in the permanent pouch', () => {
+  it('Scrap Dealer adds Mult for Brass tiles in the permanent pouch', () => {
     const run = runWith('scrapDealer');
     run.bag = run.bag.map((tile, index) => index < 2 ? { ...tile, material: 'brass' } : tile);
     const blind = startBlind(run, makeRng('scrap-brass'));
     const ctx = ctxFor(submission('metal'));
     bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
     expect(ctx.mult).toBe(1 + 2 * BALANCE.jokers.scrapDealer.factorPerBrass);
-    expect(run.jokers[0]?.state.factor).toBe(ctx.mult);
+    expect(run.jokers[0]?.state.mult).toBeUndefined();
   });
 
   it('Tower of Babel makes valid words members of all four final registers', () => {
@@ -190,7 +190,7 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     const blind = startBlind(run, makeRng('misbound'));
     const survivedResults: ChanceResult[] = [];
     const survived = onBlindEnded(run, blind, fixedRng(1), survivedResults);
-    expect(survived.jokers[0]?.state.factor).toBe(1.8);
+    expect(survived.jokers[0]?.state.factor).toBe(1.5);
     expect(survivedResults[0]).toMatchObject({ sourceId: 'misbound', outcome: 'survived' });
     const destroyedResults: ChanceResult[] = [];
     expect(onBlindEnded(survived, blind, fixedRng(0), destroyedResults).jokers).toHaveLength(0);

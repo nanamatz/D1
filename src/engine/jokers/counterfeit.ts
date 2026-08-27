@@ -8,7 +8,8 @@ export const counterfeit: JokerDef = {
   hooks: {
     wordScoring: ({ blind, ctx, rng, createdTiles, scoreBeats }) => {
       if (
-        blind.sequence.length !== 0
+        blind.sequence.some((word) => !word.isGibberish && !word.debuffed)
+        || ctx.submission.isGibberish
         || ctx.submission.tiles.length !== 1
         || !rng
         || !createdTiles

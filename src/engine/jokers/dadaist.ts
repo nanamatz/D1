@@ -11,6 +11,7 @@ export const dadaist: JokerDef = {
   layer: 2,
   price: BALANCE.jokerPrice.rare,
   multOperation: 'multiply',
+  scoresGibberish: true,
   hooks: {
     wordRules: ({ ctx }) => {
       if (ctx.submission.isGibberish) ctx.scoringSuits = new Set(['slang']);

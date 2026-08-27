@@ -16,6 +16,7 @@ export const extinctLetterCount = (bag: readonly { letter: string | null }[]): n
  * a live read stays correct if a Gambler card ever puts a letter family back.
  */
 export const outOfPrint: JokerDef = {
+  scoresGibberish: true,
   id: 'outOfPrint',
   gddNumber: 4,
   nameKo: '절판',
@@ -25,11 +26,17 @@ export const outOfPrint: JokerDef = {
   layer: 1,
   price: BALANCE.jokerPrice.rare,
   hooks: {
-    wordScoring: ({ run, ctx }) => {
+    wordScoring: ({ run, ctx, scoreBeats }) => {
       const gone = extinctLetterCount(run.bag);
       if (gone === 0) return;
-      ctx.chips += gone * BALANCE.jokers.outOfPrint.chipsPerLetter;
-      ctx.mult += gone * BALANCE.jokers.outOfPrint.multPerLetter;
+      for (let index = 0; index < gone; index += 1) {
+        ctx.chips += BALANCE.jokers.outOfPrint.chipsPerLetter;
+        ctx.mult += BALANCE.jokers.outOfPrint.multPerLetter;
+        scoreBeats?.push({
+          chipsDelta: BALANCE.jokers.outOfPrint.chipsPerLetter,
+          multDelta: BALANCE.jokers.outOfPrint.multPerLetter,
+        });
+      }
     },
   },
 };

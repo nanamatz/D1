@@ -11,11 +11,14 @@ export const recycling: JokerDef = {
       self.state.letterCode = LETTERS[rng.int(LETTERS.length)]!.charCodeAt(0);
       triggers.push({ joker: self, jokerIndex: env.index, createdTiles: [] });
     },
-    tilesDiscarded: ({ run, tiles }, self) => {
+    tilesDiscarded: ({ run, tiles }, self, env) => {
       const matches = tiles.filter(
         (tile) => tile.letter?.charCodeAt(0) === self.state.letterCode,
       ).length;
-      run.gold += matches * BALANCE.jokers.recycling.goldPerTile;
+      for (let index = 0; index < matches; index += 1) {
+        run.gold += BALANCE.jokers.recycling.goldPerTile;
+        env.grow('gold', BALANCE.jokers.recycling.goldPerTile);
+      }
     },
   },
 };

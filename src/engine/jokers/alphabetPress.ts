@@ -1,5 +1,5 @@
 import { BALANCE } from '../balance';
-import type { JokerDef } from '../events';
+import { scoringLetter, type JokerDef } from '../events';
 
 export const alphabetPress: JokerDef = {
   id: 'alphabetPress', gddNumber: 13, nameKo: '알파벳 인쇄기', nameEn: 'Alphabet Press',
@@ -10,9 +10,14 @@ export const alphabetPress: JokerDef = {
       const spellingTiles = ctx.spellingTiles ?? ctx.submission.tiles;
       const index = spellingTiles.findIndex((candidate) => candidate.id === tile.id);
       const previous = spellingTiles[index - 1]?.letter;
-      if (index > 0 && previous !== null && previous !== undefined && tile.letter !== null &&
-          tile.letter.charCodeAt(0) === previous.charCodeAt(0) + 1) {
-        ctx.mult *= BALANCE.jokers.alphabetPress.factorPerPair;
+      const current = scoringLetter(ctx, tile);
+      const next = spellingTiles[index + 1]?.letter;
+      const followsPrevious = previous != null && current != null &&
+        current.charCodeAt(0) === previous.charCodeAt(0) + 1;
+      const leadsNext = next != null && current != null &&
+        next.charCodeAt(0) === current.charCodeAt(0) + 1;
+      if (followsPrevious || leadsNext) {
+        ctx.mult *= BALANCE.jokers.alphabetPress.factorPerLetter;
       }
     },
   },

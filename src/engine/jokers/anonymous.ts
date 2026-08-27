@@ -6,6 +6,7 @@ import { jokerSlotLimit } from '../vouchers';
  *  `jokerSlotLimit` already folds in Kung Fu Manual, White editions,
  *  Carte Blanche (R1) and Book of Margins (L1) — the direct opposition to L1. */
 export const anonymous: JokerDef = {
+  scoresGibberish: true,
   id: 'anonymous',
   gddNumber: 7,
   nameKo: '무명의 저자',

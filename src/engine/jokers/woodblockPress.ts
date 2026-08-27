@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const woodblockPress: JokerDef = {
+  scoresGibberish: true,
   id: 'woodblockPress', gddNumber: 21, nameKo: '목판 인쇄', nameEn: 'Woodblock Press',
   emoji: '🪵', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },

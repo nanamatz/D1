@@ -5,8 +5,11 @@ export const uncensored: JokerDef = {
   id: 'uncensored', gddNumber: 15, nameKo: '검열 해제', nameEn: 'Uncensored',
   emoji: '🚫', rarity: 'uncommon', layer: 2, price: BALANCE.jokerPrice.uncommon,
   hooks: {
-    wordChecked: ({ ctx, debuffed }) => {
-      if (ctx.submission.suit === 'vulgar' && !debuffed) ctx.chips += BALANCE.jokers.uncensored.chips;
+    debuffScoring: ({ ctx }) => {
+      if (!ctx.submission.isGibberish) {
+        ctx.chips += BALANCE.jokers.uncensored.chips;
+        ctx.mult = 1;
+      }
     },
   },
 };

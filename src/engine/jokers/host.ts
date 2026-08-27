@@ -3,6 +3,7 @@ import { emojiTileSellValue } from '../economy';
 import type { JokerDef } from '../events';
 
 export const host: JokerDef = {
+  scoresGibberish: true,
   id: 'host',
   gddNumber: 50,
   nameKo: '숙주',

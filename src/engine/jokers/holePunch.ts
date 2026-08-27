@@ -6,6 +6,7 @@ export const holePunch: JokerDef = {
   emoji: '🕳️', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
   multOperation: 'multiply',
+  scoresGibberish: true,
   hooks: {
     wordScoring: ({ ctx }, self) => {
       if (ctx.submission.isGibberish) {

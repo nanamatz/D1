@@ -6,10 +6,11 @@
 
 import { BALANCE } from './balance';
 import {
-  createOwnedJoker,
+  addOwnedJoker,
   defaultJokerBus,
   DEVELOPER_GRACE_ID,
   JOKER_REGISTRY,
+  onTilesCreated,
 } from './jokers';
 import { availableJokerDefs, sampleJokerDefs } from './offers';
 import {
@@ -39,6 +40,7 @@ import {
   shopItemSlots,
 } from './vouchers';
 import type { Rng } from './rng';
+import { pruneEchoNamespaces } from './events';
 import type {
   OwnedJoker,
   JokerEdition,
@@ -333,6 +335,7 @@ export function applyPendingShopTags(
       id: def.id,
       edition: 'base',
       price: 0,
+      free: true,
       rarityTag: rarity === 'uncommon' ? 'uncommonTag' : 'rareTag',
     });
     consumed.add(tagIndex);
@@ -360,12 +363,12 @@ export function applyPendingShopTags(
     );
     const item = itemIndex >= 0 ? items[itemIndex] : null;
     if (!item || item.kind !== 'joker') return;
-    items[itemIndex] = { ...item, edition, price: 0 };
+    items[itemIndex] = { ...item, edition, price: 0, free: true };
     consumed.add(tagIndex);
   });
 
   if (tags.some((tag) => tag === 'couponTag')) {
-    items = items.map((item) => item ? { ...item, price: 0 } : null);
+    items = items.map((item) => item ? { ...item, price: 0, free: true } : null);
     packs = packs.map((pack) => pack ? { ...pack, free: true } : null);
     tags.forEach((tag, tagIndex) => {
       if (tag === 'couponTag') consumed.add(tagIndex);
@@ -418,7 +421,7 @@ export interface BuyResult {
 }
 
 const repriceShopItem = (run: RunState, item: ShopItem): ShopItem => {
-  if (item.price === 0) return item;
+  if (item.free) return { ...item, price: 0 };
   if (item.kind === 'joker') {
     const def = JOKER_REGISTRY.get(item.id);
     return def
@@ -433,6 +436,12 @@ const repriceShopItem = (run: RunState, item: ShopItem): ShopItem => {
   };
 };
 
+/** Re-evaluate live stock after an owned price modifier enters or leaves the shelf. */
+export const repriceShop = (run: RunState, shop: ShopState): ShopState => ({
+  ...shop,
+  items: shop.items.map((item) => item ? repriceShopItem(run, item) : null),
+});
+
 /** Buy the item in slot `index`, respecting gold and joker/consumable slot caps. */
 export function buyItem(
   run: RunState,
@@ -440,20 +449,25 @@ export function buyItem(
   index: number,
   profileEligible?: ReadonlySet<string>,
 ): BuyResult {
-  const item = shop.items[index];
+  const offered = shop.items[index];
   const fail: BuyResult = { run, shop, ok: false };
-  if (!item || run.gold < item.price) return fail;
+  if (!offered) return fail;
+  const item = repriceShopItem(run, offered);
+  if (run.gold < item.price) return fail;
 
   let nextRun: RunState;
   if (item.kind === 'joker') {
     if (!canAddJoker(run, item.id, item.edition ?? 'base', profileEligible)) return fail;
-    nextRun = {
-      ...run,
-      gold: run.gold - item.price,
-      jokers: [...run.jokers, createOwnedJoker(run, item.id, item.edition ?? 'base')],
-    };
+    nextRun = addOwnedJoker(
+      { ...run, gold: run.gold - item.price },
+      item.id,
+      item.edition ?? 'base',
+    );
   } else if (item.kind === 'tile') {
-    nextRun = { ...run, gold: run.gold - item.price, bag: [...run.bag, item.tile] };
+    nextRun = onTilesCreated(
+      { ...run, gold: run.gold - item.price, bag: [...run.bag, item.tile] },
+      1,
+    );
   } else {
     if (run.consumables.length >= run.consumableSlots) return fail;
     if (!canOwnConsumable(run, item.id)) return fail;
@@ -462,7 +476,7 @@ export function buyItem(
 
   const items = shop.items.slice();
   items[index] = null; // sold out of the slot
-  return { run: nextRun, shop: { ...shop, items }, ok: true };
+  return { run: nextRun, shop: repriceShop(nextRun, { ...shop, items }), ok: true };
 }
 
 export interface SellResult {
@@ -483,11 +497,11 @@ export function sellJoker(run: RunState, index: number, rng: Rng): SellResult {
         owned.state.sellBonus ?? 0,
       )
     : 1;
-  const nextRun = {
+  const nextRun = pruneEchoNamespaces({
     ...run,
     gold: run.gold + value,
     jokers: run.jokers.filter((_, i) => i !== index),
-  };
+  });
   defaultJokerBus.emit('selfSold', { run: nextRun, rng }, [owned]);
   return { run: nextRun, ok: true };
 }

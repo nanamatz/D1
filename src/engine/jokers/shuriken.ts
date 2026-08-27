@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const shuriken: JokerDef = {
+  scoresGibberish: true,
   id: 'shuriken', gddNumber: 57, nameKo: '수리검', nameEn: 'Shuriken',
   emoji: '🥷', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
   initialState: () => ({ factor: BALANCE.jokers.shuriken.baseFactor }),

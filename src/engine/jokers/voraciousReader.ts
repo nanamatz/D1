@@ -7,6 +7,7 @@ export const voraciousReaderChips = (totalWords: number): number =>
 /** U5 (GDD §11.3) — ★ +5 Chips per word made so far, accumulating for the run.
  *  The current word pays the total BEFORE itself, then the counter ticks. */
 export const voraciousReader: JokerDef = {
+  scoresGibberish: true,
   id: 'voraciousReader',
   gddNumber: 5,
   nameKo: '다독가',
@@ -24,7 +25,9 @@ export const voraciousReader: JokerDef = {
         voraciousReaderChips(run.counters.totalWords),
       );
       ctx.chips += chips;
-      self.state.chips = chips + BALANCE.jokers.voraciousReader.chipsPerWord;
+      if (!ctx.submission.isGibberish) {
+        self.state.chips = chips + BALANCE.jokers.voraciousReader.chipsPerWord;
+      }
     },
   },
 };

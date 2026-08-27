@@ -7,7 +7,8 @@ export const typeOrchestra: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     tileScoring: ({ ctx, tile }) => {
-      if (tile.font !== 'medium' &&
+      const fonts = new Set(ctx.submission.tiles.map((candidate) => candidate.font));
+      if (fonts.size >= 2 &&
         ctx.submission.tiles.find((candidate) => candidate.font === tile.font)?.id === tile.id) {
         ctx.mult *= BALANCE.jokers.typeOrchestra.factorPerFont;
       }

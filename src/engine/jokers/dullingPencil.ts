@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const dullingPencil: JokerDef = {
+  scoresGibberish: true,
   id: 'dullingPencil', gddNumber: 30, nameKo: '닳는 연필', nameEn: 'Dulling Pencil',
   emoji: '✏️', rarity: 'common', layer: 1, price: BALANCE.jokerPrice.common,
   growthDisplay: {

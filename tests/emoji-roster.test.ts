@@ -195,7 +195,7 @@ describe('Common — §11.2', () => {
     expect(play(run, { ...blind, sequence: [] }, submission('cat')).mult).toBe(1);
     expect(play(run, { ...blind, sequence: [submission('dog')] }, submission('cat')).mult).toBe(1);
     expect(play(run, { ...blind, sequence: [submission('paper')] }, submission('cat')).mult).toBe(
-      1 + BALANCE.jokers.stenographer.mult,
+      BALANCE.jokers.stenographer.factor,
     );
   });
 });
@@ -258,15 +258,22 @@ describe('Uncommon — §11.3', () => {
     });
   });
 
-  it('Hollow Promise pays per Inline discard blocked by full slots', () => {
+  it('Hollow Promise pays per Inline tile discarded', () => {
     const run = runWith('hollowPromise', { gold: 0 });
     const blind = blindFor(run);
     bus.emit(
-      'discardUsed',
-      { run, blind, tiles: [], gained: 0, slotsBlocked: 2, destroyedTiles: [] },
+      'tilesDiscarded',
+      {
+        run,
+        blind,
+        tiles: [
+          { ...submission('a').tiles[0]!, font: 'inline' },
+          { ...submission('b').tiles[0]!, font: 'inline' },
+        ],
+      },
       run.jokers,
     );
-    expect(run.gold).toBe(2 * BALANCE.jokers.hollowPromise.gold);
+    expect(run.gold).toBe(2 * BALANCE.jokers.hollowPromise.goldPerTile);
   });
 
   it('Wastebasket pays and presents only the first discard of each blind', () => {
@@ -356,28 +363,29 @@ describe('Uncommon — §11.3', () => {
     expect(play(run, hole, submission('cat')).mult).toBe(1);
   });
 
-  it('Correction Mark needs a shared final register; bare gibberish has none', () => {
+  it('Correction Mark needs at least one shared POS tag; gibberish breaks the chain', () => {
     const run = runWith('correctionMark');
     const base = blindFor(run);
     const same = { ...base, sequence: [submission('know')] };
-    expect(play(run, same, submission('word')).mult).toBe(
+    same.sequence[0]!.posUsed = 'noun';
+    const current = submission('word');
+    current.posUsed = 'noun';
+    expect(play(run, same, current).mult).toBe(
       1 + BALANCE.jokers.correctionMark.mult,
     );
     const different = {
       ...base,
       sequence: [submission('yo', { suit: 'slang' })],
     };
-    expect(play(run, different, submission('word')).mult).toBe(1);
+    different.sequence[0]!.posUsed = 'verbIntransitive';
+    const adjective = submission('word');
+    adjective.posUsed = 'adjective';
+    expect(play(run, different, adjective).mult).toBe(1);
     const hole = {
       ...base,
       sequence: [submission('whno', { gibberish: true })],
     };
     expect(play(run, hole, submission('word')).mult).toBe(1);
-    const rewrittenHole = submission('whno', { gibberish: true });
-    rewrittenHole.effectiveSuits = ['standard'];
-    expect(play(run, same, rewrittenHole).mult).toBe(
-      1 + BALANCE.jokers.correctionMark.mult,
-    );
   });
 
   it('Vowel Magnet and Equilibrist count vowels against consonants', () => {
@@ -391,7 +399,7 @@ describe('Uncommon — §11.3', () => {
     const even = play(balance, eb, submission('at'));
     expect([even.chips, even.mult]).toEqual([
       BALANCE.jokers.equilibrist.chips,
-      1 + BALANCE.jokers.equilibrist.mult,
+      BALANCE.jokers.equilibrist.factor,
     ]);
     expect(play(balance, eb, submission('cat')).chips).toBe(0);
   });
@@ -457,19 +465,19 @@ describe('Legendary — §11.5', () => {
     expect(BALANCE.jokers.bookOfMargins).toEqual({ slots: 3, factorPerEmptySlot: 2 });
     expect(BALANCE.jokers.tyrant).toEqual({ vulgarFactor: 2 });
     expect(BALANCE.jokers.typeFoundry).toEqual({ factorPerTile: 1.5 });
-    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 1_000, factorPerSurvival: 0.8 });
+    expect(BALANCE.jokers.misbound).toEqual({ destroyDenominator: 1_000, factorPerSurvival: 0.5 });
   });
 
   it('Tyrant rewrites every valid word to doubled Vulgar', () => {
     const run = runWith('tyrant');
     const blind = blindFor(run);
     const standard = play(run, blind, submission('cat'), BALANCE.suitMult.standard);
-    expect(standard.mult).toBe(BALANCE.suitMult.vulgar * 2);
+    expect(standard.mult).toBe(BALANCE.suitMult.standard * BALANCE.jokers.tyrant.vulgarFactor);
     expect(standard.submission.suit).toBe('vulgar');
     expect(standard.scoringSuits?.has('vulgar')).toBe(true);
 
     const formal = play(run, blind, submission('edict', { suit: 'formal' }), BALANCE.suitMult.formal);
-    expect(formal.mult).toBe(BALANCE.suitMult.vulgar * 2);
+    expect(formal.mult).toBe(BALANCE.suitMult.formal * BALANCE.jokers.tyrant.vulgarFactor);
 
     const gibberish = play(run, blind, submission('zzq', { gibberish: true }), 1);
     expect(gibberish.mult).toBe(1);

@@ -42,10 +42,10 @@ describe('Emoji Tile trigger popup', () => {
       .toBe(BALANCE.jokers.alphabetPress.factorPerPair);
     expect(jokerEvent('tyrant', 'cat').multFactor).toBe(BALANCE.jokers.tyrant.vulgarFactor);
     expect(jokerEvent('rareEarth', 'q').chipsFactor).toBe(BALANCE.jokers.rareEarth.factor);
-    expect(jokerEvent('equilibrist', 'at').multFactor).toBeUndefined();
+    expect(jokerEvent('equilibrist', 'at').multFactor).toBe(BALANCE.jokers.equilibrist.factor);
   });
 
-  it('fires Type Orchestra once per distinct non-Medium font', () => {
+  it('fires Type Orchestra once per distinct font, including Medium', () => {
     const run = newRun('type-orchestra-beats');
     run.jokers = [{ defId: 'typeOrchestra', state: {} }];
     const hand = tilesFor('cats');
@@ -64,14 +64,14 @@ describe('Emoji Tile trigger popup', () => {
       (event) => event.kind === 'joker' && event.jokerId === 'typeOrchestra',
     );
 
-    expect(beats).toHaveLength(2);
+    expect(beats).toHaveLength(3);
     expect(beats.reduce((factor, beat) =>
-      factor * (beat.kind === 'joker' ? beat.multFactor ?? 1 : 1), 1)).toBe(1.5625);
+      factor * (beat.kind === 'joker' ? beat.multFactor ?? 1 : 1), 1)).toBe(1.953125);
     for (let index = 0; index < beats.length; index += 1) {
       const beat = beats[index]!;
       expect(beat.kind === 'joker' ? beat.multFactor : undefined)
         .toBe(BALANCE.jokers.typeOrchestra.factorPerFont);
-      expect(beat.kind === 'joker' ? beat.tileId : undefined).toBe(hand[[1, 3][index]!]!.id);
+      expect(beat.kind === 'joker' ? beat.tileId : undefined).toBe(hand[[0, 1, 3][index]!]!.id);
     }
 
     const mediumHand = tilesFor('cat');
@@ -99,7 +99,7 @@ describe('Emoji Tile trigger popup', () => {
       { jokerId: 'alphabetSoup', word: 'aba', expected: [0, 1] },
       { jokerId: 'leftMargin', word: 'at', expected: [0] },
       { jokerId: 'rightMargin', word: 'at', expected: [1] },
-      { jokerId: 'alphabetPress', word: 'abc', expected: [1, 2] },
+      { jokerId: 'alphabetPress', word: 'abc', expected: [0, 1, 2] },
       { jokerId: 'vowelChoir', word: 'area', expected: [0, 2] },
       { jokerId: 'consonantChoir', word: 'letter', expected: [3] },
       {
@@ -135,7 +135,7 @@ describe('Emoji Tile trigger popup', () => {
         prepare: (tiles) => { tiles[0]!.font = 'bold'; },
       },
       {
-        jokerId: 'typeOrchestra', word: 'cat', expected: [1],
+        jokerId: 'typeOrchestra', word: 'cat', expected: [0, 1],
         prepare: (tiles) => { tiles[1]!.font = 'bold'; },
       },
       {
@@ -224,8 +224,10 @@ describe('Emoji Tile trigger popup', () => {
 
   it('marks Emoji Tile retrigger announcements and renders Again/다시 labels', () => {
     const run = newRun('retrigger-label');
-    run.jokers = [{ defId: 'echoChamber', state: {} }];
+    run.jokers = [{ defId: 'doubleImpression', state: {} }];
     const hand = tilesFor('letter');
+    hand[0]!.font = 'black';
+    hand[1]!.font = 'black';
     const result = submitWord(
       { ...startBlind(run, makeRng(run.seed)), hand },
       run,
@@ -234,7 +236,7 @@ describe('Emoji Tile trigger popup', () => {
       makeRng('retrigger-label-play'),
     );
     const announcements = result.events.filter(
-      (event) => event.kind === 'joker' && event.jokerId === 'echoChamber' && event.retrigger,
+      (event) => event.kind === 'joker' && event.jokerId === 'doubleImpression' && event.retrigger,
     );
     const tileView = readFileSync('src/ui/components/Tile.tsx', 'utf8');
     const shelf = readFileSync('src/ui/components/JokerShelf.tsx', 'utf8');

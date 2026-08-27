@@ -14,7 +14,7 @@ export const alphabeticalOrder: JokerDef = {
   price: BALANCE.jokerPrice.common,
   hooks: {
     wordScoring: ({ ctx }) => {
-      const tiles = ctx.submission.tiles;
+      const tiles = ctx.spellingTiles ?? ctx.submission.tiles;
       for (let i = 1; i < tiles.length; i++) {
         const a = tiles[i - 1]!.letter;
         const b = tiles[i]!.letter;

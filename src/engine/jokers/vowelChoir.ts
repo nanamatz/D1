@@ -1,5 +1,5 @@
 import { BALANCE } from '../balance';
-import { isScoringVowel, type JokerDef } from '../events';
+import { isScoringVowel, scoringLetter, type JokerDef } from '../events';
 
 export const vowelChoir: JokerDef = {
   id: 'vowelChoir', gddNumber: 14, nameKo: '모음 합창단', nameEn: 'Vowel Choir',
@@ -7,8 +7,9 @@ export const vowelChoir: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     tileScoring: ({ ctx, tile }) => {
-      if (isScoringVowel(ctx, tile.letter) &&
-          ctx.submission.tiles.find((candidate) => candidate.letter === tile.letter)?.id === tile.id) {
+      const letter = scoringLetter(ctx, tile);
+      if (isScoringVowel(ctx, letter) &&
+          ctx.submission.tiles.find((candidate) => scoringLetter(ctx, candidate) === letter)?.id === tile.id) {
         ctx.mult *= BALANCE.jokers.vowelChoir.factorPerVowel;
       }
     },

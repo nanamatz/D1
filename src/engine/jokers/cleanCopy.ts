@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const cleanCopy: JokerDef = {
+  scoresGibberish: true,
   id: 'cleanCopy', gddNumber: 30, nameKo: '깨끗한 원고', nameEn: 'Clean Copy',
   emoji: '📄', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
   hooks: {

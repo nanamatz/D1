@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const misbound: JokerDef = {
+  scoresGibberish: true,
   id: 'misbound',
   gddNumber: 5,
   nameKo: '파본',
@@ -10,6 +11,7 @@ export const misbound: JokerDef = {
   rarity: 'legendary',
   layer: 3,
   price: BALANCE.jokerPrice.legendary,
+  initialState: () => ({ factor: 1, revision20260826: 1 }),
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
   multOperation: 'multiply',
   hooks: {

@@ -1,5 +1,5 @@
 import { BALANCE } from '../balance';
-import type { JokerDef } from '../events';
+import { scoringLetter, type JokerDef } from '../events';
 import { isConsonant, isVowel } from '../types';
 
 /** U10 (GDD §11.3) — +Chips and +Mult when vowels and consonants are equal.
@@ -13,14 +13,15 @@ export const equilibrist: JokerDef = {
   rarity: 'uncommon',
   layer: 1,
   price: BALANCE.jokerPrice.uncommon,
+  multOperation: 'multiply',
   hooks: {
     wordScoring: ({ ctx }) => {
       const tiles = ctx.submission.tiles;
-      const vowels = tiles.filter((tile) => isVowel(tile.letter)).length;
-      const consonants = tiles.filter((tile) => isConsonant(tile.letter)).length;
+      const vowels = tiles.filter((tile) => isVowel(scoringLetter(ctx, tile))).length;
+      const consonants = tiles.filter((tile) => isConsonant(scoringLetter(ctx, tile))).length;
       if (vowels === 0 || vowels !== consonants) return;
       ctx.chips += BALANCE.jokers.equilibrist.chips;
-      ctx.mult += BALANCE.jokers.equilibrist.mult;
+      ctx.mult *= BALANCE.jokers.equilibrist.factor;
     },
   },
 };

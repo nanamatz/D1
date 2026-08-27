@@ -8,7 +8,7 @@ export const plagiarist: JokerDef = {
   hooks: {
     wordScoring: ({ blind, ctx }) => {
       const previous = blind.sequence.at(-1);
-      if (!ctx.submission.isGibberish && previous && !previous.isGibberish &&
+      if (!ctx.submission.isGibberish && previous && !previous.isGibberish && !previous.debuffed &&
           previous.text === ctx.submission.text) ctx.mult *= BALANCE.jokers.plagiarist.factor;
     },
   },

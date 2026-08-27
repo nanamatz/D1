@@ -36,6 +36,8 @@ export interface Tile {
   edition?: TileEdition;
   /** Wood's persistent, per-tile Chips value. Missing means the base +15. */
   woodBonusChips?: number;
+  /** Permanent Chips earned by Golden Type. Missing on legacy saves means 0. */
+  bonusChips?: number;
   /** Stone hides its original letter; restoring another material restores it. */
   letterBeforeStone?: Letter;
 }
@@ -102,6 +104,8 @@ export interface WordSubmission {
   settledScore: number;
   /** Effective played-word length after rule-changing Emoji Tiles. */
   scoringLength?: number;
+  /** Letter-Hand/spelling projection after rule effects; absent on legacy history. */
+  structureText?: string;
   /** An active boss or Tag accepted the physical play but short-circuited scoring to 0. */
   debuffed?: boolean;
   /** Played Glass tiles permanently destroyed while this word scored. Kept on
@@ -183,6 +187,9 @@ export interface WordScoringContext {
   scoringVowels?: Set<Letter>;
   /** Extra full-tile triggers requested by Emoji Tiles, keyed by tile id. */
   tileRetriggers?: Map<string, string[]>;
+  tileRetriggerInstances?: Map<string, Array<number | undefined>>;
+  /** Word-scoped de-duplication for effects whose unit is distinct across the word. */
+  resolvedJokerUnits?: Set<string>;
   /** Final register membership supplied by rule-changing Emoji Tiles. */
   scoringSuits?: Set<Suit>;
   /** Flat committed-score replay, used by Rotary Press. */
@@ -229,11 +236,11 @@ export type ScoreEvent =
   | { kind: 'tile'; tileId: string; letter: Letter | null; chips: number }
   | { kind: 'material'; material: TileMaterial; tileId: string; chipsDelta: number; multDelta: number; multFactor?: number; goldDelta?: number; chanceResults?: ChanceResult[] }
   | { kind: 'font'; font: TileFont; effect: FontEffectId; tileId: string; chipsDelta: number; multDelta: number; goldDelta: number }
-  | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; chipsDelta: number; multDelta: number; multFactor?: number }
+  | { kind: 'edition'; edition: TileEdition | JokerEdition; tileId?: string; jokerId?: string; jokerInstanceId?: number; chipsDelta: number; multDelta: number; multFactor?: number }
   | { kind: 'suit'; suit: Suit | null; mult: number }
   | { kind: 'wordLength'; letters: number; multDelta: number }
   | { kind: 'letterHand'; hand: LetterHandId; level: number; chipsDelta: number; multDelta: number; multFactor: number }
-  | { kind: 'joker'; jokerId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; retrigger?: boolean; growthKind?: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize'; growthDelta?: number; createdTileIds?: string[]; sourceTileId?: string }
+  | { kind: 'joker'; jokerId: string; jokerInstanceId?: number; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number; scoreDelta?: number; goldDelta?: number; tileId?: string; retrigger?: boolean; growthKind?: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize'; growthDelta?: number; createdTileIds?: string[]; sourceTileId?: string }
   | { kind: 'tag'; tagId: SkipRewardId; chipsDelta: number; multDelta: number; scoreDelta?: number; tileId?: string; retrigger?: boolean }
   | { kind: 'boss'; bossId: string; chipsDelta: number; multDelta: number; chipsFactor?: number; multFactor?: number }
   | { kind: 'pouch'; pouchId: PouchId; chipsDelta: number; multDelta: number }
@@ -447,6 +454,17 @@ export interface RunState {
   baseDiscards: number; // base 4
   bag: Tile[]; // the permanent 68-tile (sculpted) asset
   jokers: OwnedJoker[];
+  /** Next stable physical Emoji Tile identity; optional only on legacy saves. */
+  nextJokerInstanceId?: number;
+  /** Bounded headless presentation log for non-scoring lifecycle growth. */
+  jokerGrowthSequence?: number;
+  lifecycleGrowthEvents?: Array<{
+    sequence: number;
+    jokerId: string;
+    jokerInstanceId?: number;
+    kind: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize';
+    delta: number;
+  }>;
   consumables: ConsumableId[];
   /** Last used Fable/Constellation card, for The Boy Who Cried Wolf. */
   lastFableOrConstellation?: ConsumableId | null;
@@ -507,7 +525,10 @@ export interface ScalingCounters {
 // ---------- Shop (GDD §9.2) ----------
 
 /** One purchasable in a shop item slot. `null` in a slot means bought/empty. */
-export type ShopItem =
+export type ShopItem = {
+  /** Explicit free-offer provenance (Tags); dynamic discounts reaching $0 are not free. */
+  free?: true;
+} & (
   | {
       kind: 'joker';
       id: string;
@@ -520,7 +541,8 @@ export type ShopItem =
     }
   | { kind: 'consumable'; id: ConsumableId; price: number }
   | { kind: 'punctuation'; id: ConsumableId; pattern: PatternId; price: number }
-  | { kind: 'tile'; tile: Tile; price: number };
+  | { kind: 'tile'; tile: Tile; price: number }
+);
 
 /** Pack types (GDD §9.3). Publishing-world names live in i18n:
  *  pattern=Ink · joker=Charm · consumable=Consumable · tile=Tile.
@@ -562,6 +584,8 @@ export type JokerEdition = 'base' | 'gray' | 'violet' | 'rainbow' | 'white';
 
 export interface OwnedJoker {
   defId: string;
+  /** Stable physical identity used by copied-effect state across shelf moves/saves. */
+  instanceId?: number;
   /** Missing only on legacy saves/test fixtures; engine treats it as `base`. */
   edition?: JokerEdition;
   /** per-instance mutable state for scaling jokers (e.g. Classicist's grown mult) */

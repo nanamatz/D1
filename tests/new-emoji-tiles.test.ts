@@ -174,20 +174,24 @@ describe('2026-08-12 requested Emoji Tiles', () => {
     expect(run.gold).toBe(2 * BALANCE.jokers.recycling.goldPerTile);
   });
 
-  it('Beehive Tile grows and applies +6 Chips on each exact six-letter word', () => {
+  it('Beehive Tile starts at +66 Chips and grows by +6 on each six-letter word', () => {
     const run = newRun('beehive-tile');
     run.jokers = [owned(run, 'beehiveTile')];
     const blind = startBlind(run, makeRng('beehive-tile'));
     const six = [...'ABCDEF'].map((letter, index) => tile(`hive-${index}`, letter as Letter));
     const first = scoring(six);
     bus.emit('wordScoring', { run, blind, ctx: first }, run.jokers);
-    expect(first.chips).toBe(BALANCE.jokers.beehiveTile.chipsPerWord);
+    expect(first.chips).toBe(
+      BALANCE.jokers.beehiveTile.baseChips + BALANCE.jokers.beehiveTile.chipsPerWord,
+    );
     const second = scoring(six);
     bus.emit('wordScoring', { run, blind, ctx: second }, run.jokers);
-    expect(second.chips).toBe(2 * BALANCE.jokers.beehiveTile.chipsPerWord);
+    expect(second.chips).toBe(
+      BALANCE.jokers.beehiveTile.baseChips + 2 * BALANCE.jokers.beehiveTile.chipsPerWord,
+    );
   });
 
-  it('Cubism gains ×0.25 whenever a Lead Plate tile triggers', () => {
+  it('Cubism gains ×0.25 when an original Lead Plate effect succeeds', () => {
     const run = newRun('cubism');
     run.jokers = [owned(run, 'cubism')];
     const blind = startBlind(run, makeRng('cubism'));
@@ -196,6 +200,9 @@ describe('2026-08-12 requested Emoji Tiles', () => {
     bus.emit('materialScored', {
       run, blind, ctx, tile: lead, triggerIndex: 0,
       chipsDelta: 0, multDelta: 0, goldDelta: 0, grewWood: false,
+      chanceResults: [{
+        sourceId: 'leadPlate', chance: 0.5, outcome: 'success', label: 'mult',
+      }],
     }, run.jokers);
     bus.emit('wordScoring', { run, blind, ctx }, run.jokers);
     expect(run.jokers[0]!.state.factor).toBe(
@@ -204,5 +211,28 @@ describe('2026-08-12 requested Emoji Tiles', () => {
     expect(ctx.mult).toBe(
       BALANCE.jokers.cubism.baseFactor + BALANCE.jokers.cubism.factorPerLeadPlate,
     );
+  });
+
+  it('Cubism ignores retrigger-only Lead Plate successes', () => {
+    const run = newRun('cubism-retrigger-only');
+    run.jokers = [owned(run, 'cubism')];
+    const blind = startBlind(run, makeRng('cubism-retrigger-only'));
+    const lead = tile('cubism-retrigger-lead', 'A', 'leadPlate');
+    const ctx = scoring([lead]);
+    bus.emit('materialScored', {
+      run, blind, ctx, tile: lead, triggerIndex: 0,
+      chipsDelta: 0, multDelta: 0, goldDelta: 0, grewWood: false,
+      chanceResults: [{
+        sourceId: 'leadPlate', chance: 0.5, outcome: 'failure', label: 'mult',
+      }],
+    }, run.jokers);
+    bus.emit('materialScored', {
+      run, blind, ctx, tile: lead, triggerIndex: 1,
+      chipsDelta: 0, multDelta: 0, goldDelta: 0, grewWood: false,
+      chanceResults: [{
+        sourceId: 'leadPlate', chance: 0.5, outcome: 'success', label: 'mult',
+      }],
+    }, run.jokers);
+    expect(run.jokers[0]!.state.factor).toBe(BALANCE.jokers.cubism.baseFactor);
   });
 });

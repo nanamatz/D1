@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { serializeRun, writeRun, loadRun, clearRun } from '../src/ui/persist';
 import { newRun } from '../src/engine/run';
+import { createOwnedJoker } from '../src/engine/jokers';
 import type { GameState } from '../src/ui/useGame';
 
 /**
@@ -92,7 +93,7 @@ describe('run persistence', () => {
     expect(saved.lastPlayed).toBeNull();
     // Nothing left to animate, so the finalize effects are free to run on load.
     expect(saved.settleComplete).toBe(true);
-    expect(saved.run.jokers).toEqual([{ defId: 'ceramicArtisan', state: {} }]);
+    expect(saved.run.jokers).toEqual([{ defId: 'ceramicArtisan', instanceId: 1, state: {} }]);
   });
 
   it('keeps pendingEnd so a blind caught mid-resolution still resolves on load', () => {
@@ -109,10 +110,31 @@ describe('run persistence', () => {
     expect(back!.rngCounter).toBe(3);
     expect(back!.run.gold).toBe(7);
     expect(back!.run.ante).toBe(2);
-    expect(back!.run.jokers).toEqual([{ defId: 'ceramicArtisan', state: {} }]);
+    expect(back!.run.jokers).toEqual([{ defId: 'ceramicArtisan', instanceId: 1, state: {} }]);
     expect(back!.blind.committedScore).toBe(120);
     expect(back!.stats.wordsPlayed).toBe(4);
     expect(back!.runStarted).toBe(true);
+  });
+
+  it('round-trips newly grown revised scalers without legacy reconversion', () => {
+    const state = dirty();
+    const run = newRun('revision-scaler-save');
+    run.jokers = [
+      createOwnedJoker(run, 'misbound'),
+      { ...createOwnedJoker(run, 'serial'), instanceId: 2 },
+      { ...createOwnedJoker(run, 'biochemistry'), instanceId: 3 },
+    ];
+    run.jokers[0]!.state.factor = 2;
+    run.jokers[1]!.state.chips = 20;
+    run.jokers[2]!.state.factor = 1.5;
+    state.run = run;
+    writeRun(serializeRun(state));
+    const back = loadRun()!;
+    expect(back.run.jokers.map((joker) => joker.state)).toMatchObject([
+      { factor: 2, revision20260826: 1 },
+      { chips: 20, revision20260826: 1 },
+      { factor: 1.5, revision20260826: 1 },
+    ]);
   });
 
   it('defensively fills additive observation fields missing from a version-12 save', () => {
@@ -124,6 +146,36 @@ describe('run persistence', () => {
     expect(back?.observationId).toMatch(/^([0-9a-f-]{36}|run-)/);
     expect(back?.stats).toMatchObject({ wordsPlayed: 4, jokerBlindCounts: {} });
     expect(back?.run.challengeId).toBeNull();
+  });
+
+  it('sanitizes and bounds the persisted unlock ledger at the load boundary', () => {
+    const env = JSON.parse(serializeRun(dirty()));
+    env.state.runUnlocks = [
+      null,
+      {},
+      'RED',
+      'baseline:emoji:miser',
+      'pending:record:yellow:redLp',
+      'recap-ready',
+      'pending:emoji:not-real',
+      'emoji:miser:extra',
+      'x'.repeat(129),
+      ...Array.from({ length: 600 }, () => 'pending:voucher:novel'),
+    ];
+    writeRun(JSON.stringify(env));
+    expect(loadRun()?.runUnlocks).toEqual([
+      'RED',
+      'baseline:emoji:miser',
+      'pending:record:yellow:redLp',
+      'recap-ready',
+      'pending:voucher:novel',
+    ]);
+
+    for (const malformed of [null, {}, [null], [{}]]) {
+      env.state.runUnlocks = malformed;
+      writeRun(JSON.stringify(env));
+      expect(loadRun()?.runUnlocks).toEqual([]);
+    }
   });
 
   it('round-trips a valid Challenge preset and rejects invalid Challenge saves', () => {
@@ -168,7 +220,9 @@ describe('run persistence', () => {
     const env = JSON.parse(serializeRun(dirty()));
     env.state.run.jokers.push({ defId: 'uppercasePremium', state: {} });
     writeRun(JSON.stringify(env));
-    expect(loadRun()!.run.jokers).toEqual([{ defId: 'ceramicArtisan', state: {} }]);
+    expect(loadRun()!.run.jokers).toEqual([
+      { defId: 'ceramicArtisan', instanceId: 1, state: {} },
+    ]);
   });
 
   it('discards a save from a different schema version rather than half-loading it', () => {

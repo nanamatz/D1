@@ -3,6 +3,7 @@ import { emojiTileSellValue } from '../economy';
 import type { JokerDef } from '../events';
 
 export const peddler: JokerDef = {
+  scoresGibberish: true,
   id: 'peddler', gddNumber: 50, nameKo: '행상인', nameEn: 'Peddler',
   emoji: '🧳', rarity: 'common', layer: 1, price: BALANCE.jokerPrice.common,
   hooks: {

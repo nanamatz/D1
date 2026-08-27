@@ -184,6 +184,11 @@ export function grownValue(
       mult: gone * BALANCE.jokers.outOfPrint.multPerLetter,
     });
   }
+  if (def.id === 'earthquake') {
+    return t('joker.remainingUses', {
+      value: owned?.state.handsRemaining ?? BALANCE.jokers.earthquake.hands,
+    });
+  }
   const display = def.growthDisplay;
   if (!display || display.showInTooltip === false) return null;
   const ownedValue = owned?.state[display.stateKey] ?? display.initial;

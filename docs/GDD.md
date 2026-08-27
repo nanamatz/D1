@@ -31,7 +31,7 @@ Version 0.2 — systems expansion
 - Changed 2026-08-03: all fourteen Gambler-card effects are confirmed. Phoenix is the Legendary Emoji Tile route, Boar is the explicit duplicate-ownership exception, Rainman and Sake Cup modify owned Emoji Tile editions, and ordinary Gambler cards may enter Fable Packs only after Comic Book is owned (§9.2–§10.3). The 2026-08-07 acquisition pass makes Deer and Phoenix Ink-Pack-only.
 - Changed 2026-08-05: Emoji Tile profile unlocks ship for unseeded runs. After the 2026-08-12 roster additions and duplicate-condition cleanup, the 150-tile public roster starts with 76 ordinary tiles plus all 5 Legendary definitions profile-eligible; 69 Common/Uncommon/Rare tiles use persistent achievement gates. Locked ids are removed from every ordinary offer and direct-creation path (§9.2, §11).
 - Changed 2026-08-22: the deterministic headless board-verification harness now covers all 150 public Emoji Tiles, paired control/focal cohorts, actual Chapter 38 completion, market exposure, and the 14×8 Pouch/Record matrix. Bounded baseline and full-budget artifacts ship in `docs/balance/`; a separate skip-reward counterfactual harness verifies all 30 Editorial Perks. These are measurement only and do not retune any value (§12.4).
-- Changed 2026-08-06: Term Insurance permanently prevents letter-tile destruction while owned and gives ×2 Mult on every prevention. Its four-use limit and self-destruction are retired (§11.4).
+- Changed 2026-08-26: Term Insurance no longer prevents destruction. It starts at ×1 and gains +0.2 ×Mult for each letter tile actually destroyed (§11.4).
 - Changed 2026-08-06: Hand Scholar starts at ×1 and increases its multiplicative factor by ×0.5 per distinct Word Hand recorded this run, with an explicit ×4 cap. Hands played before acquisition count immediately. Every run-history Emoji Tile seeds and reconciles from the authoritative run-wide ledger (§11.6).
 - Changed 2026-08-12: Word Hands add the hidden knowledge tier Type Economy, Vowelless, and Grand Palindrome above the original six. All three require valid dictionary words and persist their first discovery per profile; Hand Scholar unlocks after eight distinct hands in one run (§5.5, §11.4).
 - Changed 2026-08-06: Glasswork no longer removes a Glass tile from the permanent pouch at blind end; it only gives +7 Mult per played Glass tile (§11.3).
@@ -118,7 +118,7 @@ The fiction: **you are a writer**. Poker/Balatro structure terms are re-skinned 
 | Concept (code) | Korean | English | Notes |
 |---|---|---|---|
 | run | 집필 | Run | flavor only; "run" fine in en |
-| ante | **장** | **Chapter** | "1장 / 8장", escalating targets |
+| ante | **N장 / 챕터** | **Chapter** | Use `1장`, `2장` when attached to a number; use `챕터` when the term stands alone (`이번 챕터`, `챕터마다`, `챕터 −1`) |
 | small blind | **초고** | **Draft** | |
 | big blind | **퇴고** | **Revision** | |
 | boss blind | **마감** | **Deadline** | the editors come to judge |
@@ -630,17 +630,19 @@ Cowherd and the Weaver Girl, Lead Plate, Glass, Misbound, and future trigger
 rolls. Shop/pack generation and random target selection show their generated or
 selected object directly and do not add a redundant probability verdict.
 
-**Per-tile Emoji effects (changed 2026-08-05).** An effect whose value is
-defined per played or held letter tile resolves through that individual tile's
-scoring hook, not as a word-level count multiplied in one batch. Each actual
-application mutates the running Chips/Mult at that tile, emits its own score
-event with the source tile id, and fires again on a full-tile retrigger. Distinct
-letter/material/font effects attach to the first qualifying tile of each type;
-pair/repetition effects attach to the tile that completes the condition. Held
-tile effects resolve in the frozen visible hand order. The source tile id drives
-the target letter tile's lift/glow/wiggle only; the Chips/Mult/gold/retrigger
-readout appears once below the firing Emoji Tile, never duplicated above the
-letter tile.
+**Per-qualifying-unit Emoji effects (changed 2026-08-26).** An effect described
+as “each/per/마다” resolves once for every qualifying unit, never as one batched
+count. Units include physical tiles, sentence-word records, POS tags, distinct
+letters/materials/fonts, destroyed/created/enhanced tiles, held consumables, and
+currency groups. Each unit mutates the running axis or growth state, emits its
+own ordered engine event, and produces one Emoji Tile trigger presentation.
+Multipliers compose sequentially. Tile units carry their source tile id;
+sentence units keep sentence order; distinct axes attach to their first tile.
+Retriggers repeat all eligible tile-unit effects. Boolean wording such as
+“contains/includes” fires once even when several tags qualify. Stored growth is
+the exception: every new growth cause emits independently, but the stored
+current factor is applied to a later word once rather than replaying all historic
+stacks. The UI replays engine events and never reconstructs or aggregates them.
 
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
@@ -875,7 +877,7 @@ the same cycle, so rerolling never bypasses the rule.
 six finishers are periodic build checks. Memoirs remains scoped to the chapter;
 the old Proofreader/Babel finishers remain retired.
 
-**Debuff convention (changed 2026-08-20).** "Debuffed" (including boss and Lipogram Tag predicates) means an allowed physical play whose scoring pipeline stops immediately after pure word preparation/rule lookup. It produces one 0-point settle and never runs tile/material/font/edition scoring, Word Hands, played/held/owned Emoji Tile scoring hooks, `wordChecked`, `tilesPlayed`, `wordScored`, Briefcase balancing, score bonuses, score-side chance RNG, or score/progress mutations. The submission keeps `posUsed = null` and is removed before Pattern and Unison judgment, so normal words before and after it become adjacent. It remains visible as a disabled tray record; physical tile/phase consumption, draw, boss `afterPlay`, actual-play Collection/chromatic/mascot discovery, and `wordsThisAnte` remain intact. Gibberish is unchanged: it scores its normal layer-1 payout and remains a sentence hole.
+**Debuff convention (changed 2026-08-26).** "Debuffed" (including boss and Lipogram Tag predicates) means an allowed physical play whose ordinary scoring pipeline stops immediately after pure word preparation/rule lookup. It normally produces one 0-point settle and never runs tile/material/font/edition scoring, Word Hands, played/held/owned Emoji Tile scoring hooks, `wordChecked`, `tilesPlayed`, `wordScored`, Briefcase balancing, score bonuses, score-side chance RNG, or score/progress mutations. **Uncensored is the sole exception:** a debuffed dictionary word emits one Uncensored +100 Chips event and settles at `100 × 1`; every other short-circuit restriction remains in force. The submission keeps `posUsed = null` and is removed before Pattern and Unison judgment, so normal words before and after it become adjacent. It remains visible as a disabled tray record; physical tile/phase consumption, draw, boss `afterPlay`, actual-play Collection/chromatic/mascot discovery, and `wordsThisAnte` remain intact. Gibberish is unchanged: it scores its normal layer-1 payout and remains a sentence hole.
 
 ---
 
@@ -926,9 +928,9 @@ Balatro-mirrored baseline: **Item slots ×2** + **Pack slots ×2** + **Voucher s
 
 **Emoji tile appearance rates by rarity (`balance.ts` `emoji.rarityWeights`).** Balatro's reference distribution is **Common 70% · Uncommon 25% · Rare 5%**. **Legendary (5 tiles) never rolls from the shop or ordinary Charm Packs.** Its implemented acquisition route is the Phoenix Gambler card (§10.3), available only as an Ink-Pack jackpot, which creates one random unowned Legendary.
 
-**Profile lock filter (implemented 2026-08-05).** Common, Uncommon, and Rare use
-an immediately available 53-tile starter subset (18 Common / 18 Uncommon / 17
-Rare) plus 70 individual unlock conditions (11 / 29 / 30 by rarity). The five
+**Profile lock filter (implemented 2026-08-05; corrected 2026-08-26).** Common,
+Uncommon, and Rare use an immediately available **76-tile ordinary starter
+subset** plus **69** individual unlock conditions (**10 / 29 / 30** by rarity). The five
 Legendary definitions have no profile gate. Only an **unseeded** run advances or
 earns achievements; progress is profile-scoped in `wj.emojiUnlocks`. Locked
 non-Legendary ids are excluded from shop stock and stale purchases, Charm Pack
@@ -942,6 +944,9 @@ thresholds live in `BALANCE.emoji.unlockTargets`, condition text in
 `locales/{en,ko}.json`, and semantic event evaluation in
 `src/ui/emojiUnlocks.ts`; engine pool functions receive only the eligible-id set
 and remain headless. Profile Reveal All unlocks the full achievement registry.
+Newly earned gated Emoji Tiles are included in the integrated run-end unlock
+recap described in `docs/screens-spec.md` §2.7; Reveal All's synthetic bulk
+grant is never recapped.
 
 **No duplicate owned objects (rule, expanded 2026-08-05).** Ordinarily, a run
 cannot acquire an Emoji Tile, Fable, Constellation, or Gambler card whose id it
@@ -986,6 +991,12 @@ Changed 2026-07-26: the former 9-item single-tier set is retired. Every pair has
 listed as **Undiscovered / 발견되지 않음**. Its Collection tooltip shows only the
 unseeded-run redemption hint; its real name, effect, unlock condition, and
 progress remain hidden until the profile unlock is earned.
+
+All 16 numeric achievement thresholds live in
+`BALANCE.voucher.unlockTargets`; `VOUCHER_UNLOCK_RULES` references those values
+and preserves the localized condition wording below. Custom-seeded runs neither
+advance nor evaluate Voucher achievements. A newly discovered upgrade appears
+in the integrated run-end unlock recap (`docs/screens-spec.md` §2.7).
 
 | Base → Upgrade | Base effect → upgraded effect | Upgrade unlock |
 |---|---|---|
@@ -1204,7 +1215,7 @@ sole Legendary acquisition route.
 Three engine notes fall out of the roster pass. **Stenographer (C06 / 속기사)**
 adds +4 Mult once only when the current submitted word is strictly shorter
 than the immediately previous submitted word; equal lengths and the first word
-never trigger it. **Hollow Promise (U21)** pays $3 for each Inline discard-gain
+never trigger it. **Hollow Promise (U21)** pays $2 for each Inline discard-gain
 trigger blocked specifically because the consumable shelf has no free slot.
 **Tyrant (L2)** applies its Vulgar rewrite as an additive delta
 from the word's own suit multiplier to `suitMult.vulgar × 2`, which keeps it
@@ -1255,10 +1266,59 @@ current payout as `(Currently +N Chips)` / `(현재 +N 칩)`. The value uses the
 same scoring helper as its hook: `blind.bag` during active/prepared blinds and
 the complete permanent `run.bag` in the Shop.
 
-**Type Orchestra (changed 2026-08-25).** Each distinct non-Medium font in the
-submitted word applies ×1.25 Mult once, on that font's first tile in word order.
-Medium never contributes; repeated copies of one enhanced font still contribute
-only once.
+**Emoji Tile revision (changed 2026-08-26; supersedes older roster prose and
+table cells below wherever they conflict).** Player-facing “word” means a
+non-debuffed dictionary word; only explicitly named Gibberish effects are an
+exception, and Gibberish/debuff breaks previous/consecutive comparisons.
+This lexical qualifier applies only when an effect's condition says “word.”
+Physical tile/material/font effects and run-, pouch-, inventory-, phase-, or
+owned-object conditions remain layer-1 effects and still resolve on Gibberish.
+Stored growth earned by valid-word causes also applies its current value once to
+Gibberish; the invalid submission never creates a new word-qualified growth cause.
+Values
+and mechanics are authoritative in `BALANCE.jokers` and the hook registry. The
+revision includes Stenographer ×2; Fill in the Blank +80 Chips; Bookmark +50;
+Beehive base +66 and +6 growth; Recycling $2; Vowel Magnet ×1.5; Equilibrist
++50 Chips then ×1.5; Everyday Hero ×1.5; One Voice +75; Scrap Dealer +0.2 Mult
+per permanent-pouch Brass tile; Heavy Press +40 per Void; Hollow Promise $2 per
+discarded Inline; Discarded Draft +7; Clean Copy +10; Full Desk +25; Bestseller
+6+; Sentence Opener noun-tag ×1.5; Modifier Stack +5 per raw POS tag; Correction
+Mark +13 once when consecutive words share any POS; Serial persistent +20 growth;
+Gematria +15 as one event per matching sentence word; Carte Blanche $2 discount;
+Alphabet Press ×1.5 per letter participating in an ascending consecutive run;
+Word Hunter base ×1/+0.1; Night Owl threshold 17; Golem +8 per Stone; Iota ×2 on
+I; Biochemistry +0.5 on a pre-play most-used Word Hand; and Misbound +0.5 on
+survival. Growth persists for the run unless an explicit scope says otherwise.
+
+**Type Orchestra (changed 2026-08-26).** If a submitted word contains at least
+two distinct fonts, every distinct font including Medium applies ×1.25 Mult once,
+on that font's first tile in word order. A one-font word does not trigger it.
+
+**Lifecycle/rule changes (2026-08-26).** Glass Insurance prevents every Glass
+break. Term Insurance prevents none, starts at ×1, and gains +0.2 per actually
+destroyed physical tile for later words. Blackletter Engine converts surviving
+Medium tiles in the blind's first word to Black only after that word settles, so
+the new Black effect begins on later plays. Golden Type permanently adds +50
+intrinsic Chips to the physical tile for every actual tile-gold event; this
+survives Stone transforms, complete copies, and saves, and affects only later
+tile triggers. Stone Tongue ignores all Stone tiles for spelling. Loaded Lead
+Dice creates exactly three non-recursive retriggers only when both original Lead
+Plate rolls fail; Cubism grows once when either original roll succeeds. Alphabet
+Poet treats physical Z as A for spelling/lexicon/POS/register/Word-Hand rules but
+retains Z's physical identity and Chips. Tyrant rewrites a word to Vulgar and
+applies its own ×2 word Mult once. Echo Chamber dynamically copies the active
+hook and data-driven passive capability of the immediately-right Emoji Tile at
+Echo's shelf position; Book of Margins slots, Carte Blanche discount, and Copy
+Editor duplicate permission therefore copy without pipeline special cases. Disabled,
+missing, Tower, or recursion-guarded targets do nothing, copied state is
+independent, and only Echo's own edition applies.
+
+**Legacy scaler normalization (changed 2026-08-26).** Loading a pre-revision
+run preserves earned proc counts while mapping old absolute values to the new
+rates: Misbound `+0.8 → +0.5`, Biochemistry `+0.45 → +0.5`, and Serial
+`+13 Chips → +20 Chips`. A per-effect state marker makes this migration
+idempotent, applies to Echo-namespaced copied state, and removes retired Term
+Insurance prevention counters without bumping the run-save version.
 
 ### 11.1 Roles by Rarity
 
@@ -1283,14 +1343,14 @@ the complete 150-entry public roster.
 | C8 | Short & Sharp | +10 Mult if word is 3 letters or fewer | 1 | — |
 | C9 | Alphabetical Order | +15 Mult if the word contains consecutive letters | 1 | — |
 | C10 | Miser | +2 Mult per 5 gold held | 1 | — |
-| C33 | Three-Leaf Clover · 세잎클로버 | At blind end, permanently add $3 to this tile's sell value | 3 | ★ gold |
-| C49 | Megalith · 거석상 | On Blind Select confirmation, permanently add one Stone tile to the pouch and current blind bag | 3 | tile generation |
+| C33 | Three-Leaf Clover · 세잎클로버 | At blind end, add $3 to this tile's sell value | 3 | ★ gold |
+| C49 | Megalith · 거석상 | On Blind Select confirmation, add one Stone tile to the pouch and current blind bag | 3 | tile generation |
 | C30 | The Scarlet Letter · 주홍 글자 | Starts at ×1; gain +0.1 ×Mult for every physical A tile discarded this run, including discards before acquisition | 1 | ×Mult |
 | C50 | Peddler · 행상인 | Add the total current sell value of all owned Emoji Tiles to word Mult | 1 | dynamic Mult |
 | C51 | Storyteller · 이야기꾼 | Gain +1 Mult per Fable card used this run, including uses before acquisition | 1 | dynamic Mult |
-| C52 | Recycling · 리사이클링 | At each blind selection choose one seeded A–Z letter; gain $5 for every matching tile discarded | 3 | gold |
-| C53 | Beehive Tile · 벌집 타일 | Starts at +0 Chips; permanently gain and apply +6 Chips whenever an exactly six-letter word is played | 1 | ★ Chips |
-| C54 | Cubism · 입체주의 | Starts at ×1; whenever a Lead Plate tile triggers, permanently add ×0.25 to its factor | 1 | ★ ×Mult |
+| C52 | Recycling · 리사이클링 | At each blind selection choose one seeded A–Z letter; gain $2 for every matching tile discarded | 3 | gold |
+| C53 | Beehive Tile · 벌집 타일 | Starts at +66 Chips; gain and apply +6 Chips whenever a six-letter word is played | 1 | ★ Chips |
+| C54 | Cubism · 입체주의 | Starts at ×1; when an original Lead Plate tile effect succeeds, add +0.25 to its factor | 1 | ★ ×Mult |
 
 ### 11.3 Uncommon — active 57
 
@@ -1302,52 +1362,52 @@ the complete 150-entry public roster.
 | U5 | Voracious Reader | +5 Chips per total words made so far, accumulating | 1 | ★ |
 | U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +8 | 2 | ★ |
 | U7 | Street Cred | Each Slang word made permanently raises Chips by +30 | 2 | ★ |
-| U8 | Combo Artist | +8 Mult if different suit from the previous phase | 2 | — |
-| U9 | Vowel Magnet | ×1.75 Mult if word has more vowels than consonants | 1 | — |
-| U10 | Equilibrist | +50 Chips & +5 Mult if vowel and consonant counts are equal | 1 | — |
+| U8 | Combo Artist | +8 Mult if different suit from the previous word | 2 | — |
+| U9 | Vowel Magnet | ×1.5 Mult if word has more vowels than consonants | 1 | — |
+| U10 | Equilibrist | +50 Chips and ×1.5 Mult if vowel and consonant counts are equal | 1 | — |
 | U45 | Noise Cancelling · 노이즈캔슬링 | Starts at ×1; gain +0.25 Mult per blind skipped this run | 1 | dynamic |
 | U5A | Astronomer · 천문학자 (`stargazer`) | Starts at ×1; permanently gain +0.1 ×Mult whenever a Constellation card is used | 3 | ★ |
 | U50 | Host · 숙주 | On Blind Select confirmation, destroy the Emoji Tile immediately to the left and permanently gain +Mult equal to twice its sell value | 1 | ★ Mult |
-| U53 | Gematria · 게마트리아 | If this and the immediately previous valid word have equal intrinsic letter Chips, +15 Mult | 1 | — |
+| U53 | Gematria · 게마트리아 | +15 Mult separately for each matching word in the current sentence, including the current submission | 1 | — |
 | U54 | Cadmus's Teeth · 카드모스의 이빨 | Permanently gain +10 Chips for each alphabet letter first discarded this run; buying it late includes prior letters | 1 | ★ Chips |
-| U22 | Scrap Dealer · 고물상 | Multiply the played word by `×(1 + 0.2 × Brass tiles in the permanent pouch)` | 1 | dynamic ×Mult |
+| U22 | Scrap Dealer · 고물상 | Add +0.2 Mult separately for each Brass tile in the permanent pouch | 1 | dynamic +Mult |
 | U55 | Strawberry Jam · 딸기잼 | If the current highest Word Hand was already played earlier this blind, ×3 Mult | 1 | ×Mult |
 | U56 | Bald · 대머리 | At each blind selection choose one seeded A–Z letter; every matching scored tile gives ×1.5 Mult | 1 | ×Mult |
 | U57 | Shuriken · 수리검 | Starts at ×2 Mult; permanently lose ×0.01 from its factor per tile discarded, floored at ×0 | 1 | decreasing ×Mult |
 | U58 | Earthquake · 대지진 | Retrigger every played tile once for the next 10 successful hands, then expire | 1 | countdown |
-| U59 | Dog Food · 개 사료 | Starts at +0 Mult; permanently gain +2 Mult whenever paid shop item stock is rerolled | 1 | ★ Mult |
+| U59 | Dog Food · 개 사료 | Starts at +0 Mult; gain +2 Mult whenever paid shop item stock is rerolled | 1 | ★ Mult |
 | U60 | Delisting · 상장폐지 | If the blind's first discard contains exactly one tile, permanently destroy it and gain $3 | 3 | tile destruction · gold |
 | U61 | Great Depression · 대공황 | At blind clear, gain an additional uncapped $1 interest per $5 held; full interest-disable effects still set it to zero | 3 | gold |
-| U62 | Leak · 누수 | Gain +4 Mult for every tile below 68 in the permanent pouch | 1 | dynamic Mult |
+| U62 | Leak · 누수 | Starts with one stack per tile the permanent pouch is below 68; whenever it reaches a new smallest size, add one stack per newly missing tile; pouch additions never remove stacks; each stack gives +4 Mult and the current Mult is displayed | 1 | ★ Mult |
 
 ### 11.4 Rare — active 54
 
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
-| R1 | Carte Blanche | Emoji Tile shop prices −$3 | 3 | Buy 40 Emoji Tiles from shops |
+| R1 | Carte Blanche | All Emoji Tile buy and sell prices −$2, including this tile, with the normal price floor | 3 | Buy 40 Emoji Tiles from shops |
 | R2 | Hypocrite | ×5 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
 | R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×3; a miss resets the streak | 3 | Start |
 | R4 | Out of Print | Gain +50 Chips and +8 Mult for each alphabet letter with no copies left in the permanent pouch; its current totals are displayed | 1 | dynamic · Remove every copy of one letter |
-| R6 | Fable Hoard | ×1.5 Mult per currently held consumable; zero consumables means ×1 | 3 | End 5 rounds with consumable slots full |
+| R6 | Fable Hoard | ×1.5 Mult per currently held consumable; no effect text is shown at zero consumables | 3 | End 5 rounds with consumable slots full |
 | R7 | Anonymous | ×3 Mult while every effective Emoji Tile slot is full | 3 | Reach Ante 4 with 5 Emoji Tiles |
 | R8 | Censor's Bane | ×3 Mult during Deadline/boss blinds | 3 | Clear 25 Deadlines cumulatively |
 | R9 | Dadaist | Give gibberish final Slang membership and its visible tag, then apply ×2.5 Mult; `suit`/POS remain null and the sentence hole remains | 2 | Clear a blind using only gibberish |
 | R10 | Interest Glutton | For every $1 interest received at round end, gain +5 Mult during the next round | 3 | Hold $100 in one run |
 | R11 | Rotary Press | On the last phase, retrigger once the committed individual-word scoring log of every word submitted this blind; never retrigger the sentence bonus | 3 | Use 8 phases in one blind |
 | R30 | Hand Scholar · 족보 학자 | Starts at ×1; +0.5 to its factor per distinct Word Hand played this run, capped at ×4 | 1 | Complete 8 distinct Word Hands in one run |
-| R44 | Term Insurance · 단기 보험 | Permanently prevents letter-tile destruction while owned; every prevention gives ×2 Mult | 1 | — |
-| R46 | Counterfeit · 모조품 | If the word played in a blind's first hand contains exactly one letter tile, create a complete copy in the hand and permanent pouch | 1 | tile generation |
+| R44 | Term Insurance · 단기 보험 | Starts at ×1; each actually destroyed letter tile gains +0.2 ×Mult, with no destruction prevention | 1 | ×Mult |
+| R46 | Counterfeit · 모조품 | If the blind's first word has a physical length of 1, create a complete copy of that tile in the hand and permanent pouch | 1 | tile generation |
 | R47 | 25th Blessing · 25번째 축복 | Each held Y gives ×1.5 Mult; a played Y is not held | 1 | dynamic exponential |
 | R48 | Blood Type A · 혈액형 A | Each scored A or O tile permanently adds +8 Chips to this Emoji Tile, including retriggers; starts at +0 and displays its current Chips | 1 | ★ Chips |
 | R41 | Copy Editor · 카피 에디터 | While owned, Emoji Tiles, Fables, Constellations, and Gambler cards may repeat in shops and packs | 3 | rule change |
 | R51 | Dummy Data · 더미 데이터 | Increase the played word's effective length by 2 for length Mult, Longword, and word-length Emoji Tile checks | 1 | rule change |
-| R52 | Blacksmith · 대장간 | Starts at +0 Chips; whenever an existing letter tile receives a material, font, or edition enhancement, permanently gain +10 Chips | 1 | ★ Chips · Start |
-| R55 | Golem · 골렘 | If removing the first letter leaves another valid dictionary word, ×3 Mult | 1 | — |
-| R56 | Temurah · 테무라 | If this valid word is a different anagram of the immediately previous valid word, ×5 Mult | 1 | — |
-| R57 | Alphabet Poet · 알파벳 시인 | If at least three sentence-word initials are strictly ascending, multiply sentence-bonus Mult by ×3.5 | 3 | — |
-| R58 | Iota Stroke · 이오타 획 | If this and the previous valid word have equal length and differ in exactly one position, ×4 Mult | 1 | — |
+| R52 | Blacksmith · 대장간 | Starts at +0 Chips; whenever an existing letter tile receives a material, font, or edition enhancement, gain +10 Chips | 1 | ★ Chips · Start |
+| R55 | Golem · 골렘 | +8 Mult per Stone tile in the word | 1 | — |
+| R56 | Temurah · 테무라 | If this word is a different anagram of the immediately previous word, ×5 Mult | 1 | — |
+| R57 | Alphabet Poet · 알파벳 시인 | Treat physical Z as A for spelling, lexicon, POS, register, Word Hand, and spelling-based Emoji Tile rules; preserve Z's physical identity, display, base Chips, material, font, and Z-specific conditions | 3 | rule change |
+| R58 | Iota Stroke · 이오타 획 | If the word contains I, ×2 Mult | 1 | — |
 | R59 | Zombie · 좀비 | After a play, return every played physical letter tile to the current blind's undrawn pouch | 1 | rule change |
-| R60 | Biochemistry · 생화학 | Starts at ×1; when a currently most-played Word Hand is repeated consecutively, permanently gain +0.45 ×Mult | 1 | ×Mult |
+| R60 | Biochemistry · 생화학 | Starts at ×1; playing any pre-play most-used Word Hand (ties included) gains +0.5 ×Mult | 1 | ×Mult |
 | R61 | Ambidextrous · 양손잡이 | If the played hand contains Twin, ×2 Mult | 1 | ×Mult |
 | R62 | Third Party · 제3자 | If the played hand contains Triplet, ×3 Mult | 1 | ×Mult |
 | R63 | Mirror Image · 거울상 | If the played hand contains Palindrome, ×3 Mult | 1 | ×Mult |
@@ -1360,13 +1420,24 @@ Legendary tiles have no profile unlock gate. They never appear in shops or
 ordinary packs; Phoenix is their only acquisition route and always draws from
 all five unowned definitions.
 
+Only the 69 gated Common/Uncommon/Rare achievements can create Emoji Tile
+entries in the integrated run-end unlock recap. The 76 ordinary starter tiles
+and five always-eligible Legendary definitions are baseline availability, not
+unlock notices.
+
 | ID | Name | Effect | Layer | Scaling |
 |---|---|---|---|---|
 | L1 | Book of Margins | +3 Emoji Tile slots; after all slot modifiers, this tile applies ×2 per empty effective slot | 3 | dynamic exponential |
-| L2 | Tyrant | Treat every valid word as Vulgar and double every Vulgar ×Mult effect | 2 | — |
+| L2 | Tyrant | Treat every word as Vulgar; each such word gets ×2 Mult once at Tyrant's shelf position | 2 | — |
 | L3 | Type Foundry | Starts at ×1; whenever a letter tile is permanently destroyed, compound this tile's factor ×1.5 for the rest of the run | 1 | ★ exponential |
 | L4 | Tower of Babel | Each valid submitted word gains all four final register tags; register conditions, boss legality, Unison, and sentence-history effects use that membership | 2 | — |
-| L5 | Misbound | Starts at ×1. At round end, 1/1,000 chance to self-destruct; if it survives, permanently gain +0.8 ×Mult | 3 | ★ |
+| L5 | Misbound | Starts at ×1. At blind end, 1/1,000 chance to self-destruct; if it survives, gain +0.5 ×Mult | 3 | ★ |
+
+> **Tower redesign is pending.** The requested “copy every other owned Emoji
+> Tile” replacement is specified in
+> `docs/superpowers/specs/2026-08-26-tower-of-babel-redesign.md`. It is not live
+> in this slice; the current four-register behavior remains authoritative until
+> the dedicated uid/capability/QA/simulation slice lands.
 
 ### 11.5a Developer-only Primordial
 
@@ -1387,9 +1458,8 @@ Reader, Hand Scholar, Word Hunter, or Royalty Contract later therefore includes
 all earlier qualifying skips, words, and Word Hands immediately. Hand Scholar's
 current multiplicative factor is `1 + distinct Word Hands × 0.5`, capped
 explicitly at ×4 even though the registry now contains nine entries. Word Hunter
-(R31) starts at ×2 and permanently gains +0.09 to its factor per unique valid
-word first played this run; its reconstructed history never overwrites a larger
-factor already stored by an existing run.
+(R31) starts at ×1 and gains +0.1 to its factor per unique word first played
+this run; its factor is reconstructed from run history under the revised rate.
 
 | Scaling axis | Emoji Tiles |
 |---|---|
@@ -1422,7 +1492,7 @@ factor already stored by an existing run.
 - **Rhyme streak.** Rhyme Chain (R3) is a blind-only combo, not a growth tile. It depends on real lexicon clusters and
   draw odds. Measure actual same-suffix streaks rather than balancing from a
   theoretical maximum.
-- **Misbound lifetime.** Its +0.8 growth and 1/1,000 self-destruction must be tuned
+- **Misbound lifetime.** Its +0.5 growth and 1/1,000 self-destruction must be tuned
   together from expected rounds survived.
 
 ### 11.8 Editions (implemented)
@@ -1500,8 +1570,10 @@ numbers in reducers or components.
   implementation adds a save key, mirror it in `desktop/save-store.js`.
 - **Custom-seed rule.** A run created from a player-entered custom seed can be
   played and reproduced, but its win cannot satisfy a Pouch win condition or
-  advance the Record ladder. Ordinary unseeded wins may satisfy every matching
-  condition at once.
+  advance the Record ladder, Emoji achievements, Voucher achievements, or
+  Challenge completion. Palette words and distinct-word Collection thresholds
+  still count, so word-threshold Pouches may unlock. Ordinary unseeded wins may
+  satisfy every matching condition at once.
 - **Challenge rule.** Challenges and custom seeds are mutually exclusive.
   Starting one Challenge uses a fresh ordinary `randomSeed()`, replaces the one
   existing `wj.run` slot like New Run, and stores its known `challengeId` beside
@@ -1509,6 +1581,10 @@ numbers in reducers or components.
   an unknown non-null saved id is rejected rather than silently loaded as a
   normal run. Challenge presets bypass Pouch/Record profile locks only inside
   the Challenge start path and never unlock those choices in ordinary New Run.
+  Palette, Emoji, and Voucher progress remains eligible. Win-based Pouch rewards
+  and the Record ladder do not progress, while word-threshold Pouches still
+  follow genuine Collection discoveries. Completing Challenge N may add only Challenge N+1 to the integrated
+  run-end recap; completing Challenge 6 adds no Challenge notice.
 - **Seeded starting randomness.** Lucky Pouch's starting card and Coin Purse's
   letters consume the run's single seeded RNG stream. The same Pouch, Record,
   and seed must reproduce the same start. No Starting Pouch effect may call
@@ -1539,7 +1615,8 @@ currency, reward, or art; construction uses the same Pouch-then-Record order and
 Challenge 1 is available by default; completing N unlocks N+1, and completed
 entries remain replayable. Only a Chapter-8 Deadline victory records completion.
 Challenges 1–5 grant only the next unlock; Challenge 6 displays `6/6 Mastered`;
-there is no separate reward. Challenge runs still count genuine word plays and
+there is no separate Challenge reward; a newly opened Challenge 2–6 instead
+appears in the integrated run-end unlock recap. Challenge runs still count genuine word plays and
 Collection discoveries, Palette/audio/mascot and secret Word-Hand discovery,
 Emoji/Voucher achievements, and ordinary lifetime run/win/streak/pattern/owned-
 Emoji statistics. They do **not** award Starting-Pouch wins, advance any
@@ -1737,7 +1814,7 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
   source-hashed `2026-08-22-emoji-flag-rerun-1024.json` adds a 1,024-pair
   confirmation for Word Hunter, Classicist, Blood Type A, and Biochemistry.
   That screen approved a bounded first tuning pass: Word Hunter's unique-word
-  gain is +0.09 and Biochemistry's consecutive-hand gain is +0.45; the paired
+  gain was later revised to +0.1 and Biochemistry's non-consecutive most-used-hand gain to +0.5; the paired
   post-tune artifact records their effect reduction without changing saved
   factors in existing runs. Further tuning decisions and the separate 97-tile
   redesign remain open.
@@ -1752,6 +1829,12 @@ blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consum
 The game begins **desaturated and silent**; playing specific words permanently unlocks presentation layers. This is the literal enactment of the title — you *play the world into existence*. Persistent **per profile** (localStorage `wj.unlocks`, beside collection/tutorial flags). **Valid words only** unlock (gibberish never does).
 
 **System shape.** One data-driven registry (`src/ui/unlocks.ts`): `word → { effect }`. A word-played check fires on each valid submission; on the first-ever play of a listed word it records the unlock and fires a **celebration reveal** (the color washes in / audio fades up). Adding a future unlock = adding a registry row — **never a hard-coded word check in a component**.
+
+The immediate `ChromaticReveal` remains, and the same newly played Palette ids
+are summarized once in the integrated run-end unlock recap. Confirmation is
+persisted: reload before confirmation repeats the recap, while confirmation
+before Endless advances its baseline so those entries never repeat at the later
+terminal screen. Reveal All's synthetic bulk state is absorbed into the baseline.
 
 **Initial table (C-2).** **Language is not a palette unlock (changed 2026-07-30).** Korean was a celebration entry for something the player already had — the language selector was never gated — so the row was removed along with the `locale` effect kind. The Palette now has three sections: 색상 / 음향 / 캐릭터.
 

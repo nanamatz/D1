@@ -5,6 +5,8 @@ export const goldenType: JokerDef = {
   id: 'goldenType', gddNumber: 42, nameKo: '금빛 활자', nameEn: 'Golden Type',
   emoji: '🪙', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   hooks: {
-    tileGold: ({ ctx }) => { ctx.chips += BALANCE.jokers.goldenType.chips; },
+    tileGold: ({ tile }) => {
+      tile.bonusChips = (tile.bonusChips ?? 0) + BALANCE.jokers.goldenType.chips;
+    },
   },
 };

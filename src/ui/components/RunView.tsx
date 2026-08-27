@@ -279,6 +279,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         <main className="main">
           <JokerShelf
             run={run}
+            runObservationId={g.state.observationId}
             pouchRemaining={phase === 'shop' ? run.bag.length : blind.bag.length}
             {...(!g.state.settleComplete ? { animatedGrowthEvents: g.state.lastEvents } : {})}
             bonusJokerTriggers={g.state.sentenceBonus?.jokerTriggers ?? []}

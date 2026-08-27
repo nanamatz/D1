@@ -16,7 +16,7 @@ import { rollJokerEdition, rollShopTileEdition, rollTileEdition } from './editio
 import { FABLE_IDS } from './fables';
 import { ORDINARY_GAMBLER_IDS } from './gamblerIds';
 import { GAMBLER_IDS } from './gamblers';
-import { createOwnedJoker } from './jokers';
+import { addOwnedJoker, onTilesCreated } from './jokers';
 import {
   canAddJoker,
   allowsDuplicateOffers,
@@ -223,12 +223,9 @@ export function applyPackPick(
   switch (option.kind) {
     case 'joker':
       if (!canAddJoker(run, option.id, option.edition, profileEligible)) return run;
-      return {
-        ...run,
-        jokers: [...run.jokers, createOwnedJoker(run, option.id, option.edition)],
-      };
+      return addOwnedJoker(run, option.id, option.edition);
     case 'tile':
-      return { ...run, bag: [...run.bag, option.tile] };
+      return onTilesCreated({ ...run, bag: [...run.bag, option.tile] }, 1);
     case 'consumable':
       if (run.consumables.length >= run.consumableSlots) return run;
       if (!canOwnConsumable(run, option.id)) return run;

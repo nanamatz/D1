@@ -7,7 +7,7 @@ import { CONSTELLATION_IDS } from './constellations';
 import { emojiTileSellValue } from './economy';
 import {
   ALL_JOKERS,
-  createOwnedJoker,
+  addOwnedJoker,
   JOKER_REGISTRY,
   onFableUsed,
   onTilesDestroyed,
@@ -483,10 +483,7 @@ export function useFable(
       def.rarity !== 'legendary' && canAddJoker(nextRun, def.id, 'base', profileEligible),
     );
     const def = available[rng.int(available.length)]!;
-    nextRun = {
-      ...nextRun,
-      jokers: [...nextRun.jokers, createOwnedJoker(nextRun, def.id)],
-    };
+    nextRun = addOwnedJoker(nextRun, def.id);
   } else if (effect.kind === 'editionJoker') {
     const eligible = nextRun.jokers
       .map((joker, index) => ({ joker, index }))

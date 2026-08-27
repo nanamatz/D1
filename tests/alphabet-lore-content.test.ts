@@ -21,6 +21,7 @@ const lex = makeLexicon([], {
   dog: { suit: 'standard', pos: ['noun'] },
   eat: { suit: 'standard', pos: ['verbTransitive'] },
   run: { suit: 'standard', pos: ['verbIntransitive'] },
+  sit: { suit: 'standard', pos: ['verbIntransitive'] },
   stone: { suit: 'standard', pos: ['noun'] },
   tone: { suit: 'standard', pos: ['noun'] },
 });
@@ -81,11 +82,22 @@ describe('alphabet-lore Emoji Tiles', () => {
     );
   });
 
-  it('Golem, Temurah, and Iota Stroke recognize their dictionary transformations', () => {
+  it('Golem, Temurah, and Iota Stroke use their revised conditions', () => {
     const golemRun = runWith('golem');
-    const golem = play(startBlind(golemRun, makeRng('golem')), golemRun, 'stone');
+    const golemBlind = startBlind(golemRun, makeRng('golem'));
+    const golemHand = tilesFor('stone');
+    golemHand[0] = {
+      ...golemHand[0]!, letter: null, letterBeforeStone: 'S', material: 'stone', font: 'medium',
+    };
+    const golem = submitWord(
+      { ...golemBlind, hand: golemHand },
+      golemRun,
+      lex,
+      golemHand.map((tile) => tile.id),
+      makeRng('golem-play'),
+    );
     expect(golem.events).toContainEqual(expect.objectContaining({
-      kind: 'joker', jokerId: 'golem', multFactor: BALANCE.jokers.golem.factor,
+      kind: 'joker', jokerId: 'golem', multDelta: BALANCE.jokers.golem.multPerStone,
     }));
 
     const temurahRun = runWith('temurah');
@@ -96,25 +108,18 @@ describe('alphabet-lore Emoji Tiles', () => {
     }));
 
     const iotaRun = runWith('iotaStroke');
-    const cat = play(startBlind(iotaRun, makeRng('iota')), iotaRun, 'cat');
-    const bat = play(cat.blind, { ...iotaRun, jokers: cat.jokers }, 'bat');
-    expect(bat.events).toContainEqual(expect.objectContaining({
+    const sit = play(startBlind(iotaRun, makeRng('iota')), iotaRun, 'sit');
+    expect(sit.events).toContainEqual(expect.objectContaining({
       kind: 'joker', jokerId: 'iotaStroke', multFactor: BALANCE.jokers.iotaStroke.factor,
     }));
   });
 
-  it('Alphabet Poet multiplies the sentence bonus for ascending initials', () => {
+  it('Alphabet Poet projects Z as A for dictionary spelling', () => {
     const run = runWith('alphabetPoet');
-    let blind = startBlind(run, makeRng('alphabet-poet'), { target: 1_000_000 });
-    let currentRun = run;
-    for (const word of ['ant', 'bat', 'cat']) {
-      const result = play(blind, currentRun, word);
-      blind = result.blind;
-      currentRun = { ...currentRun, jokers: result.jokers };
-    }
-    const end = endBlind(blind, currentRun, lex);
-    expect(end.breakdown.effectMult).toBe(BALANCE.jokers.alphabetPoet.factor);
-    expect(end.breakdown.jokerTriggers?.[0]?.jokerId).toBe('alphabetPoet');
+    const result = play(startBlind(run, makeRng('alphabet-poet')), run, 'czt');
+    expect(result.submission.isGibberish).toBe(false);
+    expect(result.submission.text).toBe('CAT');
+    expect(result.submission.tiles.map((tile) => tile.letter).join('')).toBe('CZT');
   });
 });
 

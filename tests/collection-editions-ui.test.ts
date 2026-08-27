@@ -116,7 +116,10 @@ describe('Edition Collection page', () => {
       new URL('../src/ui/components/Collection.tsx', import.meta.url),
       'utf8',
     );
-    const pager = component.slice(component.indexOf('function Pager('));
+    const pager = readFileSync(
+      new URL('../src/ui/components/Pager.tsx', import.meta.url),
+      'utf8',
+    );
 
     expect(pager).toContain('(page + delta + pages) % pages');
     expect(pager).not.toContain('page === 0');

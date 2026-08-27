@@ -3,6 +3,7 @@ import { hasScoringSuit, type JokerDef } from '../events';
 
 /** U6 (GDD §11.3) — ★ every Formal word permanently raises this tile's Mult. */
 export const classicist: JokerDef = {
+  scoresGibberish: true,
   id: 'classicist',
   gddNumber: 6,
   nameKo: '고전주의자',

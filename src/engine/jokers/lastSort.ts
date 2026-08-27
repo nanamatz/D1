@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const lastSort: JokerDef = {
+  scoresGibberish: true,
   id: 'lastSort', gddNumber: 33, nameKo: '마지막 활자', nameEn: 'Last Sort',
   emoji: '🔚', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
   hooks: {

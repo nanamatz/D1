@@ -8,7 +8,9 @@ export const earthquake: JokerDef = {
   hooks: {
     wordRules: ({ ctx }, self) => {
       if ((self.state.handsRemaining ?? BALANCE.jokers.earthquake.hands) <= 0) return;
-      for (const tile of ctx.submission.tiles) addTileRetrigger(ctx, tile.id, self.defId);
+      for (const tile of ctx.submission.tiles) {
+        addTileRetrigger(ctx, tile.id, self.defId, self.instanceId);
+      }
     },
     wordScored: (_payload, self) => {
       self.state.handsRemaining = Math.max(

@@ -5,11 +5,12 @@ import type { PatternId } from '../../engine/types';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { WooDakMascot } from './WooDakMascot';
-import { UNLOCKS } from '../unlocks';
 import { formatScore } from '../formatScore';
-import { PatternIcon, UiIcon } from './UiIcon';
+import { PatternIcon } from './UiIcon';
 import { isChallengeUnlocked } from '../../engine/challenges';
 import { loadChallengeProgress } from '../lifetime';
+import { pendingUnlocks, unlockRecapReady } from '../unlockRecap';
+import { UnlockRecap } from './UnlockRecap';
 
 /** The most-frequent finalized sentence pattern this run, with its count. */
 function topPattern(counts: Partial<Record<PatternId, number>>): { id: PatternId; n: number } | null {
@@ -51,11 +52,12 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
       : won
         ? 'gameover.wonTitle'
         : 'gameover.title';
-  // feedback #2: the chromatic unlocks earned THIS run — announced by the mascot and
-  // shown as cards below (deduped, in play order).
-  const unlocks = [...new Set(g.state.runUnlocks)]
-    .map((id) => UNLOCKS.find((u) => u.id === id))
-    .filter((u): u is (typeof UNLOCKS)[number] => !!u);
+  const unlocks = pendingUnlocks(g.state.runUnlocks);
+
+  // recordRunEnd runs after the terminal render. Keep both summary and recap hidden
+  // until that effect freezes the exact post-write payload into GameState.
+  if (!unlockRecapReady(g.state.runUnlocks)) return null;
+  if (unlocks.length > 0) return <UnlockRecap g={g} notices={unlocks} />;
 
   const copySeed = () => {
     navigator.clipboard?.writeText(seed).then(
@@ -69,7 +71,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
 
   return (
     <div className="overlay gameover-overlay">
-      <WooDakMascot stats={stats} won={won || gameover.endlessComplete} unlocked={unlocks.length} />
+      <WooDakMascot stats={stats} won={won || gameover.endlessComplete} unlocked={0} />
       <div className={['overlay-card', 'gameover', won || gameover.endlessComplete ? 'go-won' : ''].filter(Boolean).join(' ')} role="dialog" aria-modal>
       <div className="go-title">{t(titleKey)}</div>
       {challengeComplete && (
@@ -102,24 +104,6 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
           })}
         </div>
       </div>
-
-      {unlocks.length > 0 && (
-        <div className="panel go-unlocks">
-          <span className="label">{t('gameover.unlocked')}</span>
-          <div className="go-unlock-cards">
-            {unlocks.map((u) => (
-              <div key={u.id} className={['go-unlock-card', `unlock-${u.effect.kind}`].join(' ')}>
-                <div className={['go-unlock-swatch', u.effect.kind === 'color' ? `sw-${u.effect.group}` : ''].filter(Boolean).join(' ')}>
-                  {u.effect.kind === 'audio' ? (
-                    <UiIcon name={u.effect.bus === 'music' ? 'music' : 'speaker'} />
-                  ) : u.effect.kind === 'mascot' ? <UiIcon name="star" /> : null}
-                </div>
-                <span className="go-unlock-word">{u.word}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="panel go-stats">
         <div className="go-stat wide">

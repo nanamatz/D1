@@ -6,8 +6,9 @@ export const doubleImpression: JokerDef = {
   emoji: '⏺️', rarity: 'uncommon', layer: 1, price: BALANCE.jokerPrice.uncommon,
   hooks: {
     wordRules: ({ ctx }, self) => {
-      const tile = ctx.submission.tiles.find((candidate) => candidate.font === 'black');
-      if (tile) addTileRetrigger(ctx, tile.id, self.defId);
+      for (const tile of ctx.submission.tiles) {
+        if (tile.font === 'black') addTileRetrigger(ctx, tile.id, self.defId, self.instanceId);
+      }
     },
   },
 };

@@ -13,7 +13,7 @@ import {
   remainingPhaseGold,
 } from './economy';
 import type { BlindKind, BlindState, LetterHandId, RunState } from './types';
-import { defaultJokerBus } from './jokers';
+import { defaultJokerBus, recordLifecycleGrowth } from './jokers';
 import { awardBlindLetterHandStamps, type LetterHandStampReward } from './letterHands';
 import { makeRng } from './rng';
 
@@ -102,25 +102,28 @@ export function resolveBlind(
   const discardCount = blind.discardsLeft;
   const discards = remainingDiscardGold(run, discardCount);
   const interestScoring = { run, interest: effectiveInterest(run) };
-  defaultJokerBus.emit('interestScoring', interestScoring, run.jokers);
+  const interestTriggers = defaultJokerBus.emit('interestScoring', interestScoring, run.jokers);
   const interestGold = interestScoring.interest;
-  defaultJokerBus.emit('interestResolved', { run, interest: interestGold }, run.jokers);
+  interestTriggers.push(...defaultJokerBus.emit(
+    'interestResolved', { run, interest: interestGold }, run.jokers,
+  ));
+  const payoutRun = recordLifecycleGrowth(run, interestTriggers);
   const total = reward + phases + discards + interestGold;
   const mastery = awardBlindLetterHandStamps(
-    run,
+    payoutRun,
     blind,
     makeRng(`${run.seed}#word-hand-stamp-${run.ante}-${run.blindIndex}`),
     eligibleRandomLetterHands,
   );
   const won =
-    !run.victorySecured && run.ante === BALANCE.runAntes && run.blindIndex === 2;
+    !payoutRun.victorySecured && payoutRun.ante === BALANCE.runAntes && payoutRun.blindIndex === 2;
   const endlessComplete =
-    run.victorySecured &&
-    run.ante === BALANCE.endless.maxAnte &&
-    run.blindIndex === 2;
+    payoutRun.victorySecured &&
+    payoutRun.ante === BALANCE.endless.maxAnte &&
+    payoutRun.blindIndex === 2;
   const next = endlessComplete
-    ? { ante: run.ante, blindIndex: run.blindIndex }
-    : advance(run.ante, run.blindIndex);
+    ? { ante: payoutRun.ante, blindIndex: payoutRun.blindIndex }
+    : advance(payoutRun.ante, payoutRun.blindIndex);
   return {
     cleared: true,
     gameOver: false,
@@ -139,16 +142,16 @@ export function resolveBlind(
     },
     run: {
       ...mastery.run,
-      gold: run.gold + total,
+      gold: payoutRun.gold + total,
       ante: next.ante,
       blindIndex: next.blindIndex,
       pendingClearReward: 0,
-      pendingBossReward: blind.kind === 'boss' ? 0 : (run.pendingBossReward ?? 0),
+      pendingBossReward: blind.kind === 'boss' ? 0 : (payoutRun.pendingBossReward ?? 0),
       counters: {
-        ...run.counters,
-        unusedDiscards: (run.counters.unusedDiscards ?? 0) + discardCount,
+        ...payoutRun.counters,
+        unusedDiscards: (payoutRun.counters.unusedDiscards ?? 0) + discardCount,
       },
-      victorySecured: run.victorySecured || won,
+      victorySecured: payoutRun.victorySecured || won,
     },
   };
 }

@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const blacksmith: JokerDef = {
+  scoresGibberish: true,
   id: 'blacksmith', gddNumber: 52, nameKo: '대장간', nameEn: 'Blacksmith',
   emoji: '⚒️', rarity: 'rare', layer: 1, price: BALANCE.jokerPrice.rare,
   growthDisplay: { kind: 'chips', stateKey: 'chips', initial: 0 },

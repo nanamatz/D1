@@ -3,7 +3,7 @@
  * they contain NO game rules — every decision routes back through the engine
  * (scoreWord/etc). The React hook (useGame) owns the state.
  */
-import { letterString } from '../engine/scoring';
+import { letterString, tileBaseChips } from '../engine/scoring';
 import { evaluateLetterHand, type LetterHandId } from '../engine/letterHands';
 import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
@@ -107,7 +107,7 @@ export function posCandidates(sub: WordSubmission, lexicon: Lexicon): readonly P
 
 /** Letter chip value for a tile (display only). Stone has no letter → 0. */
 export const tileValue = (t: Tile): number =>
-  t.letter === null ? 0 : (BALANCE.letterChips[t.letter] ?? 0);
+  tileBaseChips(t);
 
 /** Tooltip total: Stone's material chips replace its missing letter value. */
 export const tileTooltipChips = (t: Tile): number =>

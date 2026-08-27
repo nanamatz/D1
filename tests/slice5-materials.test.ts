@@ -203,7 +203,7 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
     expect(glassBeat?.multFactor).toBe(BALANCE.materials.glass.multFactor);
   });
 
-  it('records actual survival or destruction, including insurance prevention', () => {
+  it('records actual survival or destruction, with only Glass Insurance preventing it', () => {
     const hand = tiles('cat');
     hand[0]!.material = 'glass';
     const play = (run: ReturnType<typeof newRun>, value: number) => submitWord(
@@ -235,12 +235,13 @@ describe('slice5 — Glass (GDD §2.2, the one gamble)', () => {
     const termInsuredRun = newRun('term-insured-fx');
     termInsuredRun.jokers = [{ defId: 'termInsurance', state: {} }];
     const termInsured = play(termInsuredRun, 0);
-    expect(termInsured.destroyedTileIds).not.toContain(hand[0]!.id);
-    expect(termInsured.events).toContainEqual(expect.objectContaining({
-      kind: 'joker',
-      jokerId: 'termInsurance',
-      multFactor: BALANCE.jokers.termInsurance.factor,
-    }));
+    expect(termInsured.destroyedTileIds).toContain(hand[0]!.id);
+    const insuranceGrowth = termInsured.events.find(
+      (event) => event.kind === 'joker' && event.jokerId === 'termInsurance',
+    );
+    expect(insuranceGrowth).toMatchObject({ kind: 'joker', jokerId: 'termInsurance' });
+    expect(insuranceGrowth?.kind === 'joker' ? insuranceGrowth.growthDelta : undefined)
+      .toBeCloseTo(BALANCE.jokers.termInsurance.factorPerTile);
   });
 
   it('doubles the mult on the word it is played in', () => {

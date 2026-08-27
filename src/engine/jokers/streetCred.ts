@@ -3,6 +3,7 @@ import { hasScoringSuit, type JokerDef } from '../events';
 
 /** U7 (GDD §11.3) — ★ every Slang word permanently raises this tile's Chips. */
 export const streetCred: JokerDef = {
+  scoresGibberish: true,
   id: 'streetCred',
   gddNumber: 7,
   nameKo: '거리의 신용',

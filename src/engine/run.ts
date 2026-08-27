@@ -94,6 +94,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     baseDiscards: BALANCE.discardsPerBlind,
     bag: buildBag(),
     jokers: [],
+    nextJokerInstanceId: 1,
     consumables: [],
     lastFableOrConstellation: null,
     fablesUsed: 0,

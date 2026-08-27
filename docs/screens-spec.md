@@ -260,6 +260,40 @@ factor. The trailing `Chips`/`Mult` or `칩`/`배수` label always remains in
 the normal body colour.
 
 ### 2.7 Run End (Game Over / Published)
+After the settlement-complete signal and verdict beat, the terminal flow first
+freezes a persisted availability diff. If it is non-empty, a separate
+**Content Unlocked** recap modal appears before the ordinary summary. It covers
+the six real availability gates only: Palette (10), gated Emoji Tiles (69),
+Voucher upgrades (16), gated Pouches (13), per-Pouch Record cells (98), and
+Challenges 2–6. Word discoveries, register titles, secret Word Hands, and Emoji
+Record stickers are excluded. Cards reuse `jokerArt`, shared `VoucherCard` +
+`voucherArt`, `pouchArt`, `recordArt`, and `mascotVariantArt`; color/audio use a
+swatch or `UiIcon`. Challenge cards combine their Pouch + Record art, and Record
+cards name their Pouch context. Every object has the shared body-portalled
+tooltip, keyboard focus, and ARIA label. Every page holds at most three cards;
+mobile keeps its two-column layout. Overflow uses the shared circular
+`< · Page N/M · >` pager rather than scrolling. A sparse page keeps the same
+fixed card dimensions as a full page (`148×214px` desktop, `≤132×178px` mobile),
+and the grid plus pager slots reserve their full height even when pagination is
+unnecessary. The modal therefore never resizes between pages or unlock counts.
+The portrait and every sentence in its speech bubble resolve through the
+currently selected WooDak skin; a mascot being unlocked is only the subject of
+its card and does not speak until the player selects that skin. Mascot card
+titles and tooltips use localized display names (`누렁이`, `이고지`, etc.),
+not the English unlocking words (`DOG`, `ALIEN`, etc.). The recap uses
+one compact unlock line only; win and contextual copy appears later on the
+ordinary summary. Its `260px` bubble and all visible recap labels use `18px` or
+larger text, with the page label larger still.
+Reduced motion removes the cards' entrance pop.
+
+Confirming the recap reveals the existing summary and persists immediately.
+Reload before confirmation shows it again; reload after confirmation does not.
+Published → Endless clears the terminal-ready marker while advancing confirmed
+items into the baseline, so only genuinely new Endless unlocks can appear later.
+An empty diff skips the recap without flashing the summary before the post-write
+snapshot is ready. Immediate ChromaticReveal remains unchanged. Reveal All bulk
+grants never enter the recap.
+
 One screen with three framings: **loss** — red "Game Over", defeated-by panel;
 **Chapter-8 win** — gold "출간 완료!/Published!" with **Endless Mode →** in the
 action row; **post-win end** — "Endless Run Ended" (or "Beyond Publication!" for
@@ -277,7 +311,9 @@ breathe + slow sway. Runtime art: `src/ui/assets/woodak.png`. Stats panel, trans
 - Buttons: on the Chapter-8 win, Endless Mode · New Run · Main Menu; otherwise
   New Run · Main Menu. (The run-summary quip is now 우땅's speech bubble — see above.)
 - An eligible Challenge Chapter-8 victory adds one compact localized
-  **Challenge Complete · name** line; it does not add a reward screen.
+  **Challenge Complete · name** line. It adds no independent Challenge reward
+  screen; if it opens the next Challenge, that item appears in the integrated
+  unlock recap above.
 
 ### 2.8 Pouch widget + click view (주머니)
 **Persistent pouch widget** bottom-right: the selected Starting Pouch's
@@ -325,7 +361,7 @@ surface. The developer-only Primordial image uses the same resolver but never ap
 | **Constellation Cards** | 12 implemented zodiac cards | supplied monochrome pixel art uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; hover shows the mapped sentence pattern |
 | **Gambler Cards** | 14 implemented cards | supplied artwork uses the same SVG-master/`500×700` PNG-runtime contract and 5-column, 10-per-page gallery; every card uses its live runtime tooltip |
 | Card Packs | Tile 8 · Charm 4 · Fable 8 · Constellation 8 · Ink 4 | four-page image-only gallery: Tile, combined Charm + Ink, Fable, Constellation; every page contains eight cards and therefore shares the same two-row height; all 32 supplied artworks keep a shared `244×400` path-only SVG master and use its pixel-identical PNG runtime derivative plus the common idle and cursor tilt/sheen, with no persistent type/grade/coming-soon labels; hover or keyboard focus restores the shared type/description/grade tooltip |
-| **Palette** | 11 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
+| **Palette** | 10 chromatic unlocks (feature-02 C) | locked = grey silhouette + letter-count hint ("R _ _"); unlocked = the word in its group color |
 | Mascots | WooDak skin roster | **primary skin picker** (moved from Settings 2026-07-29): one horizontal, centred, non-wrapping card row; discovered tooltip-wrapped cards and undiscovered raw cards share the same 150px basis width; locked skins use non-selectable silhouettes; unlocked cards select on click/keyboard and mark the equipped skin with a gold outline and Selected label |
 | **Starting Pouches** | 14 object-art entries from GDD §12.2 | one-at-a-time circular `arrow | panel | arrow` carousel with art left, enlarged bold localized effect right, 14 position dots below, and the shared orange Back footer; signed/count values and voucher names use semantic highlight colours; unlocked = full art/effect with no unlock copy; locked = silhouette + generated arcade-pixel lock sprite + exact unlock condition only; the tooltip retains the actual name/effect (changed 2026-08-12) |
 | **Blinds** | left: Chapter → base target table (from `balance.ts` anteBaseTargets, incl. endless rows); right: Draft/Revision badges + 21 boss chips (undiscovered = `?`) | doubles as the player-facing target-curve reference; boss cards retain their tooltip and use shared cursor tilt/sheen |

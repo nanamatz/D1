@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { CORE_BOSS_IDS } from '../src/engine/bosses';
+import { writeProfileValue } from '../src/ui/storage';
 import {
   loadVoucherProgress,
   recordVoucherProgress,
   unlockedVoucherSet,
   VOUCHER_UNLOCK_RULES,
 } from '../src/ui/voucherProgress';
-import { CORE_BOSS_IDS } from '../src/engine/bosses';
-
 const mem = new Map<string, string>();
 (globalThis as unknown as { localStorage: Storage }).localStorage = {
   getItem: (key) => mem.get(key) ?? null,
@@ -38,7 +38,7 @@ describe('voucher profile unlock progress', () => {
       recordVoucherProgress({ kind: 'voucherBuy', id: 'storyBook', spent: 10 });
     }
     expect(unlockedVoucherSet()).toContain('papyrus');
-    recordVoucherProgress({ kind: 'newRun', handSize: 10 });
+    recordVoucherProgress({ kind: 'newRun', handSize: 10, customSeed: false });
     expect(loadVoucherProgress().currentRunVoucherUses).toBe(0);
     expect(loadVoucherProgress().maxRunVoucherUses).toBe(10);
   });
@@ -56,6 +56,39 @@ describe('voucher profile unlock progress', () => {
 
     recordVoucherProgress({ kind: 'handSize', size: 8 });
     expect(unlockedVoucherSet()).toContain('pictureDiary');
+  });
+
+  it('does not advance or evaluate achievements in a custom-seeded run', () => {
+    recordVoucherProgress({ kind: 'newRun', handSize: 8, customSeed: true });
+    for (let i = 0; i < 50; i++) {
+      recordVoucherProgress({ kind: 'shopBuy', item: 'fable', spent: 3 });
+    }
+    const progress = loadVoucherProgress();
+    expect(progress.fableBought).toBe(0);
+    expect(progress.lowestHandSize).toBeNull();
+    expect(progress.unlocked).not.toContain('novel');
+    expect(progress.unlocked).not.toContain('pictureDiary');
+  });
+
+  it('reconciles eligibility when resuming old custom and standard saves', () => {
+    const legacy = loadVoucherProgress();
+    localStorage.setItem('wj.vouchers', JSON.stringify(legacy));
+    recordVoucherProgress({ kind: 'resumeRun', customSeed: true });
+    recordVoucherProgress({ kind: 'shopBuy', item: 'fable', spent: 3 });
+    expect(loadVoucherProgress().fableBought).toBe(0);
+
+    recordVoucherProgress({ kind: 'resumeRun', customSeed: false });
+    recordVoucherProgress({ kind: 'shopBuy', item: 'fable', spent: 3 });
+    expect(loadVoucherProgress().fableBought).toBe(1);
+  });
+
+  it('does not unlock Portrait from duplicated corrupted boss history', () => {
+    writeProfileValue('wj.vouchers', 1, {
+      ...loadVoucherProgress(),
+      bossesSeen: Array.from({ length: CORE_BOSS_IDS.length }, () => CORE_BOSS_IDS[0]),
+    });
+    recordVoucherProgress({ kind: 'tilesPlayed', count: 0 });
+    expect(loadVoucherProgress().unlocked).not.toContain('portrait');
   });
 
   it('requires ten consecutive maximum-interest rounds', () => {

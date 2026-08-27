@@ -7,9 +7,10 @@ export const oneVoice: JokerDef = {
   emoji: '🗣️', rarity: 'uncommon', layer: 3, price: BALANCE.jokerPrice.uncommon,
   hooks: {
     wordScoring: ({ blind, ctx }) => {
+      if (ctx.submission.isGibberish || ctx.submission.debuffed) return;
       const words = [
-        ...blind.sequence.filter((word) => !word.isGibberish),
-        ...(ctx.submission.isGibberish ? [] : [ctx.submission]),
+        ...blind.sequence.filter((word) => !word.isGibberish && !word.debuffed),
+        ctx.submission,
       ];
       const common = new Set(words[0] ? submissionSuits(words[0]) : []);
       for (const word of words.slice(1)) {

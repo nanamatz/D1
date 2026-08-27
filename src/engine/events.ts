@@ -88,9 +88,19 @@ export interface EngineEvents {
     debuffed: boolean;
   };
 
+  /** Sole scoring seam for an otherwise short-circuited debuffed word. */
+  debuffScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext };
+
   /** a SINGLE tile's chips have just been added. Per-letter Emoji Tiles hook here
    *  so their contribution interleaves with tile scoring. */
-  tileScoring: { run: RunState; blind: BlindState; ctx: WordScoringContext; tile: Tile };
+  tileScoring: {
+    run: RunState;
+    blind: BlindState;
+    ctx: WordScoringContext;
+    tile: Tile;
+    /** Split one tile hook into ordered per-qualifying-unit beats. */
+    scoreBeats?: JokerScoreBeat[];
+  };
 
   /** a SINGLE tile remaining in hand is resolving. Held-tile Emoji Tiles hook
    * here so every contribution is attributed to that visible tile. */
@@ -107,6 +117,7 @@ export interface EngineEvents {
     multDelta: number;
     goldDelta: number;
     grewWood: boolean;
+    chanceResults?: readonly ChanceResult[];
   };
 
   /** a permanent tile destruction is about to be committed; hooks may cancel it */
@@ -146,7 +157,16 @@ export interface EngineEvents {
   tilesDiscarded: { run: RunState; blind: BlindState; tiles: Tile[] };
 
   /** played tiles have left the hand; hooks may redirect their blind destination */
-  tilesPlayed: { run: RunState; blind: BlindState; tiles: Tile[] };
+  tilesPlayed: {
+    run: RunState;
+    blind: BlindState;
+    tiles: Tile[];
+    enhancedTiles?: Array<{
+      tile: Tile;
+      jokerId: string;
+      jokerInstanceId?: number;
+    }>;
+  };
 
   /** a Draft/Revision was skipped and the run-wide skip count has advanced */
   blindSkipped: { run: RunState };
@@ -201,9 +221,39 @@ export type EngineEventName = keyof EngineEvents;
 
 export interface JokerGrowthTrigger {
   jokerId: string;
+  jokerInstanceId?: number;
   kind: 'mult' | 'multAdd' | 'chips' | 'gold' | 'handSize';
   delta: number;
 }
+
+const pruneEchoNamespacesForOwner = (
+  owner: OwnedJoker,
+  shelf: readonly OwnedJoker[],
+): void => {
+  if (owner.defId !== 'echoChamber') return;
+  const liveInstanceIds = new Set(shelf.flatMap((joker) =>
+    joker.instanceId === undefined || joker.state.destroyed === 1 ? [] : [joker.instanceId],
+  ));
+  for (const key of Object.keys(owner.state)) {
+    const match = /^echo:uid:(\d+):/.exec(key);
+    if (match && !liveInstanceIds.has(Number(match[1]))) delete owner.state[key];
+  }
+};
+
+/** Bound copied state to physical target instances that still exist. Reordering retains state. */
+export const pruneEchoNamespaces = (run: RunState): RunState => {
+  let changed = false;
+  const jokers = run.jokers.map((owner) => {
+    if (owner.defId !== 'echoChamber') return owner;
+    const state = { ...owner.state };
+    const copy = { ...owner, state };
+    pruneEchoNamespacesForOwner(copy, run.jokers);
+    if (Object.keys(state).length === Object.keys(owner.state).length) return owner;
+    changed = true;
+    return copy;
+  });
+  return changed ? { ...run, jokers } : run;
+};
 
 /** A self-destroyed owner retained only until its final trigger has been shown. */
 export interface DestroyedJokerSnapshot {
@@ -214,7 +264,12 @@ export interface DestroyedJokerSnapshot {
 export type JokerHandler<E extends EngineEventName> = (
   payload: EngineEvents[E],
   self: OwnedJoker,
-  env: { index: number; lookup: (id: string) => JokerDef | undefined },
+  env: {
+    index: number;
+    lookup: (id: string) => JokerDef | undefined;
+    /** Record one qualifying growth cause without aggregating adjacent causes. */
+    grow: (kind: JokerGrowthTrigger['kind'], delta: number) => void;
+  },
 ) => void;
 
 export type JokerHooks = { [E in EngineEventName]?: JokerHandler<E> };
@@ -231,6 +286,10 @@ export interface JokerDef {
   rarity: JokerRarity;
   layer: 1 | 2 | 3;
   price: number; // placeholder, see balance.ts
+  /** Execute the immediately-right active Emoji Tile's hook at this shelf position. */
+  copiesRight?: boolean;
+  /** Explicit exception: this definition's wordScoring hook may run on Gibberish. */
+  scoresGibberish?: boolean;
   /** State for a newly acquired instance. Run-history scalers seed themselves
    * here so buying one late includes qualifying actions from earlier this run. */
   initialState?: (run: RunState) => Record<string, number>;
@@ -266,14 +325,22 @@ export const hasScoringSuit = (
 export const isScoringVowel = (ctx: WordScoringContext, letter: Letter | null): boolean =>
   letter !== null && (ctx.scoringVowels?.has(letter) ?? false);
 
+/** Virtual letter for spelling/structure rules; the physical tile stays unchanged. */
+export const scoringLetter = (ctx: WordScoringContext, tile: Tile): Letter | null =>
+  ctx.spellingTiles?.find((candidate) => candidate.id === tile.id)?.letter ?? tile.letter;
+
 export const addTileRetrigger = (
   ctx: WordScoringContext,
   tileId: string,
   jokerId: string,
+  jokerInstanceId?: number,
 ): void => {
   const sources = ctx.tileRetriggers?.get(tileId) ?? [];
   sources.push(jokerId);
   ctx.tileRetriggers?.set(tileId, sources);
+  const instances = ctx.tileRetriggerInstances?.get(tileId) ?? [];
+  instances.push(jokerInstanceId);
+  ctx.tileRetriggerInstances?.set(tileId, instances);
 };
 
 // ---------- Event bus ----------
@@ -290,6 +357,91 @@ export class JokerBus {
     owned: OwnedJoker[],
   ): JokerGrowthTrigger[] {
     const growth: JokerGrowthTrigger[] = [];
+    const growthTrigger = (
+      joker: OwnedJoker,
+      kind: JokerGrowthTrigger['kind'],
+      delta: number,
+    ): JokerGrowthTrigger => ({
+      jokerId: joker.defId,
+      ...(joker.instanceId !== undefined ? { jokerInstanceId: joker.instanceId } : {}),
+      kind,
+      delta,
+    });
+    const invokeRight = (
+      eventName: E,
+      payloadValue: EngineEvents[E],
+      copier: OwnedJoker,
+      shelfIndex: number,
+      visited: Set<string>,
+    ): void => {
+      const targetIndex = shelfIndex + 1;
+      const target = payloadValue.run.jokers[targetIndex];
+      if (!target || target.state.destroyed === 1 || target.state.bossDisabled === 1 || target.defId === 'towerOfBabel') return;
+      const targetIdentity = target.instanceId !== undefined
+        ? `uid:${target.instanceId}`
+        : `legacy:${targetIndex}:${target.defId}`;
+      if (visited.has(targetIdentity)) return;
+      const targetDef = this.defs.get(target.defId);
+      if (!targetDef) return;
+      if (eventName === 'wordScoring' &&
+          (payloadValue as EngineEvents['wordScoring']).ctx.submission.isGibberish &&
+          !targetDef.scoresGibberish) return;
+      visited.add(targetIdentity);
+      if (targetDef.copiesRight) {
+        invokeRight(eventName, payloadValue, copier, targetIndex, visited);
+        return;
+      }
+      const handler = targetDef.hooks[eventName];
+      if (!handler) return;
+      const prefix = `echo:${targetIdentity}:${target.defId}:`;
+      const savedState = Object.fromEntries(
+        Object.entries(copier.state)
+          .filter(([key]) => key.startsWith(prefix))
+          .map(([key, value]) => [key.slice(prefix.length), value]),
+      );
+      const virtualState = Object.keys(savedState).length > 0
+        ? savedState
+        : (targetDef.initialState?.(payloadValue.run) ?? {});
+      const virtual: OwnedJoker = {
+        defId: copier.defId,
+        ...(copier.instanceId !== undefined ? { instanceId: copier.instanceId } : {}),
+        edition: 'base',
+        state: virtualState,
+      };
+      const blindSelected = eventName === 'blindSelected'
+        ? payloadValue as EngineEvents['blindSelected']
+        : null;
+      const triggerStart = blindSelected?.triggers.length ?? 0;
+      const display = targetDef.growthDisplay;
+      const before = display ? virtual.state[display.stateKey] ?? display.initial : 0;
+      const growthStart = growth.length;
+      handler(payloadValue, virtual, {
+        index: shelfIndex,
+        lookup: (id) => this.defs.get(id),
+        grow: (kind, delta) => growth.push(growthTrigger(copier, kind, delta)),
+      });
+      if (display && growth.length === growthStart) {
+        const delta = (virtual.state[display.stateKey] ?? display.initial) - before;
+        if (delta > 0 || (display.showDecrease && delta < 0)) {
+          growth.push(growthTrigger(copier, display.kind, delta));
+        }
+      }
+      if (blindSelected) {
+        for (let index = triggerStart; index < blindSelected.triggers.length; index += 1) {
+          blindSelected.triggers[index] = {
+            ...blindSelected.triggers[index]!,
+            joker: copier,
+            jokerIndex: shelfIndex,
+          };
+        }
+      }
+      for (const key of Object.keys(copier.state)) if (key.startsWith(prefix)) delete copier.state[key];
+      if (virtual.state.destroyed === 1) {
+        copier.state.destroyed = 1;
+        return;
+      }
+      for (const [key, value] of Object.entries(virtual.state)) copier.state[`${prefix}${key}`] = value;
+    };
     for (let index = 0; index < owned.length; index++) {
       const joker = owned[index]!;
       // A destroyed owner may remain in the UI until its final trigger finishes.
@@ -299,14 +451,27 @@ export class JokerBus {
       if (joker.state.bossDisabled === 1) continue;
       const def = this.defs.get(joker.defId);
       const handler = def?.hooks[event];
-      if (!handler) continue;
       const display = def?.growthDisplay;
       const before = display ? joker.state[display.stateKey] ?? display.initial : 0;
-      handler(payload, joker, { index, lookup: (id) => this.defs.get(id) });
-      if (display) {
+      const growthStart = growth.length;
+      const shelfIndex = payload.run.jokers.indexOf(joker);
+      if (def?.copiesRight && shelfIndex >= 0) {
+        pruneEchoNamespacesForOwner(joker, payload.run.jokers);
+        const selfIdentity = joker.instanceId !== undefined
+          ? `uid:${joker.instanceId}`
+          : `legacy:${shelfIndex}:${joker.defId}`;
+        invokeRight(event, payload, joker, shelfIndex, new Set([selfIdentity]));
+      } else if (handler) {
+        handler(payload, joker, {
+          index: shelfIndex >= 0 ? shelfIndex : index,
+          lookup: (id) => this.defs.get(id),
+          grow: (kind, delta) => growth.push(growthTrigger(joker, kind, delta)),
+        });
+      } else continue;
+      if (display && growth.length === growthStart) {
         const delta = (joker.state[display.stateKey] ?? display.initial) - before;
         if (delta > 0 || (display.showDecrease && delta < 0)) {
-          growth.push({ jokerId: joker.defId, kind: display.kind, delta });
+          growth.push(growthTrigger(joker, display.kind, delta));
         }
       }
     }

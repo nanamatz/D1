@@ -1,5 +1,5 @@
 import { BALANCE } from '../balance';
-import type { JokerDef } from '../events';
+import { scoringLetter, type JokerDef } from '../events';
 import { isConsonant } from '../types';
 
 export const rightMargin: JokerDef = {
@@ -7,7 +7,7 @@ export const rightMargin: JokerDef = {
   emoji: '📐', rarity: 'common', layer: 1, price: BALANCE.jokerPrice.common,
   hooks: {
     tileScoring: ({ ctx, tile }) => {
-      if (ctx.submission.tiles.at(-1)?.id === tile.id && isConsonant(tile.letter)) {
+      if (ctx.submission.tiles.at(-1)?.id === tile.id && isConsonant(scoringLetter(ctx, tile))) {
         ctx.mult += BALANCE.jokers.rightMargin.mult;
       }
     },

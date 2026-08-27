@@ -28,6 +28,7 @@ import { mascotSrc } from '../mascots';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { GROWTH_POP_MS } from '../timing';
+import { createGrowthPopQueue, type GrowthPopQueue } from '../growthPopQueue';
 
 const CONSUMABLE_ICON: Partial<Record<ConsumableId, UiIconId>> = { magnifier: 'magnifier' };
 const NO_GROWTH_EVENTS: readonly ScoreEvent[] = [];
@@ -82,6 +83,8 @@ export function JokerPop({
 
 interface Props {
   run: RunState;
+  /** Stable identity for the current run; only a hard run change resets queued pops. */
+  runObservationId: string;
   pouchRemaining: number;
   onUseConsumable?: (id: ConsumableId) => void;
   canUseConsumable?: (id: ConsumableId) => boolean;
@@ -105,6 +108,7 @@ interface Props {
 /** Owned jokers (top-left) + consumables (top-right), per UI_DESIGN §2. */
 export function JokerShelf({
   run,
+  runObservationId,
   pouchRemaining,
   onUseConsumable,
   canUseConsumable,
@@ -146,43 +150,122 @@ export function JokerShelf({
   const growthSnapshot = (source: RunState): Map<string, number> => new Map<string, number>(
     source.jokers.flatMap((owned, index) => {
       const display = JOKER_REGISTRY.get(owned.defId)?.growthDisplay;
+      const identity = owned.instanceId !== undefined ? `uid:${owned.instanceId}` : `legacy:${index}`;
       return display
-        ? [[`${index}:${owned.defId}:${display.stateKey}`, owned.state[display.stateKey] ?? display.initial] as const]
+        ? [[`${identity}:${owned.defId}:${display.stateKey}`, owned.state[display.stateKey] ?? display.initial] as const]
         : [];
     }),
   );
   const previousGrowth = useRef(growthSnapshot(run));
-  const growthTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seenLifecycleGrowth = useRef(
+    Math.max(0, ...(run.lifecycleGrowthEvents ?? []).map((event) => event.sequence)),
+  );
+  const queuedLifecycleGrowth = useRef(new Set<number>());
   const growthId = useRef(0);
-  const [growthPops, setGrowthPops] = useState<Array<{
+  type GrowthPop = {
     index: number;
     jokerId: string;
+    jokerInstanceId?: number;
+    sequence?: number;
     chips: number;
     mult: number;
     gold: number;
     stat: number;
     playSound: boolean;
     id: number;
-  }>>([]);
+  };
+  const [growthPops, setGrowthPops] = useState<GrowthPop[]>([]);
+  const growthQueue = useRef<GrowthPopQueue<GrowthPop> | null>(null);
+  if (!growthQueue.current) {
+    growthQueue.current = createGrowthPopQueue(
+      (pop) => {
+        if (pop.sequence !== undefined) {
+          queuedLifecycleGrowth.current.delete(pop.sequence);
+          seenLifecycleGrowth.current = Math.max(seenLifecycleGrowth.current, pop.sequence);
+        }
+        setGrowthPops([pop]);
+        if (pop.playSound) {
+          audio.play(pop.gold !== 0 ? 'coinGain' : pop.mult !== 0
+            ? 'jokerMult' : pop.chips !== 0 ? 'jokerChips' : 'jokerEffect');
+          audio.chips(Math.abs(pop.chips));
+        }
+      },
+      () => setGrowthPops([]),
+      GROWTH_POP_MS,
+    );
+  }
+  useEffect(() => {
+    growthQueue.current?.reset();
+    queuedLifecycleGrowth.current.clear();
+    previousGrowth.current = growthSnapshot(run);
+    seenLifecycleGrowth.current = Math.max(
+      0, ...(run.lifecycleGrowthEvents ?? []).map((event) => event.sequence),
+    );
+  }, [runObservationId]);
+  useEffect(() => {
+    growthQueue.current?.setPaused(!settleComplete);
+  }, [settleComplete]);
   useEffect(() => {
     const next = growthSnapshot(run);
     const covered = new Map<string, number>();
+    const lifecycle = (run.lifecycleGrowthEvents ?? [])
+      .filter((event) => event.sequence > seenLifecycleGrowth.current &&
+        !queuedLifecycleGrowth.current.has(event.sequence))
+      .sort((left, right) => left.sequence - right.sequence);
     for (const event of animatedGrowthEvents) {
       if (event.kind !== 'joker' || !event.growthKind || !event.growthDelta) continue;
-      const key = `${event.jokerId}:${event.growthKind}`;
+      const identity = event.jokerInstanceId !== undefined
+        ? `uid:${event.jokerInstanceId}` : `def:${event.jokerId}`;
+      const key = `${identity}:${event.growthKind}`;
       covered.set(key, (covered.get(key) ?? 0) + event.growthDelta);
     }
+    for (const event of lifecycle) {
+      const identity = event.jokerInstanceId !== undefined
+        ? `uid:${event.jokerInstanceId}` : `def:${event.jokerId}`;
+      const key = `${identity}:${event.kind}`;
+      covered.set(key, (covered.get(key) ?? 0) + event.delta);
+    }
     const pops: typeof growthPops = [];
+    for (const event of lifecycle) {
+      const index = run.jokers.findIndex((owned) =>
+        event.jokerInstanceId !== undefined
+          ? owned.instanceId === event.jokerInstanceId
+          : owned.defId === event.jokerId,
+      );
+      const owned = run.jokers[index];
+      const display = owned ? JOKER_REGISTRY.get(owned.defId)?.growthDisplay : undefined;
+      if (index < 0) {
+        seenLifecycleGrowth.current = Math.max(seenLifecycleGrowth.current, event.sequence);
+        continue;
+      }
+      queuedLifecycleGrowth.current.add(event.sequence);
+      pops.push({
+        index,
+        jokerId: event.jokerId,
+        sequence: event.sequence,
+        ...(event.jokerInstanceId !== undefined
+          ? { jokerInstanceId: event.jokerInstanceId }
+          : {}),
+        chips: event.kind === 'chips' ? event.delta : 0,
+        mult: event.kind === 'mult' || event.kind === 'multAdd' ? event.delta : 0,
+        gold: event.kind === 'gold' ? event.delta : 0,
+        stat: event.kind === 'handSize' ? event.delta : 0,
+        playSound: display?.playSound !== false,
+        id: growthId.current++,
+      });
+    }
     run.jokers.forEach((owned, index) => {
       const display = JOKER_REGISTRY.get(owned.defId)?.growthDisplay;
       if (!display) return;
-      const snapshotKey = `${index}:${owned.defId}:${display.stateKey}`;
+      const identity = owned.instanceId !== undefined ? `uid:${owned.instanceId}` : `legacy:${index}`;
+      const snapshotKey = `${identity}:${owned.defId}:${display.stateKey}`;
       const before = previousGrowth.current.get(snapshotKey);
       const after = next.get(snapshotKey)!;
       if (before === undefined || after === before) return;
       const change = after - before;
       if (change < 0 && !display.showDecrease) return;
-      const coverageKey = `${owned.defId}:${display.kind}`;
+      const coverageKey = `${owned.instanceId !== undefined
+        ? `uid:${owned.instanceId}` : `def:${owned.defId}`}:${display.kind}`;
       const coverage = covered.get(coverageKey) ?? 0;
       const hidden = Math.sign(coverage) === Math.sign(change)
         ? Math.sign(change) * Math.min(Math.abs(change), Math.abs(coverage))
@@ -193,6 +276,7 @@ export function JokerShelf({
       pops.push({
         index,
         jokerId: owned.defId,
+        ...(owned.instanceId !== undefined ? { jokerInstanceId: owned.instanceId } : {}),
         chips: display.kind === 'chips' ? delta : 0,
         mult: display.kind === 'mult' || display.kind === 'multAdd' ? delta : 0,
         gold: display.kind === 'gold' ? delta : 0,
@@ -202,25 +286,9 @@ export function JokerShelf({
       });
     });
     previousGrowth.current = next;
-    if (pops.length === 0) return;
-    if (growthTimer.current) clearTimeout(growthTimer.current);
-    setGrowthPops(pops);
-    const soundingPops = pops.filter((pop) => pop.playSound);
-    if (soundingPops.length > 0) {
-      audio.play(
-        soundingPops.some((pop) => pop.gold !== 0)
-          ? 'coinGain'
-          : soundingPops.some((pop) => pop.mult !== 0)
-            ? 'jokerMult'
-            : soundingPops.some((pop) => pop.chips !== 0) ? 'jokerChips' : 'jokerEffect',
-      );
-      audio.chips(soundingPops.reduce((total, pop) => total + Math.abs(pop.chips), 0));
-    }
-    growthTimer.current = setTimeout(() => setGrowthPops([]), GROWTH_POP_MS);
-  }, [run.jokers, animatedGrowthEvents]);
-  useEffect(() => () => {
-    if (growthTimer.current) clearTimeout(growthTimer.current);
-  }, []);
+    growthQueue.current?.enqueue(pops);
+  }, [run.jokers, run.lifecycleGrowthEvents, animatedGrowthEvents]);
+  useEffect(() => () => growthQueue.current?.dispose(), []);
   useEffect(() => {
     if (bonusJokerTriggers.length > 0) audio.play('jokerEffect');
   }, [bonusJokerTriggers]);
@@ -299,8 +367,15 @@ export function JokerShelf({
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
             const art = jokerArt(def.id);
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
-            const growthPop = growthPops.find((pop) => pop.index === i && pop.jokerId === def.id);
-            const settleFiring = settle.active && settle.activeJokerId === def.id;
+            const growthPop = growthPops.find((pop) =>
+              pop.jokerId === def.id && (pop.jokerInstanceId !== undefined
+                ? pop.jokerInstanceId === owned.instanceId
+                : pop.index === i),
+            );
+            const visibleGrowthPop = settleComplete ? growthPop : undefined;
+            const settleFiring = settle.active && settle.activeJokerId === def.id &&
+              (settle.activeJokerInstanceId === null ||
+                settle.activeJokerInstanceId === owned.instanceId);
             const bonusTrigger = bonusJokerTriggers.find(
               (trigger) => trigger.jokerIndex === i && trigger.jokerId === def.id,
             );
@@ -326,8 +401,10 @@ export function JokerShelf({
               gold: number;
               stat: number;
               retrigger?: boolean;
-            } | null = growthPop ?? (settleFiring ? settle.jokerPop : bonusPop);
-            const firing = settleFiring || growthPop !== undefined || bonusTrigger !== undefined;
+            } | null = settleFiring
+              ? settle.jokerPop
+              : visibleGrowthPop ?? bonusPop;
+            const firing = settleFiring || visibleGrowthPop !== undefined || bonusTrigger !== undefined;
             const enhancedFiring = settleFiring && settle.activeJokerEnhanced;
             const bossDisabled = visibleDisabledIndex === i;
             const className = [
@@ -345,6 +422,9 @@ export function JokerShelf({
               <div
                 key={i}
                 data-joker-id={owned.defId}
+                {...(owned.instanceId !== undefined
+                  ? { 'data-joker-instance': owned.instanceId }
+                  : {})}
                 data-joker-index={i}
                 className={[
                   'joker-slot',
@@ -418,18 +498,18 @@ export function JokerShelf({
                   <JokerPop
                     key={visiblePop.id}
                     chips={visiblePop.chips ?? 0}
-                    {...(!growthPop && visiblePop.chipsFactor !== undefined
+                    {...(!visibleGrowthPop && visiblePop.chipsFactor !== undefined
                       ? { chipsFactor: visiblePop.chipsFactor }
                       : {})}
                     mult={visiblePop.mult ?? 0}
-                    {...(!growthPop && visiblePop.multFactor !== undefined
+                    {...(!visibleGrowthPop && visiblePop.multFactor !== undefined
                       ? { multFactor: visiblePop.multFactor }
                       : {})}
-                    score={growthPop ? 0 : visiblePop.score ?? 0}
+                    score={visibleGrowthPop ? 0 : visiblePop.score ?? 0}
                     gold={visiblePop.gold ?? 0}
                     stat={visiblePop.stat ?? 0}
                     applied={
-                      !growthPop && visiblePop.retrigger
+                      !visibleGrowthPop && visiblePop.retrigger
                         ? t('settle.retrigger')
                         : t('settle.applied')
                     }

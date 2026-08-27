@@ -2,6 +2,7 @@ import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
 
 export const stargazer: JokerDef = {
+  scoresGibberish: true,
   id: 'stargazer',
   gddNumber: 5,
   nameKo: '천문학자',

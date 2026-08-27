@@ -9,7 +9,8 @@ export const civilTongue: JokerDef = {
   hooks: {
     wordScoring: ({ ctx }, self) => { ctx.mult += self.state.mult ?? 0; },
     blindEnd: ({ blind }, self) => {
-      if (!blind.sequence.some((word) => submissionHasSuit(word, 'vulgar'))) {
+      if (!blind.sequence.some((word) =>
+        !word.isGibberish && !word.debuffed && submissionHasSuit(word, 'vulgar'))) {
         self.state.mult = (self.state.mult ?? 0) + BALANCE.jokers.civilTongue.multPerBlind;
       }
     },

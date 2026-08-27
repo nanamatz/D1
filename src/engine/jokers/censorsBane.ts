@@ -3,6 +3,7 @@ import type { JokerDef } from '../events';
 
 /** R8 (GDD §11.4) — ×2.5 Mult during Deadline (boss) blinds. */
 export const censorsBane: JokerDef = {
+  scoresGibberish: true,
   id: 'censorsBane',
   gddNumber: 8,
   nameKo: '검열관의 적',

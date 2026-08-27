@@ -8,7 +8,7 @@ export const hotOffThePress: JokerDef = {
   multOperation: 'multiply',
   hooks: {
     wordScoring: ({ blind, ctx }) => {
-      if (blind.sequence.length === 0 &&
+      if (!blind.sequence.some((word) => !word.isGibberish && !word.debuffed) &&
           submissionLength(ctx.submission) >= BALANCE.jokers.hotOffThePress.minLength) {
         ctx.mult *= BALANCE.jokers.hotOffThePress.factor;
       }

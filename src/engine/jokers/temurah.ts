@@ -10,7 +10,7 @@ export const temurah: JokerDef = {
   hooks: {
     wordScoring: ({ blind, ctx }) => {
       const previous = blind.sequence[blind.sequence.length - 1];
-      if (ctx.submission.isGibberish || !previous || previous.isGibberish) return;
+      if (ctx.submission.isGibberish || !previous || previous.isGibberish || previous.debuffed) return;
       const currentText = ctx.submission.text.toUpperCase();
       const priorText = previous.text.toUpperCase();
       if (currentText !== priorText && signature(currentText) === signature(priorText)) {

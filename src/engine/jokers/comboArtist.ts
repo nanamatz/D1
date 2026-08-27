@@ -19,6 +19,7 @@ export const comboArtist: JokerDef = {
       const previousSuits = previous ? submissionSuits(previous) : [];
       const currentSuits = submissionSuits(ctx.submission);
       if (
+        previous && !previous.isGibberish && !previous.debuffed &&
         previousSuits.length > 0 &&
         currentSuits.length > 0 &&
         !currentSuits.some((suit) => previousSuits.includes(suit))

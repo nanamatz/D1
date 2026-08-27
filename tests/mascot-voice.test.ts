@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
@@ -70,6 +71,7 @@ describe('voiceChain — skin-aware key routing', () => {
 
 /** Every line id the code can ask a WooDak-role mascot for. */
 const WOODAK_LINES: string[] = [
+  'unlocked',
   'won',
   'discovery',
   'tip.reroll',
@@ -85,11 +87,27 @@ const PIYAK_LINES: string[] = [
   ...Array.from({ length: 8 }, (_, i) => `welcome.${i}`),
 ];
 
-const RETIRED = [/^woodak\./, /^mascot\.welcome\./, /^tutorial\..*\.body$/];
+const RETIRED = [
+  /^woodak\./,
+  /^mascot\.welcome\./,
+  /^tutorial\..*\.body$/,
+  /^gameover\.unlockedLine$/,
+];
 
 describe('voice namespace migration', () => {
-  it('covers 21 WooDak line ids', () => {
-    expect(WOODAK_LINES).toHaveLength(21);
+  it('covers 22 WooDak line ids', () => {
+    expect(WOODAK_LINES).toHaveLength(22);
+  });
+
+  it('routes every run-end clause through the selected mascot voice', () => {
+    const source = readFileSync('src/ui/components/WooDakMascot.tsx', 'utf8');
+    expect(source).toContain("t(voicedKeys('unlocked'))");
+    expect(source).not.toContain("t('gameover.unlockedLine')");
+  });
+
+  it('keeps the unlock recap to one selected-mascot line', () => {
+    const source = readFileSync('src/ui/components/WooDakMascot.tsx', 'utf8');
+    expect(source).toMatch(/const text = unlocked > 0\s*\? t\(voicedKeys\('unlocked'\)\)/);
   });
 
   it('has every WooDak line in both locales', () => {

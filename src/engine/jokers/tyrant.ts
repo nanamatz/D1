@@ -27,8 +27,7 @@ export const tyrant: JokerDef = {
     wordScoring: ({ ctx }) => {
       const suit = ctx.baseSuit ?? ctx.submission.suit;
       if (suit === null) return; // gibberish is never a valid word (§6.4)
-      const vulgar = BALANCE.suitMult.vulgar * BALANCE.jokers.tyrant.vulgarFactor;
-      ctx.mult += vulgar - BALANCE.suitMult[suit];
+      ctx.mult *= BALANCE.jokers.tyrant.vulgarFactor;
     },
   },
 };

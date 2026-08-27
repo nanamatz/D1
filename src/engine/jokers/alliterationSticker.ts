@@ -6,10 +6,11 @@ export const alliterationSticker: JokerDef = {
   emoji: '✨', rarity: 'common', layer: 3, price: BALANCE.jokerPrice.common,
   hooks: {
     wordScoring: ({ blind, ctx }) => {
-      const previous = [...blind.sequence].reverse().find((word) => !word.isGibberish);
+      const previous = blind.sequence.at(-1);
       if (
         !ctx.submission.isGibberish &&
-        previous?.tiles[0]?.letter === ctx.submission.tiles[0]?.letter
+        previous && !previous.isGibberish && !previous.debuffed &&
+        previous.text[0] === ctx.submission.text[0]
       ) ctx.mult += BALANCE.jokers.alliterationSticker.mult;
     },
   },

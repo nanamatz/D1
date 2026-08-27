@@ -6,7 +6,8 @@ export const tipJar: JokerDef = {
   emoji: '🫙', rarity: 'common', layer: 3, price: BALANCE.jokerPrice.common,
   hooks: {
     wordScoring: ({ blind, ctx }) => {
-      if (!ctx.submission.isGibberish && !blind.sequence.some((word) => !word.isGibberish)) {
+      if (!ctx.submission.isGibberish &&
+          !blind.sequence.some((word) => !word.isGibberish && !word.debuffed)) {
         ctx.goldDelta = (ctx.goldDelta ?? 0) + BALANCE.jokers.tipJar.gold;
       }
     },

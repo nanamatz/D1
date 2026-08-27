@@ -39,6 +39,9 @@ export function letterString(tiles: readonly Tile[]): string {
   return tiles.map((t) => t.letter ?? NO_LETTER).join('');
 }
 
+export const submissionLetterString = (submission: WordSubmission): string =>
+  submission.structureText ?? letterString(submission.tiles);
+
 /** Sum intrinsic Scrabble chips from a word string. Non-letters contribute 0. */
 export function wordLetterChips(word: string): number {
   let sum = 0;
@@ -48,10 +51,16 @@ export function wordLetterChips(word: string): number {
   return sum;
 }
 
+/** One physical tile's intrinsic Chips, including persistent Golden Type growth. */
+export function tileBaseChips(tile: Tile): number {
+  return (tile.letter === null ? 0 : (BALANCE.letterChips[tile.letter] ?? 0)) +
+    (tile.bonusChips ?? 0);
+}
+
 /** Sum of intrinsic Scrabble letter chips (GDD §2.1). Stone contributes 0 — its
  *  chips come from the material, not the letter (GDD §2.2). */
 export function letterChips(tiles: readonly Tile[]): number {
-  return wordLetterChips(tiles.map((tile) => tile.letter ?? NO_LETTER).join(''));
+  return tiles.reduce((sum, tile) => sum + tileBaseChips(tile), 0);
 }
 
 /**
