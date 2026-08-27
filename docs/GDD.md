@@ -8,7 +8,8 @@ Version 0.2 — systems expansion
 **Changelog v0.1 → v0.2**
 
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
-- New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison bonus. Tone-overlay concept from v0.1 §4.1 Level 2 replaced by the single Unison rule (design diet).
+- New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison, and register synergies.
+- Changed 2026-08-27: mixed-register base synergies return beside Unison. Exact Standard+Formal, Slang+Vulgar, and Formal+Vulgar pairs trigger Harmony ×1.25 Chips, Contrast ×1.5 Chips, and Whiplash ×1.75 Chips; any 3+ final registers trigger Mishmash ×2 Chips. Unison has priority, and Hypocrite now amplifies Whiplash by ×3 Mult (§5.3, §11.4).
 - New: **Core Loop** chapter — hand size, draw/refill, discard budget, gibberish submission (b-2), no minimum word length.
 - New: **Blinds, Antes & Bosses** — scaling, Chapter-8 victory + Endless Mode, 15 regular bosses, and a six-boss finisher tier every eight Chapters (§8.4). Draft/Revision skipping and 30 Editorial Perks now ship (§8.2; alphabet-lore expansion 2026-08-12).
 - New: **Shop & Economy** — money sources, interest, shop layout, packs, 32 two-tier vouchers.
@@ -100,7 +101,7 @@ Version 0.2 — systems expansion
 | Hand (play) | Phase | Base 5 per blind; variable via emoji tiles/vouchers |
 | Discard | Discard | Budget per blind; discarded tiles exit for the blind |
 | Poker hand table | Sentence pattern table | POS sequence matching (§5) |
-| Flush | Unison bonus | All words in the sequence share one suit |
+| Flush | Unison / register synergy | Shared final register earns Unison; approved mixed sets earn one synergy |
 | High card | Gibberish submission | Non-word tile dump; letter chips only |
 | Blind (Small/Big/Boss) | Blind | One round: phases + discard budget + target score |
 | Ante | Ante | 3 blinds; base target rises per ante |
@@ -361,7 +362,7 @@ In each phase the player makes one word. As phases accumulate, the words line up
 
 **Level 1 — Part-of-Speech Sequence Matching (adopted).** Assign a part-of-speech (POS) tag to each word and match the completed sequence against the pattern table in §5. Pure lookup, no NLP needed.
 
-**Level 2 — Register Combination (adopted, simplified in v0.2).** v0.1 sketched a full "tone overlay" table (Academic / Tirade / Hypocrite / Mishmash…). This bloated the base rules, so it has been dieted down following the Balatro principle — *base rules stay minimal; the zoo of variations lives in emoji tiles.* What remains in the base game is a single rule, the **Unison bonus** (§5.3). Hypocrite is Rare tile R2; Mishmash stays retired.
+**Level 2 — Register Combination (adopted).** The base game judges one register result from the final effective-register membership of the eligible sequence: either **Unison** or one approved mixed-register synergy (§5.3). This intentionally reverses the earlier v0.2 Unison-only diet so mixing registers can define a build without requiring an Emoji Tile. Hypocrite remains Rare tile R2 as a Whiplash amplifier rather than a parallel raw-set check. (changed 2026-08-27)
 
 **Level 3 — Semantic Judgment (not adopted).** Judging semantic validity — "cat eats fish" works but "fish eats cat" is odd — depends on an LLM, so it is excluded. Since scoring with absurd, funny sentences is part of this genre's fun, passing anything that is merely grammatical is also the better game-design choice.
 
@@ -383,26 +384,29 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.1 Matching Rules
 
-1. **Whole-sequence match.** Apply any boss sentence transform to the raw submission history first (so Orphan Line always removes the literal first submitted word), then remove every debuffed submission and join the remaining eligible words in their original order. A debuffed word is not a hole and contributes neither POS nor register to Pattern/Unison judgment. The resulting entire sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) remains in that eligible sequence and voids all pattern matches — Correction Tape is the current counter. (changed 2026-08-20: debuffed words are removed rather than zeroed after scoring)
+1. **Whole-sequence match.** Apply any boss sentence transform to the raw submission history first (so Orphan Line always removes the literal first submitted word), then remove every debuffed submission and join the remaining eligible words in their original order. A debuffed word is not a hole and contributes neither POS nor register to Pattern/Unison/register-synergy judgment. The resulting entire sequence must equal a pattern. No partial matching. A gibberish hole (§6.4) remains in that eligible sequence and voids the pattern, Unison, and register synergy — Correction Tape is the current counter. (changed 2026-08-27)
 2. **Highest single pattern only.** If a sequence satisfies multiple patterns, only the highest-value one applies (a full house does not also pay as a pair).
 3. **Modifier absorption.** Articles, adjectives, and adverbs are *flesh*, not *skeleton*. "CAT EATS FISH" and "THE BIG CAT EATS FISH" are the same Transitive pattern; **each absorbed modifier adds +15 Chips to the sentence bonus's Chips side** (uniform across all patterns — placeholder). This keeps the table small while making longer sentences naturally more valuable.
 4. **POS compatibility follows the winner.** POS highlighting is derived from the same highest-pattern judgment, never reconstructed in the UI. For each eligible word, every lexical POS candidate that preserves the exact winning pattern outcome (including its modifier/repeat result) remains active; this keeps the union of equivalent parses instead of choosing an arbitrary verb subtype. Boss-transformed or debuffed-out raw words have no selected POS. This compatibility trace is ephemeral and does not change scoring, rank, or stored submissions. (changed 2026-08-21)
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, Unison, and post-pattern Chips add to it, then pattern, Unison, and post-pattern Mult multiply the combined axis. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult is deliberately compressed to ×1/×2/×3/×4 by rank band so an unupgraded pattern does not decide the blind by itself. Every level-up adds the pattern's construction-difficulty tier Chips increment (**Easy +15 · Medium +30 · Hard +45**) and +1 Mult linearly (`BALANCE.patternLevelGrowthFactor = 1`); therefore the current Chips/Mult and every displayed level-up delta remain natural numbers. Rank remains payout precedence, not a proxy for construction difficulty.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, and Unison Chips add first; an active mixed-register synergy multiplies that combined Chips axis and is materialized as sentence Chips; post-pattern hooks then add Chips or multiply Mult. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult is deliberately compressed to ×1/×2/×3/×4 by rank band so an unupgraded pattern does not decide the blind by itself. Every level-up adds the pattern's construction-difficulty tier Chips increment (**Easy +15 · Medium +30 · Hard +45**) and +1 Mult linearly (`BALANCE.patternLevelGrowthFactor = 1`); therefore the current Chips/Mult and every displayed level-up delta remain natural numbers. Rank remains payout precedence, not a proxy for construction difficulty.
 
 ```
-sentenceChips = patternChips + 15 × absorbedModifiers + unisonChips
-sentenceMult  = patternMult × unisonMult
-final score   = (committedScore + sentenceChips) × sentenceMult
+rawSentenceChips    = patternChips + 15 × absorbedModifiers + unisonChips
+registerChipsFactor = active register synergy factor, otherwise 1
+scaledSentenceChips = (committedScore + rawSentenceChips) × registerChipsFactor − committedScore
+sentenceChips       = scaledSentenceChips + post-pattern Chips
+sentenceMult        = patternMult × unisonMult × post-pattern Mult
+final score         = (committedScore + sentenceChips) × sentenceMult + post-pattern score
 sentence gain = final score − committedScore
 ```
 
 At finalization the gold pattern/level stamp remains the primary beat and reads
 **level → zodiac symbol → pattern name** from left to right. Every
 non-pattern contributor is displayed separately beside it: absorbed modifiers
-use a Chips-coloured tag, Unison uses a gold tag, and post-pattern Emoji Tile,
+use a Chips-coloured tag, mixed-register synergy uses its own Chips-coloured ×Chips tag, Unison uses a gold tag, and post-pattern Emoji Tile,
 voucher, or boss adjustments use an effect-coloured tag. They must never be
 folded invisibly into the pattern label. The level field reserves a fixed width
 and a visible gap before the zodiac symbol so one- and multi-digit levels keep
@@ -440,13 +444,22 @@ Design intent:
 - **Overlap is highest-only, never additive.** Interrogative outranks Negative, Negative outranks Transitive, and Imperative outranks Simple; those priorities resolve shared parses deterministically.
 - **Complex requires two complete clauses** after an initial subordinator such as `BECAUSE`, `WHEN`, or `IF`.
 
-### 5.3 Unison Bonus (the flush substitute)
-
-One rule replaces the v0.1 tone-overlay table:
+### 5.3 Register Bonuses (the flush substitute)
 
 > **Unison.** If the sequence has 2+ words and *all* words share one suit, a bonus applies, sized by suit rarity: **Standard +50 Chips · Formal ×1.25 · Slang ×1.5 · Vulgar ×2** (placeholders).
 
-Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). A register-mult Unison therefore scales the committed blind score even when no sentence pattern matches. This preserves the flush role ("commit to one suit across phases → reward") while keeping all richer combination rules (Hypocrite, etc.) in emoji tiles.
+Unison folds directly into the §5.2 formula: **Standard adds to the Chips side; Formal/Slang/Vulgar multiply the Mult side** (values unchanged). A register-mult Unison therefore scales the committed blind score even when no sentence pattern matches. This preserves the flush role ("commit to one suit across phases → reward"), while the mixed set below rewards deliberate contrast.
+
+If no Unison exists, the unordered union of the eligible sequence's final effective-register memberships may trigger exactly one mixed synergy. Order, word count beyond the two-word minimum, and repeated registers do not matter; the exact final set does. The remaining two-register pairs—Standard+Slang, Standard+Vulgar, and Formal+Slang—grant nothing.
+
+| Synergy | Exact final-register set | Chips factor |
+|---|---|---:|
+| Harmony / 조화 | Standard + Formal | ×1.25 Chips |
+| Contrast / 대비 | Slang + Vulgar | ×1.5 Chips |
+| Whiplash / 급전환 | Formal + Vulgar | ×1.75 Chips |
+| Mishmash / 뒤죽박죽 | Any 3 or 4 distinct registers | ×2 Chips |
+
+The factor multiplies `committedScore + rawSentenceChips` before sentence-scoring hooks. Its gain is materialized into `sentenceChips`, so existing Emoji Tile, boss, Briefcase, projection, and final-settlement paths stay authoritative. A pattern may coexist with one mixed synergy. Unison and mixed synergy are mutually exclusive, with Unison priority whenever all eligible words share any final register. Thus Tower of Babel remains Unison-only. A gibberish hole voids both kinds of register bonus. (changed 2026-08-27)
 
 Note on Vulgar stacking: suit base ×7 plus Unison-Vulgar ×2 remains a strong double reward, moderated below Formal's ×10 authority payoff. Exact values remain playtest material.
 
@@ -604,7 +617,7 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 
 The old "cash-out button unlocks at projected ≥ target" was a fake choice: surplus score is worthless and remaining phases pay gold, so continuing past the target was always wrong. **Auto-settle** removes the non-choice.
 
-- **Trigger.** After a submission's **full settle sequence** (word settle → Word-Hand/suit stamps → **sentence-finalize animation**: pattern + unison bonuses visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
+- **Trigger.** After a submission's **full settle sequence** (word settle → Word-Hand/suit stamps → **sentence-finalize animation**: pattern + register bonus visibly landing on the score), if the total ≥ target the blind auto-resolves to **Fee Settlement** — the round number rolls up, then after a short verdict beat the settlement modal opens (there is **no** intermediate "Cleared! + Settle button" screen; item 4 removed it — the modal's own Collect button confirms). There is no cash-out fake choice: it never offers to continue past target, so surplus score stays worthless and remaining-phase gold still rewards a fast clear. The sentence bonus must be *seen* pushing the score over when it is the deciding factor — this is the game's highlight moment, so the beat lets it land before the modal covers the board.
 - **Final-score authority.** Every sentence-scoring hook, including Broken Sentence when no pattern exists, is included in the live projection before the end trigger is tested. Once the sentence-finalize sequence publishes `finalScore`, that exact value—not a later recomputation—is the sole input to clear/Game Over resolution. Its temporary Emoji Tile trigger state is cleared before either result modal appears.
 - **Remaining phases = money.** Normally 1 gold per remaining phase, paid as a
   Fee Settlement line item (§9.1). Purple Pouch replaces this with $2 per phase
@@ -614,7 +627,7 @@ The old "cash-out button unlocks at projected ≥ target" was a fake choice: sur
 
 ### 7.3 Sentence Pattern = add Chips, then multiply Mult
 
-Every pattern owns a base **[Chips × Mult]** (§5.2). At finalization, the Chips side adds to the committed score and the Mult side multiplies the combined result: `final = (committedScore + sentenceChips) × sentenceMult`. There is no per-pattern operation split; every pattern uses the same axis rule.
+Every pattern owns a base **[Chips × Mult]** (§5.2). At finalization, raw pattern/modifier/Unison Chips first add to the committed axis, a mixed-register factor then applies ×Chips to that combined value, and the factor gain is materialized into `sentenceChips` before hooks. The Mult side subsequently multiplies the combined result: `final = (committedScore + sentenceChips) × sentenceMult + post-pattern score`. There is no per-pattern operation split; every pattern uses the same axis rule.
 
 > **Balance warning — high-Mult sentences.** Sentence Mult now amplifies the whole committed blind score as well as pattern/modifier/Standard-Unison Chips. High-Mult patterns therefore scale strongly with late-game word builds; target curves and pattern levels must be verified together.
 
@@ -647,8 +660,9 @@ stacks. The UI replays engine events and never reconstructs or aggregates them.
 **Each phase:** submit word → settle & accumulate individual score (letter × suit multiplier × emoji tiles) → re-judge sentence with current sequence → display the current highest valid pattern name while updating projected score internally → once the full settle sequence has played, if projected ≥ target the blind's clear is detected and, after the sentence bonus lands and a short beat, it auto-resolves to Fee Settlement (§7.2 — no early-end button, no intermediate verdict screen).
 
 **On ending (early/final):** finalize the sentence axes from the sequence — add
-pattern/modifier/Unison Chips to the committed score, then multiply by the
-pattern/Unison Mult per §5.2–§5.3 → grant the
+pattern/modifier/Unison Chips to the committed score, apply one mixed-register
+×Chips factor when active, then apply hook Chips and pattern/Unison/hook Mult
+per §5.2–§5.3 → grant the
 selected Pouch/Record's Fee Settlement lines (§9.1, §12) → end blind.
 
 **Briefcase insertion point (§12.2):** after all hooks have finalized a word's
@@ -820,7 +834,7 @@ applies to every attempted hand, including gibberish.
 
 | Boss | Effect | Targets / counters |
 |---|---|---|
-| Orphan Line · 고아행 (`orphanLine`) | The first submitted word scores individually but is excluded from sentence-pattern and Unison judging | Front-load raw word score; build the grammar skeleton from word two onward |
+| Orphan Line · 고아행 (`orphanLine`) | The first submitted word scores individually but is excluded from sentence-pattern, Unison, and register-synergy judging | Front-load raw word score; build the grammar skeleton from word two onward |
 
 **Phase attack**
 
@@ -877,7 +891,7 @@ the same cycle, so rerolling never bypasses the rule.
 six finishers are periodic build checks. Memoirs remains scoped to the chapter;
 the old Proofreader/Babel finishers remain retired.
 
-**Debuff convention (changed 2026-08-26).** "Debuffed" (including boss and Lipogram Tag predicates) means an allowed physical play whose ordinary scoring pipeline stops immediately after pure word preparation/rule lookup. It normally produces one 0-point settle and never runs tile/material/font/edition scoring, Word Hands, played/held/owned Emoji Tile scoring hooks, `wordChecked`, `tilesPlayed`, `wordScored`, Briefcase balancing, score bonuses, score-side chance RNG, or score/progress mutations. **Uncensored is the sole exception:** a debuffed dictionary word emits one Uncensored +100 Chips event and settles at `100 × 1`; every other short-circuit restriction remains in force. The submission keeps `posUsed = null` and is removed before Pattern and Unison judgment, so normal words before and after it become adjacent. It remains visible as a disabled tray record; physical tile/phase consumption, draw, boss `afterPlay`, actual-play Collection/chromatic/mascot discovery, and `wordsThisAnte` remain intact. Gibberish is unchanged: it scores its normal layer-1 payout and remains a sentence hole.
+**Debuff convention (changed 2026-08-27).** "Debuffed" (including boss and Lipogram Tag predicates) means an allowed physical play whose ordinary scoring pipeline stops immediately after pure word preparation/rule lookup. It normally produces one 0-point settle and never runs tile/material/font/edition scoring, Word Hands, played/held/owned Emoji Tile scoring hooks, `wordChecked`, `tilesPlayed`, `wordScored`, Briefcase balancing, score bonuses, score-side chance RNG, or score/progress mutations. **Uncensored is the sole exception:** a debuffed dictionary word emits one Uncensored +100 Chips event and settles at `100 × 1`; every other short-circuit restriction remains in force. The submission keeps `posUsed = null` and is removed before Pattern, Unison, and register-synergy judgment, so normal words before and after it become adjacent. It remains visible as a disabled tray record; physical tile/phase consumption, draw, boss `afterPlay`, actual-play Collection/chromatic/mascot discovery, and `wordsThisAnte` remain intact. Gibberish is unchanged: it scores its normal layer-1 payout and remains a sentence hole that voids all three sentence judgments.
 
 ---
 
@@ -1220,7 +1234,7 @@ trigger blocked specifically because the consumable shelf has no free slot.
 **Tyrant (L2)** applies its Vulgar rewrite as an additive delta
 from the word's own suit multiplier to `suitMult.vulgar × 2`, which keeps it
 independent of shelf order; the submitted word's final register and visible tag
-become Vulgar, so bosses, Unison, and sentence-history effects see the rewrite.
+become Vulgar, so bosses, Unison, register synergy, and sentence-history effects see the rewrite.
 
 **Unlock model (implemented).** Persistent achievement gates filter locked
 Common/Uncommon/Rare ids from ordinary offers and direct creation. Ungated
@@ -1385,7 +1399,7 @@ the complete 150-entry public roster.
 | ID | Name | Effect | Layer | Scaling / unlock |
 |---|---|---|---|---|
 | R1 | Carte Blanche | All Emoji Tile buy and sell prices −$2, including this tile, with the normal price floor | 3 | Buy 40 Emoji Tiles from shops |
-| R2 | Hypocrite | ×5 Mult if the sentence contains both a Formal and a Vulgar word | 2–3 | Start |
+| R2 | Hypocrite | ×3 Mult when Whiplash is active | 2–3 | Trigger Whiplash |
 | R3 | Rhyme Chain | If the previous phase's word ends in the same two letters, its blind-only streak multiplier compounds ×3; a miss resets the streak | 3 | Start |
 | R4 | Out of Print | Gain +50 Chips and +8 Mult for each alphabet letter with no copies left in the permanent pouch; its current totals are displayed | 1 | dynamic · Remove every copy of one letter |
 | R6 | Fable Hoard | ×1.5 Mult per currently held consumable; no effect text is shown at zero consumables | 3 | End 5 rounds with consumable slots full |
@@ -1430,7 +1444,7 @@ unlock notices.
 | L1 | Book of Margins | +3 Emoji Tile slots; after all slot modifiers, this tile applies ×2 per empty effective slot | 3 | dynamic exponential |
 | L2 | Tyrant | Treat every word as Vulgar; each such word gets ×2 Mult once at Tyrant's shelf position | 2 | — |
 | L3 | Type Foundry | Starts at ×1; whenever a letter tile is permanently destroyed, compound this tile's factor ×1.5 for the rest of the run | 1 | ★ exponential |
-| L4 | Tower of Babel | Each valid submitted word gains all four final register tags; register conditions, boss legality, Unison, and sentence-history effects use that membership | 2 | — |
+| L4 | Tower of Babel | Each valid submitted word gains all four final register tags; register conditions, boss legality, Unison, and sentence-history effects use that membership; shared membership gives Unison priority over mixed-register synergy | 2 | — |
 | L5 | Misbound | Starts at ×1. At blind end, 1/1,000 chance to self-destruct; if it survives, gain +0.5 ×Mult | 3 | ★ |
 
 > **Tower redesign is pending.** The requested “copy every other owned Emoji
@@ -1486,9 +1500,11 @@ this run; its factor is reconstructed from run history under the revised rate.
   Shredder, Butterflies, Full Moon, and future permanent destruction into
   exponential growth. The shrinking 68-tile pouch is its natural cost; verify
   that it is enough.
-- **One suit ↔ every suit.** Unison rewards shared final-register membership.
-  Tower of Babel (L4) supplies all four tags, so it can bridge an Unison or the
-  Forbidden Paper lock, at the cost of also satisfying every hostile register check.
+- **One suit ↔ every suit.** Unison rewards shared final-register membership;
+  approved non-shared final sets reward one mixed-register synergy. Tower of
+  Babel (L4) supplies all four tags to every valid word, so shared membership
+  gives it Unison—not Mishmash—and it can bridge the Forbidden Paper lock at
+  the cost of also satisfying every hostile register check.
 - **Rhyme streak.** Rhyme Chain (R3) is a blind-only combo, not a growth tile. It depends on real lexicon clusters and
   draw odds. Measure actual same-suffix streaks rather than balancing from a
   theoretical maximum.
@@ -1666,8 +1682,9 @@ axes with:
 
 `wordScore = mean × mean`
 
-Do the same **independently** for the sentence contribution axes after pattern,
-modifier, Unison, Emoji Tile, voucher, and boss hooks, immediately before adding
+Do the same **independently** for the sentence contribution axes after the
+register-synergy ×Chips gain has been materialized and pattern, modifier,
+Unison, Emoji Tile, voucher, and boss hooks have resolved, immediately before adding
 sentence Chips to the committed score and applying sentence Mult. Do not include
 the already-committed word total in the mean. Keep the arithmetic mean at full precision—no floor, ceiling, or nearest
 integer step in the transform. The UI may format a value without mutating the
@@ -1775,11 +1792,11 @@ disabled through its existing rule.
 **Resolved since v0.1:** sentence pattern table (→ §5) · in-phase loop (→ §6) ·
 blind/ante structure & boss pool (→ §8) · shop & economy (→ §9) · consumables
 (→ §10) · Starting Pouches and Records (→ §12) · round-level suit synergy
-(→ Unison, §5.3).
+(→ Unison and mixed-register synergies, §5.3).
 
 **Still open:**
 
-- **Value balancing across the board.** Emoji Tiles, patterns, Unison, vouchers,
+- **Value balancing across the board.** Emoji Tiles, patterns, Unison, mixed-register synergies, vouchers,
   prices, target curves, Pouch effects, and Record penalties need simulation and
   playtest tuning without changing §12's confirmed identities.
 - **Blind skip & Editorial Perk balance (harness + full proxy sweep shipped

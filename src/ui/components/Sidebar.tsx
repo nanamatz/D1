@@ -330,6 +330,14 @@ export function Sidebar({
                 {t('sidebar.bonusUnisonMult', { mult: fmtMult(sentenceBonus!.unisonMult) })}
               </span>
             )}
+            {sentenceBonus!.registerSynergyId && sentenceBonus!.registerSynergyChipsFactor !== 1 && (
+              <span className="bonus-part register-synergy">
+                {t('sidebar.bonusRegisterSynergy', {
+                  name: t(`registerSynergy.${sentenceBonus!.registerSynergyId}`),
+                  factor: fmtMult(sentenceBonus!.registerSynergyChipsFactor),
+                })}
+              </span>
+            )}
             {Math.abs(sentenceBonus!.effectChips) > 0.001 && (
               <span className="bonus-part effect">
                 {t('sidebar.bonusEffectChips', { chips: fmtSigned(sentenceBonus!.effectChips) })}
@@ -389,17 +397,15 @@ export function Sidebar({
               </span>
             )}
           </span>
-          {bonusActive && (
+          {bonusActive && sentenceBonus!.pattern && (
             <span className="bonus-stamp">
               {sentenceBonus!.level != null && (
                 <span className={['bonus-lvl', patternLevelClass(sentenceBonus!.level)].join(' ')}>
                   {t('sidebar.patternLevel', { n: sentenceBonus!.level })}
                 </span>
               )}
-              {sentenceBonus!.pattern && (
-                <PatternIcon pattern={sentenceBonus!.pattern} />
-              )}
-              {sentenceBonus!.pattern ? t(`pattern.${sentenceBonus!.pattern}`) : t('sidebar.unisonOnly')}
+              <PatternIcon pattern={sentenceBonus!.pattern} />
+              {t(`pattern.${sentenceBonus!.pattern}`)}
             </span>
           )}
           {landing && bonusTotal > 0 && (

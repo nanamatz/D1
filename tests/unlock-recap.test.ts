@@ -165,6 +165,6 @@ describe('integrated unlock recap ledger', () => {
     const css = readFileSync('src/ui/styles/screens.css', 'utf8');
     expect(css).toMatch(/\.unlock-recap > p\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);
     expect(css).toMatch(/\.unlock-recap-card strong\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);
-    expect(css).toMatch(/\.unlock-recap-overlay \.go-mascot \.mascot-bubble\s*\{[^}]*width:\s*260px;[^}]*font-size:\s*var\(--fs-xl\)/s);
+    expect(css).toMatch(/\.unlock-recap-overlay \.go-mascot \.mascot-bubble\s*\{[^}]*width:\s*max-content;[^}]*max-width:\s*260px;[^}]*font-size:\s*var\(--fs-2xl\)/s);
   });
 });

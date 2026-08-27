@@ -1095,7 +1095,7 @@ function scoreSubmission(
   };
 }
 
-/** Layer 3: fold the pattern/unison bonus → jokers mutate (sentenceScoring) → total.
+/** Layer 3: fold pattern/register bonuses → jokers mutate (sentenceScoring) → total.
  *  Returns the post-hook breakdown so the UI can animate chips × mult (item 2). */
 function scoreSentence(
   committed: number,
@@ -1120,6 +1120,7 @@ function scoreSentence(
     sequence: scoringSequence,
     match: judgment.match,
     unison: judgment.unison,
+    registerSynergy: judgment.registerSynergy ?? null,
     totalBefore: committed,
     sentenceChips: base.sentenceChips,
     sentenceMult: base.sentenceMult,
@@ -1168,6 +1169,8 @@ function scoreSentence(
       unisonSuit: judgment.unison?.suit ?? null,
       unisonChips: unison?.chips ?? 0,
       unisonMult: unison?.mult ?? 1,
+      registerSynergyId: judgment.registerSynergy?.id ?? null,
+      registerSynergyChipsFactor: base.registerSynergyChipsFactor,
       effectChips,
       effectMult,
       effectScore,

@@ -195,6 +195,16 @@ export const BALANCE = {
     vulgar:   { mult: 2.0 },
   },
 
+  // ----- Mixed-register synergies (GDD §5.3): X Chips is materialized against
+  //       committed + raw pattern/modifier Chips before sentence hooks. -----
+  registerSynergies: {
+    minWords: 2,
+    harmony:  { chipsFactor: 1.25 },
+    contrast: { chipsFactor: 1.5 },
+    whiplash: { chipsFactor: 1.75 },
+    mishmash: { chipsFactor: 2 },
+  },
+
   // ----- Blinds & antes (GDD §8.2) -----
   blindTargetMult: { small: 1.0, big: 1.5, boss: 2.0 },
   // placeholder curve, antes 1..8. Re-tuned 2026-07-30 for the word-length Mult
@@ -510,7 +520,7 @@ export const BALANCE = {
     host: { multPerSellValue: 2 },
     // Rare (§11.4)
     carteBlanche: { shopDiscount: 2 },
-    hypocrite: { factor: 5 },
+    hypocrite: { factor: 3 },
     rhymeChain: { factorPerMatch: 3 },
     outOfPrint: { chipsPerLetter: 50, multPerLetter: 8 },
     stargazer: { factorPerCard: 0.1 },

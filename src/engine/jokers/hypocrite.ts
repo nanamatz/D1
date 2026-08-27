@@ -1,6 +1,5 @@
 import { BALANCE } from '../balance';
 import type { JokerDef } from '../events';
-import { submissionSuits } from '../types';
 
 export const hypocrite: JokerDef = {
   id: 'hypocrite',
@@ -13,8 +12,7 @@ export const hypocrite: JokerDef = {
   price: BALANCE.jokerPrice.rare,
   hooks: {
     sentenceScoring: ({ ctx }) => {
-      const suits = new Set(ctx.sequence.flatMap((word) => submissionSuits(word)));
-      if (suits.has('formal') && suits.has('vulgar')) {
+      if (ctx.registerSynergy?.id === 'whiplash') {
         ctx.sentenceMult *= BALANCE.jokers.hypocrite.factor;
       }
     },

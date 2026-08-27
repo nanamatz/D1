@@ -46,10 +46,10 @@ describe('tutorial seen-flags store', () => {
     expect(loadTutorial()['firstJoker']).toBe(1000);
   });
 
-  it('registry has all 12 encounters with unique ids and a group', () => {
-    expect(ENCOUNTERS.length).toBe(12);
+  it('registry has all 13 encounters with unique ids and a group', () => {
+    expect(ENCOUNTERS.length).toBe(13);
     const ids = new Set(ENCOUNTERS.map((e) => e.id));
-    expect(ids.size).toBe(12);
+    expect(ids.size).toBe(13);
     for (const e of ENCOUNTERS) expect(e.group).toBeTruthy();
   });
 });

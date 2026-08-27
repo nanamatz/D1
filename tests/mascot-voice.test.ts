@@ -95,8 +95,8 @@ const RETIRED = [
 ];
 
 describe('voice namespace migration', () => {
-  it('covers 22 WooDak line ids', () => {
-    expect(WOODAK_LINES).toHaveLength(22);
+  it('covers 23 WooDak line ids', () => {
+    expect(WOODAK_LINES).toHaveLength(23);
   });
 
   it('routes every run-end clause through the selected mascot voice', () => {
@@ -210,7 +210,7 @@ describe('Emoji Tile terminology', () => {
 const VOICED_SKINS: string[] = ['dog', 'ghost', 'alien', 'turtle'];
 
 describe('skin voice completeness', () => {
-  it.each(VOICED_SKINS)('%s has all 22 lines in both locales', (skin) => {
+  it.each(VOICED_SKINS)('%s has all 23 lines in both locales', (skin) => {
     for (const line of WOODAK_LINES) {
       expect(EN[`voice.${skin}.${line}`], `en voice.${skin}.${line}`).toBeTypeOf('string');
       expect(KO[`voice.${skin}.${line}`], `ko voice.${skin}.${line}`).toBeTypeOf('string');

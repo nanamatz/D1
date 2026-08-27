@@ -28,14 +28,21 @@ function PatternChip({
   const { t } = useI18n();
   const m = judgment.match;
   const uniSuit = judgment.unison ? t(`suit.${judgment.unison.suit}`) : null;
+  const synergy = judgment.registerSynergy;
+  const synergyName = synergy ? t(`registerSynergy.${synergy.id}`) : null;
   const p = m ? t('tray.pattern', { name: t(`pattern.${m.pattern}`) }) : t('tray.patternNone');
-  const s = m
-    ? uniSuit
-      ? t('tray.unisonPlus', { suit: uniSuit })
-      : t('tray.bonusLive')
-    : uniSuit
-      ? t('tray.unison', { suit: uniSuit })
-      : t('tray.noPattern');
+  const s = synergy && synergyName
+    ? t(m ? 'tray.registerSynergyPlus' : 'tray.registerSynergy', {
+        name: synergyName,
+        factor: synergy.chipsFactor,
+      })
+    : m
+      ? uniSuit
+        ? t('tray.unisonPlus', { suit: uniSuit })
+        : t('tray.bonusLive')
+      : uniSuit
+        ? t('tray.unison', { suit: uniSuit })
+        : t('tray.noPattern');
   return (
     <div className={[
       'pattern-chip',

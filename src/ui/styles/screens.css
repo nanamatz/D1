@@ -1394,12 +1394,18 @@
 /* Pixel-grammar bubble: squared corners, hard 2px ink border, blocky shadow. */
 .mascot-bubble {
   position: relative;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
   background: var(--tile-face);
   color: var(--tile-ink);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-lg);
   font-weight: 700;
   line-height: 1.35;
-  text-wrap: balance;
+  text-wrap: wrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
   padding: 8px 10px;
   border: 2px solid var(--tile-ink);
   box-shadow: var(--shadow);
@@ -1445,7 +1451,8 @@
 }
 /* Single-column shop layout: hide rather than push the sale content. */
 @media (max-width: 720px) {
-  .mascot {
+  .shop-rail > .mascot,
+  .go-mascot {
     display: none;
   }
 }
@@ -4962,7 +4969,7 @@ body.cb-safe .tile.hint {
 .tut-icon { width: 28px; height: 28px; }
 .cc-icon { width: 54px; height: 54px; }
 .tut-title { font-weight: 700; font-size: 16px; }
-.tut-body { line-height: 1.5; font-size: 13px; margin-bottom: 14px; }
+.tut-body { line-height: 1.5; font-size: var(--fs-lg); margin-bottom: 14px; }
 .tut-ok { width: 100%; }
 
 /* tutorial popup mascot portrait (Piyak on shop, WooDak on boss) */
@@ -5009,12 +5016,12 @@ body.cb-safe .tile.hint {
 }
 .intro-bubble { text-align: left; }
 .intro-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
-.intro-body { font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
+.intro-body { font-size: var(--fs-lg); line-height: 1.5; margin-bottom: 10px; }
 .intro-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .intro-dots { font-size: 12px; opacity: 0.7; }
 /* Gated steps (build / submit) replace the Next button with a hint — the player advances by
    doing the action, not clicking. Sits where Next would, right-aligned. */
-.intro-hint { font-size: 12px; font-style: italic; opacity: 0.8; text-align: right; }
+.intro-hint { font-size: var(--fs-lg); font-style: italic; opacity: 0.8; text-align: right; }
 /* Skip is otherwise near-invisible (transparent .btn on the dark card) — give it a
    clearly-visible gold fill with dark text, distinct from the blue primary "Next". */
 .btn.intro-skip {
@@ -5913,9 +5920,10 @@ body.cb-safe .tile.hint {
   margin-right: 24px;
 }
 .unlock-recap-overlay .go-mascot .mascot-bubble {
-  width: 260px;
+  width: max-content;
+  max-width: 260px;
   padding: 14px 16px;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   line-height: 1.3;
 }
 @media (max-width: 600px) {

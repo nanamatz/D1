@@ -79,19 +79,29 @@ describe('Emoji Tile sample 10 — mechanics', () => {
     expect(emojiTileShopPrice(run, 7)).toBe(7 - BALANCE.jokers.carteBlanche.shopDiscount);
   });
 
-  it('Hypocrite doubles only a mixed Formal/Vulgar sentence bonus', () => {
+  it('Hypocrite multiplies only an active Whiplash once', () => {
     const run = runWith('hypocrite');
     const blind = startBlind(run, makeRng('hypocrite'));
     const ctx: SentenceScoringContext = {
       sequence: [submission('edict', 'formal'), submission('damn', 'vulgar')],
       match: null,
       unison: null,
+      registerSynergy: { id: 'whiplash', chipsFactor: 1.75 },
       totalBefore: 0,
       sentenceChips: 20,
       sentenceMult: 3,
     };
     bus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
     expect(ctx.sentenceMult).toBe(3 * BALANCE.jokers.hypocrite.factor);
+
+    ctx.sentenceMult = 3;
+    ctx.registerSynergy = { id: 'mishmash', chipsFactor: 2 };
+    bus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.sentenceMult).toBe(3);
+
+    ctx.registerSynergy = null;
+    bus.emit('sentenceScoring', { run, blind, ctx }, run.jokers);
+    expect(ctx.sentenceMult).toBe(3);
   });
 
   it('Rhyme Chain compounds its streak on matching endings and resets on a miss', () => {

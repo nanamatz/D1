@@ -172,7 +172,7 @@ describe('150 Emoji Tile board verification', () => {
       won: false,
       endlessComplete: false,
       blindFailure: true,
-      finalGold: 83,
+      finalGold: 90,
       chapter8Score: null,
       chapter8Target: null,
       furthestBlind: 21,

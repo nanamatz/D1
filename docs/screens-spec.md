@@ -18,7 +18,7 @@ Derived from 18 Balatro reference screenshots. **The screenshots are layout/flow
   - **Reference proportions (changed 2026-08-01):** the shared image-like frame uses mint pixel edges, a charcoal scanlined shell, a pale inset description plate, and cyan/magenta title separation. Standard main width scales from 150–280px according to content. Letter-tile tooltips instead use one fixed 132px compact frame regardless of enhancement count, with the standard 18px title / 15px body sizes and a highlighted `[c:+N개의 칩]` / `[c:+N Chips]` score line. Each supplemental card derives its width from its own visible title and body copy, clamped to the shared 150–280px range and the viewport. Supplemental height follows wrapped content and uses the main tooltip's 7px top / 6px bottom shell padding. Footer/enhancement tags remain 72% of the main width; main-card heights also remain content-driven.
 - **Description face (changed 2026-07-31):** main and supplemental description plates use bundled Jost 700 with Noto Sans KR 700 fallback, compact tracking, and restrained cyan/magenta separation. This keeps Korean readable offline while giving effect copy the printed arcade tone of the reference.
   Semantic highlight phrases are atomic line-breaking units: `+2 Mult` / `+2 배수`, money values, rarity names, and card-kind names may move to the next line as a whole but must never split internally.
-  - **Text wrapping:** all descriptive copy wraps only at word boundaries (`word-break: keep-all`; `overflow-wrap: normal`); an unbroken token remains intact even if it overflows. Pouch selection and clicked-open pouch descriptions inherit the same rule.
+  - **Text wrapping:** all descriptive copy wraps only at word boundaries (`word-break: keep-all`; `overflow-wrap: normal`); an unbroken token remains intact even if it overflows. Pouch selection, clicked-open pouch descriptions, and mascot/tutorial dialogue inherit the same rule. Speech bubbles size to their copy inside the existing surface cap and use greedy normal wrapping, never balanced wrapping.
   - **Hover feedback accompanies it:** anything that shows a tooltip also reacts to the cursor (lift/scale + shadow), so hoverability is discoverable without hunting.
   - **Pointer hit boxes stay stable:** cursor tilt uses the untransformed entry rectangle for the full hover and letter tiles do not translate their actual hit target. A stationary cursor on a tile boundary must not cause leave/re-enter flicker. Tile faces also keep overflow visible; material sheen is clipped internally, never by clipping the tile root, so material/font/edition tags and score popups remain intact.
   - **Letter-tile silhouette (changed 2026-07-30):** every material uses the Ceramic tile's outer border and rounded corners. Material identity is confined to face colour, texture, internal lines, and condition glyphs.
@@ -170,7 +170,7 @@ Already specced in `docs/UI_DESIGN.md`; this section owns the screen-specific ad
   change is a no-op, and Reduced Motion keeps the 500ms dwell.
 - **Deadline entry reveal (changed 2026-07-29):** trigger only when the Deadline board actually enters `playing`, never while its card is visible on Blind Select. Continuing a saved run already inside that boss blind triggers the reveal again. Show the boss emblem, localized name, and full debuff text in a centred card whose height is **150% of the prior reveal**; once the entrance lands, hold it for **1 second**, then remove it with a lift/fade-out. It is informational and non-blocking; reduced motion removes the flourish.
 - **Unopened Letter feedback (changed 2026-07-29):** after each hand play, the exact seeded-random tiles removed by the boss (up to four) visibly lift from the hand area one by one and fly into the discard direction while replacements settle. The animation is presentation-only; the engine-reported tile list is authoritative.
-- **Zero-score boss feedback (changed 2026-08-20):** when the staged word will be debuffed to 0, every staged tile carries a red **Not Allowed** tag. The Play action remains available, but the preview hides POS and Word Hand. Submitting briefly shows a text-only white `Not Allowed` notice at the top centre of the workspace, using the title face at a materially larger size; it fades away automatically instead of persisting as a normal toast. The resulting tray word stays desaturated/dashed with no POS/Word Hand label so the wasted play remains legible. Only the 0-point settle plays—no tile/enhancement/Emoji/global score beats—and the submission is removed before Pattern/Unison display, joining the remaining eligible words on either side.
+- **Zero-score boss feedback (changed 2026-08-27):** when the staged word will be debuffed to 0, every staged tile carries a red **Not Allowed** tag. The Play action remains available, but the preview hides POS and Word Hand. Submitting briefly shows a text-only white `Not Allowed` notice at the top centre of the workspace, using the title face at a materially larger size; it fades away automatically instead of persisting as a normal toast. The resulting tray word stays desaturated/dashed with no POS/Word Hand label so the wasted play remains legible. Only the 0-point settle plays—no tile/enhancement/Emoji/global score beats—and the submission is removed before Pattern/Unison/register-synergy display, joining the remaining eligible words on either side.
 - **Stereotype Plate blocking (changed 2026-08-14):** its current threshold is the longest valid word already played this Chapter. A staged hand shorter than that threshold uses the blocked status and disables Play; this is an illegal submission, not the zero-score boss treatment above.
 - **Briefcase balance beat:** after the last ordinary word hook (and separately
   after the last sentence-bonus hook), hold the final Chips/Mult pair, stamp a
@@ -225,7 +225,7 @@ The completed blind does not navigate away. The persistent sidebar resets round 
   behind it, and the separated strips drop away before the offer clears. Other
   shop actions are locked for that short beat; reduced motion clears it
   immediately.
-- **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a speech bubble showing one random `mascot.welcome.*` line per shop entry, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Runtime art: `src/ui/assets/piyak.png`.
+- **Shop mascot:** **삐약이 (Piyak)**, a pixel-art **tuxedo cat proprietor**, sits at the bottom of the existing 168px left rail (behind-the-counter feel), not overlapping the slots. Idle animation (single-sprite CSS breathe) + a content-sized, `--fs-lg` speech bubble showing one random `voice.piyak.welcome.*` line per shop entry through `voicedKeys`, per UI_DESIGN §6. Purchase/reroll reactions are a later layer. Runtime art: `src/ui/assets/piyak.png`.
 
 ### 2.6.1 Pack opening (persistent-table panel)
 
@@ -282,8 +282,9 @@ its card and does not speak until the player selects that skin. Mascot card
 titles and tooltips use localized display names (`누렁이`, `이고지`, etc.),
 not the English unlocking words (`DOG`, `ALIEN`, etc.). The recap uses
 one compact unlock line only; win and contextual copy appears later on the
-ordinary summary. Its `260px` bubble and all visible recap labels use `18px` or
-larger text, with the page label larger still.
+ordinary summary. Its bubble sizes to its copy within a `260px` outer cap and
+uses `--fs-2xl` text; all other visible recap labels use `18px` or larger text,
+with the page label larger still.
 Reduced motion removes the cards' entrance pop.
 
 Confirming the recap reveals the existing summary and persists immediately.
@@ -300,7 +301,8 @@ action row; **post-win end** — "Endless Run Ended" (or "Beyond Publication!" f
 the Chapter-38 endpoint). Endless Mode routes into the already-earned win's Fee
 Settlement → shop flow. New Run/Main Menu instead finish and clear that run.
 **우땅 (WooDak)**, the orangutan mentor mascot, stands beside the card (hidden
-≤720px) with a speech bubble: discovery mention (`{n}` new words) → stat-based
+≤720px) with a content-sized, `--fs-lg` speech bubble inside the existing 190px
+host: discovery mention (`{n}` new words) → stat-based
 tip → random tip; a congratulation leads on a win. Idle = shared single-sprite
 breathe + slow sway. Runtime art: `src/ui/assets/woodak.png`. Stats panel, translated to our terms:
 - Best word (intrinsic letter-chip sum + the word itself) · Most played pattern (e.g. "Transitive (16)")

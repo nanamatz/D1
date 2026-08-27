@@ -154,12 +154,22 @@ export interface UnisonResult {
   suit: Suit;
 }
 
-/** Result of judging a whole sequence (GDD §5): best pattern + unison. */
+export type RegisterSynergyId = 'harmony' | 'contrast' | 'whiplash' | 'mishmash';
+
+/** Mixed-register bonus judged from final register membership (GDD §5.3). */
+export interface RegisterSynergyResult {
+  id: RegisterSynergyId;
+  chipsFactor: number;
+}
+
+/** Result of judging a whole sequence (GDD §5): best pattern + one register bonus. */
 export interface SentenceJudgment {
   /** the highest-rank matching pattern, or null (no match / a gibberish hole) */
   match: PatternMatch | null;
   /** unison bonus if 2+ words share one suit, else null */
   unison: UnisonResult | null;
+  /** mixed-register synergy; mutually exclusive with Unison */
+  registerSynergy?: RegisterSynergyResult | null;
   /** Per eligible word, the lexical POS choices compatible with an equivalent
    * winning parse. Ephemeral judgment output; never persisted on submissions. */
   compatiblePos?: readonly (readonly POS[])[] | null;
@@ -250,9 +260,10 @@ export interface SentenceScoringContext {
   sequence: WordSubmission[];
   match: PatternMatch | null;
   unison: UnisonResult | null;
+  registerSynergy?: RegisterSynergyResult | null;
   /** running blind total used as the sentence settlement's current Chips axis */
   totalBefore: number;
-  /** Chips added to totalBefore: patternChips + 15·absorbedModifiers + unisonChips (GDD §5.2) */
+  /** Chips added to totalBefore after any register ×Chips gain is materialized. */
   sentenceChips: number;
   /** Mult factor applied to the combined Chips axis: patternMult × unisonMult (GDD §5.2) */
   sentenceMult: number;
@@ -276,6 +287,8 @@ export interface SentenceBonusBreakdown {
   unisonSuit: Suit | null;
   unisonChips: number;
   unisonMult: number;
+  registerSynergyId: RegisterSynergyId | null;
+  registerSynergyChipsFactor: number;
   /** Post-pattern effects from Emoji Tiles, vouchers, or bosses. */
   effectChips: number;
   effectMult: number;

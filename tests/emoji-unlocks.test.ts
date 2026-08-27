@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALL_JOKERS, DEVELOPER_GRACE_ID } from '../src/engine/jokers';
+import { BALANCE } from '../src/engine/balance';
 import { availableJokerDefs } from '../src/engine/offers';
 import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
@@ -140,6 +141,25 @@ describe('Emoji Tile profile unlocks', () => {
       acrostic: false,
     });
     expect(loadEmojiUnlockProgress().unlocked).toContain('rewrite');
+  });
+
+  it('unlocks Hypocrite only from an active Whiplash judgment', () => {
+    const run = newRun('hypocrite-unlock');
+    const blind = startBlind(run, makeRng('hypocrite-unlock-blind'));
+    recordEmojiUnlockEvent({ kind: 'newRun', run });
+    const clear = (registerSynergy: null | { id: 'whiplash'; chipsFactor: number }) =>
+      recordEmojiUnlockEvent({
+        kind: 'blindCleared',
+        run,
+        blind,
+        judgment: { match: null, unison: null, registerSynergy },
+        interest: 0,
+        acrostic: false,
+      });
+    clear(null);
+    expect(loadEmojiUnlockProgress().unlocked).not.toContain('hypocrite');
+    clear({ id: 'whiplash', chipsFactor: BALANCE.registerSynergies.whiplash.chipsFactor });
+    expect(loadEmojiUnlockProgress().unlocked).toContain('hypocrite');
   });
 
   it('unlocks Hand Scholar from eight hands in one run', () => {

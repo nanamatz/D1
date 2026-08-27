@@ -2056,7 +2056,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // scorebox fills to its combined Chips × Mult, but HOLD the round number at committed
   // (finalScore stays null → Sidebar's round target falls back to committedScore).
   // Reduced motion collapses build+land: set finalScore now too. A zero bonus
-  // (no pattern, no unison) skips the build entirely — just set finalScore.
+  // A zero bonus (no pattern or register bonus) skips the build — just set finalScore.
   useEffect(() => {
     if (!lexiconReady || !state.pendingEnd || !state.settleComplete) return;
     if (state.sentenceBonus !== null || state.finalScore !== null) return;

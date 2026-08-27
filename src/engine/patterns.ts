@@ -21,6 +21,7 @@ import type {
   PatternMatch,
   POS,
   SentenceJudgment,
+  RegisterSynergyResult,
   Suit,
   UnisonResult,
   WordSubmission,
@@ -277,7 +278,26 @@ function judgeUnison(sequence: readonly WordSubmission[]): UnisonResult | null {
   return first === undefined ? null : { suit: first };
 }
 
-/** Judge the whole sequence: best pattern (highest rank) + unison. */
+function judgeRegisterSynergy(
+  sequence: readonly WordSubmission[],
+): RegisterSynergyResult | null {
+  if (sequence.length < BALANCE.registerSynergies.minWords) return null;
+  const suits = new Set(sequence.flatMap((word) => submissionSuits(word)));
+  const id = suits.size >= 3
+    ? 'mishmash'
+    : suits.size === 2 && suits.has('standard') && suits.has('formal')
+      ? 'harmony'
+      : suits.size === 2 && suits.has('slang') && suits.has('vulgar')
+        ? 'contrast'
+        : suits.size === 2 && suits.has('formal') && suits.has('vulgar')
+          ? 'whiplash'
+          : null;
+  return id === null
+    ? null
+    : { id, chipsFactor: BALANCE.registerSynergies[id].chipsFactor };
+}
+
+/** Judge the whole sequence: best pattern + either Unison or one mixed-register synergy. */
 export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexicon): SentenceJudgment {
   // Rule 1: any gibberish hole voids all pattern matches.
   const hasHole = sequence.some((w) => w.isGibberish);
@@ -285,6 +305,7 @@ export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexi
     return {
       match: null,
       unison: hasHole ? null : judgeUnison(sequence),
+      registerSynergy: null,
       compatiblePos: null,
     };
   }
@@ -310,9 +331,11 @@ export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexi
           repeats: winning.repeats,
         };
 
+  const unison = judgeUnison(sequence);
   return {
     match: best,
-    unison: judgeUnison(sequence),
+    unison,
+    registerSynergy: unison ? null : judgeRegisterSynergy(sequence),
     compatiblePos: winning ? compatiblePos(words, winning) : null,
   };
 }
@@ -352,10 +375,12 @@ export function patternChipsMult(id: PatternId, level: number): { chips: number;
 }
 
 export interface FinalScore {
-  /** Chips added to the committed blind score: patternChips + 15·mods + unisonChips */
+  /** Chips added to committed after the mixed-register factor is materialized. */
   sentenceChips: number;
   /** Mult applied to the combined committed + sentence Chips axis */
   sentenceMult: number;
+  /** Mixed-register X Chips applied before sentence hooks. */
+  registerSynergyChipsFactor: number;
   /** score gained over totalBefore */
   bonus: number;
   /** (totalBefore + sentenceChips) × sentenceMult */
@@ -368,11 +393,11 @@ export const sentenceTotal = (totalBefore: number, chips: number, mult: number):
 
 /**
  * Compute the sentence bonus (GDD §5.2, feature-02 A). Every pattern owns a base
- * [Chips × Mult]; modifiers add +15 to the Chips side each and Unison folds in
- * (Standard on Chips, register mults on Mult). At settlement, Chips add to the
- * committed blind score and Mult multiplies the combined Chips axis.
+ * [Chips × Mult]; modifiers add +15 to the Chips side and Unison folds in.
+ * When active, one mixed-register factor multiplies committed + raw Chips and
+ * materializes its gain before sentence hooks. Mult then applies normally.
  *
- *   final = (committed + patternChips + 15·mods + unisonChips)
+ *   final = ((committed + rawSentenceChips) × registerChipsFactor)
  *         × (patternMult × unisonMult)
  */
 export function finalizeScore(
@@ -407,6 +432,14 @@ export function finalizeScore(
     if (U.mult !== undefined) mult *= U.mult;
   }
 
+  const registerSynergyChipsFactor = judgment.registerSynergy?.chipsFactor ?? 1;
+  chips = (totalBefore + chips) * registerSynergyChipsFactor - totalBefore;
   const total = sentenceTotal(totalBefore, chips, mult);
-  return { sentenceChips: chips, sentenceMult: mult, bonus: total - totalBefore, total };
+  return {
+    sentenceChips: chips,
+    sentenceMult: mult,
+    registerSynergyChipsFactor,
+    bonus: total - totalBefore,
+    total,
+  };
 }

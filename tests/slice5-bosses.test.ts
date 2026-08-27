@@ -13,6 +13,8 @@ const lex = makeLexicon(['bright'], {
   cat: { suit: 'standard', pos: ['noun'] },
   damn: { suit: 'vulgar', pos: ['interjection'] },
   run: { suit: 'standard', pos: ['verbIntransitive'] },
+  edict: { suit: 'formal', pos: ['noun'] },
+  yo: { suit: 'slang', pos: ['interjection'] },
 });
 
 let idc = 0;
@@ -180,6 +182,56 @@ describe('slice5 bosses — scoring effects', () => {
     expect(debuffed.submission.debuffed).toBe(true);
     expect(end.judgment.match?.pattern).toBe('simple');
     expect(end.judgment.unison?.suit).toBe('standard');
+  });
+
+  it('removes debuffed words before mixed-register synergy judgment', () => {
+    const r = bossRun();
+    const first = play(bossBlind(r, 'whitePaper'), r, 'edict');
+    const debuffed = play(first.blind, r, 'damn');
+    const last = play(debuffed.blind, r, 'run');
+    const end = endBlind(last.blind, r, lex);
+
+    expect(end.judgment.registerSynergy?.id).toBe('harmony');
+  });
+
+  it('applies Orphan Line to raw history before mixed-register judgment', () => {
+    const r = bossRun();
+    let blind = bossBlind(r, 'orphanLine');
+    ({ blind } = play(blind, r, 'edict'));
+    ({ blind } = play(blind, r, 'cat'));
+    ({ blind } = play(blind, r, 'damn'));
+
+    const end = endBlind(blind, r, lex);
+    expect(end.judgment.registerSynergy).toBeNull();
+  });
+
+  it('keeps Tower and Tyrant Unison-only and lets gibberish void Dadaist tags', () => {
+    const towerRun = bossRun();
+    towerRun.jokers = [createOwnedJoker(towerRun, 'towerOfBabel')];
+    let towerBlind = bossBlind(towerRun, 'contract');
+    ({ blind: towerBlind } = play(towerBlind, towerRun, 'cat'));
+    ({ blind: towerBlind } = play(towerBlind, towerRun, 'edict'));
+    const tower = endBlind(towerBlind, towerRun, lex).judgment;
+    expect(tower.unison).not.toBeNull();
+    expect(tower.registerSynergy).toBeNull();
+
+    const tyrantRun = bossRun();
+    tyrantRun.jokers = [createOwnedJoker(tyrantRun, 'tyrant')];
+    let tyrantBlind = bossBlind(tyrantRun, 'contract');
+    ({ blind: tyrantBlind } = play(tyrantBlind, tyrantRun, 'cat'));
+    ({ blind: tyrantBlind } = play(tyrantBlind, tyrantRun, 'edict'));
+    const tyrant = endBlind(tyrantBlind, tyrantRun, lex).judgment;
+    expect(tyrant.unison?.suit).toBe('vulgar');
+    expect(tyrant.registerSynergy).toBeNull();
+
+    const dadaRun = bossRun();
+    dadaRun.jokers = [createOwnedJoker(dadaRun, 'dadaist')];
+    let dadaBlind = bossBlind(dadaRun, 'contract');
+    ({ blind: dadaBlind } = play(dadaBlind, dadaRun, 'zzz'));
+    ({ blind: dadaBlind } = play(dadaBlind, dadaRun, 'qqq'));
+    const dada = endBlind(dadaBlind, dadaRun, lex).judgment;
+    expect(dada.unison).toBeNull();
+    expect(dada.registerSynergy).toBeNull();
   });
 
   it('does not award no-pattern Emoji score when every play is debuffed', () => {

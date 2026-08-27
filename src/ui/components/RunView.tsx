@@ -214,7 +214,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   }, [phase]);
 
   // A-2 first-encounter tutorials driven by LIVE board state (material/font tiles
-  // in hand, a pattern or Unison lighting up in the tray).
+  // in hand, a pattern or register bonus lighting up in the tray).
   // The bus no-ops on already-seen/tips-off, so re-firing when a condition stays
   // true is harmless; we fire the moment each condition first becomes true.
   const judgment = judgeSentence(sentenceSequenceForBlind(blind), lexicon);
@@ -222,13 +222,15 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const hasFontTile = blind.hand.some((t) => t.font !== 'medium');
   const hasPattern = judgment.match !== null;
   const hasUnison = judgment.unison !== null;
+  const hasRegisterSynergy = judgment.registerSynergy != null;
   useEffect(() => {
     if (phase !== 'playing') return;
     if (hasMaterialTile) tutorialBus.fire('firstMaterial');
     if (hasFontTile) tutorialBus.fire('firstFont');
     if (hasPattern) tutorialBus.fire('firstPattern');
     if (hasUnison) tutorialBus.fire('firstUnison');
-  }, [phase, hasMaterialTile, hasFontTile, hasPattern, hasUnison]);
+    if (hasRegisterSynergy) tutorialBus.fire('firstRegisterSynergy');
+  }, [phase, hasMaterialTile, hasFontTile, hasPattern, hasUnison, hasRegisterSynergy]);
 
   // Balatro-style persistent table: the sidebar, owned shelves and pouch never
   // swap screens. Only the work surface below them changes phase.

@@ -168,6 +168,40 @@ describe('starting pouches', () => {
       pouchMultDelta: 12,
     });
   });
+
+  it('balances Briefcase axes after mixed-register Chips', () => {
+    const lexicon = makeLexicon([], {
+      edict: { suit: 'formal', pos: ['noun'] },
+      run: { suit: 'standard', pos: ['verbIntransitive'] },
+    });
+    const run = runWith('lunchBag');
+    let blind = startBlind(run, makeRng('briefcase-register'), { target: 999_999 });
+    for (const text of ['EDICT', 'RUN']) {
+      const tiles: Tile[] = [...text].map((letter, index) => ({
+        id: `${text}-${index}`,
+        letter: letter as Letter,
+        material: 'ceramic',
+        font: 'medium',
+        edition: 'base',
+      }));
+      ({ blind } = submitWord(
+        { ...blind, hand: tiles },
+        run,
+        lexicon,
+        tiles.map((tile) => tile.id),
+        makeRng(`briefcase-register-${text}`),
+      ));
+    }
+
+    const final = endBlind(blind, run, lexicon);
+    const rawChips = (blind.committedScore + BALANCE.patterns.simple.baseChips) *
+      BALANCE.registerSynergies.harmony.chipsFactor - blind.committedScore;
+    const balancedAxis = (rawChips + BALANCE.patterns.simple.baseMult) / 2;
+    expect(final.judgment.registerSynergy?.id).toBe('harmony');
+    expect(final.sentenceChips).toBe(balancedAxis);
+    expect(final.sentenceMult).toBe(balancedAxis);
+    expect(final.breakdown.pouchId).toBe('lunchBag');
+  });
 });
 
 describe('cumulative Record difficulty', () => {

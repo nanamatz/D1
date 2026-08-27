@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { newRun } from '../src/engine/run';
-import { startBlind, submitWord, endBlind } from '../src/engine/loop';
+import { BALANCE } from '../src/engine/balance';
+import { canEndEarly, startBlind, submitWord, endBlind } from '../src/engine/loop';
 import { makeRng } from '../src/engine/rng';
 import { makeLexicon } from '../src/engine/lexicon';
 import { resolveBlind } from '../src/engine/progression';
@@ -11,6 +12,8 @@ const lex = makeLexicon([], {
   cat: { suit: 'standard', pos: ['noun'] },
   eats: { suit: 'standard', pos: ['verbTransitive'] },
   fish: { suit: 'standard', pos: ['noun'] },
+  edict: { suit: 'formal', pos: ['noun'] },
+  damn: { suit: 'vulgar', pos: ['interjection'] },
 });
 
 let idc = 0;
@@ -94,6 +97,48 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     expect(final.finalScore).toBe(blind.projectedScore);
     expect(resolveBlind(run, blind, final.finalScore).cleared).toBe(true);
   });
+
+  it('uses the same mixed-register factor for live projection and final settlement', () => {
+    const { run } = freshBlind(1_000_000);
+    let b = startBlind(run, makeRng('register-live'), { target: 1_000_000 });
+    ({ blind: b } = play(b, run, 'edict'));
+    ({ blind: b } = play(b, run, 'run'));
+    const end = endBlind(b, run, lex);
+    const expectedChips = (b.committedScore + BALANCE.patterns.simple.baseChips) *
+      BALANCE.registerSynergies.harmony.chipsFactor - b.committedScore;
+
+    expect(end.judgment.registerSynergy?.id).toBe('harmony');
+    expect(end.sentenceChips).toBe(expectedChips);
+    expect(end.breakdown).toMatchObject({
+      registerSynergyId: 'harmony',
+      registerSynergyChipsFactor: BALANCE.registerSynergies.harmony.chipsFactor,
+    });
+    expect(b.projectedScore).toBe(end.finalScore);
+    expect(canEndEarly({ ...b, target: b.projectedScore })).toBe(true);
+  });
+
+  it('applies flat Chips and Mult hooks after the mixed-register Chips factor', () => {
+    const { run } = freshBlind(1_000_000);
+    run.jokers = [
+      { defId: 'brokenSentence', state: {} },
+      { defId: 'hypocrite', state: {} },
+    ];
+    let b = startBlind(run, makeRng('register-effects'), { target: 1_000_000 });
+    ({ blind: b } = play(b, run, 'edict'));
+    ({ blind: b } = play(b, run, 'damn'));
+    const end = endBlind(b, run, lex);
+    const factor = BALANCE.registerSynergies.whiplash.chipsFactor;
+    const expected = (b.committedScore * factor + BALANCE.jokers.brokenSentence.chips) *
+      BALANCE.jokers.brokenSentence.mult * BALANCE.jokers.hypocrite.factor;
+
+    expect(end.judgment.registerSynergy?.id).toBe('whiplash');
+    expect(end.breakdown).toMatchObject({
+      effectChips: BALANCE.jokers.brokenSentence.chips,
+      effectMult: BALANCE.jokers.brokenSentence.mult * BALANCE.jokers.hypocrite.factor,
+    });
+    expect(end.finalScore).toBe(expected);
+    expect(b.projectedScore).toBe(expected);
+  });
 });
 
 describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
@@ -130,6 +175,8 @@ describe('slice3 loop — endBlind finalization (GDD §7.4)', () => {
       unisonSuit: 'standard',
       unisonChips: 50,
       unisonMult: 1,
+      registerSynergyId: null,
+      registerSynergyChipsFactor: 1,
       effectChips: 0,
       effectMult: 1,
       effectScore: 0,

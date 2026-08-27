@@ -15,10 +15,10 @@ import type { UiIconId } from './uiIcons';
 
 const KEY = 'wj.tutorial';
 
-/** The 12 encounters (pack-opening coach mark retired; A-2 + first boss). */
+/** The 13 encounters (pack-opening coach mark retired; A-2 + first boss). */
 export type EncounterId =
   | 'firstJoker' | 'firstMaterial' | 'firstFont' | 'firstLetterHand'
-  | 'firstPattern' | 'firstUnison' | 'firstGibberish' | 'shopFirstVisit'
+  | 'firstPattern' | 'firstUnison' | 'firstRegisterSynergy' | 'firstGibberish' | 'shopFirstVisit'
   | 'firstConsumable' | 'firstVoucher'
   | 'pouchHover' | 'firstBoss';
 
@@ -43,6 +43,7 @@ export const ENCOUNTERS: readonly Encounter[] = [
   { id: 'firstLetterHand', group: 'scoring', icon: 'letterHand', mascot: 'woodak', target: '.tray' },
   { id: 'firstPattern', group: 'scoring', icon: 'manuscript', mascot: 'woodak', target: '.tray' },
   { id: 'firstUnison', group: 'scoring', icon: 'musicNote', mascot: 'woodak', target: '.tray' },
+  { id: 'firstRegisterSynergy', group: 'scoring', icon: 'speechBurst', mascot: 'woodak', target: '.tray' },
   { id: 'firstMaterial', group: 'tiles', icon: 'brick', mascot: 'woodak', target: '.hand' },
   { id: 'firstFont', group: 'tiles', icon: 'letterA', mascot: 'woodak', target: '.hand' },
   { id: 'firstJoker', group: 'run', icon: 'jester', mascot: 'woodak', target: '.jokers-col' },

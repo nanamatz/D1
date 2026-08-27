@@ -5422,6 +5422,7 @@
   background: rgba(5, 14, 20, .88);
 }
 .bonus-part.modifier { color: var(--chips); }
+.bonus-part.register-synergy { color: var(--chips); }
 .bonus-part.unison { color: var(--gold); }
 .bonus-part.effect { color: #d7a8ff; }
 .bonus-part.pouch { color: var(--gold); }

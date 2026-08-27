@@ -424,7 +424,7 @@ function blindCleared(
     add(progress, 'oneVoice');
     add(progress, 'royalWe');
   }
-  if (styles.has('formal') && styles.has('vulgar')) set(progress, 'hypocrite', 1);
+  if (judgment.registerSynergy?.id === 'whiplash') set(progress, 'hypocrite', 1);
   if (blind.kind === 'boss') {
     add(progress, 'censorsBane');
     if (tracker.discardActions === 0) set(progress, 'cleanCopy', 1);
