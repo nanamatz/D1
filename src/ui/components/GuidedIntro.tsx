@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useI18n } from '../i18n';
 import { richText } from '../richtext';
 import { tilesByIds } from '../game';
@@ -8,21 +8,34 @@ import type { UseGame } from '../useGame';
 
 /**
  * Guided first-run lesson (rebuilt 2026-07-21). A scripted, learn-by-doing walkthrough:
- * frame the grey world → build YELLOW → submit it. The board is hard-locked to spelling
- * YELLOW (StagePanel `lockWord`, wired in RunView), and the build/submit steps auto-advance
+ * frame the grey world → discard a spare → build YELLOW → submit it. The board is hard-locked
+ * to the guided action, and the discard/build/submit steps auto-advance
  * when the player actually performs them — so the flow can't run ahead of the player and the
  * player can't run ahead of the flow. Submitting washes the yellow palette in (ChromaticReveal)
- * and ends the lesson; the target stays the normal 100, so the board then unlocks and the
+ * and ends the lesson; the target stays at 300, so the board then unlocks and the
  * player plays on to clear. Skip finishes early and releases the lock (accessibility).
  */
-export function GuidedIntro({ g, onClose }: { g: UseGame; onClose: () => void }) {
+export function GuidedIntro({
+  g, step, discardTargetId, onStepChange, onClose,
+}: {
+  g: UseGame;
+  step: number;
+  discardTargetId: string | null;
+  onStepChange: (step: number) => void;
+  onClose: () => void;
+}) {
   const { t } = useI18n();
-  const [step, setStep] = useState(0);
   const cur = INTRO_STEPS[step]!;
   const last = step === INTRO_STEPS.length - 1;
 
   const finish = () => { markIntroSeen(); onClose(); };
-  const advance = () => { if (last) finish(); else setStep((s) => s + 1); };
+  const advance = () => { if (last) finish(); else onStepChange(step + 1); };
+
+  useEffect(() => {
+    if (cur.advance === 'discarded' && discardTargetId &&
+      g.state.blind.discardedThisBlind.some((tile) => tile.id === discardTargetId)) advance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur.advance, discardTargetId, g.state.blind.discardedThisBlind]);
 
   // 'staged' step: advance once the staged tiles spell the lesson word.
   const stagedWord = tilesByIds(g.state.blind.hand, g.state.selected)

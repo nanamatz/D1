@@ -1,5 +1,9 @@
 # Spotlight Encounters Implementation Plan
 
+> **Superseded:** The passive, always-Next guided-intro portion was replaced on 2026-07-21 by
+> the [hard-locked YELLOW lesson](../specs/2026-07-21-yellow-first-lesson-design.md). Current
+> behavior is authoritative in [GDD §13](../../GDD.md); the remaining plan is historical.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Present the joker / shop / boss encounter tutorials as spotlight + speech-bubble (like the A-1 guided intro) instead of centered modal cards.

@@ -16,8 +16,17 @@ import {
   TOUCH_MARK_HOLD_MS,
   TOUCH_SYNTHETIC_SUPPRESSION_MS,
 } from '../src/ui/drag';
+import { toggleDiscardMark } from '../src/ui/game';
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
+
+describe('discard marking', () => {
+  it('preserves other ordinary marks while tutorial mode remains single-mark', () => {
+    expect(toggleDiscardMark(['a', 'b'], 'a', false)).toEqual(['b']);
+    expect(toggleDiscardMark(['a'], 'a', true)).toEqual([]);
+    expect(toggleDiscardMark(['a'], 'b', true)).toEqual(['b']);
+  });
+});
 
 describe('feature-04 D — drag physics wiring', () => {
   it('tiles no longer use native HTML5 drag (the controller owns pointer drag)', () => {

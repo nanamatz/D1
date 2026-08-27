@@ -4,11 +4,11 @@ import { fontEffectOf } from '../../engine/fonts';
 import type { SortMode, StagePreview } from '../game';
 import {
   SORT_MODES,
-  nextLockLetter,
   reorderIds,
   sortHand,
   tileTooltip,
   tilesByIds,
+  toggleDiscardMark,
 } from '../game';
 import { usePersistedState, useFlip } from '../hooks';
 import { useI18n } from '../i18n';
@@ -21,20 +21,24 @@ import { useStageDrag, type StageDragCallbacks } from '../drag';
 import { UiIcon } from './UiIcon';
 import { bossAllowsDiscard } from '../../engine/bosses';
 import { PosTags } from './PosTags';
+import { isTutorialTilePrefix, type IntroAdvance } from '../tutorial';
 
 /** Staged word, hand, and the action cluster (UI_DESIGN §2). The selected-word
  *  status now lives in the sidebar (playtest-03 E-9); this area is board, not panel (E-5). */
 export function StagePanel({
   g,
   preview,
-  lockWord,
+  tutorialLock,
 }: {
   g: UseGame;
   preview: StagePreview | null;
-  /** First-run lesson: hard-lock the board to spelling this word (YELLOW). Only the next
-   *  needed letter is clickable; sort/discard/drag are disabled; Play lights only when the
-   *  staged word matches. Undefined = normal free play. */
-  lockWord?: string;
+  /** First-run lesson: exact physical YELLOW tiles plus its one allowed discard spare. */
+  tutorialLock?: {
+    advance: IntroAdvance;
+    word: string;
+    wordTileIds: readonly string[];
+    discardTargetId: string | null;
+  };
 }) {
   const { t } = useI18n();
   const { blind, selected, message } = g.state;
@@ -61,9 +65,15 @@ export function StagePanel({
   const staged = tilesByIds(blind.hand, selected);
   // First-run lesson hard-lock: only the next YELLOW letter is clickable, and Play lights
   // only when the staged word matches. Order is enforced, so `staged` is always a prefix.
-  const lock = !!lockWord;
-  const nextLetter = lockWord ? nextLockLetter(staged.map((tl) => tl.letter), lockWord) : null;
-  const lockComplete = lock && nextLetter === null;
+  const lock = !!tutorialLock;
+  const discardStep = tutorialLock?.advance === 'discarded';
+  const buildStep = tutorialLock?.advance === 'staged';
+  const exactPrefix = tutorialLock
+    ? isTutorialTilePrefix(selected, tutorialLock.wordTileIds)
+    : false;
+  const nextTileId = exactPrefix ? tutorialLock?.wordTileIds[selected.length] ?? null : null;
+  const lockComplete = !!tutorialLock && exactPrefix &&
+    selected.length === tutorialLock.wordTileIds.length;
   const selectedSet = new Set(selected);
   const hand = sortHand(
     blind.hand.filter((tl) => !selectedSet.has(tl.id)),
@@ -169,6 +179,11 @@ export function StagePanel({
 
   const handIds = new Set(hand.map((tl) => tl.id));
   const validMarks = discardMarks.filter((id) => handIds.has(id));
+  const tutorialWasActive = useRef(lock);
+  useEffect(() => {
+    if ((tutorialWasActive.current && !lock) || (lock && !discardStep)) setDiscardMarks([]);
+    tutorialWasActive.current = lock;
+  }, [lock, discardStep]);
   const playTileVoice = (id: string) => {
     const tile = blind.hand.find((candidate) => candidate.id === id);
     if (!tile) return;
@@ -178,13 +193,15 @@ export function StagePanel({
     audio.material(tile.material, step !== undefined ? { step } : undefined);
   };
   const toggleMark = (id: string) => {
-    if (lock) return; // discard is disabled during the lesson lock
+    if (lock && (!discardStep || id !== tutorialLock?.discardTargetId)) return;
     const tile = blind.hand.find((candidate) => candidate.id === id);
     if (!tile || !bossAllowsDiscard(blind, tile)) return;
     playTileVoice(id);
-    setDiscardMarks((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
+    setDiscardMarks((marks) => toggleDiscardMark(marks, id, lock));
   };
   const selectTile = (id: string) => {
+    const undoLast = buildStep && id === selected.at(-1);
+    if (lock && !undoLast && (!buildStep || id !== nextTileId)) return;
     playTileVoice(id);
     g.toggleTile(id);
   };
@@ -254,7 +271,9 @@ export function StagePanel({
     g.discard(validMarks);
     setDiscardMarks([]);
   };
-  const canDiscard = g.canDiscard && validMarks.length > 0 && !lock; // no per-use tile cap (D-4)
+  const canDiscard = g.canDiscard && validMarks.length > 0 && (
+    !lock || (discardStep && validMarks.length === 1 && validMarks[0] === tutorialLock.discardTargetId)
+  ); // no per-use tile cap (D-4)
 
   return (
     <div className="stage" ref={stageRef}>
@@ -272,6 +291,7 @@ export function StagePanel({
             faceDown={faceDown(tile)}
             invalid={!!preview?.debuffed}
             forced={tile.id === blind.forcedTileId}
+            disabled={lock && (!buildStep || tile.id !== selected.at(-1))}
             onSelect={selectTile}
             tooltip={tileTip(tile)}
           />
@@ -304,8 +324,10 @@ export function StagePanel({
             hinted={hintIds.has(tile.id)}
             marked={validMarks.includes(tile.id)}
             faceDown={faceDown(tile)}
-            disabled={lock && tile.letter !== nextLetter}
-            markDisabled={!bossAllowsDiscard(blind, tile)}
+            disabled={lock && (discardStep
+              ? tile.id !== tutorialLock.discardTargetId
+              : !buildStep || tile.id !== nextTileId)}
+            markDisabled={!bossAllowsDiscard(blind, tile) || (lock && tile.id !== tutorialLock.discardTargetId)}
             onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}

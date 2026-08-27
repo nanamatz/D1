@@ -107,8 +107,11 @@ pointer movement reaching 5px becomes the existing drag. Right-click marks an
 eligible hand tile for discard; a primary touch held for 500ms performs that same
 mark once. Sub-5px touch jitter preserves the hold. A completed hold is consumed
 through release, so it never also drags, stages, or fires a second context-menu
-mark. Staged, disabled, boss-locked, guided-lesson, mouse, and pen gestures do not
-gain touch long-press behavior. Reduced Motion does not shorten the input dwell.
+mark. The guided lesson's discard step is the sole right-click lock exception: only
+its seventh opening-order spare may be marked, then the ordinary Discard button must
+commit it. Guided-lesson touch long-press remains disabled. Staged, disabled,
+boss-locked, mouse, and pen gestures do not gain touch long-press behavior. Reduced
+Motion does not shorten the input dwell.
 
 Sidebar (top→bottom): blind badge (kind + boss name when boss) with target score ·
 selected Record icon/name · committed score as `[chips]×[mult]` blue/red boxes ·

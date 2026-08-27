@@ -7,7 +7,17 @@ import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
-import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from '../tutorial';
+import {
+  INTRO_STEPS,
+  claimTutorialInitialization,
+  tutorialBus,
+  hasSeenIntro,
+  isTutorialTilePrefix,
+  markIntroSeen,
+  tutorialDeal,
+  TUTORIAL_WORD,
+  type TutorialDeal,
+} from '../tutorial';
 import { readTips } from '../settings';
 import { SettleProvider } from '../settle';
 import { Sidebar } from './Sidebar';
@@ -68,6 +78,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const [packCandidateIds, setPackCandidateIds] = useState<string[]>([]);
   const [packInteractionLocked, setPackInteractionLocked] = useState(true);
   const [introOpen, setIntroOpen] = useState(false);
+  const [introStep, setIntroStep] = useState(0);
+  const [introDeal, setIntroDeal] = useState<TutorialDeal | null>(null);
+  const initializedTutorialBoards = useRef(new Set<string>());
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
   const candidatePackOpen = phase === 'shop' &&
@@ -163,7 +176,26 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   // `!hasSeenIntro()` is the once-guard (finishing the intro marks it seen). There is no
   // replay control; a rigged hand only comes from a fresh profile's first run.
   useEffect(() => {
-    if (phase === 'playing' && g.state.showIntro && !hasSeenIntro() && readTips()) setIntroOpen(true);
+    if (phase !== 'playing' || !g.state.showIntro || hasSeenIntro() || !readTips()) return;
+    const initKey = `${run.seed}:${run.ante}:${run.blindIndex}`;
+    if (!claimTutorialInitialization(initializedTutorialBoards.current, initKey)) return;
+    if (blind.sequence.some((word) => word.text.toUpperCase() === TUTORIAL_WORD)) {
+      markIntroSeen();
+      return;
+    }
+    const deal = tutorialDeal(blind);
+    if (!deal) {
+      markIntroSeen();
+      return;
+    }
+    const exactPrefix = isTutorialTilePrefix(selected, deal.wordTileIds);
+    if (!exactPrefix) selected.forEach(g.toggleTile);
+    const wordReady = exactPrefix && selected.length === deal.wordTileIds.length;
+    setIntroDeal(deal);
+    setIntroStep(wordReady ? 3 : deal.discardDone || !deal.discardTargetId || blind.discardsLeft <= 0 ? 2 : 0);
+    setIntroOpen(true);
+    // Initialize once on board entry; subsequent guided actions own the controlled step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, g.state.showIntro]);
 
   // feature-04 A-1 · money is never silent. One central watcher on run.gold plays a
@@ -348,7 +380,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
                 <StagePanel
                   g={g}
                   preview={preview}
-                  {...(introOpen ? { lockWord: TUTORIAL_WORD } : {})}
+                  {...(introOpen && introDeal ? {
+                    tutorialLock: {
+                      advance: INTRO_STEPS[introStep]!.advance ?? 'next',
+                      word: TUTORIAL_WORD,
+                      wordTileIds: introDeal.wordTileIds,
+                      discardTargetId: introDeal.discardTargetId,
+                    },
+                  } : {})}
                 />
               </div>
             )}
@@ -386,7 +425,16 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         />
       )}
       {!ending && !settling && introOpen && (
-        <GuidedIntro g={g} onClose={() => setIntroOpen(false)} />
+        <GuidedIntro
+          g={g}
+          step={introStep}
+          discardTargetId={introDeal?.discardTargetId ?? null}
+          onStepChange={setIntroStep}
+          onClose={() => {
+            setIntroOpen(false);
+            setIntroDeal(null);
+          }}
+        />
       )}
       {!ending && !settling && showInfo && (
         <RunInfo

@@ -248,3 +248,13 @@ export function reorderIds(
   next.splice(to, 0, moved!);
   return next;
 }
+
+/** Tutorial discard owns one mark; ordinary play preserves unrelated marks on toggle-off. */
+export function toggleDiscardMark(
+  marks: readonly string[],
+  id: string,
+  single: boolean,
+): string[] {
+  if (marks.includes(id)) return single ? [] : marks.filter((mark) => mark !== id);
+  return single ? [id] : [...marks, id];
+}

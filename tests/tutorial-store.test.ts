@@ -88,16 +88,15 @@ describe('guided intro flag (A-1)', () => {
     expect(hasSeenIntro()).toBe(false);
   });
 
-  it('INTRO_STEPS is the 3-step YELLOW lesson, each with a key and a selector', () => {
-    expect(INTRO_STEPS.length).toBe(3);
+  it('INTRO_STEPS is the 4-step YELLOW lesson, each with a key and a selector', () => {
+    expect(INTRO_STEPS.length).toBe(4);
     for (const s of INTRO_STEPS) {
       expect(s.key).toBeTruthy();
       expect(s.selector.startsWith('.')).toBe(true);
     }
     // keys are unique
-    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(3);
-    // the build/submit steps auto-advance on the player's action, not a Next click
-    expect(INTRO_STEPS.map((s) => s.advance)).toEqual(['next', 'staged', 'played']);
+    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(4);
+    expect(INTRO_STEPS.map((s) => s.advance)).toEqual(['next', 'discarded', 'staged', 'played']);
   });
 });
 
@@ -118,9 +117,9 @@ describe('guided intro copy coverage', () => {
     }
   });
 
-  it('adds bilingual right-click discard guidance without changing the 3-step lesson', () => {
-    expect(en['intro.step.build.body']).toMatch(/right-click.*hand tile.*discard/i);
-    expect(ko['intro.step.build.body']).toMatch(/핸드 타일.*우클릭.*버리기/);
-    expect(INTRO_STEPS.map((step) => step.advance)).toEqual(['next', 'staged', 'played']);
+  it('teaches the ordinary mark-then-Discard action in both locales', () => {
+    expect(en['intro.step.discard.body']).toMatch(/right-click.*mark.*Discard button/i);
+    expect(ko['intro.step.discard.body']).toMatch(/우클릭.*표시.*버리기 버튼/);
+    expect(INTRO_STEPS.map((step) => step.advance)).toEqual(['next', 'discarded', 'staged', 'played']);
   });
 });

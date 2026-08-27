@@ -1,5 +1,9 @@
 # Guided first-run intro (A-1) — design
 
+> **Superseded:** This passive, always-Next tour was replaced on 2026-07-21 by the
+> [hard-locked YELLOW lesson](./2026-07-21-yellow-first-lesson-design.md). Current behavior is
+> authoritative in [GDD §13](../../GDD.md); this file remains historical context only.
+
 Date: 2026-07-19. Approved in-session ("패시브 워크스루 방식으로 일단 해보자").
 Work order: `docs/feature-01-tutorial-sound-fontseals.md` §A-1. Second slice of Work Order A
 (A-2 popups + A-3 Help already shipped).

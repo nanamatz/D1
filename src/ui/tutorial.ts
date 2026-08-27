@@ -12,6 +12,7 @@
 
 import { readValue, remove as removeKey, writeValue } from './storage';
 import type { UiIconId } from './uiIcons';
+import type { BlindState } from '../engine/types';
 
 const KEY = 'wj.tutorial';
 
@@ -84,8 +85,8 @@ const INTRO_KEY = 'wj.tutorialIntro';
 
 /**
  * The scripted first-run lesson (2026-07-21): the opening hand is rigged to contain this
- * word's letters so the guided steps can teach build → submit. The blind target is NOT
- * lowered — it stays the normal ante-1 value (100), so submitting YELLOW (~12 chips) teaches
+ * word's letters so the guided steps can teach discard → build → submit. The blind target is NOT
+ * lowered — it stays the normal ante-1 value (300), so submitting YELLOW (252 chips) teaches
  * the Palette and ends the lesson, then the board unlocks and the player plays on to clear.
  * The word MUST be a valid dictionary + colour-unlock word so submitting it teaches the
  * Palette. YELLOW = Y,E,L,L,O,W (Twin on the two L's).
@@ -94,7 +95,7 @@ export const TUTORIAL_WORD = 'YELLOW';
 
 /** How an intro step advances: a Next button, or automatically when the player performs
  *  the gated action (stages the full word / plays a word). */
-export type IntroAdvance = 'next' | 'staged' | 'played';
+export type IntroAdvance = 'next' | 'discarded' | 'staged' | 'played';
 
 export interface IntroStep {
   /** stable key → i18n copy `intro.step.<key>.title/.body` */
@@ -105,14 +106,49 @@ export interface IntroStep {
   advance?: IntroAdvance;
 }
 
-/** The rebuilt lesson: frame the grey world → build YELLOW → submit it. Submitting washes the
- *  yellow palette in (ChromaticReveal) and clears the target-10 blind. Learn-by-doing: the
- *  build/submit steps auto-advance when the player actually does them (GuidedIntro). */
+/** Frame the grey world → discard one safe spare → build YELLOW → submit it. */
 export const INTRO_STEPS: readonly IntroStep[] = [
   { key: 'frame', selector: '.round-panel', advance: 'next' },
+  { key: 'discard', selector: '.stage', advance: 'discarded' },
   { key: 'build', selector: '.hand', advance: 'staged' },
   { key: 'submit', selector: '.play-btn', advance: 'played' },
 ];
+
+export interface TutorialDeal {
+  wordTileIds: readonly string[];
+  discardTargetId: string | null;
+  discardDone: boolean;
+}
+
+/** A resumed staged selection is safe only when it is the exact physical-ID prefix. */
+export function isTutorialTilePrefix(
+  selected: readonly string[],
+  wordTileIds: readonly string[],
+): boolean {
+  return selected.length <= wordTileIds.length &&
+    selected.every((id, index) => id === wordTileIds[index]);
+}
+
+/** StrictMode may replay mount effects; each blind's tutorial init may mutate selection once. */
+export function claimTutorialInitialization(claimed: Set<string>, key: string): boolean {
+  if (claimed.has(key)) return false;
+  claimed.add(key);
+  return true;
+}
+
+/** UI-only lesson metadata: protect the six front-loaded tiles and teach the next spare. */
+export function tutorialDeal(
+  blind: Pick<BlindState, 'hand' | 'discardedThisBlind'>,
+): TutorialDeal | null {
+  const wordTiles = blind.hand.slice(0, TUTORIAL_WORD.length);
+  if (wordTiles.map((tile) => tile.letter ?? '').join('') !== TUTORIAL_WORD) return null;
+  const discarded = blind.discardedThisBlind[0];
+  return {
+    wordTileIds: wordTiles.map((tile) => tile.id),
+    discardTargetId: discarded?.id ?? blind.hand[TUTORIAL_WORD.length]?.id ?? null,
+    discardDone: !!discarded,
+  };
+}
 
 /** Stored as a bare number: valid JSON, so older String(Date.now()) values still read. */
 export function hasSeenIntro(): boolean {
