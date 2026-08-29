@@ -8,6 +8,8 @@ const sidebar = readFileSync('src/ui/components/Sidebar.tsx', 'utf8');
 const playCss = readFileSync('src/ui/styles/play.css', 'utf8');
 const screenCss = readFileSync('src/ui/styles/screens.css', 'utf8');
 const tokensCss = readFileSync('src/ui/styles/tokens.css', 'utf8');
+const app = readFileSync('src/ui/App.tsx', 'utf8');
+const transition = readFileSync('src/ui/components/ScreenTransition.tsx', 'utf8');
 
 describe('persistent Balatro-style run table', () => {
   it('keeps sidebar, shelves and pouch in one frame without an in-run ScreenTransition', () => {
@@ -73,7 +75,33 @@ describe('persistent Balatro-style run table', () => {
     expect(screenCss).toMatch(/\.screen\s*\{[^}]*max-width:\s*var\(--board-max\)[^}]*min-height:\s*var\(--board-h\)/s);
     expect(screenCss).toMatch(/\.screen-stack\s*\{[^}]*max-width:\s*var\(--board-max\)[^}]*min-height:\s*var\(--board-h\)/s);
     expect(screenCss).toMatch(/\.screen-pane\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
-    expect(screenCss).toContain('zoom: min(var(--ui-scale, 1), var(--fit-scale, 1))');
+    expect(screenCss).toContain('zoom: var(--root-zoom)');
+  });
+
+  it('freezes ordinary and run fit independently through enter and exit transitions', () => {
+    expect(tokensCss).toContain('--root-zoom: min(var(--ui-scale, 1), var(--fit-scale, 1))');
+    expect(tokensCss).toContain('--run-zoom: min(var(--ui-scale, 1), var(--run-fit-scale, 1))');
+    expect(tokensCss).not.toContain(':root:has(.persistent-run)');
+    expect(app).toContain("runFit={screen === 'run' || screen === 'deskLab'}");
+    expect(transition).toContain('runFit: boolean;');
+    expect(transition).toContain("outgoing.runFit && 'run-fit'");
+    expect(transition).toContain("runFit && 'run-fit'");
+    expect(screenCss).toMatch(/\.screen-pane\.run-fit\s*\{[^}]*zoom:\s*var\(--run-relative-scale\)/s);
+    expect(screenCss).not.toContain('width: calc(100% / var(--run-relative-scale))');
+
+    const viewportWidth = 1440;
+    const viewportHeight = 1000;
+    const baseFit = Math.min(viewportWidth / 1440, (viewportHeight - 4) / 988);
+    const runFit = Math.min((viewportWidth - 240) / 1440, (viewportHeight - 4) / 988);
+    expect(baseFit).toBeCloseTo(1, 3);
+    expect(runFit).toBeCloseTo(5 / 6, 3);
+    expect(runFit / baseFit).toBeCloseTo(5 / 6, 3);
+    expect(baseFit - runFit).toBeGreaterThan(0.15);
+    // Electron 1440×1000: CSS zoom keeps the 1200px run board centred.
+    const boardWidth = 1440 * runFit;
+    const gutter = (viewportWidth - boardWidth) / 2;
+    expect(gutter).toBeCloseTo(120, 3);
+    expect(gutter + boardWidth).toBeCloseTo(1320, 3);
   });
 
   it('reserves the live pattern line before the second word completes a pattern', () => {

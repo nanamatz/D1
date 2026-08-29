@@ -51,6 +51,7 @@ import { mascotSrc } from '../mascots';
 import { preloadImagesWhenIdle } from '../preload';
 import { loadDiscoveredLetterHands } from '../lifetime';
 import { unlockedEmojiSet } from '../emojiUnlocks';
+import { BALANCE } from '../../engine/balance';
 
 interface Props {
   g: UseGame;
@@ -274,6 +275,13 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const sidebarMode =
     phase === 'shop' ? 'shop' : phase === 'blindselect' ? 'blindselect' : 'blind';
   const boardVisible = phase === 'playing' || settling || ending;
+  const lastSubmission = blind.sequence.at(-1) ?? null;
+  const originalSuit = lastSubmission && !lastSubmission.isGibberish
+    ? lexicon.lookup(lastSubmission.text)?.suit
+    : null;
+  const baseSuitMult = originalSuit
+    ? BALANCE.suitMult[originalSuit]
+    : BALANCE.gibberish.mult;
 
   return (
     <>
@@ -289,7 +297,8 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       >
       <SettleProvider
         events={g.state.lastEvents}
-        submission={blind.sequence.at(-1) ?? null}
+        submission={lastSubmission}
+        baseSuitMult={baseSuitMult}
         settleId={g.state.settleId}
         speed={settings.gameSpeed}
         screenShake={settings.screenshake}
@@ -308,6 +317,8 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           discoveredLetterHands={discoveredLetterHands}
           onOpenInfo={() => setShowInfo(true)}
           onOpenOptions={() => setPaused(true)}
+          screenshake={settings.screenshake}
+          reducedMotion={settings.reducedMotion}
           mode={sidebarMode}
         />
         <main className="main">

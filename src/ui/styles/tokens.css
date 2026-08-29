@@ -202,7 +202,7 @@
   --tile-ink-24: #9b4938;
 }
 :root.unlock-yellow {
-  --gold: #f0b23e; /* money, gold UI, early-end glow */
+  --gold: #f0b23e; /* money, gold UI, target-cross/typewriter accents */
   --suit-slang: #f09437;
   --tile-face: #f4eddf; /* warm ivory tile face returns */
   --kind-big-a: #d6a53a; /* big-blind (Revision) kind pill */
@@ -324,6 +324,17 @@
     calc(var(--vw-n) / var(--board-w-n)),
     calc(var(--vh-n) / var(--board-h-n))
   );
+  /* Run panes reserve physical feedback lanes without changing the root scale:
+     outgoing and incoming transition panes must retain their own frozen fit. */
+  --run-side-lane: clamp(96px, 8.333333vw, 160px);
+  --run-vw-n: tan(atan2(calc(100vw - var(--run-side-lane) - var(--run-side-lane)), 1px));
+  --run-fit-scale: min(
+    calc(var(--run-vw-n) / var(--board-w-n)),
+    calc(var(--vh-n) / var(--board-h-n))
+  );
+  --root-zoom: min(var(--ui-scale, 1), var(--fit-scale, 1));
+  --run-zoom: min(var(--ui-scale, 1), var(--run-fit-scale, 1));
+  --run-relative-scale: calc(var(--run-zoom) / var(--root-zoom));
 }
 
 * {

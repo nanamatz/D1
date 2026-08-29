@@ -24,6 +24,14 @@ import type {
 } from '../engine/types';
 import { audio, type SfxName } from './audio';
 import { motionOff } from './motion';
+import {
+  scoreEventFlatDelta,
+  scoreTypewriterBaseSuitMult,
+  scoreTypewriterEventDelta,
+  scoreTypewriterExpectedBase,
+  scoreTypewriterTier,
+  type ScoreTypewriterTier,
+} from './scoreTypewriter';
 
 /**
  * feedback: when a tile's MATERIAL / FONT / EDITION triggers during scoring, make the
@@ -205,6 +213,21 @@ export interface SettleView {
   active: boolean;
   chips: number;
   mult: number;
+  /** Submission-snapshotted game speed, retained through sentence BUILD/LAND. */
+  settleSpeed: number;
+  /** Reduced Motion latched for this submission; OFF applies to the next one. */
+  settleReduced: boolean;
+  /** Ordinary base frozen from the original suit event before word-rule rewrites. */
+  typewriterExpectedBase: number;
+  /** Running flat score applied after Chips × Mult. */
+  flatScore: number;
+  /** Current scoring beat's local strength; target/round progress never enters it. */
+  typewriterBeat: {
+    id: string;
+    tier: ScoreTypewriterTier;
+    delta: number;
+    speed: number;
+  } | null;
   /** tile currently lifting for its own score or an Emoji Tile targeting it */
   activeTileId: string | null;
   /** tileId → chip value, accumulated as each tile scores (drives the +N tags) */
@@ -260,6 +283,11 @@ const IDLE: SettleView = {
   active: false,
   chips: 0,
   mult: 0,
+  settleSpeed: 1,
+  settleReduced: false,
+  typewriterExpectedBase: 0,
+  flatScore: 0,
+  typewriterBeat: null,
   activeTileId: null,
   tilePops: {},
   tileEffectPop: null,
@@ -274,6 +302,24 @@ const IDLE: SettleView = {
 
 const SettleCtx = createContext<SettleView>(IDLE);
 export const useSettleView = (): SettleView => useContext(SettleCtx);
+
+export interface SettlePresentationSnapshot {
+  settleId: number;
+  speed: number;
+  reduced: boolean;
+}
+
+/** Freeze presentation settings per submission; Reduced Motion may only latch on. */
+export function settlePresentationSnapshot(
+  previous: SettlePresentationSnapshot,
+  settleId: number,
+  speed: number,
+  reduced: boolean,
+): SettlePresentationSnapshot {
+  if (previous.settleId !== settleId) return { settleId, speed, reduced };
+  if (reduced && !previous.reduced) return { ...previous, reduced: true };
+  return previous;
+}
 
 // ms per beat at 1× speed; game speed (1/2/4×) scales this single timing source.
 const BASE_STEP = 600;
@@ -436,6 +482,47 @@ export function accumulate(
   return { chips, mult };
 }
 
+export interface ScoreTypewriterEventFold {
+  chips: number;
+  mult: number;
+  flatScore: number;
+  tier: ScoreTypewriterTier;
+  delta: number;
+}
+
+/** Fold final axes while retaining only the strongest single local event. */
+export function foldScoreTypewriterEvents(
+  events: readonly ScoreEvent[],
+  expectedBase: number,
+): ScoreTypewriterEventFold {
+  let chips = 0;
+  let mult = 0;
+  let flatScore = 0;
+  let tier: ScoreTypewriterTier = 0;
+  let delta = 0;
+  for (const event of events) {
+    const beforeChips = chips;
+    const beforeMult = mult;
+    const beforeFlatScore = flatScore;
+    ({ chips, mult } = accumulate(chips, mult, event));
+    flatScore += scoreEventFlatDelta(event);
+    const candidateDelta = scoreTypewriterEventDelta(
+      beforeChips,
+      beforeMult,
+      beforeFlatScore,
+      chips,
+      mult,
+      flatScore,
+    );
+    const candidateTier = scoreTypewriterTier(candidateDelta, expectedBase);
+    if (candidateTier > tier || (candidateTier === tier && candidateDelta > delta)) {
+      tier = candidateTier;
+      delta = candidateDelta;
+    }
+  }
+  return { chips, mult, flatScore, tier, delta };
+}
+
 /** Emoji Tile triggers speak by the operation they actually performed. A mixed
  * chips+Mult trigger uses the heavier Mult voice so it remains legible. */
 export function emojiTriggerSfx(
@@ -490,6 +577,7 @@ export function settleDurationMs(
 export function SettleProvider({
   events,
   submission,
+  baseSuitMult,
   settleId,
   speed,
   screenShake,
@@ -499,6 +587,8 @@ export function SettleProvider({
 }: {
   events: readonly ScoreEvent[];
   submission: WordSubmission | null;
+  /** Original lexicon suit Mult; used when a debuff emits no suit beat. */
+  baseSuitMult: number;
   settleId: number;
   speed: number;
   screenShake: number;
@@ -515,6 +605,17 @@ export function SettleProvider({
   const activeSettleIdRef = useRef<number | null>(null);
   const impactContactSettleIdRef = useRef<number | null>(null);
   const reduce = reducedMotion || motionOff();
+  const presentationSnapshotRef = useRef<SettlePresentationSnapshot>({
+    settleId,
+    speed,
+    reduced: reduce,
+  });
+  presentationSnapshotRef.current = settlePresentationSnapshot(
+    presentationSnapshotRef.current,
+    settleId,
+    speed,
+    reduce,
+  );
   const previousReduceRef = useRef({ settleId, reduce });
   const [reducedRestart, setReducedRestart] = useState(0);
 
@@ -525,13 +626,16 @@ export function SettleProvider({
   // the same submission is never replayed as a full-motion timeline.
   useLayoutEffect(() => {
     const previous = previousReduceRef.current;
-    if (
-      previous.settleId === settleId &&
-      !previous.reduce &&
-      reduce &&
-      activeSettleIdRef.current === settleId
-    ) {
-      setReducedRestart((value) => value + 1);
+    const turnedOn = previous.settleId === settleId && !previous.reduce && reduce;
+    if (turnedOn) {
+      // The word timeline may already be idle while its sentence BUILD/LAND is
+      // still presenting. Keep the submission latch visible to that later beat.
+      setView((current) => current.settleReduced
+        ? current
+        : { ...current, settleReduced: true });
+      if (activeSettleIdRef.current === settleId) {
+        setReducedRestart((value) => value + 1);
+      }
     }
     previousReduceRef.current = { settleId, reduce };
   }, [settleId, reduce]);
@@ -546,7 +650,11 @@ export function SettleProvider({
       return;
     }
     activeSettleIdRef.current = settleId;
-    const settleSpeed = speed;
+    const { speed: settleSpeed, reduced: settleReduced } = presentationSnapshotRef.current;
+    const frozenBaseSuitMult = scoreTypewriterBaseSuitMult(beats, baseSuitMult);
+    const typewriterExpectedBase = submission
+      ? scoreTypewriterExpectedBase(submission, frozenBaseSuitMult)
+      : 0;
     const impactTiles = submission?.tiles.map((tile) => ({
       el: submittedTile(tile.id),
       family: playImpactFamily(tile.material),
@@ -555,19 +663,34 @@ export function SettleProvider({
       .find(({ el }) => el !== null)
       ?.el?.closest<HTMLElement>('.submitted-tiles') ?? null;
 
-    if (reduce) {
+    if (settleReduced) {
       // Collapse to an instant fill, then reset to idle 0×0.
-      let chips = 0;
-      let mult = 0;
+      const { chips, mult, flatScore, tier, delta } = foldScoreTypewriterEvents(
+        beats,
+        typewriterExpectedBase,
+      );
       const pops: Record<string, number> = {};
       const destroyedTileIds = beats
         .filter(tileWasDestroyed)
         .map((event) => event.tileId);
       for (const e of beats) {
         if (e.kind === 'tile') pops[e.tileId] = e.chips;
-        ({ chips, mult } = accumulate(chips, mult, e));
       }
-      setView({ ...IDLE, active: true, chips, mult, tilePops: pops, destroyedTileIds });
+      setView({
+        ...IDLE,
+        active: true,
+        chips,
+        mult,
+        settleSpeed,
+        settleReduced,
+        typewriterExpectedBase,
+        flatScore,
+        typewriterBeat: tier > 0
+          ? { id: `${settleId}-reduced`, tier, delta, speed: settleSpeed }
+          : null,
+        tilePops: pops,
+        destroyedTileIds,
+      });
       clearPlayImpactRow(impactRow);
       impactTiles.forEach(({ el }) => { if (el) clearPlayImpact(el); });
       if (impactRow && impactTiles.length > 0) impactRow.classList.add('play-impact-reduced');
@@ -577,7 +700,7 @@ export function SettleProvider({
       const off = setTimeout(() => {
         clearPlayImpactRow(impactRow);
         activeSettleIdRef.current = null;
-        setView(IDLE);
+        setView({ ...IDLE, settleSpeed, settleReduced, typewriterExpectedBase });
         onCompleteRef.current?.();
       }, settleDurationMs(events, settleSpeed, true, submission?.tiles.length ?? 0));
       return () => {
@@ -592,9 +715,10 @@ export function SettleProvider({
     const creationCleanups: Array<() => void> = [];
     const shakeCleanups: Array<() => void> = [];
     setCreatedTilesPending(beats, true);
-    setView({ ...IDLE, active: true });
+    setView({ ...IDLE, active: true, settleSpeed, settleReduced, typewriterExpectedBase });
     let chips = 0;
     let mult = 0;
+    let flatScore = 0;
     const pops: Record<string, number> = {};
     const destroyedTileIds = new Set<string>();
     let tickStep = 0;
@@ -642,7 +766,18 @@ export function SettleProvider({
         setTimeout(() => {
           const prevChips = chips;
           const prevMult = mult;
+          const prevFlatScore = flatScore;
           ({ chips, mult } = accumulate(chips, mult, e));
+          flatScore += scoreEventFlatDelta(e);
+          const typewriterDelta = scoreTypewriterEventDelta(
+            prevChips,
+            prevMult,
+            prevFlatScore,
+            chips,
+            mult,
+            flatScore,
+          );
+          const typewriterTier = scoreTypewriterTier(typewriterDelta, typewriterExpectedBase);
           if (chips !== prevChips) audio.chips(chips - prevChips);
           if (tileWasDestroyed(e)) destroyedTileIds.add(e.tileId);
           // SFX (work order B): fire inside the speed-scaled beat timer so the
@@ -702,6 +837,18 @@ export function SettleProvider({
             active: true,
             chips,
             mult,
+            settleSpeed,
+            settleReduced,
+            typewriterExpectedBase,
+            flatScore,
+            typewriterBeat: typewriterTier > 0
+              ? {
+                  id: `${settleId}-${i}`,
+                  tier: typewriterTier,
+                  delta: typewriterDelta,
+                  speed: settleSpeed,
+                }
+              : null,
             activeTileId: null,
             tilePops: { ...pops },
             tileEffectPop: null,
@@ -856,7 +1003,7 @@ export function SettleProvider({
         setCreatedTilesPending(beats, false);
         audio.play('totalRoll');
         activeSettleIdRef.current = null;
-        setView(IDLE);
+        setView({ ...IDLE, settleSpeed, settleReduced, typewriterExpectedBase });
         onCompleteRef.current?.();
       }, settleDurationMs(events, settleSpeed, false, submission?.tiles.length ?? 0)),
     );

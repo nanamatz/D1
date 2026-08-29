@@ -183,7 +183,7 @@ export function DeskObjects({
       const base = candidates[Math.floor(Math.random() * candidates.length)]!;
       const next: DeskObj = {
         ...base,
-        side: Math.random() < 0.5 ? 'left' : 'right',
+        side: 'right',
         spawn: seq.current++,
         trigger: base.kind === 'bulldog'
           ? Math.floor(Math.random() * BULLDOG_TEETH)
@@ -395,7 +395,8 @@ export function DeskObjects({
   };
 
   const still = reduced() ? 'desk-still' : '';
-  // Three independent height zones PER SIDE (six total), oldest at the bottom.
+  // Three right-margin height zones at runtime; Laboratory samples keep their
+  // contained left placement through the same stack helper.
   // Removing an object compacts only the stack on that same side.
   const liveObjects = [cup, bell, encounter].filter(
     (obj): obj is DeskObj => obj !== null,

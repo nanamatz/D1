@@ -11,12 +11,11 @@ interface Props {
   onOptions: () => void;
   onProfile: () => void;
   onDeskLab: () => void;
-  onUnlockRecap?: () => void;
 }
 
 /** Main Menu (spec §2.1). Our own logotype. */
 export function MainMenu({
-  lexicon, onPlay, onCollection, onOptions, onProfile, onDeskLab, onUnlockRecap,
+  lexicon, onPlay, onCollection, onOptions, onProfile, onDeskLab,
 }: Props) {
   const { t, lang, setLang } = useI18n();
   const slot = activeProfile();
@@ -81,14 +80,9 @@ export function MainMenu({
           {profile.unseen > 0 && <span className="badge" aria-label={t('menu.newBadge')}>!</span>}
         </button>
         {import.meta.env.DEV && (
-          <>
-            <button className="btn menu-desk-lab" onClick={onDeskLab}>
-              {t('menu.deskLab')}
-            </button>
-            <button className="btn menu-unlock-recap" onClick={onUnlockRecap}>
-              {t('unlockRecap.title')}
-            </button>
-          </>
+          <button className="btn menu-desk-lab" onClick={onDeskLab}>
+            {t('menu.deskLab')}
+          </button>
         )}
         <button className="btn menu-quit" onClick={onQuit}>
           {t('menu.quit')}

@@ -28,7 +28,9 @@ describe('ambient coffee cup interaction', () => {
     expect(css).toContain('width: clamp(112px, 11vw, 168px)');
   });
 
-  it('stacks each side independently into three bottom-up height zones', () => {
+  it('reserves runtime encounters for the right-side three-zone stack', () => {
+    expect(component).toContain("side: 'right',");
+    expect(component).not.toContain("side: Math.random() < 0.5 ? 'left' : 'right'");
     expect(component).toContain('const liveObjects = [cup, bell, encounter]');
     expect(component).toContain("const sideStack = (side: DeskObj['side'])");
     expect(component).toContain('liveObjects.filter((obj) => obj.side === side)');

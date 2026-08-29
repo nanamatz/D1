@@ -1535,7 +1535,7 @@
 /* ---------- UI scale + accessibility toggles (spec §2.11) ---------- */
 /* UI scale may use available headroom, but viewport fit always wins in-run. */
 #root {
-  zoom: min(var(--ui-scale, 1), var(--fit-scale, 1));
+  zoom: var(--root-zoom);
 }
 body.force-reduced-motion * {
   animation: none !important;
@@ -1940,6 +1940,95 @@ body.cb-safe .tile.hint {
   color: #d8e5e2;
   font-size: var(--fs-lg);
 }
+.desk-lab-tabs {
+  width: min(720px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.desk-lab-tabs .btn {
+  min-height: 46px;
+  background: #354e55;
+}
+.desk-lab-tabs .btn[aria-selected='true'] {
+  color: #101719;
+  background: var(--gold);
+}
+.desk-lab-panel {
+  width: 100%;
+}
+.desk-lab-panel[hidden] {
+  display: none;
+}
+.desk-lab-panel-copy {
+  margin-bottom: 10px;
+  color: #d8e5e2;
+  font-size: var(--fs-md);
+  text-align: center;
+}
+.score-feedback-lab {
+  width: min(760px, 100%);
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+  background: #17282d;
+  border: 3px solid #4b666c;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .04), 0 7px 0 #101b20;
+}
+.score-feedback-lab > p {
+  color: #d8e5e2;
+  font-size: var(--fs-lg);
+  text-align: center;
+}
+.score-lab-group,
+.score-lab-slider,
+.score-lab-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.score-lab-group > strong,
+.score-lab-slider > strong {
+  flex: 0 0 170px;
+  color: var(--gold);
+  font-size: var(--fs-lg);
+}
+.score-lab-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.score-lab-buttons .btn,
+.score-lab-target {
+  min-height: 40px;
+  padding: 7px 14px;
+  background: #354e55;
+}
+.score-lab-buttons .btn[aria-pressed='true'] {
+  background: var(--btn-green);
+}
+.score-lab-buttons .score-lab-replay,
+.score-lab-target {
+  background: var(--btn-blue);
+}
+.score-lab-slider input[type='range'] {
+  flex: 1;
+}
+.score-lab-slider span {
+  width: 54px;
+  color: #fff;
+  text-align: right;
+}
+.score-lab-check {
+  min-height: 40px;
+  color: #fff;
+  cursor: pointer;
+}
+.score-lab-check input {
+  width: 24px;
+  height: 24px;
+}
 .desk-lab-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2023,6 +2112,11 @@ body.cb-safe .tile.hint {
 }
 @media (max-width: 520px) {
   .desk-lab-grid { grid-template-columns: 1fr; }
+  .score-feedback-lab { padding: 14px; }
+  .score-lab-group,
+  .score-lab-slider { align-items: flex-start; flex-direction: column; }
+  .score-lab-group > strong,
+  .score-lab-slider > strong { flex-basis: auto; }
 }
 .quit-farewell .quit-body {
   color: var(--ink-dim);
@@ -4882,6 +4976,12 @@ body.cb-safe .tile.hint {
   width: 100%;
   min-height: var(--board-h);
   background: var(--bg-desk);
+}
+/* Each retained transition pane keeps its own fit snapshot. CSS zoom already
+   compensates percentage layout sizing; reciprocal width would double that
+   compensation and offset the centred run. */
+.screen-pane.run-fit {
+  zoom: var(--run-relative-scale);
 }
 /* Outgoing: frozen in place, beneath the incoming panel, and inert. */
 .screen-pane.screen-out {

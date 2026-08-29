@@ -14,6 +14,16 @@ describe('random encounter laboratory', () => {
     expect(lab).toContain('DESK_KINDS.map');
     expect(lab).toContain('<DeskObjects active sampleKind={kind} resetToken={resetToken} />');
     expect(lab).toContain('setResetToken((value) => value + 1)');
+    expect(lab).toContain("type LabTab = 'score' | 'encounters'");
+    expect(lab).toContain('role="tablist"');
+    expect(lab).toContain('role="tabpanel"');
+    expect(lab).toContain("useState<LabTab>('score')");
+    expect(lab).toContain("tabIndex={tab === 'score' ? 0 : -1}");
+    expect(lab).toContain("tabIndex={tab === 'encounters' ? 0 : -1}");
+    for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+      expect(lab).toContain(`event.key === '${key}'`);
+    }
+    expect(lab).toContain('tabRefs.current[next]?.focus()');
   });
 
   it('is reachable only in development and has a contained gallery layout', () => {
@@ -23,6 +33,7 @@ describe('random encounter laboratory', () => {
     expect(app).toContain("| 'deskLab'");
     expect(app).toContain("case 'deskLab'");
     expect(app).toContain('const DeskEncounterLab = import.meta.env.DEV');
+    expect(app).toContain("runFit={screen === 'run' || screen === 'deskLab'}");
     expect(menu).toContain('import.meta.env.DEV &&');
     expect(menu).toContain("t('menu.deskLab')");
     expect(css).toContain('.desk-lab-grid');

@@ -139,12 +139,17 @@ describe('integrated unlock recap ledger', () => {
     );
   });
 
-  it('exposes a save-safe preview from the development menu', () => {
+  it('keeps the integrated recap but removes the development-menu preview', () => {
     const app = readFileSync('src/ui/App.tsx', 'utf8');
     const menu = readFileSync('src/ui/components/MainMenu.tsx', 'utf8');
-    expect(app).toContain('const UnlockRecapPreview = import.meta.env.DEV');
-    expect(app).toContain('g={{ ...g, acknowledgeUnlocks: () => setScreen(\'menu\') }}');
-    expect(menu).toContain('className="btn menu-unlock-recap"');
+    const gameOver = readFileSync('src/ui/components/GameOver.tsx', 'utf8');
+    expect(app).not.toContain('UnlockRecapPreview');
+    expect(app).not.toContain('UNLOCK_RECAP_PREVIEW');
+    expect(app).not.toContain("| 'unlockRecap'");
+    expect(menu).not.toContain('menu-unlock-recap');
+    expect(menu).not.toContain('onUnlockRecap');
+    expect(gameOver).toContain("import { UnlockRecap } from './UnlockRecap'");
+    expect(gameOver).toContain('<UnlockRecap g={g} notices={unlocks} />');
   });
 
   it('uses the shared circular pager only when unlock cards overflow', () => {

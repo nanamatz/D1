@@ -6,6 +6,8 @@ import {
   playImpactDurationMs,
   playImpactFamily,
   playImpactIntensity,
+  settlePresentationSnapshot,
+  foldScoreTypewriterEvents,
 } from '../src/ui/settle';
 import type { ScoreEvent, TileMaterial } from '../src/engine/types';
 
@@ -74,6 +76,47 @@ describe('settleDurationMs — the clear signal tracks the settle length', () =>
     // must now wait for THIS, not a constant that undershoots it.
     const longPlay = settleDurationMs(play(7, 2), 1, false);
     expect(longPlay).toBeGreaterThan(1900);
+  });
+});
+
+describe('settle presentation snapshot', () => {
+  it('keeps original speed and latched Reduced Motion through the submission', () => {
+    let snapshot = settlePresentationSnapshot(
+      { settleId: 0, speed: 1, reduced: false },
+      7,
+      2,
+      false,
+    );
+    snapshot = settlePresentationSnapshot(snapshot, 7, 4, true);
+    expect(snapshot).toEqual({ settleId: 7, speed: 2, reduced: true });
+
+    snapshot = settlePresentationSnapshot(snapshot, 7, 4, false);
+    expect(snapshot).toEqual({ settleId: 7, speed: 2, reduced: true });
+
+    expect(settlePresentationSnapshot(snapshot, 8, 4, false)).toEqual({
+      settleId: 8,
+      speed: 4,
+      reduced: false,
+    });
+  });
+});
+
+describe('reduced Score Typewriter fold', () => {
+  it('keeps the strongest local beat instead of classifying the aggregate', () => {
+    const folded = foldScoreTypewriterEvents([
+      { kind: 'suit', suit: 'standard', mult: 1 },
+      tile('a'),
+      { kind: 'tile', tileId: 'b', letter: 'A', chips: 20 },
+      tile('c'),
+    ], 100);
+    expect(folded).toEqual({ chips: 40, mult: 1, flatScore: 0, tier: 1, delta: 20 });
+    expect(foldScoreTypewriterEvents([], 100)).toEqual({
+      chips: 0,
+      mult: 0,
+      flatScore: 0,
+      tier: 0,
+      delta: 0,
+    });
   });
 });
 
@@ -160,7 +203,7 @@ describe('physical Play impact prologue', () => {
     expect(settleSource).toContain('timers.forEach(clearTimeout);');
     expect(settleSource).toContain('clearPlayImpactRow(impactRow);');
     expect(runViewSource).toContain('reducedMotion={settings.reducedMotion}');
-    expect(settleSource).toContain('const settleSpeed = speed;');
+    expect(settleSource).toContain('const { speed: settleSpeed, reduced: settleReduced }');
     expect(settleSource).toContain('const screenShakeRef = useRef(screenShake);');
     expect(settleSource).toContain('screenShakeRef.current = screenShake;');
     expect(settleSource).toContain('const reduce = reducedMotion || motionOff();');

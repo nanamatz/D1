@@ -1705,54 +1705,230 @@
   box-shadow: var(--shadow);
   position: relative; /* anchor the +N/×N pop (item 6) */
 }
-/* D-2 · burning score boxes (UI_DESIGN §4.7). Ignite while the settling total ≥ the
-   blind target; --flame (0..1, set inline, scales with the overshoot) drives both the
-   box glow and a flame licking up from behind each box's top edge. Because auto-settle
-   (GDD §7.2) has no cash-out button, the flame IS the "you've cleared it" tell — the
-   JS lights it DURING the count-up, a beat before the settlement resolves. */
-.scorebox.burning .box {
-  box-shadow:
-    var(--shadow),
-    0 0 calc(8px + var(--flame, 0) * 22px) rgba(255, 150, 40, calc(0.45 + var(--flame, 0) * 0.5));
-  overflow: visible;
-}
-.scorebox.burning .box::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% - 10px);
-  translate: -50% 0;
-  width: calc(52% + var(--flame, 0) * 40%);
-  height: calc(24px + var(--flame, 0) * 42px);
-  background: radial-gradient(
-    50% 100% at 50% 100%,
-    rgba(255, 238, 130, 0.95) 0%,
-    rgba(255, 150, 40, 0.85) 42%,
-    rgba(214, 60, 24, 0.32) 72%,
-    transparent 100%
+/* Score Typewriter (GDD §7.1): persistent left-margin pixel machine. It reacts
+   inside the existing settle beat and never owns completion timing. */
+.score-typewriter-dock {
+  --typewriter-beat: 460ms;
+  --typewriter-key-beat: 230ms;
+  --typewriter-run-scale: min(var(--ui-scale, 1), var(--run-fit-scale, 1));
+  --typewriter-gutter: calc((100vw - var(--board-max) * var(--typewriter-run-scale)) / 2);
+  --typewriter-width: min(
+    230px,
+    13vw,
+    max(0px, calc(var(--typewriter-gutter) - 16px))
   );
-  border-radius: 50% 50% 46% 46% / 64% 64% 36% 36%;
-  filter: blur(1px);
+  position: fixed;
+  left: max(8px, calc(var(--typewriter-gutter) - var(--typewriter-width) - 8px));
+  top: 3vh;
+  bottom: auto;
+  translate: none;
+  width: var(--typewriter-width);
+  height: 94vh;
+  z-index: 45;
   pointer-events: none;
-  transform-origin: 50% 100%;
-  animation: flame-flicker 0.3s ease-in-out infinite alternate;
-  z-index: -1;
+  image-rendering: pixelated;
+  contain: layout paint;
 }
-@keyframes flame-flicker {
-  0% {
-    transform: scaleY(0.9) scaleX(1.03) skewX(-3deg);
-    opacity: 0.82;
+:root:has(.screen-stack.transitioning) .score-typewriter-dock { visibility: hidden; }
+:root.world-mono .score-typewriter-dock { filter: grayscale(1); }
+.score-typewriter {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+.score-typewriter-dock.is-active .score-typewriter {
+  animation: typewriter-body-hit var(--typewriter-beat) steps(4, end) both;
+}
+.typewriter-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: .52;
+  filter: brightness(.72) saturate(.55) contrast(.9);
+  image-rendering: pixelated;
+  user-select: none;
+}
+.score-typewriter-dock.is-active .typewriter-art { opacity: .62; }
+.typewriter-carriage {
+  position: absolute;
+  z-index: 3;
+  left: 31%;
+  top: 6%;
+  width: 3%;
+  height: 88%;
+}
+.typewriter-carriage span {
+  position: absolute;
+  inset: 0;
+  height: 12%;
+  background: rgba(240, 178, 62, .22);
+  box-shadow: 0 0 max(2px, .18vw) rgba(240, 178, 62, .24);
+}
+.score-typewriter-dock.is-active .typewriter-carriage {
+  animation: typewriter-carriage var(--typewriter-beat) steps(6, end) both;
+}
+.typewriter-keys {
+  position: absolute;
+  z-index: 4;
+  left: 54%;
+  top: 6%;
+  width: 44%;
+  height: 88%;
+}
+.typewriter-key {
+  position: absolute;
+  left: var(--key-x);
+  top: var(--key-y);
+  width: clamp(10px, .9vw, 18px);
+  aspect-ratio: 1.08;
+  box-sizing: border-box;
+  padding: 0;
+  border: max(1px, .06vw) solid #3b4348;
+  border-radius: 46%;
+  background: #0d151a;
+  box-shadow:
+    inset 1px 1px 0 rgba(181, 191, 194, .12),
+    1px 1px 0 #050708;
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--key-tilt))
+    scale(var(--key-scale));
+  opacity: .48;
+  filter: brightness(.72) saturate(.35) contrast(.9);
+  appearance: none;
+}
+.typewriter-key:disabled {
+  opacity: .48;
+}
+.score-typewriter-dock.is-active .typewriter-key.is-pressed {
+  animation: typewriter-key var(--key-duration) steps(2, end) both;
+  animation-delay: var(--key-delay);
+}
+.typewriter-smoke,
+.typewriter-flame,
+.typewriter-pop,
+.typewriter-ding { opacity: 0; }
+.typewriter-smoke {
+  position: absolute;
+  z-index: 6;
+  left: 53.5%;
+  top: 22%;
+}
+.typewriter-smoke i {
+  position: absolute;
+  width: clamp(6px, .8vw, 16px);
+  aspect-ratio: 1;
+  background: #606a70;
+  border: max(1px, .08vw) solid #20292e;
+}
+.typewriter-smoke i:nth-child(2) { translate: 70% -90%; }
+.typewriter-smoke i:nth-child(3) { translate: -55% -155%; }
+.typewriter-tier-4.is-active .typewriter-smoke,
+.typewriter-tier-5.is-active .typewriter-smoke {
+  opacity: 1;
+  animation: typewriter-smoke var(--typewriter-beat) steps(4, end) both;
+}
+.typewriter-flame {
+  position: absolute;
+  z-index: 7;
+  left: 42%;
+  top: 12%;
+  width: 23%;
+  height: 20%;
+}
+.typewriter-flame i {
+  position: absolute;
+  inset: 25% 18% 0;
+  background: var(--mult);
+  clip-path: polygon(50% 0, 100% 65%, 72% 100%, 28% 100%, 0 65%);
+}
+.typewriter-flame i + i { inset: 48% 34% 0; background: var(--gold); }
+.typewriter-tier-5.is-active .typewriter-flame {
+  opacity: 1;
+  animation: typewriter-meltdown var(--typewriter-beat) steps(3, end) both;
+}
+.typewriter-pop,
+.typewriter-ding {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  color: var(--gold);
+  font-family: 'Jersey 10', monospace;
+  font-size: clamp(12px, 1.4vw, 28px);
+  text-shadow: max(1px, .14vw) max(1px, .14vw) 0 #11191e;
+  white-space: nowrap;
+}
+.typewriter-pop { left: 52%; top: 50%; }
+.typewriter-tier-5.is-active .typewriter-pop {
+  animation: typewriter-label-hit var(--typewriter-beat) steps(4, end) both;
+}
+.typewriter-ding {
+  left: 25%;
+  top: 2%;
+  opacity: 1;
+  animation: typewriter-target-punch var(--typewriter-target-cue) steps(5, end) both;
+}
+@keyframes typewriter-body-hit {
+  0%, 100% { transform: translate(0); }
+  30% { transform: translate(calc(-1px * var(--typewriter-shake)) , calc(1px * var(--typewriter-shake))); }
+  55% { transform: translate(calc(2px * var(--typewriter-shake)), calc(-1px * var(--typewriter-shake))); }
+  75% { transform: translate(calc(-2px * var(--typewriter-shake)), 0); }
+}
+@keyframes typewriter-key {
+  0%, 100% {
+    translate: 0;
+    scale: 1;
+    opacity: .48;
+    filter: brightness(.72) saturate(.35) contrast(.9);
+    background: #0d151a;
+    border-color: #3b4348;
+    box-shadow: inset 1px 1px 0 rgba(181, 191, 194, .12), 1px 1px 0 #050708;
   }
-  100% {
-    transform: scaleY(1.13) scaleX(0.95) skewX(4deg);
-    opacity: 1;
+  50% {
+    translate: -2px 2px;
+    scale: .94;
+    opacity: .76;
+    filter: brightness(.92) saturate(.5) contrast(.95);
+    background: #25231c;
+    border-color: #665e49;
+    box-shadow: inset 1px 1px 0 rgba(190, 178, 137, .16), 0 0 0 #050708;
   }
 }
+@keyframes typewriter-carriage { 0% { translate: 0 -12%; } 100% { translate: 0 12%; } }
+@keyframes typewriter-smoke { 0% { translate: 0 8px; } 100% { translate: 0 -22px; opacity: 0; } }
+@keyframes typewriter-meltdown { 0%, 35% { scale: .2; } 70% { scale: 1.15; } 100% { scale: .75; opacity: 0; } }
+@keyframes typewriter-label-hit { 0%, 55% { opacity: 0; translate: -50% 10px; } 70% { opacity: 1; translate: -50% 0; scale: 1.3; } 100% { opacity: 0; translate: -50% -14px; } }
+@keyframes typewriter-target-punch { 0% { opacity: 0; translate: -50% 8px; scale: .6; } 30%, 70% { opacity: 1; translate: -50% 0; scale: 1.25; } 100% { opacity: 0; translate: -50% -12px; scale: 1; } }
+
+.score-typewriter-dock.is-reduced *,
+.force-reduced-motion .score-typewriter-dock * { animation: none !important; }
+.score-typewriter-dock.is-reduced .typewriter-key.is-pressed,
+.force-reduced-motion .score-typewriter-dock .typewriter-key.is-pressed {
+  opacity: .58;
+  filter: brightness(.78) saturate(.35) contrast(.9);
+  background: #161b1c;
+  border-color: #50565a;
+  box-shadow: inset 1px 1px 0 rgba(192, 196, 190, .14), 1px 1px 0 #06090b;
+}
+.score-typewriter-dock.is-reduced .typewriter-smoke,
+.score-typewriter-dock.is-reduced .typewriter-flame,
+.score-typewriter-dock.is-reduced .typewriter-pop,
+.force-reduced-motion .score-typewriter-dock .typewriter-smoke,
+.force-reduced-motion .score-typewriter-dock .typewriter-flame,
+.force-reduced-motion .score-typewriter-dock .typewriter-pop { display: none; }
 @media (prefers-reduced-motion: reduce) {
-  /* Static ember — the glow stays, the flicker stops (§4.7 reduced-motion). */
-  .scorebox.burning .box::before {
-    animation: none;
+  .score-typewriter-dock * { animation: none !important; }
+  .score-typewriter-dock .typewriter-key.is-pressed {
+    opacity: .58;
+    filter: brightness(.78) saturate(.35) contrast(.9);
+    background: #161b1c;
+    border-color: #50565a;
+    box-shadow: inset 1px 1px 0 rgba(192, 196, 190, .14), 1px 1px 0 #06090b;
   }
+  .score-typewriter-dock .typewriter-smoke,
+  .score-typewriter-dock .typewriter-flame,
+  .score-typewriter-dock .typewriter-pop { display: none; }
 }
 
 /* D-3 · ambient desk objects (UI_DESIGN §4.8). The pixel-art cup and call bell are
@@ -1791,6 +1967,11 @@
   --desk-stack-base: max(136px, 14vh);
   right: 14px;
 }
+:root:has(.persistent-run) .desk-right {
+  --desk-right-run-scale: min(var(--ui-scale, 1), var(--run-fit-scale, 1));
+  --desk-right-gutter: calc((100vw - var(--board-max) * var(--desk-right-run-scale)) / 2);
+  --desk-right-footprint: max(44px, calc(var(--desk-right-gutter) - 28px));
+}
 .desk-glyph {
   display: inline-block;
 }
@@ -1814,6 +1995,25 @@
   padding: 0;
   width: clamp(144px, min(17vw, 22vh), 260px);
   height: clamp(144px, min(17vw, 22vh), 260px);
+}
+:root:has(.persistent-run) .desk-right:is(
+  .desk-cup,
+  .desk-bell,
+  .desk-pot,
+  .desk-waxBall,
+  .desk-keycap,
+  .desk-shacoBox,
+  .desk-fly,
+  .desk-bulldog,
+  .desk-launchButton,
+  .desk-check
+) {
+  width: min(var(--desk-right-footprint), clamp(112px, 11vw, 168px));
+  height: min(var(--desk-right-footprint), clamp(112px, 11vw, 168px));
+}
+:root:has(.persistent-run) .desk-right.desk-check {
+  width: min(var(--desk-right-footprint), clamp(144px, min(17vw, 22vh), 260px));
+  height: min(var(--desk-right-footprint), clamp(144px, min(17vw, 22vh), 260px));
 }
 .desk-cup-sprite {
   position: relative;

@@ -31,11 +31,14 @@ export const useEntering = (): boolean => useContext(TransitionContext);
 interface Entry {
   key: string;
   node: ReactNode;
+  runFit: boolean;
 }
 
 interface Props {
   /** Identity of the current screen — a change plays the transition. */
   screenKey: string;
+  /** Reserve the persistent run's physical side lanes for this pane. */
+  runFit?: boolean;
   children: ReactNode;
 }
 
@@ -49,8 +52,8 @@ interface Props {
  */
 const MAX_TRANSITION_MS = 1100;
 
-export function ScreenTransition({ screenKey, children }: Props) {
-  const live = useRef<Entry>({ key: screenKey, node: children });
+export function ScreenTransition({ screenKey, runFit = false, children }: Props) {
+  const live = useRef<Entry>({ key: screenKey, node: children, runFit });
   const [outgoing, setOutgoing] = useState<Entry | null>(null);
   const [shownKey, setShownKey] = useState(screenKey);
 
@@ -66,7 +69,7 @@ export function ScreenTransition({ screenKey, children }: Props) {
   // `live` trails one render behind: during the render where screenKey changes it
   // still holds the screen we are leaving, which is exactly what we freeze above.
   useEffect(() => {
-    live.current = { key: screenKey, node: children };
+    live.current = { key: screenKey, node: children, runFit };
   });
 
   useEffect(() => {
@@ -84,13 +87,17 @@ export function ScreenTransition({ screenKey, children }: Props) {
   return (
     <div className={['screen-stack', transitioning && 'transitioning'].filter(Boolean).join(' ')}>
       {outgoing && (
-        <div key={outgoing.key} className="screen-pane screen-out" aria-hidden="true">
+        <div
+          key={outgoing.key}
+          className={['screen-pane', 'screen-out', outgoing.runFit && 'run-fit'].filter(Boolean).join(' ')}
+          aria-hidden="true"
+        >
           {outgoing.node}
         </div>
       )}
       <div
         key={screenKey}
-        className={['screen-pane', 'screen-in', transitioning && 'screen-anim']
+        className={['screen-pane', 'screen-in', runFit && 'run-fit', transitioning && 'screen-anim']
           .filter(Boolean)
           .join(' ')}
         // Descendant animations (tiles, jokers) bubble their animationend too —

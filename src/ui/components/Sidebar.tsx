@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import type { BlindState, LetterHandId, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { effectiveClearReward } from '../../engine/economy';
@@ -19,6 +19,8 @@ import { Tooltip } from './Tooltip';
 import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 import { isLetterHandDiscovered } from '../lifetime';
+import { scoreTypewriterLiveTotal, scoreTypewriterTier } from '../scoreTypewriter';
+import { ScoreTypewriter } from './ScoreTypewriter';
 
 interface Props {
   run: RunState;
@@ -39,6 +41,8 @@ interface Props {
   discoveredLetterHands: ReadonlySet<LetterHandId>;
   onOpenInfo: () => void;
   onOpenOptions: () => void;
+  screenshake: number;
+  reducedMotion: boolean;
   mode?: 'blind' | 'shop' | 'blindselect';
 }
 
@@ -96,6 +100,8 @@ export function Sidebar({
   discoveredLetterHands,
   onOpenInfo,
   onOpenOptions,
+  screenshake,
+  reducedMotion,
   mode = 'blind',
 }: Props) {
   const { t, lang } = useI18n();
@@ -149,28 +155,30 @@ export function Sidebar({
   const mult = mode === 'blind' ? (bonusActive ? bonusMult : settle.active ? settle.mult : 0) : 0;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
 
-  // D-2 · burning score boxes (UI_DESIGN §4.7): the chips/mult boxes ignite while
-  // the SETTLING total is at or above the blind target — the flame is the "you've
-  // cleared it" tell that arrives a beat before auto-settle resolves (GDD §7.2), so
-  // it must light DURING the count-up, not after. Live total = the pre-word committed
-  // + this word's chips×mult during settle; the finalized round total while the bonus
-  // lands. Flame size scales with the overshoot (0 at target … 1 at ≥3×).
+  // Live score is presentation-only: it drives the typewriter's separate one-shot
+  // target bell, never its strength tier or the committed round number.
   const liveTotal = bonusActive
-    ? bonusChips * bonusMult
-    : settle.active
-      ? committedBefore + settle.chips * settle.mult
-      : blind.committedScore;
-  // Once the live chips × mult crosses the target, keep the board lit through the
-  // rest of the blind. The threshold check is evaluated directly in render, so the
-  // flame appears on the exact scoring beat that crosses it (not one effect later).
-  const crossedTarget = blind.target > 0 && liveTotal >= blind.target;
-  const [ignited, setIgnited] = useState(false);
-  useEffect(() => {
-    if (mode !== 'blind') setIgnited(false);
-    else if (crossedTarget) setIgnited(true);
-  }, [crossedTarget, mode]);
-  const burning = crossedTarget || ignited;
-  const flame = burning ? Math.min(1, (liveTotal / blind.target - 1) / 2) : 0;
+    ? round
+    : scoreTypewriterLiveTotal(
+      settleComplete,
+      settle.active,
+      committedBefore,
+      settle.chips,
+      settle.mult,
+      settle.flatScore,
+      blind.committedScore,
+    );
+  const lastSubmission = blind.sequence.at(-1);
+  const sentenceDelta = landing && finalScore !== null
+    ? Math.abs(finalScore - blind.committedScore)
+    : 0;
+  const sentenceTier = lastSubmission
+    ? scoreTypewriterTier(sentenceDelta, settle.typewriterExpectedBase)
+    : 0;
+  const typewriterTier = landing ? sentenceTier : (settle.typewriterBeat?.tier ?? 0);
+  const typewriterBeatId = landing
+    ? `sentence-${run.ante}-${run.blindIndex}-${finalScore}`
+    : `score-${settle.typewriterBeat?.id ?? 0}`;
 
   // D-1 · tomato idle hop (UI_DESIGN §4.6): a few times per blind, on a long random
   // timer, never rhythmic. Positioning lives on a separate anchor so neither this
@@ -197,6 +205,17 @@ export function Sidebar({
 
   return (
     <aside className={['sidebar', `sidebar-${mode}`].join(' ')}>
+      <ScoreTypewriter
+        active={mode === 'blind' && typewriterTier > 0}
+        tier={typewriterTier}
+        beatId={typewriterBeatId}
+        liveTotal={mode === 'blind' ? liveTotal : 0}
+        target={mode === 'blind' ? blind.target : 0}
+        blindKey={`${run.ante}-${run.blindIndex}`}
+        gameSpeed={settle.typewriterBeat?.speed ?? settle.settleSpeed}
+        screenshake={screenshake}
+        reducedMotion={reducedMotion || settle.settleReduced}
+      />
       {/* Centered row: the kind emblem on the left, the target/reward stats panel
           on the right. `.bb-eff` between the heading and the row is a slot of
           fixed height that is ALWAYS present — empty on a normal blind, holding
@@ -370,10 +389,9 @@ export function Sidebar({
           />
         )}
         <div
-          className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing', burning && 'burning']
+          className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing']
             .filter(Boolean)
             .join(' ')}
-          style={burning ? ({ '--flame': flame.toFixed(3) } as CSSProperties) : undefined}
         >
           <span className="box c">
             {Math.round(chips)}
