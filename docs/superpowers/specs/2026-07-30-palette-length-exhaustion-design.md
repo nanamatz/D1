@@ -167,7 +167,7 @@ number, plus the length rule in the easy-to-get-wrong list).
 
 ---
 
-## ④ Emoji Tile art tracks the palette unlocks
+## ④ Raster object art tracks the palette unlocks
 
 **Problem.** Emoji Tile art is a `<img class="joker-art">` inside `.frame`.
 `:root.world-mono .frame { filter: grayscale(1) }` greys it while no colour is
@@ -176,10 +176,11 @@ RED unlock reveals every hue in every PNG at once. The palette reveals
 progressively; the art does not.
 
 **Decision.** Gate the art's chroma per colour channel with one SVG
-`feColorMatrix`, driven by the same active-unlock set. Emoji Tile art only for
-now — Fable / Gambler / Voucher / Pack / Boss art keeps the current all-or-nothing
-behaviour. (Known inconsistency, accepted; extending it is adding one class to
-the CSS rule.)
+`feColorMatrix`, driven by the same active-unlock set. **Expanded 2026-08-28:**
+the original Emoji-Tile-only limitation is superseded. Blind/Deadline emblems,
+Editorial Perk Tags, Vouchers, Packs, Fable/Constellation/Gambler cards, and
+Starting Pouch/Record art now use the same gate on ordinary surfaces. Locked,
+boss-disabled, and Unlock Recap reward states remain authoritative overrides.
 
 **Mapping.** Each colour group enables one or more RGB channels; the enabled set
 is the union:
@@ -208,7 +209,10 @@ grey `grayscale(1)` would give it — not black.
 - `src/ui/unlocks.ts` `applyPresentation` — compute the gates from the active set
   and write the filter's `values` attribute. Idempotent, same as the class
   toggles it already does.
-- `src/ui/styles/play.css` — `.joker-art { filter: url(#unlock-chroma); }`.
+- `src/ui/styles/play.css` / `screens.css` — raster object classes compose
+  `url(#unlock-chroma)` with their existing shadows and state filters.
+- `src/ui/components/FamilyCardArt.tsx` — one filtered inner SVG group preserves
+  root-level hover, cast, result, and level-up filters.
 
 No art rework. Composes correctly with `world-mono` — while no colour is
 unlocked both paths produce full greyscale.
@@ -221,7 +225,8 @@ luminance row.
 
 ## Out of scope
 
-- Extending the chroma filter to non-Emoji-Tile art.
+- Letter-tile material/font/edition CSS colors and score particles remain a
+  separate semantic-token audit; they are not part of this raster-art slice.
 - A `BALANCE.wordLength` curve table (rejected in favour of the flat additive
   rule; add one only if the sim shows the linear form misbehaving at length 8+).
 - Migrating the orphan `'KOREAN'` id out of existing profiles.

@@ -46,6 +46,16 @@ describe('Edition Collection page', () => {
     );
   });
 
+  it('binds consumable category buttons to their chromatic unlock groups', () => {
+    const css = readFileSync(
+      new URL('../src/ui/styles/screens.css', import.meta.url),
+      'utf8',
+    );
+    expect(css).toMatch(/\.cat-fableCards\s*\{[^}]*background:\s*var\(--mult\);/s);
+    expect(css).toMatch(/\.cat-constellationCards\s*\{[^}]*background:\s*var\(--chips\);/s);
+    expect(css).toMatch(/\.cat-inkCards\s*\{[^}]*background:\s*var\(--btn-green\);/s);
+  });
+
   it('pages Enhanced Tiles with the shared arrows instead of tabs', () => {
     const component = readFileSync(
       new URL('../src/ui/components/Collection.tsx', import.meta.url),

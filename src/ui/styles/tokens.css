@@ -5,8 +5,9 @@
      token is restored to its true value by an `unlock-<group>` class on <html>
      (below) when the matching colour WORD is played — RED/YELLOW/GREEN/BLUE bring
      their hues back progressively. A `world-mono` guard (unlocks.ts) additionally
-     greyscales the board while NO colour is unlocked, covering hard-coded fills
-     (materials, badges) the tokens don't reach. Info is never colour-only (a11y). */
+     greyscales the board while NO colour is unlocked, covering hard-coded material
+     fills the tokens don't reach. Raster object art uses #unlock-chroma; badge/kind
+     fills already use the grouped tokens below. Info is never colour-only (a11y). */
   --bg-desk: #383a39; /* GREEN group; unlock-green → #22443b */
   --panel: #2a2d30; /* BLUE (slate chrome); unlock-blue → #20303b */
   --panel-edge: #4a4d51; /* BLUE; unlock-blue → #39505e */
@@ -236,8 +237,8 @@
 }
 
 /* "Truly monochrome" guard (revised C-3): while NO colour group is unlocked the
-   board is greyscaled outright, so hard-coded fills the tokens don't reach
-   (material tile faces and the blind badge) are B&W too. The class
+   board is greyscaled outright, so hard-coded material fills the tokens don't
+   reach are B&W too. Blind badges use the grouped --badge-bg/--kind-* tokens. The class
    is dropped the moment any colour is played, after which the token desaturation
    above carries the per-colour reveal. The fixed CRT overlay sits outside these
    containers, so it is never greyscaled. The coach-mark mascot is portalled to

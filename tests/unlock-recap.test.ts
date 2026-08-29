@@ -1,8 +1,13 @@
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { newRun } from '../src/engine/run';
+import { UnlockRecap } from '../src/ui/components/UnlockRecap';
+import { I18nProvider } from '../src/ui/i18n';
 import { loadLifetime, writeLifetime } from '../src/ui/lifetime';
 import { resetStorageCache } from '../src/ui/storage';
+import type { UseGame } from '../src/ui/useGame';
 import {
   acknowledgeUnlockLedger,
   createUnlockLedger,
@@ -30,6 +35,23 @@ beforeEach(() => {
 });
 
 describe('integrated unlock recap ledger', () => {
+  const recapGame = {
+    state: {
+      stats: {
+        wordsPlayed: 0,
+        tilesDiscarded: 0,
+        itemsBought: 0,
+        rerollsUsed: 0,
+        bestWord: null,
+        patternCounts: {},
+        jokerBlindCounts: {},
+        discoveries: 0,
+      },
+      gameover: null,
+    },
+    acknowledgeUnlocks: () => undefined,
+  } as unknown as UseGame;
+
   it('diffs a baseline, dedupes, survives reload, and acknowledges exactly once', () => {
     const baseline = createUnlockLedger(['palette:RED', 'emoji:miser']);
     const snapshot = [
@@ -116,6 +138,55 @@ describe('integrated unlock recap ledger', () => {
     expect(source).toContain('aria-label={card.title}');
     expect(source).toContain('role="dialog" aria-modal aria-labelledby="unlock-recap-title"');
     expect(source).toContain("t(`mascot.${def.effect.variant}`)");
+  });
+
+  it('portals only the recap overlay to body, outside the monochrome run frame', () => {
+    const recap = readFileSync('src/ui/components/UnlockRecap.tsx', 'utf8');
+    const gameOver = readFileSync('src/ui/components/GameOver.tsx', 'utf8');
+    const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
+
+    expect(recap).toContain("import { createPortal } from 'react-dom';");
+    expect(recap).toContain('const overlay = (');
+    expect(recap).toContain("typeof document === 'undefined' ? overlay : createPortal(overlay, document.body)");
+    expect(tokens).toMatch(/:root\.world-mono \.frame,[\s\S]*filter:\s*grayscale\(1\)/);
+    expect(gameOver).toContain('<div className="overlay gameover-overlay">');
+    expect(gameOver).not.toContain('createPortal');
+  });
+
+  it('keeps the SSR fallback renderable with dialog, pager, cards, and confirmation', () => {
+    expect(typeof document).toBe('undefined');
+    const html = renderToStaticMarkup(createElement(
+      I18nProvider,
+      null,
+      createElement(UnlockRecap, {
+        g: recapGame,
+        notices: [
+          { category: 'palette', id: 'RED' },
+          { category: 'palette', id: 'YELLOW' },
+          { category: 'palette', id: 'GREEN' },
+          { category: 'palette', id: 'BLUE' },
+        ],
+      }),
+    ));
+
+    expect(html).toContain('class="overlay gameover-overlay unlock-recap-overlay"');
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    expect(html.match(/class="unlock-recap-card"/g)).toHaveLength(3);
+    expect(html).toContain('class="pager"');
+    expect(html).toContain('autofocus=""');
+  });
+
+  it('returns null for notices that produce no cards without changing hook order', () => {
+    const html = renderToStaticMarkup(createElement(
+      I18nProvider,
+      null,
+      createElement(UnlockRecap, {
+        g: recapGame,
+        notices: [{ category: 'palette', id: 'NOT_REAL' }],
+      }),
+    ));
+    expect(html).toBe('');
   });
 
   it('gates the first terminal frame until the post-record recap is ready', () => {

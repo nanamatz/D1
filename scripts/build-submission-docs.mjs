@@ -272,7 +272,7 @@ function coverHtml(meta, markdownDir) {
     <p class="cover-subtitle">${esc(meta.subtitle ?? '')}</p>
     ${coverImage ? `<div class="cover-visual"><img src="${coverImage}" alt=""></div>` : ''}
     ${coverArt ? `<img class="cover-art" src="${coverArt}" alt="">` : ''}
-    <div class="cover-meta"><b>${esc(meta.author ?? 'Ben Kim')}</b><br>${esc(meta.version ?? '2026.08.04')}<br>${esc(meta.status ?? 'Submission Edition')}</div>
+    <div class="cover-meta"><b>${esc(meta.author ?? 'SweetTurtles')}</b><br>${esc(meta.version ?? '2026.08.04')}<br>${esc(meta.status ?? 'Submission Edition')}</div>
   </section>`;
 }
 

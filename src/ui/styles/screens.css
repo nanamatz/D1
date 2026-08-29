@@ -834,7 +834,7 @@
   height: 72px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3));
+  filter: url(#unlock-chroma) drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3));
 }
 /* Draft/Revision emblem on the non-boss cards. */
 .bs-kind-art {
@@ -843,6 +843,7 @@
   margin: 2px auto;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 .bs-boss .bn {
   font-weight: 700;
@@ -948,6 +949,7 @@
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 .bs-tag-icon:focus-visible {
   outline: 3px solid var(--ink);
@@ -1029,6 +1031,7 @@
   height: 72px;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 .skip-tag-auto-name,
 .skip-tag-auto-label {
@@ -1238,6 +1241,7 @@
   object-fit: contain;
   image-rendering: pixelated;
   vertical-align: middle;
+  filter: url(#unlock-chroma);
 }
 /* Run Info boss row emblem (inline). */
 .ri-boss {
@@ -2705,6 +2709,7 @@ body.cb-safe .tile.hint {
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 .run-choice-art-record {
   width: 88px;
@@ -3066,16 +3071,16 @@ body.cb-safe .tile.hint {
   min-height: var(--category-button-h);
 }
 .cat-fableCards {
-  background: #b14fbd;
-  border-color: #713278;
+  background: var(--mult);
+  border-color: color-mix(in srgb, var(--mult) 68%, #000);
 }
 .cat-constellationCards {
-  background: #08a9d6;
-  border-color: #086d91;
+  background: var(--chips);
+  border-color: color-mix(in srgb, var(--chips) 68%, #000);
 }
 .cat-inkCards {
-  background: #249a62;
-  border-color: #166340;
+  background: var(--btn-green);
+  border-color: color-mix(in srgb, var(--btn-green) 68%, #000);
 }
 .cat-btn:hover {
   transform: translateY(-2px);
@@ -3409,7 +3414,7 @@ body.cb-safe .tile.hint {
   height: 54px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.72));
+  filter: url(#unlock-chroma) drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.72));
   pointer-events: none;
 }
 .emoji-tile-lock {
@@ -3427,7 +3432,7 @@ body.cb-safe .tile.hint {
   height: 64px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
+  filter: url(#unlock-chroma) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
 }
 .cc-name {
   font-size: var(--fs-2xl);
@@ -3457,7 +3462,7 @@ body.cb-safe .tile.hint {
     linear-gradient(rgba(117, 80, 29, 0.08) 1px, transparent 1px) 4px 4px / 13px 13px,
     radial-gradient(circle at 50% 38%, #fff9e8 0 18%, transparent 52%),
     #ead8ab;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.42));
+  filter: url(#unlock-chroma) drop-shadow(0 3px 0 rgba(0, 0, 0, 0.42));
 }
 .voucher-card::before {
   content: '';
@@ -3800,6 +3805,7 @@ body.cb-safe .tile.hint {
   object-fit: contain;
   image-rendering: pixelated;
   border-radius: 0;
+  filter: url(#unlock-chroma);
 }
 /* Legacy shop-pack idle. Collection packs use the shared motion-card system. */
 @keyframes packIdle {
@@ -3860,7 +3866,7 @@ body.cb-safe .tile.hint {
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.45));
+  filter: url(#unlock-chroma) drop-shadow(0 4px 0 rgba(0, 0, 0, 0.45));
 }
 .tag-collection-name {
   max-width: 118px;
@@ -4028,7 +4034,7 @@ body.cb-safe .tile.hint {
   height: 56px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
+  filter: url(#unlock-chroma) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
 }
 .blind-emblem .cc-name {
   font-size: var(--fs-md);
@@ -4535,6 +4541,7 @@ body.cb-safe .tile.hint {
   height: 72px;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 /* Font/size/colour come from the shared count rule in play.css (matched to
    .shelf-count); only the spacing under the box is local. */
@@ -5118,7 +5125,7 @@ body.cb-safe .tile.hint {
 .intro-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
 .intro-body { font-size: var(--fs-lg); line-height: 1.5; margin-bottom: 10px; }
 .intro-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.intro-dots { font-size: 12px; opacity: 0.7; }
+.intro-dots { flex: none; white-space: nowrap; font-size: 12px; opacity: 0.7; }
 /* Gated steps (build / submit) replace the Next button with a hint — the player advances by
    doing the action, not clicking. Sits where Next would, right-aligned. */
 .intro-hint { font-size: var(--fs-lg); font-style: italic; opacity: 0.8; text-align: right; }
@@ -5237,6 +5244,191 @@ body.cb-safe .tile.hint {
 .palette-card.chroma-yellow .cc-name { color: #f0b23e; }
 .palette-card.chroma-green .cc-name { color: #3c9b5c; }
 .palette-card.chroma-blue .cc-name { color: #3fa7f5; }
+
+/* Developer ident before the real preload screen. Its fixed beat is branding,
+   not fake loading; the following LoadingScreen still reports only real work. */
+.developer-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+.developer-splash--mono {
+  filter: grayscale(1);
+}
+.developer-splash__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  animation: developer-splash-out 3850ms linear both;
+}
+.developer-splash__coin-stage {
+  position: relative;
+  width: min(300px, 62vmin);
+  aspect-ratio: 1;
+  perspective: 900px;
+  transform-style: preserve-3d;
+}
+.developer-splash__coin {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  animation: developer-coin-drop 3850ms linear both;
+}
+.developer-splash__coin-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 6px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.58);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.developer-splash__coin-front {
+  background: var(--inset);
+  transform: translateZ(4px);
+}
+.developer-splash__coin-back {
+  display: grid;
+  place-items: center;
+  color: #303437;
+  background: #8f9498;
+  border-color: #252a2d;
+  box-shadow:
+    inset 0 0 0 8px #b8bdc0,
+    inset 0 0 0 14px #686d71,
+    8px 8px 0 rgba(0, 0, 0, 0.58);
+  transform: rotateX(180deg) translateZ(4px);
+}
+.developer-splash__coin-back span {
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: clamp(76px, 18vmin, 124px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-shadow: -3px -3px 0 #c9cdcf, 3px 3px 0 #565b5f;
+}
+.developer-splash__logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.developer-splash__coin-shadow {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: -30px;
+  width: 22%;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.52);
+  transform: translateX(-50%);
+  transform-origin: center;
+  animation: developer-coin-shadow 3850ms linear both;
+}
+.developer-splash__ring-shine {
+  position: absolute;
+  z-index: 3;
+  inset: -10px;
+  border: 5px solid #fff4b6;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: developer-coin-shine 3850ms linear both;
+}
+.developer-splash__name {
+  margin: 0;
+  color: var(--ink);
+  font-family: 'Jersey 10', var(--ctl-font);
+  font-size: clamp(36px, 8vmin, 58px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-shadow: var(--shadow);
+  animation: developer-name-reveal 3850ms linear both;
+}
+.developer-splash--reduced .developer-splash__content {
+  animation: developer-splash-reduced 2240ms linear both !important;
+}
+.developer-splash--fallback .developer-splash__content {
+  animation: developer-splash-short 700ms linear both !important;
+}
+.developer-splash--reduced .developer-splash__coin {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotateX(0deg) scale3d(1, 1, 1);
+  animation: none !important;
+}
+.developer-splash--reduced .developer-splash__coin-shadow,
+.developer-splash--reduced .developer-splash__ring-shine {
+  display: none;
+  animation: none !important;
+}
+.developer-splash--reduced .developer-splash__name,
+.developer-splash--fallback .developer-splash__name {
+  opacity: 1;
+  transform: none;
+  animation: none !important;
+}
+@keyframes developer-splash-out {
+  0%, 93.506% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes developer-splash-reduced {
+  0% { opacity: 0; }
+  5.357%, 94.643% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes developer-splash-short {
+  0% { opacity: 0; }
+  17.143%, 82.857% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes developer-coin-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -34vmin, 0) rotateX(0deg) scale3d(.70, .70, 1);
+  }
+  3.117% { opacity: 1; }
+  25.974% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(1260deg) scale3d(1.04, .92, 1);
+  }
+  31.688% {
+    opacity: 1;
+    transform: translate3d(0, -18px, 0) rotateX(1440deg) scale3d(1, 1, 1);
+    animation-timing-function: cubic-bezier(.15, .7, .25, 1);
+  }
+  37.662% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(1710deg) scale3d(1, 1, 1);
+    animation-timing-function: cubic-bezier(.55, 0, .2, 1);
+  }
+  41.558%, 100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(1800deg) scale3d(1, 1, 1);
+  }
+}
+@keyframes developer-coin-shadow {
+  0% { opacity: .1; transform: translateX(-50%) scaleX(.25); }
+  25.325% { opacity: .2; transform: translateX(-50%) scaleX(.55); }
+  25.974% { opacity: .68; transform: translateX(-50%) scaleX(4.2); }
+  31.688% { opacity: .28; transform: translateX(-50%) scaleX(2.3); }
+  37.662%, 100% { opacity: .5; transform: translateX(-50%) scaleX(3.5); }
+}
+@keyframes developer-coin-shine {
+  0%, 41.494% { opacity: 0; transform: scale(.94); }
+  44.156% { opacity: .9; transform: scale(1); }
+  50.649%, 100% { opacity: 0; transform: scale(1.16); }
+}
+@keyframes developer-name-reveal {
+  0%, 41.558% { opacity: 0; transform: translateY(8px); }
+  45.455%, 100% { opacity: 1; transform: translateY(0); }
+}
 
 /* D-4 · loading screen (screens-spec §2.0). Real-progress preload gate before the
    Main Menu; greyscale on a fresh profile so no colour leaks before it is earned. */
@@ -6010,6 +6202,11 @@ body.cb-safe .tile.hint {
 .unlock-recap-pair img + img {
   margin-left: -24px;
   transform: translateY(8px);
+}
+/* Reward-recap art reveals the newly earned object at full colour. The palette
+   swatch/mascot celebration remains outside the progressive raster gate. */
+.unlock-recap .voucher-card {
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.42));
 }
 .unlock-recap > .btn.gold {
   padding: 12px 24px;

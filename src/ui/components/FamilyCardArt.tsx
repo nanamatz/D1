@@ -28,39 +28,41 @@ export function FamilyCardArt({ src, className, title }: Props) {
           <rect x="14" y="14" width="472" height="672" rx="24" />
         </clipPath>
       </defs>
-      <rect x="4" y="4" width="492" height="692" rx="30" fill="#17130d" />
-      <rect x="10" y="10" width="480" height="680" rx="26" fill="#f4e8ca" />
-      <g clipPath={`url(#${clipId})`}>
-        <rect x="14" y="14" width="472" height="672" fill="#efe0bd" />
-        <image
-          href={src}
-          x="14"
-          y="14"
-          width="472"
-          height="672"
-          preserveAspectRatio="xMidYMid meet"
+      <g filter="url(#unlock-chroma)">
+        <rect x="4" y="4" width="492" height="692" rx="30" fill="#17130d" />
+        <rect x="10" y="10" width="480" height="680" rx="26" fill="#f4e8ca" />
+        <g clipPath={`url(#${clipId})`}>
+          <rect x="14" y="14" width="472" height="672" fill="#efe0bd" />
+          <image
+            href={src}
+            x="14"
+            y="14"
+            width="472"
+            height="672"
+            preserveAspectRatio="xMidYMid meet"
+          />
+        </g>
+        <rect
+          x="10"
+          y="10"
+          width="480"
+          height="680"
+          rx="26"
+          fill="none"
+          stroke="#120f0a"
+          strokeWidth="10"
+        />
+        <rect
+          x="20"
+          y="20"
+          width="460"
+          height="660"
+          rx="18"
+          fill="none"
+          stroke="#d3ad65"
+          strokeWidth="4"
         />
       </g>
-      <rect
-        x="10"
-        y="10"
-        width="480"
-        height="680"
-        rx="26"
-        fill="none"
-        stroke="#120f0a"
-        strokeWidth="10"
-      />
-      <rect
-        x="20"
-        y="20"
-        width="460"
-        height="660"
-        rx="18"
-        fill="none"
-        stroke="#d3ad65"
-        strokeWidth="4"
-      />
     </svg>
   );
 }

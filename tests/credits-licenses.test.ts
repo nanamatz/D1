@@ -67,7 +67,7 @@ describe('Credits legal notices', () => {
     for (const file of imports) expect(notices).toContain(file);
     const audioLicenses = text('assets/AUDIO_LICENSES.md');
     expect(audioLicenses).not.toContain('CC0 / original');
-    expect(audioLicenses).toContain('© 2026 Ben Kim — all rights reserved');
+    expect(audioLicenses).toContain('© 2026 SweetTurtles — all rights reserved');
   });
 
   it('ships static notices through Vite public assets without navigation or fetch', () => {
@@ -84,7 +84,7 @@ describe('Credits legal notices', () => {
     expect(spec).toContain('native **Legal Notices** disclosure');
     expect(spec).not.toContain('all SFX/BGM are original runtime synthesis');
     expect(vite).not.toMatch(/publicDir\s*:\s*false/);
-    expect(text('LICENSE')).toContain('Copyright © 2026 Ben Kim. All rights reserved.');
+    expect(text('LICENSE')).toContain('Copyright © 2026 SweetTurtles. All rights reserved.');
     expect(text('LICENSE')).toContain('public/licenses');
   });
 

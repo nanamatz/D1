@@ -50,7 +50,7 @@ describe('POS tag chips', () => {
     expect(css).toMatch(/\.pos-tag\s*\{[^}]*border:\s*2px solid/s);
     expect(css).toMatch(/\.pos-tag\s*\{[^}]*border-radius:\s*2px/s);
     expect(css).not.toContain('.pos-marker');
-    expect(css).toMatch(/\.pos-tag\.active\s*\{[^}]*border-style:\s*solid/s);
+    expect(css).toMatch(/\.pos-tag\.active\s*\{[^}]*border-style:\s*solid[^}]*border-color:\s*var\(--ink\)[^}]*background:\s*color-mix\([^;]*var\(--ink\)\)[^}]*color:\s*var\(--tile-ink\)/s);
     expect(css).toMatch(/\.pos-tag\.alternative\s*\{[^}]*border-style:\s*dashed/s);
     expect(css).toMatch(/@media \(forced-colors: active\)[\s\S]*\.pos-tag\.active[\s\S]*outline:\s*2px solid Highlight/);
   });

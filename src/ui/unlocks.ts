@@ -97,7 +97,7 @@ const CHROMA_CHANNELS: Record<UnlockGroup, readonly number[]> = {
 };
 
 /**
- * The `feColorMatrix values` for `#unlock-chroma`, the Emoji Tile art chroma gate.
+ * The `feColorMatrix values` for `#unlock-chroma`, the shared raster-art chroma gate.
  * Each output channel is either its own value (its group is unlocked) or the
  * luminance (locked): `out_c = lum + k_c × (c − lum)`. So no unlocks is exactly
  * `grayscale(1)`, all four is the identity, and a locked hue lands on the same
@@ -139,8 +139,8 @@ export function applyPresentation(): void {
     // "Truly monochrome" guard: greyscale the whole board until ANY colour is
     // unlocked, so hard-coded fills the tokens don't reach are B&W too (C-3 revised).
     root.classList.toggle('world-mono', !anyColor);
-    // Emoji Tile art chroma gate (2026-07-30): the palette reveals progressively,
-    // so the art must too — one filter, driven by the same active set.
+    // Shared raster-art chroma gate (expanded 2026-08-28): the palette and object
+    // art reveal progressively from the same active set.
     const chroma = document.querySelector('#unlock-chroma feColorMatrix');
     if (chroma) chroma.setAttribute('values', chromaMatrix(active));
   }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { challengeDef, isChallengeId } from '../../engine/challenges';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { POUCH_IDS } from '../../engine/pouches';
@@ -143,7 +144,7 @@ export function UnlockRecap({ g, notices }: Props) {
     visiblePage * CARDS_PER_PAGE,
     (visiblePage + 1) * CARDS_PER_PAGE,
   );
-  return (
+  const overlay = (
     <div className="overlay gameover-overlay unlock-recap-overlay">
       <WooDakMascot
         stats={g.state.stats}
@@ -172,4 +173,5 @@ export function UnlockRecap({ g, notices }: Props) {
       </div>
     </div>
   );
+  return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body);
 }

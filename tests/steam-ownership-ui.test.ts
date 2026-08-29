@@ -1,5 +1,23 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+
+const renderer = vi.hoisted(() => ({
+  ownershipStatus: 'ok',
+}));
+
+vi.mock('../src/ui/storage', () => ({
+  decideSteamClaim: vi.fn(),
+  steamOwnershipSnapshot: () => renderer.ownershipStatus,
+  subscribeSteamOwnership: () => () => undefined,
+}));
+
+vi.mock('../src/ui/i18n', () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}));
+
+import { SteamOwnershipNotice } from '../src/ui/components/SteamOwnershipNotice';
 
 describe('Steam ownership renderer boundary', () => {
   it('mounts one accessible non-identifying ownership modal with bilingual copy', () => {
@@ -28,5 +46,18 @@ describe('Steam ownership renderer boundary', () => {
       expect(en[key]).toBeTruthy();
       expect(ko[key]).toBeTruthy();
     }
+  });
+
+  it('renders a visible ownership decision path once the App gate permits mounting', () => {
+    renderer.ownershipStatus = 'claim-required';
+    const visible = renderToStaticMarkup(createElement(SteamOwnershipNotice));
+    expect(visible).toContain('role="dialog"');
+    expect(visible).toContain('aria-modal="true"');
+    expect(visible).toContain('steam.owner.claim-required.title');
+    expect(visible).toContain('steam.owner.accept');
+    expect(visible).toContain('steam.owner.decline');
+
+    renderer.ownershipStatus = 'ok';
+    expect(renderToStaticMarkup(createElement(SteamOwnershipNotice))).toBe('');
   });
 });

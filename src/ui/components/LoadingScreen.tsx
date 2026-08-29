@@ -11,8 +11,9 @@ import draftUrl from '../assets/bosses/T_Draft.png';
  * Menu, while the real assets (pixel art, pack illustrations, mascot sprites) preload.
  * Reports REAL progress (loaded / total), never a fake timer, and falls through the
  * instant everything is already cached — no artificial delay. Greyscale on a fresh
- * profile so the world's first colour is still earned, not leaked (§13). Silent:
- * audio can't play before the first gesture (feature-01 B-3), so nothing sounds here.
+ * profile so the world's first colour is still earned, not leaked (§13). The
+ * gameplay mixer remains silent here; only the earlier developer ident owns its
+ * separate best-effort startup cue.
  */
 
 // Only first-interaction art belongs on the critical path. Preloading the complete

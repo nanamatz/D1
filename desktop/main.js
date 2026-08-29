@@ -22,6 +22,10 @@ const DIR = path.dirname(fileURLToPath(import.meta.url));
 /** Electron userData is keyed by appName. Renaming this orphans every save. */
 app.setName('Play the World');
 
+// The pre-game Sweet Turtles ident is the sole ungestured audio path. This
+// must be registered before app readiness and BrowserWindow construction.
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 /** Matches the game's dark background so no white flash shows before first paint. */
 const BACKGROUND = '#141018';
 

@@ -6,7 +6,7 @@ import cc0License from './legal/CC0-1.0.txt?raw';
 
 const NOTICE_INDEX = `THIRD-PARTY NOTICES — Play the Wor!d
 
-Original contributions: Copyright © 2026 Ben Kim. All rights reserved.
+Original contributions: Copyright © 2026 SweetTurtles. All rights reserved.
 
 SOFTWARE
 React 18.3.1, ReactDOM 18.3.1, and scheduler 0.23.2

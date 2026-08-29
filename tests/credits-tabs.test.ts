@@ -12,10 +12,10 @@ describe('Credits tabs', () => {
     expect(component).toContain("['team', 'visuals', 'audio', 'fonts']");
     expect(component).toContain('role="tablist"');
     expect(component).toContain('role="tabpanel"');
-    expect(component).toContain('Ben Kim');
+    expect(component).toContain('SweetTurtles');
     expect(component).toContain('<details className="cr-legal">');
     expect(component).toContain('<summary>{t(\'credits.legal.open\')}</summary>');
-    expect(component).toContain('© 2026 Ben Kim');
+    expect(component).toContain('© 2026 SweetTurtles');
     expect(en['credits.aiTools']).toBe('AI production tools: ChatGPT (OpenAI) · Claude (Anthropic)');
     expect(ko['credits.audioSource']).toContain('Casino Audio 1.1');
     expect(en['credits.audioSource']).not.toContain('No external samples');

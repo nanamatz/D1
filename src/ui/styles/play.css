@@ -706,6 +706,7 @@
   height: 100%;
   max-width: none;
   object-fit: fill;
+  filter: url(#unlock-chroma);
   image-rendering: pixelated;
   border-radius: 0;
   transform: none;
@@ -778,6 +779,7 @@
   height: 64px;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
 }
 
 /* ---- Shared pack-opening sequence (tear top -> cards pour out -> fan settles) ---- */
@@ -845,6 +847,9 @@
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
+}
+.pack-open-piece:not(.generic) {
+  filter: url(#unlock-chroma);
 }
 .pack-open-piece.generic {
   background:
@@ -1266,7 +1271,7 @@
   height: 164px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 5px 0 rgba(0, 0, 0, 0.4));
+  filter: url(#unlock-chroma) drop-shadow(0 5px 0 rgba(0, 0, 0, 0.4));
 }
 .boss-intro-emoji {
   font-size: 86px;
@@ -1487,7 +1492,7 @@
   height: 104px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
+  filter: url(#unlock-chroma) drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
   transform-origin: 50% 78%;
   animation: blind-emblem-idle 3.2s ease-in-out infinite;
 }
@@ -1548,6 +1553,7 @@
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: url(#unlock-chroma);
   animation: target-record-idle 3.2s steps(24, end) infinite;
 }
 @keyframes target-record-idle {
@@ -3825,9 +3831,9 @@
 }
 .pos-tag.active {
   border-style: solid;
-  border-color: var(--pos-tone);
-  background: color-mix(in srgb, var(--pos-tone) 40%, #0f1b22);
-  color: #fff;
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--pos-tone) 35%, var(--ink));
+  color: var(--tile-ink);
 }
 .pos-tag.alternative {
   border-style: dashed;

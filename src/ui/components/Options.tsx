@@ -454,8 +454,8 @@ function CreditsView() {
         <div id={`credits-${tab}`} className="cr-body" role="tabpanel">
           {tab === 'team' && (
             <>
-              <div className="cr-row"><span>{t('credits.planning')}</span><b>Ben Kim</b></div>
-              <div className="cr-row"><span>{t('credits.development')}</span><b>Ben Kim</b></div>
+              <div className="cr-row"><span>{t('credits.planning')}</span><b>SweetTurtles</b></div>
+              <div className="cr-row"><span>{t('credits.development')}</span><b>SweetTurtles</b></div>
               <p className="cr-dim">{t('credits.aiDisclosure')}</p>
             </>
           )}
@@ -492,7 +492,7 @@ function CreditsView() {
             <pre>{THIRD_PARTY_NOTICES}</pre>
           </div>
         </details>
-        <p className="cr-copyright">© 2026 Ben Kim</p>
+        <p className="cr-copyright">© 2026 SweetTurtles</p>
       </div>
     </>
   );

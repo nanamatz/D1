@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   UNLOCKS,
@@ -12,6 +14,7 @@ import {
   checkWordPlayed,
   chromaMatrix,
 } from '../src/ui/unlocks';
+import { FamilyCardArt } from '../src/ui/components/FamilyCardArt';
 
 // jsdom is not configured project-wide; provide a minimal localStorage shim
 // (matching tutorial-store.test.ts) so the played-set persistence round-trips.
@@ -79,7 +82,7 @@ describe('chromatic unlocks — activeUnlocks', () => {
   });
 });
 
-describe('chromaMatrix — Emoji Tile art chroma gate (2026-07-30)', () => {
+describe('chromaMatrix — shared raster-art chroma gate', () => {
   const LUM = '0.2126 0.7152 0.0722';
 
   it('no colour unlocked → exactly grayscale(1)', () => {
@@ -106,12 +109,42 @@ describe('chromaMatrix — Emoji Tile art chroma gate (2026-07-30)', () => {
     );
   });
 
+  it.each([
+    [
+      'GREEN',
+      ['GREEN'],
+      `${LUM} 0 0 0 1 0 0 0 ${LUM} 0 0 0 0 0 1 0`,
+    ],
+    [
+      'BLUE',
+      ['BLUE'],
+      `${LUM} 0 0 ${LUM} 0 0 0 0 1 0 0 0 0 0 1 0`,
+    ],
+    [
+      'RED + BLUE',
+      ['RED', 'BLUE'],
+      `1 0 0 0 0 ${LUM} 0 0 0 0 1 0 0 0 0 0 1 0`,
+    ],
+    [
+      'GREEN + BLUE',
+      ['GREEN', 'BLUE'],
+      `${LUM} 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0`,
+    ],
+    [
+      'YELLOW + BLUE',
+      ['YELLOW', 'BLUE'],
+      '1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0',
+    ],
+  ])('%s restores exactly the union of its RGB channels', (_name, ids, expected) => {
+    expect(chromaMatrix(new Set(ids))).toBe(expected);
+  });
+
   it('ignores non-colour unlocks', () => {
     expect(chromaMatrix(new Set(['MUSIC', 'SOUND', 'DOG']))).toBe(chromaMatrix(new Set()));
   });
 });
 
-describe('unlock-chroma filter — every Emoji Tile art surface, not just the owned shelf (2026-07-30 fix)', () => {
+describe('unlock-chroma filter — approved raster-art surfaces and state overrides', () => {
   const play = readFileSync(
     fileURLToPath(new URL('../src/ui/styles/play.css', import.meta.url)),
     'utf8',
@@ -123,7 +156,9 @@ describe('unlock-chroma filter — every Emoji Tile art surface, not just the ow
 
   /** The declaration block for the rule whose selector list contains `selector`. */
   const ruleFor = (css: string, selector: string): string => {
-    const start = css.indexOf(selector);
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = new RegExp(`(?:^|\\n)${escaped}(?:,|\\s*\\{)`).exec(css);
+    const start = match?.index ?? -1;
     expect(start, `selector ${selector} not found`).toBeGreaterThanOrEqual(0);
     const open = css.indexOf('{', start);
     const close = css.indexOf('}', open);
@@ -137,5 +172,69 @@ describe('unlock-chroma filter — every Emoji Tile art surface, not just the ow
     ['.cc-joker-art', () => screens],
   ])('%s carries the chroma-gate filter', (selector, css) => {
     expect(ruleFor(css(), selector)).toContain('filter: url(#unlock-chroma);');
+  });
+
+  it.each([
+    ['.shopitem .pack-img', () => play],
+    ['.pack-open-art', () => play],
+    ['.pack-open-piece:not(.generic)', () => play],
+    ['.boss-intro-art', () => play],
+    ['.bb-art', () => play],
+    ['.target-record', () => play],
+    ['.bs-boss-art', () => screens],
+    ['.bs-kind-art', () => screens],
+    ['.bs-tag-icon img', () => screens],
+    ['.skip-tag-auto-redeem img', () => screens],
+    ['.go-boss-art', () => screens],
+    ['.run-choice-art img', () => screens],
+    ['.joker-record-sticker', () => screens],
+    ['.boss-card-art', () => screens],
+    ['.voucher-card', () => screens],
+    ['.pack-gallery-art', () => screens],
+    ['.tag-collection-icon img', () => screens],
+    ['.blind-emblem-art', () => screens],
+    ['.pouch-art', () => screens],
+  ])('%s gates an approved ordinary raster-art surface', (selector, css) => {
+    expect(ruleFor(css(), selector)).toContain('url(#unlock-chroma)');
+  });
+
+  it.each([
+    ['.boss-intro-art', () => play],
+    ['.bb-art', () => play],
+    ['.bs-boss-art', () => screens],
+    ['.joker-record-sticker', () => screens],
+    ['.boss-card-art', () => screens],
+    ['.voucher-card', () => screens],
+    ['.tag-collection-icon img', () => screens],
+    ['.blind-emblem-art', () => screens],
+  ])('%s composes the chroma gate with its drop shadow', (selector, css) => {
+    const rule = ruleFor(css(), selector);
+    expect(rule).toContain('url(#unlock-chroma)');
+    expect(rule).toContain('drop-shadow(');
+  });
+
+  it('keeps locked, muted, skipped, generic-fallback, and recap states authoritative', () => {
+    expect(ruleFor(screens, '.select-preview.locked .run-choice-art img'))
+      .toContain('filter: grayscale(1) brightness(0.55);');
+    expect(ruleFor(screens, '.voucher-card.muted'))
+      .toContain('filter: grayscale(1) brightness(0.62) drop-shadow(');
+    expect(ruleFor(screens, '.bs-card.skipped .bs-tag-icon'))
+      .toContain('filter: grayscale(1) brightness(.62);');
+    expect(ruleFor(play, '.pack-open-piece.generic')).not.toContain('url(#unlock-chroma)');
+    expect(ruleFor(screens, '.unlock-recap .voucher-card'))
+      .toContain('filter: drop-shadow(');
+    expect(ruleFor(screens, '.unlock-recap .voucher-card')).not.toContain('url(#unlock-chroma)');
+    expect(ruleFor(screens, '.unlock-recap-object')).not.toContain('url(#unlock-chroma)');
+    expect(ruleFor(screens, '.unlock-recap-pair img')).not.toContain('url(#unlock-chroma)');
+  });
+
+  it('filters FamilyCardArt inside the SVG so root motion filters stay independent', () => {
+    const markup = renderToStaticMarkup(createElement(FamilyCardArt, {
+      src: '/family.png',
+      title: 'Family card',
+    }));
+    const root = markup.slice(0, markup.indexOf('>') + 1);
+    expect(root).not.toContain('filter=');
+    expect(markup).toContain('<g filter="url(#unlock-chroma)">');
   });
 });

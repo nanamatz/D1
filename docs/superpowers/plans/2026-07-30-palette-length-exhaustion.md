@@ -397,11 +397,11 @@ EOF
 
 ---
 
-### Task 3: Emoji Tile art tracks the palette unlocks
+### Task 3: Raster object art tracks the palette unlocks
 
 `.joker-art` lives inside `.frame`, so `:root.world-mono .frame { filter: grayscale(1) }` greys it — but `world-mono` drops the instant *any* colour unlocks, so one RED unlock reveals every hue in every PNG. Gate the art's chroma per RGB channel from the same active-unlock set.
 
-Emoji Tile art only. Fable / Gambler / Voucher / Pack / Boss art keep the current all-or-nothing behaviour — an accepted inconsistency, recorded in the spec.
+The original Emoji-Tile-only delivery described below was expanded on 2026-08-28: blind/Deadline emblems, Editorial Perk Tags, Vouchers, Packs, family cards, and Starting Pouch/Record art now share the matrix. This historical task's narrower file list remains as the record of its first implementation.
 
 **Files:**
 - Modify: `src/ui/unlocks.ts` (new `chromaMatrix` export; `applyPresentation` writes it)
@@ -418,7 +418,7 @@ Emoji Tile art only. Fable / Gambler / Voucher / Pack / Boss art keep the curren
 Append to `tests/chromatic-unlocks.test.ts` (it already imports from `../src/ui/unlocks`; add `chromaMatrix` to that import list):
 
 ```ts
-describe('chromaMatrix — Emoji Tile art chroma gate (2026-07-30)', () => {
+describe('chromaMatrix — shared raster-art chroma gate (2026-07-30)', () => {
   const LUM = '0.2126 0.7152 0.0722';
 
   it('no colour unlocked → exactly grayscale(1)', () => {
@@ -473,7 +473,7 @@ const CHROMA_CHANNELS: Record<UnlockGroup, readonly number[]> = {
 };
 
 /**
- * The `feColorMatrix values` for `#unlock-chroma`, the Emoji Tile art chroma gate.
+ * The `feColorMatrix values` for `#unlock-chroma`, the shared raster-art chroma gate.
  * Each output channel is either its own value (its group is unlocked) or the
  * luminance (locked): `out_c = lum + k_c × (c − lum)`. So no unlocks is exactly
  * `grayscale(1)`, all four is the identity, and a locked hue lands on the same
@@ -503,8 +503,8 @@ Expected: PASS. If a row prints `0.21260000000000002`, the arithmetic order in S
 Inside `applyPresentation`'s `if (typeof document !== 'undefined')` block, after the `world-mono` toggle:
 
 ```ts
-    // Emoji Tile art chroma gate (2026-07-30): the palette reveals progressively,
-    // so the art must too — one filter, driven by the same active set.
+    // Shared raster-art chroma gate: the palette reveals progressively, so the
+    // art must too — one filter, driven by the same active set.
     const chroma = document.querySelector('#unlock-chroma feColorMatrix');
     if (chroma) chroma.setAttribute('values', chromaMatrix(active));
 ```
@@ -514,7 +514,7 @@ Inside `applyPresentation`'s `if (typeof document !== 'undefined')` block, after
 In `src/ui/App.tsx`, inside the outer fragment beside `<CrtOverlay />`:
 
 ```tsx
-      {/* Emoji Tile art chroma gate — applyPresentation (unlocks.ts) rewrites the
+      {/* Shared raster-art chroma gate — applyPresentation (unlocks.ts) rewrites the
           matrix from the active colour unlocks. Always mounted; a filter needs no
           visible geometry. colorInterpolationFilters MUST be sRGB — the linearRGB
           default would shift the greys away from grayscale(1). */}
@@ -577,7 +577,7 @@ still mostly grey. Gates the art per RGB channel with one feColorMatrix
 that applyPresentation rewrites from the active unlock set.
 
 Luminance-preserving, so a locked hue lands on the grey grayscale(1)
-would give it. Emoji Tile art only for now.
+would give it. Expanded to the shared raster object families on 2026-08-28.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 EOF

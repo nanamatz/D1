@@ -7,6 +7,7 @@ import { ScreenTransition } from './components/ScreenTransition';
 import { TutorialHost } from './components/TutorialPopup';
 import { ChromaticReveal } from './components/ChromaticReveal';
 import { CrtOverlay } from './components/CrtOverlay';
+import { DeveloperSplash } from './components/DeveloperSplash';
 import { LoadingScreen } from './components/LoadingScreen';
 import { PatternLevelUp } from './components/PatternLevelUp';
 import { ConsumableEffect } from './components/ConsumableEffect';
@@ -76,6 +77,7 @@ export function App() {
     return ensureLexicon();
   }, [ensureLexicon]);
   const g = useGame(getLexicon, lexiconReady);
+  const [showDeveloperSplash, setShowDeveloperSplash] = useState(true);
   // D-4: preload assets behind a loading screen before the Main Menu. Falls through
   // immediately when everything is cached (LoadingScreen reports real progress).
   const [loading, setLoading] = useState(true);
@@ -277,7 +279,12 @@ export function App() {
   // transition. In-run phase changes use the same component inside RunView.
   return (
     <>
-      {loading ? (
+      {showDeveloperSplash ? (
+        <DeveloperSplash
+          reducedMotion={settings.reducedMotion}
+          onDone={() => setShowDeveloperSplash(false)}
+        />
+      ) : loading ? (
         <LoadingScreen onDone={() => setLoading(false)} />
       ) : (
         <>
@@ -291,7 +298,7 @@ export function App() {
           <JokerChanceEffect />
         </>
       )}
-      {/* Emoji Tile art chroma gate — applyPresentation (unlocks.ts) rewrites the
+      {/* Shared raster-art chroma gate — applyPresentation (unlocks.ts) rewrites the
           matrix from the active colour unlocks. Always mounted; a filter needs no
           visible geometry. colorInterpolationFilters MUST be sRGB — the linearRGB
           default would shift the greys away from grayscale(1). */}
@@ -304,8 +311,12 @@ export function App() {
         </filter>
       </svg>
       <CrtOverlay />
-      <SaveHealthNotice />
-      <SteamOwnershipNotice />
+      {!showDeveloperSplash && (
+        <>
+          <SaveHealthNotice />
+          <SteamOwnershipNotice />
+        </>
+      )}
     </>
   );
 }

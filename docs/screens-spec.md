@@ -32,6 +32,8 @@ Derived from 18 Balatro reference screenshots. **The screenshots are layout/flow
 ## 1. Screen flow map
 
 ```
+App mount ─→ Sweet Turtles developer ident ─→ Loading (while real preload remains) ─→ Main Menu
+
 Main Menu ─ Play ─→ New Run ─→ PERSISTENT RUN TABLE
                                       ├─ Blind work panel
                                       ├─ Fee Settlement overlay
@@ -50,9 +52,52 @@ In-run overlays: Run Info · Fee Settlement · pause menu
 
 ## 2. Screens
 
-### 2.0 Loading screen (asset preload)
+### 2.0 Developer ident + Loading screen (asset preload)
 
-Shown once on app start, before the Main Menu. The build now carries real weight — pixel art, 24 pack illustrations, mascot sprites, and (after feature-01 B) an audio bundle — so a blank first paint is no longer acceptable.
+Shown once on app start, before the Main Menu. One automatic **Sweet Turtles**
+developer ident appears first; there is no publisher stage or publisher copy,
+start prompt, skip, focusable control, or pointer/keyboard listener. Its bundled
+local image is centred and cover-cropped on the front of a true circular coin
+(`300px`, responsive up to `62vmin`); the neutral metal back has raised `ST` and
+never mirrors the logo or text. The ident fills the physical viewport with
+literal `#000`, stacks above the global CRT layer, and does not use a palette or
+desk-background token. Proper 3D faces rotate vertically on `rotateX` and end at
+exactly `1800deg`, with the front visible. The fixed 3850ms sequence is:
+
+- `0–1000ms`: drop from about `-34vmin`, fade in within 120ms, rotate
+  `0→1260deg`, and scale `.70→1.04`;
+- `1000ms`: compress on contact and expand the ground shadow;
+- `1000–1220ms`: bounce `-18px` and rotate `1260→1440deg`;
+- `1220–1450ms`: reland and decelerate `1440→1710deg`;
+- `1450–1600ms`: snap `1710→1800deg`, exactly five full turns/front visible;
+- `1600–3600ms`: lock the front for exactly two seconds, play one ring shine,
+  and reveal the name;
+- `3600–3850ms`: fade out the complete ident over 250ms, then mount Loading.
+
+The matching deterministic synthesized cue starts with one bright metallic ding
+at the initial appearance, then has decreasing edge ticks, a main body/metal
+impact at the visible 1000ms contact, a quieter 1220ms bounce clink, and a short
+1600ms metallic shine. It uses its own fixed peak-safe output and is
+completely separate from `src/ui/audio.ts`, settings/storage, Master/SFX/music
+levels, mute, and MUSIC/SOUND or colour gates. It attempts ungestured playback
+once: a web browser may block it, in which case the failure is swallowed and no
+sound is queued for a later gesture; Electron sets Chromium's autoplay policy
+before app readiness/window creation so the local desktop build can play it.
+Visual timing never waits for audio. Either reduced-motion path replaces the
+motion with a static front for 2240ms (120ms fade-in, exactly 2000ms fully shown,
+120ms fade-out), with no drop, flip, bounce, shadow, or shine and only one small
+metallic brand chime. The brand beat begins only after the bundled image loads
+and decodes. An error or two-second preparation timeout remains a separate silent
+700ms text-only fallback; a late image stays suppressed. Preparation shows only
+the black backdrop, without text, animation, or fake progress. On a fresh
+no-colour profile the ready logo is greyscale even though it sits outside
+`.frame`; after any colour unlock the original logo colour may render.
+
+The existing Loading screen follows the ident only while real preload work
+remains. The build now carries real weight — pixel art, 24 pack illustrations,
+mascot sprites, and (after feature-01 B) an audio bundle — so a blank first paint
+is no longer acceptable. The ident's fixed brand beat is not loading progress and
+must never be added to the progress calculation or used to delay cached assets.
 
 - **Preloads only first-interaction assets** (fonts, the active WooDak sprite,
   Yellow Pouch, White LP, and first Draft emblem) and reports **real progress**,
@@ -270,7 +315,10 @@ Challenges 2–6. Word discoveries, register titles, secret Word Hands, and Emoj
 Record stickers are excluded. Cards reuse `jokerArt`, shared `VoucherCard` +
 `voucherArt`, `pouchArt`, `recordArt`, and `mascotVariantArt`; color/audio use a
 swatch or `UiIcon`. Challenge cards combine their Pouch + Record art, and Record
-cards name their Pouch context. Every object has the shared body-portalled
+cards name their Pouch context. The recap overlay itself is portalled to
+`document.body`, escaping `.frame` filter/zoom so the full-colour reward reveal
+and physical viewport centring remain intact; ordinary Game Over stays in the
+run frame. Every object has the shared body-portalled
 tooltip, keyboard focus, and ARIA label. Every page holds at most three cards;
 mobile keeps its two-column layout. Overflow uses the shared circular
 `< · Page N/M · >` pager rather than scrolling. A sparse page keeps the same
@@ -389,7 +437,7 @@ Tabs — trimmed for a web game:
 - **Game**: game speed (1/2/4 — settle-animation multiplier) · screenshake slider · reduced motion toggle (mirrors `prefers-reduced-motion`, user-overridable) · language (ko/en) · hint highlight color-blind-safe palette toggle · **"don't show tips" toggle** (kills the first-encounter tutorial popups, feature-01 A-2).
 - **Graphics**: **CRT effect on/off · scanline intensity slider · CRT bloom on/off** (see UI_DESIGN §"Surface language"). CRT Off hides scanlines, vignette, and bloom; Bloom is independently switchable. The board keeps its responsive viewport-fit zoom plus the UI-scale slider. There is no integer-scale option: quantizing the shared 1440×988 interface would make it unnecessarily small or letterboxed on common displays.
 - **Video**: fullscreen toggle · UI scale slider. The fullscreen toggle mirrors the browser's actual `fullscreenElement`; when ESC exits fullscreen externally, the toggle immediately synchronizes to Off. (No monitor select/VSync — web.) Reveal All belongs exclusively to the selected profile screen (§2.1).
-- **Audio** (changed 2026-08-19): master / music / SFX sliders with value badges drive the **live Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). SFX and two loop-safe synthesized BGM contexts (menu/run) are shipped; Shop keeps the run loop playing through a muffled low-pass, and Deadline uses the unchanged run loop. No remote audio assets are required. The context unlocks on the first user gesture (autoplay policy), settle-sequence SFX scale with game speed, and the `MUSIC`/`SOUND` Palette entries gate their respective buses. The Audio tab has no sound-effect or music preview controls.
+- **Audio** (changed 2026-08-29): master / music / SFX sliders with value badges drive the **live gameplay Web Audio mixer** (`src/ui/audio.ts`, feature-01 B). SFX and two loop-safe synthesized BGM contexts (menu/run) are shipped; Shop keeps the run loop playing through a muffled low-pass, and Deadline uses the unchanged run loop. No remote audio assets are required. The gameplay context unlocks on the first user gesture (autoplay policy), settle-sequence SFX scale with game speed, and the `MUSIC`/`SOUND` Palette entries gate their respective buses. The preceding Sweet Turtles ident cue (§2.0) is a separate fixed-output startup context and obeys none of these controls or gates. The Audio tab has no sound-effect or music preview controls.
 All 14 value settings use the shared tooltip on row hover, native-control focus, and touch pin; Escape, outside tap, tab change, and unmount close it without consuming the setting action.
 
 ### 2.12 Statistics
@@ -408,8 +456,8 @@ Run-end totals use a persisted UI-only run observation id plus the profile lifet
 ### 2.13 Credits
 
 The Credits panel uses four compact, accessible tabs so attribution never
-overflows the shell screen: **Team · Visuals · Audio · Fonts**. Team names Ben
-Kim for game design/planning, development, and art direction, with an AI-use
+overflows the shell screen: **Team · Visuals · Audio · Fonts**. Team names
+SweetTurtles for game design/planning, development, and art direction, with an AI-use
 disclosure. Visuals disclose the ChatGPT/Claude-assisted generation and editing
 workflow without implying rights in third-party material. Audio distinguishes
 original runtime-synthesized BGM/most SFX from the 17 local Kenney Casino Audio
@@ -417,7 +465,7 @@ original runtime-synthesized BGM/most SFX from the 17 local Kenney Casino Audio
 Jost, Noto Sans KR, Baloo 2, and Jersey 10 with their exact authorship and SIL
 OFL 1.1 source information. A tab-independent native **Legal Notices** disclosure
 shows the bundled English license texts in a bounded internal scroller, followed
-by `© 2026 Ben Kim`; it uses no fetch, CDN, link navigation, or new window.
+by `© 2026 SweetTurtles`; it uses no fetch, CDN, link navigation, or new window.
 The distributable copies live under `public/licenses/` so browser and `file://`
 desktop builds carry the same version-locked software, font, audio, and lexical
 notices.
