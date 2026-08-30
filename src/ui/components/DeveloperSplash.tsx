@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motionOff } from '../motion';
 import { playStartupIdentAudio } from '../startupAudio';
+import { useI18n } from '../i18n';
 import logoUrl from '../assets/branding/sweet-turtles.png';
 
 const SPLASH_MS = 3850;
@@ -19,9 +20,15 @@ export function DeveloperSplash({
   const onDoneRef = useRef(onDone);
   const doneRef = useRef(false);
   const [logoState, setLogoState] = useState<LogoState>('preparing');
+  const { t } = useI18n();
   onDoneRef.current = onDone;
 
   const reduce = reducedMotion || motionOff();
+  const finish = () => {
+    if (logoState === 'preparing' || doneRef.current) return;
+    doneRef.current = true;
+    onDoneRef.current();
+  };
 
   useEffect(() => {
     let live = true;
@@ -66,9 +73,7 @@ export function DeveloperSplash({
       ? FALLBACK_SPLASH_MS
       : reduce ? REDUCED_SPLASH_MS : SPLASH_MS;
     const timer = window.setTimeout(() => {
-      if (!live || doneRef.current) return;
-      doneRef.current = true;
-      onDoneRef.current();
+      if (live) finish();
     }, duration);
 
     return () => {
@@ -98,9 +103,33 @@ export function DeveloperSplash({
         reduce && 'developer-splash--reduced',
         logoState === 'fallback' && 'developer-splash--fallback',
       ].filter(Boolean).join(' ')}
-      role="img"
-      aria-label="Sweet Turtles"
+      role="button"
+      tabIndex={0}
+      autoFocus
+      aria-label={t('startup.identContinue')}
+      aria-disabled={logoState === 'preparing'}
       aria-busy={logoState === 'preparing'}
+      onKeyDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (
+          event.repeat || event.nativeEvent.isComposing || event.key === 'Tab' ||
+          ['Shift', 'Control', 'Alt', 'Meta'].includes(event.key) ||
+          event.ctrlKey || event.altKey || event.metaKey
+        ) return;
+        finish();
+      }}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        if (!event.isPrimary || event.button !== 0) return;
+        event.preventDefault();
+        finish();
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        finish();
+      }}
     >
       {logoState !== 'preparing' && (
         <div className="developer-splash__content">

@@ -13,13 +13,15 @@ describe('register synergy UI provenance', () => {
     expect(tray).toContain("'tray.registerSynergyPlus'");
   });
 
-  it('renders a dedicated Chips-colour settlement source for register synergy', () => {
+  it('renders Mixed Register in the finalized Chips-colour headline', () => {
     const sidebar = read('src/ui/components/Sidebar.tsx');
     const css = read('src/ui/styles/play.css');
-    expect(sidebar).toContain('bonus-part register-synergy');
+    expect(sidebar).toContain('FinalizedSentenceHeadline');
+    expect(sidebar).toContain('hasRegisterSynergy');
     expect(sidebar).toContain('sidebar.bonusRegisterSynergy');
     expect(sidebar).toContain('sentenceBonus.registerSynergyId');
-    expect(css).toContain('.bonus-part.register-synergy { color: var(--chips); }');
+    expect(sidebar).not.toContain('bonus-part register-synergy');
+    expect(css).toContain('.round-pattern.finalized-pattern.register-synergy { color: var(--chips); }');
   });
 
   it('keeps all names and factor labels paired in English and Korean', () => {

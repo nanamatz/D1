@@ -16,7 +16,6 @@ import { recordArt } from '../recordArt';
 import { PatternIcon } from './UiIcon';
 import { TiltCard } from './TiltCard';
 import { Tooltip } from './Tooltip';
-import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 import { isLetterHandDiscovered } from '../lifetime';
 import { scoreTypewriterLiveTotal } from '../scoreTypewriter';
@@ -51,6 +50,8 @@ interface Props {
 const fmtMult = (m: number): string => (Number.isInteger(m) ? String(m) : m.toFixed(2));
 const fmtSigned = (value: number): string =>
   `${value >= 0 ? '+' : ''}${Number.isInteger(value) ? value : value.toFixed(2)}`;
+const fmtScoreSigned = (value: number): string =>
+  `${value >= 0 ? '+' : ''}${formatScore(value)}`;
 
 /** Selected-tile status text, in Balatro's hand-name position (E-9). */
 function StatusLine({
@@ -89,9 +90,80 @@ function StatusLine({
   );
 }
 
-/** Finalized non-pattern sources, kept separate from the primary pattern stamp. */
+export function sentenceBonusSupplementRowCount(sentenceBonus: SentenceBonusDisplay): number {
+  const hasEffects = Math.abs(sentenceBonus.effectChips) > 0.001 ||
+    Math.abs(sentenceBonus.effectMult - 1) > 0.001 ||
+    (sentenceBonus.effectScore ?? 0) !== 0;
+  return Number(sentenceBonus.modifierChips !== 0) +
+    Number(hasEffects) +
+    Number(sentenceBonus.pouchId != null);
+}
+
+/** Finalized headline reuses the round panel's already-reserved live-pattern line. */
+export function FinalizedSentenceHeadline({
+  sentenceBonus,
+}: {
+  sentenceBonus: SentenceBonusDisplay;
+}) {
+  const { t } = useI18n();
+  const hasUnison = sentenceBonus.unisonSuit !== null &&
+    (sentenceBonus.unisonChips !== 0 || sentenceBonus.unisonMult !== 1);
+  const hasRegisterSynergy = !hasUnison &&
+    sentenceBonus.registerSynergyId !== null &&
+    sentenceBonus.registerSynergyChipsFactor !== 1;
+  const unisonText = hasUnison
+    ? `${t(`suit.${sentenceBonus.unisonSuit}`)} ${sentenceBonus.unisonChips !== 0
+        ? t('sidebar.bonusUnisonChips', { chips: fmtSigned(sentenceBonus.unisonChips) })
+        : t('sidebar.bonusUnisonMult', { mult: fmtMult(sentenceBonus.unisonMult) })}`
+    : null;
+  const registerText = hasRegisterSynergy
+    ? t('sidebar.bonusRegisterSynergy', {
+        name: t(`registerSynergy.${sentenceBonus.registerSynergyId}`),
+        factor: fmtMult(sentenceBonus.registerSynergyChipsFactor),
+      })
+    : null;
+  const styleText = unisonText ?? registerText;
+  const patternText = sentenceBonus.pattern
+    ? `${t('sidebar.patternLevel', { n: sentenceBonus.level ?? 1 })} · ${t(`pattern.${sentenceBonus.pattern}`)}`
+    : null;
+  const label = [patternText, styleText].filter(Boolean).join(' · ');
+  if (!label) return null;
+
+  return (
+    <div
+      className={[
+        'round-pattern',
+        'finalized-pattern',
+        hasUnison && 'unison',
+        hasUnison && sentenceBonus.unisonSuit,
+        hasRegisterSynergy && 'register-synergy',
+      ].filter(Boolean).join(' ')}
+      role="group"
+      aria-label={label}
+    >
+      {sentenceBonus.pattern && (
+        <span className="finalized-pattern-core">
+          <span className="finalized-pattern-level">
+            {t('sidebar.patternLevel', { n: sentenceBonus.level ?? 1 })}
+          </span>
+          <span aria-hidden>·</span>
+          <PatternIcon pattern={sentenceBonus.pattern} />
+          <span className="finalized-pattern-name">{t(`pattern.${sentenceBonus.pattern}`)}</span>
+        </span>
+      )}
+      {sentenceBonus.pattern && styleText && <span aria-hidden>·</span>}
+      {styleText && <span className="finalized-style">{styleText}</span>}
+    </div>
+  );
+}
+
+/** Finalized supplemental sources: one full-width row per source family. */
 export function SentenceBonusParts({ sentenceBonus }: { sentenceBonus: SentenceBonusDisplay }) {
   const { t } = useI18n();
+  const hasEffectChips = Math.abs(sentenceBonus.effectChips) > 0.001;
+  const hasEffectMult = Math.abs(sentenceBonus.effectMult - 1) > 0.001;
+  const hasEffectScore = (sentenceBonus.effectScore ?? 0) !== 0;
+  if (sentenceBonusSupplementRowCount(sentenceBonus) === 0) return null;
   return (
     <div className="bonus-parts" aria-label={t('sidebar.bonusBreakdown')}>
       {sentenceBonus.modifierChips !== 0 && (
@@ -102,37 +174,24 @@ export function SentenceBonusParts({ sentenceBonus }: { sentenceBonus: SentenceB
           })}
         </span>
       )}
-      {sentenceBonus.registerSynergyId && sentenceBonus.registerSynergyChipsFactor !== 1 && (
-        <span className="bonus-part register-synergy">
-          {t('sidebar.bonusRegisterSynergy', {
-            name: t(`registerSynergy.${sentenceBonus.registerSynergyId}`),
-            factor: fmtMult(sentenceBonus.registerSynergyChipsFactor),
-          })}
-        </span>
-      )}
-      {sentenceBonus.unisonChips !== 0 && (
-        <span className="bonus-part unison chips">
-          {t('sidebar.bonusUnisonChips', { chips: fmtSigned(sentenceBonus.unisonChips) })}
-        </span>
-      )}
-      {sentenceBonus.unisonMult !== 1 && (
-        <span className="bonus-part unison mult">
-          {t('sidebar.bonusUnisonMult', { mult: fmtMult(sentenceBonus.unisonMult) })}
-        </span>
-      )}
-      {Math.abs(sentenceBonus.effectChips) > 0.001 && (
-        <span className="bonus-part effect chips">
-          {t('sidebar.bonusEffectChips', { chips: fmtSigned(sentenceBonus.effectChips) })}
-        </span>
-      )}
-      {Math.abs(sentenceBonus.effectMult - 1) > 0.001 && (
-        <span className="bonus-part effect mult">
-          {t('sidebar.bonusEffectMult', { mult: fmtMult(sentenceBonus.effectMult) })}
-        </span>
-      )}
-      {(sentenceBonus.effectScore ?? 0) !== 0 && (
-        <span className="bonus-part effect score">
-          {t('sidebar.bonusEffectScore', { score: formatScore(sentenceBonus.effectScore ?? 0) })}
+      {(hasEffectChips || hasEffectMult || hasEffectScore) && (
+        <span className="bonus-part effect">
+          <span>{t('sidebar.bonusEffects')}</span>
+          {hasEffectChips && (
+            <span className="effect-axis chips">
+              {fmtSigned(sentenceBonus.effectChips)} {t('patternLevel.chips')}
+            </span>
+          )}
+          {hasEffectMult && (
+            <span className="effect-axis mult">
+              ×{fmtMult(sentenceBonus.effectMult)} {t('patternLevel.mult')}
+            </span>
+          )}
+          {hasEffectScore && (
+            <span className="effect-axis score">
+              {fmtScoreSigned(sentenceBonus.effectScore ?? 0)} {t('sidebar.score')}
+            </span>
+          )}
         </span>
       )}
       {sentenceBonus.pouchId && (
@@ -197,6 +256,7 @@ export function Sidebar({
   // At blind end, the scorebox shows the committed score plus sentence Chips on
   // the Chips axis and the sentence Mult factor on the Mult axis.
   const bonusActive = mode === 'blind' && sentenceBonus !== null;
+  const provenanceRows = bonusActive ? sentenceBonusSupplementRowCount(sentenceBonus) : 0;
   // The bonus is LANDING (round is rolling) once finalScore is published — the box
   // is full and its product flies onto the round total. During BUILD (finalScore
   // still null) the box is filling and the round holds.
@@ -375,7 +435,9 @@ export function Sidebar({
             <span className="round-score-value">{formatScore(round)}</span>
           </span>
         </div>
-        {mode === 'blind' && !blind.previewHidden && currentPattern && (
+        {bonusActive ? (
+          <FinalizedSentenceHeadline sentenceBonus={sentenceBonus} />
+        ) : mode === 'blind' && !blind.previewHidden && currentPattern && (
           <div className="round-pattern">
             <PatternIcon pattern={currentPattern} />
             {t('sidebar.currentPattern', {
@@ -386,7 +448,11 @@ export function Sidebar({
         )}
       </div>
 
-      <div className={['panel', 'score-panel', bonusActive && 'has-provenance'].filter(Boolean).join(' ')}>
+      <div className={[
+        'panel',
+        'score-panel',
+        provenanceRows >= 2 && `provenance-rows-${provenanceRows}`,
+      ].filter(Boolean).join(' ')}>
         {!bonusActive && (
           <StatusLine
             preview={mode === 'blind' ? preview : null}
@@ -420,17 +486,6 @@ export function Sidebar({
               </span>
             )}
           </span>
-          {bonusActive && sentenceBonus!.pattern && (
-            <span className="bonus-stamp">
-              {sentenceBonus!.level != null && (
-                <span className={['bonus-lvl', patternLevelClass(sentenceBonus!.level)].join(' ')}>
-                  {t('sidebar.patternLevel', { n: sentenceBonus!.level })}
-                </span>
-              )}
-              <PatternIcon pattern={sentenceBonus!.pattern} />
-              {t(`pattern.${sentenceBonus!.pattern}`)}
-            </span>
-          )}
           {landing && bonusTotal > 0 && (
             <span key="bonus-fly" className="bonus-fly">
               +{bonusTotal}

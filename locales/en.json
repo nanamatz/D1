@@ -1,4 +1,5 @@
 {
+  "startup.identContinue": "Sweet Turtles — Press any key or click to continue",
   "pos.stateCompatible": "{pos}, compatible with pattern",
   "pos.stateAlternative": "{pos}, alternative candidate",
   "joker.unlockCondition": "Unlock: {condition}",
@@ -159,9 +160,7 @@
   "sidebar.bonusUnisonChips": "Unison {chips} Chips",
   "sidebar.bonusUnisonMult": "Unison ×{mult}",
   "sidebar.bonusRegisterSynergy": "{name} ×{factor} Chips",
-  "sidebar.bonusEffectChips": "Effects {chips} Chips",
-  "sidebar.bonusEffectMult": "Effects ×{mult}",
-  "sidebar.bonusEffectScore": "Effects +{score} score",
+  "sidebar.bonusEffects": "Effects",
   "sidebar.bonusPouch": "{name}: {chips} Chips · {mult} Mult",
   "patternLevel.up": "Level Up!",
   "tray.title": "Sentence",

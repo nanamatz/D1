@@ -17,5 +17,6 @@ describe('delegated button-press input', () => {
     expect(source).toContain("event.key === 'Enter' || event.key === ' '");
     expect(source).toContain("control.matches(':disabled, [aria-disabled=\"true\"]')");
     expect(source).toContain("control.closest('.desk-object')");
+    expect(source).toContain("control.closest('.developer-splash')");
   });
 });

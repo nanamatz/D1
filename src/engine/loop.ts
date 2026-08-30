@@ -18,7 +18,7 @@ import type { Lexicon } from './lexicon';
 import { baseScore, letterString, submissionLetterString, tileBaseChips, wordLengthMult, type BaseScore } from './scoring';
 import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
 import { applyEdition } from './editions';
-import { finalizeScore, judgeSentence, sentenceTotal } from './patterns';
+import { finalizeScore, isHiddenPattern, judgeSentence, sentenceTotal } from './patterns';
 import { evaluateLetterHand } from './letterHands';
 import { fontEffectOf, rollDiscardGains } from './fonts';
 import { defaultJokerBus, JOKER_REGISTRY, recordLifecycleGrowth } from './jokers';
@@ -402,6 +402,8 @@ export interface SubmitResult {
   counters: RunState['counters'];
   /** unique valid words played across the run, including this submission */
   playedWords: string[];
+  /** hidden sentence patterns activated across the run, including this submission */
+  discoveredPatterns: NonNullable<RunState['discoveredPatterns']>;
   /** unique Word Hand ids made across the run, including this submission */
   playedLetterHands: NonNullable<RunState['playedLetterHands']>;
   /** run-wide Word Hand use counts, including this submission */
@@ -1392,6 +1394,14 @@ export function submitWord(
   // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
   // sentence bonus is a projection, never accumulated per phase.
   const judgment = judgeSentence(sentenceSequenceForBlind(afterBlind, sequence), lexicon);
+  const priorDiscoveredPatterns = postBossRun.discoveredPatterns ?? [];
+  const matchedPattern = judgment.match?.pattern;
+  const discoveredPatterns = !submission.debuffed &&
+    matchedPattern !== undefined &&
+    isHiddenPattern(matchedPattern) &&
+    !priorDiscoveredPatterns.includes(matchedPattern)
+    ? [...priorDiscoveredPatterns, matchedPattern]
+    : priorDiscoveredPatterns;
   const projectedScore = scoreSentence(
     committedScore,
     sequence,
@@ -1414,6 +1424,7 @@ export function submitWord(
     destroyedJokers,
     counters: postBossRun.counters,
     playedWords: postBossRun.playedWords ?? [],
+    discoveredPatterns,
     playedLetterHands: postBossRun.playedLetterHands ?? [],
     letterHandPlayCounts: postBossRun.letterHandPlayCounts ?? {},
     lastLetterHand: postBossRun.lastLetterHand ?? null,

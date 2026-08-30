@@ -102,6 +102,7 @@ export function newRun(seed: string, options: NewRunOptions = {}): RunState {
     jokerSlots: BALANCE.jokerSlots,
     patternLevels: freshPatternLevels(),
     patternPlayCounts: freshPatternCounts(),
+    discoveredPatterns: [],
     vouchers: [],
     voucherOffer: null, // rolled at run start / each new chapter (playtest-03 C)
     voucherLocked: false,

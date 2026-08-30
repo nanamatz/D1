@@ -354,6 +354,22 @@ describe('150 Emoji Tile board verification', () => {
       .toBe(6);
   });
 
+  it('merges run-scoped hidden pattern discoveries from headless submissions', () => {
+    const run = newRun('sim-hidden-pattern');
+    const blind = startBlind(run, makeRng('sim-hidden-pattern-blind'));
+    const result = submitWord(
+      blind,
+      run,
+      lexicon,
+      [blind.hand[0]!.id],
+      makeRng('sim-hidden-pattern-play'),
+    );
+    result.discoveredPatterns = ['complex'];
+
+    expect(mergeSubmitResult(run, result).discoveredPatterns).toEqual(['complex']);
+    expect(run.discoveredPatterns).toEqual([]);
+  });
+
   it('records blindSelected triggers and an owner destroyed by Host', () => {
     const run = newRun('host-telemetry');
     run.jokers = [createOwnedJoker(run, 'ceramicArtisan'), createOwnedJoker(run, 'host')];

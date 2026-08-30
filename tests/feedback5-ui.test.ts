@@ -82,13 +82,15 @@ describe('feedback 5 UI regressions', () => {
 
     expect(sidebar).toContain('className="bonus-parts"');
     expect(sidebar).toContain("t('sidebar.bonusModifier'");
-    expect(sidebar).toContain("t('sidebar.bonusUnisonChips'");
-    expect(sidebar).toContain("t('sidebar.bonusEffectMult'");
+    expect(sidebar).toContain("t('sidebar.bonusEffects')");
+    expect(sidebar).toContain('className="effect-axis chips"');
+    expect(sidebar).toContain('className="effect-axis mult"');
+    expect(sidebar).toContain('className="effect-axis score"');
     expect(play).toContain('.bonus-part.modifier');
-    expect(play).toContain('.bonus-part.unison');
     expect(play).toContain('.bonus-part.effect');
-    expect(sidebar.indexOf("sentenceBonus.registerSynergyId"))
-      .toBeLessThan(sidebar.indexOf("sentenceBonus.unisonChips"));
+    expect(play).toContain('.bonus-part.pouch');
+    expect(sidebar).not.toContain('bonus-part unison');
+    expect(sidebar).not.toContain('bonus-part register-synergy');
     expect(play).toMatch(/\.bonus-part\s*\{[^}]*padding:\s*2px 9px[^}]*border-radius:\s*8px[^}]*font-size:\s*var\(--fs-sm\)/s);
   });
 
@@ -96,10 +98,10 @@ describe('feedback 5 UI regressions', () => {
     const sidebar = source('src/ui/components/Sidebar.tsx');
     const runInfo = source('src/ui/components/RunInfo.tsx');
 
-    expect(sidebar.indexOf("['bonus-lvl'"))
-      .toBeLessThan(sidebar.indexOf('<PatternIcon pattern={sentenceBonus!.pattern} />'));
-    expect(sidebar.indexOf('<PatternIcon pattern={sentenceBonus!.pattern} />'))
-      .toBeLessThan(sidebar.indexOf('t(`pattern.${sentenceBonus!.pattern}`)'));
+    expect(sidebar.indexOf('className="finalized-pattern-level"'))
+      .toBeLessThan(sidebar.indexOf('<PatternIcon pattern={sentenceBonus.pattern} />'));
+    expect(sidebar.indexOf('<PatternIcon pattern={sentenceBonus.pattern} />'))
+      .toBeLessThan(sidebar.indexOf('className="finalized-pattern-name"'));
     expect(runInfo.indexOf('<span className="pl">'))
       .toBeLessThan(runInfo.indexOf('<PatternIcon pattern={p} />'));
     expect(runInfo.indexOf('<PatternIcon pattern={p} />'))
@@ -108,19 +110,20 @@ describe('feedback 5 UI regressions', () => {
 
   it('places finalized pattern provenance before every supplemental part', () => {
     const sidebar = source('src/ui/components/Sidebar.tsx');
-    const panel = sidebar.indexOf("className={['panel', 'score-panel'");
-    const status = sidebar.indexOf('<StatusLine', panel);
+    const roundPanel = sidebar.indexOf('<div className="panel round-panel">');
+    const headline = sidebar.indexOf('<FinalizedSentenceHeadline', roundPanel);
+    const panel = sidebar.indexOf("'score-panel',", roundPanel);
     const scorebox = sidebar.indexOf("className={['scorebox'", panel);
-    const stamp = sidebar.indexOf('className="bonus-stamp"', scorebox);
     const parts = sidebar.indexOf('<SentenceBonusParts', scorebox);
 
+    expect(roundPanel).toBeGreaterThanOrEqual(0);
+    expect(headline).toBeGreaterThan(roundPanel);
     expect(panel).toBeGreaterThanOrEqual(0);
-    expect(status).toBeGreaterThan(panel);
-    expect(status).toBeLessThan(scorebox);
-    expect(scorebox).toBeLessThan(stamp);
-    expect(stamp).toBeLessThan(parts);
-    expect(sidebar.slice(panel, scorebox)).toContain('!bonusActive');
-    expect(sidebar.slice(scorebox, parts)).toContain('bonusActive && sentenceBonus!.pattern');
+    expect(headline).toBeLessThan(panel);
+    expect(panel).toBeLessThan(scorebox);
+    expect(scorebox).toBeLessThan(parts);
+    expect(sidebar.slice(roundPanel, panel)).toContain('bonusActive ?');
+    expect(sidebar).not.toContain('className="bonus-stamp"');
   });
 
   it('plays the Constellation upgrade 500ms faster', () => {
