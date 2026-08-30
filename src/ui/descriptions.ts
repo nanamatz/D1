@@ -73,6 +73,16 @@ export function consumableTooltipExtra(
 export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
+/** Canonical material copy; Wood uses its live per-tile Chips when available. */
+export const materialDescription = (
+  material: TileMaterial,
+  t: (key: string, params?: TParams) => string,
+  woodChips: number = BALANCE.materials.wood.baseChips,
+): string => t(`materialdesc.${material}`, {
+  value: woodChips,
+  growth: BALANCE.materials.wood.chipsPerPlay,
+});
+
 const TILE_FONTS: readonly TileFont[] = ['lightItalic', 'bold', 'inline', 'black'];
 const TILE_MATERIALS: readonly TileMaterial[] = [...MATERIAL_REGISTRY.keys()]
   .filter((material): material is Exclude<TileMaterial, 'ceramic'> => material !== 'ceramic');
@@ -108,7 +118,7 @@ export function referencedMaterialTips(
     const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const named = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu')
       .test(effectCopy);
-    return named ? [{ title, body: t(`materialdesc.${material}`), kind: 'material' }] : [];
+    return named ? [{ title, body: materialDescription(material, t), kind: 'material' }] : [];
   });
 }
 
@@ -152,7 +162,7 @@ export function consumableAxisTip(
   if (effect?.kind === 'material' && effect.material !== 'ceramic') {
     return {
       title: t(`material.${effect.material}`),
-      body: t(`materialdesc.${effect.material}`),
+      body: materialDescription(effect.material, t),
       kind: 'material',
     };
   }

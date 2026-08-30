@@ -18,31 +18,34 @@ import {
 } from '../src/ui/scoreTypewriter';
 
 describe('Score Typewriter strength', () => {
-  it('uses strict target-ratio boundaries', () => {
+  it('uses the approved 1.0–1.5 target-ratio boundaries', () => {
     const target = 100;
-    expect(BALANCE.scoreTypewriter.ratioThresholds).toEqual([1.25, 2, 4, 10]);
-    expect(scoreTypewriterTier(100, target)).toBe(0);
-    expect(scoreTypewriterTier(100.001, target)).toBe(1);
-    expect(scoreTypewriterTier(124.999, target)).toBe(1);
-    expect(scoreTypewriterTier(125, target)).toBe(2);
-    expect(scoreTypewriterTier(199.999, target)).toBe(2);
-    expect(scoreTypewriterTier(200, target)).toBe(3);
-    expect(scoreTypewriterTier(399.999, target)).toBe(3);
-    expect(scoreTypewriterTier(400, target)).toBe(4);
-    expect(scoreTypewriterTier(999.999, target)).toBe(4);
-    expect(scoreTypewriterTier(1_000, target)).toBe(5);
+    expect(BALANCE.scoreTypewriter.ratioThresholds).toEqual([1, 1.1, 1.2, 1.3, 1.4, 1.5]);
+    expect(scoreTypewriterTier(99.999, target)).toBe(0);
+    expect(scoreTypewriterTier(100, target)).toBe(1);
+    expect(scoreTypewriterTier(109.999, target)).toBe(1);
+    expect(scoreTypewriterTier(110, target)).toBe(2);
+    expect(scoreTypewriterTier(119.999, target)).toBe(2);
+    expect(scoreTypewriterTier(120, target)).toBe(3);
+    expect(scoreTypewriterTier(129.999, target)).toBe(3);
+    expect(scoreTypewriterTier(130, target)).toBe(4);
+    expect(scoreTypewriterTier(139.999, target)).toBe(4);
+    expect(scoreTypewriterTier(140, target)).toBe(5);
+    expect(scoreTypewriterTier(149.999, target)).toBe(5);
+    expect(scoreTypewriterTier(150, target)).toBe(6);
+    expect(scoreTypewriterTier(200, target)).toBe(6);
   });
 
-  it('depends only on the current submission-local score / target ratio', () => {
-    expect(scoreTypewriterTier(150, 100)).toBe(2);
-    expect(scoreTypewriterTier(1_500_000, 1_000_000)).toBe(2);
+  it('classifies the supplied score / target ratio', () => {
+    expect(scoreTypewriterTier(150, 100)).toBe(6);
+    expect(scoreTypewriterTier(1_500_000, 1_000_000)).toBe(6);
     expect(scoreTypewriterTier(0, 100)).toBe(0); // debuffed submission
     expect(scoreTypewriterTier(101, 100)).toBe(1); // gibberish may qualify
   });
 
   it('makes higher submission ratios denser, faster, and stronger', () => {
-    const tiers = [1, 2, 3, 4, 5] as const;
-    const ratios = [1.01, 1.25, 2, 4, 10];
+    const tiers = [1, 2, 3, 4, 5, 6] as const;
+    const ratios = [1, 1.1, 1.2, 1.3, 1.4, 1.5];
     expect(ratios.map((ratio) => scoreTypewriterTier(ratio * 100, 100))).toEqual(tiers);
     for (let index = 1; index < tiers.length; index += 1) {
       const previous = tiers[index - 1]!;
@@ -65,7 +68,7 @@ describe('Score Typewriter strength', () => {
   });
 
   it('raises a settle-local peak through the approved progressive trace', () => {
-    const trace = [60, 101, 124.9, 125, 210, 180, 400, 1_000];
+    const trace = [99, 100, 109.9, 110, 120, 115, 130, 140, 150];
     let previousLocal = 0;
     let peak: ScoreTypewriterTier = 0;
     const tiers = trace.map((local) => {
@@ -73,11 +76,19 @@ describe('Score Typewriter strength', () => {
       previousLocal = local;
       return peak;
     });
-    expect(tiers).toEqual([0, 1, 1, 2, 3, 3, 4, 5]);
-    expect(scoreTypewriterPeakTier(3, 210, 180, 100)).toBe(3);
-    expect(scoreTypewriterPeakTier(3, 210, Number.NaN, 100)).toBe(3);
+    expect(tiers).toEqual([0, 1, 1, 2, 3, 3, 4, 5, 6]);
+    expect(scoreTypewriterPeakTier(3, 100, 80, 100)).toBe(3);
+    expect(scoreTypewriterPeakTier(3, 100, Number.NaN, 100)).toBe(3);
     expect(scoreTypewriterPeakTier(0, 0, 1_000, 0)).toBe(0);
     expect(scoreTypewriterPeakTier(0, 0, 1_000, Number.POSITIVE_INFINITY)).toBe(0);
+  });
+
+  it('adds visible sentence projection only after a positive local beat', () => {
+    expect(scoreTypewriterPeakTier(0, 0, 150, 740, 590)).toBe(1);
+    expect(scoreTypewriterPeakTier(0, 0, 90, 800, 1_110)).toBe(6);
+    expect(scoreTypewriterPeakTier(0, 0, 0, 100, 500)).toBe(0);
+    expect(scoreTypewriterPeakTier(2, 20, 10, 100, 500)).toBe(2);
+    expect(scoreTypewriterPeakTier(0, 0, 10, 100, Number.NaN)).toBe(0);
   });
 
   it('resets normal/cashout lifecycle while retaining a clear peak through resolution', () => {
@@ -93,13 +104,13 @@ describe('Score Typewriter strength', () => {
   });
 
   it('uses the approved tier and snapshotted-speed clear-repeat intervals', () => {
-    expect(BALANCE.scoreTypewriter.clearRepeatFactors).toEqual([0, 2, 1.75, 1.5, 1.25, 1]);
-    expect([1, 2, 3, 4, 5].map((tier) =>
+    expect(BALANCE.scoreTypewriter.clearRepeatFactors).toEqual([0, 2, 1.75, 1.5, 1.25, 1, 1]);
+    expect([1, 2, 3, 4, 5, 6].map((tier) =>
       scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier, 1),
-    )).toEqual([920, 805, 690, 575, 460]);
-    expect([1, 2, 3, 4, 5].map((tier) =>
+    )).toEqual([920, 805, 690, 575, 460, 460]);
+    expect([1, 2, 3, 4, 5, 6].map((tier) =>
       scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier, 2),
-    )).toEqual([460, 402.5, 345, 287.5, 230]);
+    )).toEqual([460, 402.5, 345, 287.5, 230, 230]);
   });
 
   it('starts clear cycle zero immediately, self-schedules, and cleans up exactly', () => {
@@ -142,7 +153,7 @@ describe('Score Typewriter strength', () => {
     expect(crossedScoreTarget(99, 100, 100)).toBe(true);
     expect(crossedScoreTarget(100, 120, 100)).toBe(false);
     expect(crossedScoreTarget(99, 99.9, 100)).toBe(false);
-    expect(scoreTypewriterTier(60, 60)).toBe(0);
+    expect(scoreTypewriterTier(60, 60)).toBe(1);
   });
 
   it('holds the pre-word total until settle activation and completion', () => {
@@ -203,8 +214,8 @@ describe('Score Typewriter strength', () => {
           .toBe(false);
       }
     }
-    expect(BALANCE.scoreTypewriter.visualKeyCounts).toEqual([0, 3, 5, 8, 12, 16]);
-    expect(BALANCE.scoreTypewriter.audibleKeyCounts).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(BALANCE.scoreTypewriter.visualKeyCounts).toEqual([0, 3, 5, 8, 12, 16, 20]);
+    expect(BALANCE.scoreTypewriter.audibleKeyCounts).toEqual([0, 1, 2, 3, 4, 5, 6]);
     const sequence = scoreTypewriterKeySequence('settle-42', 16);
     expect(scoreTypewriterKeySequence('settle-42', 16)).toEqual(sequence);
     expect(new Set(sequence).size).toBe(16);
@@ -239,7 +250,7 @@ describe('Score Typewriter strength', () => {
   });
 
   it('uses deterministic uneven gaps and finishes every key inside its score beat', () => {
-    const tiers: ScoreTypewriterTier[] = [1, 2, 3, 4, 5];
+    const tiers: ScoreTypewriterTier[] = [1, 2, 3, 4, 5, 6];
     for (const speed of [1, 2]) {
       for (const tier of tiers) {
         const count = BALANCE.scoreTypewriter.visualKeyCounts[tier];
@@ -261,18 +272,18 @@ describe('Score Typewriter strength', () => {
         )).toEqual(timings);
       }
     }
-    const tierFive = Array.from(
-      { length: BALANCE.scoreTypewriter.visualKeyCounts[5] },
+    const tierSix = Array.from(
+      { length: BALANCE.scoreTypewriter.visualKeyCounts[6] },
       (_, index) => scoreTypewriterKeyTiming(
         'settle-42',
         1,
-        5,
+        6,
         index,
-        BALANCE.scoreTypewriter.visualKeyCounts[5],
+        BALANCE.scoreTypewriter.visualKeyCounts[6],
       ),
     );
-    const gaps = tierFive.slice(1).map((timing, index) =>
-      Number((timing.delayMs - tierFive[index]!.delayMs).toFixed(6)),
+    const gaps = tierSix.slice(1).map((timing, index) =>
+      Number((timing.delayMs - tierSix[index]!.delayMs).toFixed(6)),
     );
     expect(new Set(gaps).size).toBeGreaterThan(1);
     expect(BALANCE.scoreTypewriter.keyRhythmJitter).toBe(0.35);
@@ -280,7 +291,7 @@ describe('Score Typewriter strength', () => {
       (1 + BALANCE.scoreTypewriter.keyRhythmJitter) /
       (1 - BALANCE.scoreTypewriter.keyRhythmJitter),
     );
-    expect(BALANCE.scoreTypewriter.keyPressMs).toEqual([0, 96, 88, 76, 64, 56]);
+    expect(BALANCE.scoreTypewriter.keyPressMs).toEqual([0, 96, 88, 76, 64, 56, 48]);
   });
 
   it('normalizes screen shake and scales it monotonically by event tier', () => {
@@ -292,6 +303,7 @@ describe('Score Typewriter strength', () => {
     expect(scoreTypewriterShake(100, 3)).toBe(0.45);
     expect(scoreTypewriterShake(100, 4)).toBe(0.7);
     expect(scoreTypewriterShake(100, 5)).toBe(1);
-    expect(scoreTypewriterShake(200, 5)).toBe(1);
+    expect(scoreTypewriterShake(100, 6)).toBe(1);
+    expect(scoreTypewriterShake(200, 6)).toBe(1);
   });
 });

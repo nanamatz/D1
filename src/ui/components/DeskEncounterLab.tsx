@@ -9,7 +9,7 @@ type LabTab = 'score' | 'encounters';
 type PreviewTier = Exclude<ScoreTypewriterTier, 0>;
 type PreviewSpeed = 1 | 2;
 
-const PREVIEW_TIERS: readonly PreviewTier[] = [1, 2, 3, 4, 5];
+const PREVIEW_TIERS: readonly PreviewTier[] = [1, 2, 3, 4, 5, 6];
 const PREVIEW_SPEEDS: readonly PreviewSpeed[] = [1, 2];
 const LAB_TABS: readonly LabTab[] = ['score', 'encounters'];
 const TARGET_CUE_TARGET = 100;

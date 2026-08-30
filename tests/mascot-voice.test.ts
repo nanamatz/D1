@@ -263,6 +263,26 @@ const ALIEN_LEXICON: Record<string, string> = {
   "zin'ka": 'twin', "zk'tha": 'joy', "zor'ga": 'hard/stiff',
 };
 
+/** One fixed Korean orthography for the same alien tokens; do not improvise spellings. */
+const KO_ALIEN_LEXICON: Record<string, string> = {
+  "an'ka": "안'카", ao: '아오', "ar'ti": "아르'티", blin: '블린',
+  "bou'nak": "부'낙", "chap'ta": "챕'타", chi: '치', "del'vo": "델'보",
+  "do'gan": "도'간", "em'ji": "엠'지", "fa'zen": "파'젠", "flu'sha": "플루'샤",
+  "fon'ta": "폰'타", "glo'ba": "글로'바", "gru'vak": "그루'바크", "hol'na": "홀'나",
+  "il'ma": "일'마", "ka'lith": "카'리스", "ka'shen": "카'셨", "kel'dan": "켈'단",
+  "kon'su": "콘'수", "kre'sha": "크레'샤", "ku'ren": "쿠'렌", "lo'ren": "로'렌",
+  "ma'run": "마'룬", "mi'ren": "미'렌", "mor'ka": "모르'카",
+  mul: '물', "nak'ta": "낙'타", "ne'sha": "네'샤", nu: '누',
+  "nu'kha": "누'카", "nu'ven": "누'벤", "ol'dan": "올'단", ollu: '올루',
+  "pa'tarn": "파'타른", "pen'ta": "펜'타", "qa'shi": "카'시",
+  "re'rol": "레'롤", reth: '레스', "se'la": "세'라", "sen'tal": "센'탈",
+  shen: '셨', "shi'mela": "시'멜라", "ta'wen": "타'웬", thal: '탈',
+  tolun: '톨룬', "tor'un": "토르'운", "tri'un": "트리'운", "u'nizn": "우'니즌",
+  unn: '운', vai: '바이', "vau'cha": "바우'차", vell: '벨',
+  "vok'tu": "보크'투", vor: '보르', "vor'nak": "보르'낙", "zar'ka": "자르'카",
+  "zin'ka": "진'카", "zk'tha": "즈크'타", "zor'ga": "조르'가",
+};
+
 /** Strip richtext markup, params and punctuation; return lowercase word tokens.
  *  Order matters: `{n}` and `[c:` must go before the generic punctuation strip, and
  *  the apostrophe is deliberately NOT stripped — it is part of every alien token. */
@@ -277,9 +297,36 @@ function alienTokens(s: string): string[] {
 }
 
 describe('이고지 (alien) speech', () => {
-  it('is byte-identical between ko and en', () => {
+  it('uses a distinct Hangul alien rendering for every Korean line', () => {
     for (const line of WOODAK_LINES) {
-      expect(KO[`voice.alien.${line}`], `alien ${line}`).toBe(EN[`voice.alien.${line}`]);
+      const english = EN[`voice.alien.${line}`]!;
+      const korean = KO[`voice.alien.${line}`]!;
+      expect(korean, `alien ${line}`).not.toBe(english);
+      const visible = korean
+        .replace(/\[[a-z]:/g, '[')
+        .replace(/\{[a-z]+\}/gi, '');
+      expect(visible, `ko alien ${line}`).not.toMatch(/[A-Za-z]/);
+    }
+  });
+
+  it('preserves marker kinds and placeholders across languages', () => {
+    const markers = (copy: string) => [...copy.matchAll(/\[([a-z]):/g)].map((match) => match[1]);
+    const placeholders = (copy: string) => copy.match(/\{[a-z]+\}/gi) ?? [];
+    for (const line of WOODAK_LINES) {
+      const english = EN[`voice.alien.${line}`]!;
+      const korean = KO[`voice.alien.${line}`]!;
+      expect(markers(korean), `markers ${line}`).toEqual(markers(english));
+      expect(placeholders(korean), `placeholders ${line}`).toEqual(placeholders(english));
+    }
+  });
+
+  it('uses the fixed Korean orthography for the approved English lexicon', () => {
+    expect(Object.keys(KO_ALIEN_LEXICON).sort()).toEqual(Object.keys(ALIEN_LEXICON).sort());
+    for (const line of WOODAK_LINES) {
+      const englishTokens = alienTokens(EN[`voice.alien.${line}`]!);
+      expect(alienTokens(KO[`voice.alien.${line}`]!), `ko alien ${line}`).toEqual(
+        englishTokens.map((token) => KO_ALIEN_LEXICON[token]),
+      );
     }
   });
 

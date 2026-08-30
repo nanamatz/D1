@@ -36,8 +36,13 @@ describe('shared consumable tooltip copy', () => {
   });
 
   it('derives font sub-tooltips from any effect description that names a font', () => {
-    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
-      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    const translate = (dict: Record<string, string>) => (
+      key: string | string[],
+      params?: Record<string, string | number>,
+    ) => Object.entries(params ?? {}).reduce(
+      (copy, [name, value]) => copy.replaceAll(`{${name}}`, String(value)),
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key),
+    );
     const koT = translate(ko);
     const enT = translate(en);
 
@@ -56,8 +61,13 @@ describe('shared consumable tooltip copy', () => {
   });
 
   it('derives every named material tooltip without matching Korean substrings', () => {
-    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
-      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    const translate = (dict: Record<string, string>) => (
+      key: string | string[],
+      params?: Record<string, string | number>,
+    ) => Object.entries(params ?? {}).reduce(
+      (copy, [name, value]) => copy.replaceAll(`{${name}}`, String(value)),
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key),
+    );
     const enT = translate(en);
     const koT = translate(ko);
 
@@ -65,7 +75,9 @@ describe('shared consumable tooltip copy', () => {
       title: en['material.leadPlate'], body: en['materialdesc.leadPlate'], kind: 'material',
     }]);
     expect(referencedMaterialTips(ko['jokerdesc.woodblockPress'], koT)).toEqual([{
-      title: ko['material.wood'], body: ko['materialdesc.wood'], kind: 'material',
+      title: ko['material.wood'],
+      body: '현재 [c:+15 칩] · 이 타일을 플레이할 때마다 [c:+10 칩]',
+      kind: 'material',
     }]);
     expect(referencedMaterialTips(ko['jokerdesc.ceramicArtisan'], koT)).toEqual([]);
     expect(consumableAxisTip('fable7', enT)).toEqual({

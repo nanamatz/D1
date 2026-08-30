@@ -62,7 +62,9 @@ legibility, explicitly. The trade-off is acceptable because the Collection (도�
 independently carries the same information (`materialdesc.*`, `fontdesc.*`,
 `bossdesc.*`, `voucherdesc.*`, `packdesc.*`), so nothing is permanently lost, and
 because selecting 이고지 is a deliberate opt-in the player can reverse in
-Collection → Mascots at any time.
+Collection → Mascots at any time. The lexicon remains shared, but its written
+form is locale-specific: Romanized alien in English and fixed Hangul alien
+transliterations in Korean (changed 2026-08-31).
 
 ## Part A — Character names (item 3)
 
@@ -87,7 +89,7 @@ other three romanised names (WooDak / Nurungi / Egoya / Egoji).
 | **삐약** Piyak | Shop proprietor. Unchanged. Fixed role, never re-skinned. | `~다냥`, sly merchant |
 | **누렁이** Nurungi | Loyal dog. Addresses the player as **주인님**. Short declaratives, unconditional encouragement even on a loss. | `~다멍!` |
 | **이고야** Egoya | Tricky, mischievous ghost. Informal speech (반말), teases and needles, trails off. Delivers the information but wrapped in a jab or a riddle. | `~지롱`, `~시지~`, `…` |
-| **이고지** Egoji | Alien. **Alien speech only, no subtitle.** Uses a consistent alien lexicon so the lines read as a real language rather than noise. | Language-neutral |
+| **이고지** Egoji | Alien. **Alien speech only, no subtitle.** Uses a consistent alien lexicon so the lines read as a real language rather than noise. | Same lexicon; Roman EN / Hangul KO |
 | **느무보** Nemubo | Crisp scholar. Formal 격식체, cites exact figures and terms, no filler. | `~습니다` |
 
 ### Approved tone samples
@@ -97,7 +99,8 @@ other three romanised names (WooDak / Nurungi / Egoya / Egoji).
 우땅   축하한다우땅! 원고가 드디어 책이 됐다우땅.
 누렁이  해냈다멍! 주인님이 해낼 줄 알았다멍! 꼬리가 멈추질 않는다멍!
 이고야  어라, 진짜 끝냈네? 시시하게시리~ …아니 뭐, 잘했어. 조금은.
-이고지  Qa'shi tolun! Vor'nak mi'ren — zk'tha, zk'tha!
+이고지 EN  Vor'nak! Tolun mi'ren — do'gan thal. Zk'tha, zk'tha!
+이고지 KO  보르'낙! 톨룬 미'렌 — 도'간 탈. 즈크'타, 즈크'타!
 느무보  완료되었습니다. 원고가 서적의 형태를 갖추었군요. 통계적으로 드문 결과입니다.
 ```
 
@@ -106,7 +109,8 @@ other three romanised names (WooDak / Nurungi / Egoya / Egoji).
 우땅   리롤을 한 번도 안 썼다우땅. 좋은 이모지는 기다려 주지 않는다우땅.
 누렁이  주인님, 리롤을 한 번도 안 썼다멍. 마음에 안 들면 말만 하라멍, 다시 물어 오겠다멍!
 이고야  리롤 한 번도 안 썼지롱~ 겁쟁이. 상점 물건이 그렇게 무섭던가?
-이고지  Mi'ren re'rol nu'kha. Vor'shi tolun kel'dan?
+이고지 EN  Mi'ren re'rol nu'kha Mor'ka tolun vok'tu — shi'mela
+이고지 KO  미'렌 레'롤 누'카 모르'카 톨룬 보크'투 — 시'멜라
 느무보  리롤 사용 0회로 기록되었습니다. 상점 재고는 확률 분포이지 운명이 아닙니다.
 ```
 
@@ -116,7 +120,8 @@ other three romanised names (WooDak / Nurungi / Egoya / Egoji).
 누렁이  $5마다 $1이 붙는다멍! 주인님 지갑은 제가 지키겠다멍!
 이고야  $5마다 $1… 계산도 안 해봤지? 알려줘도 안 쓸 거면서~
 느무보  이자는 보유금 $5당 $1입니다. 복리는 아니며, 블라인드 종료 시마다 정산됩니다.
-이고지  Kel'dan pen'ta — kel'dan unn. Vor'nak shi'mela.
+이고지 EN  Kel'dan pen'ta — kel'dan unn Vor'nak shi'mela
+이고지 KO  켈'단 펜'타 — 켈'단 운 보르'낙 시'멜라
 ```
 
 ### 이고지 alien lexicon
@@ -125,17 +130,49 @@ A fixed glossary is what makes the speech read as *"의미는 있는 말"*. Ever
 line MUST be built from it; do not invent a new token for a concept that already
 has one. Extend the table (in this spec) if a new concept is needed.
 
-| token | meaning | token | meaning |
-|---|---|---|---|
-| `mi'ren` | you / the player | `vor` | and / then |
-| `tolun` | word / manuscript | `nu'kha` | none / did not |
-| `qa'shi` | score | `shi'mela` | good / recommended |
-| `kel'dan` | money | `zk'tha` | joy / attention |
-| `vor'nak` | it is done / achieved | `pen'ta` | five |
-| `unn` | one | `re'rol` | reroll (loan word) |
+The complete fixed orthography is below. Each Roman token maps to exactly one
+Hangul token; changing or adding a token requires updating this table, both
+locale rows, and the paired lexicon tests in the same change.
 
-Because 이고지 is language-neutral, its `ko` and `en` strings are **identical**,
-so it costs one set rather than two.
+| Roman | Hangul | Roman | Hangul |
+|---|---|---|---|
+| `an'ka` | `안'카` | `ao` | `아오` |
+| `ar'ti` | `아르'티` | `blin` | `블린` |
+| `bou'nak` | `부'낙` | `chap'ta` | `챕'타` |
+| `chi` | `치` | `del'vo` | `델'보` |
+| `do'gan` | `도'간` | `em'ji` | `엠'지` |
+| `fa'zen` | `파'젠` | `flu'sha` | `플루'샤` |
+| `fon'ta` | `폰'타` | `glo'ba` | `글로'바` |
+| `gru'vak` | `그루'바크` | `hol'na` | `홀'나` |
+| `il'ma` | `일'마` | `ka'lith` | `카'리스` |
+| `ka'shen` | `카'셨` | `kel'dan` | `켈'단` |
+| `kon'su` | `콘'수` | `kre'sha` | `크레'샤` |
+| `ku'ren` | `쿠'렌` | `lo'ren` | `로'렌` |
+| `ma'run` | `마'룬` | `mi'ren` | `미'렌` |
+| `mor'ka` | `모르'카` | `mul` | `물` |
+| `nak'ta` | `낙'타` | `ne'sha` | `네'샤` |
+| `nu` | `누` | `nu'kha` | `누'카` |
+| `nu'ven` | `누'벤` | `ol'dan` | `올'단` |
+| `ollu` | `올루` | `pa'tarn` | `파'타른` |
+| `pen'ta` | `펜'타` | `qa'shi` | `카'시` |
+| `re'rol` | `레'롤` | `reth` | `레스` |
+| `se'la` | `세'라` | `sen'tal` | `센'탈` |
+| `shen` | `셨` | `shi'mela` | `시'멜라` |
+| `ta'wen` | `타'웬` | `thal` | `탈` |
+| `tolun` | `톨룬` | `tor'un` | `토르'운` |
+| `tri'un` | `트리'운` | `u'nizn` | `우'니즌` |
+| `unn` | `운` | `vai` | `바이` |
+| `vau'cha` | `바우'차` | `vell` | `벨` |
+| `vok'tu` | `보크'투` | `vor` | `보르` |
+| `vor'nak` | `보르'낙` | `zar'ka` | `자르'카` |
+| `zin'ka` | `진'카` | `zk'tha` | `즈크'타` |
+| `zor'ga` | `조르'가` | — | — |
+
+The semantic lexicon and token order are language-neutral, but the approved
+orthography is not: `en` uses the Roman tokens above and `ko` uses one fixed
+Hangul transliteration per token. Marker kinds and placeholders remain aligned;
+marker payloads are localized too (`[c:chi]` → `[c:치]`). There is still no
+subtitle or ordinary-language translation.
 
 ### Line inventory
 
@@ -143,17 +180,17 @@ so it costs one set rather than two.
 
 | group | count | ids |
 |---|---|---|
-| run-end | 2 | `won`, `discovery` |
+| run-end | 3 | `unlocked`, `won`, `discovery` |
 | run-end tips | 8 | `tip.reroll`, `tip.discard`, `tip.shop`, `tip.0`…`tip.4` |
-| encounters | 13 | `enc.<id>`, one per WooDak encounter below |
+| encounters | 12 | `enc.<id>`, one per WooDak encounter below |
 
 WooDak encounter ids (`src/ui/tutorial.ts` `ENCOUNTERS`, `mascot: 'woodak'`):
 `firstGibberish`, `firstLetterHand`, `firstPattern`, `firstUnison`,
-`firstMaterial`, `firstFont`, `firstJoker`, `firstConsumable`, `firstVoucher`,
-`firstPack`, `magnifier`, `pouchHover`, `firstBoss`. (`shopFirstVisit` is the
-14th encounter and belongs to Piyak, not to this set.)
+`firstRegisterSynergy`, `firstMaterial`, `firstFont`, `firstJoker`,
+`firstConsumable`, `firstVoucher`, `pouchHover`, `firstBoss`. (`shopFirstVisit`
+is the remaining encounter and belongs to Piyak, not to this set.)
 
-Writing budget: 23 × 3 mascots × 2 languages + 23 × 1 (이고지) = **161 strings**.
+Writing budget: 23 × 4 mascots × 2 languages = **184 strings**.
 
 Two line sets are deliberately **out of scope**:
 
@@ -229,7 +266,7 @@ tutorial.<id>.title           ← stays (a term, not dialogue)
 intro.step.*                  ← stays (first-run WooDak, unreachable by skins)
 
 new: voice.{dog,ghost,alien,turtle}.{won,discovery,tip.*,enc.*}   23 lines each
-     (alien's ko and en strings are identical)
+     (alien shares one lexicon but uses Roman EN and fixed Hangul KO orthography)
 ```
 
 `WooDakMascot.pickLine` currently returns full keys (`'woodak.tip.reroll'`); it
@@ -253,7 +290,7 @@ where space is tight. Engine identifiers are untouched.
 | `tutorial.firstJoker.title` | Joker → **Emoji Tile** | 조커 → **이모지 타일** |
 
 In-body mentions to rewrite while re-voicing: `voice.woodak.enc.firstJoker`,
-`voice.woodak.enc.firstPack`, `voice.woodak.tip.reroll`,
+`voice.woodak.tip.reroll`,
 `voice.piyak.enc.shopFirstVisit`, `voice.piyak.welcome.3`.
 
 `pack.type.joker` ("부적 팩" / "Charm Pack") is **unchanged** — it never surfaces
@@ -277,7 +314,8 @@ Per the spec-conflict protocol, the docs land with the code.
     (`src/ui/mascots.ts`) — **never write a `voice.*` locale key at a call site**.
     Adding a mascot voice = adding `voice.<skin>.*` rows, and a missing line falls
     back to WooDak's. 이고지 (alien) speaks untranslated alien only, from the fixed
-    lexicon in the 2026-07-23 spec; its ko and en strings are identical."*
+    lexicon in the 2026-07-23 spec; English uses Romanized tokens and Korean uses
+    fixed Hangul transliterations, with no subtitle."*
 
 ## Testing
 
@@ -288,14 +326,14 @@ Per the spec-conflict protocol, the docs land with the code.
 2. **Fallback** — `voicedKeys('won')` for a non-default skin returns the skin key
    first and `voice.woodak.won` second; `t()` on a chain whose first key is absent
    returns the second key's string, not the raw key.
-3. **Alien neutrality** — every `voice.alien.*` string is byte-identical between
-   `ko.json` and `en.json`.
-4. **Alien lexicon** — every whitespace/punctuation-separated token in
-   `voice.alien.*` (excluding `{param}` placeholders and digits/`$`) appears in the
-   approved glossary. This is what keeps the language self-consistent as lines are
-   added.
+3. **Alien orthography** — all 23 Korean `voice.alien.*` strings differ from
+   English, contain no ASCII letters after control markup/placeholders are removed,
+   and use only the approved fixed Hangul transliteration for each English token.
+4. **Alien structure + lexicon** — marker kinds and placeholders match between
+   locales; every English token appears in the approved glossary and the fallback
+   chain remains unchanged. This keeps the language self-consistent as lines are added.
 5. **No orphans** — the set of `voice.*` line ids in the locales equals the set the
-   code can request: `won`, `discovery`, `tip.reroll|discard|shop|0..4`, and
+   code can request: `unlocked`, `won`, `discovery`, `tip.reroll|discard|shop|0..4`, and
    `enc.<id>` for exactly the ids in `ENCOUNTERS` with the matching `mascot` role.
 6. **Migration completeness** — none of the retired keys (`woodak.*`,
    `mascot.welcome.*`, `tutorial.*.body`) remain in either locale file.

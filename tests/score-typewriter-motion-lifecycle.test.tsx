@@ -174,11 +174,11 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     const active = renderUntilStable({
       ...common,
       active: true,
-      tier: 5,
+      tier: 6,
       beatId: 'score-7-15',
       holdActive: false,
     } as Props);
-    expect(active.props.className).toContain('typewriter-tier-5');
+    expect(active.props.className).toContain('typewriter-tier-6');
     expect(active.props.className).toContain('is-active');
     const repeating = renderUntilStable({
       ...common,
@@ -188,7 +188,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       holdActive: true,
     } as Props);
     expect(repeating.props.className).toContain('is-clear-cycle');
-    expect(repeating.props.className).toContain('typewriter-tier-5');
+    expect(repeating.props.className).toContain('typewriter-tier-6');
     expect(repeating.props.className).toContain('is-active');
     expect(query.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
     expect(vi.getTimerCount()).toBeGreaterThan(0);
@@ -206,7 +206,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     expect(reduced.props.className).toContain('is-clear-held');
     expect(reduced.props.className).toContain('is-reduced');
     expect(reduced.props.className).not.toContain('is-clear-cycle');
-    expect(reduced.props['data-tier']).toBe(5);
+    expect(reduced.props['data-tier']).toBe(6);
     expect(vi.getTimerCount()).toBe(0);
 
     vi.advanceTimersByTime(10_000);

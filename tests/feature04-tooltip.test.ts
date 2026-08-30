@@ -12,6 +12,8 @@ import {
   supplementalTooltipWidth,
 } from '../src/ui/components/Tooltip';
 import type { Tile } from '../src/engine/types';
+import en from '../locales/en.json';
+import ko from '../locales/ko.json';
 
 // key-echo translator: returns the key itself (params ignored) so assertions can
 // check precisely which locale keys the tooltip composes.
@@ -88,6 +90,20 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
     expect(tileTooltip(stone, t).title).toBe('material.stone');
     expect(tileTooltip(stone, (key, params) => `${key}:${params?.n}`).body)
       .toBe('tile.chips:50');
+  });
+
+  it('shows the live Wood Chips and falls back to the base value', () => {
+    const translate = (dict: Record<string, string>) => (
+      key: string,
+      params?: Record<string, string | number>,
+    ) => Object.entries(params ?? {}).reduce(
+      (copy, [name, value]) => copy.replaceAll(`{${name}}`, String(value)),
+      dict[key] ?? key,
+    );
+    expect(tileTooltip(tile({ material: 'wood' }), translate(en)).sub[0]?.body)
+      .toBe('Currently [c:+15 Chips] · Gains [c:+10 Chips] each time this tile is played');
+    expect(tileTooltip(tile({ material: 'wood', woodBonusChips: 35 }), translate(ko)).sub[0]?.body)
+      .toBe('현재 [c:+35 칩] · 이 타일을 플레이할 때마다 [c:+10 칩]');
   });
 
   it('an Emoji Tile tooltip names its edition and effect', () => {

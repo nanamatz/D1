@@ -34,6 +34,7 @@ import {
   fontDescKey,
   grownValue,
   jokerDescKey,
+  materialDescription,
 } from '../descriptions';
 import { useI18n } from '../i18n';
 import { packGalleryPages } from '../packArt';
@@ -592,7 +593,7 @@ function MaterialsView() {
   return (
     <div className="swatch-grid">
       {MATERIALS.map((m) => (
-        <Tooltip key={m} title={t(`material.${m}`)} body={t(`materialdesc.${m}`)} down>
+        <Tooltip key={m} title={t(`material.${m}`)} body={materialDescription(m, t)} down>
           <div className="swatch">
             <TileView tile={sampleTile({ material: m })} />
             <span className="sw-name">{t(`material.${m}`)}</span>

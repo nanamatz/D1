@@ -1031,7 +1031,7 @@
   "materialdesc.leadPlate": "[n:1] in [n:5] chance of [m:+20 Mult], [n:1] in [n:5] chance of [$:+$20]",
   "materialdesc.ivory": "[$:+$3] if held in hand at [b:blind] end",
   "materialdesc.brass": "While held, [m:×1.5 the current total Mult] after Emoji Tile effects",
-  "materialdesc.wood": "Starts at [c:+15 Chips]; gains [c:+10 Chips] each time this tile is played this run",
+  "materialdesc.wood": "Currently [c:+{value} Chips] · Gains [c:+{growth} Chips] each time this tile is played",
   "fontdesc.medium": "Base font — no extra effect",
   "fonteffectdesc.goldPlay": "[$:+$3]",
   "fonteffectdesc.chipPlay": "[c:+30 Chips]",

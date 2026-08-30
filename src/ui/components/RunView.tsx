@@ -300,6 +300,9 @@ export function RunView({ g, onExit, onNewRun }: Props) {
         submission={lastSubmission}
         heldTiles={blind.hand}
         target={blind.target}
+        sentenceAssist={blind.previewHidden
+          ? 0
+          : Math.max(0, blind.projectedScore - blind.committedScore)}
         settleId={g.state.settleId}
         speed={settings.gameSpeed}
         screenShake={settings.screenshake}

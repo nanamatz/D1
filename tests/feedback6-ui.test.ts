@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import en from '../locales/en.json';
+import ko from '../locales/ko.json';
+import { resolve } from '../src/ui/i18n';
 
 const source = (path: string) => readFileSync(path, 'utf8');
 
@@ -38,9 +41,31 @@ describe('latest feedback UI regressions', () => {
   });
 
   it('renders boss-description highlight markup on every plain-text surface', () => {
-    for (const component of ['BlindSelect', 'BossIntro', 'RunInfo', 'Sidebar']) {
+    for (const component of ['BlindSelect', 'BossIntro', 'RunInfo']) {
       const content = source(`src/ui/components/${component}.tsx`);
       expect(content, component).toMatch(/richText\(t\((?:bossDescKey|`bossdesc\.)/);
+    }
+    const sidebar = source('src/ui/components/Sidebar.tsx');
+    expect(sidebar).toContain('richText(bossDescription)');
+  });
+
+  it('anchors the current Deadline boss description tooltip to a focusable emblem', () => {
+    const sidebar = source('src/ui/components/Sidebar.tsx');
+    expect(sidebar).toContain('const bossEmblemRef = useRef<HTMLDivElement>(null)');
+    expect(sidebar).toContain('body={bossDescription}');
+    expect(sidebar).toContain('anchorRef={bossEmblemRef}');
+    expect(sidebar).toContain("tabIndex={boss ? 0 : undefined}");
+    expect(sidebar).toContain("letter: blind.deadLetter ?? '—'");
+    expect(sidebar).toContain('aria-label={boss ? bossName : undefined}');
+    expect(sidebar).not.toContain('stripRichText');
+  });
+
+  it('interpolates the current Dead Letter in both localized boss tooltips', () => {
+    const dicts = { en, ko };
+    for (const lang of ['en', 'ko'] as const) {
+      const description = resolve(dicts, lang, 'bossdesc.deadLetter', { letter: 'Q' });
+      expect(description).toContain('Q');
+      expect(description).not.toContain('{letter}');
     }
   });
 

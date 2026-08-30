@@ -113,7 +113,7 @@ describe('reduced Score Typewriter fold', () => {
       chips: 40,
       mult: 1,
       flatScore: 0,
-      tier: 4,
+      tier: 6,
       delta: 10,
       primaryKeyId: 'KeyA',
     });
@@ -140,6 +140,17 @@ describe('reduced Score Typewriter fold', () => {
       },
       { kind: 'boss', bossId: 'wanted', chipsDelta: 0, multDelta: 0 },
     ], 5).tier).toBe(0);
+    expect(foldScoreTypewriterEvents([
+      { kind: 'joker', jokerId: 'gold', chipsDelta: 0, multDelta: 0, goldDelta: 5 },
+    ], 5, [], 500).tier).toBe(0);
+  });
+
+  it('folds the same sentence assist into reduced-motion score tiers', () => {
+    const assisted = foldScoreTypewriterEvents([
+      { kind: 'suit', suit: 'standard', mult: 1 },
+      { kind: 'tile', tileId: 'a', letter: 'A', chips: 90 },
+    ], 800, [], 770);
+    expect(assisted.tier).toBe(1);
   });
 
   it('resolves frozen held-tile ids for Brass and tile-bound Emoji beats', () => {

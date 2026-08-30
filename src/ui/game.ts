@@ -9,7 +9,7 @@ import { BALANCE } from '../engine/balance';
 import { BOSS_REGISTRY } from '../engine/bosses';
 import { isSubmissionDebuffed, prepareWordSubmission } from '../engine/loop';
 import { isVowel, submissionLength } from '../engine/types';
-import { fontDescKey } from './descriptions';
+import { fontDescKey, materialDescription } from './descriptions';
 import type { Lexicon } from '../engine/lexicon';
 import type {
   BlindState,
@@ -154,7 +154,15 @@ export function tileTooltip(tile: Tile, t: TFull) {
   if (tile.material !== 'ceramic') {
     const title = t(`material.${tile.material}`);
     tags.push({ label: title, tone: 'material' });
-    sub.push({ title, body: t(`materialdesc.${tile.material}`), kind: 'material' });
+    sub.push({
+      title,
+      body: materialDescription(
+        tile.material,
+        t,
+        tile.woodBonusChips ?? BALANCE.materials.wood.baseChips,
+      ),
+      kind: 'material',
+    });
   }
   if (tile.font !== 'medium') {
     // fonteffectdesc is keyed by EFFECT, resolved through the balance mapping.

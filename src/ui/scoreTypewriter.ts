@@ -1,7 +1,7 @@
 import { BALANCE } from '../engine/balance';
 import type { ScoreEvent } from '../engine/types';
 
-export type ScoreTypewriterTier = 0 | 1 | 2 | 3 | 4 | 5;
+export type ScoreTypewriterTier = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type KeyboardKeyRole = 'main' | 'function' | 'nav' | 'numpad';
 
@@ -220,34 +220,45 @@ export function scoreEventFlatDelta(event: ScoreEvent): number {
   return event.kind === 'joker' || event.kind === 'tag' ? (event.scoreDelta ?? 0) : 0;
 }
 
-/** Classify one current-submission local score against the positive blind target. */
+/** Classify a positive sentence-assisted submission score against the blind target. */
 export function scoreTypewriterTier(
   settledScore: number,
   target: number,
 ): ScoreTypewriterTier {
-  if (!Number.isFinite(settledScore) || !Number.isFinite(target) || target <= 0 || settledScore <= target) {
+  if (!Number.isFinite(settledScore) || !Number.isFinite(target) || target <= 0 || settledScore <= 0) {
     return 0;
   }
   const ratio = settledScore / target;
-  const [fast, frenzy, overdrive, meltdown] = BALANCE.scoreTypewriter.ratioThresholds;
-  if (ratio < fast) return 1;
-  if (ratio < frenzy) return 2;
-  if (ratio < overdrive) return 3;
-  if (ratio < meltdown) return 4;
-  return 5;
+  const [tier1, tier2, tier3, tier4, tier5, tier6] = BALANCE.scoreTypewriter.ratioThresholds;
+  if (ratio < tier1) return 0;
+  if (ratio < tier2) return 1;
+  if (ratio < tier3) return 2;
+  if (ratio < tier4) return 3;
+  if (ratio < tier5) return 4;
+  if (ratio < tier6) return 5;
+  return 6;
 }
 
-/** Raise, but never lower, the presented tier after a local score increase. */
+/** Raise, but never lower, the tier after a local increase; assist alone cannot activate it. */
 export function scoreTypewriterPeakTier(
   previous: ScoreTypewriterTier,
   beforeLocal: number,
   afterLocal: number,
   target: number,
+  sentenceAssist = 0,
 ): ScoreTypewriterTier {
-  if (!Number.isFinite(beforeLocal) || !Number.isFinite(afterLocal) || afterLocal <= beforeLocal) {
+  if (
+    !Number.isFinite(beforeLocal)
+    || !Number.isFinite(afterLocal)
+    || !Number.isFinite(sentenceAssist)
+    || afterLocal <= beforeLocal
+  ) {
     return previous;
   }
-  return Math.max(previous, scoreTypewriterTier(Math.max(0, afterLocal), target)) as ScoreTypewriterTier;
+  return Math.max(
+    previous,
+    scoreTypewriterTier(Math.max(0, afterLocal) + Math.max(0, sentenceAssist), target),
+  ) as ScoreTypewriterTier;
 }
 
 /** UI-only clear lifecycle: keep the submission peak until resolution leaves play. */

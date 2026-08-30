@@ -302,7 +302,11 @@ describe('Score Keyboard presentation contract', () => {
     expect(sidebar).toContain('gameSpeed={settle.typewriterBeat?.speed ?? settle.settleSpeed}');
     expect(sidebar).toContain('reducedMotion={reducedMotion || settle.settleReduced}');
     expect(runView).toContain('target={blind.target}');
+    expect(runView).toContain('sentenceAssist={blind.previewHidden');
+    expect(runView).toContain('Math.max(0, blind.projectedScore - blind.committedScore)');
     expect(runView).toContain('heldTiles={blind.hand}');
+    expect(settle).toContain('const sentenceAssistSnapshotRef = useRef({ settleId, value: sentenceAssist })');
+    expect(settle).toContain('typewriterSentenceAssist');
     expect(runView).toContain(
       "resolutionActive={phase === 'playing' && g.state.pendingEnd && blind.projectedScore >= blind.target}",
     );
@@ -341,13 +345,15 @@ describe('Score Keyboard presentation contract', () => {
     );
   });
 
-  it('adds smoke at Tier 4 and keeps flame and POP local to Tier 5', () => {
+  it('adds smoke at Tier 4 and reuses flame and POP for Tiers 5–6', () => {
     expect(sidebar).not.toContain('burning');
     expect(css).not.toContain('.scorebox.burning');
     expect(css).not.toContain('--flame');
     expect(css).toContain('.typewriter-tier-4.is-active .typewriter-smoke');
     expect(css).toContain('.typewriter-tier-5.is-active .typewriter-flame');
+    expect(css).toContain('.typewriter-tier-6.is-active .typewriter-flame');
     expect(css).toContain('.typewriter-tier-5.is-active .typewriter-pop');
+    expect(css).toContain('.typewriter-tier-6.is-active .typewriter-pop');
     for (const tier of [0, 1, 2, 3, 4]) {
       expect(css).not.toContain(`.typewriter-tier-${tier}.is-active .typewriter-flame`);
     }
@@ -437,6 +443,7 @@ describe('Score Keyboard presentation contract', () => {
       css.indexOf('.typewriter-tier-5.is-active .typewriter-flame'),
       css.indexOf('.score-typewriter-dock.is-clear-held'),
     );
+    expect(flameGate).toContain('.typewriter-tier-6.is-active .typewriter-flame');
     expect(flameGate).toContain('animation: typewriter-meltdown var(--typewriter-beat) steps(3, end) both');
     const flameFrames = css.slice(
       css.indexOf('@keyframes typewriter-meltdown'),
@@ -444,5 +451,6 @@ describe('Score Keyboard presentation contract', () => {
     );
     expect(flameFrames).toContain('0%, 35% { scale: .65; }');
     expect(flameFrames).toMatch(/100%\s*\{[^}]*opacity:\s*0/);
+    expect(css).toMatch(/\.typewriter-tier-6\.is-clear-held\s*\{[\s\S]*?--typewriter-ambient-low:\s*\.72;[\s\S]*?--typewriter-ambient-high:\s*\.92;[\s\S]*?--typewriter-ambient-glow:\s*18px;[\s\S]*?--typewriter-ambient-speed:\s*400ms;/);
   });
 });

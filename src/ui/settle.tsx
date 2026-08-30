@@ -492,6 +492,7 @@ export function foldScoreTypewriterEvents(
   events: readonly ScoreEvent[],
   target: number,
   tiles: readonly { id: string; letter: string | null }[] = [],
+  sentenceAssist = 0,
 ): ScoreTypewriterEventFold {
   let chips = 0;
   let mult = 0;
@@ -516,7 +517,7 @@ export function foldScoreTypewriterEvents(
     if (candidateDelta > 0) {
       const beforeLocal = Math.max(0, beforeChips * beforeMult + beforeFlatScore);
       const afterLocal = Math.max(0, chips * mult + flatScore);
-      tier = scoreTypewriterPeakTier(tier, beforeLocal, afterLocal, target);
+      tier = scoreTypewriterPeakTier(tier, beforeLocal, afterLocal, target, sentenceAssist);
       primaryKeyId = scoreTypewriterPrimaryKey(event, tiles);
       delta = candidateDelta;
     }
@@ -580,6 +581,7 @@ export function SettleProvider({
   submission,
   heldTiles,
   target,
+  sentenceAssist,
   settleId,
   speed,
   screenShake,
@@ -591,6 +593,7 @@ export function SettleProvider({
   submission: WordSubmission | null;
   heldTiles: readonly Tile[];
   target: number;
+  sentenceAssist: number;
   settleId: number;
   speed: number;
   screenShake: number;
@@ -610,6 +613,11 @@ export function SettleProvider({
     };
   }
   const typewriterTiles = typewriterTileSnapshotRef.current.tiles;
+  const sentenceAssistSnapshotRef = useRef({ settleId, value: sentenceAssist });
+  if (sentenceAssistSnapshotRef.current.settleId !== settleId) {
+    sentenceAssistSnapshotRef.current = { settleId, value: sentenceAssist };
+  }
+  const typewriterSentenceAssist = sentenceAssistSnapshotRef.current.value;
   // Latest onComplete, read from the timeline effect without retriggering it.
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -678,6 +686,7 @@ export function SettleProvider({
         beats,
         target,
         typewriterTiles,
+        typewriterSentenceAssist,
       );
       const pops: Record<string, number> = {};
       const destroyedTileIds = beats
@@ -801,6 +810,7 @@ export function SettleProvider({
               beforeLocal,
               afterLocal,
               target,
+              typewriterSentenceAssist,
             );
           }
           const typewriterTier = typewriterDelta > 0 ? typewriterTierPeak : 0;

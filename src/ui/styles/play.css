@@ -1871,7 +1871,8 @@
 .typewriter-smoke i:nth-child(2) { translate: 70% -90%; }
 .typewriter-smoke i:nth-child(3) { translate: -55% -155%; }
 .typewriter-tier-4.is-active .typewriter-smoke,
-.typewriter-tier-5.is-active .typewriter-smoke {
+.typewriter-tier-5.is-active .typewriter-smoke,
+.typewriter-tier-6.is-active .typewriter-smoke {
   opacity: 1;
   animation: typewriter-smoke var(--typewriter-beat) steps(4, end) both;
 }
@@ -1890,7 +1891,8 @@
 }
 .typewriter-flame-outer { fill: var(--score-flame-outer); stroke: none; }
 .typewriter-flame-core { fill: var(--score-flame-core); stroke: none; }
-.typewriter-tier-5.is-active .typewriter-flame {
+.typewriter-tier-5.is-active .typewriter-flame,
+.typewriter-tier-6.is-active .typewriter-flame {
   opacity: 1;
   animation: typewriter-meltdown var(--typewriter-beat) steps(3, end) both;
 }
@@ -1928,6 +1930,12 @@
   --typewriter-ambient-glow: 15px;
   --typewriter-ambient-speed: 460ms;
 }
+.typewriter-tier-6.is-clear-held {
+  --typewriter-ambient-low: .72;
+  --typewriter-ambient-high: .92;
+  --typewriter-ambient-glow: 18px;
+  --typewriter-ambient-speed: 400ms;
+}
 .typewriter-pop {
   position: absolute;
   z-index: 8;
@@ -1939,7 +1947,8 @@
   white-space: nowrap;
 }
 .typewriter-pop { left: 58%; top: 48%; }
-.typewriter-tier-5.is-active .typewriter-pop {
+.typewriter-tier-5.is-active .typewriter-pop,
+.typewriter-tier-6.is-active .typewriter-pop {
   animation: typewriter-label-hit var(--typewriter-beat) steps(4, end) both;
 }
 @keyframes typewriter-body-hit {

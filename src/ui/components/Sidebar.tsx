@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BlindState, LetterHandId, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { effectiveClearReward } from '../../engine/economy';
@@ -21,6 +21,7 @@ import { richText } from '../richtext';
 import { isLetterHandDiscovered } from '../lifetime';
 import { scoreTypewriterLiveTotal } from '../scoreTypewriter';
 import { ScoreTypewriter } from './ScoreTypewriter';
+import { bossDescKey } from '../descriptions';
 
 interface Props {
   run: RunState;
@@ -217,6 +218,11 @@ export function Sidebar({
   const chips = mode === 'blind' ? (bonusActive ? bonusChips : settle.active ? settle.chips : 0) : 0;
   const mult = mode === 'blind' ? (bonusActive ? bonusMult : settle.active ? settle.mult : 0) : 0;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
+  const bossEmblemRef = useRef<HTMLDivElement>(null);
+  const bossName = boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : '';
+  const bossDescription = boss
+    ? t(bossDescKey(boss.id), { letter: blind.deadLetter ?? '—' })
+    : '';
 
   // Live score is presentation-only: it drives the keyboard's separate one-shot
   // Enter target strike, never its strength tier or the committed round number.
@@ -285,7 +291,7 @@ export function Sidebar({
         <div className="kind">
           {mode === 'blind'
             ? boss
-              ? (lang === 'ko' ? boss.nameKo : boss.nameEn)
+              ? bossName
               : t(`blind.${blind.kind}`)
             : mode === 'shop'
               ? <span className="shop-sign-word">SHOP</span>
@@ -297,9 +303,7 @@ export function Sidebar({
         </div>
         <div className="bb-eff">
           {mode === 'blind' && boss && (
-            <span className="bosseff">{richText(t(`bossdesc.${boss.id}`, {
-              letter: blind.deadLetter ?? '—',
-            }))}</span>
+            <span className="bosseff">{richText(bossDescription)}</span>
           )}
         </div>
         {mode !== 'blind' ? (
@@ -317,11 +321,24 @@ export function Sidebar({
           {/* Pixel-art emblem: the boss art on a boss blind, else the Draft/Revision
               kind art (bossArt.ts). Falls back to the kind emoji if art is missing.
               The kind name still reads off the badge heading above. */}
-          <div className="bb-emblem">
+          <div
+            ref={bossEmblemRef}
+            className="bb-emblem"
+            role={boss ? 'img' : undefined}
+            tabIndex={boss ? 0 : undefined}
+            aria-label={boss ? bossName : undefined}
+          >
             {blindEmblem(blind.kind, blind.bossId) && (
               <img className="bb-art" src={blindEmblem(blind.kind, blind.bossId)} alt="" />
             )}
           </div>
+          {boss && (
+            <Tooltip
+              anchorRef={bossEmblemRef}
+              title={bossName}
+              body={bossDescription}
+            />
+          )}
           <div className="bb-stats">
             <div className="bs-target">
               <span className="tlabel">{t('sidebar.target')}:</span>

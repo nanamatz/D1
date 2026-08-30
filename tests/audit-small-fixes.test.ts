@@ -104,8 +104,6 @@ describe('locale completeness (COPY-03 / U-4)', () => {
       return (
         K[key] === source &&
         /[A-Za-z]{4}/.test(source) &&
-        // The alien mascot deliberately speaks the same non-language in both.
-        !key.startsWith('voice.alien.') &&
         // Pure interpolation formats carry no prose to translate.
         !/^\{[a-z]+\}/i.test(source)
       );

@@ -1,5 +1,12 @@
 # Mascot Voices & Emoji Tile Terminology Implementation Plan
 
+> **Superseded note (2026-08-31):** this is the historical execution plan for
+> the original 2026-07-23 delivery. Its former requirement that Egoji's Korean
+> and English alien strings match exactly is retired. The live rule is the
+> normative design spec linked below: one fixed alien lexicon, Romanized English,
+> fixed Hangul Korean transliterations, and no subtitle. The Task 8 examples and
+> tests below are annotated to reflect that newer decision.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give each WooDak skin its own written voice, name the ghost/alien mascots 이고야/이고지, and switch the player-facing term "Joker" to "Emoji Tile".
@@ -16,8 +23,8 @@
 - **Canonical display term:** **이모지 타일 / Emoji Tile**; short form **이모지 / Emoji** where space is tight.
 - **Mascot display names:** 우땅/WooDak, 삐약/Piyak, 누렁이/Nurungi, 이고야/**Egoya** (ghost), 이고지/**Egoji** (alien), 느무보/**Nemubo** (turtle). The turtle is 느무보, **not** 느무시.
 - **Skin ids never change:** `woodak | dog | ghost | alien | turtle`. The Palette trigger words stay `GHOST` / `ALIEN`.
-- **이고지 speaks untranslated alien only, with no subtitle,** built strictly from the approved lexicon, and its `ko` and `en` strings are byte-identical.
-- **Richtext markup is preserved** in every rewritten encounter body: `[c:…]` chips, `[m:…]` mult, `[b:…]` blind. Korean uses `[c:칩]`/`[m:배수]`/`[b:블라인드]`; English uses `[c:chips]`/`[m:mult]`/`[b:blind]`; alien uses `[c:chi]`/`[m:mul]`/`[b:blin]`.
+- **이고지 speaks untranslated alien only, with no subtitle,** built strictly from the approved lexicon. English uses Romanized tokens and Korean uses the fixed Hangul mapping in the normative spec (superseded 2026-08-31).
+- **Richtext markup is preserved** in every rewritten encounter body: `[c:…]` chips, `[m:…]` mult, `[b:…]` blind. Ordinary Korean uses `[c:칩]`/`[m:배수]`/`[b:블라인드]`; ordinary English uses `[c:chips]`/`[m:mult]`/`[b:blind]`; Egoji uses `[c:chi]`/`[m:mul]`/`[b:blin]` in English and `[c:치]`/`[m:물]`/`[b:블린]` in Korean.
 - **Locale JSON files are flat** — one `"key": "value"` per line, no nesting. Keep keys grouped with their neighbours and preserve the existing file ordering style.
 - **Out of scope:** any engine rename, `intro.step.*` re-voicing, per-mascot audio or typography, and bundles B–E of the batch.
 - Run tests with `npx vitest run <path>`. **Never** run a bare `npx vitest run` after a `tsc -b` without checking for a `dist/` directory — the build emits compiled copies of the tests there and Vitest globs them, producing phantom failures. If `dist/` exists, delete it first.
@@ -366,7 +373,7 @@ Expected: FAIL — `en voice.woodak.won: expected undefined to be type 'string'`
 
 - [ ] **Step 3: Rename the keys in both locale files**
 
-This is a mechanical rename. In **both** `locales/en.json` and `locales/ko.json`, keeping each string's value byte-identical:
+This is a mechanical rename. In **both** `locales/en.json` and `locales/ko.json`, keeping each pre-existing string value unchanged:
 
 | old key | new key |
 |---|---|
@@ -966,10 +973,13 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ### Task 8: 이고지 (alien) voice + lexicon enforcement
 
-Alien speech only, no subtitle, `ko` and `en` byte-identical. What makes it read as a language rather than noise is that every token comes from one fixed glossary — the test enforces exactly that.
+Alien speech only, no subtitle. **Superseded 2026-08-31:** `en` now uses the
+Roman tokens and `ko` uses the normative one-to-one Hangul mapping. What makes
+it read as a language rather than noise is that every token comes from one fixed
+glossary and preserves marker/placeholder structure across locales.
 
 **Files:**
-- Modify: `locales/en.json`, `locales/ko.json` (23 keys each, identical values)
+- Modify: `locales/en.json`, `locales/ko.json` (23 keys each, locale-specific orthography)
 - Modify: `tests/mascot-voice.test.ts`
 
 **Interfaces:**
@@ -1027,9 +1037,9 @@ function alienTokens(s: string): string[] {
 }
 
 describe('이고지 (alien) speech', () => {
-  it('is byte-identical between ko and en', () => {
+  it('uses the approved locale-specific orthography', () => {
     for (const line of WOODAK_LINES) {
-      expect(KO[`voice.alien.${line}`], `alien ${line}`).toBe(EN[`voice.alien.${line}`]);
+      expect(KO[`voice.alien.${line}`], `alien ${line}`).not.toBe(EN[`voice.alien.${line}`]);
     }
   });
 
@@ -1056,9 +1066,13 @@ describe('이고지 (alien) speech', () => {
 Run: `npx vitest run tests/mascot-voice.test.ts`
 Expected: FAIL — `alien has all 23 lines in both locales` → `en voice.alien.won: expected undefined to be type 'string'`.
 
-- [ ] **Step 3: Add the alien lines to BOTH locale files, identically**
+- [ ] **Step 3: Add the alien lines using the approved locale orthographies**
 
-Append the exact same 23 lines to `locales/ko.json` **and** `locales/en.json`:
+Historical note: the block below is the old plan-time Romanized snapshot, not
+the current 23-line inventory. Do not copy it into either locale. The canonical
+keys and strings are the current `locales/*.json` rows, guarded by
+`tests/mascot-voice.test.ts`; Korean uses the exact token mapping in the normative
+design spec.
 
 ```json
   "voice.alien.won": "Vor'nak! Tolun mi'ren — do'gan thal. Zk'tha, zk'tha!",
@@ -1099,12 +1113,12 @@ If "uses only approved lexicon tokens" fails, the message names each offending t
 
 ```bash
 git add locales/en.json locales/ko.json tests/mascot-voice.test.ts
-git commit -m "feat(i18n): 이고지 (Egoji) voice — 23 alien lines, language-neutral
+git commit -m "feat(i18n): 이고지 (Egoji) voice — 23 localized alien lines
 
-Untranslated alien with no subtitle, per the design decision. ko and en are
-byte-identical, and a lexicon test asserts every token comes from one fixed
-62-word glossary (and that no glossary entry goes unused) — that constraint is
-what makes the speech read as a language instead of noise.
+Untranslated alien with no subtitle, per the design decision. English and Korean
+use the approved Roman/Hangul token pairings, and lexicon tests assert every token
+comes from one fixed glossary (and that no glossary entry goes unused) — that
+constraint is what makes the speech read as a language instead of noise.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -1263,7 +1277,8 @@ Open Collection → Mascots. Confirm the picker lists **우땅 / 누렁이 / 이
 
 For each of 누렁이 / 이고야 / 이고지 / 느무보: select the skin, then trigger the Game Over screen (start a run and fail a blind, or use whatever shortcut the `verify` skill documents). Confirm the bubble shows that skin's voice, not WooDak's, and that the portrait matches the name.
 
-Confirm 이고지's line is alien in **both** languages — toggle the language in Settings and re-check.
+Confirm 이고지's line stays alien in **both** languages but switches script:
+Romanized in English and the fixed Hangul orthography in Korean.
 
 - [ ] **Step 4: Check an encounter coach-mark**
 
