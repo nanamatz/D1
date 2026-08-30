@@ -23,8 +23,9 @@ describe('Sweet Turtles boot splash', () => {
     expect(app).toMatch(/showDeveloperSplash[\s\S]*<DeveloperSplash[\s\S]*:\s*loading\s*\?[\s\S]*<LoadingScreen/);
     expect(splash).not.toMatch(/publisher/i);
     expect(splash).toContain('Sweet Turtles');
-    expect(splash).toContain('role="img"');
-    expect(splash).toContain('aria-label="Sweet Turtles"');
+    expect(splash).toContain('role="button"');
+    expect(splash).toContain('tabIndex={0}');
+    expect(splash).toContain("aria-label={t('startup.identContinue')}");
     expect((splash.match(/aria-label=/g) ?? [])).toHaveLength(1);
     expect(splash).toMatch(/assets\/branding\/sweet-turtles\.png/);
   });
@@ -92,9 +93,15 @@ describe('Sweet Turtles boot splash', () => {
     expect(Math.max(...crtLayers)).toBeLessThan(10_000);
   });
 
-  it('has no gesture gate and keeps startup audio outside every game audio control', () => {
-    expect(splash).not.toMatch(/pointerdown|keydown|click|preventDefault|addEventListener/i);
-    expect(splash).not.toMatch(/press|continue|시작|클릭|아무 키/i);
+  it('uses one accessible ready/fallback input surface outside every game audio control', () => {
+    expect(splash).toContain("logoState === 'preparing' || doneRef.current");
+    expect(splash).toContain('onPointerDown=');
+    expect(splash).toContain('onKeyDown=');
+    expect(splash).toContain('onClick=');
+    expect(splash).toContain('event.preventDefault()');
+    expect(splash).toContain('event.stopPropagation()');
+    expect(app).toContain("control.closest('.developer-splash')");
+    expect(css).toMatch(/\.developer-splash:focus-visible\s*\{[^}]*outline:/s);
     expect(splash).not.toMatch(/from ['"]\.\.\/audio['"]|audio\.(?:play|playMusic|setVolumes)/);
     expect(startupAudio).not.toMatch(/from ['"].*(?:audio|settings|storage|unlocks)/);
     expect(startupAudio).not.toMatch(/master|music|sfx|mute|SOUND|MUSIC/);
@@ -123,12 +130,13 @@ describe('Sweet Turtles boot splash', () => {
   it('documents the mixer exception, autoplay caveat, timing, and original synthesis', () => {
     expect(gdd).toContain('developer ident is the sole audio exception');
     expect(gdd).toContain('never imports, reads, or obeys the gameplay mixer');
-    expect(uiDesign).toContain('automatic 3850ms beat needs no input');
+    expect(uiDesign).toContain('ready logo or text fallback becomes one viewport-sized accessible button surface');
     expect(uiDesign).toContain('1600–3600ms locks the front for exactly two seconds');
     expect(uiDesign).toContain('static front fades in for 120ms, stays fully visible for exactly two seconds');
     expect(screensSpec).toContain('there is no publisher stage or publisher copy');
     expect(screensSpec).toContain('a web browser may block it');
     expect(screensSpec).toContain('Visual timing never waits for audio');
+    expect(screensSpec).toContain('Preparing black frames ignore and consume input');
     expect(audioLicenses).toContain('Sweet Turtles startup ident cue');
     expect(audioLicenses).toContain('Original deterministic Web Audio synthesis, no sample');
   });

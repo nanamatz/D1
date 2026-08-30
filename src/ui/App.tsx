@@ -187,6 +187,7 @@ export function App() {
         'button, [role="button"], input[type="checkbox"], input[type="radio"]',
       );
       return !control ||
+        control.closest('.developer-splash') ||
         control.closest('.desk-object') ||
         control.matches(':disabled, [aria-disabled="true"]')
         ? null

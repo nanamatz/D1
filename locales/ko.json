@@ -1,4 +1,5 @@
 {
+  "startup.identContinue": "Sweet Turtles — 아무 키를 누르거나 클릭하여 계속",
   "pos.stateCompatible": "{pos}, 패턴과 호환됨",
   "pos.stateAlternative": "{pos}, 대안 후보",
   "joker.unlockCondition": "해금 조건: {condition}",
@@ -159,9 +160,7 @@
   "sidebar.bonusUnisonChips": "유니즌 {chips}칩",
   "sidebar.bonusUnisonMult": "유니즌 ×{mult}",
   "sidebar.bonusRegisterSynergy": "{name} ×{factor} 칩",
-  "sidebar.bonusEffectChips": "추가 효과 {chips}칩",
-  "sidebar.bonusEffectMult": "추가 효과 ×{mult}",
-  "sidebar.bonusEffectScore": "추가 효과 +{score} 점수",
+  "sidebar.bonusEffects": "추가 효과",
   "sidebar.bonusPouch": "{name}: 칩 {chips} · 배수 {mult}",
   "patternLevel.up": "레벨 업!",
   "tray.title": "문장",

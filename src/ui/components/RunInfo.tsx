@@ -6,7 +6,7 @@ import { effectiveBlindTarget, effectiveClearReward } from '../../engine/economy
 import { formatScore } from '../formatScore';
 import { kindForIndex } from '../../engine/progression';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
-import { patternChipsMult } from '../../engine/patterns';
+import { isHiddenPattern, patternChipsMult } from '../../engine/patterns';
 import {
   LETTER_HAND_REGISTRY,
   letterHandChipsMult,
@@ -91,28 +91,30 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
         <div className="ri-body">
           {tab === 'patterns' && (
             <div className="ri-patterns">
-              {PATTERN_ORDER.map((p) => {
-                // feature-02 A-3: the Balatro-style hand list — live [Chips × Mult]
-                // at the pattern's current level, updating as Constellation cards level it.
-                const cm = patternChipsMult(p, run.patternLevels[p]);
-                return (
-                  <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
-                    <div className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}>
-                      <span className="pl">Lv {run.patternLevels[p]}</span>
-                      <PatternIcon pattern={p} />
-                      <span className="pn">{t(`pattern.${p}`)}</span>
-                      <span className="pcm">
-                        <b className="chips">+{cm.chips}</b>
-                        <span className="times">×</span>
-                        <b className="mult">{cm.mult}</b>
-                      </span>
-                      <span className="ri-use-count">
-                        {t('runinfo.timesUsed', { n: run.patternPlayCounts?.[p] ?? 0 })}
-                      </span>
-                    </div>
-                  </Tooltip>
-                );
-              })}
+              {PATTERN_ORDER
+                .filter((p) => !isHiddenPattern(p) || run.discoveredPatterns?.includes(p))
+                .map((p) => {
+                  // feature-02 A-3: the Balatro-style hand list — live [Chips × Mult]
+                  // at the pattern's current level, updating as Constellation cards level it.
+                  const cm = patternChipsMult(p, run.patternLevels[p]);
+                  return (
+                    <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
+                      <div className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}>
+                        <span className="pl">Lv {run.patternLevels[p]}</span>
+                        <PatternIcon pattern={p} />
+                        <span className="pn">{t(`pattern.${p}`)}</span>
+                        <span className="pcm">
+                          <b className="chips">+{cm.chips}</b>
+                          <span className="times">×</span>
+                          <b className="mult">{cm.mult}</b>
+                        </span>
+                        <span className="ri-use-count">
+                          {t('runinfo.timesUsed', { n: run.patternPlayCounts?.[p] ?? 0 })}
+                        </span>
+                      </div>
+                    </Tooltip>
+                  );
+                })}
             </div>
           )}
 

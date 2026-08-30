@@ -18,6 +18,7 @@ import { readValue, remove, writeRaw } from './storage';
 import { isKnownConsumableId } from '../engine/consumables';
 import { JOKER_REGISTRY, normalizeOwnedJokerInstanceIds } from '../engine/jokers';
 import { challengeDef, isChallengeId } from '../engine/challenges';
+import { isHiddenPattern } from '../engine/patterns';
 import type { GameState } from './useGame';
 import { normalizeRunObservationId } from './runObservation';
 import { sanitizeUnlockLedger } from './unlockRecap';
@@ -47,6 +48,9 @@ function normalizeRun(run: NonNullable<GameState['run']>): NonNullable<GameState
     ...run,
     lifecycleGrowthEvents: [],
     challengeId: run.challengeId ?? null,
+    discoveredPatterns: Array.isArray(run.discoveredPatterns)
+      ? run.discoveredPatterns.filter(isHiddenPattern)
+      : [],
     jokers: run.jokers.filter(
       (joker) => JOKER_REGISTRY.has(joker.defId) && joker.state.destroyed !== 1,
     ),

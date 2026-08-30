@@ -5331,6 +5331,10 @@ body.force-reduced-motion:has(.menu)::after {
   background: #000;
   filter: none;
 }
+.developer-splash:focus-visible {
+  outline: 4px solid #fff;
+  outline-offset: -8px;
+}
 .developer-splash__content {
   display: flex;
   flex-direction: column;

@@ -137,6 +137,18 @@ describe('run persistence', () => {
     ]);
   });
 
+  it('round-trips run-scoped hidden patterns and defaults legacy saves to none', () => {
+    const state = dirty();
+    state.run = { ...newRun('hidden-pattern-save'), discoveredPatterns: ['ditransitive'] };
+    writeRun(serializeRun(state));
+    expect(loadRun()?.run.discoveredPatterns).toEqual(['ditransitive']);
+
+    const env = JSON.parse(serializeRun(state));
+    delete env.state.run.discoveredPatterns;
+    writeRun(JSON.stringify(env));
+    expect(loadRun()?.run.discoveredPatterns).toEqual([]);
+  });
+
   it('defensively fills additive observation fields missing from a version-12 save', () => {
     const env = JSON.parse(serializeRun(dirty()));
     delete env.state.observationId;

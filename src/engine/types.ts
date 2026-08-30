@@ -487,6 +487,8 @@ export interface RunState {
   jokerSlots: number; // base 5; Kung Fu Manual adds one
   patternLevels: Record<PatternId, number>;
   patternPlayCounts: Record<PatternId, number>;
+  /** Hidden sentence patterns activated during this run; optional on legacy saves. */
+  discoveredPatterns?: PatternId[];
   vouchers: VoucherId[];
   /** the current chapter's offered voucher (fixed per chapter; playtest-03 C) */
   voucherOffer: VoucherId | null;

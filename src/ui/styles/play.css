@@ -1731,7 +1731,7 @@
   justify-content: center;
   margin-top: 6px;
   width: 100%;
-  position: relative; /* anchors the .bonus-stamp (item 2) */
+  position: relative; /* anchors the landing .bonus-fly */
 }
 /* The two boxes fill the score panel's width inside its 12px inset (playtest-06)
    — they used to hug their digits. `flex: 1` splits the row evenly between them
@@ -3140,37 +3140,6 @@
   font-family: 'Jersey 10';
   font-size: var(--ds-xs);
   color: var(--ink-dim);
-}
-/* item 2: the sentence-pattern stamp over the scorebox while the bonus lands,
-   mirroring .word-stamp's look/motion (reuses the stampIn keyframe). */
-.bonus-stamp {
-  position: absolute;
-  top: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--gold);
-  color: #173226;
-  font-weight: 800;
-  font-size: var(--fs-sm);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border-radius: 8px;
-  padding: 2px 9px;
-  box-shadow: var(--shadow);
-  animation: stampIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
-  z-index: 6;
-  display: inline-flex;
-  align-items: center;
-}
-/* Level sub-badge inside the sentence-pattern stamp (2026-07-22 landing beat). */
-.bonus-lvl {
-  margin-right: 6px;
-  padding: 0 5px;
-  border-radius: 6px;
-  background: rgba(23, 50, 38, 0.28);
-  color: var(--pattern-level-color, #173226);
-  font-size: 0.82em;
-  font-weight: 800;
 }
 /* The bonus LAND beat: the box pulses once as its product flies onto the round. */
 .scorebox.landing .box {
@@ -5694,6 +5663,31 @@
   color: var(--gold);
   opacity: 0.9;
 }
+.round-pattern.finalized-pattern {
+  min-height: 20px;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 5px;
+  row-gap: 1px;
+  font-size: var(--fs-xs);
+  line-height: 1.15;
+  text-align: center;
+  overflow: visible;
+  opacity: 1;
+}
+.finalized-pattern-core,
+.finalized-style {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.round-pattern.finalized-pattern.unison.standard { color: var(--suit-standard); }
+.round-pattern.finalized-pattern.unison.formal { color: var(--suit-formal); }
+.round-pattern.finalized-pattern.unison.slang { color: var(--suit-slang); }
+.round-pattern.finalized-pattern.unison.vulgar { color: var(--suit-vulgar); }
+.round-pattern.finalized-pattern.register-synergy { color: var(--chips); }
 /* FIXED size (playtest-06): the status line's text varies (Word-Hand name /
    "not a word" / suit) and the 0×0 box only fills during a settle, so a content-
    sized panel made the whole rail reflow mid-play. Locked so nothing below it
@@ -5713,18 +5707,10 @@
   gap: 2px;
   text-align: center;
 }
-/* Final provenance can reach seven supplemental tags. Reallocate a fixed 80px
-   from the controls only while that snapshot is visible, preserving the rail's
-   total height and every ordinary-play measurement. */
-.score-panel.has-provenance {
-  height: 216px;
-  flex-basis: 216px;
-  padding: 10px 12px;
-  justify-content: flex-start;
-}
-.score-panel.has-provenance .scorebox {
-  flex: 0 0 72px;
-}
+/* Supplemental provenance grows only for the reachable second/third rows.
+   The score panel and controls always retain their shared 468px total. */
+.score-panel.provenance-rows-2 { height: 159px; flex-basis: 159px; }
+.score-panel.provenance-rows-3 { height: 182px; flex-basis: 182px; }
 .sb-status {
   max-width: 100%;
   min-height: 22px;
@@ -5735,19 +5721,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Sentence landing keeps the gold pattern stamp separate, then names every
-   non-pattern contributor in its own colour-coded pill. */
+/* Headline owns Pattern/Unison/Mixed. Supplemental rows stay source-grouped. */
 .bonus-parts {
   width: 100%;
-  min-height: 22px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
   gap: 3px;
   animation: stampIn .25s cubic-bezier(.2, 1.4, .4, 1);
 }
 .bonus-part {
+  width: 100%;
+  min-height: 20px;
   padding: 2px 9px;
   border: 1px solid currentColor;
   border-radius: 8px;
@@ -5757,33 +5743,26 @@
   white-space: nowrap;
   background: rgba(5, 14, 20, .88);
   box-shadow: var(--shadow-sm);
-}
-.bonus-part.modifier { color: var(--chips); }
-.bonus-part.register-synergy { color: var(--chips); }
-.bonus-part.unison { color: var(--gold); }
-.bonus-part.effect { color: #d7a8ff; }
-.bonus-part.pouch { color: var(--gold); }
-.score-panel.has-provenance .bonus-parts {
-  flex: 0 0 112px;
-  height: 112px;
-  min-height: 112px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 20px;
-  align-content: start;
-  overflow: hidden;
-}
-.score-panel.has-provenance .bonus-part {
-  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
 }
-.score-panel.has-provenance .bonus-part.modifier,
-.score-panel.has-provenance .bonus-part.register-synergy,
-.score-panel.has-provenance .bonus-part.effect.score,
-.score-panel.has-provenance .bonus-part.pouch {
-  grid-column: 1 / -1;
+.bonus-part.modifier { color: var(--chips); }
+.bonus-part.effect { color: var(--ink); }
+.bonus-part.effect .effect-axis::before { content: "·"; margin-right: 5px; color: var(--ink-dim); }
+.bonus-part.effect .effect-axis.chips { color: var(--chips); }
+.bonus-part.effect .effect-axis.mult { color: var(--mult); }
+.bonus-part.effect .effect-axis.score { color: var(--gold); }
+.bonus-part.pouch { color: var(--gold); }
+@media (forced-colors: active) {
+  .round-pattern.finalized-pattern,
+  .bonus-part,
+  .bonus-part.effect .effect-axis {
+    color: CanvasText;
+    border-color: CanvasText;
+    background: Canvas;
+  }
 }
 .sb-status.warn {
   color: var(--gold);
@@ -5825,9 +5804,8 @@
   height: var(--nav-h);
   flex: 0 0 var(--nav-h);
 }
-.score-panel.has-provenance + .sb-controls {
-  --nav-h: 252px;
-}
+.score-panel.provenance-rows-2 + .sb-controls { --nav-h: 309px; }
+.score-panel.provenance-rows-3 + .sb-controls { --nav-h: 286px; }
 .sb-btns {
   grid-column: 1;
   grid-row: 1 / span 3;
@@ -5956,6 +5934,7 @@
   .blind-in,
   .box-pop,
   .bonus-fly,
+  .bonus-parts,
   .scorebox.landing .box,
   .tile.polished::after {
     animation: none;

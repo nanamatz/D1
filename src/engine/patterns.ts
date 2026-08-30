@@ -27,6 +27,17 @@ import type {
   WordSubmission,
 } from './types';
 
+/** Run Info hides these until their first authoritative activation in the run. */
+export const HIDDEN_PATTERN_IDS = [
+  'objectComplement',
+  'ditransitive',
+  'complex',
+] as const satisfies readonly PatternId[];
+
+export function isHiddenPattern(id: unknown): id is (typeof HIDDEN_PATTERN_IDS)[number] {
+  return HIDDEN_PATTERN_IDS.includes(id as (typeof HIDDEN_PATTERN_IDS)[number]);
+}
+
 /** A word reduced to what matching needs: its text and its allowed POS set. */
 interface POSWord {
   text: string;

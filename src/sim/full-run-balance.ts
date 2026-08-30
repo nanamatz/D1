@@ -404,6 +404,7 @@ export function mergeSubmitResult(
       jokers: result.jokers,
       counters: result.counters,
       playedWords: result.playedWords,
+      discoveredPatterns: result.discoveredPatterns,
       playedLetterHands: result.playedLetterHands,
       letterHandPlayCounts: result.letterHandPlayCounts,
       lastLetterHand: result.lastLetterHand,

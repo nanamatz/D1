@@ -41,7 +41,7 @@ Version 0.2 — systems expansion
 - Changed 2026-08-06: Cleaning Sign displays as `청소 표지판` in Korean and removes $2 for each tile discarded, rather than once per discard action (§8.4).
 - Changed 2026-08-18: register base Mult is Standard ×1, Formal ×10, Slang ×5, and Vulgar ×7. Formal becomes the highest-authority reward while Vulgar's former jackpot is moderated. Profile register titles derive from unique current-lexicon discoveries and one earned title may be equipped cosmetically by stable semantic id in `wj.lifetime`; there is no gameplay effect or new save key (§3.1).
 - Changed 2026-08-22: the curated acronym families MVP and VIP ship as the four noun surfaces `mvp`, `mvps`, `vip`, and `vips`. Punctuation and unlisted initialisms remain invalid; the canonical offline source is `lexicon-pipeline/curated-abbreviations.json` (§3.2).
-- Changed 2026-08-30: exact reviewed validity omissions now live in `lexicon-pipeline/curated-validity.json`; `christ` and `christmas` ship as Standard nouns without admitting proper names or generating derivatives. Final sentence patterns receive one central BUILD callout and their enlarged provenance tags remain through Fee Settlement until Collect (§3.2, §7.1–§7.2).
+- Changed 2026-08-30: exact reviewed validity omissions now live in `lexicon-pipeline/curated-validity.json`; `christ` and `christmas` ship as Standard nouns without admitting proper names or generating derivatives. Final sentence patterns receive one central BUILD callout, while their finalized sidebar headline and grouped provenance rows remain through Fee Settlement until Collect (§3.2, §7.1–§7.2).
 - Changed 2026-08-06: sentence-pattern base Mult is compressed to ×1/×2/×3/×4 by rank band while base Chips stay unchanged. Every Constellation level now adds its fixed Chips increment and +1 Mult linearly; the former ×1.5 geometric growth is retired (§5.2–§5.4).
 - Changed 2026-08-07: sentence-pattern construction difficulty is classified independently from payout rank. Easy/Medium/Hard Constellation levels add +15/+30/+45 Chips respectively while every pattern continues to gain +1 Mult (§5.2–§5.4).
 - Changed 2026-08-07: Deer and Phoenix are Ink-Pack-only jackpots at 0.3% per choice each. The other 12 Gambler Cards roll uniformly; Lucky Pouch shop and starting-card routes, plus Comic Book replacements, exclude both jackpots (§9.3, §10.3, §12.2).
@@ -406,20 +406,23 @@ final score         = (committedScore + sentenceChips) × sentenceMult + post-pa
 sentence gain = final score − committedScore
 ```
 
-At finalization the gold pattern/level stamp remains the primary beat and reads
-**level → zodiac symbol → pattern name** from left to right. Every
-non-pattern contributor is displayed separately beside it: absorbed modifiers
-use a Chips-coloured tag, mixed-register synergy uses its own Chips-coloured ×Chips tag, Unison uses a gold tag, and post-pattern Emoji Tile,
-voucher, or boss adjustments use an effect-coloured tag. They must never be
-folded invisibly into the pattern label. The level field reserves a fixed width
-and a visible gap before the zodiac symbol so one- and multi-digit levels keep
-the symbol/name columns aligned. When BUILD publishes that authoritative final
-pattern after the last word's settle-complete signal, the workspace also shows
-one localized 1.7-second title-scale `Lv.N · [zodiac] pattern name` callout; live
-projection, ordinary word settles, and Unison-only finals do not show it. The
-pattern stamp and Word-Hand-sized provenance tags remain in Pattern → Modifier →
-Mixed Register → Unison → effects → Pouch order through LAND, verdict, and live
-Fee Settlement, then Collect clears the UI-only snapshot in the Shop transition.
+At finalization the sidebar's already-reserved current-pattern line becomes the
+authoritative headline: pattern-only reads **Lv.N · zodiac symbol · pattern
+name**; Unison-only reads **suit + Unison + Chips/Mult value**; Mixed-only reads
+**synergy name + ×factor Chips**; and pattern plus a winning style joins both
+with a visible middle dot. Unison has defensive priority if malformed data
+contains both style fields. The complete headline uses the style's semantic
+colour (Unison suit or Mixed Chips), while pattern-only stays gold; its visible
+name, axis, value, and full accessible label keep colour from carrying meaning.
+There is no duplicate gold stamp in the score box. Absorbed modifiers, all
+non-neutral post-pattern Chips/Mult/flat-score axes grouped into one Effects
+row, and Pouch balancing remain visible as at most three full-width rows in that
+order. When BUILD publishes an authoritative real pattern after the last word's
+settle-complete signal, the workspace also shows one localized 1.7-second
+title-scale `Lv.N · [zodiac] pattern name` callout; live projection, ordinary
+word settles, and Unison-only finals do not show it. The finalized headline and
+supplemental rows remain through LAND, verdict, and live Fee Settlement, then
+Collect clears the UI-only snapshot in the Shop transition.
 
 | # | Pattern | Difficulty | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
 |---|---|---|---|---|---|---|---|
@@ -437,6 +440,19 @@ Fee Settlement, then Collect clears the UI-only snapshot in the Shop transition.
 | 12 | Complex | Hard | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 4 | +45, +1 |
 
 (Values live in `balance.ts` under `patterns`; changed 2026-08-21 to follow the approved construction-difficulty rank, with the bottom five patterns raised by +10 base Chips. Difficulty-tier level growth remains unchanged.)
+
+**Run Info discovery (changed 2026-08-30).** Object Complement (5형식),
+Ditransitive (수여문), and Complex (복문) are hidden in **Run Info → Patterns**
+for a new run; the other nine patterns, including Compound, remain public. A
+hidden row is absent altogether—no `???`, empty slot, tooltip, or accessible
+label—until the first successful actual submission whose authoritative
+post-boss sentence judgment names that pattern as the single highest match.
+Stage preview, failed input, a debuffed/removed word, and a lower-ranked
+overlapping candidate do not reveal it. Once revealed, the row remains for the
+rest of that run and through save/Continue even if later submissions break the
+pattern. Discovery resets on a new run and never enters profile lifetime data.
+It is independent of `patternPlayCounts`, which still increments only when the
+blind's final pattern is settled.
 
 Design intent:
 
@@ -523,7 +539,7 @@ Sentence patterns are the *run-level* payoff (evaluated across the whole sequenc
 
 - **Shipped-lexicon check (2026-08-30).** Among 172,257 valid entries, Vowelless has 60 candidates under the live Y-as-consonant rule (the hypothetical Y-as-vowel branch has 17), Type Economy has 10,164, and Grand Palindrome has 7. The four curated acronym surfaces plus `christ` and `christmas` qualify for none of these hands, so the sampled candidate counts and seeded 100,000-hand upper-bound rates remain roughly 1.56%, 7.56%, and 0.017% respectively; these are perfect-dictionary-solver rates, not expected human completion rates.
 - **Preview, discovery & settle.** The original six always show by name. An undiscovered knowledge-tier match renders as `???` in both the staged-word status and Run Info name/condition; its score axes remain visible. Completing it writes the id into the active profile's `wj.lifetime`, and the settle stamp reveals the real name on that play. Profile → Reveal All marks all three discovered. The settle sequence otherwise stamps the matched name normally (UI_DESIGN §4).
-- **In-game reference (changed 2026-08-14).** Run Info → Word Hands lists all nine ranks, current levels, live Chips/Mult bonuses, stamp progress, and run-use counts. As with sentence patterns, each condition/description lives in that row's shared portalled tooltip instead of inline copy. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns likewise shows each finalized pattern's run-wide use count to the right of its Chips/Mult axes.
+- **In-game reference (changed 2026-08-30).** Run Info → Word Hands lists all nine ranks, current levels, live Chips/Mult bonuses, stamp progress, and run-use counts. As with visible sentence patterns, each condition/description lives in that row's shared portalled tooltip instead of inline copy. The nine-row list owns a bounded vertical scroll area at short viewports. It renders the operation as `+Chips ×Mult`: Chips keeps its additive `+`, while Mult is a multiplicative factor. Run Info → Patterns starts with nine public rows; Object Complement, Ditransitive, and Complex join it only after their run-scoped first activation under §5.2. Every visible pattern row shows its finalized run-wide use count to the right of its Chips/Mult axes; revealing a row does not increment that count.
 - **Out of scope (for now):** dedicated Emoji Tiles keyed to Word Hand levels—see §12.4.
 
 ---
@@ -618,7 +634,7 @@ Score uses the same **Chips × Mult** structure as Balatro. Because the sentence
 
 > **Displayed round score = committed ONLY (playtest-04 A; changed 2026-07-31).** The big round number on screen is the **committed** score (layer 1) and **never decreases** — it climbs during each word's settle. Beside it, the UI shows the **current highest valid sentence pattern** and its live sentence-bonus score as `pattern name : score` (for example, `의문문 : 120`). That score is still a projection which may be overwritten as the sentence changes; it is never folded into the round number during play. The engine uses the same projected score for auto-clear, and the bonus resolves visibly in the settle sequence (§7.2) when it is the deciding factor.
 
-> **Final pattern callout and provenance lifetime (changed 2026-08-30).** Only after the authoritative last-word settle-complete signal lets BUILD publish the finalized `SentenceBonusDisplay`, a real pattern receives one central localized `Lv.N · [pattern icon] pattern name` title callout using the 1.7-second Not Allowed motion family. This is not the live projection and adds no engine event, score, RNG, or settle delay. The gold pattern stamp and separate Modifier → Mixed Register → Unison → effects → Pouch tags use the Word-Hand stamp footprint and remain visible through BUILD, LAND, final count-up, verdict, and live Fee Settlement. Collect clears the snapshot in the existing same-transition Shop reset; it is not added to persistence. Reduced Motion keeps a readable static/fade form.
+> **Final pattern callout and provenance lifetime (changed 2026-08-30).** Only after the authoritative last-word settle-complete signal lets BUILD publish the finalized `SentenceBonusDisplay`, a real pattern receives one central localized `Lv.N · [pattern icon] pattern name` title callout using the 1.7-second Not Allowed motion family. This is not the live projection and adds no engine event, score, RNG, or settle delay. The reserved live-pattern line becomes the finalized Pattern/Unison/Mixed headline described in §5.2, with no duplicate score-box stamp. Modifier, grouped Effects, and Pouch render as zero to three full-width supplemental rows. Zero or one row keeps the score/controls panels at 136/332px; two rows use 159/309px; three use 182/286px, preserving their 468px total without blank space. The snapshot remains visible through BUILD, LAND, final count-up, verdict, and live Fee Settlement. Collect clears it in the existing same-transition Shop reset; it is not added to persistence. Reduced Motion keeps a readable static/fade form.
 
 > **Presentation speed baseline (speed set changed 2026-08-30).** Public game speed is exactly 1× or 2×. Ordinary score beats use 600ms, enhanced Emoji beats 1000ms, and the final hold is 650ms at 1×, with ordinary/enhanced/final timing divided at 2×. Before beat zero, every submitted tile moves as one rigid row through a single anticipation/drop/contact/recoil desk slam; its length-independent duration is 650ms/400ms at 1×/2×. The shared contact tick applies every material-family burst simultaneously and fires at most one settings-scaled screen shake and one `submitThock`; later score-event ordering, audio, and shake remain unchanged. Lead Plate chance beats keep a 600ms real-time minimum, tile creation keeps 480ms, reduced motion stays fixed at 700ms with only a static contact highlight, and pack opening stays fixed at 2265ms. `settleDurationMs()` remains the single source for the settle-complete signal. Speed and screen-shake edits never replay an in-flight submission: speed is snapshotted for that submission, Reduced Motion ON cancels outstanding work and switches it to the fixed 700ms branch, and OFF applies from the next submission. Legacy `gameSpeed: 4` normalizes to 2; any other invalid value normalizes to 1. (The group treatment still supersedes the 2026-08-22 per-tile stagger.)
 
@@ -1886,7 +1902,7 @@ Collection's consumable-family buttons follow the same token groups: **Fable = R
 (`--mult`), **Constellation = BLUE** (`--chips`), and **Gambler = GREEN**
 (`--btn-green`). Their locked colors remain neutral until the matching word is played.
 
-**Audio gating and settings (C-6, layout/copy clarified 2026-08-30).** MUSIC/SOUND gate the shipped gameplay mixer's buses — **default off** until their word is played. Color groups are independent. The tab note is exactly `Audio / 오디오`. Music and SFX use the same four-column `label | slider | value | mute` grid; the visible checkbox copy is shared `Mute / 음소거`, while each native checkbox has a bus-qualified accessible name. Desktop columns are `minmax(72px,1fr) minmax(140px,160px) 44px 76px` with 12px gaps; at 480px and below they are `64px minmax(96px,1fr) 36px 68px` with 8px gaps. Effective output is the Palette bus gate AND not-muted, multiplied by that group value and the recipe gain. Sliders never clear mute, and unmuting restores the retained slider value. New-format `musicMuted` + `sfxMuted` make any stale `master` irrelevant. Otherwise a valid positive legacy master is folded once into each group with `round(master × group / 100)`; legacy master `0` preserves the stored group values and mutes both. The legacy defaults 80/70/80 therefore become Music 56, SFX 64, both unmuted; normalized writes omit `master`. The automatic pre-game Sweet Turtles developer ident is the sole exception: its original synthesized cue owns a separate Web Audio context and fixed peak-safe output, and never imports, reads, or obeys the gameplay mixer, settings/storage, group levels, mute, or any Palette audio gate. It attempts ungestured playback once without delaying the visual; blocked web autoplay fails closed with no later-gesture queue, while the Electron shell enables Chromium autoplay before app readiness/window creation. Image failure or preparation timeout uses the silent text-only fallback.
+**Audio gating and settings (C-6, ident input changed 2026-08-31).** MUSIC/SOUND gate the shipped gameplay mixer's buses — **default off** until their word is played. Color groups are independent. The tab note is exactly `Audio / 오디오`. Music and SFX use the same four-column `label | slider | value | mute` grid; the visible checkbox copy is shared `Mute / 음소거`, while each native checkbox has a bus-qualified accessible name. Desktop columns are `minmax(72px,1fr) minmax(140px,160px) 44px 76px` with 12px gaps; at 480px and below they are `64px minmax(96px,1fr) 36px 68px` with 8px gaps. Effective output is the Palette bus gate AND not-muted, multiplied by that group value and the recipe gain. Sliders never clear mute, and unmuting restores the retained slider value. New-format `musicMuted` + `sfxMuted` make any stale `master` irrelevant. Otherwise a valid positive legacy master is folded once into each group with `round(master × group / 100)`; legacy master `0` preserves the stored group values and mutes both. The legacy defaults 80/70/80 therefore become Music 56, SFX 64, both unmuted; normalized writes omit `master`. The pre-game Sweet Turtles developer ident is the sole exception: its original synthesized cue owns a separate Web Audio context and fixed peak-safe output, and never imports, reads, or obeys the gameplay mixer, settings/storage, group levels, mute, or any Palette audio gate. It attempts ungestured playback once without delaying the visual; blocked web autoplay fails closed with no later-gesture queue, while the Electron shell enables Chromium autoplay before app readiness/window creation. Its black preparing state consumes but ignores input. After the ready logo or silent text fallback appears, the whole localized accessible surface may continue immediately on an ordinary keydown, primary mouse/touch/pen press, or accessibility click while retaining the normal 3850ms, Reduced Motion 2240ms, and fallback 700ms automatic paths. A single pre-locked finish path consumes the event before App's gameplay `buttonPress`/`audio.unlock`, then unmount cancels every ident timer and scheduled or running cue. This gesture never retries blocked ident audio or wakes the gameplay mixer. Image failure or preparation timeout uses the silent text-only fallback.
 
 All enabled native buttons and ARIA button controls play the shared button-press
 SFX through one delegated UI listener. A primary pointer press fires it once on
