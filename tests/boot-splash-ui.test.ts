@@ -36,10 +36,11 @@ describe('Sweet Turtles boot splash', () => {
     expect((app.match(/<SteamOwnershipNotice \/>/g) ?? [])).toHaveLength(1);
   });
 
-  it('renders one two-sided circular coin and preserves the first-paint monochrome gate', () => {
+  it('renders one two-sided circular coin in its original colour', () => {
     expect((splash.match(/<img\b/g) ?? [])).toHaveLength(1);
-    expect(splash).toContain("effect.kind === 'color'");
-    expect(splash).toContain('developer-splash--mono');
+    expect(splash).not.toContain('activeUnlocks');
+    expect(splash).not.toContain('UNLOCKS');
+    expect(splash).not.toContain('developer-splash--mono');
     expect(splash).toContain('developer-splash__coin-front');
     expect(splash).toContain('developer-splash__coin-back');
     expect(splash).toMatch(/developer-splash__coin-back[\s\S]*<span>ST<\/span>/);
@@ -49,7 +50,10 @@ describe('Sweet Turtles boot splash', () => {
     expect(css).toMatch(/\.developer-splash__coin-back\s*\{[^}]*transform:\s*rotateX\(180deg\) translateZ\(4px\)/s);
     expect(identCss).not.toContain('rotateY(');
     expect(css).toMatch(/\.developer-splash__logo\s*\{[^}]*object-fit:\s*cover[^}]*object-position:\s*center/s);
-    expect(css).toMatch(/\.developer-splash--mono\s*\{[^}]*filter:\s*grayscale\(1\)/s);
+    expect(css).not.toContain('.developer-splash--mono');
+    expect(css).toMatch(/\.developer-splash\s*\{[^}]*filter:\s*none;/s);
+    expect(css).toMatch(/\.developer-splash__logo\s*\{[^}]*filter:\s*none;/s);
+    expect(identCss).not.toContain('#unlock-chroma');
   });
 
   it('ships the optimized square logo master in the local bundle source', () => {
@@ -91,8 +95,10 @@ describe('Sweet Turtles boot splash', () => {
   it('has no gesture gate and keeps startup audio outside every game audio control', () => {
     expect(splash).not.toMatch(/pointerdown|keydown|click|preventDefault|addEventListener/i);
     expect(splash).not.toMatch(/press|continue|시작|클릭|아무 키/i);
+    expect(splash).not.toMatch(/from ['"]\.\.\/audio['"]|audio\.(?:play|playMusic|setVolumes)/);
     expect(startupAudio).not.toMatch(/from ['"].*(?:audio|settings|storage|unlocks)/);
     expect(startupAudio).not.toMatch(/master|music|sfx|mute|SOUND|MUSIC/);
+    expect(startupAudio).not.toMatch(/audio\.|setVolumes|setBusEnabled|applyPresentation/);
     expect(startupAudio).toContain('output.gain.value = 0.6');
     expect(startupAudio).toContain('if (context.state !== \'running\')');
     expect(startupAudio).toContain('void context.resume().catch(() => undefined)');

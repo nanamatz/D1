@@ -45,7 +45,7 @@ describe('settleDurationMs — the clear signal tracks the settle length', () =>
     expect(at2x).toBeCloseTo(at1x / 2);
   });
 
-  it.each([[1, 600], [2, 300], [4, 150]])(
+  it.each([[1, 600], [2, 300]])(
     'runs an ordinary score beat at %ix in %ims',
     (speed, duration) => {
       const oneBeat = settleDurationMs([tile('t0'), settle()], speed, false);
@@ -62,7 +62,7 @@ describe('settleDurationMs — the clear signal tracks the settle length', () =>
 
   it('reduced motion is a constant hold, independent of beat count', () => {
     expect(settleDurationMs(play(2), 1, true)).toBe(700);
-    expect(settleDurationMs(play(12, 5), 4, true)).toBe(700);
+    expect(settleDurationMs(play(12, 5), 2, true)).toBe(700);
   });
 
   it('is zero when there are no scoring beats (nothing to wait for)', () => {
@@ -87,36 +87,75 @@ describe('settle presentation snapshot', () => {
       2,
       false,
     );
-    snapshot = settlePresentationSnapshot(snapshot, 7, 4, true);
+    snapshot = settlePresentationSnapshot(snapshot, 7, 1, true);
     expect(snapshot).toEqual({ settleId: 7, speed: 2, reduced: true });
 
-    snapshot = settlePresentationSnapshot(snapshot, 7, 4, false);
+    snapshot = settlePresentationSnapshot(snapshot, 7, 1, false);
     expect(snapshot).toEqual({ settleId: 7, speed: 2, reduced: true });
 
-    expect(settlePresentationSnapshot(snapshot, 8, 4, false)).toEqual({
+    expect(settlePresentationSnapshot(snapshot, 8, 1, false)).toEqual({
       settleId: 8,
-      speed: 4,
+      speed: 1,
       reduced: false,
     });
   });
 });
 
 describe('reduced Score Typewriter fold', () => {
-  it('keeps the strongest local beat instead of classifying the aggregate', () => {
+  it('keeps the peak local tier only when an event increases the word score', () => {
     const folded = foldScoreTypewriterEvents([
       { kind: 'suit', suit: 'standard', mult: 1 },
       tile('a'),
       { kind: 'tile', tileId: 'b', letter: 'A', chips: 20 },
       tile('c'),
-    ], 100);
-    expect(folded).toEqual({ chips: 40, mult: 1, flatScore: 0, tier: 1, delta: 20 });
-    expect(foldScoreTypewriterEvents([], 100)).toEqual({
+    ], 10);
+    expect(folded).toEqual({
+      chips: 40,
+      mult: 1,
+      flatScore: 0,
+      tier: 4,
+      delta: 10,
+      primaryKeyId: 'KeyA',
+    });
+    expect(foldScoreTypewriterEvents([], 10)).toEqual({
       chips: 0,
       mult: 0,
       flatScore: 0,
       tier: 0,
       delta: 0,
+      primaryKeyId: null,
     });
+  });
+
+  it('ignores gold-only, stat-only, and zero-score events', () => {
+    expect(foldScoreTypewriterEvents([
+      { kind: 'joker', jokerId: 'gold', chipsDelta: 0, multDelta: 0, goldDelta: 5 },
+      {
+        kind: 'joker',
+        jokerId: 'stat',
+        chipsDelta: 0,
+        multDelta: 0,
+        growthKind: 'handSize',
+        growthDelta: 1,
+      },
+      { kind: 'boss', bossId: 'wanted', chipsDelta: 0, multDelta: 0 },
+    ], 5).tier).toBe(0);
+  });
+
+  it('resolves frozen held-tile ids for Brass and tile-bound Emoji beats', () => {
+    const tileLookup = [
+      { id: 'submitted', letter: 'A' },
+      { id: 'held-brass', letter: 'B' },
+      { id: 'held-joker', letter: 'H' },
+    ] as const;
+    expect(foldScoreTypewriterEvents([
+      { kind: 'suit', suit: 'standard', mult: 1 },
+      { kind: 'material', material: 'brass', tileId: 'held-brass', chipsDelta: 2, multDelta: 0 },
+    ], 3, tileLookup).primaryKeyId).toBe('KeyB');
+    expect(foldScoreTypewriterEvents([
+      { kind: 'suit', suit: 'standard', mult: 1 },
+      { kind: 'joker', jokerId: 'test', tileId: 'held-joker', chipsDelta: 3, multDelta: 0 },
+    ], 3, tileLookup).primaryKeyId).toBe('KeyH');
   });
 });
 
@@ -124,7 +163,6 @@ describe('physical Play impact prologue', () => {
   it.each([
     [1, 1, 650], [2, 1, 650], [10, 1, 650], [18, 1, 650],
     [1, 2, 400], [2, 2, 400], [10, 2, 400], [18, 2, 400],
-    [1, 4, 280], [2, 4, 280], [10, 4, 280], [18, 4, 280],
   ])('scales %i tiles at %ix to %ims', (tiles, speed, duration) => {
     expect(playImpactDurationMs(tiles, speed, false)).toBe(duration);
   });
@@ -137,7 +175,7 @@ describe('physical Play impact prologue', () => {
     expect(playImpactDurationMs(0, 1, false)).toBe(0);
   });
 
-  it.each([[1, 650], [2, 400], [4, 280]])(
+  it.each([[1, 650], [2, 400]])(
     'adds fixed impact + beats + hold to the single completion source at %ix',
     (speed, impact) => {
       expect(settleDurationMs([tile('t0'), settle()], speed, false, 18)).toBe(
@@ -148,14 +186,14 @@ describe('physical Play impact prologue', () => {
   );
 
   it('keeps the rigid slam duration independent of word length', () => {
-    for (const speed of [1, 2, 4]) {
+    for (const speed of [1, 2]) {
       expect(playImpactDurationMs(18, speed, false)).toBe(
         playImpactDurationMs(1, speed, false),
       );
     }
   });
 
-  it.each([[1, 650], [2, 400], [4, 280]])(
+  it.each([[1, 650], [2, 400]])(
     'gives a settle-only debuffed play exactly one group slam at %ix',
     (speed, duration) => {
       expect(settleDurationMs([settle()], speed, false, 10)).toBe(duration);
@@ -253,10 +291,10 @@ describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', 
 
   it('scales with speed like every other beat — never a fixed delay', () => {
     const beats = [tile('t0'), material('t0'), suit(), settle()];
-    expect(settleDurationMs(beats, 1, false)).toBeGreaterThan(settleDurationMs(beats, 4, false));
+    expect(settleDurationMs(beats, 1, false)).toBeGreaterThan(settleDurationMs(beats, 2, false));
   });
 
-  it.each([1, 2, 4])('keeps Lead Plate probability results readable at %i×', (speed) => {
+  it.each([1, 2])('keeps Lead Plate probability results readable at %i×', (speed) => {
     const lead: ScoreEvent = {
       kind: 'material',
       material: 'leadPlate',

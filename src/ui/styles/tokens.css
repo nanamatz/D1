@@ -16,6 +16,8 @@
   --chips: #8f9295; /* BLUE; unlock-blue → #3fa7f5 */
   --mult: #8a8785; /* RED; unlock-red → #f5504e */
   --gold: #b0aca4; /* YELLOW; unlock-yellow → #f0b23e */
+  --score-flame-outer: #a9a9a9; /* YELLOW; unlock-yellow → #FF9F0E */
+  --score-flame-core: #c3c3c3; /* YELLOW; unlock-yellow → #FFC222 */
   --tile-face: #e9e8e4; /* YELLOW (warm cream); unlock-yellow → #f4eddf */
   --tile-ink: #2b2620; /* neutral (near-black) */
   /* Base-score letter inks. Neutral defaults preserve luminance until their
@@ -33,6 +35,17 @@
   --suit-formal: #979799; /* BLUE; unlock-blue → #7e96f2 */
   --suit-slang: #a3a09b; /* YELLOW; unlock-yellow → #f09437 */
   --suit-vulgar: #808080; /* RED; unlock-red → #c6479e */
+  /* POS identities stay distinct even before their Palette group unlocks. */
+  --pos-noun: #8f9295; /* BLUE → #3fa7f5 */
+  --pos-interjection: #9b9e9f; /* BLUE → #73d6e8 */
+  --pos-verb-intransitive: #8a8785; /* RED → #f5504e */
+  --pos-verb-transitive: #807e7d; /* RED → #d94e8f */
+  --pos-verb-linking: #95908d; /* RED → #ff7b4d */
+  --pos-adjective: #b0aca4; /* YELLOW → #f0b23e */
+  --pos-adverb: #a5a39c; /* YELLOW → #d6d34a */
+  --pos-article: #bbb7ae; /* YELLOW → #f4dd82 */
+  --pos-conjunction: #7d7d7d; /* GREEN → #4a9d5b */
+  --pos-preposition: #929292; /* GREEN → #52c7a7 */
   /* feature-02 C-3 (playtest bug): fills that were hard-coded hexes and only kept
      monochrome by the all-or-nothing `world-mono` greyscale. Because world-mono is
      dropped the moment ANY colour unlocks, a single unlock (e.g. RED) used to reveal
@@ -201,21 +214,31 @@
   --pop-mult: #ff6f6d; /* mult score-pop */
   --tile-ink-15: #844b78;
   --tile-ink-24: #9b4938;
+  --pos-verb-intransitive: #f5504e;
+  --pos-verb-transitive: #d94e8f;
+  --pos-verb-linking: #ff7b4d;
 }
 :root.unlock-yellow {
-  --gold: #f0b23e; /* money, gold UI, target-cross/typewriter accents */
+  --score-flame-outer: #FF9F0E;
+  --score-flame-core: #FFC222;
+  --gold: #f0b23e; /* money, gold UI, target-cross/score-keyboard accents */
   --suit-slang: #f09437;
   --tile-face: #f4eddf; /* warm ivory tile face returns */
   --kind-big-a: #d6a53a; /* big-blind (Revision) kind pill */
   --kind-big-b: #a87d20;
   --tile-ink-3: #54432f;
   --tile-ink-30: #8a6420;
+  --pos-adjective: #f0b23e;
+  --pos-adverb: #d6d34a;
+  --pos-article: #f4dd82;
 }
 :root.unlock-green {
   --bg-desk: #22443b; /* desk / blind backgrounds */
   --btn-green: #4a9d5b; /* reroll / pack-open / sell buttons */
   --btn-green-hi: #57b268;
   --tile-ink-6: #3f694d;
+  --pos-conjunction: #4a9d5b;
+  --pos-preposition: #52c7a7;
 }
 :root.unlock-blue {
   --chips: #3fa7f5; /* chips, blue buttons */
@@ -234,6 +257,8 @@
   --pop-chip: #5bb8ff; /* chip score-pop */
   --tile-ink-9: #315f86;
   --tile-ink-12: #5b4f8b;
+  --pos-noun: #3fa7f5;
+  --pos-interjection: #73d6e8;
 }
 
 /* "Truly monochrome" guard (revised C-3): while NO colour group is unlocked the

@@ -16,7 +16,7 @@ import { readValue } from './storage';
 import { isWooDakSkin, type WooDakSkin } from './mascotIds';
 
 export interface Settings {
-  gameSpeed: 1 | 2 | 4;
+  gameSpeed: 1 | 2;
   screenshake: number; // 0..100
   reducedMotion: boolean;
   colorBlind: boolean;
@@ -26,9 +26,10 @@ export interface Settings {
   crtEnabled: boolean;
   crtIntensity: number; // 0..100
   crtBloom: boolean;
-  master: number; // 0..100
   music: number;
   sfx: number;
+  musicMuted: boolean;
+  sfxMuted: boolean;
   /** Chosen in Collection → Mascots; persisted here with other profile presentation. */
   mascot: WooDakSkin;
 }
@@ -44,9 +45,10 @@ export const DEFAULT_SETTINGS: Settings = {
   crtEnabled: true,
   crtIntensity: 100,
   crtBloom: true,
-  master: 80,
-  music: 70,
-  sfx: 80,
+  music: 56,
+  sfx: 64,
+  musicMuted: false,
+  sfxMuted: false,
   mascot: 'woodak',
 };
 
@@ -62,7 +64,7 @@ export function readTips(): boolean {
   return normalizeSettings(readValue<unknown>(SETTINGS_KEY)).tips;
 }
 
-const SPEEDS: readonly Settings['gameSpeed'][] = [1, 2, 4];
+const SPEEDS: readonly Settings['gameSpeed'][] = [1, 2];
 
 /**
  * Merge a stored value onto the defaults and range-check every field.
@@ -76,7 +78,10 @@ const SPEEDS: readonly Settings['gameSpeed'][] = [1, 2, 4];
  */
 export function normalizeSettings(stored: unknown): Settings {
   const parsed = stored && typeof stored === 'object'
-    ? stored as Partial<Settings>
+    ? stored as Omit<Partial<Settings>, 'gameSpeed'> & {
+        gameSpeed?: unknown;
+        master?: unknown;
+      }
     : {};
   const merged = { ...DEFAULT_SETTINGS, ...parsed };
   const num = (value: unknown, fallback: number, lo: number, hi: number): number =>
@@ -85,15 +90,30 @@ export function normalizeSettings(stored: unknown): Settings {
       : fallback;
   const bool = (value: unknown, fallback: boolean): boolean =>
     typeof value === 'boolean' ? value : fallback;
+  const hasMuteFormat = typeof parsed.musicMuted === 'boolean' && typeof parsed.sfxMuted === 'boolean';
+  const legacyMaster = typeof parsed.master === 'number' && Number.isFinite(parsed.master) &&
+    parsed.master >= 0 && parsed.master <= 100
+    ? parsed.master
+    : 80;
+  const legacyMusic = num(parsed.music, 70, 0, 100);
+  const legacySfx = num(parsed.sfx, 80, 0, 100);
   return {
-    ...merged,
-    gameSpeed: SPEEDS.includes(merged.gameSpeed) ? merged.gameSpeed : DEFAULT_SETTINGS.gameSpeed,
+    gameSpeed: parsed.gameSpeed === 4
+      ? 2
+      : SPEEDS.includes(parsed.gameSpeed as Settings['gameSpeed'])
+        ? parsed.gameSpeed as Settings['gameSpeed']
+        : DEFAULT_SETTINGS.gameSpeed,
     screenshake: num(merged.screenshake, DEFAULT_SETTINGS.screenshake, 0, 100),
     uiScale: num(merged.uiScale, DEFAULT_SETTINGS.uiScale, 80, 120),
     crtIntensity: num(merged.crtIntensity, DEFAULT_SETTINGS.crtIntensity, 0, 100),
-    master: num(merged.master, DEFAULT_SETTINGS.master, 0, 100),
-    music: num(merged.music, DEFAULT_SETTINGS.music, 0, 100),
-    sfx: num(merged.sfx, DEFAULT_SETTINGS.sfx, 0, 100),
+    music: hasMuteFormat
+      ? num(merged.music, DEFAULT_SETTINGS.music, 0, 100)
+      : legacyMaster === 0 ? legacyMusic : Math.round(legacyMaster * legacyMusic / 100),
+    sfx: hasMuteFormat
+      ? num(merged.sfx, DEFAULT_SETTINGS.sfx, 0, 100)
+      : legacyMaster === 0 ? legacySfx : Math.round(legacyMaster * legacySfx / 100),
+    musicMuted: hasMuteFormat ? parsed.musicMuted! : legacyMaster === 0,
+    sfxMuted: hasMuteFormat ? parsed.sfxMuted! : legacyMaster === 0,
     reducedMotion: bool(merged.reducedMotion, DEFAULT_SETTINGS.reducedMotion),
     colorBlind: bool(merged.colorBlind, DEFAULT_SETTINGS.colorBlind),
     tips: bool(merged.tips, DEFAULT_SETTINGS.tips),
@@ -142,19 +162,24 @@ export function useSettings() {
     document.body.classList.toggle('force-reduced-motion', settings.reducedMotion);
     document.body.classList.toggle('cb-safe', settings.colorBlind);
     // Mixer: push the persisted slider values into the audio facade (work order B).
-    audio.setVolumes({ master: settings.master, music: settings.music, sfx: settings.sfx });
+    audio.setVolumes({
+      music: settings.music,
+      sfx: settings.sfx,
+      musicMuted: settings.musicMuted,
+      sfxMuted: settings.sfxMuted,
+    });
     // Chromatic unlocks are profile progress; never read a device-wide override.
     applyPresentation();
   }, [
     settings.uiScale, settings.screenshake, settings.crtEnabled, settings.crtIntensity,
     settings.crtBloom, settings.reducedMotion, settings.colorBlind,
-    settings.master, settings.music, settings.sfx,
+    settings.music, settings.sfx, settings.musicMuted, settings.sfxMuted,
   ]);
 
   // Built from the NORMALIZED value, so writing one field also repairs a legacy
   // partial object instead of persisting the hole again.
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
-    setSettings((current) => normalizeSettings({ ...current, [key]: value }));
+    setSettings((current) => normalizeSettings({ ...normalizeSettings(current), [key]: value }));
 
   return { settings, set };
 }

@@ -1,71 +1,218 @@
 import { BALANCE } from '../engine/balance';
-import { letterChips, wordLengthMult } from '../engine/scoring';
-import type { ScoreEvent, WordSubmission } from '../engine/types';
+import type { ScoreEvent } from '../engine/types';
 
 export type ScoreTypewriterTier = 0 | 1 | 2 | 3 | 4 | 5;
 
-export interface ScoreTypewriterKeycap {
+export type KeyboardKeyRole = 'main' | 'function' | 'nav' | 'numpad';
+
+export interface KeyboardKeyDef {
   readonly id: string;
+  readonly label: string;
   readonly x: number;
   readonly y: number;
-  readonly scale: number;
-  readonly tilt: number;
+  readonly w: number;
+  readonly h: number;
+  readonly role: KeyboardKeyRole;
 }
 
-/** Authored loose mechanical banks inside the rotated chassis keywell. */
-export const SCORE_TYPEWRITER_KEYCAPS: readonly ScoreTypewriterKeycap[] = [
-  { id: 'a01', x: 20, y: 7, scale: 0.98, tilt: -3 },
-  { id: 'a02', x: 18, y: 16.5, scale: 1.03, tilt: 2 },
-  { id: 'a03', x: 17, y: 26, scale: 0.96, tilt: -1 },
-  { id: 'a04', x: 19, y: 35.5, scale: 1.01, tilt: 3 },
-  { id: 'a05', x: 22, y: 45, scale: 1.04, tilt: -2 },
-  { id: 'a06', x: 23, y: 54.5, scale: 0.97, tilt: 1 },
-  { id: 'a07', x: 21, y: 64, scale: 1.02, tilt: -3 },
-  { id: 'a08', x: 18, y: 73.5, scale: 0.95, tilt: 2 },
-  { id: 'a09', x: 17, y: 83, scale: 1.03, tilt: -1 },
-  { id: 'a10', x: 20, y: 92.5, scale: 0.99, tilt: 3 },
-  { id: 'b01', x: 48, y: 10.5, scale: 1.02, tilt: 2 },
-  { id: 'b02', x: 46, y: 20.5, scale: 0.96, tilt: -3 },
-  { id: 'b03', x: 47, y: 30.5, scale: 1.04, tilt: 1 },
-  { id: 'b04', x: 50, y: 40.5, scale: 0.98, tilt: -2 },
-  { id: 'b05', x: 51, y: 50.5, scale: 1.01, tilt: 3 },
-  { id: 'b06', x: 49, y: 60.5, scale: 0.95, tilt: -1 },
-  { id: 'b07', x: 46, y: 70.5, scale: 1.03, tilt: 2 },
-  { id: 'b08', x: 47, y: 80.5, scale: 0.97, tilt: -3 },
-  { id: 'b09', x: 50, y: 90.5, scale: 1.02, tilt: 1 },
-  { id: 'c01', x: 79, y: 14, scale: 0.97, tilt: -2 },
-  { id: 'c02', x: 82, y: 25, scale: 1.03, tilt: 3 },
-  { id: 'c03', x: 80, y: 36, scale: 0.95, tilt: -1 },
-  { id: 'c04', x: 77, y: 47, scale: 1.04, tilt: 2 },
-  { id: 'c05', x: 76, y: 58, scale: 0.98, tilt: -3 },
-  { id: 'c06', x: 78, y: 69, scale: 1.01, tilt: 1 },
-  { id: 'c07', x: 81, y: 80, scale: 0.96, tilt: -2 },
-  { id: 'c08', x: 79, y: 91, scale: 1.03, tilt: 3 },
-] as const;
-
-/** Original suit Mult from the score log, with a lexicon-derived debuff fallback. */
-export function scoreTypewriterBaseSuitMult(
-  events: readonly ScoreEvent[],
-  fallbackBaseSuitMult: number,
-): number {
-  const scoredSuit = events.find((event) => event.kind === 'suit');
-  if (scoredSuit?.kind === 'suit') return scoredSuit.mult;
-  return fallbackBaseSuitMult;
+interface KeySpec {
+  readonly id: string;
+  readonly label: string;
+  readonly units?: number;
+  readonly extraAfter?: number;
 }
 
-/** Frozen ordinary score for this submission, before enhancements and hooks. */
-export function scoreTypewriterExpectedBase(
-  submission: WordSubmission,
-  baseSuitMult: number,
-): number {
-  const suitMult = submission.isGibberish
-    ? BALANCE.gibberish.mult
-    : baseSuitMult;
-  const scoringLength = submission.scoringLength ?? submission.tiles.length;
-  const expected = letterChips(submission.tiles) * (
-    suitMult + wordLengthMult(scoringLength, submission.isGibberish)
+const KEYBOARD_SOURCE_WIDTH = 1774;
+const KEYBOARD_SOURCE_HEIGHT = 887;
+const KEY_HEIGHT = 47;
+const ROW_GAP = 7;
+const MAIN_UNIT = 64;
+const MAIN_X = 94;
+const MAIN_WIDTH = 1044;
+const ROW_Y = [302, 361, 420, 479, 538, 597] as const;
+
+function keyDef(
+  id: string,
+  label: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  role: KeyboardKeyRole,
+): KeyboardKeyDef {
+  return {
+    id,
+    label,
+    x: x / KEYBOARD_SOURCE_WIDTH * 100,
+    y: y / KEYBOARD_SOURCE_HEIGHT * 100,
+    w: width / KEYBOARD_SOURCE_WIDTH * 100,
+    h: height / KEYBOARD_SOURCE_HEIGHT * 100,
+    role,
+  };
+}
+
+function keyRow(
+  specs: readonly KeySpec[],
+  x: number,
+  y: number,
+  width: number,
+  role: KeyboardKeyRole,
+  fixedUnit?: number,
+): KeyboardKeyDef[] {
+  const gaps = specs.slice(0, -1).reduce((sum, spec) => sum + ROW_GAP + (spec.extraAfter ?? 0), 0);
+  const units = specs.reduce((sum, spec) => sum + (spec.units ?? 1), 0);
+  const unit = fixedUnit ?? (width - gaps) / units;
+  let cursor = x;
+  return specs.map((spec, index) => {
+    const keyWidth = unit * (spec.units ?? 1);
+    const key = keyDef(spec.id, spec.label, cursor, y, keyWidth, KEY_HEIGHT, role);
+    cursor += keyWidth + (index < specs.length - 1 ? ROW_GAP + (spec.extraAfter ?? 0) : 0);
+    return key;
+  });
+}
+
+const functionKeys = keyRow([
+  { id: 'Escape', label: 'ESC', extraAfter: 22 },
+  ...Array.from({ length: 12 }, (_, index): KeySpec => ({
+    id: `F${index + 1}`,
+    label: `F${index + 1}`,
+    extraAfter: index === 3 || index === 7 ? 22 : 0,
+  })),
+], MAIN_X, ROW_Y[0], MAIN_WIDTH, 'function', 47);
+
+const mainRows = [
+  keyRow([
+    { id: 'Backquote', label: '`' },
+    ...Array.from({ length: 10 }, (_, index): KeySpec => ({ id: `Digit${index}`, label: String(index) }))
+      .slice(1)
+      .concat({ id: 'Digit0', label: '0' }),
+    { id: 'Minus', label: '-' },
+    { id: 'Equal', label: '=' },
+    { id: 'Backspace', label: 'BACKSPACE', units: 2 },
+  ], MAIN_X, ROW_Y[1], MAIN_WIDTH, 'main'),
+  keyRow([
+    { id: 'Tab', label: 'TAB', units: 1.5 },
+    ...'QWERTYUIOP'.split('').map((letter): KeySpec => ({ id: `Key${letter}`, label: letter })),
+    { id: 'BracketLeft', label: '[' },
+    { id: 'BracketRight', label: ']' },
+    { id: 'Backslash', label: '\\', units: 1.5 },
+  ], MAIN_X, ROW_Y[2], MAIN_WIDTH, 'main'),
+  keyRow([
+    { id: 'CapsLock', label: 'CAPS', units: 1.75 },
+    ...'ASDFGHJKL'.split('').map((letter): KeySpec => ({ id: `Key${letter}`, label: letter })),
+    { id: 'Semicolon', label: ';' },
+    { id: 'Quote', label: "'" },
+    { id: 'Enter', label: 'ENTER', units: 2.25 },
+  ], MAIN_X, ROW_Y[3], MAIN_WIDTH, 'main'),
+  keyRow([
+    { id: 'ShiftLeft', label: 'SHIFT', units: 2.25 },
+    ...'ZXCVBNM'.split('').map((letter): KeySpec => ({ id: `Key${letter}`, label: letter })),
+    { id: 'Comma', label: ',' },
+    { id: 'Period', label: '.' },
+    { id: 'Slash', label: '/' },
+    { id: 'ShiftRight', label: 'SHIFT', units: 2.75 },
+  ], MAIN_X, ROW_Y[4], MAIN_WIDTH, 'main'),
+  keyRow([
+    { id: 'ControlLeft', label: 'CTRL', units: 1.25 },
+    { id: 'AltLeft', label: 'ALT', units: 1.25 },
+    { id: 'Space', label: 'SPACE', units: 7 },
+    { id: 'AltRight', label: 'ALT', units: 1.25 },
+    { id: 'ControlRight', label: 'CTRL', units: 1.25 },
+  ], MAIN_X + (MAIN_WIDTH - (12 * MAIN_UNIT + 4 * ROW_GAP)) / 2, ROW_Y[5], MAIN_WIDTH, 'main', MAIN_UNIT),
+].flat();
+
+function gridKey(
+  id: string,
+  label: string,
+  column: number,
+  row: number,
+  role: 'nav' | 'numpad',
+  columns: number,
+  x: number,
+  width: number,
+  columnSpan = 1,
+  rowSpan = 1,
+): KeyboardKeyDef {
+  const gap = 7;
+  const keyWidth = (width - gap * (columns - 1)) / columns;
+  return keyDef(
+    id,
+    label,
+    x + column * (keyWidth + gap),
+    ROW_Y[row] ?? ROW_Y[0],
+    keyWidth * columnSpan + gap * (columnSpan - 1),
+    KEY_HEIGHT * rowSpan + 12 * (rowSpan - 1),
+    role,
   );
-  return Math.max(BALANCE.scoreTypewriter.expectedBaseFloor, expected);
+}
+
+const NAV_X = 1177;
+const NAV_WIDTH = 192;
+const navKeys: KeyboardKeyDef[] = [
+  ['PrintScreen', 'PRINT', 0, 0], ['ScrollLock', 'SCROLL', 1, 0], ['Break', 'BREAK', 2, 0],
+  ['Insert', 'INS', 0, 1], ['Home', 'HOME', 1, 1], ['PageUp', 'PGUP', 2, 1],
+  ['Delete', 'DEL', 0, 2], ['End', 'END', 1, 2], ['PageDown', 'PGDN', 2, 2],
+  ['ArrowUp', '↑', 1, 4], ['ArrowLeft', '←', 0, 5], ['ArrowDown', '↓', 1, 5], ['ArrowRight', '→', 2, 5],
+].map(([id, label, column, row]) => gridKey(
+  String(id), String(label), Number(column), Number(row), 'nav', 3, NAV_X, NAV_WIDTH,
+));
+
+const NUMPAD_X = 1404;
+const NUMPAD_WIDTH = 258;
+const numpadKeys: KeyboardKeyDef[] = [
+  gridKey('NumLock', 'NUM', 0, 1, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH),
+  gridKey('NumpadDivide', '/', 1, 1, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH),
+  gridKey('NumpadMultiply', '*', 2, 1, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH),
+  gridKey('NumpadSubtract', '-', 3, 1, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH),
+  ...['7', '8', '9'].map((label, column) => gridKey(`Numpad${label}`, label, column, 2, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH)),
+  gridKey('NumpadAdd', '+', 3, 2, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH, 1, 2),
+  ...['4', '5', '6'].map((label, column) => gridKey(`Numpad${label}`, label, column, 3, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH)),
+  ...['1', '2', '3'].map((label, column) => gridKey(`Numpad${label}`, label, column, 4, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH)),
+  gridKey('NumpadEnter', 'ENTER', 3, 4, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH, 1, 2),
+  gridKey('Numpad0', '0', 0, 5, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH, 2),
+  gridKey('NumpadDecimal', '.', 2, 5, 'numpad', 4, NUMPAD_X, NUMPAD_WIDTH),
+];
+
+/** UI-only ANSI-derived registry; every cap is a deterministic score-feedback candidate. */
+export const SCORE_TYPEWRITER_KEYCAPS: readonly KeyboardKeyDef[] = [
+  ...functionKeys,
+  ...mainRows,
+  ...navKeys,
+  ...numpadKeys,
+];
+
+const playedLetter = (
+  tileId: string | undefined,
+  tiles: readonly { id: string; letter: string | null }[],
+): string | null | undefined => tiles.find((tile) => tile.id === tileId)?.letter;
+
+const letterKey = (letter: string | null | undefined): string =>
+  letter === null ? 'Space' : /^[A-Z]$/.test(letter ?? '') ? `Key${letter}` : 'Enter';
+
+/** Pick the key that semantically owns this presentation beat. */
+export function scoreTypewriterPrimaryKey(
+  event: ScoreEvent,
+  tiles: readonly { id: string; letter: string | null }[] = [],
+): string {
+  if (event.kind === 'tile') return letterKey(event.letter);
+  if (event.kind === 'tag') {
+    if (event.tileId) return letterKey(playedLetter(event.tileId, tiles));
+    return 'Tab';
+  }
+  if (event.kind === 'pouch') return 'Space';
+  if (event.kind === 'boss') return 'Break';
+  if (event.kind === 'joker') {
+    if (event.tileId) return letterKey(playedLetter(event.tileId, tiles));
+    return `F${scoreTypewriterBeatHash(event.jokerId) % 12 + 1}`;
+  }
+  if (event.kind === 'material' || event.kind === 'font') {
+    return letterKey(playedLetter(event.tileId, tiles));
+  }
+  if (event.kind === 'edition') {
+    if (event.tileId) return letterKey(playedLetter(event.tileId, tiles));
+    if (event.jokerId) return `F${scoreTypewriterBeatHash(event.jokerId) % 12 + 1}`;
+  }
+  return 'Enter';
 }
 
 /** Flat post-Chips×Mult score carried by the current presentation beat. */
@@ -73,24 +220,50 @@ export function scoreEventFlatDelta(event: ScoreEvent): number {
   return event.kind === 'joker' || event.kind === 'tag' ? (event.scoreDelta ?? 0) : 0;
 }
 
-/** Six deterministic tiers driven only by this event's local score magnitude. */
+/** Classify one current-submission local score against the positive blind target. */
 export function scoreTypewriterTier(
-  delta: number,
-  expectedBase: number,
+  settledScore: number,
+  target: number,
 ): ScoreTypewriterTier {
-  if (!Number.isFinite(delta) || !Number.isFinite(expectedBase) || delta === 0 || expectedBase <= 0) {
+  if (!Number.isFinite(settledScore) || !Number.isFinite(target) || target <= 0 || settledScore <= target) {
     return 0;
   }
-  const impact = Math.abs(delta) / expectedBase;
-  const [typing, fast, frenzy, overdrive] = BALANCE.scoreTypewriter.impactThresholds;
-  if (impact < typing) return 1;
-  if (impact < fast) return 2;
-  if (impact < frenzy) return 3;
-  if (impact < overdrive) return 4;
+  const ratio = settledScore / target;
+  const [fast, frenzy, overdrive, meltdown] = BALANCE.scoreTypewriter.ratioThresholds;
+  if (ratio < fast) return 1;
+  if (ratio < frenzy) return 2;
+  if (ratio < overdrive) return 3;
+  if (ratio < meltdown) return 4;
   return 5;
 }
 
-/** Local before/after axes, deliberately independent of target and round total. */
+/** Raise, but never lower, the presented tier after a local score increase. */
+export function scoreTypewriterPeakTier(
+  previous: ScoreTypewriterTier,
+  beforeLocal: number,
+  afterLocal: number,
+  target: number,
+): ScoreTypewriterTier {
+  if (!Number.isFinite(beforeLocal) || !Number.isFinite(afterLocal) || afterLocal <= beforeLocal) {
+    return previous;
+  }
+  return Math.max(previous, scoreTypewriterTier(Math.max(0, afterLocal), target)) as ScoreTypewriterTier;
+}
+
+/** UI-only clear lifecycle: keep the submission peak until resolution leaves play. */
+export function scoreTypewriterClearPeak(
+  previous: ScoreTypewriterTier,
+  resolutionActive: boolean,
+  active: boolean,
+  tier: ScoreTypewriterTier,
+): ScoreTypewriterTier {
+  if (!resolutionActive) return 0;
+  return active
+    ? Math.max(previous, tier) as ScoreTypewriterTier
+    : previous;
+}
+
+/** Local before/after axes used only to decide whether a beat changes score. */
 export function scoreTypewriterEventDelta(
   chipsBefore: number,
   multBefore: number,
@@ -99,10 +272,10 @@ export function scoreTypewriterEventDelta(
   multAfter: number,
   flatAfter: number,
 ): number {
-  const before = chipsBefore * multBefore + flatBefore;
-  const after = chipsAfter * multAfter + flatAfter;
-  const delta = Math.abs(after - before);
-  return Number.isFinite(delta) ? delta : 0;
+  const before = Math.max(0, chipsBefore * multBefore + flatBefore);
+  const after = Math.max(0, chipsAfter * multAfter + flatAfter);
+  const delta = after - before;
+  return Number.isFinite(delta) && delta > 0 ? delta : 0;
 }
 
 /** Separate one-shot signal; it never participates in strength classification. */
@@ -115,6 +288,33 @@ export function scoreTypewriterShake(value: number, tier: ScoreTypewriterTier): 
   if (!Number.isFinite(value)) return 0;
   const setting = Math.max(0, Math.min(100, value)) / 100;
   return setting * BALANCE.scoreTypewriter.shakeFactors[tier];
+}
+
+/** Clear-celebration cadence reuses the score beat and its clearing-submission speed snapshot. */
+export function scoreTypewriterClearRepeatMs(tier: ScoreTypewriterTier, speed: number): number {
+  const safeSpeed = Math.max(1, Number.isFinite(speed) ? speed : 1);
+  return BALANCE.scoreTypewriter.beatMs * BALANCE.scoreTypewriter.clearRepeatFactors[tier] / safeSpeed;
+}
+
+/** Immediate, self-scheduling presentation loop; cleanup stops every future cycle. */
+export function scheduleScoreTypewriterClearRepeats(
+  intervalMs: number,
+  onCycle: (cycle: number) => void,
+): () => void {
+  let live = true;
+  let cycle = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const run = (): void => {
+    if (!live) return;
+    onCycle(cycle);
+    cycle += 1;
+    timer = setTimeout(run, intervalMs);
+  };
+  run();
+  return () => {
+    live = false;
+    if (timer !== undefined) clearTimeout(timer);
+  };
 }
 
 export function scoreTypewriterLiveTotal(
@@ -148,7 +348,11 @@ function nextHash(state: number): number {
 }
 
 /** Stable beat-local hash permutation; presentation only, never engine RNG. */
-export function scoreTypewriterKeySequence(beatId: string, count: number): number[] {
+export function scoreTypewriterKeySequence(
+  beatId: string,
+  count: number,
+  primaryKeyId?: string,
+): number[] {
   const keys = SCORE_TYPEWRITER_KEYCAPS.map((_, index) => index);
   let state = scoreTypewriterBeatHash(beatId) || 0x9e3779b9;
   for (let index = keys.length - 1; index > 0; index -= 1) {
@@ -156,7 +360,12 @@ export function scoreTypewriterKeySequence(beatId: string, count: number): numbe
     const swapIndex = state % (index + 1);
     [keys[index], keys[swapIndex]] = [keys[swapIndex]!, keys[index]!];
   }
-  return keys.slice(0, Math.max(0, Math.min(keys.length, Math.floor(count))));
+  const take = Math.max(0, Math.min(keys.length, Math.floor(count)));
+  const primaryIndex = primaryKeyId === undefined
+    ? -1
+    : SCORE_TYPEWRITER_KEYCAPS.findIndex(({ id }) => id === primaryKeyId);
+  if (take === 0 || primaryIndex < 0) return keys.slice(0, take);
+  return [primaryIndex, ...keys.filter((index) => index !== primaryIndex).slice(0, take - 1)];
 }
 
 /** Per-button timing; every selected key finishes inside the existing score beat. */

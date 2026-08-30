@@ -1668,22 +1668,26 @@ body.cb-safe .tile.hint {
 /* ---------- Main Menu (spec §2.1) ---------- */
 .menu {
   position: relative;
-  isolation: isolate;
   box-sizing: border-box;
   width: 100%;
   overflow: hidden;
   gap: 26px;
 }
-.menu::before,
-.menu::after {
+/* Keep the menu-only monitor field on the viewport, not the zoomed central
+   board, so its light and scan sweep cannot expose the board's side edges. */
+body:has(.menu) {
+  isolation: isolate;
+}
+body:has(.menu)::before,
+body:has(.menu)::after {
   content: '';
-  position: absolute;
+  position: fixed;
   pointer-events: none;
   z-index: -1;
 }
 /* Menu-only monitor field: a static low-resolution phosphor grid under one
    composited sweep. Global CRT scanlines still finish the whole application. */
-.menu::before {
+body:has(.menu)::before {
   inset: 0;
   background:
     repeating-linear-gradient(90deg, transparent 0 47px, rgba(255, 255, 255, .035) 47px 48px),
@@ -1691,10 +1695,10 @@ body.cb-safe .tile.hint {
     radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--chips) 13%, transparent), transparent 58%);
   opacity: .68;
 }
-.menu::after {
+body:has(.menu)::after {
   top: -42vh;
-  right: -8%;
-  left: -8%;
+  right: 0;
+  left: 0;
   height: 34vh;
   background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .09), transparent);
   mix-blend-mode: screen;
@@ -1780,11 +1784,11 @@ body.cb-safe .tile.hint {
   92% { transform: translateY(0) rotate(4deg) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .menu::after { animation: none; transform: translateY(82vh); }
+  body:has(.menu)::after { animation: none; transform: translateY(82vh); }
   .menu .logotype,
   .menu .lt-bang { animation: none; }
 }
-.force-reduced-motion .menu::after {
+body.force-reduced-motion:has(.menu)::after {
   animation: none;
   transform: translateY(82vh);
 }
@@ -4238,12 +4242,42 @@ body.cb-safe .tile.hint {
   accent-color: var(--gold);
   width: 160px;
 }
+.audio-set-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(140px, 160px) 44px 76px;
+  gap: 12px;
+}
+.audio-set-row .set-control { display: contents; }
+.audio-set-row .set-control input[type='range'] {
+  width: 100%;
+  min-width: 0;
+}
+.audio-set-row .set-badge {
+  width: 100%;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
 .set-badge {
   font-family: 'Jersey 10';
   font-size: var(--fs-xl);
   color: var(--gold);
   min-width: 34px;
   text-align: right;
+}
+.audio-mute {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+}
+.audio-mute input { accent-color: var(--gold); }
+@media (max-width: 480px) {
+  .audio-set-row {
+    grid-template-columns: 64px minmax(96px, 1fr) 36px 68px;
+    gap: 8px;
+  }
 }
 .set-note {
   font-size: var(--fs-sm);
@@ -4967,7 +5001,6 @@ body.cb-safe .tile.hint {
 .screen-stack {
   position: relative;
   width: 100%;
-  max-width: var(--board-max);
   min-height: var(--board-h);
   margin: 0 auto;
 }
@@ -4982,7 +5015,7 @@ body.cb-safe .tile.hint {
 .screen-pane {
   width: 100%;
   min-height: var(--board-h);
-  background: var(--bg-desk);
+  background: transparent;
 }
 /* Each retained transition pane keeps its own fit snapshot. CSS zoom already
    compensates percentage layout sizing; reciprocal width would double that
@@ -5023,6 +5056,7 @@ body.cb-safe .tile.hint {
 .screen-pane.screen-in.screen-anim {
   animation: screenSlideIn 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
   will-change: transform;
+  background: var(--bg-desk);
   box-shadow: -8px 0 6px -3px rgba(0, 0, 0, 0.38);
 }
 @keyframes screenSlideIn {
@@ -5110,6 +5144,47 @@ body.cb-safe .tile.hint {
   outline: 3px solid var(--gold, #ffd76a);
   pointer-events: none;
   transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s;
+}
+.tutorial-mouse-cue {
+  display: none;
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  animation: tutorial-mouse-cue 0.8s steps(2, end) infinite;
+}
+.tutorial-mouse-cue::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 1px;
+  width: 26px;
+  height: 36px;
+  border: 3px solid #f2f2f2;
+  border-radius: 13px 13px 10px 10px;
+  background: #4b5054;
+  box-shadow: 3px 3px 0 #080a0b;
+}
+.tutorial-mouse-cue::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  width: 10px;
+  height: 13px;
+  background: #d6d8d9;
+  border-bottom: 3px solid #111416;
+}
+.tutorial-mouse-cue[data-click-kind='left']::after { left: 9px; border-right: 2px solid #111416; }
+.tutorial-mouse-cue[data-click-kind='right']::after { left: 21px; border-left: 2px solid #111416; }
+@media (hover: hover) and (pointer: fine) {
+  .tutorial-mouse-cue { display: block; }
+}
+@keyframes tutorial-mouse-cue {
+  50% { translate: 0 2px; }
+}
+.force-reduced-motion .tutorial-mouse-cue { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-mouse-cue { animation: none; }
 }
 .intro-wrap {
   position: fixed;
@@ -5254,9 +5329,7 @@ body.cb-safe .tile.hint {
   display: grid;
   place-items: center;
   background: #000;
-}
-.developer-splash--mono {
-  filter: grayscale(1);
+  filter: none;
 }
 .developer-splash__content {
   display: flex;
@@ -5319,6 +5392,7 @@ body.cb-safe .tile.hint {
   height: 100%;
   object-fit: cover;
   object-position: center;
+  filter: none;
 }
 .developer-splash__coin-shadow {
   position: absolute;

@@ -53,6 +53,8 @@ interface Props {
   tilt?: boolean;
   /** Focusable display object with no click action, used by inspection galleries. */
   inspectable?: boolean;
+  /** Current guided-intro action; marks exactly one real DOM target. */
+  tutorialClick?: 'left' | 'right' | undefined;
   /** Anchored hover tooltip with enhancement tags and left-side definitions. */
   tooltip?: {
     title: string;
@@ -85,6 +87,7 @@ function TileViewImpl({
   destroyed = false,
   tilt = true,
   inspectable = false,
+  tutorialClick,
   tooltip,
 }: Props) {
   const { t } = useI18n();
@@ -161,6 +164,7 @@ function TileViewImpl({
     markDisabled && 'discard-locked',
     destroyed && 'glass-destroyed',
     shattering && 'glass-shattering',
+    tutorialClick && 'tutorial-action-target',
   ]
     .filter(Boolean)
     .join(' ');
@@ -177,6 +181,7 @@ function TileViewImpl({
       // pointer events; the home zone is read from here. Native HTML5 drag is off —
       // it can't spring-follow or rotate (the browser owns its drag image).
       data-zone={zone}
+      data-tutorial-click-kind={tutorialClick}
       role={interactive ? 'button' : inspectable ? 'img' : undefined}
       tabIndex={focusable ? 0 : undefined}
       aria-pressed={interactive ? selected : undefined}

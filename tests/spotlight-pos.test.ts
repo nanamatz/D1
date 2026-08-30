@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { placeSpotlightBubble, type Rect, type Viewport } from '../src/ui/spotlightPos';
+import {
+  isPointNearRect,
+  placeSpotlightBubble,
+  retainPointerForTarget,
+  type Rect,
+  type Viewport,
+} from '../src/ui/spotlightPos';
 
 const VP: Viewport = { w: 1280, h: 720 };
 const WRAP_W = 360;
@@ -53,5 +59,29 @@ describe('placeSpotlightBubble — always keeps the bubble on-screen', () => {
     const region: Rect = { top: 100, left: 500, width: 300, height: 300 };
     const pos = placeSpotlightBubble(region, WRAP_W, 800, VP);
     expect(pos.top).toBe(MARGIN);
+  });
+});
+
+describe('isPointNearRect', () => {
+  const target: Rect = { top: 100, left: 200, width: 80, height: 40 };
+
+  it('includes the target and its 48px perimeter, but nothing beyond it', () => {
+    expect(isPointNearRect({ x: 220, y: 120 }, target)).toBe(true);
+    expect(isPointNearRect({ x: 152, y: 148 }, target)).toBe(true);
+    expect(isPointNearRect({ x: 151.99, y: 120 }, target)).toBe(false);
+    expect(isPointNearRect({ x: 220, y: 188.01 }, target)).toBe(false);
+    expect(isPointNearRect({ x: 220, y: 120 }, null)).toBe(false);
+  });
+});
+
+describe('retainPointerForTarget', () => {
+  it('retains coordinates only while the exact target element is unchanged', () => {
+    const first = {};
+    const replacement = {};
+    const pointer = { x: 220, y: 120 };
+    expect(retainPointerForTarget(pointer, first, first)).toBe(pointer);
+    expect(retainPointerForTarget(pointer, first, replacement)).toBeNull();
+    expect(retainPointerForTarget(pointer, first, null)).toBeNull();
+    expect(retainPointerForTarget(pointer, null, null)).toBeNull();
   });
 });

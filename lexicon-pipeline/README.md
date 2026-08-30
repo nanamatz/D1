@@ -12,6 +12,7 @@ Sources:
 - Moby Part-of-Speech II: <https://www.gutenberg.org/files/3203/files/mobypos.txt>
 - English Wiktionary usage categories: <https://en.wiktionary.org/wiki/Category:English_terms_by_usage>
 - Curated acronym families: `curated-abbreviations.json`
+- Reviewed exact validity omissions: `curated-validity.json`
 
 ```sh
 node scripts/build-dictionary.mjs /path/to/enable1.txt data/dictionary.txt
@@ -29,7 +30,8 @@ npm run check:data
 ```
 
 `dictionary.txt` contains every ENABLE word of 18 letters or fewer plus apostrophe-free tile-grammar
-exceptions and the curated MVP/VIP singular/plural surfaces. `classify-wordnet.mjs` unions exact-headword Moby/WordNet POS into
+exceptions, the curated MVP/VIP singular/plural surfaces, and the exact reviewed
+rows in `curated-validity.json`. `classify-wordnet.mjs` unions exact-headword Moby/WordNet POS into
 existing non-empty entries, fills missing words, then applies `pos-overrides.json`.
 WordNet morphology handles
 inflections and verb frames distinguish transitive, intransitive, and linking
@@ -39,15 +41,18 @@ defaults newly added words to Standard rather than applying legacy suit seeds.
 Each `pos-overrides.json` row is the complete ordered POS list for that word,
 not an additive patch; `check:data` verifies that the baked entry matches it.
 
-Both classifiers apply `curated-abbreviations.json` last, so its exact suit/POS
-metadata wins deterministically. When only that source changes, preserve the
+Both classifiers apply `curated-abbreviations.json` and `curated-validity.json`
+last, so their exact suit/POS metadata wins deterministically. The validity
+registry is reason-bearing and exact-only: it neither admits proper names as a
+class nor generates derivatives. When only either curated source changes, preserve the
 existing licensed snapshot with `node lexicon-pipeline/classify-registers.mjs --curatedOnly true`.
 
-Current playable build: 172,232 dictionary words, 172,255 lexicon entries
+Current playable build: 172,234 dictionary words, 172,257 lexicon entries
 (23 retained pre-existing entries sit outside the dictionary). `check:data`
 rejects words over 18 letters, missing or empty POS, and register-audit drift.
-It also validates the curated schema, exact four keys, and both baked outputs.
-Register distribution: Standard 168,467; Formal 2,669; Slang 879; Vulgar 240.
+It also validates both curated schemas, the exact four acronym keys, the exact
+two reviewed-validity keys, and both baked outputs. Register distribution:
+Standard 168,469; Formal 2,669; Slang 879; Vulgar 240.
 
 The authoritative rules and boundary examples live in
 `docs/# 영단어 레지스터 분류 기준.md`; `register-overrides.json` mirrors only

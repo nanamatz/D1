@@ -1,6 +1,6 @@
 /**
  * Audio facade (work order B, phase 1 — SFX). One module singleton owns the
- * AudioContext and a master→group gain graph; components call `audio.play(name)`.
+ * AudioContext and group gain controls; components call `audio.play(name)`.
  *
  * Most sounds are synthesized via small oscillator/noise recipes. Selected
  * one-shot samples live behind the same facade, so call sites stay unchanged
@@ -40,7 +40,7 @@ export type SfxName =
   | 'tagSpawn' | 'gameOver' | 'gameClear' | 'rainbowShimmer'
   | 'jokerChips' | 'jokerMult' | 'jokerEffect'
   // D-3 ambient desk objects (feature-03): each click plays its own small sound.
-  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour' | 'deskKeycap' | 'deskWaxCrunch' | 'deskJackPop' | 'deskFlySwat' | 'deskBulldogBite' | 'deskLaunchCover' | 'deskLaunchAlarm'
+  | 'deskCup' | 'deskBell' | 'deskCheck' | 'deskPour' | 'deskKeycap' | 'deskEnter' | 'deskWaxCrunch' | 'deskJackPop' | 'deskFlySwat' | 'deskBulldogBite' | 'deskLaunchCover' | 'deskLaunchAlarm'
   // feature-04 A-1 · money is never silent — a rising coin gain / falling coin loss,
   // distinguishable by contour, fired centrally on every gold change.
   | 'coinGain' | 'coinLoss'
@@ -78,7 +78,7 @@ interface NoiseLayer {
 }
 
 interface Recipe {
-  /** base loudness 0..1, before master/sfx scaling */
+  /** base loudness 0..1, before group scaling */
   gain: number;
   /** overall length in seconds */
   dur: number;
@@ -258,6 +258,17 @@ const RECIPES: Record<SfxName, Recipe> = {
     noise: [
       { cutoff: 5200, filter: 'highpass', gain: 0.9, dur: 0.022, attack: 0.001 },
       { cutoff: 3900, filter: 'bandpass', q: 1.7, gain: 0.72, delay: 0.072, dur: 0.032, attack: 0.001 },
+    ],
+  },
+  deskEnter: {
+    gain: 0.56, dur: 0.24, textured: true, cutoff: 9000,
+    tones: [
+      { wave: 'sine', from: 175, to: 82, gain: 0.72, dur: 0.075, attack: 0.001, sub: true },
+      { wave: 'sine', from: 510, to: 295, gain: 0.32, delay: 0.13, dur: 0.06, attack: 0.001 },
+    ],
+    noise: [
+      { cutoff: 4400, filter: 'bandpass', q: 1.4, gain: 0.9, dur: 0.035, attack: 0.001 },
+      { cutoff: 3200, filter: 'bandpass', q: 1.2, gain: 0.7, delay: 0.13, dur: 0.04, attack: 0.001 },
     ],
   },
   deskWaxCrunch: {
@@ -597,20 +608,21 @@ export function catchUpSequencer(
   };
 }
 
-/** Pure gain computation — master × group × recipe, each 0..1. Exposed for tests. */
+/** Pure gain computation — unmuted group × recipe, each 0..1. Exposed for tests. */
 export function effectiveGain(
   name: SfxName,
-  v: { master: number; music: number; sfx: number },
+  v: { music: number; sfx: number; musicMuted: boolean; sfxMuted: boolean },
 ): number {
   const r = RECIPES[name];
   const group = r.bus === 'music' ? v.music : v.sfx;
-  return clamp(v.master, 0, 100) / 100 * (clamp(group, 0, 100) / 100) * r.gain;
+  const muted = r.bus === 'music' ? v.musicMuted : v.sfxMuted;
+  return (muted ? 0 : clamp(group, 0, 100) / 100) * r.gain;
 }
 
 class Audio {
   private ctx: AudioContext | null = null;
   private unlocked = false;
-  private vol = { master: 80, music: 70, sfx: 80 };
+  private vol = { music: 56, sfx: 64, musicMuted: false, sfxMuted: false };
   // BGM state (phase 2). The music bus is a single gain node all notes route
   // through; a lookahead scheduler retriggers the current track's loop.
   private musicGain: GainNode | null = null;
@@ -662,11 +674,12 @@ class Audio {
 
   isUnlocked(): boolean { return this.unlocked; }
 
-  setVolumes(v: { master: number; music: number; sfx: number }): void {
+  setVolumes(v: { music: number; sfx: number; musicMuted: boolean; sfxMuted: boolean }): void {
     this.vol = {
-      master: clamp(v.master, 0, 100),
       music: clamp(v.music, 0, 100),
       sfx: clamp(v.sfx, 0, 100),
+      musicMuted: v.musicMuted,
+      sfxMuted: v.sfxMuted,
     };
     this.updateMusicGain(); // live-apply to a playing track
   }
@@ -727,10 +740,9 @@ class Audio {
 
   private updateMusicGain(): void {
     if (!this.ctx || !this.musicGain) return;
-    const level =
-      clamp(this.vol.master, 0, 100) / 100 *
-      (clamp(this.vol.music, 0, 100) / 100) *
-      MUSIC_HEADROOM;
+    const level = this.busEnabled.music && !this.vol.musicMuted
+      ? clamp(this.vol.music, 0, 100) / 100 * MUSIC_HEADROOM
+      : 0.0001;
     this.musicGain.gain.setTargetAtTime(level, this.ctx.currentTime, 0.03);
   }
 

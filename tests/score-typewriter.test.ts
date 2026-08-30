@@ -1,125 +1,140 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BALANCE } from '../src/engine/balance';
-import type { Tile, WordSubmission } from '../src/engine/types';
 import {
   crossedScoreTarget,
   SCORE_TYPEWRITER_KEYCAPS,
-  scoreTypewriterBaseSuitMult,
+  scoreTypewriterClearPeak,
+  scoreTypewriterClearRepeatMs,
   scoreTypewriterEventDelta,
-  scoreTypewriterExpectedBase,
   scoreTypewriterKeySequence,
   scoreTypewriterKeyTiming,
   scoreTypewriterLiveTotal,
+  scoreTypewriterPeakTier,
+  scoreTypewriterPrimaryKey,
   scoreTypewriterShake,
   scoreTypewriterTier,
+  scheduleScoreTypewriterClearRepeats,
   type ScoreTypewriterTier,
 } from '../src/ui/scoreTypewriter';
 
-const tile = (id: string, letter: Tile['letter']): Tile => ({
-  id,
-  letter,
-  material: 'ceramic',
-  font: 'medium',
-  edition: 'base',
-});
-
-const submission = (patch: Partial<WordSubmission> = {}): WordSubmission => ({
-  tiles: [tile('c', 'C'), tile('a', 'A'), tile('t', 'T')],
-  text: 'CAT',
-  isGibberish: false,
-  suit: 'standard',
-  posUsed: null,
-  settledScore: 0,
-  ...patch,
-});
-
 describe('Score Typewriter strength', () => {
-  it('freezes expected base from letters, base suit, and scoring length with a floor', () => {
-    expect(scoreTypewriterExpectedBase(submission({
-      tiles: [tile('h1', 'H'), tile('i', 'I'), tile('g', 'G'), tile('h2', 'H')],
-      text: 'HIGH',
-    }), BALANCE.suitMult.standard)).toBe(165);
-    expect(scoreTypewriterExpectedBase(submission({
-      tiles: [tile('a', 'A')],
-      text: 'A',
-      scoringLength: 1,
-    }), BALANCE.suitMult.standard)).toBe(BALANCE.scoreTypewriter.expectedBaseFloor);
-    expect(scoreTypewriterExpectedBase(
-      submission({ isGibberish: true, suit: null }),
-      BALANCE.gibberish.mult,
-    )).toBe(60);
-    const stone = submission({
-      tiles: [tile('stone', null)],
-      text: '□',
-      isGibberish: true,
-      suit: null,
-    });
-    expect(scoreTypewriterExpectedBase(stone, BALANCE.gibberish.mult)).toBe(60);
-    expect(scoreTypewriterTier(50, scoreTypewriterExpectedBase(
-      stone,
-      BALANCE.gibberish.mult,
-    ))).toBe(2);
+  it('uses strict target-ratio boundaries', () => {
+    const target = 100;
+    expect(BALANCE.scoreTypewriter.ratioThresholds).toEqual([1.25, 2, 4, 10]);
+    expect(scoreTypewriterTier(100, target)).toBe(0);
+    expect(scoreTypewriterTier(100.001, target)).toBe(1);
+    expect(scoreTypewriterTier(124.999, target)).toBe(1);
+    expect(scoreTypewriterTier(125, target)).toBe(2);
+    expect(scoreTypewriterTier(199.999, target)).toBe(2);
+    expect(scoreTypewriterTier(200, target)).toBe(3);
+    expect(scoreTypewriterTier(399.999, target)).toBe(3);
+    expect(scoreTypewriterTier(400, target)).toBe(4);
+    expect(scoreTypewriterTier(999.999, target)).toBe(4);
+    expect(scoreTypewriterTier(1_000, target)).toBe(5);
   });
 
-  it('uses the original suit multiplier even when word rules rewrite the final suit', () => {
-    const rewritten = submission({
-      tiles: [tile('h1', 'H'), tile('i', 'I'), tile('g', 'G'), tile('h2', 'H')],
-      text: 'HIGH',
-      suit: 'vulgar',
-    });
-    const originalSuitEvent = [{
-      kind: 'suit' as const,
-      suit: 'standard' as const,
-      mult: BALANCE.suitMult.standard,
-    }];
-    expect(scoreTypewriterExpectedBase(
-      rewritten,
-      scoreTypewriterBaseSuitMult(originalSuitEvent, BALANCE.suitMult.standard),
-    )).toBe(165);
-    expect(scoreTypewriterExpectedBase(
-      rewritten,
-      scoreTypewriterBaseSuitMult([], BALANCE.suitMult.standard),
-    )).toBe(165);
-
-    const gibberish = submission({
-      tiles: Array.from({ length: 7 }, (_, index) => tile(`z${index}`, 'Z')),
-      text: 'ZZZZZZZ',
-      isGibberish: true,
-      suit: null,
-    });
-    expect(scoreTypewriterExpectedBase(gibberish, BALANCE.suitMult.vulgar)).toBe(
-      7 * (BALANCE.letterChips.Z ?? 0),
-    );
-
-    expect(scoreTypewriterBaseSuitMult([], BALANCE.suitMult.standard)).toBe(
-      BALANCE.suitMult.standard,
-    );
-    expect(scoreTypewriterBaseSuitMult([], BALANCE.gibberish.mult)).toBe(
-      BALANCE.gibberish.mult,
-    );
+  it('depends only on the current submission-local score / target ratio', () => {
+    expect(scoreTypewriterTier(150, 100)).toBe(2);
+    expect(scoreTypewriterTier(1_500_000, 1_000_000)).toBe(2);
+    expect(scoreTypewriterTier(0, 100)).toBe(0); // debuffed submission
+    expect(scoreTypewriterTier(101, 100)).toBe(1); // gibberish may qualify
   });
 
-  it('uses the exact tier boundaries and keeps Tier 5 rare', () => {
-    const base = 100;
-    expect(scoreTypewriterTier(0, base)).toBe(0);
-    expect(scoreTypewriterTier(24.999, base)).toBe(1);
-    expect(scoreTypewriterTier(25, base)).toBe(2);
-    expect(scoreTypewriterTier(99.999, base)).toBe(2);
-    expect(scoreTypewriterTier(100, base)).toBe(3);
-    expect(scoreTypewriterTier(-100, base)).toBe(3);
-    expect(scoreTypewriterTier(300, base)).toBe(4);
-    expect(scoreTypewriterTier(999.999, base)).toBe(4);
-    expect(scoreTypewriterTier(1_000, base)).toBe(5);
+  it('makes higher submission ratios denser, faster, and stronger', () => {
+    const tiers = [1, 2, 3, 4, 5] as const;
+    const ratios = [1.01, 1.25, 2, 4, 10];
+    expect(ratios.map((ratio) => scoreTypewriterTier(ratio * 100, 100))).toEqual(tiers);
+    for (let index = 1; index < tiers.length; index += 1) {
+      const previous = tiers[index - 1]!;
+      const current = tiers[index]!;
+      expect(BALANCE.scoreTypewriter.visualKeyCounts[current])
+        .toBeGreaterThan(BALANCE.scoreTypewriter.visualKeyCounts[previous]);
+      expect(BALANCE.scoreTypewriter.audibleKeyCounts[current])
+        .toBeGreaterThan(BALANCE.scoreTypewriter.audibleKeyCounts[previous]);
+      expect(BALANCE.scoreTypewriter.keyPressMs[current])
+        .toBeLessThan(BALANCE.scoreTypewriter.keyPressMs[previous]);
+      expect(scoreTypewriterShake(100, current))
+        .toBeGreaterThanOrEqual(scoreTypewriterShake(100, previous));
+    }
   });
 
-  it('measures unrounded local axes, includes flat score, and uses absolute magnitude', () => {
+  it('measures only positive increases in the unrounded local subtotal', () => {
     expect(scoreTypewriterEventDelta(10, 2, 0, 10, 2.5, 7)).toBe(12);
-    expect(scoreTypewriterEventDelta(10, 2, 0, 5, 2, 0)).toBe(10);
+    expect(scoreTypewriterEventDelta(10, 2, 0, 5, 2, 0)).toBe(0);
+    expect(scoreTypewriterEventDelta(-10, 1, 0, -5, 1, 0)).toBe(0);
   });
 
-  it('rejects non-finite values without consulting cumulative score or target', () => {
+  it('raises a settle-local peak through the approved progressive trace', () => {
+    const trace = [60, 101, 124.9, 125, 210, 180, 400, 1_000];
+    let previousLocal = 0;
+    let peak: ScoreTypewriterTier = 0;
+    const tiers = trace.map((local) => {
+      peak = scoreTypewriterPeakTier(peak, previousLocal, local, 100);
+      previousLocal = local;
+      return peak;
+    });
+    expect(tiers).toEqual([0, 1, 1, 2, 3, 3, 4, 5]);
+    expect(scoreTypewriterPeakTier(3, 210, 180, 100)).toBe(3);
+    expect(scoreTypewriterPeakTier(3, 210, Number.NaN, 100)).toBe(3);
+    expect(scoreTypewriterPeakTier(0, 0, 1_000, 0)).toBe(0);
+    expect(scoreTypewriterPeakTier(0, 0, 1_000, Number.POSITIVE_INFINITY)).toBe(0);
+  });
+
+  it('resets normal/cashout lifecycle while retaining a clear peak through resolution', () => {
+    expect(scoreTypewriterClearPeak(0, false, false, 0)).toBe(0);
+    const clearPeak = scoreTypewriterClearPeak(0, true, true, 3);
+    expect(clearPeak).toBe(3);
+    expect(scoreTypewriterClearPeak(clearPeak, true, false, 0)).toBe(3);
+    expect(scoreTypewriterClearPeak(clearPeak, false, false, 0)).toBe(0);
+
+    const finalPhaseLossResolution = true && 90 >= 100;
+    expect(finalPhaseLossResolution).toBe(false);
+    expect(scoreTypewriterClearPeak(3, finalPhaseLossResolution, false, 0)).toBe(0);
+  });
+
+  it('uses the approved tier and snapshotted-speed clear-repeat intervals', () => {
+    expect(BALANCE.scoreTypewriter.clearRepeatFactors).toEqual([0, 2, 1.75, 1.5, 1.25, 1]);
+    expect([1, 2, 3, 4, 5].map((tier) =>
+      scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier, 1),
+    )).toEqual([920, 805, 690, 575, 460]);
+    expect([1, 2, 3, 4, 5].map((tier) =>
+      scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier, 2),
+    )).toEqual([460, 402.5, 345, 287.5, 230]);
+  });
+
+  it('starts clear cycle zero immediately, self-schedules, and cleans up exactly', () => {
+    vi.useFakeTimers();
+    try {
+      const cycles: number[] = [];
+      const stop = scheduleScoreTypewriterClearRepeats(460, (cycle) => cycles.push(cycle));
+      expect(cycles).toEqual([0]);
+      vi.advanceTimersByTime(920);
+      expect(cycles).toEqual([0, 1, 2]);
+      stop();
+      vi.advanceTimersByTime(920);
+      expect(cycles).toEqual([0, 1, 2]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('makes Enter the deterministic primary for every synthetic clear cycle', () => {
+    const ids = [0, 1, 2].map((cycle) => `clear:1-0:7:${cycle}`);
+    const sequences = ids.map((id) => scoreTypewriterKeySequence(id, 8, 'Enter'));
+    for (const sequence of sequences) {
+      expect(SCORE_TYPEWRITER_KEYCAPS[sequence[0]!]!.id).toBe('Enter');
+      expect(new Set(sequence).size).toBe(8);
+    }
+    expect(scoreTypewriterKeySequence(ids[1]!, 8, 'Enter')).toEqual(sequences[1]);
+    expect(sequences[0]).not.toEqual(sequences[1]);
+  });
+
+  it('rejects invalid submission scores and targets', () => {
     expect(scoreTypewriterTier(Number.NaN, 60)).toBe(0);
+    expect(scoreTypewriterTier(Number.POSITIVE_INFINITY, 60)).toBe(0);
     expect(scoreTypewriterTier(60, Number.POSITIVE_INFINITY)).toBe(0);
+    expect(scoreTypewriterTier(60, 0)).toBe(0);
+    expect(scoreTypewriterTier(60, -1)).toBe(0);
     expect(scoreTypewriterEventDelta(1, 1, 0, Number.NaN, 1, 0)).toBe(0);
   });
 
@@ -127,7 +142,7 @@ describe('Score Typewriter strength', () => {
     expect(crossedScoreTarget(99, 100, 100)).toBe(true);
     expect(crossedScoreTarget(100, 120, 100)).toBe(false);
     expect(crossedScoreTarget(99, 99.9, 100)).toBe(false);
-    expect(scoreTypewriterTier(1, 60)).toBe(1);
+    expect(scoreTypewriterTier(60, 60)).toBe(0);
   });
 
   it('holds the pre-word total until settle activation and completion', () => {
@@ -136,45 +151,96 @@ describe('Score Typewriter strength', () => {
     expect(scoreTypewriterLiveTotal(true, false, 90, 0, 0, 0, 140)).toBe(140);
   });
 
-  it('authors 27 unlabeled caps and chooses a hashed unique permutation per beat', () => {
-    expect(SCORE_TYPEWRITER_KEYCAPS).toHaveLength(27);
-    expect(new Set(SCORE_TYPEWRITER_KEYCAPS.map(({ id }) => id)).size).toBe(27);
-    expect(['a', 'b', 'c'].map((bank) =>
-      SCORE_TYPEWRITER_KEYCAPS.filter(({ id }) => id.startsWith(bank)).length,
-    )).toEqual([10, 9, 8]);
-    for (const bank of ['a', 'b', 'c']) {
-      const caps = SCORE_TYPEWRITER_KEYCAPS.filter(({ id }) => id.startsWith(bank));
-      expect(new Set(caps.map(({ x }) => x)).size).toBeGreaterThan(1);
-      expect(new Set(caps.map(({ scale }) => scale)).size).toBeGreaterThan(1);
-      expect(new Set(caps.map(({ tilt }) => tilt)).size).toBeGreaterThan(1);
-    }
+  it('authors one 101-key vintage registry and chooses a semantic-first permutation', () => {
+    expect(SCORE_TYPEWRITER_KEYCAPS).toHaveLength(101);
+    expect(new Set(SCORE_TYPEWRITER_KEYCAPS.map(({ id }) => id)).size).toBe(101);
+    expect(SCORE_TYPEWRITER_KEYCAPS.filter(({ role }) => role === 'main')).toHaveLength(58);
+    expect(SCORE_TYPEWRITER_KEYCAPS.filter(({ role }) => role === 'function')).toHaveLength(13);
+    expect(SCORE_TYPEWRITER_KEYCAPS.filter(({ role }) => role === 'nav')).toHaveLength(13);
+    expect(SCORE_TYPEWRITER_KEYCAPS.filter(({ role }) => role === 'numpad')).toHaveLength(17);
+    expect(SCORE_TYPEWRITER_KEYCAPS.some(({ id }) => id.includes('Meta') || id.includes('Windows'))).toBe(false);
+    const letterKeys = SCORE_TYPEWRITER_KEYCAPS.filter(({ id }) => /^Key[A-Z]$/.test(id));
+    expect(letterKeys).toHaveLength(26);
+    expect(letterKeys.map(({ label }) => label).sort().join('')).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+    expect(['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row) =>
+      row.split('').map((letter) =>
+        SCORE_TYPEWRITER_KEYCAPS.find(({ id }) => id === `Key${letter}`)?.label,
+      ).join(''),
+    )).toEqual(['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']);
     for (const cap of SCORE_TYPEWRITER_KEYCAPS) {
-      expect(Object.keys(cap).sort()).toEqual(['id', 'scale', 'tilt', 'x', 'y']);
+      expect(Object.keys(cap).sort()).toEqual(['h', 'id', 'label', 'role', 'w', 'x', 'y']);
       expect(Number.isFinite(cap.x) && cap.x >= 0 && cap.x <= 100).toBe(true);
       expect(Number.isFinite(cap.y) && cap.y >= 0 && cap.y <= 100).toBe(true);
-      expect(cap.scale).toBeGreaterThanOrEqual(0.9);
-      expect(cap.scale).toBeLessThanOrEqual(1.1);
-      expect(Math.abs(cap.tilt)).toBeLessThanOrEqual(4);
+      expect(cap.x + cap.w).toBeLessThanOrEqual(100);
+      expect(cap.y + cap.h).toBeLessThanOrEqual(100);
+    }
+    const byId = new Map(SCORE_TYPEWRITER_KEYCAPS.map((key) => [key.id, key]));
+    expect(byId.get('Space')!.label).toBe('SPACE');
+    expect(byId.get('Enter')!.label).toBe('ENTER');
+    expect(byId.get('Backspace')!.w / byId.get('Digit1')!.w).toBeCloseTo(2);
+    expect(byId.get('Tab')!.w / byId.get('KeyQ')!.w).toBeCloseTo(1.5);
+    expect(byId.get('CapsLock')!.w / byId.get('KeyA')!.w).toBeCloseTo(1.75);
+    expect(byId.get('Enter')!.w / byId.get('KeyA')!.w).toBeCloseTo(2.25);
+    expect(byId.get('ShiftLeft')!.w / byId.get('KeyZ')!.w).toBeCloseTo(2.25);
+    expect(byId.get('ShiftRight')!.w / byId.get('KeyZ')!.w).toBeCloseTo(2.75);
+    expect(byId.get('Space')!.w / byId.get('KeyA')!.w).toBeCloseTo(7);
+    expect(byId.get('ControlLeft')!.w / byId.get('KeyA')!.w).toBeCloseTo(1.25);
+    expect(byId.get('AltLeft')!.w / byId.get('KeyA')!.w).toBeCloseTo(1.25);
+    expect(byId.get('Space')!.w / byId.get('ControlLeft')!.w).toBeCloseTo(5.6);
+    expect(byId.get('Numpad0')!.w).toBeGreaterThan(byId.get('Numpad1')!.w * 1.9);
+    expect(byId.get('NumpadAdd')!.h).toBeGreaterThan(byId.get('Numpad7')!.h * 1.9);
+    expect(byId.get('NumpadEnter')!.h).toBeGreaterThan(byId.get('Numpad1')!.h * 1.9);
+    expect(byId.get('NumLock')!.y).toBeCloseTo(byId.get('Digit1')!.y);
+    expect(byId.get('Numpad7')!.y).toBeCloseTo(byId.get('KeyQ')!.y);
+    expect(byId.get('Numpad4')!.y).toBeCloseTo(byId.get('KeyA')!.y);
+    expect(byId.get('Numpad1')!.y).toBeCloseTo(byId.get('KeyZ')!.y);
+    expect(byId.get('Numpad0')!.y).toBeCloseTo(byId.get('Space')!.y);
+    for (let left = 0; left < SCORE_TYPEWRITER_KEYCAPS.length; left += 1) {
+      const a = SCORE_TYPEWRITER_KEYCAPS[left]!;
+      for (let right = left + 1; right < SCORE_TYPEWRITER_KEYCAPS.length; right += 1) {
+        const b = SCORE_TYPEWRITER_KEYCAPS[right]!;
+        expect(a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y)
+          .toBe(false);
+      }
     }
     expect(BALANCE.scoreTypewriter.visualKeyCounts).toEqual([0, 3, 5, 8, 12, 16]);
     expect(BALANCE.scoreTypewriter.audibleKeyCounts).toEqual([0, 1, 2, 3, 4, 5]);
     const sequence = scoreTypewriterKeySequence('settle-42', 16);
     expect(scoreTypewriterKeySequence('settle-42', 16)).toEqual(sequence);
     expect(new Set(sequence).size).toBe(16);
-    expect(sequence.every((index) => index >= 0 && index < 27)).toBe(true);
-    expect(scoreTypewriterKeySequence('settle-42', 99)).toHaveLength(27);
-    const fullSequence = scoreTypewriterKeySequence('settle-42', 27);
+    expect(sequence.every((index) => index >= 0 && index < 101)).toBe(true);
+    expect(scoreTypewriterKeySequence('settle-42', 999)).toHaveLength(101);
+    const fullSequence = scoreTypewriterKeySequence('settle-42', 101);
     expect(new Set(fullSequence.slice(1).map((value, index) =>
-      (value - fullSequence[index]! + 27) % 27,
+      (value - fullSequence[index]! + 101) % 101,
     )).size).toBeGreaterThan(1);
-    expect(scoreTypewriterKeySequence('ab', 27)).not.toEqual(
-      scoreTypewriterKeySequence('ba', 27),
+    expect(scoreTypewriterKeySequence('ab', 101)).not.toEqual(
+      scoreTypewriterKeySequence('ba', 101),
     );
+    const semantic = scoreTypewriterKeySequence('semantic', 8, 'Enter');
+    expect(SCORE_TYPEWRITER_KEYCAPS[semantic[0]!]!.id).toBe('Enter');
+    expect(new Set(semantic).size).toBe(8);
+  });
+
+  it('maps score-event semantics to their primary keys without engine state', () => {
+    const tiles = [{ id: 'a', letter: 'A' }, { id: 'stone', letter: null }] as const;
+    expect(scoreTypewriterPrimaryKey({ kind: 'tile', tileId: 'a', letter: 'A', chips: 1 }, tiles)).toBe('KeyA');
+    expect(scoreTypewriterPrimaryKey({ kind: 'tile', tileId: 'stone', letter: null, chips: 1 }, tiles)).toBe('Space');
+    expect(scoreTypewriterPrimaryKey({ kind: 'material', material: 'brass', tileId: 'a', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('KeyA');
+    expect(scoreTypewriterPrimaryKey({ kind: 'material', material: 'stone', tileId: 'stone', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('Space');
+    expect(scoreTypewriterPrimaryKey({ kind: 'suit', suit: 'formal', mult: 2 }, tiles)).toBe('Enter');
+    expect(scoreTypewriterPrimaryKey({ kind: 'letterHand', hand: 'palindrome', level: 1, chipsDelta: 1, multDelta: 0, multFactor: 1 }, tiles)).toBe('Enter');
+    expect(scoreTypewriterPrimaryKey({ kind: 'tag', tagId: 'economyTag', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('Tab');
+    expect(scoreTypewriterPrimaryKey({ kind: 'tag', tagId: 'scarletTag', tileId: 'a', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('KeyA');
+    expect(scoreTypewriterPrimaryKey({ kind: 'tag', tagId: 'scarletTag', tileId: 'stone', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('Space');
+    expect(scoreTypewriterPrimaryKey({ kind: 'boss', bossId: 'wanted', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('Break');
+    expect(scoreTypewriterPrimaryKey({ kind: 'pouch', pouchId: 'yellow', chipsDelta: 1, multDelta: 0 }, tiles)).toBe('Space');
+    expect(scoreTypewriterPrimaryKey({ kind: 'joker', jokerId: 'test', chipsDelta: 1, multDelta: 0 }, tiles)).toMatch(/^F(?:[1-9]|1[0-2])$/);
   });
 
   it('uses deterministic uneven gaps and finishes every key inside its score beat', () => {
     const tiers: ScoreTypewriterTier[] = [1, 2, 3, 4, 5];
-    for (const speed of [1, 2, 4]) {
+    for (const speed of [1, 2]) {
       for (const tier of tiers) {
         const count = BALANCE.scoreTypewriter.visualKeyCounts[tier];
         const timings = Array.from(
@@ -221,7 +287,7 @@ describe('Score Typewriter strength', () => {
     expect(scoreTypewriterShake(0, 5)).toBe(0);
     expect(scoreTypewriterShake(50, 5)).toBe(0.5);
     expect(scoreTypewriterShake(100, 0)).toBe(0);
-    expect(scoreTypewriterShake(100, 1)).toBe(0);
+    expect(scoreTypewriterShake(100, 1)).toBe(0.1);
     expect(scoreTypewriterShake(100, 2)).toBe(0.2);
     expect(scoreTypewriterShake(100, 3)).toBe(0.45);
     expect(scoreTypewriterShake(100, 4)).toBe(0.7);

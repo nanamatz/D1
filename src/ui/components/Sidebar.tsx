@@ -19,7 +19,7 @@ import { Tooltip } from './Tooltip';
 import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 import { isLetterHandDiscovered } from '../lifetime';
-import { scoreTypewriterLiveTotal, scoreTypewriterTier } from '../scoreTypewriter';
+import { scoreTypewriterLiveTotal } from '../scoreTypewriter';
 import { ScoreTypewriter } from './ScoreTypewriter';
 
 interface Props {
@@ -30,9 +30,10 @@ interface Props {
   /** false while a submission's settle is animating; flips true when it lands. Gates
    *  the round-number roll so it holds at committedBefore until the settle completes. */
   settleComplete: boolean;
+  settleId: number;
   /** blind-end final score — non-null while the sentence bonus lands (06 #1) */
   finalScore: number | null;
-  /** finalized sentence-bonus breakdown while it lands (item 2), else null */
+  /** finalized sentence-bonus breakdown from BUILD through Fee Settlement */
   sentenceBonus: SentenceBonusDisplay | null;
   /** highest valid pattern in the already-submitted sequence */
   currentPattern: PatternId | null;
@@ -43,6 +44,7 @@ interface Props {
   onOpenOptions: () => void;
   screenshake: number;
   reducedMotion: boolean;
+  resolutionActive?: boolean;
   mode?: 'blind' | 'shop' | 'blindselect';
 }
 
@@ -87,12 +89,72 @@ function StatusLine({
   );
 }
 
+/** Finalized non-pattern sources, kept separate from the primary pattern stamp. */
+export function SentenceBonusParts({ sentenceBonus }: { sentenceBonus: SentenceBonusDisplay }) {
+  const { t } = useI18n();
+  return (
+    <div className="bonus-parts" aria-label={t('sidebar.bonusBreakdown')}>
+      {sentenceBonus.modifierChips !== 0 && (
+        <span className="bonus-part modifier">
+          {t('sidebar.bonusModifier', {
+            count: sentenceBonus.modifierCount,
+            chips: fmtSigned(sentenceBonus.modifierChips),
+          })}
+        </span>
+      )}
+      {sentenceBonus.registerSynergyId && sentenceBonus.registerSynergyChipsFactor !== 1 && (
+        <span className="bonus-part register-synergy">
+          {t('sidebar.bonusRegisterSynergy', {
+            name: t(`registerSynergy.${sentenceBonus.registerSynergyId}`),
+            factor: fmtMult(sentenceBonus.registerSynergyChipsFactor),
+          })}
+        </span>
+      )}
+      {sentenceBonus.unisonChips !== 0 && (
+        <span className="bonus-part unison chips">
+          {t('sidebar.bonusUnisonChips', { chips: fmtSigned(sentenceBonus.unisonChips) })}
+        </span>
+      )}
+      {sentenceBonus.unisonMult !== 1 && (
+        <span className="bonus-part unison mult">
+          {t('sidebar.bonusUnisonMult', { mult: fmtMult(sentenceBonus.unisonMult) })}
+        </span>
+      )}
+      {Math.abs(sentenceBonus.effectChips) > 0.001 && (
+        <span className="bonus-part effect chips">
+          {t('sidebar.bonusEffectChips', { chips: fmtSigned(sentenceBonus.effectChips) })}
+        </span>
+      )}
+      {Math.abs(sentenceBonus.effectMult - 1) > 0.001 && (
+        <span className="bonus-part effect mult">
+          {t('sidebar.bonusEffectMult', { mult: fmtMult(sentenceBonus.effectMult) })}
+        </span>
+      )}
+      {(sentenceBonus.effectScore ?? 0) !== 0 && (
+        <span className="bonus-part effect score">
+          {t('sidebar.bonusEffectScore', { score: formatScore(sentenceBonus.effectScore ?? 0) })}
+        </span>
+      )}
+      {sentenceBonus.pouchId && (
+        <span className="bonus-part pouch">
+          {t('sidebar.bonusPouch', {
+            name: t(`pouch.${sentenceBonus.pouchId}.name`),
+            chips: fmtSigned(sentenceBonus.pouchChipsDelta),
+            mult: fmtSigned(sentenceBonus.pouchMultDelta),
+          })}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /** Left rail (playtest-03 E-9): stage badge · target+reward · round score · 0×0 · controls. */
 export function Sidebar({
   run,
   blind,
   committedBefore,
   settleComplete,
+  settleId,
   finalScore,
   sentenceBonus,
   currentPattern,
@@ -102,6 +164,7 @@ export function Sidebar({
   onOpenOptions,
   screenshake,
   reducedMotion,
+  resolutionActive = false,
   mode = 'blind',
 }: Props) {
   const { t, lang } = useI18n();
@@ -155,8 +218,8 @@ export function Sidebar({
   const mult = mode === 'blind' ? (bonusActive ? bonusMult : settle.active ? settle.mult : 0) : 0;
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
 
-  // Live score is presentation-only: it drives the typewriter's separate one-shot
-  // target bell, never its strength tier or the committed round number.
+  // Live score is presentation-only: it drives the keyboard's separate one-shot
+  // Enter target strike, never its strength tier or the committed round number.
   const liveTotal = bonusActive
     ? round
     : scoreTypewriterLiveTotal(
@@ -168,17 +231,8 @@ export function Sidebar({
       settle.flatScore,
       blind.committedScore,
     );
-  const lastSubmission = blind.sequence.at(-1);
-  const sentenceDelta = landing && finalScore !== null
-    ? Math.abs(finalScore - blind.committedScore)
-    : 0;
-  const sentenceTier = lastSubmission
-    ? scoreTypewriterTier(sentenceDelta, settle.typewriterExpectedBase)
-    : 0;
-  const typewriterTier = landing ? sentenceTier : (settle.typewriterBeat?.tier ?? 0);
-  const typewriterBeatId = landing
-    ? `sentence-${run.ante}-${run.blindIndex}-${finalScore}`
-    : `score-${settle.typewriterBeat?.id ?? 0}`;
+  const typewriterTier = settle.typewriterBeat?.tier ?? 0;
+  const typewriterBeatId = `score-${settle.typewriterBeat?.id ?? 0}`;
 
   // D-1 · tomato idle hop (UI_DESIGN §4.6): a few times per blind, on a long random
   // timer, never rhythmic. Positioning lives on a separate anchor so neither this
@@ -209,9 +263,13 @@ export function Sidebar({
         active={mode === 'blind' && typewriterTier > 0}
         tier={typewriterTier}
         beatId={typewriterBeatId}
+        primaryKeyId={settle.typewriterBeat?.primaryKeyId ?? 'Enter'}
         liveTotal={mode === 'blind' ? liveTotal : 0}
         target={mode === 'blind' ? blind.target : 0}
         blindKey={`${run.ante}-${run.blindIndex}`}
+        settleId={settleId}
+        resolutionActive={resolutionActive}
+        holdActive={resolutionActive && settleComplete}
         gameSpeed={settle.typewriterBeat?.speed ?? settle.settleSpeed}
         screenshake={screenshake}
         reducedMotion={reducedMotion || settle.settleReduced}
@@ -328,61 +386,8 @@ export function Sidebar({
         )}
       </div>
 
-      <div className="panel score-panel">
-        {bonusActive ? (
-          <div className="bonus-parts" aria-label={t('sidebar.bonusBreakdown')}>
-            {sentenceBonus!.modifierChips !== 0 && (
-              <span className="bonus-part modifier">
-                {t('sidebar.bonusModifier', {
-                  count: sentenceBonus!.modifierCount,
-                  chips: fmtSigned(sentenceBonus!.modifierChips),
-                })}
-              </span>
-            )}
-            {sentenceBonus!.unisonChips !== 0 && (
-              <span className="bonus-part unison">
-                {t('sidebar.bonusUnisonChips', { chips: fmtSigned(sentenceBonus!.unisonChips) })}
-              </span>
-            )}
-            {sentenceBonus!.unisonMult !== 1 && (
-              <span className="bonus-part unison">
-                {t('sidebar.bonusUnisonMult', { mult: fmtMult(sentenceBonus!.unisonMult) })}
-              </span>
-            )}
-            {sentenceBonus!.registerSynergyId && sentenceBonus!.registerSynergyChipsFactor !== 1 && (
-              <span className="bonus-part register-synergy">
-                {t('sidebar.bonusRegisterSynergy', {
-                  name: t(`registerSynergy.${sentenceBonus!.registerSynergyId}`),
-                  factor: fmtMult(sentenceBonus!.registerSynergyChipsFactor),
-                })}
-              </span>
-            )}
-            {Math.abs(sentenceBonus!.effectChips) > 0.001 && (
-              <span className="bonus-part effect">
-                {t('sidebar.bonusEffectChips', { chips: fmtSigned(sentenceBonus!.effectChips) })}
-              </span>
-            )}
-            {Math.abs(sentenceBonus!.effectMult - 1) > 0.001 && (
-              <span className="bonus-part effect">
-                {t('sidebar.bonusEffectMult', { mult: fmtMult(sentenceBonus!.effectMult) })}
-              </span>
-            )}
-            {(sentenceBonus!.effectScore ?? 0) !== 0 && (
-              <span className="bonus-part effect">
-                {t('sidebar.bonusEffectScore', { score: formatScore(sentenceBonus!.effectScore ?? 0) })}
-              </span>
-            )}
-            {sentenceBonus!.pouchId && (
-              <span className="bonus-part pouch">
-                {t('sidebar.bonusPouch', {
-                  name: t(`pouch.${sentenceBonus!.pouchId}.name`),
-                  chips: fmtSigned(sentenceBonus!.pouchChipsDelta),
-                  mult: fmtSigned(sentenceBonus!.pouchMultDelta),
-                })}
-              </span>
-            )}
-          </div>
-        ) : (
+      <div className={['panel', 'score-panel', bonusActive && 'has-provenance'].filter(Boolean).join(' ')}>
+        {!bonusActive && (
           <StatusLine
             preview={mode === 'blind' ? preview : null}
             discoveredLetterHands={discoveredLetterHands}
@@ -432,6 +437,7 @@ export function Sidebar({
             </span>
           )}
         </div>
+        {bonusActive && <SentenceBonusParts sentenceBonus={sentenceBonus!} />}
       </div>
 
       <div className="sb-controls">

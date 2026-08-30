@@ -55,6 +55,68 @@ describe('POS tag chips', () => {
     expect(css).toMatch(/@media \(forced-colors: active\)[\s\S]*\.pos-tag\.active[\s\S]*outline:\s*2px solid Highlight/);
   });
 
+  it('maps every POS identity to its own palette token and final colour', () => {
+    const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
+    const css = readFileSync('src/ui/styles/play.css', 'utf8');
+    const mappings = {
+      noun: 'noun',
+      verbIntransitive: 'verb-intransitive',
+      verbTransitive: 'verb-transitive',
+      verbLinking: 'verb-linking',
+      adjective: 'adjective',
+      adverb: 'adverb',
+      article: 'article',
+      conjunction: 'conjunction',
+      preposition: 'preposition',
+      interjection: 'interjection',
+    } as const;
+    const neutralValues = Object.values(mappings).map((token) => {
+      const matches = [...tokens.matchAll(new RegExp(`--pos-${token}:\\s*(#[0-9a-f]{6})`, 'gi'))];
+      expect(matches, token).toHaveLength(2);
+      return matches[0]![1]!.toLowerCase();
+    });
+    const unlockedValues = Object.values(mappings).map((token) => {
+      const matches = [...tokens.matchAll(new RegExp(`--pos-${token}:\\s*(#[0-9a-f]{6})`, 'gi'))];
+      return matches[1]![1]!.toLowerCase();
+    });
+
+    expect(new Set(neutralValues).size).toBe(10);
+    expect(new Set(unlockedValues).size).toBe(10);
+    const groupBits: Record<keyof typeof mappings, number> = {
+      noun: 8,
+      verbIntransitive: 1,
+      verbTransitive: 1,
+      verbLinking: 1,
+      adjective: 2,
+      adverb: 2,
+      article: 2,
+      conjunction: 4,
+      preposition: 4,
+      interjection: 8,
+    };
+    for (let unlockedMask = 0; unlockedMask < 16; unlockedMask += 1) {
+      const values = (Object.keys(mappings) as (keyof typeof mappings)[]).map((pos, index) =>
+        (unlockedMask & groupBits[pos]) !== 0 ? unlockedValues[index] : neutralValues[index],
+      );
+      expect(new Set(values).size, `Palette mask ${unlockedMask}`).toBe(10);
+    }
+    const html = renderToStaticMarkup(
+      <I18nProvider><PosTags candidates={Object.keys(mappings) as POS[]} /></I18nProvider>,
+    );
+    for (const [pos, token] of Object.entries(mappings)) {
+      expect(css).toContain(`.pos-tag.pos-${pos} {\n  --pos-tone: var(--pos-${token});`);
+      expect((tokens.match(new RegExp(`--pos-${token}:`, 'g')) ?? []).length, token).toBe(2);
+      expect(html).toContain(`class="pos-tag pos-${pos}"`);
+    }
+    for (const lang of ['en', 'ko']) {
+      const locale = JSON.parse(readFileSync(`locales/${lang}.json`, 'utf8')) as Record<string, string>;
+      const labels = Object.keys(mappings).map((pos) => locale[`pos.${pos}`]);
+      expect(labels.every(Boolean), lang).toBe(true);
+      expect(new Set(labels).size, lang).toBe(10);
+    }
+    expect(css).not.toContain('.pos-tag:is(.pos-');
+  });
+
   it('renders nothing for the production-invalid empty candidate boundary', () => {
     expect(renderToStaticMarkup(
       <I18nProvider><PosTags candidates={[]} /></I18nProvider>,

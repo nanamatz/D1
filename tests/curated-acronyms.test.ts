@@ -9,6 +9,7 @@ import { loadBrowserLexicon } from '../src/ui/lexicon.browser';
 
 const lexicon = loadStubLexicon();
 const surfaces = ['mvp', 'mvps', 'vip', 'vips'] as const;
+const validitySurfaces = ['christ', 'christmas'] as const;
 
 function tiles(word: string): Tile[] {
   return [...word.toUpperCase()].map((letter, index) => ({
@@ -46,7 +47,9 @@ describe('curated MVP/VIP acronym families', () => {
     const browser = loadBrowserLexicon();
     expect(browser.size).toBe(lexicon.size);
     expect(browser.registerTotals).toEqual(lexicon.registerTotals);
-    for (const word of surfaces) expect(browser.lookup(word)).toEqual(lexicon.lookup(word));
+    for (const word of [...surfaces, ...validitySurfaces]) {
+      expect(browser.lookup(word)).toEqual(lexicon.lookup(word));
+    }
   });
 
   it.each([
@@ -75,5 +78,45 @@ describe('curated MVP/VIP acronym families', () => {
       suit: null,
       settledScore: 30,
     });
+  });
+});
+
+describe('reviewed curated validity omissions', () => {
+  it('bakes only the reviewed exact rows with reasons and authoritative metadata', () => {
+    const curated = JSON.parse(readFileSync(
+      'lexicon-pipeline/curated-validity.json',
+      'utf8',
+    )) as { word: string; suit: string; pos: string[]; reason: string }[];
+    const dictionary = new Set(readFileSync('data/dictionary.txt', 'utf8').split(/\r?\n/));
+    const pipelineSources = [
+      'scripts/build-dictionary.mjs',
+      'lexicon-pipeline/classify-wordnet.mjs',
+      'lexicon-pipeline/classify-registers.mjs',
+      'scripts/validate-data.mjs',
+    ].map((file) => readFileSync(file, 'utf8'));
+
+    expect(curated.map(({ word }) => word)).toEqual(validitySurfaces);
+    for (const source of pipelineSources) expect(source).toContain('curated-validity.json');
+    for (const entry of curated) {
+      expect(entry).toMatchObject({ suit: 'standard', pos: ['noun'] });
+      expect(entry.reason.length).toBeGreaterThan(0);
+      expect(dictionary.has(entry.word)).toBe(true);
+      expect(lexicon.lookup(entry.word)).toEqual({
+        word: entry.word,
+        suit: 'standard',
+        pos: ['noun'],
+      });
+      expect(scoreWord(tiles(entry.word), lexicon)).toMatchObject({
+        isGibberish: false,
+        suit: 'standard',
+        posUsed: null,
+      });
+    }
+  });
+
+  it('does not create proper-name or derivative families implicitly', () => {
+    for (const word of ['christs', 'christmases', 'christian']) {
+      expect(lexicon.isWord(word), word).toBe(false);
+    }
   });
 });

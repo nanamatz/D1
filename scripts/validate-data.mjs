@@ -21,16 +21,21 @@ const curatedAbbreviations = JSON.parse(readFileSync(
   resolve(root, 'lexicon-pipeline/curated-abbreviations.json'),
   'utf8',
 ));
+const curatedValidity = JSON.parse(readFileSync(
+  resolve(root, 'lexicon-pipeline/curated-validity.json'),
+  'utf8',
+));
 const dictionary = readFileSync(resolve(root, 'data/dictionary.txt'), 'utf8')
   .split(/\r?\n/)
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
 const maxWordLength = 18;
-const dictionaryTarget = 172232; // ENABLE + tile-grammar exceptions + 4 curated acronym surfaces
-const lexiconTarget = 172255; // dictionary + 23 retained pre-existing entries
+const dictionaryTarget = 172234; // ENABLE + tile grammar + 4 acronyms + 2 reviewed omissions
+const lexiconTarget = 172257; // dictionary + 23 retained pre-existing entries
 const curatedTarget = ['mvp', 'mvps', 'vip', 'vips'];
+const curatedValidityTarget = ['christ', 'christmas'];
 const suits = new Set(['standard', 'formal', 'slang', 'vulgar']);
-const suitTargets = { standard: 168467, formal: 2669, slang: 879, vulgar: 240 };
+const suitTargets = { standard: 168469, formal: 2669, slang: 879, vulgar: 240 };
 const parts = new Set([
   'noun',
   'verbIntransitive',
@@ -90,6 +95,41 @@ if (!Array.isArray(curatedAbbreviations)) {
   }
   if (JSON.stringify([...seen]) !== JSON.stringify(curatedTarget)) {
     errors.push(`curated abbreviations: expected exactly ${curatedTarget.join(', ')}`);
+  }
+}
+if (!Array.isArray(curatedValidity)) {
+  errors.push('curated validity: expected an array');
+} else {
+  const seen = new Set();
+  const dictionaryWords = new Set(dictionary);
+  for (const [index, entry] of curatedValidity.entries()) {
+    const label = entry?.word ?? `row ${index}`;
+    if (!entry || typeof entry !== 'object') {
+      errors.push(`curated validity: invalid ${label}`);
+      continue;
+    }
+    if (!/^[a-z]{2,18}$/.test(entry.word ?? '')) errors.push(`curated validity: invalid word ${label}`);
+    if (seen.has(entry.word)) errors.push(`curated validity: duplicate ${label}`);
+    seen.add(entry.word);
+    const previousWord = curatedValidity[index - 1]?.word;
+    if (index > 0 && typeof previousWord === 'string' && typeof entry.word === 'string'
+      && previousWord.localeCompare(entry.word) > 0) errors.push('curated validity: entries are not sorted');
+    if (!suits.has(entry.suit)) errors.push(`${label}: invalid curated validity suit ${entry.suit}`);
+    if (!Array.isArray(entry.pos) || entry.pos.length === 0 || entry.pos.some((pos) => !parts.has(pos))) {
+      errors.push(`${label}: invalid curated validity POS`);
+    }
+    if (typeof entry.reason !== 'string' || entry.reason.trim().length === 0) {
+      errors.push(`${label}: missing curated validity reason`);
+    }
+    if (!dictionaryWords.has(entry.word)) errors.push(`${label}: missing from dictionary`);
+    if (!table[entry.word]) errors.push(`${label}: missing from lexicon`);
+    else if (table[entry.word].suit !== entry.suit
+      || JSON.stringify(table[entry.word].pos) !== JSON.stringify(entry.pos)) {
+      errors.push(`${label}: curated validity suit/POS drift`);
+    }
+  }
+  if (JSON.stringify([...seen]) !== JSON.stringify(curatedValidityTarget)) {
+    errors.push(`curated validity: expected exactly ${curatedValidityTarget.join(', ')}`);
   }
 }
 if (dictionary.length !== dictionaryTarget) {

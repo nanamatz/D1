@@ -26,6 +26,33 @@ export interface BubblePos {
   top: number;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** True while a pointer is inside or within `proximity` CSS px of the target. */
+export function isPointNearRect(
+  point: Point,
+  rect: Rect | null,
+  proximity = 48,
+): boolean {
+  return !!rect &&
+    point.x >= rect.left - proximity &&
+    point.x <= rect.left + rect.width + proximity &&
+    point.y >= rect.top - proximity &&
+    point.y <= rect.top + rect.height + proximity;
+}
+
+/** A pointer coordinate is valid only for the exact DOM target that observed it. */
+export function retainPointerForTarget<T extends object>(
+  pointer: Point | null,
+  previousTarget: T | null,
+  nextTarget: T | null,
+): Point | null {
+  return nextTarget !== null && previousTarget === nextTarget ? pointer : null;
+}
+
 
 /**
  * Where to put the bubble's top-left, in viewport coords.

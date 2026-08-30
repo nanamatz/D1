@@ -8,7 +8,7 @@ describe('score feedback laboratory', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
     expect(lab).toContain("import { ScoreTypewriter } from './ScoreTypewriter'");
     expect(lab).toContain('const PREVIEW_TIERS: readonly PreviewTier[] = [1, 2, 3, 4, 5]');
-    expect(lab).toContain('const PREVIEW_SPEEDS: readonly PreviewSpeed[] = [1, 2, 4]');
+    expect(lab).toContain('const PREVIEW_SPEEDS: readonly PreviewSpeed[] = [1, 2]');
     expect(lab).toContain('<ScoreTypewriter');
     expect(lab).toContain('tier={activeTier}');
     expect(lab).toContain('gameSpeed={speed}');

@@ -117,13 +117,34 @@ describe('latest feedback UI regressions', () => {
     const runView = source('src/ui/components/RunView.tsx');
     const stage = source('src/ui/components/StagePanel.tsx');
     expect(runView).toContain('const NOT_ALLOWED_NOTICE_MS = 1700');
-    expect(runView).toContain('className="workspace-not-allowed"');
+    expect(runView).toContain('className="workspace-final-notice workspace-not-allowed"');
     expect(runView).toContain('setNotAllowedNotice(null)');
     expect(stage).toContain("message.key !== 'boss.notAllowed'");
     expect(play).toMatch(
-      /\.workspace-not-allowed\s*\{[^}]*top:\s*18px[^}]*color:\s*#fff[^}]*font-family:\s*'Jersey 10'[^}]*font-size:\s*clamp\(44px,\s*5vw,\s*76px\)/s,
+      /\.workspace-final-notice\s*\{[^}]*top:\s*18px[^}]*color:\s*#fff[^}]*font-family:\s*'Jersey 10'[^}]*font-size:\s*clamp\(44px,\s*5vw,\s*76px\)/s,
     );
     expect(play).toContain('@keyframes workspace-not-allowed');
+  });
+
+  it('announces only the finalized BUILD pattern in the central workspace', () => {
+    const runView = source('src/ui/components/RunView.tsx');
+    const notice = source('src/ui/useFinalPatternNotice.ts');
+    expect(runView).toContain('useFinalPatternNotice(');
+    expect(runView).toContain('g.state.sentenceBonus');
+    expect(notice).toContain("if (phase !== 'playing') return;");
+    expect(notice).toContain('if (!source?.pattern)');
+    expect(runView).toContain('className="workspace-final-notice workspace-pattern-notice"');
+    expect(runView).toContain("t('sidebar.patternLevel', { n: patternNotice.level })");
+    expect(runView).toContain('<PatternIcon pattern={patternNotice.pattern} />');
+    expect(runView).not.toContain('blind.projectedScore - blind.committedScore}</div>');
+    expect(play).toMatch(/\.workspace-pattern-notice\s*\{[^}]*top:\s*50%[^}]*transform:\s*translate\(-50%,\s*-50%\)[^}]*animation:\s*workspace-pattern-notice 1\.7s/s);
+    expect(play).toContain('@keyframes workspace-pattern-notice');
+    expect(play).toMatch(/@keyframes workspace-pattern-notice\s*\{[\s\S]*translate\(-50%,\s*-50%\) scale\(1\)/s);
+    expect(play).toContain('@keyframes workspace-pattern-notice-reduced');
+    expect(play).toMatch(/@keyframes workspace-pattern-notice-reduced\s*\{[\s\S]*opacity:\s*1;\s*transform:\s*translate\(-50%,\s*-50%\)/s);
+    expect(play).toMatch(/\.force-reduced-motion \.workspace-final-notice\s*\{[^}]*workspace-final-notice-reduced[^}]*linear/s);
+    expect(play).toMatch(/\.force-reduced-motion \.workspace-pattern-notice\s*\{[^}]*workspace-pattern-notice-reduced[^}]*linear/s);
+    expect(play).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.workspace-pattern-notice\s*\{[^}]*workspace-pattern-notice-reduced/s);
   });
 
   it('keeps instant use right of its card and reserves boss-reroll space', () => {

@@ -18,7 +18,7 @@ describe('register synergy UI provenance', () => {
     const css = read('src/ui/styles/play.css');
     expect(sidebar).toContain('bonus-part register-synergy');
     expect(sidebar).toContain('sidebar.bonusRegisterSynergy');
-    expect(sidebar).toContain('sentenceBonus!.registerSynergyId');
+    expect(sidebar).toContain('sentenceBonus.registerSynergyId');
     expect(css).toContain('.bonus-part.register-synergy { color: var(--chips); }');
   });
 

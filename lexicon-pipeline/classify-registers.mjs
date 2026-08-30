@@ -19,6 +19,7 @@ const OVERRIDES = args.overrides ?? 'lexicon-pipeline/register-overrides.json';
 const OUT = args.out ?? LEXICON;
 const AUDIT = args.audit ?? 'data/register-audit.json';
 const CURATED = args.curated ?? 'lexicon-pipeline/curated-abbreviations.json';
+const CURATED_VALIDITY = args.curatedValidity ?? 'lexicon-pipeline/curated-validity.json';
 const MAX_WORD_LENGTH = 18;
 const SUITS = ['standard', 'formal', 'slang', 'vulgar'];
 const STRENGTH = Object.fromEntries(SUITS.map((suit, index) => [suit, index]));
@@ -29,7 +30,10 @@ const lexicon = Object.fromEntries(
 );
 const primary = JSON.parse(fs.readFileSync(PRIMARY, 'utf8'));
 const overrides = JSON.parse(fs.readFileSync(OVERRIDES, 'utf8'));
-const curated = JSON.parse(fs.readFileSync(CURATED, 'utf8'));
+const curated = [
+  ...JSON.parse(fs.readFileSync(CURATED, 'utf8')),
+  ...JSON.parse(fs.readFileSync(CURATED_VALIDITY, 'utf8')),
+];
 const curatedByWord = new Map(curated.map((entry) => [entry.word, entry]));
 for (const entry of curated) {
   lexicon[entry.word] = { suit: entry.suit, pos: entry.pos };
@@ -55,7 +59,7 @@ if (args.curatedOnly === 'true') {
   };
   fs.writeFileSync(OUT, `${JSON.stringify(sortedLexicon)}\n`);
   fs.writeFileSync(AUDIT, `${JSON.stringify(report)}\n`);
-  console.log(`merged ${curated.length} curated abbreviations into ${OUT} and ${AUDIT}`);
+  console.log(`merged ${curated.length} curated words into ${OUT} and ${AUDIT}`);
   process.exit(0);
 }
 const decisions = new Map();

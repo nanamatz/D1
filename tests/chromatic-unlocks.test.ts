@@ -13,8 +13,10 @@ import {
   activeUnlocks,
   checkWordPlayed,
   chromaMatrix,
+  applyPresentation,
 } from '../src/ui/unlocks';
 import { FamilyCardArt } from '../src/ui/components/FamilyCardArt';
+import { audio } from '../src/ui/audio';
 
 // jsdom is not configured project-wide; provide a minimal localStorage shim
 // (matching tutorial-store.test.ts) so the played-set persistence round-trips.
@@ -83,6 +85,22 @@ describe('chromatic unlocks — activeUnlocks', () => {
 });
 
 describe('chromaMatrix — shared raster-art chroma gate', () => {
+  it('gates the gameplay audio buses independently through Palette progress', () => {
+    applyPresentation();
+    expect(audio.isBusEnabled('sfx')).toBe(false);
+    expect(audio.isBusEnabled('music')).toBe(false);
+
+    markPlayed('SOUND');
+    applyPresentation();
+    expect(audio.isBusEnabled('sfx')).toBe(true);
+    expect(audio.isBusEnabled('music')).toBe(false);
+
+    markPlayed('MUSIC');
+    applyPresentation();
+    expect(audio.isBusEnabled('sfx')).toBe(true);
+    expect(audio.isBusEnabled('music')).toBe(true);
+  });
+
   const LUM = '0.2126 0.7152 0.0722';
 
   it('no colour unlocked → exactly grayscale(1)', () => {

@@ -278,9 +278,8 @@ export interface GameState {
    * Null at every other time — the bonus stays a separate forecast during play.
    */
   finalScore: number | null;
-  /** The finalized sentence-bonus breakdown, non-null only while it lands on the
-   *  round number (item 2). Drives the scorebox fill (chips → mult) in the Sidebar;
-   *  null at every other time (mirrors `finalScore`). */
+  /** Finalized sentence provenance from BUILD through live Fee Settlement.
+   *  Collect clears it in the same transition that opens Shop. */
   sentenceBonus: SentenceBonusDisplay | null;
   /**
    * The player actually started this run (vs. the idle run `bootstrap` always
@@ -2110,7 +2109,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     const id = setTimeout(
       () => setState((prev) => {
         if (!prev.pendingEnd || prev.finalScore === null) return prev;
-        return { ...finalize(prev), pendingEnd: false, sentenceBonus: null };
+        return { ...finalize(prev), pendingEnd: false };
       }),
       reduce ? VERDICT_BEAT_REDUCED_MS : BONUS_LAND_MS + VERDICT_BEAT_MS,
     );

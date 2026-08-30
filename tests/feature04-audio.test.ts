@@ -14,7 +14,7 @@ import {
   type SfxName,
 } from '../src/ui/audio';
 
-const FULL = { master: 100, music: 100, sfx: 100 };
+const FULL = { music: 100, sfx: 100, musicMuted: false, sfxMuted: false };
 // The 9 engine TileMaterial values (types.ts) — kept in step by this test.
 const MATERIALS = [
   'ceramic', 'porcelain', 'polished', 'glass', 'stone', 'leadPlate', 'ivory', 'brass', 'wood',

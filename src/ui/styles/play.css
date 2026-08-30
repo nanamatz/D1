@@ -33,7 +33,7 @@
      as one clear work surface, rather than nesting a second full screen. */
   justify-content: flex-end;
 }
-.workspace-not-allowed {
+.workspace-final-notice {
   position: absolute;
   z-index: 58;
   top: 18px;
@@ -49,13 +49,51 @@
   pointer-events: none;
   animation: workspace-not-allowed 1.7s ease both;
 }
+.workspace-pattern-notice {
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  gap: .12em;
+  text-shadow: 4px 4px 0 rgba(0, 0, 0, .65);
+  animation: workspace-pattern-notice 1.7s ease both;
+}
+.workspace-pattern-notice .ui-icon {
+  width: .8em;
+  height: .8em;
+}
 @keyframes workspace-not-allowed {
   0% { opacity: 0; transform: translate(-50%, -12px) scale(.88); }
   14%, 68% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -10px) scale(.96); }
 }
-.force-reduced-motion .workspace-not-allowed {
-  animation: workspace-not-allowed 1.7s linear both;
+@keyframes workspace-pattern-notice {
+  0% { opacity: 0; transform: translate(-50%, calc(-50% - 12px)) scale(.88); }
+  14%, 68% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, calc(-50% - 10px)) scale(.96); }
+}
+@keyframes workspace-final-notice-reduced {
+  0%, 100% { opacity: 0; transform: translateX(-50%); }
+  10%, 82% { opacity: 1; transform: translateX(-50%); }
+}
+@keyframes workspace-pattern-notice-reduced {
+  0%, 100% { opacity: 0; transform: translate(-50%, -50%); }
+  10%, 82% { opacity: 1; transform: translate(-50%, -50%); }
+}
+.force-reduced-motion .workspace-final-notice {
+  animation: workspace-final-notice-reduced 1.7s linear both;
+}
+.force-reduced-motion .workspace-pattern-notice {
+  animation: workspace-pattern-notice-reduced 1.7s linear both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-final-notice {
+    animation: workspace-final-notice-reduced 1.7s linear both;
+  }
+  .workspace-pattern-notice {
+    animation: workspace-pattern-notice-reduced 1.7s linear both;
+  }
 }
 .blind-workspace {
   display: flex;
@@ -1711,7 +1749,7 @@
   box-shadow: var(--shadow);
   position: relative; /* anchor the +N/×N pop (item 6) */
 }
-/* Score Typewriter (GDD §7.1): persistent left-margin pixel machine. It reacts
+/* Score Keyboard (GDD §7.1): persistent left-margin pixel machine. It reacts
    inside the existing settle beat and never owns completion timing. */
 .score-typewriter-dock {
   --typewriter-beat: 460ms;
@@ -1721,15 +1759,16 @@
   --typewriter-width: min(
     230px,
     13vw,
-    max(0px, calc(var(--typewriter-gutter) - 16px))
+    max(0px, calc(var(--typewriter-gutter) - 16px)),
+    calc((100vh - 32px) / 2)
   );
   position: fixed;
   left: max(8px, calc(var(--typewriter-gutter) - var(--typewriter-width) - 8px));
-  top: 3vh;
+  top: 50%;
   bottom: auto;
-  translate: none;
+  translate: 0 -50%;
   width: var(--typewriter-width);
-  height: 94vh;
+  height: calc(var(--typewriter-width) * 2);
   z-index: 45;
   pointer-events: none;
   image-rendering: pixelated;
@@ -1739,73 +1778,75 @@
 :root.world-mono .score-typewriter-dock { filter: grayscale(1); }
 .score-typewriter {
   position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200%;
+  height: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+.typewriter-machine {
+  position: absolute;
   inset: 0;
   transform-origin: 50% 50%;
 }
-.score-typewriter-dock.is-active .score-typewriter {
+.typewriter-machine::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  left: 5%;
+  top: 28%;
+  width: 90%;
+  height: 48%;
+  box-sizing: border-box;
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 var(--typewriter-ambient-glow, 0) var(--gold);
+  opacity: 0;
+  pointer-events: none;
+}
+.score-typewriter-dock.is-active .typewriter-machine {
   animation: typewriter-body-hit var(--typewriter-beat) steps(4, end) both;
 }
 .typewriter-art {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: fill;
-  opacity: .52;
-  filter: brightness(.72) saturate(.55) contrast(.9);
+  object-fit: contain;
+  opacity: 1;
   image-rendering: pixelated;
   user-select: none;
-}
-.score-typewriter-dock.is-active .typewriter-art { opacity: .62; }
-.typewriter-carriage {
-  position: absolute;
-  z-index: 3;
-  left: 31%;
-  top: 6%;
-  width: 3%;
-  height: 88%;
-}
-.typewriter-carriage span {
-  position: absolute;
-  inset: 0;
-  height: 12%;
-  background: rgba(240, 178, 62, .22);
-  box-shadow: 0 0 max(2px, .18vw) rgba(240, 178, 62, .24);
-}
-.score-typewriter-dock.is-active .typewriter-carriage {
-  animation: typewriter-carriage var(--typewriter-beat) steps(6, end) both;
 }
 .typewriter-keys {
   position: absolute;
   z-index: 4;
-  left: 54%;
-  top: 6%;
-  width: 44%;
-  height: 88%;
+  inset: 0;
 }
 .typewriter-key {
   position: absolute;
   left: var(--key-x);
   top: var(--key-y);
-  width: clamp(10px, .9vw, 18px);
-  aspect-ratio: 1.08;
+  width: var(--key-w);
+  height: var(--key-h);
   box-sizing: border-box;
   padding: 0;
-  border: max(1px, .06vw) solid #3b4348;
-  border-radius: 46%;
-  background: #0d151a;
+  border: 1px solid #66645d;
+  border-radius: 2px;
+  background: #141819;
   box-shadow:
-    inset 1px 1px 0 rgba(181, 191, 194, .12),
+    inset 1px 1px 0 #77756d,
     1px 1px 0 #050708;
-  transform:
-    translate(-50%, -50%)
-    rotate(var(--key-tilt))
-    scale(var(--key-scale));
-  opacity: .48;
-  filter: brightness(.72) saturate(.35) contrast(.9);
+  opacity: 1;
+  color: #e4dfd2;
+  font-family: 'Jersey 10', monospace;
+  font-size: clamp(3px, calc(var(--typewriter-width) * .028), 7px);
+  line-height: .9;
+  text-align: center;
+  text-shadow: 1px 1px 0 #050708;
+  overflow: hidden;
   appearance: none;
 }
 .typewriter-key:disabled {
-  opacity: .48;
+  opacity: 1;
 }
 .score-typewriter-dock.is-active .typewriter-key.is-pressed {
   animation: typewriter-key var(--key-duration) steps(2, end) both;
@@ -1813,13 +1854,12 @@
 }
 .typewriter-smoke,
 .typewriter-flame,
-.typewriter-pop,
-.typewriter-ding { opacity: 0; }
+.typewriter-pop { opacity: 0; }
 .typewriter-smoke {
   position: absolute;
   z-index: 6;
-  left: 53.5%;
-  top: 22%;
+  left: 62%;
+  top: 34%;
 }
 .typewriter-smoke i {
   position: absolute;
@@ -1838,24 +1878,57 @@
 .typewriter-flame {
   position: absolute;
   z-index: 7;
-  left: 42%;
-  top: 12%;
-  width: 23%;
-  height: 20%;
+  left: 53%;
+  top: 27%;
+  width: 20%;
+  height: 32%;
 }
-.typewriter-flame i {
-  position: absolute;
-  inset: 25% 18% 0;
-  background: var(--mult);
-  clip-path: polygon(50% 0, 100% 65%, 72% 100%, 28% 100%, 0 65%);
+.typewriter-flame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
-.typewriter-flame i + i { inset: 48% 34% 0; background: var(--gold); }
+.typewriter-flame-outer { fill: var(--score-flame-outer); stroke: none; }
+.typewriter-flame-core { fill: var(--score-flame-core); stroke: none; }
 .typewriter-tier-5.is-active .typewriter-flame {
   opacity: 1;
   animation: typewriter-meltdown var(--typewriter-beat) steps(3, end) both;
 }
-.typewriter-pop,
-.typewriter-ding {
+.score-typewriter-dock.is-clear-held .typewriter-machine::after {
+  opacity: var(--typewriter-ambient-low);
+  animation: typewriter-ambient-hold var(--typewriter-ambient-speed) steps(2, end) infinite;
+}
+.typewriter-tier-1.is-clear-held {
+  --typewriter-ambient-low: .16;
+  --typewriter-ambient-high: .24;
+  --typewriter-ambient-glow: 3px;
+  --typewriter-ambient-speed: 900ms;
+}
+.typewriter-tier-2.is-clear-held {
+  --typewriter-ambient-low: .25;
+  --typewriter-ambient-high: .36;
+  --typewriter-ambient-glow: 5px;
+  --typewriter-ambient-speed: 760ms;
+}
+.typewriter-tier-3.is-clear-held {
+  --typewriter-ambient-low: .36;
+  --typewriter-ambient-high: .5;
+  --typewriter-ambient-glow: 8px;
+  --typewriter-ambient-speed: 640ms;
+}
+.typewriter-tier-4.is-clear-held {
+  --typewriter-ambient-low: .48;
+  --typewriter-ambient-high: .64;
+  --typewriter-ambient-glow: 11px;
+  --typewriter-ambient-speed: 560ms;
+}
+.typewriter-tier-5.is-clear-held {
+  --typewriter-ambient-low: .62;
+  --typewriter-ambient-high: .82;
+  --typewriter-ambient-glow: 15px;
+  --typewriter-ambient-speed: 460ms;
+}
+.typewriter-pop {
   position: absolute;
   z-index: 8;
   left: 50%;
@@ -1865,15 +1938,9 @@
   text-shadow: max(1px, .14vw) max(1px, .14vw) 0 #11191e;
   white-space: nowrap;
 }
-.typewriter-pop { left: 52%; top: 50%; }
+.typewriter-pop { left: 58%; top: 48%; }
 .typewriter-tier-5.is-active .typewriter-pop {
   animation: typewriter-label-hit var(--typewriter-beat) steps(4, end) both;
-}
-.typewriter-ding {
-  left: 25%;
-  top: 2%;
-  opacity: 1;
-  animation: typewriter-target-punch var(--typewriter-target-cue) steps(5, end) both;
 }
 @keyframes typewriter-body-hit {
   0%, 100% { transform: translate(0); }
@@ -1885,37 +1952,59 @@
   0%, 100% {
     translate: 0;
     scale: 1;
-    opacity: .48;
-    filter: brightness(.72) saturate(.35) contrast(.9);
-    background: #0d151a;
-    border-color: #3b4348;
-    box-shadow: inset 1px 1px 0 rgba(181, 191, 194, .12), 1px 1px 0 #050708;
+    background: #141819;
+    border-color: #575755;
+    box-shadow: inset 1px 1px 0 #77756d, 1px 1px 0 #050708;
   }
   50% {
-    translate: -2px 2px;
+    translate: 0 2px;
     scale: .94;
-    opacity: .76;
-    filter: brightness(.92) saturate(.5) contrast(.95);
     background: #25231c;
     border-color: #665e49;
     box-shadow: inset 1px 1px 0 rgba(190, 178, 137, .16), 0 0 0 #050708;
   }
 }
-@keyframes typewriter-carriage { 0% { translate: 0 -12%; } 100% { translate: 0 12%; } }
+@keyframes typewriter-enter-strike {
+  0%, 100% { translate: 0; scale: 1; }
+  35%, 68% {
+    translate: 0 3px;
+    scale: .9;
+    background: #4a3b1d;
+    border-color: var(--gold);
+    box-shadow: inset 1px 2px 0 #17120a, 0 0 5px var(--gold);
+  }
+}
 @keyframes typewriter-smoke { 0% { translate: 0 8px; } 100% { translate: 0 -22px; opacity: 0; } }
-@keyframes typewriter-meltdown { 0%, 35% { scale: .2; } 70% { scale: 1.15; } 100% { scale: .75; opacity: 0; } }
+@keyframes typewriter-meltdown { 0%, 35% { scale: .65; } 70% { scale: 1.15; } 100% { scale: .75; opacity: 0; } }
 @keyframes typewriter-label-hit { 0%, 55% { opacity: 0; translate: -50% 10px; } 70% { opacity: 1; translate: -50% 0; scale: 1.3; } 100% { opacity: 0; translate: -50% -14px; } }
-@keyframes typewriter-target-punch { 0% { opacity: 0; translate: -50% 8px; scale: .6; } 30%, 70% { opacity: 1; translate: -50% 0; scale: 1.25; } 100% { opacity: 0; translate: -50% -12px; scale: 1; } }
+@keyframes typewriter-ambient-hold {
+  0%, 100% { opacity: var(--typewriter-ambient-low); }
+  50% { opacity: var(--typewriter-ambient-high); }
+}
+.score-typewriter-dock.target-punched .typewriter-key[data-key-id="Enter"] {
+  animation: typewriter-enter-strike var(--typewriter-target-cue) steps(4, end) both !important;
+}
+.score-typewriter-dock.is-clear-cycle .typewriter-key[data-key-id="Enter"] {
+  animation: typewriter-enter-strike var(--typewriter-beat) steps(4, end) both !important;
+}
 
 .score-typewriter-dock.is-reduced *,
 .force-reduced-motion .score-typewriter-dock * { animation: none !important; }
+.score-typewriter-dock.is-reduced .typewriter-machine::after,
+.force-reduced-motion .score-typewriter-dock .typewriter-machine::after { animation: none !important; }
 .score-typewriter-dock.is-reduced .typewriter-key.is-pressed,
 .force-reduced-motion .score-typewriter-dock .typewriter-key.is-pressed {
-  opacity: .58;
-  filter: brightness(.78) saturate(.35) contrast(.9);
   background: #161b1c;
   border-color: #50565a;
   box-shadow: inset 1px 1px 0 rgba(192, 196, 190, .14), 1px 1px 0 #06090b;
+}
+.score-typewriter-dock.is-reduced.target-punched .typewriter-key[data-key-id="Enter"],
+.force-reduced-motion .score-typewriter-dock.target-punched .typewriter-key[data-key-id="Enter"],
+.score-typewriter-dock.is-reduced.is-clear-held .typewriter-key[data-key-id="Enter"],
+.force-reduced-motion .score-typewriter-dock.is-clear-held .typewriter-key[data-key-id="Enter"] {
+  background: #4a3b1d;
+  border-color: var(--gold);
+  box-shadow: inset 1px 1px 0 #8d7435, 0 0 5px var(--gold);
 }
 .score-typewriter-dock.is-reduced .typewriter-smoke,
 .score-typewriter-dock.is-reduced .typewriter-flame,
@@ -1925,12 +2014,16 @@
 .force-reduced-motion .score-typewriter-dock .typewriter-pop { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .score-typewriter-dock * { animation: none !important; }
+  .score-typewriter-dock .typewriter-machine::after { animation: none !important; }
   .score-typewriter-dock .typewriter-key.is-pressed {
-    opacity: .58;
-    filter: brightness(.78) saturate(.35) contrast(.9);
     background: #161b1c;
     border-color: #50565a;
     box-shadow: inset 1px 1px 0 rgba(192, 196, 190, .14), 1px 1px 0 #06090b;
+  }
+  .score-typewriter-dock.target-punched .typewriter-key[data-key-id="Enter"] {
+    background: #4a3b1d;
+    border-color: var(--gold);
+    box-shadow: inset 1px 1px 0 #8d7435, 0 0 5px var(--gold);
   }
   .score-typewriter-dock .typewriter-smoke,
   .score-typewriter-dock .typewriter-flame,
@@ -3053,7 +3146,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-radius: 8px;
-  padding: 1px 8px;
+  padding: 2px 9px;
   box-shadow: var(--shadow);
   animation: stampIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
   z-index: 6;
@@ -3815,19 +3908,34 @@
   white-space: nowrap;
 }
 .pos-tag.pos-noun {
-  --pos-tone: var(--chips);
+  --pos-tone: var(--pos-noun);
 }
-.pos-tag:is(.pos-verbIntransitive, .pos-verbTransitive, .pos-verbLinking) {
-  --pos-tone: var(--mult);
+.pos-tag.pos-verbIntransitive {
+  --pos-tone: var(--pos-verb-intransitive);
 }
-.pos-tag:is(.pos-adjective, .pos-adverb, .pos-article) {
-  --pos-tone: var(--gold);
+.pos-tag.pos-verbTransitive {
+  --pos-tone: var(--pos-verb-transitive);
 }
-.pos-tag:is(.pos-conjunction, .pos-preposition) {
-  --pos-tone: var(--btn-green);
+.pos-tag.pos-verbLinking {
+  --pos-tone: var(--pos-verb-linking);
+}
+.pos-tag.pos-adjective {
+  --pos-tone: var(--pos-adjective);
+}
+.pos-tag.pos-adverb {
+  --pos-tone: var(--pos-adverb);
+}
+.pos-tag.pos-article {
+  --pos-tone: var(--pos-article);
+}
+.pos-tag.pos-conjunction {
+  --pos-tone: var(--pos-conjunction);
+}
+.pos-tag.pos-preposition {
+  --pos-tone: var(--pos-preposition);
 }
 .pos-tag.pos-interjection {
-  --pos-tone: var(--gold);
+  --pos-tone: var(--pos-interjection);
 }
 .pos-tag.active {
   border-style: solid;
@@ -5587,6 +5695,7 @@
    edge to edge — it was the only inset in the rail that didn't line up. */
 .score-panel {
   height: 136px;
+  flex: 0 0 136px;
   padding: 14px 12px;
   display: flex;
   flex-direction: column;
@@ -5594,6 +5703,18 @@
   justify-content: center;
   gap: 2px;
   text-align: center;
+}
+/* Final provenance can reach seven supplemental tags. Reallocate a fixed 80px
+   from the controls only while that snapshot is visible, preserving the rail's
+   total height and every ordinary-play measurement. */
+.score-panel.has-provenance {
+  height: 216px;
+  flex-basis: 216px;
+  padding: 10px 12px;
+  justify-content: flex-start;
+}
+.score-panel.has-provenance .scorebox {
+  flex: 0 0 72px;
 }
 .sb-status {
   max-width: 100%;
@@ -5618,20 +5739,43 @@
   animation: stampIn .25s cubic-bezier(.2, 1.4, .4, 1);
 }
 .bonus-part {
-  padding: 1px 5px;
+  padding: 2px 9px;
   border: 1px solid currentColor;
-  border-radius: 5px;
-  font-size: var(--fs-2xs);
-  font-weight: 900;
+  border-radius: 8px;
+  font-size: var(--fs-sm);
+  font-weight: 800;
   line-height: 1.15;
   white-space: nowrap;
   background: rgba(5, 14, 20, .88);
+  box-shadow: var(--shadow-sm);
 }
 .bonus-part.modifier { color: var(--chips); }
 .bonus-part.register-synergy { color: var(--chips); }
 .bonus-part.unison { color: var(--gold); }
 .bonus-part.effect { color: #d7a8ff; }
 .bonus-part.pouch { color: var(--gold); }
+.score-panel.has-provenance .bonus-parts {
+  flex: 0 0 112px;
+  height: 112px;
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 20px;
+  align-content: start;
+  overflow: hidden;
+}
+.score-panel.has-provenance .bonus-part {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.score-panel.has-provenance .bonus-part.modifier,
+.score-panel.has-provenance .bonus-part.register-synergy,
+.score-panel.has-provenance .bonus-part.effect.score,
+.score-panel.has-provenance .bonus-part.pouch {
+  grid-column: 1 / -1;
+}
 .sb-status.warn {
   color: var(--gold);
 }
@@ -5670,6 +5814,10 @@
   grid-template-rows: repeat(3, 1fr);
   gap: 8px;
   height: var(--nav-h);
+  flex: 0 0 var(--nav-h);
+}
+.score-panel.has-provenance + .sb-controls {
+  --nav-h: 252px;
 }
 .sb-btns {
   grid-column: 1;

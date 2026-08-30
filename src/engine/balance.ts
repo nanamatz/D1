@@ -87,19 +87,18 @@ export const BALANCE = {
   wordLength: { multPerLetter: 1, maxLetters: 18 },
 
   // ----- Score Typewriter (GDD §7.1; UI presentation only) -----
-  // Event impact is normalized against the played word's unenhanced base score.
-  // A floor keeps tiny/Stone-heavy words from escalating ordinary flat bonuses.
+  // Presentation tier rises from each submission's local score-event peak.
   scoreTypewriter: {
-    expectedBaseFloor: 60,
-    impactThresholds: [0.25, 1, 3, 10] as const,
+    ratioThresholds: [1.25, 2, 4, 10] as const,
     beatMs: 460,
     targetCueMs: 460,
     visualKeyCounts: [0, 3, 5, 8, 12, 16] as const,
     audibleKeyCounts: [0, 1, 2, 3, 4, 5] as const,
+    clearRepeatFactors: [0, 2, 1.75, 1.5, 1.25, 1] as const,
     keyPressMs: [0, 96, 88, 76, 64, 56] as const,
     keyPressFloorMs: 24,
     keyRhythmJitter: 0.35,
-    shakeFactors: [0, 0, 0.2, 0.45, 0.7, 1] as const,
+    shakeFactors: [0, 0.1, 0.2, 0.45, 0.7, 1] as const,
   },
 
   // ----- Gibberish (GDD §6.4, decision b-2) -----

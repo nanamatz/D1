@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { audio, effectiveGain, noteHz, MUSIC, MUSIC_TRACKS, SFX_NAMES, type SfxName } from '../src/ui/audio';
 
-const FULL = { master: 100, music: 100, sfx: 100 };
+const FULL = { music: 100, sfx: 100, musicMuted: false, sfxMuted: false };
 
 describe('audio facade — pure logic (no Web Audio in Node)', () => {
   it('play() is a safe no-op in Node (no AudioContext) and does not throw', () => {
@@ -14,14 +14,15 @@ describe('audio facade — pure logic (no Web Audio in Node)', () => {
     expect(audio.isUnlocked()).toBe(false);
   });
 
-  it('effectiveGain multiplies master × group × recipe gain', () => {
+  it('effectiveGain applies group volume and its independent mute', () => {
     const full = effectiveGain('tilePop', FULL);
-    // half master → half gain
-    expect(effectiveGain('tilePop', { ...FULL, master: 50 })).toBeCloseTo(full / 2, 5);
-    // sfx group zeroed → silent
+    expect(effectiveGain('tilePop', { ...FULL, sfx: 50 })).toBeCloseTo(full / 2, 5);
     expect(effectiveGain('tilePop', { ...FULL, sfx: 0 })).toBe(0);
-    // master zeroed → silent
-    expect(effectiveGain('tilePop', { ...FULL, master: 0 })).toBe(0);
+    expect(effectiveGain('tilePop', { ...FULL, sfxMuted: true })).toBe(0);
+    for (const name of ['deskEnter', 'deskBell'] as const) {
+      expect(effectiveGain(name, { ...FULL, musicMuted: true })).toBeGreaterThan(0);
+      expect(effectiveGain(name, { ...FULL, sfxMuted: true })).toBe(0);
+    }
   });
 
   it('every SfxName has a recipe (positive base gain) and SFX_NAMES is complete', () => {
@@ -35,7 +36,12 @@ describe('audio facade — pure logic (no Web Audio in Node)', () => {
   });
 
   it('setVolumes clamps out-of-range values instead of throwing', () => {
-    expect(() => audio.setVolumes({ master: 999, music: -5, sfx: 50 })).not.toThrow();
+    expect(() => audio.setVolumes({
+      music: -5,
+      sfx: 500,
+      musicMuted: false,
+      sfxMuted: true,
+    })).not.toThrow();
   });
 });
 

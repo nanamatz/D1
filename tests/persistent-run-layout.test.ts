@@ -73,7 +73,8 @@ describe('persistent Balatro-style run table', () => {
     expect(playCss).toMatch(/\.frame\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
     expect(playCss).toMatch(/\.persistent-run \.main\s*\{[^}]*min-height:\s*calc\(var\(--board-h\)/s);
     expect(screenCss).toMatch(/\.screen\s*\{[^}]*max-width:\s*var\(--board-max\)[^}]*min-height:\s*var\(--board-h\)/s);
-    expect(screenCss).toMatch(/\.screen-stack\s*\{[^}]*max-width:\s*var\(--board-max\)[^}]*min-height:\s*var\(--board-h\)/s);
+    expect(screenCss).toMatch(/\.screen-stack\s*\{[^}]*width:\s*100%[^}]*min-height:\s*var\(--board-h\)/s);
+    expect(screenCss).not.toMatch(/\.screen-stack\s*\{[^}]*max-width:/s);
     expect(screenCss).toMatch(/\.screen-pane\s*\{[^}]*min-height:\s*var\(--board-h\)/s);
     expect(screenCss).toContain('zoom: var(--root-zoom)');
   });
@@ -108,5 +109,17 @@ describe('persistent Balatro-style run table', () => {
     expect(sidebar).toContain('className="round-pattern"');
     expect(playCss).toMatch(/\.round-panel\s*\{[^}]*flex:\s*0 0 148px[^}]*height:\s*148px/s);
     expect(playCss).toMatch(/\.score-panel\s*\{[^}]*height:\s*136px/s);
+  });
+
+  it('retains finalized sentence provenance through Fee Settlement and clears it on Collect', () => {
+    const game = readFileSync('src/ui/useGame.ts', 'utf8');
+    const resolveStart = game.indexOf('// RESOLVE');
+    const confirmStart = game.indexOf('const confirmCashout');
+    const selectStart = game.indexOf('const selectBlind', confirmStart);
+    expect(game.slice(resolveStart, game.indexOf('// C-3:', resolveStart)))
+      .not.toContain('sentenceBonus: null');
+    expect(game.slice(confirmStart, selectStart)).toContain('sentenceBonus: null');
+    expect(sidebar).toContain("const bonusActive = mode === 'blind' && sentenceBonus !== null;");
+    expect(runView).toContain("phase === 'shop' ? 'shop' : phase === 'blindselect' ? 'blindselect' : 'blind'");
   });
 });

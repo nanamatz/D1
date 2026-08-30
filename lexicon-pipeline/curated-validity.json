@@ -1,0 +1,14 @@
+[
+  {
+    "word": "christ",
+    "suit": "standard",
+    "pos": ["noun"],
+    "reason": "Reviewed common English religious-title surface omitted by ENABLE; admitted as an exact lowercase word, not as a general proper-name rule."
+  },
+  {
+    "word": "christmas",
+    "suit": "standard",
+    "pos": ["noun"],
+    "reason": "Reviewed common English holiday noun omitted by ENABLE; admitted as an exact lowercase word with no automatic derivatives."
+  }
+]

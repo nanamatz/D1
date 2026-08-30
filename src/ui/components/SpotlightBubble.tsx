@@ -1,7 +1,13 @@
-import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { mascotSrc } from '../mascots';
-import { placeSpotlightBubble, type Rect } from '../spotlightPos';
+import {
+  isPointNearRect,
+  placeSpotlightBubble,
+  retainPointerForTarget,
+  type Point,
+  type Rect,
+} from '../spotlightPos';
 
 /**
  * Dim overlay + box-shadow spotlight on a target element + a mascot speech bubble,
@@ -40,24 +46,61 @@ export function SpotlightBubble({
   children: ReactNode;
 }) {
   const [rect, setRect] = useState<Rect | null>(null);
+  const [clickKind, setClickKind] = useState<'left' | 'right' | null>(null);
+  const [pointerNear, setPointerNear] = useState(false);
+  const elementRef = useRef<Element | null>(null);
+  const rectRef = useRef<Rect | null>(null);
+  const clickKindRef = useRef<'left' | 'right' | null>(null);
+  const pointerRef = useRef<Point | null>(null);
+  const finePointerRef = useRef(false);
+  const pointerNearRef = useRef(false);
   // The bubble's own measured height — needed to keep it (and its button) fully on
   // screen when anchored above/beside a target. Tracked every frame like the rect.
   const [wrapH, setWrapH] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const refreshPointerNear = () => {
+    const point = pointerRef.current;
+    const next = finePointerRef.current && clickKindRef.current !== null && point !== null &&
+      isPointNearRect(point, rectRef.current);
+    if (next !== pointerNearRef.current) {
+      pointerNearRef.current = next;
+      setPointerNear(next);
+    }
+  };
 
   useLayoutEffect(() => {
-    if (!target) { setRect(null); return; }
+    elementRef.current = null;
+    pointerRef.current = null;
+    if (pointerNearRef.current) {
+      pointerNearRef.current = false;
+      setPointerNear(false);
+    }
+    if (!target) {
+      rectRef.current = null;
+      clickKindRef.current = null;
+      setRect(null);
+      setClickKind(null);
+      return;
+    }
     let raf = 0;
     const same = (a: Rect | null, b: Rect | null) =>
       a === b || (!!a && !!b && a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height);
     const tick = () => {
       const el = document.querySelector(target);
+      pointerRef.current = retainPointerForTarget(pointerRef.current, elementRef.current, el);
+      elementRef.current = el;
       let next: Rect | null = null;
       if (el) {
         const r = el.getBoundingClientRect();
         next = { top: r.top, left: r.left, width: r.width, height: r.height };
       }
+      const nextClickKind = el?.getAttribute('data-tutorial-click-kind');
+      const nextKind = nextClickKind === 'left' || nextClickKind === 'right' ? nextClickKind : null;
+      rectRef.current = next;
+      clickKindRef.current = nextKind;
+      setClickKind((current) => current === nextKind ? current : nextKind);
       setRect((cur) => (same(cur, next) ? cur : next)); // same ref → no re-render on idle frames
+      refreshPointerNear();
       const h = wrapRef.current?.offsetHeight ?? 0;
       setWrapH((cur) => (cur === h ? cur : h));
       raf = requestAnimationFrame(tick);
@@ -65,6 +108,45 @@ export function SpotlightBubble({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [target]);
+
+  useEffect(() => {
+    if (!clickKind) {
+      finePointerRef.current = false;
+      pointerRef.current = null;
+      refreshPointerNear();
+      return;
+    }
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    finePointerRef.current = finePointer.matches;
+    const hide = () => {
+      pointerRef.current = null;
+      refreshPointerNear();
+    };
+    const move = (event: PointerEvent) => {
+      if (!finePointer.matches || event.pointerType !== 'mouse') {
+        hide();
+        return;
+      }
+      pointerRef.current = { x: event.clientX, y: event.clientY };
+      refreshPointerNear();
+    };
+    const mediaChanged = () => {
+      finePointerRef.current = finePointer.matches;
+      if (!finePointer.matches) hide();
+      else refreshPointerNear();
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    document.documentElement.addEventListener('pointerleave', hide);
+    window.addEventListener('blur', hide);
+    finePointer.addEventListener('change', mediaChanged);
+    refreshPointerNear();
+    return () => {
+      window.removeEventListener('pointermove', move);
+      document.documentElement.removeEventListener('pointerleave', hide);
+      window.removeEventListener('blur', hide);
+      finePointer.removeEventListener('change', mediaChanged);
+    };
+  }, [clickKind]);
 
   const pad = 8;
   const box = rect && {
@@ -78,6 +160,14 @@ export function SpotlightBubble({
   const wrapStyle: CSSProperties | undefined = rect
     ? placeSpotlightBubble(rect, WRAP_W, wrapH, { w: window.innerWidth, h: window.innerHeight })
     : undefined;
+  const mouseStyle: CSSProperties | undefined = rect && clickKind && pointerNear
+    ? {
+        left: rect.left + rect.width + 48 <= window.innerWidth
+          ? rect.left + rect.width + 8
+          : Math.max(0, rect.left - 48),
+        top: Math.max(0, Math.min(window.innerHeight - 40, rect.top + rect.height / 2 - 20)),
+      }
+    : undefined;
 
   // Portal to body so the fixed overlay is viewport-relative — see (1) above.
   return createPortal(
@@ -90,6 +180,14 @@ export function SpotlightBubble({
         <div
           className="intro-spot"
           style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
+        />
+      )}
+      {mouseStyle && (
+        <div
+          className="tutorial-mouse-cue"
+          data-click-kind={clickKind}
+          style={mouseStyle}
+          aria-hidden="true"
         />
       )}
       <div

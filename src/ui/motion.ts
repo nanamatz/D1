@@ -18,15 +18,38 @@
  * and every call site's shape is `if (motionOff()) applyInstantly()`, so the
  * instant branch is always the safe one.
  *
- * Deliberately NOT a hook and NOT React state: it is read inside timers, layout
- * effects and event handlers that must see the value at the moment they run, not
- * the value captured when a component last rendered. Same reasoning as
- * `readTips()` in settings.ts.
+ * This imperative predicate remains for timers, layout effects, and handlers.
+ * Components that must react immediately to an OS preference change use the
+ * subscription below in addition to their in-game setting.
  */
 export function motionOff(): boolean {
   if (typeof window === 'undefined') return true;
   return (
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true ||
+    window.matchMedia?.(REDUCED_MOTION_QUERY).matches === true ||
     document.body.classList.contains('force-reduced-motion')
   );
 }
+
+const prefersReducedMotion = (): boolean =>
+  typeof window === 'undefined'
+    ? true
+    : window.matchMedia?.(REDUCED_MOTION_QUERY).matches === true;
+
+const subscribeReducedMotion = (onChange: () => void): (() => void) => {
+  if (typeof window === 'undefined' || !window.matchMedia) return () => undefined;
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  if (typeof query.addEventListener === 'function') {
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }
+  query.addListener(onChange);
+  return () => query.removeListener(onChange);
+};
+
+/** Reactively follows the OS preference; SSR takes the safe motion-off branch. */
+export function usePrefersReducedMotion(): boolean {
+  return useSyncExternalStore(subscribeReducedMotion, prefersReducedMotion, () => true);
+}
+import { useSyncExternalStore } from 'react';
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';

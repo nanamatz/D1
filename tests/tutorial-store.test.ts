@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { hasSeen, markSeen, resetTutorial, seenCount, loadTutorial, ENCOUNTERS, tutorialBus, type EncounterId } from '../src/ui/tutorial';
 import { hasSeenIntro, markIntroSeen, resetIntro, INTRO_STEPS } from '../src/ui/tutorial';
 import en from '../locales/en.json';
@@ -97,6 +98,37 @@ describe('guided intro flag (A-1)', () => {
     // keys are unique
     expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(4);
     expect(INTRO_STEPS.map((s) => s.advance)).toEqual(['next', 'discarded', 'staged', 'played']);
+    expect(INTRO_STEPS.map((s) => s.selector)).toEqual([
+      '.round-panel',
+      '.tutorial-action-target',
+      '.tutorial-action-target',
+      '.tutorial-action-target',
+    ]);
+  });
+
+  it('moves one dynamic spotlight between the exact left/right-click actions', () => {
+    const stage = readFileSync('src/ui/components/StagePanel.tsx', 'utf8');
+    const tile = readFileSync('src/ui/components/Tile.tsx', 'utf8');
+    const spotlight = readFileSync('src/ui/components/SpotlightBubble.tsx', 'utf8');
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(stage).toContain("? 'right'");
+    expect(stage).toContain("? 'left' : undefined");
+    expect(stage).toContain("tutorialLock?.advance === 'played' && canPlay");
+    expect(stage).toContain('discardStep && canDiscard');
+    expect(tile).toContain("tutorialClick && 'tutorial-action-target'");
+    expect(tile).toContain('data-tutorial-click-kind={tutorialClick}');
+    expect(spotlight).toContain("getAttribute('data-tutorial-click-kind')");
+    expect(spotlight).toContain('isPointNearRect(point, rectRef.current)');
+    expect(spotlight).toContain('retainPointerForTarget(pointerRef.current, elementRef.current, el)');
+    expect(spotlight).toContain('rect && clickKind && pointerNear');
+    expect(spotlight).toContain("window.addEventListener('pointermove', move, { passive: true })");
+    expect(spotlight).toContain("document.documentElement.addEventListener('pointerleave', hide)");
+    expect(spotlight).toContain("window.addEventListener('blur', hide)");
+    expect(spotlight).toContain('className="tutorial-mouse-cue"');
+    expect(spotlight).toContain('aria-hidden="true"');
+    expect(css).toMatch(/\.tutorial-mouse-cue\s*\{[^}]*width:\s*40px;[^}]*height:\s*40px;[^}]*pointer-events:\s*none;/s);
+    expect(css).toContain('@media (hover: hover) and (pointer: fine)');
+    expect(css).toContain('.force-reduced-motion .tutorial-mouse-cue { animation: none; }');
   });
 });
 

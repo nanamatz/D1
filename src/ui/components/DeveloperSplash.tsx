@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motionOff } from '../motion';
 import { playStartupIdentAudio } from '../startupAudio';
-import { activeUnlocks, UNLOCKS } from '../unlocks';
 import logoUrl from '../assets/branding/sweet-turtles.png';
 
 const SPLASH_MS = 3850;
@@ -22,11 +21,7 @@ export function DeveloperSplash({
   const [logoState, setLogoState] = useState<LogoState>('preparing');
   onDoneRef.current = onDone;
 
-  const active = activeUnlocks();
   const reduce = reducedMotion || motionOff();
-  const mono = !UNLOCKS.some(
-    ({ id, effect }) => effect.kind === 'color' && active.has(id),
-  );
 
   useEffect(() => {
     let live = true;
@@ -100,7 +95,6 @@ export function DeveloperSplash({
     <div
       className={[
         'developer-splash',
-        mono && 'developer-splash--mono',
         reduce && 'developer-splash--reduced',
         logoState === 'fallback' && 'developer-splash--fallback',
       ].filter(Boolean).join(' ')}

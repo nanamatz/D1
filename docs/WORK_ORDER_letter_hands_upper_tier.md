@@ -107,7 +107,7 @@ Hand #8 ships without a dedicated tile; a Vowelless counterpart is a follow-up d
 
 ## C. Lexicon verification (do this before tuning)
 
-Counts against the shipped 172,255-entry lexicon (the four curated MVP/VIP noun surfaces add no candidates here):
+Counts against the shipped 172,257-entry lexicon (the four curated MVP/VIP noun surfaces plus `christ` and `christmas` add no candidates here):
 
 1. Vowelless: **60 live Y=consonant / 17 hypothetical Y=vowel**
 2. Words of ≥8 letters with zero repeated letters: **10,164**

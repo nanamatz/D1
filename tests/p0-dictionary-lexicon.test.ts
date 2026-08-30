@@ -19,9 +19,9 @@ describe('P0-1 — real validity dictionary', () => {
   });
 
   it('contains the 18-letter ENABLE pool plus documented exceptions', () => {
-    expect(lex.size).toBe(172255);
+    expect(lex.size).toBe(172257);
     expect(lex.registerTotals).toEqual({
-      standard: 168467,
+      standard: 168469,
       formal: 2669,
       slang: 879,
       vulgar: 240,

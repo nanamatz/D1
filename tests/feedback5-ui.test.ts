@@ -87,6 +87,9 @@ describe('feedback 5 UI regressions', () => {
     expect(play).toContain('.bonus-part.modifier');
     expect(play).toContain('.bonus-part.unison');
     expect(play).toContain('.bonus-part.effect');
+    expect(sidebar.indexOf("sentenceBonus.registerSynergyId"))
+      .toBeLessThan(sidebar.indexOf("sentenceBonus.unisonChips"));
+    expect(play).toMatch(/\.bonus-part\s*\{[^}]*padding:\s*2px 9px[^}]*border-radius:\s*8px[^}]*font-size:\s*var\(--fs-sm\)/s);
   });
 
   it('orders sentence-pattern labels as level, symbol, then name', () => {
@@ -101,6 +104,23 @@ describe('feedback 5 UI regressions', () => {
       .toBeLessThan(runInfo.indexOf('<PatternIcon pattern={p} />'));
     expect(runInfo.indexOf('<PatternIcon pattern={p} />'))
       .toBeLessThan(runInfo.indexOf('<span className="pn">'));
+  });
+
+  it('places finalized pattern provenance before every supplemental part', () => {
+    const sidebar = source('src/ui/components/Sidebar.tsx');
+    const panel = sidebar.indexOf("className={['panel', 'score-panel'");
+    const status = sidebar.indexOf('<StatusLine', panel);
+    const scorebox = sidebar.indexOf("className={['scorebox'", panel);
+    const stamp = sidebar.indexOf('className="bonus-stamp"', scorebox);
+    const parts = sidebar.indexOf('<SentenceBonusParts', scorebox);
+
+    expect(panel).toBeGreaterThanOrEqual(0);
+    expect(status).toBeGreaterThan(panel);
+    expect(status).toBeLessThan(scorebox);
+    expect(scorebox).toBeLessThan(stamp);
+    expect(stamp).toBeLessThan(parts);
+    expect(sidebar.slice(panel, scorebox)).toContain('!bonusActive');
+    expect(sidebar.slice(scorebox, parts)).toContain('bonusActive && sentenceBonus!.pattern');
   });
 
   it('plays the Constellation upgrade 500ms faster', () => {

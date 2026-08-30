@@ -1,5 +1,5 @@
-# ENABLE words up to 18 letters plus tile-grammar exceptions and curated abbreviations.
-# Sources: ENABLE (dolph/dictionary) and lexicon-pipeline/curated-abbreviations.json.
+# ENABLE words up to 18 letters plus tile-grammar exceptions and reviewed curated words.
+# Sources: ENABLE (dolph/dictionary), lexicon-pipeline/curated-abbreviations.json, and curated-validity.json.
 # Regenerate: node scripts/build-dictionary.mjs <enable.txt> <out.txt>
 aa
 aah
@@ -25099,6 +25099,7 @@ chrismons
 chrisms
 chrisom
 chrisoms
+christ
 christen
 christened
 christening
@@ -25108,6 +25109,7 @@ christiania
 christianias
 christie
 christies
+christmas
 christy
 chroma
 chromaffin

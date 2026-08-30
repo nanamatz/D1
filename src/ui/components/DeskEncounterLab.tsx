@@ -7,10 +7,10 @@ import { ScoreTypewriter } from './ScoreTypewriter';
 
 type LabTab = 'score' | 'encounters';
 type PreviewTier = Exclude<ScoreTypewriterTier, 0>;
-type PreviewSpeed = 1 | 2 | 4;
+type PreviewSpeed = 1 | 2;
 
 const PREVIEW_TIERS: readonly PreviewTier[] = [1, 2, 3, 4, 5];
-const PREVIEW_SPEEDS: readonly PreviewSpeed[] = [1, 2, 4];
+const PREVIEW_SPEEDS: readonly PreviewSpeed[] = [1, 2];
 const LAB_TABS: readonly LabTab[] = ['score', 'encounters'];
 const TARGET_CUE_TARGET = 100;
 
@@ -169,6 +169,7 @@ export function DeskEncounterLab({ onBack }: { onBack: () => void }) {
               active={activeTier > 0}
               tier={activeTier}
               beatId={`lab-beat-${beatId}`}
+              primaryKeyId="Enter"
               liveTotal={liveTotal}
               target={TARGET_CUE_TARGET}
               blindKey={`lab-target-${targetReplay}`}

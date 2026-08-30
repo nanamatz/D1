@@ -274,6 +274,9 @@ export function StagePanel({
   const canDiscard = g.canDiscard && validMarks.length > 0 && (
     !lock || (discardStep && validMarks.length === 1 && validMarks[0] === tutorialLock.discardTargetId)
   ); // no per-use tile cap (D-4)
+  const canPlay = g.canPlay && !preview?.blocked && (!lock || lockComplete);
+  const tutorialDiscardMarked = discardStep &&
+    validMarks.length === 1 && validMarks[0] === tutorialLock?.discardTargetId;
 
   return (
     <div className="stage" ref={stageRef}>
@@ -328,6 +331,9 @@ export function StagePanel({
               ? tile.id !== tutorialLock.discardTargetId
               : !buildStep || tile.id !== nextTileId)}
             markDisabled={!bossAllowsDiscard(blind, tile) || (lock && tile.id !== tutorialLock.discardTargetId)}
+            tutorialClick={discardStep && !tutorialDiscardMarked && tile.id === tutorialLock?.discardTargetId
+              ? 'right'
+              : buildStep && tile.id === nextTileId ? 'left' : undefined}
             onSelect={selectTile}
             onMark={toggleMark}
             tooltip={tileTip(tile)}
@@ -340,13 +346,15 @@ export function StagePanel({
       {/* item 4: Balatro layout — Play (left) · Sort panel (center) · Discard (right) */}
       <div className="actions">
         <button
-          className="btn blue play-btn"
+          className={['btn', 'blue', 'play-btn', tutorialLock?.advance === 'played' && canPlay
+            ? 'tutorial-action-target' : ''].filter(Boolean).join(' ')}
+          data-tutorial-click-kind={tutorialLock?.advance === 'played' && canPlay ? 'left' : undefined}
           onClick={() => {
             captureBossDiscardOrigins();
             // Freeze held-tile scoring in the order currently shown to the player.
             g.playWord(hand.map((tile) => tile.id));
           }}
-          disabled={!g.canPlay || !!preview?.blocked || (lock && !lockComplete)}
+          disabled={!canPlay}
         >
           {preview?.isGibberish ? t('btn.gibberish') : t('btn.play')}
         </button>
@@ -366,7 +374,13 @@ export function StagePanel({
             ))}
           </div>
         </div>
-        <button className="btn red discard-btn" onClick={doDiscard} disabled={!canDiscard}>
+        <button
+          className={['btn', 'red', 'discard-btn', discardStep && canDiscard
+            ? 'tutorial-action-target' : ''].filter(Boolean).join(' ')}
+          data-tutorial-click-kind={discardStep && canDiscard ? 'left' : undefined}
+          onClick={doDiscard}
+          disabled={!canDiscard}
+        >
           {t('btn.discard')}
           {validMarks.length > 0 ? ` (${validMarks.length})` : ''}
         </button>

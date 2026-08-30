@@ -136,6 +136,7 @@ export function Slider({
   onChange,
   tooltip,
   tooltipDisabled,
+  mute,
 }: {
   label: string;
   value: number;
@@ -144,10 +145,16 @@ export function Slider({
   onChange: (v: number) => void;
   tooltip: string;
   tooltipDisabled: boolean;
+  mute?: {
+    label: string;
+    ariaLabel: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+  };
 }) {
   return (
     <Tooltip title={label} body={tooltip} touchPin disabled={tooltipDisabled}>
-      <div className="set-row">
+      <div className={['set-row', mute && 'audio-set-row'].filter(Boolean).join(' ')}>
         <span className="set-label">{label}</span>
         <div className="set-control">
           <input
@@ -159,6 +166,17 @@ export function Slider({
             onChange={(e) => onChange(Number(e.target.value))}
           />
           <span className="set-badge">{value}</span>
+          {mute && (
+            <label className="audio-mute">
+              <input
+                aria-label={mute.ariaLabel}
+                type="checkbox"
+                checked={mute.checked}
+                onChange={(event) => mute.onChange(event.currentTarget.checked)}
+              />
+              <span aria-hidden="true">{mute.label}</span>
+            </label>
+          )}
         </div>
       </div>
     </Tooltip>
@@ -223,7 +241,7 @@ function SettingsView() {
             <div className="set-row">
               <span className="set-label">{t('settings.gameSpeed')}</span>
               <div className="segmented">
-                {([1, 2, 4] as const).map((s) => (
+                {([1, 2] as const).map((s) => (
                   <button
                     key={s}
                     className={['seg', s === settings.gameSpeed ? 'on' : ''].filter(Boolean).join(' ')}
@@ -311,9 +329,36 @@ function SettingsView() {
             {(!audio.isBusEnabled('sfx') || !audio.isBusEnabled('music')) && (
               <p className="set-note locked-hint"><UiIcon name="mutedSpeaker" className="inline-ui-icon" /> {t('settings.audioLockedHint')}</p>
             )}
-            <Slider label={t('settings.master')} tooltip={t('settings.tooltip.master')} tooltipDisabled={tab !== 'audio'} value={settings.master} min={0} max={100} onChange={(v) => set('master', v)} />
-            <Slider label={t('settings.music')} tooltip={t('settings.tooltip.music')} tooltipDisabled={tab !== 'audio'} value={settings.music} min={0} max={100} onChange={(v) => set('music', v)} />
-            <Slider label={t('settings.sfx')} tooltip={t('settings.tooltip.sfx')} tooltipDisabled={tab !== 'audio'} value={settings.sfx} min={0} max={100} onChange={(v) => set('sfx', v)} />
+            <Slider
+              label={t('settings.music')}
+              tooltip={t('settings.tooltip.music')}
+              tooltipDisabled={tab !== 'audio'}
+              value={settings.music}
+              min={0}
+              max={100}
+              onChange={(v) => set('music', v)}
+              mute={{
+                label: t('settings.mute'),
+                ariaLabel: t('settings.musicMute'),
+                checked: settings.musicMuted,
+                onChange: (checked) => set('musicMuted', checked),
+              }}
+            />
+            <Slider
+              label={t('settings.sfx')}
+              tooltip={t('settings.tooltip.sfx')}
+              tooltipDisabled={tab !== 'audio'}
+              value={settings.sfx}
+              min={0}
+              max={100}
+              onChange={(v) => set('sfx', v)}
+              mute={{
+                label: t('settings.mute'),
+                ariaLabel: t('settings.sfxMute'),
+                checked: settings.sfxMuted,
+                onChange: (checked) => set('sfxMuted', checked),
+              }}
+            />
         </div>
       </div>
     </>

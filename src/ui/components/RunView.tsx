@@ -36,6 +36,7 @@ import { DeskObjects } from './DeskObjects';
 import { PackOpening } from './PackOpening';
 import { BossIntro } from './BossIntro';
 import { BlindEntryEffects } from './BlindEntryEffects';
+import { PatternIcon } from './UiIcon';
 import { canUseFableOnPouch, fableTargetsTiles, isFableId } from '../../engine/fables';
 import { isConstellationId } from '../../engine/constellations';
 import { canUseGambler, gamblerTargetsTiles, isGamblerId } from '../../engine/gamblers';
@@ -51,7 +52,7 @@ import { mascotSrc } from '../mascots';
 import { preloadImagesWhenIdle } from '../preload';
 import { loadDiscoveredLetterHands } from '../lifetime';
 import { unlockedEmojiSet } from '../emojiUnlocks';
-import { BALANCE } from '../../engine/balance';
+import { useFinalPatternNotice } from '../useFinalPatternNotice';
 
 interface Props {
   g: UseGame;
@@ -84,6 +85,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const initializedTutorialBoards = useRef(new Set<string>());
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
+  const patternNotice = useFinalPatternNotice(
+    phase,
+    g.state.sentenceBonus,
+    NOT_ALLOWED_NOTICE_MS,
+  );
   const candidatePackOpen = phase === 'shop' &&
     (g.state.pack?.offer.type === 'consumable' || g.state.pack?.offer.type === 'ink');
   const heldPackUseLocked = candidatePackOpen && packInteractionLocked;
@@ -276,12 +282,6 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     phase === 'shop' ? 'shop' : phase === 'blindselect' ? 'blindselect' : 'blind';
   const boardVisible = phase === 'playing' || settling || ending;
   const lastSubmission = blind.sequence.at(-1) ?? null;
-  const originalSuit = lastSubmission && !lastSubmission.isGibberish
-    ? lexicon.lookup(lastSubmission.text)?.suit
-    : null;
-  const baseSuitMult = originalSuit
-    ? BALANCE.suitMult[originalSuit]
-    : BALANCE.gibberish.mult;
 
   return (
     <>
@@ -298,7 +298,8 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       <SettleProvider
         events={g.state.lastEvents}
         submission={lastSubmission}
-        baseSuitMult={baseSuitMult}
+        heldTiles={blind.hand}
+        target={blind.target}
         settleId={g.state.settleId}
         speed={settings.gameSpeed}
         screenShake={settings.screenshake}
@@ -310,6 +311,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           blind={blind}
           committedBefore={g.state.committedBefore}
           settleComplete={g.state.settleComplete}
+          settleId={g.state.settleId}
           finalScore={g.state.finalScore}
           sentenceBonus={g.state.sentenceBonus}
           currentPattern={judgment.match?.pattern ?? null}
@@ -319,6 +321,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           onOpenOptions={() => setPaused(true)}
           screenshake={settings.screenshake}
           reducedMotion={settings.reducedMotion}
+          resolutionActive={phase === 'playing' && g.state.pendingEnd && blind.projectedScore >= blind.target}
           mode={sidebarMode}
         />
         <main className="main">
@@ -327,7 +330,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             runObservationId={g.state.observationId}
             pouchRemaining={phase === 'shop' ? run.bag.length : blind.bag.length}
             {...(!g.state.settleComplete ? { animatedGrowthEvents: g.state.lastEvents } : {})}
-            bonusJokerTriggers={g.state.sentenceBonus?.jokerTriggers ?? []}
+            bonusJokerTriggers={phase === 'playing' ? (g.state.sentenceBonus?.jokerTriggers ?? []) : []}
             onUseConsumable={(id) => {
               if (heldPackUseLocked && (
                 (isFableId(id) && fableTargetsTiles(id)) || isGamblerId(id)
@@ -373,11 +376,24 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             {notAllowedNotice !== null && (
               <div
                 key={notAllowedNotice}
-                className="workspace-not-allowed"
+                className="workspace-final-notice workspace-not-allowed"
                 role="status"
                 aria-live="assertive"
               >
                 {t('boss.notAllowed')}
+              </div>
+            )}
+            {patternNotice !== null && (
+              <div
+                key={patternNotice.id}
+                className="workspace-final-notice workspace-pattern-notice"
+                role="status"
+                aria-live="polite"
+              >
+                {t('sidebar.patternLevel', { n: patternNotice.level })}
+                <span aria-hidden> · </span>
+                <PatternIcon pattern={patternNotice.pattern} />
+                {t(`pattern.${patternNotice.pattern}`)}
               </div>
             )}
             {boardVisible && (

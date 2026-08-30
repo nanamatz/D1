@@ -109,9 +109,9 @@ export interface IntroStep {
 /** Frame the grey world → discard one safe spare → build YELLOW → submit it. */
 export const INTRO_STEPS: readonly IntroStep[] = [
   { key: 'frame', selector: '.round-panel', advance: 'next' },
-  { key: 'discard', selector: '.stage', advance: 'discarded' },
-  { key: 'build', selector: '.hand', advance: 'staged' },
-  { key: 'submit', selector: '.play-btn', advance: 'played' },
+  { key: 'discard', selector: '.tutorial-action-target', advance: 'discarded' },
+  { key: 'build', selector: '.tutorial-action-target', advance: 'staged' },
+  { key: 'submit', selector: '.tutorial-action-target', advance: 'played' },
 ];
 
 export interface TutorialDeal {
