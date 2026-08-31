@@ -32,7 +32,8 @@ Derived from 18 Balatro reference screenshots. **The screenshots are layout/flow
 ## 1. Screen flow map
 
 ```
-App mount ─→ Sweet Turtles developer ident ─→ Loading (while real preload remains) ─→ Main Menu
+GitHub Pages + mobile ─→ Desktop-play notice
+All other entries ─→ App mount ─→ Sweet Turtles developer ident ─→ Loading (while real preload remains) ─→ Main Menu
 
 Main Menu ─ Play ─→ New Run ─→ PERSISTENT RUN TABLE
                                       ├─ Blind work panel
@@ -53,6 +54,16 @@ In-run overlays: Run Info · Fee Settlement · pause menu
 ## 2. Screens
 
 ### 2.0 Developer ident + Loading screen (asset preload)
+
+**GitHub Pages mobile gate (changed 2026-08-31):** before app startup, a mobile
+browser visiting a `github.io` hostname receives one full-viewport bilingual
+notice directing the player to a desktop browser. The gate has no dismiss or
+continue action and does not mount the developer ident, Loading, or game UI.
+iPadOS desktop-style user agents count as mobile when touch capability identifies
+the device. Desktop GitHub Pages visits and every non-GitHub-Pages host—including
+local development, itch.io, custom domains, and the Electron `file://` build—keep
+the ordinary startup flow. This hosted-demo gate does not retire the responsive
+and touch UI retained for a future mobile build.
 
 Shown once on app start, before the Main Menu. One **Sweet Turtles** developer
 ident appears first; there is no publisher stage or publisher copy, start prompt,

@@ -31,14 +31,50 @@ import './ui/styles/play.css';
 import './ui/styles/screens.css';
 import './ui/styles/cursor.css';
 import { initializeSteamAchievements } from './ui/lifetime';
+import { shouldShowMobileGitHubPagesNotice } from './ui/mobileGate';
+import woodak from './ui/assets/woodak.png';
+
+function MobileGitHubPagesNotice() {
+  return (
+    <main className="mobile-gh-notice" aria-labelledby="mobile-gh-notice-title">
+      <div className="mobile-gh-notice__content">
+        <p className="mobile-gh-notice__edition">DESKTOP PLAY</p>
+        <h1 id="mobile-gh-notice-title" className="mobile-gh-notice__title">
+          <span>PLAY THE</span>
+          <strong>WOR!D</strong>
+        </h1>
+        <img className="mobile-gh-notice__mascot" src={woodak} alt="" aria-hidden="true" />
+        <p className="mobile-gh-notice__headline" lang="ko">
+          데스크톱에서 플레이할 수 있어요
+        </p>
+        <p className="mobile-gh-notice__copy" lang="ko">
+          데스크톱 브라우저에서 이 페이지를 다시 열어주세요.
+        </p>
+        <p className="mobile-gh-notice__copy mobile-gh-notice__copy--en" lang="en">
+          Open this page on a desktop browser to play.
+        </p>
+      </div>
+    </main>
+  );
+}
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('#root not found');
-initializeSteamAchievements();
+const showMobileNotice = shouldShowMobileGitHubPagesNotice(
+  window.location.hostname,
+  window.navigator.userAgent,
+  window.navigator.maxTouchPoints,
+);
+rootEl.classList.toggle('mobile-gh-notice-root', showMobileNotice);
+if (!showMobileNotice) initializeSteamAchievements();
 createRoot(rootEl).render(
   <StrictMode>
-    <I18nProvider>
-      <App />
-    </I18nProvider>
+    {showMobileNotice ? (
+      <MobileGitHubPagesNotice />
+    ) : (
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    )}
   </StrictMode>,
 );
