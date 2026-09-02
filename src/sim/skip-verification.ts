@@ -224,7 +224,11 @@ function runSkipVerificationAtSnapshot(config: SkipVerificationConfig): SkipVeri
     lexicon,
     solver,
     freshCohort(1, true, 38),
-    { skipDecisionIndices: [0], forcedSkipRewards: { 0: { id: 'advancePayment' } } },
+    {
+      disableJokerAcquisition: true,
+      skipDecisionIndices: [0],
+      forcedSkipRewards: { 0: { id: 'advancePayment' } },
+    },
   );
   const deadline = newRun(`${config.seedPrefix}:deadline`);
   deadline.blindIndex = 2;
