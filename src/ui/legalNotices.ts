@@ -40,7 +40,12 @@ chips-collide-1.ogg
 chips-collide-2.ogg
 chips-collide-3.ogg
 chips-collide-4.ogg
-All other sound effects and BGM are original runtime synthesis and are not CC0.
+
+Score Keyboard keypress set (Audio/Single Keys/keypress-001.wav through keypress-032.wav)
+User-provided on 2026-09-02.
+License not supplied — verify before distribution.
+
+Remaining sound effects and BGM are original runtime synthesis and are not CC0.
 
 ENABLE WORD LIST
 Enhanced North American Benchmark Lexicon (ENABLE), compiled by Alan Beale and

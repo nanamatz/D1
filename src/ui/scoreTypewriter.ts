@@ -181,6 +181,15 @@ export const SCORE_TYPEWRITER_KEYCAPS: readonly KeyboardKeyDef[] = [
   ...numpadKeys,
 ];
 
+export const SCORE_TYPEWRITER_SAMPLE_COUNT = 32;
+const SCORE_TYPEWRITER_ENTER_INDEX = SCORE_TYPEWRITER_KEYCAPS.findIndex(({ id }) => id === 'Enter');
+
+/** Stable physical-key voice; unknown ids use the main Enter key's sample. */
+export function scoreTypewriterSampleIndex(keyId: string): number {
+  const keyIndex = SCORE_TYPEWRITER_KEYCAPS.findIndex(({ id }) => id === keyId);
+  return (keyIndex >= 0 ? keyIndex : SCORE_TYPEWRITER_ENTER_INDEX) % SCORE_TYPEWRITER_SAMPLE_COUNT;
+}
+
 const playedLetter = (
   tileId: string | undefined,
   tiles: readonly { id: string; letter: string | null }[],

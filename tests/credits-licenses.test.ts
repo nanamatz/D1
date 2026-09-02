@@ -3,12 +3,22 @@ import { describe, expect, it } from 'vitest';
 
 const text = (path: string) => readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
 
+const noticeCoversAudioFile = (notices: string, file: string): boolean => {
+  if (notices.includes(file)) return true;
+  const keypress = /^Single Keys\/keypress-(\d{3})\.wav$/.exec(file);
+  const range = /keypress-(\d{3})\.wav through keypress-(\d{3})\.wav/.exec(notices);
+  if (!keypress || !range) return false;
+  const index = Number(keypress[1]);
+  return index >= Number(range[1]) && index <= Number(range[2]);
+};
+
 describe('Credits legal notices', () => {
   it('uses the approved localized production and legal copy', () => {
     const en = JSON.parse(text('locales/en.json')) as Record<string, string>;
     const ko = JSON.parse(text('locales/ko.json')) as Record<string, string>;
     expect(en['credits.audio']).toBe('All BGM and most sound effects are generated at runtime from oscillator, noise, and sequencer recipes designed and implemented for this game with assistance from ChatGPT and Claude.');
-    expect(en['credits.audioSource']).toBe('Pack-opening, reroll, and chip-laying, stacking, handling, and collision sounds use samples from Casino Audio 1.1 by Kenney Vleugels (Kenney.nl), released under CC0 1.0.');
+    expect(en['credits.audioSource']).toBe('Pack-opening, reroll, and chip-laying, stacking, handling, and collision sounds use samples from Casino Audio 1.1 by Kenney Vleugels (Kenney.nl), released under CC0 1.0. The Score Keyboard keypress set was user-provided on 2026-09-02; its license was not supplied and must be verified before distribution.');
+    expect(ko['credits.audioSource']).toBe('팩 개봉, 새로고침, 칩 놓기·쌓기·다루기·충돌 소리는 Kenney Vleugels(Kenney.nl)의 Casino Audio 1.1 샘플을 사용하며 CC0 1.0으로 공개되었습니다. 점수 키보드 타건음 세트는 2026년 9월 2일 사용자에게 제공받았으며 라이선스 정보가 제공되지 않았습니다. 배포 전에 반드시 확인해야 합니다.');
     expect(en['credits.visuals']).toContain('they do not grant or imply rights in third-party material');
     expect(en['credits.legal.open']).toBe('Legal Notices');
     expect(ko['credits.legal.open']).toBe('법적 고지');
@@ -34,6 +44,8 @@ describe('Credits legal notices', () => {
       'Copyright 2019 The Baloo 2 Project Authors',
       'Copyright 2023 The Soft Type Project Authors',
       'Casino Audio 1.1 by Kenney Vleugels',
+      'Score Keyboard keypress set (Audio/Single Keys/keypress-001.wav through keypress-032.wav)',
+      'License not supplied — verify before distribution.',
       'compiled by Alan Beale and',
       'Moby Part-of-Speech II by Grady Ward',
       'WordNet 3.0',
@@ -58,13 +70,19 @@ describe('Credits legal notices', () => {
     expect(text('public/licenses/CC0-1.0.txt')).toBe(text('src/ui/legal/CC0-1.0.txt'));
   });
 
-  it('covers every imported OGG and never labels original synthesis CC0', () => {
+  it('covers every imported OGG and WAV and never labels original synthesis CC0', () => {
     const audio = text('src/ui/audio.ts');
-    const imports = [...audio.matchAll(/from '\.\.\/\.\.\/Audio\/([^']+\.ogg)'/g)]
+    const imports = [...audio.matchAll(/from '\.\.\/\.\.\/Audio\/([^']+\.(?:ogg|wav))'/g)]
       .map((match) => match[1]!);
-    const notices = text('public/licenses/THIRD_PARTY_NOTICES.txt');
-    expect(imports).toHaveLength(17);
-    for (const file of imports) expect(notices).toContain(file);
+    const notices = [
+      text('public/licenses/THIRD_PARTY_NOTICES.txt'),
+      text('src/ui/legalNotices.ts'),
+    ];
+    expect(imports).toHaveLength(49);
+    expect(new Set(imports)).toHaveLength(imports.length);
+    for (const file of imports) {
+      for (const notice of notices) expect(noticeCoversAudioFile(notice, file), file).toBe(true);
+    }
     const audioLicenses = text('assets/AUDIO_LICENSES.md');
     expect(audioLicenses).not.toContain('CC0 / original');
     expect(audioLicenses).toContain('© 2026 SweetTurtles — all rights reserved');
@@ -81,6 +99,7 @@ describe('Credits legal notices', () => {
     expect(component).not.toMatch(/fetch\(|window\.open|location\.href/);
     expect(css).toMatch(/\.cr-legal-body\s*\{[^}]*max-height:[^}]*overflow:\s*auto;/s);
     expect(spec).toContain('original runtime-synthesized BGM/most SFX from the 17 local Kenney');
+    expect(spec).toContain('plus the 32\nlocal Score Keyboard samples user-provided on 2026-09-02');
     expect(spec).toContain('native **Legal Notices** disclosure');
     expect(spec).not.toContain('all SFX/BGM are original runtime synthesis');
     expect(vite).not.toMatch(/publicDir\s*:\s*false/);

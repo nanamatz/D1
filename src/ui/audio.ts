@@ -30,6 +30,39 @@ import chipsCollide1 from '../../Audio/chips-collide-1.ogg';
 import chipsCollide2 from '../../Audio/chips-collide-2.ogg';
 import chipsCollide3 from '../../Audio/chips-collide-3.ogg';
 import chipsCollide4 from '../../Audio/chips-collide-4.ogg';
+import keypress001 from '../../Audio/Single Keys/keypress-001.wav';
+import keypress002 from '../../Audio/Single Keys/keypress-002.wav';
+import keypress003 from '../../Audio/Single Keys/keypress-003.wav';
+import keypress004 from '../../Audio/Single Keys/keypress-004.wav';
+import keypress005 from '../../Audio/Single Keys/keypress-005.wav';
+import keypress006 from '../../Audio/Single Keys/keypress-006.wav';
+import keypress007 from '../../Audio/Single Keys/keypress-007.wav';
+import keypress008 from '../../Audio/Single Keys/keypress-008.wav';
+import keypress009 from '../../Audio/Single Keys/keypress-009.wav';
+import keypress010 from '../../Audio/Single Keys/keypress-010.wav';
+import keypress011 from '../../Audio/Single Keys/keypress-011.wav';
+import keypress012 from '../../Audio/Single Keys/keypress-012.wav';
+import keypress013 from '../../Audio/Single Keys/keypress-013.wav';
+import keypress014 from '../../Audio/Single Keys/keypress-014.wav';
+import keypress015 from '../../Audio/Single Keys/keypress-015.wav';
+import keypress016 from '../../Audio/Single Keys/keypress-016.wav';
+import keypress017 from '../../Audio/Single Keys/keypress-017.wav';
+import keypress018 from '../../Audio/Single Keys/keypress-018.wav';
+import keypress019 from '../../Audio/Single Keys/keypress-019.wav';
+import keypress020 from '../../Audio/Single Keys/keypress-020.wav';
+import keypress021 from '../../Audio/Single Keys/keypress-021.wav';
+import keypress022 from '../../Audio/Single Keys/keypress-022.wav';
+import keypress023 from '../../Audio/Single Keys/keypress-023.wav';
+import keypress024 from '../../Audio/Single Keys/keypress-024.wav';
+import keypress025 from '../../Audio/Single Keys/keypress-025.wav';
+import keypress026 from '../../Audio/Single Keys/keypress-026.wav';
+import keypress027 from '../../Audio/Single Keys/keypress-027.wav';
+import keypress028 from '../../Audio/Single Keys/keypress-028.wav';
+import keypress029 from '../../Audio/Single Keys/keypress-029.wav';
+import keypress030 from '../../Audio/Single Keys/keypress-030.wav';
+import keypress031 from '../../Audio/Single Keys/keypress-031.wav';
+import keypress032 from '../../Audio/Single Keys/keypress-032.wav';
+import { scoreTypewriterSampleIndex } from './scoreTypewriter';
 
 export type SfxName =
   | 'tilePop' | 'countTick' | 'jokerBlip' | 'stamp' | 'multFill' | 'totalRoll'
@@ -486,6 +519,12 @@ const CHIP_SAMPLES: Record<ChipSoundTier, readonly string[]> = {
   handle: [chipsHandle1, chipsHandle2, chipsHandle3, chipsHandle4],
   collide: [chipsCollide1, chipsCollide2, chipsCollide3, chipsCollide4],
 };
+export const SCORE_TYPEWRITER_SAMPLES: readonly string[] = [
+  keypress001, keypress002, keypress003, keypress004, keypress005, keypress006, keypress007, keypress008,
+  keypress009, keypress010, keypress011, keypress012, keypress013, keypress014, keypress015, keypress016,
+  keypress017, keypress018, keypress019, keypress020, keypress021, keypress022, keypress023, keypress024,
+  keypress025, keypress026, keypress027, keypress028, keypress029, keypress030, keypress031, keypress032,
+];
 /** Denser chip recordings track the magnitude of the Chips operation. */
 export function chipSoundTier(chips: number): ChipSoundTier {
   const amount = Math.abs(chips);
@@ -851,6 +890,16 @@ class Audio {
       return;
     }
     this.playRecipe(name, opts);
+  }
+
+  /** Score Keyboard only: one bundled physical sample per deterministic visual key. */
+  scoreTypewriterKey(keyId: string, accent = false): void {
+    const fallback: SfxName = accent ? 'deskEnter' : 'deskKeycap';
+    this.playSample(
+      SCORE_TYPEWRITER_SAMPLES[scoreTypewriterSampleIndex(keyId)]!,
+      effectiveGain(fallback, this.vol),
+      () => this.playRecipe(fallback),
+    );
   }
 
   /** Play a physical chip sample whose density matches the Chips delta. */

@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import { SCORE_TYPEWRITER_KEYCAPS } from '../src/ui/scoreTypewriter';
+import {
+  SCORE_TYPEWRITER_KEYCAPS,
+  SCORE_TYPEWRITER_SAMPLE_COUNT,
+  scoreTypewriterSampleIndex,
+} from '../src/ui/scoreTypewriter';
+import { SCORE_TYPEWRITER_SAMPLES } from '../src/ui/audio';
 
 const { PNG } = createRequire(import.meta.url)('pngjs') as {
   PNG: { sync: { read: (input: Buffer) => { width: number; height: number; data: Buffer } } };
@@ -15,6 +20,7 @@ const css = readFileSync('src/ui/styles/play.css', 'utf8');
 const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
 const helper = readFileSync('src/ui/scoreTypewriter.ts', 'utf8');
 const audio = readFileSync('src/ui/audio.ts', 'utf8');
+const deskObjects = readFileSync('src/ui/components/DeskObjects.tsx', 'utf8');
 const balance = readFileSync('src/engine/balance.ts', 'utf8');
 const art = readFileSync('src/ui/assets/score-typewriter-chassis.png');
 
@@ -220,7 +226,7 @@ describe('Score Keyboard presentation contract', () => {
 
   it('turns target crossing into one forced Enter strike and no DING label', () => {
     expect(component).toContain('crossedScoreTarget(');
-    expect(component).toContain("audio.play('deskEnter')");
+    expect(component).toContain("audio.scoreTypewriterKey('Enter', true)");
     expect(component).not.toContain("audio.play('deskBell')");
     expect(component).toContain('durationMs: BALANCE.scoreTypewriter.targetCueMs / beatSpeed');
     expect(component).not.toContain('DING!');
@@ -234,7 +240,7 @@ describe('Score Keyboard presentation contract', () => {
   });
 
   it('reuses speed, shake, reduced motion, and SFX without extending settle timing', () => {
-    expect(component).toContain("audio.play('deskKeycap'");
+    expect(component).toContain('audio.scoreTypewriterKey(keyId)');
     expect(component).toContain("'--typewriter-shake'");
     expect(component).toContain('scoreTypewriterShake(screenshake, displayTier)');
     expect(component).toContain('presentationBeatId,');
@@ -281,6 +287,28 @@ describe('Score Keyboard presentation contract', () => {
     expect(component).not.toContain('[active, beatId, gameSpeed, reduce, tier]');
     expect(component).not.toContain('settleDurationMs');
     expect(component).not.toContain('activeKeyClusters');
+  });
+
+  it('maps all 101 keys across the exact 32 bundled recordings with unknown ids using Enter', () => {
+    expect(SCORE_TYPEWRITER_SAMPLE_COUNT).toBe(32);
+    expect(SCORE_TYPEWRITER_SAMPLES).toHaveLength(32);
+    expect(new Set(SCORE_TYPEWRITER_SAMPLES)).toHaveLength(32);
+    expect(SCORE_TYPEWRITER_KEYCAPS).toHaveLength(101);
+    expect(SCORE_TYPEWRITER_KEYCAPS.map(({ id }, index) => scoreTypewriterSampleIndex(id)))
+      .toEqual(SCORE_TYPEWRITER_KEYCAPS.map((_, index) => index % 32));
+    expect(new Set(SCORE_TYPEWRITER_KEYCAPS.map(({ id }) => scoreTypewriterSampleIndex(id))))
+      .toEqual(new Set(Array.from({ length: 32 }, (_, index) => index)));
+    expect(scoreTypewriterSampleIndex('unknown-key')).toBe(scoreTypewriterSampleIndex('Enter'));
+  });
+
+  it('routes only Score Keyboard presses through samples and preserves synthesized ambient keys', () => {
+    expect(component).toContain('const keyId = SCORE_TYPEWRITER_KEYCAPS[keySequence[pressIndex] ?? -1]?.id ?? \'Enter\'');
+    expect(component).toContain('audio.scoreTypewriterKey(keyId)');
+    expect(component).not.toContain("audio.play('deskKeycap'");
+    expect(deskObjects).toContain("audio.play('deskKeycap')");
+    expect(audio).toMatch(/scoreTypewriterKey\(keyId: string, accent = false\)[\s\S]*?accent \? 'deskEnter' : 'deskKeycap'/);
+    expect(audio).toContain('() => this.playRecipe(fallback)');
+    expect(audio).toMatch(/deskKeycap:\s*\{[\s\S]*?textured:\s*true/);
   });
 
   it('holds live target progress at committedBefore until the settle is active', () => {

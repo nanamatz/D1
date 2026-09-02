@@ -7,7 +7,6 @@ import { motionOff, usePrefersReducedMotion } from '../motion';
 import {
   crossedScoreTarget,
   SCORE_TYPEWRITER_KEYCAPS,
-  scoreTypewriterBeatHash,
   scoreTypewriterClearPeak,
   scoreTypewriterClearRepeatMs,
   scoreTypewriterKeySequence,
@@ -88,7 +87,7 @@ export function ScoreTypewriter({
       id: (value?.id ?? 0) + 1,
       durationMs: BALANCE.scoreTypewriter.targetCueMs / beatSpeed,
     }));
-    audio.play('deskEnter');
+    audio.scoreTypewriterKey('Enter', true);
   }, [beatSpeed, liveTotal, target]);
 
   useEffect(() => {
@@ -137,13 +136,19 @@ export function ScoreTypewriter({
       { length: audibleCount },
       (_, index) => Math.floor(index * visualCount / audibleCount),
     );
+    const keySequence = scoreTypewriterKeySequence(
+      presentationBeatId,
+      visualCount,
+      presentationPrimaryKeyId,
+    );
     const timers = audibleSlots.map((pressIndex, index) => setTimeout(() => {
+      const keyId = SCORE_TYPEWRITER_KEYCAPS[keySequence[pressIndex] ?? -1]?.id ?? 'Enter';
       if (clearRepeating && index === 0) {
-        audio.play('deskEnter');
+        audio.scoreTypewriterKey(keyId, true);
         return;
       }
       if (pressIndex === 0 && presentationPrimaryKeyId === 'Enter' && targetStrikeActive.current) return;
-      audio.play('deskKeycap', { step: (scoreTypewriterBeatHash(presentationBeatId) + index) % 5 });
+      audio.scoreTypewriterKey(keyId);
     }, scoreTypewriterKeyTiming(
       presentationBeatId,
       beatSpeed,

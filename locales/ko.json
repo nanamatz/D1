@@ -1141,7 +1141,7 @@
   "credits.aiDisclosure": "제작 과정 일부에 생성형 AI가 활용되었습니다 게임 기획, 프로그래밍, 아트 디렉션 및 모든 최종 창작 결정은 SweetTurtles가 담당했습니다",
   "credits.visuals": "일부 시각 자산은 OpenAI의 ChatGPT와 Anthropic의 Claude의 도움으로 생성하거나 변형한 뒤 SweetTurtles가 선별·편집·가공하여 게임에 통합했습니다. 이 도구 표기는 제작 과정을 설명할 뿐, 제3자 자료에 대한 권리 부여나 보유를 의미하지 않습니다.",
   "credits.audio": "모든 배경음악과 대부분의 효과음은 이 게임을 위해 설계·구현한 오실레이터, 노이즈 및 시퀀서 구성으로 런타임에 생성되며, ChatGPT와 Claude의 도움을 받았습니다.",
-  "credits.audioSource": "팩 개봉, 새로고침, 칩 놓기·쌓기·다루기·충돌 소리는 Kenney Vleugels(Kenney.nl)의 Casino Audio 1.1 샘플을 사용하며 CC0 1.0으로 공개되었습니다.",
+  "credits.audioSource": "팩 개봉, 새로고침, 칩 놓기·쌓기·다루기·충돌 소리는 Kenney Vleugels(Kenney.nl)의 Casino Audio 1.1 샘플을 사용하며 CC0 1.0으로 공개되었습니다. 점수 키보드 타건음 세트는 2026년 9월 2일 사용자에게 제공받았으며 라이선스 정보가 제공되지 않았습니다. 배포 전에 반드시 확인해야 합니다.",
   "credits.aiTools": "AI 제작 도구: ChatGPT (OpenAI) · Claude (Anthropic)",
   "credits.fontSource": "Jost, Noto Sans KR, Baloo 2, Jersey 10은 Fontsource를 통해 로컬에 번들되며 SIL Open Font License 1.1에 따라 사용됩니다.",
   "credits.legal.open": "법적 고지",

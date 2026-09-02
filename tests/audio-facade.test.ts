@@ -6,6 +6,8 @@ const FULL = { music: 100, sfx: 100, musicMuted: false, sfxMuted: false };
 describe('audio facade — pure logic (no Web Audio in Node)', () => {
   it('play() is a safe no-op in Node (no AudioContext) and does not throw', () => {
     expect(() => audio.play('tilePop')).not.toThrow();
+    expect(() => audio.scoreTypewriterKey('KeyA')).not.toThrow();
+    expect(() => audio.scoreTypewriterKey('Enter', true)).not.toThrow();
     expect(audio.isUnlocked()).toBe(false); // never unlocks without a real context
   });
 

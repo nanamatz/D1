@@ -1141,7 +1141,7 @@
   "credits.aiDisclosure": "Generative AI assisted parts of production. Game design, programming, art direction, and all final creative decisions were handled by SweetTurtles.",
   "credits.visuals": "Some visual assets were created or transformed with assistance from OpenAI’s ChatGPT and Anthropic’s Claude, then selected, edited, adapted, and integrated by SweetTurtles. These tool credits describe the production process; they do not grant or imply rights in third-party material.",
   "credits.audio": "All BGM and most sound effects are generated at runtime from oscillator, noise, and sequencer recipes designed and implemented for this game with assistance from ChatGPT and Claude.",
-  "credits.audioSource": "Pack-opening, reroll, and chip-laying, stacking, handling, and collision sounds use samples from Casino Audio 1.1 by Kenney Vleugels (Kenney.nl), released under CC0 1.0.",
+  "credits.audioSource": "Pack-opening, reroll, and chip-laying, stacking, handling, and collision sounds use samples from Casino Audio 1.1 by Kenney Vleugels (Kenney.nl), released under CC0 1.0. The Score Keyboard keypress set was user-provided on 2026-09-02; its license was not supplied and must be verified before distribution.",
   "credits.aiTools": "AI production tools: ChatGPT (OpenAI) · Claude (Anthropic)",
   "credits.fontSource": "Jost, Noto Sans KR, Baloo 2, and Jersey 10 are bundled locally through Fontsource and used under the SIL Open Font License 1.1.",
   "credits.legal.open": "Legal Notices",

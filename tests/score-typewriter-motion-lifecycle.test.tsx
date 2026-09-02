@@ -13,7 +13,10 @@ const hooks = vi.hoisted(() => ({
   dirty: false,
 }));
 
-const audio = vi.hoisted(() => ({ play: vi.fn() }));
+const audio = vi.hoisted(() => ({
+  play: vi.fn(),
+  scoreTypewriterKey: vi.fn(),
+}));
 
 function depsChanged(
   previous: readonly unknown[] | undefined,
@@ -79,6 +82,11 @@ vi.mock('react-dom', () => ({ createPortal: (children: unknown) => children }));
 vi.mock('../src/ui/audio', () => ({ audio }));
 
 import { ScoreTypewriter } from '../src/ui/components/ScoreTypewriter';
+import { BALANCE } from '../src/engine/balance';
+import {
+  SCORE_TYPEWRITER_KEYCAPS,
+  scoreTypewriterKeySequence,
+} from '../src/ui/scoreTypewriter';
 
 class FakeMediaQueryList {
   matches = false;
@@ -142,6 +150,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     hooks.pending = [];
     hooks.dirty = false;
     audio.play.mockReset();
+    audio.scoreTypewriterKey.mockReset();
     query.matches = false;
     query.listeners.clear();
     query.addEventListener.mockClear();
@@ -210,10 +219,60 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     expect(vi.getTimerCount()).toBe(0);
 
     vi.advanceTimersByTime(10_000);
-    expect(audio.play).not.toHaveBeenCalled();
+    expect(audio.scoreTypewriterKey).not.toHaveBeenCalled();
 
     unmount();
     expect(query.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
     expect(query.listeners.size).toBe(0);
+  });
+
+  it('plays the actual visible keys in each audible slot and accents only a clear-cycle Enter', () => {
+    const beatId = 'score-audible-slots';
+    const tier = 3;
+    const primaryKeyId = 'KeyQ';
+    renderUntilStable({
+      active: true,
+      tier,
+      beatId,
+      primaryKeyId,
+      liveTotal: 10,
+      target: 1_000,
+      blindKey: '1-0',
+      settleId: 8,
+      resolutionActive: true,
+      holdActive: false,
+      gameSpeed: 1,
+      screenshake: 0,
+      reducedMotion: false,
+    });
+
+    vi.runAllTimers();
+    const visualCount = BALANCE.scoreTypewriter.visualKeyCounts[tier];
+    const audibleCount = BALANCE.scoreTypewriter.audibleKeyCounts[tier];
+    const sequence = scoreTypewriterKeySequence(beatId, visualCount, primaryKeyId);
+    const expected = Array.from({ length: audibleCount }, (_, index) => {
+      const pressIndex = Math.floor(index * visualCount / audibleCount);
+      return SCORE_TYPEWRITER_KEYCAPS[sequence[pressIndex]!]!.id;
+    });
+    expect(audio.scoreTypewriterKey.mock.calls).toEqual(expected.map((keyId) => [keyId]));
+
+    audio.scoreTypewriterKey.mockClear();
+    renderUntilStable({
+      active: false,
+      tier: 0,
+      beatId: 'score-idle',
+      primaryKeyId: 'Enter',
+      liveTotal: 1_000,
+      target: 100,
+      blindKey: '1-0',
+      settleId: 8,
+      resolutionActive: true,
+      holdActive: true,
+      gameSpeed: 1,
+      screenshake: 0,
+      reducedMotion: false,
+    });
+    vi.advanceTimersByTime(0);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledWith('Enter', true);
   });
 });
