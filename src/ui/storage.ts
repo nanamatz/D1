@@ -56,6 +56,8 @@ export interface StorageBridge {
   onSaveStatus?(listener: (ok: boolean) => void): void;
   syncSteam?(payload: import('./steamAchievements').SteamStatPayload): void;
   steamStatus?: SteamOwnershipStatus;
+  /** Sanitized main-process bootstrap hint; never a raw Steam locale. */
+  languageHint?: 'en' | 'ko';
   decideSteamClaim?(decision: 'accept' | 'decline'): void;
   onSteamStatus?(listener: (status: SteamOwnershipStatus) => void): void;
 }
@@ -96,6 +98,11 @@ export function syncSteamStats(payload: import('./steamAchievements').SteamStatP
 
 export function steamSyncAvailable(): boolean {
   return typeof getBridge()?.syncSteam === 'function';
+}
+
+export function steamLanguageHint(): 'en' | 'ko' | undefined {
+  const hint = getBridge()?.languageHint;
+  return hint === 'en' || hint === 'ko' ? hint : undefined;
 }
 
 let cache: Map<string, string> | null = null;

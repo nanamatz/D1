@@ -1985,3 +1985,12 @@ decline disables Steam progress for the session. Mismatch, malformed ownership,
 direct launch, initialization failure, pending decision, and failed owner writes
 all fail closed while ordinary play and saves continue unchanged. The Steam id
 never reaches renderer state, UI copy, or logs. (Ownership added 2026-08-25.)
+
+The very first Steam-owned UI uses the valid machine-local `wj.lang` choice when
+present. Otherwise, only a successfully initialized packaged Windows Steam session
+may supply a main-process-sanitized startup hint: Steam `koreana`/`korean` maps to
+Korean, `english` maps to English, and every unsupported or failed lookup falls
+back to English. The renderer receives only `en|ko`, never the raw Steam locale or
+Steam id. Detection is not persisted; only an explicit in-game language change
+writes `wj.lang`. Web, direct-EXE, and Steam-initialization-failure launches retain
+the saved choice or English. (First-frame Steam localization added 2026-09-02.)

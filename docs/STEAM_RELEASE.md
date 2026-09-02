@@ -179,6 +179,12 @@ existing evidence reconciles without decrease. Separately test zero-stat
 auto-bind, positive legacy accept/decline, malformed owner fail-closed, owner
 write failure, and primary-to-backup recovery. Repeat Cloud-file tests with
 separate Windows users to distinguish byte isolation from statistics isolation.
+On a clean machine-language profile, launch with Steam language `koreana` and
+`english` and confirm the first ownership prompt is Korean and English respectively
+with no language flash. Confirm an existing valid `wj.lang` overrides Steam, an
+unsupported or throwing Steam language falls back to English without disabling the
+Steam session, and detection does not write `wj.lang`. Direct-EXE and web launches
+must use only a valid saved choice or English.
 
 ## 6. Review, release, and rollback
 

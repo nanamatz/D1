@@ -3,10 +3,11 @@
  * words/tiles stay English by design. `t(key, params)` does {param} interpolation
  * and falls back to English then the raw key.
  */
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import en from '../../locales/en.json';
 import ko from '../../locales/ko.json';
 import { usePersistedState } from './hooks';
+import { steamLanguageHint } from './storage';
 
 export type Lang = 'en' | 'ko';
 const DICTS: Record<Lang, Record<string, string>> = {
@@ -48,7 +49,11 @@ export function resolve(
 const Ctx = createContext<I18n | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = usePersistedState<Lang>('wj.lang', 'en');
+  const [storedLang, setStoredLang] = usePersistedState<unknown>('wj.lang', null);
+  const lang: Lang = storedLang === 'en' || storedLang === 'ko'
+    ? storedLang
+    : steamLanguageHint() ?? 'en';
+  const setLang = useCallback((next: Lang) => setStoredLang(next), [setStoredLang]);
   const value = useMemo<I18n>(
     () => ({
       lang,

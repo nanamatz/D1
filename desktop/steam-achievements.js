@@ -44,6 +44,19 @@ export function reconcileSteamStats(local, remote) {
   return Object.fromEntries(STEAM_STATS.map((name) => [name, Math.max(local[name], remote[name] ?? 0)]));
 }
 
+/** Renderer-safe first-run locale hint; raw Steam locale strings stay main-only. */
+export function normalizeSteamLanguage(value) {
+  if (typeof value !== 'string') return 'en';
+  switch (value.trim().toLowerCase()) {
+    case 'koreana':
+    case 'korean':
+      return 'ko';
+    case 'english':
+    default:
+      return 'en';
+  }
+}
+
 /** Coalesces renderer bursts and retries failed Steam stores without blocking saves. */
 export function createSteamSync(adapter, options = {}) {
   const schedule = options.schedule ?? setTimeout;
@@ -143,8 +156,15 @@ export async function initializeSteamSync({
     const client = steamworks.init(Number(suppliedAppId));
     const steamId64 = client.localplayer.getSteamId().steamId64.toString();
     if (!/^[1-9]\d{16,19}$/.test(steamId64)) return null;
+    let languageHint = 'en';
+    try {
+      languageHint = normalizeSteamLanguage(client.apps?.currentGameLanguage?.());
+    } catch {
+      // Locale lookup is optional; it must never disable achievements.
+    }
     return {
       steamId64,
+      languageHint,
       sync: createSteamSync({
         getInt: (name) => client.stats.getInt(name),
         setInt: (name, value) => client.stats.setInt(name, value),

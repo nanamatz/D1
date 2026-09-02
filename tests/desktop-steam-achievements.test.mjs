@@ -4,6 +4,7 @@ import {
   STEAM_STATS,
   createSteamSync,
   initializeSteamSync,
+  normalizeSteamLanguage,
   reconcileSteamStats,
   validateSteamPayload,
 } from '../desktop/steam-achievements.js';
@@ -41,10 +42,19 @@ describe('desktop Steam achievement boundary', () => {
       .toMatchObject({ std_runs: 3, std_wins: 2 });
   });
 
+  it('sanitizes Steam languages to the two renderer locales', () => {
+    expect(normalizeSteamLanguage(' Koreana ')).toBe('ko');
+    expect(normalizeSteamLanguage('KOREAN')).toBe('ko');
+    expect(normalizeSteamLanguage('english')).toBe('en');
+    expect(normalizeSteamLanguage('german')).toBe('en');
+    expect(normalizeSteamLanguage(null)).toBe('en');
+  });
+
   it('initializes only from a packaged Windows x64 Steam launch AppID', async () => {
     const init = vi.fn(() => ({
       stats: { getInt: () => 0, setInt: () => {}, store: () => {} },
       localplayer: { getSteamId: () => ({ steamId64: 76561198000000001n }) },
+      apps: { currentGameLanguage: () => 'koreana' },
     }));
     const load = vi.fn(async () => ({ default: { init } }));
     expect(await initializeSteamSync({ packaged: false, platform: 'win32', arch: 'x64',
@@ -53,7 +63,7 @@ describe('desktop Steam achievement boundary', () => {
       env: {}, load })).toBeNull();
     const sync = await initializeSteamSync({ packaged: true, platform: 'win32', arch: 'x64',
       env: { SteamAppId: '123' }, load });
-    expect(sync).toMatchObject({ steamId64: '76561198000000001' });
+    expect(sync).toMatchObject({ steamId64: '76561198000000001', languageHint: 'ko' });
     expect(sync.sync.submit).toBeTypeOf('function');
     expect(init).toHaveBeenCalledWith(123);
     const invalid = await initializeSteamSync({
@@ -63,6 +73,19 @@ describe('desktop Steam achievement boundary', () => {
       }) } }),
     });
     expect(invalid).toBeNull();
+  });
+
+  it('keeps a valid Steam session when language lookup throws', async () => {
+    const session = await initializeSteamSync({
+      packaged: true, platform: 'win32', arch: 'x64', env: { SteamAppId: '123' },
+      load: async () => ({ default: { init: () => ({
+        stats: { getInt: () => 0, setInt: () => {}, store: () => {} },
+        localplayer: { getSteamId: () => ({ steamId64: 76561198000000001n }) },
+        apps: { currentGameLanguage: () => { throw new Error('unavailable'); } },
+      }) } }),
+    });
+    expect(session).toMatchObject({ steamId64: '76561198000000001', languageHint: 'en' });
+    expect(session.sync.submit).toBeTypeOf('function');
   });
 
   it('coalesces bursts into one store and never decreases remote values', async () => {

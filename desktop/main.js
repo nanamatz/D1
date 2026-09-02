@@ -102,6 +102,7 @@ app.whenReady().then(async () => {
       snapshot: saves.snapshot(),
       fresh: saves.fresh,
       steamStatus: steamOwnership.state(),
+      languageHint: steamSession?.languageHint,
     };
   });
   ipcMain.on('wj:write', (_event, key, json) => saves.set(key, json));

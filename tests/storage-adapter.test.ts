@@ -10,6 +10,7 @@ import {
   decideSteamClaim,
   steamEvidenceEligible,
   steamAggregateSyncAllowed,
+  steamLanguageHint,
   steamOwnershipSnapshot,
   storageHealthSnapshot,
   writeRaw,
@@ -129,6 +130,16 @@ describe('desktop backend (bridge present)', () => {
     decideSteamClaim('accept');
     decideSteamClaim('decline');
     expect(decisions).toEqual(['accept', 'decline']);
+    expect(JSON.stringify(bridge)).not.toContain('steamId64');
+  });
+  it('accepts only a sanitized renderer language hint', () => {
+    const { bridge } = fakeBridge();
+    bridge.languageHint = 'ko';
+    installBridge(bridge);
+    expect(steamLanguageHint()).toBe('ko');
+
+    (bridge as unknown as { languageHint?: string }).languageHint = 'koreana';
+    expect(steamLanguageHint()).toBeUndefined();
     expect(JSON.stringify(bridge)).not.toContain('steamId64');
   });
   it('sends a save key to the bridge, not localStorage', () => {

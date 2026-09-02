@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('wj', {
   snapshot: loaded.snapshot,
   fresh: loaded.fresh,
   steamStatus: loaded.steamStatus,
+  languageHint: loaded.languageHint,
   write: (key, json) => ipcRenderer.send('wj:write', key, json),
   remove: (key) => ipcRenderer.send('wj:remove', key),
   syncSteam: (payload) => ipcRenderer.send('wj:steam-sync', payload),
