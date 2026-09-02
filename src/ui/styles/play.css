@@ -4818,8 +4818,8 @@
   font-size: var(--fs-md);
   color: var(--chips);
 }
-.tile.mini .mat-glyph {
-  display: none; /* 36px face has no room; mini tiles rely on their tooltip */
+.tile.mini .mat-glyph:not(.mat-glyph-wood) {
+  display: none;
 }
 /* Font editions (Jost styles). The persisted `bold` id is displayed as Void:
    Medium's counters close under added ink, unlike Black's naturally heavy strokes. */
@@ -5353,9 +5353,6 @@
 .consumable-slot > .tt-anchor > .consumable-select {
   z-index: 3;
 }
-.consumable-slot.menu-open > .tt-anchor > .consumable-select {
-  pointer-events: none;
-}
 /* The second/right held card sits against the shelf boundary. Right-align its
    downward tooltip so neither the main card nor its optional sub-card is clipped
    by the board's right-side layer. */
@@ -5448,18 +5445,18 @@
   border: none;
   box-shadow: var(--shadow);
 }
-/* Use is red and Sell is green; both inherit the shop Buy dimensions. */
+/* Action semantics: Use green, Sell red, Buy/Redeem blue. */
 .consumable-menu.bare button.use {
-  background: var(--mult);
-}
-.consumable-menu.bare button.use:hover {
-  filter: brightness(1.12);
-}
-.consumable-menu.bare button.sell {
   background: var(--btn-green);
 }
-.consumable-menu.bare button.sell:hover {
+.consumable-menu.bare button.use:hover {
   background: var(--btn-green-hi);
+}
+.consumable-menu.bare button.sell {
+  background: var(--mult);
+}
+.consumable-menu.bare button.sell:hover {
+  filter: brightness(1.12);
 }
 
 /* ===== playtest-03 E: unified board, shelves, sidebar, action cluster ===== */
@@ -5724,6 +5721,7 @@
 /* Headline owns Pattern/Unison/Mixed. Supplemental rows stay source-grouped. */
 .bonus-parts {
   width: 100%;
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5766,6 +5764,16 @@
 }
 .sb-status.warn {
   color: var(--gold);
+}
+.sb-status.blocked {
+  color: var(--mult);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--mult) 70%, transparent);
+}
+@media (forced-colors: active) {
+  .sb-status.blocked {
+    color: Mark;
+    text-shadow: none;
+  }
 }
 .sb-status.loud {
   color: #15242c;

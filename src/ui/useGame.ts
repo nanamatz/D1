@@ -1901,7 +1901,6 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         submission,
         goldDelta,
         destroyedTileIds,
-        grownWoodTileIds,
         createdTiles,
         updatedTiles,
         bossDiscardedTiles,
@@ -1918,18 +1917,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       } = result;
       const selectedIds = new Set(prev.selected);
       const heldTiles = prev.blind.hand.filter((tile) => !selectedIds.has(tile.id));
-      const growWood = (tile: import('../engine/types').Tile) =>
-        grownWoodTileIds.includes(tile.id)
-          ? {
-              ...tile,
-              woodBonusChips:
-                (tile.woodBonusChips ?? BALANCE.materials.wood.baseChips) +
-                BALANCE.materials.wood.chipsPerPlay,
-            }
-          : tile;
       const updatedById = new Map(updatedTiles.map((tile) => [tile.id, tile]));
       const updateTile = (tile: import('../engine/types').Tile) =>
-        growWood(updatedById.get(tile.id) ?? tile);
+        updatedById.get(tile.id) ?? tile;
       const blind = {
         ...result.blind,
         hand: result.blind.hand.map(updateTile),

@@ -9,7 +9,7 @@ import { loadBrowserLexicon } from '../src/ui/lexicon.browser';
 
 const lexicon = loadStubLexicon();
 const surfaces = ['mvp', 'mvps', 'vip', 'vips'] as const;
-const validitySurfaces = ['christ', 'christmas'] as const;
+const validitySurfaces = ['aint', 'christ', 'christmas'] as const;
 
 function tiles(word: string): Tile[] {
   return [...word.toUpperCase()].map((letter, index) => ({
@@ -98,20 +98,26 @@ describe('reviewed curated validity omissions', () => {
     expect(curated.map(({ word }) => word)).toEqual(validitySurfaces);
     for (const source of pipelineSources) expect(source).toContain('curated-validity.json');
     for (const entry of curated) {
-      expect(entry).toMatchObject({ suit: 'standard', pos: ['noun'] });
       expect(entry.reason.length).toBeGreaterThan(0);
       expect(dictionary.has(entry.word)).toBe(true);
       expect(lexicon.lookup(entry.word)).toEqual({
         word: entry.word,
-        suit: 'standard',
-        pos: ['noun'],
+        suit: entry.suit,
+        pos: entry.pos,
       });
       expect(scoreWord(tiles(entry.word), lexicon)).toMatchObject({
         isGibberish: false,
-        suit: 'standard',
+        suit: entry.suit,
         posUsed: null,
       });
     }
+    expect(curated[0]).toMatchObject({
+      word: 'aint', suit: 'slang', pos: ['verbLinking'],
+    });
+    expect(curated.slice(1)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ word: 'christ', suit: 'standard', pos: ['noun'] }),
+      expect.objectContaining({ word: 'christmas', suit: 'standard', pos: ['noun'] }),
+    ]));
   });
 
   it('does not create proper-name or derivative families implicitly', () => {

@@ -10,6 +10,7 @@ import { isLetterHandDiscovered } from '../lifetime';
 import type { UseGame } from '../useGame';
 import proofStampArt from '../assets/icons/ui/proof-stamp.png';
 import { UiIcon } from './UiIcon';
+import { formatScore } from '../formatScore';
 
 interface Line {
   key: string;
@@ -90,7 +91,7 @@ export function CashOut({
       <div className="overlay-card cashout" role="dialog" aria-modal>
         <div className="cashout-banner">
           <span className="label">{t('cashout.title')}</span>
-          <span className="cashout-total">${Math.round(total)}</span>
+          <span className="cashout-total">${formatScore(total)}</span>
         </div>
 
         <div className="cashout-lines">
@@ -99,7 +100,7 @@ export function CashOut({
               <span className="desc">{t(line.key, line.params)}</span>
               <span className="amt">
                 <Coins n={line.amount} />
-                <b>${line.amount}</b>
+                <b>${formatScore(line.amount)}</b>
               </span>
             </div>
           ))}

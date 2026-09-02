@@ -13,6 +13,7 @@ import {
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
 import { motionOff } from '../motion';
+import { formatScore } from '../formatScore';
 import { useSettleView } from '../settle';
 import { Tooltip } from './Tooltip';
 import { TiltCard } from './TiltCard';
@@ -482,12 +483,12 @@ export function JokerShelf({
                           }}
                         >
                           {t('shop.sell', {
-                            value: emojiTileSellValue(
+                            value: formatScore(emojiTileSellValue(
                               run,
                               BALANCE.jokerPrice[def.rarity],
                               owned.edition ?? 'base',
                               owned.state.sellBonus ?? 0,
-                            ),
+                            )),
                           })}
                         </button>
                       </div>
@@ -604,7 +605,9 @@ export function JokerShelf({
                         beginLeave('consumable', i, 'sell', () => onSellConsumable?.(i));
                       }}
                     >
-                      {t('consumable.sellAction', { value: consumableSellValue(run, c) })}
+                      {t('consumable.sellAction', {
+                        value: formatScore(consumableSellValue(run, c)),
+                      })}
                     </button>
                     {onUseConsumable && (
                       <button

@@ -13,7 +13,7 @@ import {
   letterHandLevel,
   letterHandStampCost,
 } from '../../engine/letterHands';
-import { bossDescKey, voucherDescKey } from '../descriptions';
+import { bossDescription, voucherDescKey } from '../descriptions';
 import { useI18n } from '../i18n';
 import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
@@ -181,7 +181,12 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                       <div className="bs-boss">
                         <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
                         <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
-                        <span className="be">{richText(t(bossDescKey(boss.id)))}</span>
+                        <span className="be">{richText(bossDescription(
+                          boss.id,
+                          t,
+                          run,
+                          blind.deadLetter ?? '—',
+                        ))}</span>
                       </div>
                     )}
                     {status === 'skipped' && (
@@ -195,7 +200,7 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                     </div>
                     <div className="bs-reward">
                       <span className="label">{t('blindselect.reward')}</span>
-                      <span className="r"><UiIcon name="coin" className="inline-ui-icon" /> <b>${reward}</b></span>
+                      <span className="r"><UiIcon name="coin" className="inline-ui-icon" /> <b>${formatScore(reward)}</b></span>
                     </div>
                     <div className={['bs-status', status].join(' ')}>{t(`blindselect.${status}`)}</div>
                   </div>

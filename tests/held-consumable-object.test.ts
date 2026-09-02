@@ -32,7 +32,7 @@ describe('held consumable foreground objects', () => {
     expect(shelf).toMatch(
       /className="consumable-object"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>[\s\S]*className="owned-object-select consumable-select"/,
     );
-    expect(css).toMatch(
+    expect(css).not.toMatch(
       /\.consumable-slot\.menu-open > \.tt-anchor > \.consumable-select\s*\{[^}]*pointer-events:\s*none;/s,
     );
     expect(css).toContain('.consumables .consumable-slot.menu-open');

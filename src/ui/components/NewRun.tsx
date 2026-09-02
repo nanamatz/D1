@@ -15,6 +15,7 @@ import { recordArt } from '../recordArt';
 import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
 import { UiIcon } from './UiIcon';
+import { formatScore } from '../formatScore';
 
 /** Summary of the persisted run behind the Continue tab. */
 export interface ContinueInfo {
@@ -176,7 +177,9 @@ export function NewRun({
                     blind: t(`blind.${continueInfo.blindKind}`),
                   })}
                 </span>
-                <span className="cs-gold">{t('newrun.continueGold', { n: continueInfo.gold })}</span>
+                <span className="cs-gold">{t('newrun.continueGold', {
+                  n: formatScore(continueInfo.gold),
+                })}</span>
                 <span className="cs-seed">
                   {t('gameover.seed')}: {continueInfo.seed}
                 </span>

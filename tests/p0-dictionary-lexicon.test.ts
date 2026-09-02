@@ -13,17 +13,17 @@ describe('P0-1 — real validity dictionary', () => {
   });
 
   it('accepts apostrophe-free negative contractions used by tile grammar', () => {
-    for (const w of ['dont', 'isnt', 'arent', 'couldnt', 'wouldnt']) {
+    for (const w of ['aint', 'dont', 'isnt', 'arent', 'couldnt', 'wouldnt']) {
       expect(lex.isWord(w), w).toBe(true);
     }
   });
 
   it('contains the 18-letter ENABLE pool plus documented exceptions', () => {
-    expect(lex.size).toBe(172257);
+    expect(lex.size).toBe(172258);
     expect(lex.registerTotals).toEqual({
       standard: 168469,
       formal: 2669,
-      slang: 879,
+      slang: 880,
       vulgar: 240,
     });
     expect(Object.values(lex.registerTotals).reduce((sum, count) => sum + count, 0))

@@ -273,7 +273,7 @@ describe('tutorial copy stays in sync with the registry', () => {
   "tutorial.pouchHover.body": "\"Remaining\" counts only the undrawn tiles still in the pouch — tiles in hand, played, or discarded have already left it.",
 ```
 
-In `locales/ko.json` (same keys, Korean copy; use the glossary terms Draft/Revision/Deadline→초고/퇴고/마감, Fee→원고료, Pouch→주머니, Shop→문방구, Piyak the cat is the shop proprietor):
+In `locales/ko.json` (same keys, Korean copy; use the glossary terms Draft/Revision/Deadline→초고/퇴고/마감, Fee→돈, Pouch→주머니, Shop→문방구, Piyak the cat is the shop proprietor):
 
 ```json
   "tutorial.firstGibberish.title": "횡설수설",
@@ -297,7 +297,7 @@ In `locales/ko.json` (same keys, Korean copy; use the glossary terms Draft/Revis
   "tutorial.firstPack.title": "팩",
   "tutorial.firstPack.body": "팩을 열어 몇 가지 선택지(타일·조커·소모품) 중에서 골라 담습니다. 빌드에 맞는 것을 고르세요.",
   "tutorial.shopFirstVisit.title": "문방구",
-  "tutorial.shopFirstVisit.body": "블라인드 사이에 원고료를 쓰세요: 조커·소모품 구매, 상품 리롤, 바우처나 팩 구입. 주인장 피약이 방문할 때마다 물건을 채워둡니다.",
+  "tutorial.shopFirstVisit.body": "블라인드 사이에 돈을 쓰세요: 조커·소모품 구매, 상품 리롤, 바우처나 팩 구입. 주인장 피약이 방문할 때마다 물건을 채워둡니다.",
   "tutorial.magnifier.title": "돋보기",
   "tutorial.magnifier.body": "돋보기를 쓰면 지금 손패로 만들 수 있는 단어를 최대 3개까지 보여줍니다.",
   "tutorial.pouchHover.title": "주머니",

@@ -1,5 +1,11 @@
 [
   {
+    "word": "aint",
+    "suit": "slang",
+    "pos": ["verbLinking"],
+    "reason": "Reviewed apostrophe-free AIN'T surface for alphabet-only tiles; admitted as a Slang auxiliary under the existing linking-verb POS convention."
+  },
+  {
     "word": "christ",
     "suit": "standard",
     "pos": ["noun"],

@@ -13,8 +13,8 @@
   --panel-edge: #4a4d51; /* BLUE; unlock-blue → #39505e */
   --ink: #edeae2; /* neutral (near-white) */
   --ink-dim: #adafb1; /* neutral grey */
-  --chips: #8f9295; /* BLUE; unlock-blue → #3fa7f5 */
-  --mult: #8a8785; /* RED; unlock-red → #f5504e */
+  --chips: #8f9295; /* BLUE; unlock-blue → #3fa7f5; Buy/Redeem actions */
+  --mult: #8a8785; /* RED; unlock-red → #f5504e; Sell actions */
   --gold: #b0aca4; /* YELLOW; unlock-yellow → #f0b23e */
   --score-flame-outer: #a9a9a9; /* YELLOW; unlock-yellow → #FF9F0E */
   --score-flame-core: #c3c3c3; /* YELLOW; unlock-yellow → #FFC222 */
@@ -63,7 +63,7 @@
   --kind-big-b: #7f7f7f; /* YELLOW; unlock-yellow → #a87d20 */
   --kind-boss-a: #767676; /* RED; unlock-red → #d64d4a */
   --kind-boss-b: #4f4f4f; /* RED; unlock-red → #a02c2c */
-  --btn-green: #7d7d7d; /* GREEN; unlock-green → #4a9d5b */
+  --btn-green: #7d7d7d; /* GREEN; unlock-green → #4a9d5b; Use/Use Now actions */
   --btn-green-hi: #8e8e8e; /* GREEN; unlock-green → #57b268 */
   --pop-chip: #a4a4a4; /* BLUE; unlock-blue → #5bb8ff */
   --pop-mult: #9a9a9a; /* RED; unlock-red → #ff6f6d */
@@ -234,7 +234,7 @@
 }
 :root.unlock-green {
   --bg-desk: #22443b; /* desk / blind backgrounds */
-  --btn-green: #4a9d5b; /* reroll / pack-open / sell buttons */
+  --btn-green: #4a9d5b; /* reroll / pack-open / Use buttons */
   --btn-green-hi: #57b268;
   --tile-ink-6: #3f694d;
   --pos-conjunction: #4a9d5b;

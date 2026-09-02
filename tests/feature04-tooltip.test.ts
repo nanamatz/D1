@@ -92,7 +92,7 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
       .toBe('tile.chips:50');
   });
 
-  it('shows the live Wood Chips and falls back to the base value', () => {
+  it('keeps generic Wood copy stateless and puts the live stack on the concrete tile', () => {
     const translate = (dict: Record<string, string>) => (
       key: string,
       params?: Record<string, string | number>,
@@ -100,10 +100,16 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
       (copy, [name, value]) => copy.replaceAll(`{${name}}`, String(value)),
       dict[key] ?? key,
     );
-    expect(tileTooltip(tile({ material: 'wood' }), translate(en)).sub[0]?.body)
-      .toBe('Currently [c:+15 Chips] · Gains [c:+10 Chips] each time this tile is played');
-    expect(tileTooltip(tile({ material: 'wood', woodBonusChips: 35 }), translate(ko)).sub[0]?.body)
-      .toBe('현재 [c:+35 칩] · 이 타일을 플레이할 때마다 [c:+10 칩]');
+    const base = tileTooltip(tile({ material: 'wood' }), translate(en));
+    expect(base.body).toBe('[c:+9 letter Chips] + [c:+15 Wood Chips]');
+    expect(base.sub[0]?.body).toBe('Gains [c:+10 Chips] each time this tile is played');
+
+    const grown = tileTooltip(
+      tile({ material: 'wood', woodBonusChips: 35 }),
+      translate(ko),
+    );
+    expect(grown.body).toBe('[c:+9 글자 칩] + [c:+35 목재 칩]');
+    expect(grown.sub[0]?.body).toBe('이 타일을 플레이할 때마다 [c:+10 칩]');
   });
 
   it('an Emoji Tile tooltip names its edition and effect', () => {

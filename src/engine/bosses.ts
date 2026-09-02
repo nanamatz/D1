@@ -82,6 +82,10 @@ export interface BossDef {
   canDiscardTile?: (tile: Tile) => boolean;
 }
 
+/** Current Chapter length floor enforced by Stereotype Plate. */
+export const stereotypePlateMinimumLength = (run: RunState): number =>
+  Math.max(0, ...(run.wordsThisAnte ?? []).map((word) => word.length));
+
 const BOSSES: readonly BossDef[] = [
   // 1. Wanted (수배 전단): XL blind — target ×2.
   {
@@ -200,10 +204,8 @@ const BOSSES: readonly BossDef[] = [
     nameEn: 'Stereotype Plate',
     nameKo: '스테레오타입 판',
     emoji: '▤',
-    blocks: (submission, env) => {
-      const minimumLength = Math.max(0, ...(env.run.wordsThisAnte ?? []).map((word) => word.length));
-      return submissionLength(submission) < minimumLength;
-    },
+    blocks: (submission, env) =>
+      submissionLength(submission) < stereotypePlateMinimumLength(env.run),
   },
   {
     id: 'orphanLine',

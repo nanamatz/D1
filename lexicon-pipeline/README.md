@@ -47,12 +47,14 @@ registry is reason-bearing and exact-only: it neither admits proper names as a
 class nor generates derivatives. When only either curated source changes, preserve the
 existing licensed snapshot with `node lexicon-pipeline/classify-registers.mjs --curatedOnly true`.
 
-Current playable build: 172,234 dictionary words, 172,257 lexicon entries
+Current playable build: 172,235 dictionary words, 172,258 lexicon entries
 (23 retained pre-existing entries sit outside the dictionary). `check:data`
 rejects words over 18 letters, missing or empty POS, and register-audit drift.
 It also validates both curated schemas, the exact four acronym keys, the exact
-two reviewed-validity keys, and both baked outputs. Register distribution:
-Standard 168,469; Formal 2,669; Slang 879; Vulgar 240.
+three reviewed-validity keys (`aint`, `christ`, `christmas`), and both baked outputs.
+`aint` is the exact apostrophe-free AIN'T tile surface, classified Slang with the
+existing auxiliary/linking-verb POS convention. Register distribution:
+Standard 168,469; Formal 2,669; Slang 880; Vulgar 240.
 
 The authoritative rules and boundary examples live in
 `docs/# 영단어 레지스터 분류 기준.md`; `register-overrides.json` mirrors only

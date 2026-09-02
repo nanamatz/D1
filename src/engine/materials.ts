@@ -39,6 +39,16 @@ export const setTileMaterial = (tile: Tile, material: TileMaterial): Tile => {
   };
 };
 
+/** Permanently advance one Wood tile after it scored in a play. */
+export const growWoodTile = (tile: Tile): Tile => tile.material === 'wood'
+  ? {
+      ...tile,
+      woodBonusChips:
+        (tile.woodBonusChips ?? BALANCE.materials.wood.baseChips)
+        + BALANCE.materials.wood.chipsPerPlay,
+    }
+  : tile;
+
 /** Outcomes a material can produce beyond chips/mult. */
 export interface MaterialSideEffects {
   /** run gold to add (Ivory, Lead plate) */

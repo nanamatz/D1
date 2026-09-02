@@ -298,16 +298,6 @@ export const freshCohort = (
   ])) as Record<string, JokerStats>,
 });
 
-const growWood = (tile: Tile, ids: readonly string[]): Tile =>
-  ids.includes(tile.id)
-    ? {
-        ...tile,
-        woodBonusChips:
-          (tile.woodBonusChips ?? BALANCE.materials.wood.baseChips)
-          + BALANCE.materials.wood.chipsPerPlay,
-      }
-    : tile;
-
 const jokerState = (run: RunState): Map<string, string> => new Map(
   run.jokers.map((joker) => [joker.defId, JSON.stringify(joker.state)]),
 );
@@ -397,7 +387,6 @@ export function mergeSubmitResult(
   run: RunState,
   result: ReturnType<typeof submitWord>,
 ): RunState {
-  const grow = (tile: Tile) => growWood(tile, result.grownWoodTileIds);
   return onTilesDestroyed(
     {
       ...run,
@@ -414,7 +403,6 @@ export function mergeSubmitResult(
       bag: run.bag
         .filter((tile) => !result.destroyedTileIds.includes(tile.id))
         .map((tile) => result.updatedTiles.find((updated) => updated.id === tile.id) ?? tile)
-        .map(grow)
         .concat(result.createdTiles),
       wordsThisAnte: result.submission.isGibberish
         ? run.wordsThisAnte
@@ -492,15 +480,7 @@ function playBlind(
       cohort.materials.leadPlate.gold += result.goldDelta;
     }
 
-    const grow = (tile: Tile) => growWood(tile, result.grownWoodTileIds);
-    blind = result.grownWoodTileIds.length
-      ? {
-          ...result.blind,
-          hand: result.blind.hand.map(grow),
-          bag: result.blind.bag.map(grow),
-          discardedThisBlind: result.blind.discardedThisBlind.map(grow),
-        }
-      : result.blind;
+    blind = result.blind;
     run = mergeSubmitResult(run, result);
     recordStateChanges(cohort, beforeState, run);
     if (canEndEarly(blind)) break;

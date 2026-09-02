@@ -47,15 +47,29 @@ if (args.curatedOnly === 'true') {
   const counts = Object.fromEntries(SUITS.map((suit) => [suit, 0]));
   for (const entry of Object.values(sortedLexicon)) counts[entry.suit] += 1;
   const assignments = { ...previousAudit.assignments };
+  assignments.curated = curated.length;
   assignments['default-standard'] = Object.keys(sortedLexicon).length
     - assignments['primary-sense']
     - assignments['criteria-example']
-    - assignments.inflection;
+    - assignments.inflection
+    - assignments.curated;
+  const words = { ...previousAudit.words };
+  for (const entry of curated) {
+    if (entry.suit === 'standard') delete words[entry.word];
+    else {
+      words[entry.word] = {
+        suit: entry.suit,
+        assignment: 'curated',
+        sources: ['curated:exact'],
+      };
+    }
+  }
   const report = {
     ...previousAudit,
     reviewedWords: Object.keys(sortedLexicon).length,
     counts,
     assignments,
+    words: Object.fromEntries(Object.entries(words).sort(([a], [b]) => a.localeCompare(b))),
   };
   fs.writeFileSync(OUT, `${JSON.stringify(sortedLexicon)}\n`);
   fs.writeFileSync(AUDIT, `${JSON.stringify(report)}\n`);
@@ -167,20 +181,29 @@ const counts = Object.fromEntries(SUITS.map((suit) => [suit, 0]));
 const assignmentCounts = {
   'primary-sense': 0,
   'criteria-example': 0,
+  curated: 0,
   inflection: 0,
   'default-standard': 0,
 };
 const auditWords = {};
 
 for (const [word, entry] of Object.entries(lexicon)) {
+  const curatedEntry = curatedByWord.get(word);
   const direct = decisions.get(word);
   const inheritance = inherited.get(word);
-  const suit = curatedByWord.get(word)?.suit ?? direct?.suit ?? inheritance?.suit ?? 'standard';
+  const suit = curatedEntry?.suit ?? direct?.suit ?? inheritance?.suit ?? 'standard';
   entry.suit = suit;
   counts[suit] += 1;
-  assignmentCounts[direct?.assignment ?? (inheritance ? 'inflection' : 'default-standard')] += 1;
+  const assignment = curatedEntry
+    ? 'curated'
+    : direct?.assignment ?? (inheritance ? 'inflection' : 'default-standard');
+  assignmentCounts[assignment] += 1;
   if (suit === 'standard') continue;
-  auditWords[word] = direct ? {
+  auditWords[word] = curatedEntry ? {
+    suit,
+    assignment: 'curated',
+    sources: ['curated:exact'],
+  } : direct ? {
     suit,
     assignment: direct.assignment,
     sources: direct.sources,

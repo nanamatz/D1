@@ -675,7 +675,7 @@ Expected: FAIL — `en collection.cat.jokers: expected 'jokers' not to contain '
   "voice.woodak.enc.firstJoker": "이모지 타일은 득점할 때마다 발동하는 지속 효과입니다. 왼쪽에서 오른쪽 순서로 발동하니 배치를 잘 하세요.",
   "voice.woodak.enc.firstPack": "팩을 열어 몇 가지 선택지(타일·이모지·소모품) 중에서 골라 담습니다. 빌드에 맞는 것을 고르세요.",
   "voice.woodak.tip.reroll": "리롤을 한 번도 안 썼다우땅. 좋은 이모지는 기다려 주지 않는다우땅.",
-  "voice.piyak.enc.shopFirstVisit": "블라인드 사이에 원고료를 쓰세요: 이모지 타일·소모품 구매, 상품 리롤, 바우처나 팩 구입. 주인장 삐약이가 방문할 때마다 물건을 채워둡니다.",
+  "voice.piyak.enc.shopFirstVisit": "블라인드 사이에 돈을 쓰세요: 이모지 타일·소모품 구매, 상품 리롤, 바우처나 팩 구입. 주인장 삐약이가 방문할 때마다 물건을 채워둡니다.",
   "voice.piyak.welcome.3": "그 이모지 타일, 오늘 아침에 막 들어온 물건이라냥.",
 ```
 

@@ -109,9 +109,13 @@ export function posCandidates(sub: WordSubmission, lexicon: Lexicon): readonly P
 export const tileValue = (t: Tile): number =>
   tileBaseChips(t);
 
-/** Tooltip total: Stone's material chips replace its missing letter value. */
+/** Tooltip total: include the concrete tile's current material Chips. */
 export const tileTooltipChips = (t: Tile): number =>
-  t.material === 'stone' ? BALANCE.materials.stone.chips : tileValue(t);
+  t.material === 'stone'
+    ? BALANCE.materials.stone.chips
+    : tileValue(t) + (t.material === 'wood'
+      ? t.woodBonusChips ?? BALANCE.materials.wood.baseChips
+      : 0);
 
 /** First-run lesson lock: the next letter still needed to spell `word`, given the letters
  *  already staged (in order), or null once they spell it. The lock enforces order, so the
@@ -156,11 +160,7 @@ export function tileTooltip(tile: Tile, t: TFull) {
     tags.push({ label: title, tone: 'material' });
     sub.push({
       title,
-      body: materialDescription(
-        tile.material,
-        t,
-        tile.woodBonusChips ?? BALANCE.materials.wood.baseChips,
-      ),
+      body: materialDescription(tile.material, t),
       kind: 'material',
     });
   }
@@ -178,7 +178,13 @@ export function tileTooltip(tile: Tile, t: TFull) {
   }
   // Stone has no glyph — title falls back to its material name so the card is identifiable.
   const title = tileGlyph(tile) || t(`material.${tile.material}`);
-  return { title, body: t('tile.chips', { n: tileTooltipChips(tile) }), tags, sub };
+  const body = tile.material === 'wood'
+    ? t('tile.woodChips', {
+        letter: tileValue(tile),
+        wood: tile.woodBonusChips ?? BALANCE.materials.wood.baseChips,
+      })
+    : t('tile.chips', { n: tileTooltipChips(tile) });
+  return { title, body, tags, sub };
 }
 
 /** Wood alone shows its live +Chips growth; other materials rely on texture and tooltip. */

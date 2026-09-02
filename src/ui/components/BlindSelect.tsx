@@ -2,7 +2,7 @@ import { effectiveBlindTarget, effectiveClearReward } from '../../engine/economy
 import { kindForIndex } from '../../engine/progression';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
-import { bossDescKey } from '../descriptions';
+import { bossDescription } from '../descriptions';
 import { useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { bossRerollLimit, bossRerollPrice } from '../../engine/vouchers';
@@ -99,9 +99,12 @@ export function BlindSelect({ g }: { g: UseGame }) {
                 <div className="bs-boss">
                   <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
                   <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
-                  <span className="be">{richText(t(bossDescKey(boss.id), {
-                    letter: blind.deadLetter ?? '—',
-                  }))}</span>
+                  <span className="be">{richText(bossDescription(
+                    boss.id,
+                    t,
+                    run,
+                    blind.deadLetter ?? '—',
+                  ))}</span>
                 </div>
               )}
               {(status === 'skipped' || claiming) && (
@@ -114,7 +117,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
               <div className="bs-reward">
                 <span className="label">{t('blindselect.reward')}</span>
                 <span className="r">
-                  <UiIcon name="coin" className="inline-ui-icon" /> <b>${reward}</b>
+                  <UiIcon name="coin" className="inline-ui-icon" /> <b>${formatScore(reward)}</b>
                 </span>
               </div>
               {skipOffer && (

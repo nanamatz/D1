@@ -82,7 +82,7 @@ const QUESTION_OPENERS = new Set([
 ]);
 const NEGATIVE_WORDS = new Set([
   'not', 'never',
-  'dont', 'isnt', 'arent', 'wasnt', 'werent',
+  'aint', 'dont', 'isnt', 'arent', 'wasnt', 'werent',
   'cant', 'couldnt', 'wont', 'wouldnt', 'shouldnt',
   'hasnt', 'havent', 'hadnt', 'didnt', 'doesnt',
 ]);

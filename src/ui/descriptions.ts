@@ -8,6 +8,7 @@ import type { JokerDef } from '../engine/events';
 import { MATERIAL_REGISTRY } from '../engine/materials';
 import { extinctLetterCount } from '../engine/jokers/outOfPrint';
 import { pouchTagChips } from '../engine/jokers/pouchTag';
+import { scrapDealerMult } from '../engine/jokers/scrapDealer';
 import type {
   ConsumableId,
   JokerEdition,
@@ -18,6 +19,7 @@ import type {
 } from '../engine/types';
 import { FABLE_REGISTRY, isFableId, jokerSellGoldValue } from '../engine/fables';
 import { CONSTELLATION_PATTERN } from '../engine/constellations';
+import { stereotypePlateMinimumLength } from '../engine/bosses';
 import type { TParams } from './i18n';
 import { patternSymbol } from './patternSymbols';
 
@@ -27,6 +29,20 @@ export const jokerDescKey = (id: string): string => `jokerdesc.${id}`;
 export const voucherDescKey = (id: string): string => `voucherdesc.${id}`;
 export const consumableDescKey = (id: string): string => `consumabledesc.${id}`;
 export const bossDescKey = (id: string): string => `bossdesc.${id}`;
+
+/** Canonical boss effect copy; live Stereotype Plate surfaces disclose its exact floor. */
+export function bossDescription(
+  id: string,
+  t: Translate,
+  run?: RunState,
+  letter = '—',
+): string {
+  if (id !== 'stereotypePlate' || !run) return t(bossDescKey(id), { letter });
+  const minimum = stereotypePlateMinimumLength(run);
+  return minimum > 0
+    ? t('bossdesc.stereotypePlate.current', { minimum })
+    : t('bossdesc.stereotypePlate.none');
+}
 
 /** Emoji Tile effect plus its separately presented edition enhancement. */
 export function jokerTooltip(
@@ -73,13 +89,11 @@ export function consumableTooltipExtra(
 export const fontDescKey = (font: TileFont): string =>
   font === 'medium' ? 'fontdesc.medium' : `fonteffectdesc.${BALANCE.fontEffects[font]}`;
 
-/** Canonical material copy; Wood uses its live per-tile Chips when available. */
+/** Canonical material copy. Concrete Wood values belong to the tile tooltip. */
 export const materialDescription = (
   material: TileMaterial,
   t: (key: string, params?: TParams) => string,
-  woodChips: number = BALANCE.materials.wood.baseChips,
 ): string => t(`materialdesc.${material}`, {
-  value: woodChips,
   growth: BALANCE.materials.wood.chipsPerPlay,
 });
 
@@ -193,6 +207,9 @@ export function grownValue(
       chips: gone * BALANCE.jokers.outOfPrint.chipsPerLetter,
       mult: gone * BALANCE.jokers.outOfPrint.multPerLetter,
     });
+  }
+  if (def.id === 'scrapDealer' && run) {
+    return t('joker.currentMultAdd', { value: formatGrowth(scrapDealerMult(run)) });
   }
   if (def.id === 'earthquake') {
     return t('joker.remainingUses', {

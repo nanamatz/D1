@@ -16,7 +16,7 @@ import { drawTiles } from './bag';
 import type { Rng } from './rng';
 import type { Lexicon } from './lexicon';
 import { baseScore, letterString, submissionLetterString, tileBaseChips, wordLengthMult, type BaseScore } from './scoring';
-import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials } from './materials';
+import { applyTileMaterial, applyHeldMaterials, collectBlindEndMaterials, growWoodTile } from './materials';
 import { applyEdition } from './editions';
 import { finalizeScore, isHiddenPattern, judgeSentence, sentenceTotal } from './patterns';
 import { evaluateLetterHand } from './letterHands';
@@ -1235,6 +1235,12 @@ export function submitWord(
     rng,
     heldOrder,
   );
+  if (grownWoodTileIds.length > 0) {
+    const grownIds = new Set(grownWoodTileIds);
+    submission.tiles = submission.tiles.map((tile) => grownIds.has(tile.id) ? growWoodTile(tile) : tile);
+    const grownById = new Map(submission.tiles.map((tile) => [tile.id, tile]));
+    scoringRun.bag = scoringRun.bag.map((tile) => grownById.get(tile.id) ?? tile);
+  }
   if (destroyedTileIds.length > 0) {
     const settle = events.at(-1)?.kind === 'settle' ? events.pop() : undefined;
     for (const tileId of destroyedTileIds) {
@@ -1265,7 +1271,7 @@ export function submitWord(
     hand: [...keptHand, ...drawn, ...createdTiles],
     bag,
     // used tiles are spent for the blind; they return to the bag at blind end (§6.1)
-    discardedThisBlind: [...blind.discardedThisBlind, ...used],
+    discardedThisBlind: [...blind.discardedThisBlind, ...submission.tiles],
     sequence: [...blind.sequence, submission],
     committedScore: blind.committedScore + submission.settledScore,
     projectedScore: 0,
@@ -1273,7 +1279,7 @@ export function submitWord(
   };
   if (!submission.debuffed) {
     const enhancedTiles: NonNullable<import('./events').EngineEvents['tilesPlayed']['enhancedTiles']> = [];
-    const survivingTiles = used.filter((tile) => !destroyedTileIds.includes(tile.id));
+    const survivingTiles = submission.tiles.filter((tile) => !destroyedTileIds.includes(tile.id));
     defaultJokerBus.emit(
       'tilesPlayed',
       { run: scoringRun, blind: afterBlind, tiles: survivingTiles, enhancedTiles },

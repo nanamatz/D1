@@ -20,7 +20,7 @@ import { richText } from '../richtext';
 import { isLetterHandDiscovered } from '../lifetime';
 import { scoreTypewriterLiveTotal } from '../scoreTypewriter';
 import { ScoreTypewriter } from './ScoreTypewriter';
-import { bossDescKey } from '../descriptions';
+import { bossDescription } from '../descriptions';
 
 interface Props {
   run: RunState;
@@ -64,7 +64,7 @@ function StatusLine({
 }) {
   const { t } = useI18n();
   if (!preview) return <div className="sb-status">&nbsp;</div>;
-  if (preview.blocked) return <div className="sb-status warn">{t('boss.blockedWord')}</div>;
+  if (preview.blocked) return <div className="sb-status blocked">{t('boss.blockedWord')}</div>;
   if (preview.isGibberish) {
     const lh = preview.letterHand
       ? ` · ${isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)
@@ -280,8 +280,8 @@ export function Sidebar({
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   const bossEmblemRef = useRef<HTMLDivElement>(null);
   const bossName = boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : '';
-  const bossDescription = boss
-    ? t(bossDescKey(boss.id), { letter: blind.deadLetter ?? '—' })
+  const bossEffect = boss
+    ? bossDescription(boss.id, t, run, blind.deadLetter ?? '—')
     : '';
 
   // Live score is presentation-only: it drives the keyboard's separate one-shot
@@ -332,6 +332,7 @@ export function Sidebar({
         primaryKeyId={settle.typewriterBeat?.primaryKeyId ?? 'Enter'}
         liveTotal={mode === 'blind' ? liveTotal : 0}
         target={mode === 'blind' ? blind.target : 0}
+        targetCueEnabled={mode === 'blind' && blind.projectedScore >= blind.target}
         blindKey={`${run.ante}-${run.blindIndex}`}
         settleId={settleId}
         resolutionActive={resolutionActive}
@@ -363,7 +364,7 @@ export function Sidebar({
         </div>
         <div className="bb-eff">
           {mode === 'blind' && boss && (
-            <span className="bosseff">{richText(bossDescription)}</span>
+            <span className="bosseff">{richText(bossEffect)}</span>
           )}
         </div>
         {mode !== 'blind' ? (
@@ -396,7 +397,7 @@ export function Sidebar({
             <Tooltip
               anchorRef={bossEmblemRef}
               title={bossName}
-              body={bossDescription}
+              body={bossEffect}
             />
           )}
           <div className="bb-stats">
@@ -482,7 +483,7 @@ export function Sidebar({
             .join(' ')}
         >
           <span className="box c">
-            {Math.round(chips)}
+            {formatScore(chips)}
             {settle.scorePop && settle.scorePop.chips !== 0 && (
               <span key={`c${settle.scorePop.id}`} className="box-pop chip">
                 <span className="chip-diamond" aria-hidden />
@@ -495,7 +496,7 @@ export function Sidebar({
           </span>
           <span className="x">×</span>
           <span className="box m">
-            {fmtMult(mult)}
+            {formatScore(mult)}
             {settle.scorePop && settle.scorePop.mult !== 0 && (
               <span key={`m${settle.scorePop.id}`} className="box-pop">
                 {settle.scorePop.multOp === 'mul' ? '×' : '+'}

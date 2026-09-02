@@ -30,12 +30,12 @@ const dictionary = readFileSync(resolve(root, 'data/dictionary.txt'), 'utf8')
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
 const maxWordLength = 18;
-const dictionaryTarget = 172234; // ENABLE + tile grammar + 4 acronyms + 2 reviewed omissions
-const lexiconTarget = 172257; // dictionary + 23 retained pre-existing entries
+const dictionaryTarget = 172235; // ENABLE + tile grammar + 4 acronyms + 3 reviewed omissions
+const lexiconTarget = 172258; // dictionary + 23 retained pre-existing entries
 const curatedTarget = ['mvp', 'mvps', 'vip', 'vips'];
-const curatedValidityTarget = ['christ', 'christmas'];
+const curatedValidityTarget = ['aint', 'christ', 'christmas'];
 const suits = new Set(['standard', 'formal', 'slang', 'vulgar']);
-const suitTargets = { standard: 168469, formal: 2669, slang: 879, vulgar: 240 };
+const suitTargets = { standard: 168469, formal: 2669, slang: 880, vulgar: 240 };
 const parts = new Set([
   'noun',
   'verbIntransitive',
@@ -243,7 +243,7 @@ for (const [word, auditEntry] of Object.entries(auditedWords)) {
   else if (table[word].suit !== auditEntry.suit) {
     errors.push(`${word}: register audit suit ${auditEntry.suit} != lexicon ${table[word].suit}`);
   }
-  if (!['primary-sense', 'criteria-example', 'inflection'].includes(auditEntry.assignment)) {
+  if (!['primary-sense', 'criteria-example', 'curated', 'inflection'].includes(auditEntry.assignment)) {
     errors.push(`${word}: invalid register audit assignment ${auditEntry.assignment}`);
   }
 }

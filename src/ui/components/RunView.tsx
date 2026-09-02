@@ -441,7 +441,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             {/* Deadline reveal is centred on the work surface, not the full frame:
                 the persistent sidebar is excluded from its positioning box. */}
             {!ending && !settling && !introOpen && phase === 'playing' && blind.kind === 'boss' && (
-              <BossIntro blind={blind} />
+              <BossIntro blind={blind} run={run} />
             )}
           </section>
         </main>

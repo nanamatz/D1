@@ -48,6 +48,7 @@ import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { audio } from '../audio';
 import { shopEmojiSet, unlockedEmojiSet } from '../emojiUnlocks';
+import { formatScore } from '../formatScore';
 
 interface ShopOfferProps {
   label: string;
@@ -94,14 +95,16 @@ function ShopOffer({
           <button
             type="button"
             className="shop-offer-select"
-            aria-label={`${label} · $${price}`}
+            aria-label={`${label} · $${formatScore(price)}`}
             aria-pressed={selected}
             onClick={onSelect}
           />
           <div className={['shop-offer-art', artClassName].filter(Boolean).join(' ')}>
             {children}
           </div>
-          <span className="shop-offer-price" aria-label={`$${price}`}>${price}</span>
+          <span className="shop-offer-price" aria-label={`$${formatScore(price)}`}>
+            ${formatScore(price)}
+          </span>
           <div className="shop-offer-action" aria-hidden={!selected}>
             <button
               type="button"
@@ -265,7 +268,7 @@ export function Shop({ g }: { g: UseGame }) {
           disabled={!!redeemingVoucher || run.gold < cost}
           onClick={g.reroll}
         >
-          {t('shop.reroll', { cost })}
+          {t('shop.reroll', { cost: formatScore(cost) })}
         </button>
         <div className="shop-gold">
           <span className="label">{t('shop.title')}</span>
@@ -306,7 +309,7 @@ export function Shop({ g }: { g: UseGame }) {
                     price={item.price}
                     selected={selectedOffer === offerKey}
                     actionLabel={t('shop.buy')}
-                    actionClassName="exchange"
+                    actionClassName="blue"
                     disabled={!affordable(item)}
                     onSelect={() => toggleOffer(offerKey)}
                     onAction={() => g.buy(i)}
@@ -401,7 +404,7 @@ export function Shop({ g }: { g: UseGame }) {
                       price={voucher.price}
                       selected={selectedOffer === offerKey}
                       actionLabel={t('shop.redeem')}
-                      actionClassName="exchange"
+                      actionClassName="blue"
                       disabled={
                         !!redeemingVoucher
                         || !canBuyVoucher(run, shop, slot)

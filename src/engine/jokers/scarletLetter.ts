@@ -12,15 +12,15 @@ export const scarletLetter: JokerDef = {
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: 1 },
   multOperation: 'multiply',
   hooks: {
-    tilesDiscarded: ({ tiles }, self) => {
+    tilesDiscarded: ({ run, tiles }, self) => {
       if (tiles[0]?.letter === 'A') {
-        self.state.factor = (self.state.factor ?? BALANCE.jokers.scarletLetter.baseFactor)
-          + BALANCE.jokers.scarletLetter.factorPerDiscardedA;
+        self.state.factor = factorFor(run.discardedLetterCounts?.A ?? 0);
       }
     },
     wordScoring: ({ run, ctx }, self) => {
-      self.state.factor = factorFor(run.discardedLetterCounts?.A ?? 0);
-      ctx.mult *= self.state.factor;
+      const factor = factorFor(run.discardedLetterCounts?.A ?? 0);
+      self.state.factor = factor;
+      if (factor !== 1) ctx.mult *= factor;
     },
   },
 };

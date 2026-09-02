@@ -153,6 +153,16 @@ describe('scaling Emoji Tile tooltip value', () => {
     }, t('en'), undefined, run)).toBe('(Currently [m:+2] Mult)');
   });
 
+  it('derives Scrap Dealer current Mult from permanent Brass tiles', () => {
+    const run = newRun('scrap-dealer-tooltip');
+    run.bag = run.bag.map((tile, index) => index < 2
+      ? { ...tile, material: 'brass' as const }
+      : tile);
+    const def = JOKER_REGISTRY.get('scrapDealer')!;
+    expect(grownValue(def, { defId: def.id, state: {} }, t('en'), undefined, run))
+      .toBe('(Currently [m:+0.4] Mult)');
+  });
+
   it('shows Pouch Tag Chips from the live remaining-tile count', () => {
     expect(grownValue(pouchTag, undefined, t('ko'), 17))
       .toBe('(현재 [c:+15] 칩)');

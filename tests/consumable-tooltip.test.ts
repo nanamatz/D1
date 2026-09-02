@@ -76,7 +76,7 @@ describe('shared consumable tooltip copy', () => {
     }]);
     expect(referencedMaterialTips(ko['jokerdesc.woodblockPress'], koT)).toEqual([{
       title: ko['material.wood'],
-      body: '현재 [c:+15 칩] · 이 타일을 플레이할 때마다 [c:+10 칩]',
+      body: '이 타일을 플레이할 때마다 [c:+10 칩]',
       kind: 'material',
     }]);
     expect(referencedMaterialTips(ko['jokerdesc.ceramicArtisan'], koT)).toEqual([]);

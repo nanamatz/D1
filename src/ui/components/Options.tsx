@@ -411,7 +411,7 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
           <Stat k={t('stats.highestAnte')} v={lt.highestAnte || '—'} />
           <Stat k={t('stats.highestEndlessAnte')} v={lt.highestEndlessAnte || '—'} />
           <Stat k={t('stats.bestEndlessScore')} v={lt.bestEndlessScore ? formatScore(lt.bestEndlessScore) : '—'} />
-          <Stat k={t('stats.mostGold')} v={lt.mostGold ? `$${lt.mostGold}` : '—'} />
+          <Stat k={t('stats.mostGold')} v={lt.mostGold ? `$${formatScore(lt.mostGold)}` : '—'} />
           <Stat k={t('stats.runs')} v={lt.runs} />
           <Stat k={t('stats.wins')} v={lt.wins} />
           <Stat k={t('stats.bestWinStreak')} v={lt.bestWinStreak} />

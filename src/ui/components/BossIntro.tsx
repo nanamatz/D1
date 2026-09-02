@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { BlindState } from '../../engine/types';
+import type { BlindState, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART } from '../bossArt';
 import { useI18n } from '../i18n';
 import { richText } from '../richtext';
+import { bossDescription } from '../descriptions';
 import { useEntering } from './ScreenTransition';
 
 const BOSS_ENTER_MS = 520;
@@ -11,7 +12,7 @@ const BOSS_HOLD_MS = 1000;
 const BOSS_EXIT_MS = 420;
 
 /** Brief, non-blocking Deadline reveal. Starts after the screen transition lands. */
-export function BossIntro({ blind }: { blind: BlindState }) {
+export function BossIntro({ blind, run }: { blind: BlindState; run: RunState }) {
   const { t, lang } = useI18n();
   const entering = useEntering();
   const [state, setState] = useState<'waiting' | 'visible' | 'exiting' | 'done'>('waiting');
@@ -40,9 +41,12 @@ export function BossIntro({ blind }: { blind: BlindState }) {
         <div className="boss-intro-copy">
           <div className="boss-intro-kicker">{t('blind.boss')}</div>
           <div className="boss-intro-name">{lang === 'ko' ? boss.nameKo : boss.nameEn}</div>
-          <div className="boss-intro-effect">{richText(t(`bossdesc.${boss.id}`, {
-            letter: blind.deadLetter ?? '—',
-          }))}</div>
+          <div className="boss-intro-effect">{richText(bossDescription(
+            boss.id,
+            t,
+            run,
+            blind.deadLetter ?? '—',
+          ))}</div>
         </div>
       </div>
     </div>

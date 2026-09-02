@@ -23,6 +23,7 @@ interface Props {
   primaryKeyId: string;
   liveTotal: number;
   target: number;
+  targetCueEnabled?: boolean;
   blindKey: string;
   settleId?: number;
   resolutionActive?: boolean;
@@ -40,6 +41,7 @@ export function ScoreTypewriter({
   primaryKeyId,
   liveTotal,
   target,
+  targetCueEnabled = true,
   blindKey,
   settleId = 0,
   resolutionActive = false,
@@ -78,7 +80,9 @@ export function ScoreTypewriter({
   }, [blindKey]);
 
   useEffect(() => {
-    const justCrossed = !crossed.current && crossedScoreTarget(previousTotal.current, liveTotal, target);
+    const justCrossed = targetCueEnabled
+      && !crossed.current
+      && crossedScoreTarget(previousTotal.current, liveTotal, target);
     previousTotal.current = liveTotal;
     if (!justCrossed) return;
     crossed.current = true;
@@ -88,7 +92,7 @@ export function ScoreTypewriter({
       durationMs: BALANCE.scoreTypewriter.targetCueMs / beatSpeed,
     }));
     audio.scoreTypewriterKey('Enter', true);
-  }, [beatSpeed, liveTotal, target]);
+  }, [beatSpeed, liveTotal, target, targetCueEnabled]);
 
   useEffect(() => {
     if (!targetPunch) return;

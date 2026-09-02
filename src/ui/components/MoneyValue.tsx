@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motionOff as reducedMotion } from '../motion';
+import { formatScore } from '../formatScore';
 
 /**
  * A gold readout ($N) that floats a delta pop whenever the amount changes (item 3),
@@ -26,10 +27,12 @@ export function MoneyValue({ value }: { value: number }) {
 
   return (
     <span className="money money-wrap">
-      ${value}
+      ${formatScore(value)}
       {pop && (
         <span key={pop.id} className={['money-pop', pop.delta < 0 ? 'down' : 'up'].join(' ')}>
-          {pop.delta < 0 ? `-$${Math.abs(pop.delta)}` : `+$${pop.delta}`}
+          {pop.delta < 0
+            ? `-$${formatScore(Math.abs(pop.delta))}`
+            : `+$${formatScore(pop.delta)}`}
         </span>
       )}
     </span>

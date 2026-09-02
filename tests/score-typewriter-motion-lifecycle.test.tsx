@@ -275,4 +275,28 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     vi.advanceTimersByTime(0);
     expect(audio.scoreTypewriterKey).toHaveBeenCalledWith('Enter', true);
   });
+
+  it('does not fire a target cue for a transient pre-boss crossing rejected by the engine', () => {
+    const common = {
+      active: false,
+      tier: 0,
+      beatId: 'will-transient',
+      primaryKeyId: 'Enter',
+      target: 100,
+      targetCueEnabled: false,
+      blindKey: 'will-1',
+      settleId: 1,
+      resolutionActive: false,
+      holdActive: false,
+      gameSpeed: 1,
+      screenshake: 0,
+      reducedMotion: false,
+    } satisfies Omit<Props, 'liveTotal'>;
+
+    renderUntilStable({ ...common, liveTotal: 90 });
+    renderUntilStable({ ...common, liveTotal: 110 });
+    vi.runAllTimers();
+
+    expect(audio.scoreTypewriterKey).not.toHaveBeenCalledWith('Enter', true);
+  });
 });

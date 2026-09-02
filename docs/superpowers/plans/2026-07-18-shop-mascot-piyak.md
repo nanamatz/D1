@@ -41,7 +41,7 @@ In `locales/ko.json`, directly after the `"shop.packs"` line, add:
   "mascot.welcome.3": "그 조커, 오늘 아침에 막 들어온 물건이라냥.",
   "mascot.welcome.4": "마감이 코앞이라냥? 그럴수록 장비가 중요하다냥.",
   "mascot.welcome.5": "단골한텐 좋은 것만 보여준다냥.",
-  "mascot.welcome.6": "리롤은 신중하게 하라냥. 원고료는 소중하다냥.",
+  "mascot.welcome.6": "리롤은 신중하게 하라냥. 돈은 소중하다냥.",
   "mascot.welcome.7": "구경은 공짜다냥. 만지면 사야 한다냥.",
 ```
 
