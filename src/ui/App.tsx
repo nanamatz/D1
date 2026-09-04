@@ -222,6 +222,7 @@ export function App() {
           <NewRun
             initialPouchId={g.state.run.pouchId}
             initialRecordId={g.state.run.recordId}
+            showChallenges={import.meta.env.DEV}
             onStart={(config) => {
               void startLexiconLoad()
                 .then(() => {
@@ -238,6 +239,11 @@ export function App() {
                     blindKind: g.state.blind.kind,
                     gold: g.state.run.gold,
                     seed: g.state.seed,
+                    pouchId: g.state.run.pouchId,
+                    recordId: g.state.run.recordId,
+                    committedScore: g.state.blind.committedScore,
+                    target: g.state.blind.target,
+                    bestWord: g.state.stats.bestWord,
                     challengeId: g.state.run.challengeId ?? null,
                   }
                 : undefined

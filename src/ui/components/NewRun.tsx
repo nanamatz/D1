@@ -1,20 +1,19 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
 import { POUCH_IDS, isPouchUnlocked } from '../../engine/pouches';
 import { RECORD_IDS, isRecordUnlocked } from '../../engine/records';
-import {
-  CHALLENGE_DEFS,
-  challengeDef,
-  isChallengeUnlocked,
-} from '../../engine/challenges';
 import type { BlindKind, ChallengeId, PouchId, RecordId } from '../../engine/types';
 import { useI18n } from '../i18n';
-import { loadChallengeProgress, loadLifetime, recordWinsForPouch } from '../lifetime';
+import { loadLifetime, recordWinsForPouch } from '../lifetime';
 import { pouchUnlockWordCount } from '../profile';
 import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
-import { UiIcon } from './UiIcon';
 import { formatScore } from '../formatScore';
 import { PouchCard, RecordCard } from './ObjectCards';
+
+const NewRunChallenges = import.meta.env.DEV
+  ? lazy(() => import('./NewRunChallenges')
+      .then(({ NewRunChallenges: component }) => ({ default: component })))
+  : null;
 
 /** Summary of the persisted run behind the Continue tab. */
 export interface ContinueInfo {
@@ -22,6 +21,11 @@ export interface ContinueInfo {
   blindKind: BlindKind;
   gold: number;
   seed: string;
+  pouchId: PouchId;
+  recordId: RecordId;
+  committedScore: number;
+  target: number;
+  bestWord: { text: string; score: number } | null;
   challengeId?: ChallengeId | null;
 }
 
@@ -40,6 +44,17 @@ interface Props {
   onBack: () => void;
   continueInfo?: ContinueInfo | undefined;
   onContinue?: (() => void) | undefined;
+  showChallenges: boolean;
+}
+
+type NewRunTab = 'new' | 'continue' | 'challenges';
+
+export function availableNewRunTabs(showChallenges: boolean, canContinue: boolean) {
+  return [
+    { id: 'new' as const, disabled: false },
+    { id: 'continue' as const, disabled: !canContinue },
+    ...(showChallenges ? [{ id: 'challenges' as const, disabled: false }] : []),
+  ];
 }
 
 interface CarouselProps<T extends string> {
@@ -128,200 +143,151 @@ export function NewRun({
   onBack,
   continueInfo,
   onContinue,
+  showChallenges,
 }: Props) {
   const { t } = useI18n();
   const [seeded, setSeeded] = useState(false);
   const [seed, setSeed] = useState('');
   const canContinue = !!continueInfo && !!onContinue;
-  const [tab, setTab] = useState<'new' | 'continue' | 'challenges'>(
+  const [tab, setTab] = useState<NewRunTab>(
     canContinue ? 'continue' : 'new',
   );
-  const active = tab === 'continue' && !canContinue ? 'new' : tab;
-  const tabs = [
-    { id: 'new' as const, disabled: false },
-    { id: 'continue' as const, disabled: !canContinue },
-    { id: 'challenges' as const, disabled: false },
-  ];
+  const challengesAvailable = showChallenges && NewRunChallenges !== null;
+  const active = tab === 'continue' && !canContinue
+    ? 'new'
+    : tab === 'challenges' && !challengesAvailable
+      ? 'new'
+      : tab;
+  const tabs = availableNewRunTabs(challengesAvailable, canContinue);
 
   return (
     <div className="screen newrun">
-      <div className="tabs" role="tablist" aria-label={t('newrun.tabs')}>
-        {tabs.map(({ id, disabled }) => (
-          <button
-            key={id}
-            id={`newrun-tab-${id}`}
-            role="tab"
-            aria-selected={active === id}
-            aria-controls={`newrun-panel-${id}`}
-            className={['tab', active === id ? 'on' : ''].filter(Boolean).join(' ')}
-            disabled={disabled}
-            onClick={() => setTab(id)}
-          >
-            {t(`newrun.tab.${id}`)}
-          </button>
-        ))}
-      </div>
+      <div className="panel newrun-modal">
+        <div className="tabs" role="tablist" aria-label={t('newrun.tabs')}>
+          {tabs.map(({ id, disabled }) => (
+            <button
+              key={id}
+              id={`newrun-tab-${id}`}
+              role="tab"
+              aria-selected={active === id}
+              aria-controls={`newrun-panel-${id}`}
+              className={['tab', active === id ? 'on' : ''].filter(Boolean).join(' ')}
+              disabled={disabled}
+              onClick={() => setTab(id)}
+            >
+              {t(`newrun.tab.${id}`)}
+            </button>
+          ))}
+        </div>
 
-      {active === 'continue' && continueInfo ? (
-        <div id="newrun-panel-continue" role="tabpanel" aria-labelledby="newrun-tab-continue">
-          <div className="panel newrun-body">
-            <div className="continue-card">
-              <div className="continue-art"><UiIcon name="manuscript" /></div>
-              <h3 className="continue-title">{t('newrun.continueTitle')}</h3>
-              <p className="select-desc">{t('newrun.continueHint')}</p>
-              <div className="continue-stats">
-                <span className="cs-chapter">
-                  {t('newrun.continueChapter', {
-                    n: continueInfo.ante,
-                    blind: t(`blind.${continueInfo.blindKind}`),
-                  })}
-                </span>
-                <span className="cs-gold">{t('newrun.continueGold', {
-                  n: formatScore(continueInfo.gold),
-                })}</span>
-                <span className="cs-seed">
-                  {t('gameover.seed')}: {continueInfo.seed}
-                </span>
-                {continueInfo.challengeId && (
-                  <span className="cs-challenge">
-                    {t('challenge.current', {
-                      name: t(`challenge.${continueInfo.challengeId}.name`),
-                    })}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          <button className="btn exchange big play-run" onClick={onContinue}>
-            {t('newrun.continueBtn')}
-          </button>
-          <button className="btn back-bar" onClick={onBack}>
-            {t('common.back')}
-          </button>
+        <div
+          id={`newrun-panel-${active}`}
+          className="newrun-panel"
+          role="tabpanel"
+          aria-labelledby={`newrun-tab-${active}`}
+        >
+          {active === 'continue' && continueInfo ? (
+            <ContinueBody info={continueInfo} onContinue={onContinue!} />
+          ) : active === 'challenges' && NewRunChallenges ? (
+            <Suspense fallback={(
+              <>
+                <div className="newrun-content" />
+                <div className="newrun-action-row" />
+                <div className="newrun-note-row" />
+              </>
+            )}>
+              <NewRunChallenges onStart={onStart} />
+            </Suspense>
+          ) : (
+            <NewRunBody
+              initialPouchId={initialPouchId}
+              initialRecordId={initialRecordId}
+              seeded={seeded}
+              setSeeded={setSeeded}
+              seed={seed}
+              setSeed={setSeed}
+              onStart={onStart}
+            />
+          )}
         </div>
-      ) : active === 'challenges' ? (
-        <div id="newrun-panel-challenges" role="tabpanel" aria-labelledby="newrun-tab-challenges">
-          <ChallengeBody onStart={onStart} onBack={onBack} />
-        </div>
-      ) : (
-        <div id="newrun-panel-new" role="tabpanel" aria-labelledby="newrun-tab-new">
-          <NewRunBody
-            initialPouchId={initialPouchId}
-            initialRecordId={initialRecordId}
-            seeded={seeded}
-            setSeeded={setSeeded}
-            seed={seed}
-            setSeed={setSeed}
-            onStart={onStart}
-            onBack={onBack}
-          />
-        </div>
-      )}
+
+        <button className="btn back-bar" onClick={onBack}>
+          {t('common.back')}
+        </button>
+      </div>
     </div>
   );
 }
 
-function ChallengeBody({
-  onStart,
-  onBack,
-}: Pick<Props, 'onStart' | 'onBack'>) {
+function ContinueBody({ info, onContinue }: { info: ContinueInfo; onContinue: () => void }) {
   const { t } = useI18n();
-  const [lifetime] = useState(() => loadChallengeProgress());
-  const [challengeId, setChallengeId] = useState<ChallengeId>('redPen');
-  const completed = useMemo(
-    () => new Set(lifetime.completedChallenges),
-    [lifetime.completedChallenges],
-  );
-  const challenge = challengeDef(challengeId);
-  const mastered = completed.size === CHALLENGE_DEFS.length;
-
-  const loadout = (kind: 'pouch' | 'record', id: PouchId | RecordId) => {
+  const object = (kind: 'pouch' | 'record', id: PouchId | RecordId) => {
     const name = t(`${kind}.${id}.name`);
     const cumulative = kind === 'record' && id !== 'whiteLp' ? t('newrun.cumulative') : '';
     const props = {
-      className: ['run-choice-art', `run-choice-art-${kind}`].join(' '),
+      className: `run-choice-art run-choice-art-${kind} continue-object-art continue-object-art-${kind}`,
       role: 'img',
       tabIndex: 0,
       'aria-label': name,
     } as const;
     return (
-      <Tooltip
-        title={name}
-        body={[t(`${kind}.${id}.desc`), cumulative].filter(Boolean).join('\n')}
-        down
-      >
+      <Tooltip title={name} body={[t(`${kind}.${id}.desc`), cumulative].filter(Boolean).join('\n')} down>
         {kind === 'pouch'
           ? <PouchCard id={id as PouchId} {...props} />
           : <RecordCard id={id as RecordId} {...props} />}
       </Tooltip>
     );
   };
+  const bestWord = info.bestWord
+    ? `${info.bestWord.text.toUpperCase()} · ${formatScore(info.bestWord.score)}`
+    : '—';
 
   return (
     <>
-      <div className="panel newrun-body challenge-body">
-        <div className="challenge-progress">
-          {lifetime.challengesDisabled
-            ? t('challenge.disabled')
-            : mastered
-              ? t('challenge.mastered')
-              : t('challenge.progress', { n: completed.size, total: CHALLENGE_DEFS.length })}
-        </div>
-        <div className="challenge-list">
-          {CHALLENGE_DEFS.map((def, index) => {
-            const done = completed.has(def.id);
-            const unlocked = isChallengeUnlocked(def.id, completed);
-            return (
-              <button
-                key={def.id}
-                type="button"
-                className={['challenge-row', challengeId === def.id && 'selected', done && 'complete']
-                  .filter(Boolean).join(' ')}
-                disabled={!unlocked}
-                aria-pressed={challengeId === def.id}
-                onClick={() => setChallengeId(def.id)}
-              >
-                <span>{index + 1}. {t(`challenge.${def.id}.name`)}</span>
-                <span className="challenge-status">
-                  {done ? t('challenge.complete') : unlocked ? t('challenge.available') : t('challenge.locked')}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="challenge-detail">
-          <div className="challenge-copy">
-            <h2>{t(`challenge.${challenge.id}.name`)}</h2>
-            <p>{t(`challenge.${challenge.id}.desc`)}</p>
+      <div className="newrun-content continue-content">
+        <section className="continue-object-row continue-pouch-row">
+          {object('pouch', info.pouchId)}
+          <div className="continue-object-copy">
+            <h2>{t(`pouch.${info.pouchId}.name`)}</h2>
+            <p>{richText(t(`pouch.${info.pouchId}.desc`))}</p>
           </div>
-          <div className="challenge-loadout">
-            {loadout('pouch', challenge.pouchId)}
-            <span aria-hidden>+</span>
-            {loadout('record', challenge.recordId)}
+          <dl className="continue-summary">
+            <div><dt>{t('newrun.summaryChapter')}</dt><dd>{t('newrun.continueChapter', {
+              n: info.ante,
+              blind: t(`blind.${info.blindKind}`),
+            })}</dd></div>
+            <div><dt>{t('newrun.summaryScore')}</dt><dd>{t('newrun.continueScore', {
+              score: formatScore(info.committedScore),
+              target: formatScore(info.target),
+            })}</dd></div>
+            <div><dt>{t('newrun.summaryMoney')}</dt><dd>{t('newrun.continueMoneyValue', {
+              n: formatScore(info.gold),
+            })}</dd></div>
+            <div><dt>{t('newrun.summaryBest')}</dt><dd>{bestWord}</dd></div>
+            <div><dt>{t('gameover.seed')}</dt><dd className="cs-seed" title={info.seed}>{info.seed}</dd></div>
+          </dl>
+        </section>
+        <section className="continue-object-row continue-record-row">
+          {object('record', info.recordId)}
+          <div className="continue-object-copy">
+            <h2>{t(`record.${info.recordId}.name`)}</h2>
+            <div className="continue-record-effect">
+              <p>{richText(t(`record.${info.recordId}.desc`))}</p>
+              {info.recordId !== 'whiteLp' && <p className="cumulative-note">{t('newrun.cumulative')}</p>}
+            </div>
           </div>
-          <div className="challenge-effects">
-            <p><b>{t(`pouch.${challenge.pouchId}.name`)}</b> — {richText(t(`pouch.${challenge.pouchId}.desc`))}</p>
-            <p><b>{t(`record.${challenge.recordId}.name`)}</b> — {richText(t(`record.${challenge.recordId}.desc`))}</p>
-            <p className="cumulative-note">{t('newrun.cumulative')}</p>
-          </div>
-        </div>
+        </section>
       </div>
-      <button
-        className="btn exchange big play-run"
-        disabled={lifetime.challengesDisabled}
-        onClick={() => onStart({
-          pouchId: challenge.pouchId,
-          recordId: challenge.recordId,
-          customSeed: false,
-          challengeId: challenge.id,
+      <div className="newrun-action-row">
+        <button className="btn exchange big play-run" onClick={onContinue}>
+          {t('newrun.continueBtn')}
+        </button>
+      </div>
+      <div className="newrun-note-row" aria-live="polite">
+        {info.challengeId && t('challenge.current', {
+          name: t(`challenge.${info.challengeId}.name`),
         })}
-      >
-        {t('challenge.start')}
-      </button>
-      {lifetime.challengesDisabled && (
-        <p className="seed-unlock-note challenge-disabled-note">{t('challenge.disabledReason')}</p>
-      )}
-      <button className="btn back-bar" onClick={onBack}>{t('common.back')}</button>
+      </div>
     </>
   );
 }
@@ -334,7 +300,6 @@ function NewRunBody({
   seed,
   setSeed,
   onStart,
-  onBack,
 }: {
   initialPouchId: PouchId;
   initialRecordId: RecordId;
@@ -343,7 +308,6 @@ function NewRunBody({
   seed: string;
   setSeed: (value: string) => void;
   onStart: (config: StartRunConfig) => void;
-  onBack: () => void;
 }) {
   const { t } = useI18n();
   const [pouchId, setPouchId] = useState<PouchId>(initialPouchId);
@@ -419,7 +383,7 @@ function NewRunBody({
 
   return (
     <>
-      <div className="panel newrun-body">
+      <div className="newrun-content newrun-body">
         <Carousel
           label={t('newrun.bag')}
           kind="pouch"
@@ -443,29 +407,25 @@ function NewRunBody({
           {choice('record', recordId, recordUnlocked)}
         </Carousel>
 
-      </div>
-
-      <div className="run-start-row">
         <div className="seed-controls">
           <label className="seed-toggle">
             <input type="checkbox" checked={seeded} onChange={(event) => setSeeded(event.target.checked)} />
             <span>{t('newrun.seeded')}</span>
           </label>
           {seeded && (
-            <>
-              <input
-                className="seed-input"
-                type="text"
-                value={seed}
-                placeholder={t('newrun.seedPlaceholder')}
-                onChange={(event) => setSeed(event.target.value)}
-                spellCheck={false}
-              />
-              <p className="seed-unlock-note">{t('newrun.seedNoUnlocks')}</p>
-            </>
+            <input
+              className="seed-input"
+              type="text"
+              value={seed}
+              placeholder={t('newrun.seedPlaceholder')}
+              onChange={(event) => setSeed(event.target.value)}
+              spellCheck={false}
+            />
           )}
         </div>
+      </div>
 
+      <div className="newrun-action-row">
         <button
           className="btn exchange big play-run"
           disabled={!canStart}
@@ -479,10 +439,9 @@ function NewRunBody({
           {t('newrun.play')}
         </button>
       </div>
-
-      <button className="btn back-bar" onClick={onBack}>
-        {t('common.back')}
-      </button>
+      <div className="newrun-note-row" aria-live="polite">
+        {seeded && t('newrun.seedNoUnlocks')}
+      </div>
     </>
   );
 }

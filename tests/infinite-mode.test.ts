@@ -67,12 +67,27 @@ describe('endless chapter curve and finisher schedule', () => {
     expect(() => blindTarget(39, 'small')).toThrow(RangeError);
   });
 
-  it('formats huge targets without Infinity or an overflowing digit wall', () => {
-    expect(formatScore(123_456)).toBe('123,456');
-    expect(formatScore(9_999_999)).toBe('9,999,999');
-    expect(formatScore(10_000_000)).toBe('1e7');
-    expect(formatScore(1_234_567_890)).toBe('1.2e9');
+  it('formats unbounded score and money values with compact suffixes', () => {
+    expect(formatScore(-0.4)).toBe('0');
+    expect(formatScore(999.4)).toBe('999');
+    expect(formatScore(999.5)).toBe('1K');
+    expect(formatScore(1_299.4)).toBe('1.2K');
+    expect(formatScore(-1_299.4)).toBe('-1.2K');
+    expect(formatScore(999_999)).toBe('999.9K');
+    expect(formatScore(1_000_000)).toBe('1M');
+    expect(formatScore(100_000_000)).toBe('100M');
+    expect(formatScore(1_000_000_000)).toBe('1B');
+    expect(formatScore(1e12)).toBe('1T');
+    expect(formatScore(999_999_999_999_999)).toBe('999.9T');
+    expect(formatScore(1e15)).toBe('1Qa');
+    expect(formatScore(999_999_999_999_999_000)).toBe('999.9Qa');
+    expect(formatScore(1e18)).toBe('1Qi');
+    expect(formatScore(1e21 - 1e6)).toBe('999.9Qi');
+    expect(formatScore(1e21)).toBe('1e21');
+    expect(formatScore(-1.29e21)).toBe('-1.2e21');
+    expect(formatScore(Number.NaN)).toBe('—');
     expect(formatScore(Number.POSITIVE_INFINITY)).toBe('—');
+    expect(formatScore(Number.NEGATIVE_INFINITY)).toBe('—');
   });
 });
 

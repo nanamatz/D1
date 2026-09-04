@@ -26,7 +26,6 @@ import {
   type TooltipDetail,
   type TooltipTag,
 } from './Tooltip';
-import { MoneyValue } from './MoneyValue';
 import { ShopMascot } from './ShopMascot';
 import { VoucherCard } from './VoucherCard';
 import { packArt } from '../packArt';
@@ -268,10 +267,6 @@ export function Shop({ g }: { g: UseGame }) {
         >
           {t('shop.reroll', { cost: formatScore(cost) })}
         </button>
-        <div className="shop-gold">
-          <span className="label">{t('shop.title')}</span>
-          <MoneyValue value={run.gold} presentLedger />
-        </div>
         <ShopMascot />
       </aside>
 

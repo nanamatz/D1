@@ -109,8 +109,9 @@ export function consumeTooltipEscape(
   event: Pick<KeyboardEvent, 'key' | 'preventDefault' | 'stopPropagation'>,
   active: boolean,
   close: () => void,
+  defer = false,
 ): boolean {
-  if (event.key !== 'Escape' || !active) return false;
+  if (event.key !== 'Escape' || !active || defer) return false;
   event.preventDefault();
   event.stopPropagation();
   close();
@@ -385,7 +386,12 @@ export function Tooltip({
   useEffect(() => {
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      consumeTooltipEscape(event, activeTooltip?.id === tooltipId, close);
+      consumeTooltipEscape(
+        event,
+        activeTooltip?.id === tooltipId,
+        close,
+        !!anchor()?.querySelector('[aria-expanded="true"]'),
+      );
     };
     window.addEventListener('keydown', closeOnEscape, true);
     return () => window.removeEventListener('keydown', closeOnEscape, true);

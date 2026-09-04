@@ -83,25 +83,24 @@ describe('Shop Use Now money-gaining Fable ledger', () => {
     expect(markup).toContain('role="status"');
     expect(markup).toContain('aria-live="polite"');
     expect(markup).toContain('is-reduced');
-    expect(markup.indexOf('-$3')).toBeLessThan(markup.indexOf('+$1e7'));
+    expect(markup.indexOf('-$3')).toBeLessThan(markup.indexOf('+$10M'));
     expect(markup.match(/money-ledger-beat/g)).toHaveLength(2);
-    expect(moneyDeltaText(-1234)).toBe('-$1,234');
+    expect(moneyDeltaText(-1234)).toBe('-$1.2K');
   });
 
-  it('gives two co-mounted readouts one live ledger while both suppress the matching net pop', () => {
-    const sidebar = resolveMoneyLedgerEvent(10, 14, [-3, 7], false);
-    const shop = resolveMoneyLedgerEvent(10, 14, [-3, 7], true);
-    const markup = renderToStaticMarkup(createElement(
-      'div',
-      null,
-      createElement(MoneyLedger, { deltas: sidebar.ledgerDeltas }),
-      createElement(MoneyLedger, { deltas: shop.ledgerDeltas }),
-    ));
+  it('gives the persistent Sidebar ledger ownership only in Shop mode', () => {
+    const outsideShop = resolveMoneyLedgerEvent(10, 14, [-3, 7], false);
+    const inShop = resolveMoneyLedgerEvent(10, 14, [-3, 7], true);
+    const ordinary = resolveMoneyLedgerEvent(10, 11, [], true);
+    const markup = renderToStaticMarkup(createElement(MoneyLedger, {
+      deltas: inShop.ledgerDeltas,
+    }));
 
-    expect(sidebar.suppressValue).toBe(14);
-    expect(shop.suppressValue).toBe(14);
-    expect(sidebar.ledgerDeltas).toEqual([]);
-    expect(shop.ledgerDeltas).toEqual([-3, 7]);
+    expect(outsideShop.suppressValue).toBe(14);
+    expect(inShop.suppressValue).toBe(14);
+    expect(outsideShop.ledgerDeltas).toEqual([]);
+    expect(inShop.ledgerDeltas).toEqual([-3, 7]);
+    expect(ordinary).toEqual({ suppressValue: null, ledgerDeltas: [] });
     expect(markup.match(/role="status"/g)).toHaveLength(1);
     expect(markup.match(/aria-live="polite"/g)).toHaveLength(1);
   });
@@ -111,6 +110,7 @@ describe('Shop Use Now money-gaining Fable ledger', () => {
     const money = source('src/ui/components/MoneyValue.tsx');
     const shop = source('src/ui/components/Shop.tsx');
     const sidebar = source('src/ui/components/Sidebar.tsx');
+    const screens = source('src/ui/styles/screens.css');
     const buyAndUse = game.slice(game.indexOf('const buyAndUse'), game.indexOf('const playWord'));
 
     expect(buyAndUse).toContain('if (prev.run.gold < item.price) return prev;');
@@ -118,9 +118,16 @@ describe('Shop Use Now money-gaining Fable ledger', () => {
     expect(buyAndUse).toContain('const next = applyConsumable(paid, id, item.price);');
     expect(game).toContain('shopUseNowMoneyDeltas(id, shopPrice, prev.run, result.run)');
     expect(money).toContain('setLedgerQueue((queue) => [...queue, {');
+    expect(money.indexOf('setTotalMotion({ direction')).toBeLessThan(
+      money.indexOf('if (suppressValue.current === value)'),
+    );
     expect(money).toContain('if (suppressValue.current === value)');
     expect(money).toContain('queue.slice(1)');
-    expect(shop).toContain('<MoneyValue value={run.gold} presentLedger />');
-    expect(sidebar).toContain('<MoneyValue value={run.gold} />');
+    expect(shop).not.toContain('MoneyValue');
+    expect(shop).not.toContain('shop-gold');
+    expect(sidebar).toContain('<MoneyValue value={run.gold} presentLedger={mode === \'shop\'} />');
+    expect(money).toContain('if (!presentLedger) setLedgerQueue([]);');
+    expect(money).toContain('presentLedger && activeLedger');
+    expect(screens).not.toContain('.shop-gold');
   });
 });

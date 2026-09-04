@@ -127,7 +127,7 @@ export function JokerShelf({
   const emojiSlotLimit = jokerSlotLimit(run);
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
   const [hoveredConsumableIdx, setHoveredConsumableIdx] = useState<number | null>(null);
-  const [jokerMenuIdx, setJokerMenuIdx] = useState<number | null>(null);
+  const [jokerMenuKey, setJokerMenuKey] = useState<number | RunState['jokers'][number] | null>(null);
   const disabledIndex = run.jokers.findIndex((owned) => owned.state.bossDisabled === 1);
   const [visibleDisabledIndex, setVisibleDisabledIndex] = useState(disabledIndex);
   const [disabledEnteringIndex, setDisabledEnteringIndex] = useState<number | null>(null);
@@ -365,6 +365,8 @@ export function JokerShelf({
           {run.jokers.map((owned, i) => {
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
+            const jokerKey = owned.instanceId ?? owned;
+            const jokerMenuOpen = jokerMenuKey === jokerKey;
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
             const growthPop = growthPops.find((pop) =>
@@ -428,7 +430,7 @@ export function JokerShelf({
                 data-joker-index={i}
                 className={[
                   'joker-slot',
-                  jokerMenuIdx === i && 'menu-open',
+                  jokerMenuOpen && 'menu-open',
                   jokerLeaving && 'leave-sell',
                   arriving?.zone === 'joker' && i >= arriving.from && 'slot-arriving',
                 ].filter(Boolean).join(' ')}
@@ -456,6 +458,11 @@ export function JokerShelf({
                     imageClassName={jokersFaceDown ? 'joker-art joker-back-mascot' : 'joker-art'}
                     key={visiblePop?.id ?? 'idle'}
                     className={className}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Escape' || !jokerMenuOpen) return;
+                      e.stopPropagation();
+                      setJokerMenuKey(null);
+                    }}
                   >
                     {onSellJoker && (
                       <button
@@ -463,18 +470,18 @@ export function JokerShelf({
                         className="owned-object-select"
                         aria-label={jokersFaceDown ? t('boss.faceDownJoker') : name}
                         aria-haspopup="menu"
-                        aria-expanded={jokerMenuIdx === i}
-                        onClick={() => setJokerMenuIdx(jokerMenuIdx === i ? null : i)}
+                        aria-expanded={jokerMenuOpen}
+                        onClick={() => setJokerMenuKey(jokerMenuOpen ? null : jokerKey)}
                       />
                     )}
-                    {onSellJoker && jokerMenuIdx === i && (
+                    {onSellJoker && jokerMenuOpen && (
                       <div className="consumable-menu bare" role="menu">
                         <button
                           className="sell"
                           role="menuitem"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setJokerMenuIdx(null);
+                            setJokerMenuKey(null);
                             beginLeave('joker', i, 'sell', () => onSellJoker(i));
                           }}
                         >

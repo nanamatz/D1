@@ -73,9 +73,17 @@ interface SignaturePoint {
 
 const reduced = motionOff;
 
-export function DeskObjects({ active }: { active: boolean }) {
+export function DeskObjects({
+  active,
+  sampleKind,
+}: {
+  active: boolean;
+  sampleKind?: 'cup';
+}) {
   const { t } = useI18n();
-  const [cup, setCup] = useState<DeskObj | null>(null);
+  const [cup, setCup] = useState<DeskObj | null>(() => sampleKind === 'cup'
+    ? { kind: 'cup', sfx: 'deskCup', side: 'right', spawn: 0, trigger: undefined }
+    : null);
   const [bell, setBell] = useState<DeskObj | null>(null);
   const [encounter, setEncounter] = useState<DeskObj | null>(null);
   const [coffeeReady, setCoffeeReady] = useState(true);
@@ -129,7 +137,7 @@ export function DeskObjects({ active }: { active: boolean }) {
   );
 
   useEffect(() => {
-    if (!active || encounter) return;
+    if (!active || sampleKind || encounter) return;
     let live = true;
     const gap = ENCOUNTER_GAP_MIN_MS + Math.random() * ENCOUNTER_GAP_SPREAD_MS;
     const timer = setTimeout(() => {
@@ -172,7 +180,7 @@ export function DeskObjects({ active }: { active: boolean }) {
       live = false;
       clearTimeout(timer);
     };
-  }, [active, encounter, encounterCycle, cup, bell, coffeeReady]);
+  }, [active, sampleKind, encounter, encounterCycle, cup, bell, coffeeReady]);
 
   const finishEncounter = () => {
     if (encounter?.kind === 'pot') setCoffeeReady(true);
@@ -414,11 +422,13 @@ export function DeskObjects({ active }: { active: boolean }) {
     <>
       {cup && (
         <button
+          type="button"
           key={cup.spawn}
           className={cupClass}
           onClick={drinkCoffee}
-          aria-hidden
-          tabIndex={-1}
+          aria-hidden={sampleKind ? undefined : true}
+          aria-label={sampleKind ? t('desk.lab.coffee.action') : undefined}
+          tabIndex={sampleKind ? 0 : -1}
         >
           <span className="desk-glyph desk-cup-sprite">
             <span className="desk-coffee-steam" aria-hidden>
@@ -618,5 +628,7 @@ export function DeskObjects({ active }: { active: boolean }) {
       )}
     </>
   );
-  return createPortal(objects, document.body);
+  return sampleKind
+    ? <div className="desk-sample-root">{objects}</div>
+    : createPortal(objects, document.body);
 }

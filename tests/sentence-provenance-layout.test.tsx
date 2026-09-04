@@ -218,7 +218,7 @@ describe('grouped supplemental provenance', () => {
     expect(html).toContain('Effects');
     expect(html).toContain('+50 Chips');
     expect(html).toContain('×1.50 Mult');
-    expect(html).toContain('+7,890 Score');
+    expect(html).toContain('+7.8K Score');
   });
 
   it('keeps effect-only Broken Sentence values visible in Korean', () => {
@@ -266,18 +266,18 @@ describe('grouped supplemental provenance', () => {
 });
 
 describe('dynamic score/control allocation', () => {
-  it('uses no extra height for zero/one row and exact 468px pairs for two/three rows', () => {
+  it('uses no extra height for zero/one row and exact 484px pairs for two/three rows', () => {
     const sidebar = readFileSync('src/ui/components/Sidebar.tsx', 'utf8');
     const css = readFileSync('src/ui/styles/play.css', 'utf8');
     expect(sidebar).toContain('provenanceRows >= 2 && `provenance-rows-${provenanceRows}`');
-    expect(css).toMatch(/\.score-panel\s*\{[^}]*height:\s*136px[^}]*flex:\s*0 0 136px/s);
-    expect(css).toContain('.score-panel.provenance-rows-2 { height: 159px; flex-basis: 159px; }');
-    expect(css).toContain('.score-panel.provenance-rows-3 { height: 182px; flex-basis: 182px; }');
-    expect(css).toContain('.score-panel.provenance-rows-2 + .sb-controls { --nav-h: 309px; }');
-    expect(css).toContain('.score-panel.provenance-rows-3 + .sb-controls { --nav-h: 286px; }');
-    expect(136 + 332).toBe(468);
-    expect(159 + 309).toBe(468);
-    expect(182 + 286).toBe(468);
+    expect(css).toMatch(/\.score-panel\s*\{[^}]*height:\s*188px[^}]*flex:\s*0 0 188px/s);
+    expect(css).toContain('.score-panel.provenance-rows-2 { height: 211px; flex-basis: 211px; }');
+    expect(css).toContain('.score-panel.provenance-rows-3 { height: 234px; flex-basis: 234px; }');
+    expect(css).toContain('.score-panel.provenance-rows-2 + .sb-controls { --nav-h: 273px; }');
+    expect(css).toContain('.score-panel.provenance-rows-3 + .sb-controls { --nav-h: 250px; }');
+    expect(188 + 296).toBe(484);
+    expect(211 + 273).toBe(484);
+    expect(234 + 250).toBe(484);
   });
 
   it('removes fixed two-column clipping and keeps three full-width rows', () => {

@@ -98,7 +98,7 @@ describe('D1 UI contract wiring', () => {
     expect(bossDescription('stereotypePlate', translate('ko'), run)).toContain('6');
   });
 
-  it('formats Chips, Mult, money, prices, and sell values through the 10m formatter', () => {
+  it('formats Chips, Mult, money, prices, and sell values through the shared formatter', () => {
     const sidebar = source('src/ui/components/Sidebar.tsx');
     const css = source('src/ui/styles/play.css');
     expect(sidebar).toContain('const chipsText = formatScore(chips)');
@@ -123,12 +123,12 @@ describe('D1 UI contract wiring', () => {
       return [text, text.length <= 7 ? 'normal' : text.length <= 9 ? 'compact' : 'dense'];
     };
 
-    expect(classify(999_999)).toEqual(['999,999', 'normal']);
-    expect(classify(1_000_000)).toEqual(['1,000,000', 'compact']);
-    expect(classify(9_999_999)).toEqual(['9,999,999', 'compact']);
-    expect(classify(10_000_000)).toEqual(['1e7', 'normal']);
-    expect(classify(-1_000_000)).toEqual(['-1,000,000', 'dense']);
-    expect(classify(1_000_000.4)).toEqual(['1,000,000', 'compact']);
+    expect(classify(999_999)).toEqual(['999.9K', 'normal']);
+    expect(classify(1_000_000)).toEqual(['1M', 'normal']);
+    expect(classify(9_999_999)).toEqual(['9.9M', 'normal']);
+    expect(classify(10_000_000)).toEqual(['10M', 'normal']);
+    expect(classify(-1_000_000)).toEqual(['-1M', 'normal']);
+    expect(classify(1_000_000.4)).toEqual(['1M', 'normal']);
     expect(classify(Number.POSITIVE_INFINITY)).toEqual(['—', 'normal']);
   });
 
@@ -144,11 +144,26 @@ describe('D1 UI contract wiring', () => {
     expect(css).toContain('.ri-challenge::before,');
   });
 
-  it('retains signed money motion and assigns distinct action colours', () => {
+  it('moves the money total itself while retaining signed pops and action colours', () => {
     const money = source('src/ui/components/MoneyValue.tsx');
     const shop = source('src/ui/components/Shop.tsx');
     const css = source('src/ui/styles/play.css');
+    expect(money).toContain('if (prev.current === value) return;');
+    expect(money).toContain("key={totalMotion?.id ?? 'idle'}");
+    expect(money).toContain('const MONEY_TOTAL_MOTION_MS = 480');
+    expect(money).toContain("['money-total', totalMotion?.direction]");
+    expect(money).toContain("setTotalMotion({ direction: delta < 0 ? 'down' : 'up', id })");
+    expect(money.indexOf('setTotalMotion({ direction')).toBeLessThan(
+      money.indexOf('if (suppressValue.current === value)'),
+    );
     expect(money).toContain("pop.delta < 0 ? 'down' : 'up'");
+    expect(css).toMatch(/\.money-total\s*\{[^}]*display:\s*inline-block;[^}]*transform-origin:\s*center;/s);
+    expect(css).toContain('animation: money-total-up 480ms');
+    expect(css).toContain('animation: money-total-down 480ms');
+    expect(css).toMatch(/@keyframes money-total-up[\s\S]*?translateY\(-4px\) scale\(\.97, 1\.05\)/);
+    expect(css).toMatch(/@keyframes money-total-down[\s\S]*?translateY\(4px\) scale\(\.97, 1\.05\)/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.money-total\.up,[\s\S]*?animation:\s*none;/);
+    expect(css).toMatch(/\.force-reduced-motion \.money-total\.up,[\s\S]*?animation:\s*none;/);
     expect(css).toContain('.money-pop.up');
     expect(css).toContain('.money-pop.down');
     expect(shop).toContain('actionClassName="blue"');

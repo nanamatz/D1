@@ -92,6 +92,26 @@ function StatusLine({
   );
 }
 
+export function ScoreTransferReadout({
+  committedBefore,
+  committedScore,
+  round,
+}: {
+  committedBefore: number;
+  committedScore: number;
+  round: number;
+}) {
+  const finite = Number.isFinite(committedBefore) && Number.isFinite(committedScore) && Number.isFinite(round);
+  const gain = finite ? Math.max(0, committedScore - committedBefore) : 0;
+  const remaining = Math.min(gain, Math.max(0, committedScore - round));
+  const text = remaining > 0 ? formatScore(remaining) : '';
+  return (
+    <div className="sb-status score-transfer" aria-hidden>
+      {text && text !== '0' && text !== '—' ? text : '\u00a0'}
+    </div>
+  );
+}
+
 export function sentenceBonusSupplementRowCount(sentenceBonus: SentenceBonusDisplay): number {
   const hasEffects = Math.abs(sentenceBonus.effectChips) > 0.001 ||
     Math.abs(sentenceBonus.effectMult - 1) > 0.001 ||
@@ -254,6 +274,13 @@ export function Sidebar({
   // previous blind. Snap the reset so entering the shop cannot replay the final
   // score as a count-down/count-up animation.
   const round = useCountUp(roundTarget, BONUS_LAND_MS, mode !== 'blind');
+  const settleReduced = reducedMotion || settle.settleReduced;
+  const displayedRound = settleReduced ? roundTarget : round;
+  const transferActive = mode === 'blind' &&
+    (finalScore === null || finalScore === blind.committedScore) && (
+    (settleReduced && !settleComplete) ||
+    (!settleReduced && settleComplete && round < blind.committedScore)
+  );
   // The sentence result as a forecast — "if the sentence ends like this: +N".
   // At blind end, the scorebox shows the committed score plus sentence Chips on
   // the Chips axis and the sentence Mult factor on the Mult axis.
@@ -453,7 +480,7 @@ export function Sidebar({
                 <span className="tomato-icon" key={settle.scorePop?.id ?? 'idle'} aria-hidden />
               </span>
             </span>
-            <span className="round-score-value">{formatScore(round)}</span>
+            <span className="round-score-value">{formatScore(displayedRound)}</span>
           </span>
         </div>
         {bonusActive ? (
@@ -474,9 +501,15 @@ export function Sidebar({
         'score-panel',
         provenanceRows >= 2 && `provenance-rows-${provenanceRows}`,
       ].filter(Boolean).join(' ')}>
-        {!bonusActive && (
+        {transferActive ? (
+          <ScoreTransferReadout
+            committedBefore={committedBefore}
+            committedScore={blind.committedScore}
+            round={settleReduced ? committedBefore : round}
+          />
+        ) : (
           <StatusLine
-            preview={mode === 'blind' ? preview : null}
+            preview={mode === 'blind' && !bonusActive ? preview : null}
             discoveredLetterHands={discoveredLetterHands}
           />
         )}
@@ -542,7 +575,7 @@ export function Sidebar({
           <span className="cnum red">{showBlindResources ? blind.discardsLeft : 0}</span>
         </div>
         <div className="sb-cell money-cell">
-          <MoneyValue value={run.gold} />
+          <MoneyValue value={run.gold} presentLedger={mode === 'shop'} />
         </div>
         <div className="sb-cell">
           <span className="label">{t('sidebar.chapter')}</span>

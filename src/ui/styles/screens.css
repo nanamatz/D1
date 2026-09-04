@@ -1471,18 +1471,6 @@
 .shop-rail .reroll-btn {
   width: 100%;
 }
-.shop-gold {
-  background: var(--panel);
-  border-radius: 12px;
-  border-top: 1px solid var(--panel-edge);
-  box-shadow: var(--shadow);
-  padding: 12px;
-  text-align: center;
-}
-.shop-gold .money {
-  display: block;
-  margin-top: 2px;
-}
 .shop-main {
   display: flex;
   flex-direction: column;
@@ -2127,24 +2115,31 @@ body.force-reduced-motion:has(.menu)::after {
   text-align: center;
   word-break: keep-all;
 }
-.desk-lab-money-stage {
-  min-height: 126px;
+.desk-lab-score-stage {
+  min-height: 160px;
   padding: 18px;
   display: grid;
-  grid-template-columns: 1fr minmax(112px, 160px) 1fr;
-  align-items: center;
-  gap: 16px;
+  place-items: center;
   border: 2px solid var(--inset-edge);
   background: var(--inset);
 }
-.desk-lab-money-total {
-  color: var(--gold);
-  font-family: var(--readout-font);
-  font-size: var(--ds-md);
+.desk-lab-score-demo {
+  min-width: 220px;
+  display: grid;
+  gap: 10px;
   text-align: center;
 }
-.desk-lab-money-card .money-ledger {
-  justify-self: center;
+.desk-lab-round {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ink-dim);
+}
+.desk-lab-round strong {
+  color: var(--ink);
+  font-family: var(--readout-font);
+  font-size: var(--ds-lg);
 }
 .desk-lab-replay {
   width: min(240px, 100%);
@@ -2159,15 +2154,9 @@ body.force-reduced-motion:has(.menu)::after {
 @media (max-width: 900px) {
   .desk-lab-grid { grid-template-columns: 1fr; }
 }
-@media (max-width: 520px) {
-  .desk-lab-money-stage {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-}
 @media (forced-colors: active) {
   .desk-lab-card,
-  .desk-lab-money-stage {
+  .desk-lab-score-stage {
     border-color: CanvasText;
   }
 }
@@ -2523,21 +2512,36 @@ body.force-reduced-motion:has(.menu)::after {
 
 /* ---------- New Run (spec §2.2) ---------- */
 .newrun {
-  gap: 14px;
+  overflow: hidden;
   padding-block: 20px;
 }
-.newrun > .tabs {
-  width: min(620px, 94vw);
+.newrun-modal {
+  width: min(720px, 96vw);
+  height: 700px;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) 48px;
+  gap: 12px;
+  padding: 16px 18px 18px;
+  overflow: hidden;
+}
+.newrun-modal > .tabs {
+  width: min(620px, 100%);
+  justify-self: center;
   gap: 12px;
 }
-.newrun > [role="tabpanel"] {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
+.newrun-panel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 82px 32px;
+  gap: 8px;
+}
+.newrun-content {
+  min-height: 0;
+  overflow-y: auto;
 }
 .newrun .tab {
+  flex: 1;
   min-width: 170px;
   padding: 10px 24px 14px;
   color: #fff;
@@ -2565,11 +2569,11 @@ body.force-reduced-motion:has(.menu)::after {
   text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
 }
 .newrun-body {
-  width: min(720px, 96vw);
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 16px 18px 18px;
+  padding: 4px 2px;
 }
 .challenge-body {
   display: grid;
@@ -2616,18 +2620,7 @@ body.force-reduced-motion:has(.menu)::after {
   flex-direction: column;
   gap: 10px;
 }
-.challenge-copy h2,
-.challenge-copy p,
 .challenge-effects p { margin: 0; }
-.challenge-copy h2 {
-  color: var(--gold);
-  font-family: var(--ctl-font);
-  text-align: center;
-}
-.challenge-copy p {
-  color: var(--ink-dim);
-  text-align: center;
-}
 .challenge-loadout {
   min-height: 118px;
   display: flex;
@@ -2764,6 +2757,10 @@ body.force-reduced-motion:has(.menu)::after {
     inset 0 0 0 3px rgba(0, 0, 0, 0.16),
     var(--shadow-sm);
 }
+.select-preview > .tt-anchor,
+.continue-object-row > .tt-anchor {
+  justify-self: center;
+}
 .run-choice-record .select-preview {
   min-height: 116px;
   grid-template-columns: 92px minmax(0, 1fr);
@@ -2882,43 +2879,81 @@ body.force-reduced-motion:has(.menu)::after {
   text-align: center;
 }
 /* Continue tab — the run left in memory when you exit via Options → Main Menu. */
-.continue-card {
+.continue-content {
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  padding: 4px 2px;
+}
+.continue-object-row {
+  display: grid;
+  grid-template-columns: 148px minmax(150px, .75fr) minmax(260px, 1.25fr);
   align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--inset);
+  border: 2px solid var(--inset-edge);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .16), var(--shadow-sm);
+}
+.continue-record-row {
+  grid-template-columns: 92px minmax(0, 1fr);
+}
+.continue-object-copy {
+  min-width: 0;
   text-align: center;
-  gap: 8px;
 }
-.continue-art {
-  font-size: var(--ds-2xl);
-}
-.continue-title {
-  font-family: 'Jersey 10';
-  font-size: var(--ds-sm);
-  line-height: 1;
+.continue-object-copy h2 {
+  margin: 0 0 8px;
   color: var(--ink);
+  font-family: var(--ctl-font);
+  font-size: var(--ds-xs);
+  line-height: 1;
 }
-.continue-stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px 16px;
-  margin-top: 6px;
+.continue-object-copy p {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: var(--fs-md);
+  line-height: 1.3;
 }
-.continue-stats span {
+.continue-summary,
+.continue-record-effect {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--tt-bg);
+  background: #fff;
+  border-radius: 9px;
+  box-shadow: inset 0 -4px 0 rgba(32, 48, 59, .12), 0 3px 0 rgba(0, 0, 0, .2);
+}
+.continue-summary > div {
+  display: grid;
+  grid-template-columns: minmax(78px, auto) minmax(0, 1fr);
+  gap: 10px;
+  padding: 3px 0;
+}
+.continue-summary dt,
+.continue-summary dd {
+  margin: 0;
   font-size: var(--fs-md);
   font-weight: 700;
-  color: var(--ink-dim);
 }
-.continue-stats .cs-chapter {
-  color: var(--ink);
+.continue-summary dt {
+  color: #616970;
 }
-.continue-stats .cs-gold {
-  color: var(--gold);
+.continue-summary dd {
+  min-width: 0;
+  text-align: right;
 }
-.continue-stats .cs-seed {
+.continue-summary .cs-seed {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
   font-family: 'Jost';
   font-weight: 500;
+  white-space: nowrap;
+}
+.continue-record-effect .cumulative-note {
+  margin-top: 7px;
 }
 .seed-toggle {
   display: flex;
@@ -2943,30 +2978,35 @@ body.force-reduced-motion:has(.menu)::after {
   font-size: var(--fs-xs);
   line-height: 1.2;
 }
-.run-start-row {
-  width: min(720px, 96vw);
+.newrun-action-row {
   min-height: 82px;
   display: grid;
-  grid-template-columns: 1fr minmax(260px, 340px) 1fr;
-  align-items: center;
-  gap: 14px;
+  place-items: center;
 }
 .seed-controls {
-  grid-column: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 7px;
-  width: min(220px, 100%);
+  padding-bottom: 4px;
 }
 .play-run {
   width: min(340px, 94vw);
 }
-.run-start-row .play-run {
-  grid-column: 2;
-  width: 100%;
+.newrun-action-row .play-run {
+  width: min(340px, 100%);
+}
+.newrun-note-row {
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  text-align: center;
 }
 .newrun .back-bar {
-  width: min(720px, 96vw);
+  width: 100%;
   max-width: none;
 }
 @media (max-width: 620px) {
@@ -2974,16 +3014,17 @@ body.force-reduced-motion:has(.menu)::after {
     justify-content: flex-start;
     padding: 18px 10px;
   }
-  .newrun > .tabs {
+  .newrun-modal {
+    width: 100%;
+    padding: 12px 10px;
+  }
+  .newrun-modal > .tabs {
     gap: 7px;
   }
   .newrun .tab {
     flex: 1;
     min-width: 0;
     padding-inline: 10px;
-  }
-  .newrun-body {
-    padding: 12px 10px;
   }
   .run-choice {
     grid-template-columns: 38px minmax(0, 1fr) 38px;
@@ -3026,20 +3067,33 @@ body.force-reduced-motion:has(.menu)::after {
   .select-desc {
     font-size: var(--fs-md);
   }
-  .run-start-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  .continue-object-row {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 9px;
+    padding: 10px;
   }
-  .seed-controls,
-  .run-start-row .play-run {
-    grid-column: 1;
-    width: 100%;
-    max-width: none;
+  .continue-record-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .continue-summary {
+    grid-column: 1 / -1;
+  }
+  .seed-controls {
+    flex-direction: column;
   }
 }
 @media (max-height: 760px) {
   .newrun {
     justify-content: flex-start;
+  }
+}
+
+@media (forced-colors: active) {
+  .newrun-modal,
+  .continue-object-row,
+  .continue-summary,
+  .continue-record-effect {
+    border: 2px solid CanvasText;
   }
 }
 

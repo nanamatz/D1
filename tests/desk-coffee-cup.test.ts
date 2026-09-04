@@ -8,15 +8,39 @@ const app = readFileSync('src/ui/App.tsx', 'utf8');
 
 describe('ambient coffee cup interaction', () => {
   it('uses the pixel-art asset and a separately animated liquid layer', () => {
+    const cupArt = css.match(/\.desk-cup-art\s*\{([^}]*)\}/s)?.[1] ?? '';
+    const cavity = css.match(/\.desk-cup-sprite::before\s*\{([^}]*)\}/s)?.[1] ?? '';
+    const liquid = css.match(/\.desk-coffee-liquid\s*\{([^}]*)\}/s)?.[1] ?? '';
     expect(component).toContain("import coffeeCup from '../assets/desk-coffee-cup.png'");
     expect(component).toContain('className="desk-coffee-liquid"');
     expect(component).toContain('onClick={drinkCoffee}');
+    expect(cupArt).toMatch(/z-index:\s*2/);
+    expect(cavity).toMatch(/z-index:\s*3/);
+    expect(cavity).toMatch(/left:\s*20%/);
+    expect(cavity).toMatch(/top:\s*21%/);
+    expect(cavity).toMatch(/width:\s*54%/);
+    expect(cavity).toMatch(/height:\s*15%/);
+    expect(cavity).toContain('#d8caa8 0 20%');
+    expect(cavity).toContain('#817663 21% 45%');
+    expect(cavity).toContain('#29241e 46% 100%');
+    expect(cavity).not.toMatch(/(?:border|outline|box-shadow|animation|transition):/);
+    expect(liquid).toMatch(/z-index:\s*4/);
+    expect(liquid).toMatch(/left:\s*22%/);
+    expect(liquid).toMatch(/top:\s*23%/);
+    expect(liquid).toMatch(/width:\s*50%/);
+    expect(liquid).toMatch(/height:\s*12%/);
+    expect(liquid).toMatch(/box-shadow:\s*inset 0 2px/);
+    expect(liquid).not.toMatch(/border:/);
     expect(css).toContain('@keyframes coffee-drain');
     expect(css).toContain('.desk-cup.desk-drinking .desk-coffee-liquid');
   });
 
   it('emits staggered pixel steam until the coffee is drunk', () => {
+    const steam = css.match(/\.desk-coffee-steam\s*\{([^}]*)\}/s)?.[1] ?? '';
     expect(component).toContain('className="desk-coffee-steam"');
+    expect(steam).toMatch(/z-index:\s*5/);
+    expect(steam).toMatch(/left:\s*22%/);
+    expect(steam).toMatch(/width:\s*50%/);
     expect(css).toContain('@keyframes coffee-steam-rise');
     expect(css).toContain('.desk-coffee-steam i:nth-child(3)');
     expect(css).toMatch(/\.desk-cup\.desk-drinking \.desk-coffee-steam\s*\{[^}]*opacity:\s*0/s);
@@ -49,7 +73,14 @@ describe('ambient coffee cup interaction', () => {
     expect(component).toContain('setCupLeaving(true)');
     expect(component).toContain('setCup(null)');
     expect(component).toContain("cupLeaving ? 'desk-leaving' : 'desk-entering'");
+    expect(component).toContain('}, 820);');
+    expect(component).toContain('}, 1280);');
     expect(audio).toMatch(/deskCup:\s*\{[\s\S]*?gain:\s*0\.4[\s\S]*?dur:\s*0\.86/);
+  });
+
+  it('shows the clicked cup empty under both Reduced Motion paths', () => {
+    expect(css).toMatch(/\.desk-still\.desk-cup\.desk-drinking \.desk-coffee-liquid\s*\{[^}]*opacity:\s*0/s);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.desk-cup\.desk-drinking \.desk-coffee-liquid\s*\{[^}]*opacity:\s*0/s);
   });
 
   it('waits longer between one-shot encounters', () => {

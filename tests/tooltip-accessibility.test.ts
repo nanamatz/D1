@@ -124,8 +124,26 @@ describe('shared tooltip accessibility', () => {
     expect(downstream).toHaveBeenCalledOnce();
   });
 
+  it('defers Escape to an expanded object menu without closing the tooltip', () => {
+    const close = vi.fn();
+    const downstream = vi.fn();
+    const event = {
+      key: 'Escape',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+
+    if (!consumeTooltipEscape(event, true, close, true)) downstream();
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    expect(downstream).toHaveBeenCalledOnce();
+  });
+
   it('registers active-tooltip Escape before document capture and window bubble handlers', () => {
     const tooltip = source('src/ui/components/Tooltip.tsx');
+    expect(tooltip).toContain("!!anchor()?.querySelector('[aria-expanded=\"true\"]')");
     expect(tooltip).toContain("window.addEventListener('keydown', closeOnEscape, true)");
     expect(tooltip).toContain("window.removeEventListener('keydown', closeOnEscape, true)");
     expect(tooltip).not.toContain("document.addEventListener('keydown', closeOnEscape)");

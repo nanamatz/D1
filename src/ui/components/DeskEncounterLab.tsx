@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n';
-import { richText } from '../richtext';
-import { MoneyLedger } from './MoneyValue';
+import { formatScore } from '../formatScore';
+import { useCountUp } from '../useAnim';
+import { BONUS_LAND_MS } from '../useGame';
+import { ScoreTransferReadout } from './Sidebar';
 
-const LAB_MONEY_DELTAS = [-3, 7] as const;
+function ScoreTransferPreview() {
+  const { t } = useI18n();
+  const [target, setTarget] = useState(67);
+  const round = useCountUp(target, BONUS_LAND_MS);
+  useEffect(() => setTarget(82), []);
+
+  return (
+    <div className="desk-lab-score-demo">
+      <div className="desk-lab-round">
+        <span>{t('sidebar.round')}</span>
+        <strong>{formatScore(round)}</strong>
+      </div>
+      <ScoreTransferReadout committedBefore={67} committedScore={82} round={round} />
+    </div>
+  );
+}
 
 export function DeskEncounterLab({ onBack }: { onBack: () => void }) {
   const { t } = useI18n();
-  const [sequence, setSequence] = useState(0);
+  const [replay, setReplay] = useState(0);
 
   return (
     <div className="screen desk-lab">
@@ -15,19 +32,16 @@ export function DeskEncounterLab({ onBack }: { onBack: () => void }) {
         <h1>{t('desk.lab.title')}</h1>
         <p>{t('desk.lab.subtitle')}</p>
       </header>
-      <main className="desk-lab-panel" aria-labelledby="desk-lab-money-title">
-        <h2 id="desk-lab-money-title">{t('shop.instantUse')}</h2>
+      <main className="desk-lab-panel" aria-labelledby="desk-lab-score-title">
+        <h2 id="desk-lab-score-title">{t('desk.lab.scoreTransfer.title')}</h2>
         <div className="desk-lab-grid">
-          <article className="desk-lab-card desk-lab-money-card">
-            <h3>{t('consumable.fable9')}</h3>
-            <p>{richText(t('consumabledesc.fable9'))}</p>
-            <div className="desk-lab-money-stage" aria-label="$10, -$3, +$7, $14">
-              <span className="desk-lab-money-total">$10</span>
-              <MoneyLedger key={sequence} deltas={LAB_MONEY_DELTAS} sequence={sequence} />
-              <span className="desk-lab-money-total">$14</span>
+          <article className="desk-lab-card desk-lab-score-card">
+            <p>{t('desk.lab.scoreTransfer.body')}</p>
+            <div className="desk-lab-score-stage">
+              <ScoreTransferPreview key={replay} />
             </div>
-            <button className="btn desk-lab-replay" onClick={() => setSequence((n) => n + 1)}>
-              {t('settle.retrigger')}
+            <button className="btn desk-lab-replay" onClick={() => setReplay((value) => value + 1)}>
+              {t('desk.lab.replay')}
             </button>
           </article>
         </div>

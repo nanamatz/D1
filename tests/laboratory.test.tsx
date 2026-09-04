@@ -10,32 +10,36 @@ import ko from '../locales/ko.json';
 const source = (path: string): string => readFileSync(path, 'utf8');
 
 describe('rotating developer laboratory', () => {
-  it('shows the current Shop Use Now cost/full-payout ledger in order', () => {
+  it('shows the current production word-score transfer as one deterministic sample', () => {
     const markup = renderToStaticMarkup(createElement(
       I18nProvider,
       null,
       createElement(DeskEncounterLab, { onBack: () => undefined }),
     ));
 
-    expect(markup.match(/desk-lab-card desk-lab-money-card/g)).toHaveLength(1);
-    expect(markup).toContain(en['consumable.fable9']);
-    expect(markup.indexOf('-$3')).toBeLessThan(markup.indexOf('+$7'));
-    expect(markup).toContain('aria-label="$10, -$3, +$7, $14"');
-    expect(markup).toContain(en['settle.retrigger']);
+    expect(markup.match(/desk-lab-card desk-lab-score-card/g)).toHaveLength(1);
+    expect(markup).toContain(en['desk.lab.scoreTransfer.title']);
+    expect(markup).toContain('production word score transferring into the round total');
+    expect(markup).toContain('<strong>67</strong>');
+    expect(markup).toContain('class="sb-status score-transfer" aria-hidden="true">15</div>');
+    expect(markup).toContain(en['desk.lab.replay']);
   });
 
-  it('reuses the production ledger renderer and existing bilingual Fable copy', () => {
+  it('reuses the production readout with UI-local 67 → 82 state', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
-    expect(lab).toContain("import { MoneyLedger } from './MoneyValue'");
-    expect(lab).toContain('const LAB_MONEY_DELTAS = [-3, 7] as const');
-    expect(lab).toContain('<MoneyLedger key={sequence}');
+    expect(lab).toContain("import { ScoreTransferReadout } from './Sidebar'");
+    expect(lab).toContain('const [target, setTarget] = useState(67)');
+    expect(lab).toContain('useCountUp(target, BONUS_LAND_MS)');
+    expect(lab).toContain('setTarget(82)');
+    expect(lab).toContain('<ScoreTransferReadout committedBefore={67} committedScore={82} round={round} />');
+    expect(lab).toContain('<ScoreTransferPreview key={replay} />');
+    expect(lab).not.toContain('MoneyValue');
     for (const locale of [en, ko]) {
       expect(locale['desk.lab.title']).toBeTruthy();
       expect(locale['desk.lab.subtitle']).toBeTruthy();
-      expect(locale['shop.instantUse']).toBeTruthy();
-      expect(locale['consumable.fable9']).toBeTruthy();
-      expect(locale['consumabledesc.fable9']).toBeTruthy();
-      expect(locale['settle.retrigger']).toBeTruthy();
+      expect(locale['desk.lab.scoreTransfer.title']).toBeTruthy();
+      expect(locale['desk.lab.scoreTransfer.body']).toBeTruthy();
+      expect(locale['desk.lab.replay']).toBeTruthy();
     }
     expect(en['desk.lab.subtitle']).toBe(
       'Review the latest player-facing implementation or change that cannot be inspected immediately in Collection or Run Info',
@@ -63,16 +67,12 @@ describe('rotating developer laboratory', () => {
 
   it('has no retired preview, engine simulation, persistence, settings, or RNG path', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
-    const desk = source('src/ui/components/DeskObjects.tsx');
     for (const retired of [
-      'ScoreTypewriter', 'DeskObjects', 'DESK_KINDS', 'HIDDEN_PATTERN_IDS',
-      'PatternExampleTray', 'useEffect',
+      'MoneyValue', 'MoneyLedger', 'DeskObjects', 'sampleKind', 'LAB_MONEY_DELTAS', 'ScoreTypewriter', 'DESK_KINDS',
+      'HIDDEN_PATTERN_IDS', 'PatternExampleTray',
       'setTimeout', 'requestAnimationFrame', 'storage', 'useSettings', 'rng',
       'role="tablist"', 'role="tabpanel"',
     ]) expect(lab).not.toContain(retired);
-    expect(desk).not.toContain('sampleKind');
-    expect(desk).not.toContain('resetToken');
-    expect(desk).not.toContain('desk-sample-root');
   });
 
   it('keeps the DEV-only entry, Back/Escape hook, responsive stack, and Forced Colors border', () => {
@@ -89,8 +89,8 @@ describe('rotating developer laboratory', () => {
     expect(lab).toContain('className="btn desk-lab-back"');
     expect(css).toMatch(/\.desk-lab-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 680px\)/s);
     expect(css).toMatch(/@media \(max-width: 900px\)[\s\S]*?\.desk-lab-grid\s*\{\s*grid-template-columns:\s*1fr;/);
-    expect(css).toMatch(/@media \(forced-colors: active\)[\s\S]*?\.desk-lab-card,[\s\S]*?\.desk-lab-money-stage\s*\{\s*border-color:\s*CanvasText;/);
+    expect(css).toMatch(/@media \(forced-colors: active\)[\s\S]*?\.desk-lab-card,[\s\S]*?\.desk-lab-score-stage\s*\{\s*border-color:\s*CanvasText;/);
     expect(css).toMatch(/\.desk-lab-card\s*\{[^}]*min-width:\s*0;[^}]*overflow:\s*hidden;/s);
-    expect(css).toMatch(/\.desk-lab-money-stage\s*\{[^}]*grid-template-columns:/s);
+    expect(css).toMatch(/\.desk-lab-score-stage\s*\{[^}]*min-height:\s*160px;[^}]*place-items:\s*center;/s);
   });
 });

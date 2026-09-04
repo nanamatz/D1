@@ -7,6 +7,7 @@ import { motionOff as reducedMotion } from '../motion';
 export const MONEY_LEDGER_BEAT_MS = 720;
 const MONEY_LEDGER_LAST_BEAT_MS = 700;
 const MONEY_LEDGER_REDUCED_MS = 2400;
+const MONEY_TOTAL_MOTION_MS = 480;
 
 export function moneyDeltaText(delta: number): string {
   return delta < 0
@@ -14,7 +15,7 @@ export function moneyDeltaText(delta: number): string {
     : `+$${formatScore(delta)}`;
 }
 
-/** Real Shop Use Now ledger renderer, also reused by the rotating Laboratory. */
+/** Real Shop Use Now ledger renderer. */
 export function MoneyLedger({
   deltas,
   sequence = 0,
@@ -91,8 +92,13 @@ export function MoneyValue({
   const idRef = useRef(0);
   const suppressValue = useRef<number | null>(null);
   const [pop, setPop] = useState<{ delta: number; id: number } | null>(null);
+  const [totalMotion, setTotalMotion] = useState<{ direction: 'up' | 'down'; id: number } | null>(null);
   const [ledgerQueue, setLedgerQueue] = useState<QueuedLedger[]>([]);
   const activeLedger = ledgerQueue[0] ?? null;
+
+  useEffect(() => {
+    if (!presentLedger) setLedgerQueue([]);
+  }, [presentLedger]);
 
   useEffect(() => consumableEffectBus.on((event) => {
     const presentation = resolveMoneyLedgerEvent(
@@ -130,21 +136,42 @@ export function MoneyValue({
     if (prev.current === value) return;
     const delta = value - prev.current;
     prev.current = value;
+    const reduced = reducedMotion();
+    let totalTimer: ReturnType<typeof setTimeout> | undefined;
+    if (reduced) {
+      setTotalMotion(null);
+    } else {
+      idRef.current += 1;
+      const id = idRef.current;
+      setTotalMotion({ direction: delta < 0 ? 'down' : 'up', id });
+      totalTimer = setTimeout(
+        () => setTotalMotion((motion) => (motion?.id === id ? null : motion)),
+        MONEY_TOTAL_MOTION_MS,
+      );
+    }
     if (suppressValue.current === value) {
       suppressValue.current = null;
-      return;
+      return () => clearTimeout(totalTimer);
     }
-    if (reducedMotion() || delta === 0) return;
+    if (reduced || delta === 0) return () => clearTimeout(totalTimer);
     idRef.current += 1;
     const id = idRef.current;
     setPop({ delta, id });
     const timer = setTimeout(() => setPop((p) => (p && p.id === id ? null : p)), 800);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(totalTimer);
+      clearTimeout(timer);
+    };
   }, [value]);
 
   return (
     <span ref={anchor} className="money money-wrap">
-      ${formatScore(value)}
+      <span
+        key={totalMotion?.id ?? 'idle'}
+        className={['money-total', totalMotion?.direction].filter(Boolean).join(' ')}
+      >
+        ${formatScore(value)}
+      </span>
       {pop && (
         <span key={pop.id} className={['money-pop', pop.delta < 0 ? 'down' : 'up'].join(' ')}>
           {pop.delta < 0
@@ -152,7 +179,7 @@ export function MoneyValue({
             : `+$${formatScore(pop.delta)}`}
         </span>
       )}
-      {activeLedger && typeof document !== 'undefined' && createPortal(
+      {presentLedger && activeLedger && typeof document !== 'undefined' && createPortal(
         <MoneyLedger
           key={activeLedger.id}
           deltas={activeLedger.deltas}

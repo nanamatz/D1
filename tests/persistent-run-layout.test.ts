@@ -108,7 +108,7 @@ describe('persistent Balatro-style run table', () => {
   it('reserves the live pattern line before the second word completes a pattern', () => {
     expect(sidebar).toContain('className="round-pattern"');
     expect(playCss).toMatch(/\.round-panel\s*\{[^}]*flex:\s*0 0 148px[^}]*height:\s*148px/s);
-    expect(playCss).toMatch(/\.score-panel\s*\{[^}]*height:\s*136px/s);
+    expect(playCss).toMatch(/\.score-panel\s*\{[^}]*height:\s*188px/s);
   });
 
   it('retains finalized sentence provenance through Fee Settlement and clears it on Collect', () => {
