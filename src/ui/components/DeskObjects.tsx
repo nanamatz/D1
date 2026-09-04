@@ -28,7 +28,7 @@ import { useI18n } from '../i18n';
  * encounters live in the viewport margins, portaled to <body>, so they never
  * affect the headless engine or block the game board.
  */
-export type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap' | 'shacoBox' | 'fly' | 'bulldog' | 'launchButton';
+type DeskKind = 'cup' | 'pot' | 'bell' | 'check' | 'waxBall' | 'keycap' | 'shacoBox' | 'fly' | 'bulldog' | 'launchButton';
 
 interface DeskObj {
   kind: DeskKind;
@@ -50,7 +50,6 @@ const BASE_KINDS: Pick<DeskObj, 'kind' | 'sfx'>[] = [
   { kind: 'bulldog', sfx: 'deskBulldogBite' },
   { kind: 'launchButton', sfx: 'deskLaunchAlarm' },
 ];
-export const DESK_KINDS: readonly DeskKind[] = BASE_KINDS.map(({ kind }) => kind);
 const SIMPLE_ART: Partial<Record<DeskKind, string>> = {
   pot: coffeePot,
   waxBall,
@@ -74,15 +73,7 @@ interface SignaturePoint {
 
 const reduced = motionOff;
 
-export function DeskObjects({
-  active,
-  sampleKind,
-  resetToken = 0,
-}: {
-  active: boolean;
-  sampleKind?: DeskKind;
-  resetToken?: number;
-}) {
+export function DeskObjects({ active }: { active: boolean }) {
   const { t } = useI18n();
   const [cup, setCup] = useState<DeskObj | null>(null);
   const [bell, setBell] = useState<DeskObj | null>(null);
@@ -130,36 +121,6 @@ export function DeskObjects({
     setSignatureDrawing(false);
   }, [active]);
 
-  useEffect(() => {
-    if (!active || !sampleKind) return;
-    interactionTimers.current.forEach(clearTimeout);
-    interactionTimers.current = [];
-    const base = BASE_KINDS.find(({ kind }) => kind === sampleKind)!;
-    const sample: DeskObj = {
-      ...base,
-      side: 'left',
-      spawn: resetToken,
-      trigger: sampleKind === 'bulldog'
-        ? Math.floor(Math.random() * BULLDOG_TEETH)
-        : undefined,
-    };
-    setCup(sampleKind === 'cup' ? sample : null);
-    setBell(sampleKind === 'bell' ? sample : null);
-    setEncounter(sampleKind !== 'cup' && sampleKind !== 'bell' ? sample : null);
-    setCupDrinking(false);
-    setCupLeaving(false);
-    setBellRinging(false);
-    setBellLeaving(false);
-    setEncounterLeaving(false);
-    setEncounterInteracting(false);
-    setBulldogPressed([]);
-    setLaunchCoverOpen(false);
-    signaturePointer.current = null;
-    signaturePointsRef.current = [];
-    setSignaturePoints([]);
-    setSignatureDrawing(false);
-  }, [active, resetToken, sampleKind]);
-
   useEffect(
     () => () => {
       interactionTimers.current.forEach(clearTimeout);
@@ -168,7 +129,7 @@ export function DeskObjects({
   );
 
   useEffect(() => {
-    if (!active || encounter || sampleKind) return;
+    if (!active || encounter) return;
     let live = true;
     const gap = ENCOUNTER_GAP_MIN_MS + Math.random() * ENCOUNTER_GAP_SPREAD_MS;
     const timer = setTimeout(() => {
@@ -211,7 +172,7 @@ export function DeskObjects({
       live = false;
       clearTimeout(timer);
     };
-  }, [active, encounter, encounterCycle, cup, bell, coffeeReady, sampleKind]);
+  }, [active, encounter, encounterCycle, cup, bell, coffeeReady]);
 
   const finishEncounter = () => {
     if (encounter?.kind === 'pot') setCoffeeReady(true);
@@ -395,9 +356,8 @@ export function DeskObjects({
   };
 
   const still = reduced() ? 'desk-still' : '';
-  // Three right-margin height zones at runtime; Laboratory samples keep their
-  // contained left placement through the same stack helper.
-  // Removing an object compacts only the stack on that same side.
+  // Three right-margin height zones keep simultaneous objects from overlapping.
+  // Removing an object compacts the remaining stack.
   const liveObjects = [cup, bell, encounter].filter(
     (obj): obj is DeskObj => obj !== null,
   );
@@ -457,9 +417,8 @@ export function DeskObjects({
           key={cup.spawn}
           className={cupClass}
           onClick={drinkCoffee}
-          aria-hidden={sampleKind ? undefined : true}
-          aria-label={sampleKind ? t(`desk.encounter.${cup.kind}.name`) : undefined}
-          tabIndex={sampleKind ? 0 : -1}
+          aria-hidden
+          tabIndex={-1}
         >
           <span className="desk-glyph desk-cup-sprite">
             <span className="desk-coffee-steam" aria-hidden>
@@ -478,9 +437,8 @@ export function DeskObjects({
           key={bell.spawn}
           className={bellClass}
           onClick={ringBell}
-          aria-hidden={sampleKind ? undefined : true}
-          aria-label={sampleKind ? t(`desk.encounter.${bell.kind}.name`) : undefined}
-          tabIndex={sampleKind ? 0 : -1}
+          aria-hidden
+          tabIndex={-1}
         >
           <span className="desk-glyph desk-bell-sprite">
             <span className="desk-bell-rings" aria-hidden>
@@ -507,8 +465,7 @@ export function DeskObjects({
         <div
           key={encounter.spawn}
           className={encounterClass}
-          aria-hidden={sampleKind ? undefined : true}
-          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
+          aria-hidden
         >
           <span className="desk-glyph desk-check-sprite">
             <img className="desk-check-art" src={blankCheck} alt="" draggable={false} />
@@ -553,9 +510,7 @@ export function DeskObjects({
         <div
           key={encounter.spawn}
           className={encounterClass}
-          role={sampleKind ? 'group' : undefined}
-          aria-hidden={sampleKind ? undefined : true}
-          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
+          aria-hidden
         >
           <span className="desk-glyph desk-bulldog-sprite">
             <img
@@ -580,10 +535,7 @@ export function DeskObjects({
                     className={`desk-bulldog-tooth${pressed ? ' pressed' : ''}`}
                     onClick={() => pressBulldogTooth(index)}
                     disabled={pressed || encounterInteracting || encounterLeaving}
-                    aria-label={sampleKind
-                      ? t('desk.bulldog.tooth', { n: index + 1 })
-                      : undefined}
-                    tabIndex={sampleKind ? 0 : -1}
+                    tabIndex={-1}
                   />
                 );
               })}
@@ -597,9 +549,8 @@ export function DeskObjects({
           key={encounter.spawn}
           className={encounterClass}
           onClick={interactLaunchButton}
-          aria-hidden={sampleKind ? undefined : true}
-          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
-          tabIndex={sampleKind ? 0 : -1}
+          aria-hidden
+          tabIndex={-1}
         >
           <span className="desk-glyph desk-launch-sprite">
             <img
@@ -629,9 +580,8 @@ export function DeskObjects({
           key={encounter.spawn}
           className={encounterClass}
           onClick={interactSimpleEncounter}
-          aria-hidden={sampleKind ? undefined : true}
-          aria-label={sampleKind ? t(`desk.encounter.${encounter.kind}.name`) : undefined}
-          tabIndex={sampleKind ? 0 : -1}
+          aria-hidden
+          tabIndex={-1}
         >
           <span className="desk-glyph desk-encounter-sprite">
             {encounter.kind === 'waxBall' ? (
@@ -668,7 +618,5 @@ export function DeskObjects({
       )}
     </>
   );
-  return sampleKind
-    ? <div className="desk-sample-root">{objects}</div>
-    : createPortal(objects, document.body);
+  return createPortal(objects, document.body);
 }

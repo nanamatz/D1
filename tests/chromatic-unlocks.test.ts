@@ -14,9 +14,14 @@ import {
   checkWordPlayed,
   chromaMatrix,
   applyPresentation,
+  grantRequiredPaletteUnlocks,
+  REQUIRED_PALETTE_UNLOCKS,
+  unlockBus,
+  type UnlockRevealEvent,
 } from '../src/ui/unlocks';
 import { FamilyCardArt } from '../src/ui/components/FamilyCardArt';
 import { audio } from '../src/ui/audio';
+import { readProfileValue, writeProfileValue } from '../src/ui/storage';
 
 // jsdom is not configured project-wide; provide a minimal localStorage shim
 // (matching tutorial-store.test.ts) so the played-set persistence round-trips.
@@ -67,6 +72,27 @@ describe('chromatic unlocks — played persistence', () => {
     markPlayed('BLUE');
     expect(playedCount()).toBe(1);
   });
+
+  it('grants exactly the six color/audio essentials, idempotently and per profile', () => {
+    writeProfileValue('wj.unlocks', 1, ['DOG', 'UNKNOWN']);
+    writeProfileValue('wj.unlocks', 2, ['ALIEN']);
+    let reveals = 0;
+    const unsubscribe = unlockBus.subscribe(() => { reveals += 1; });
+
+    expect(REQUIRED_PALETTE_UNLOCKS.map((def) => def.id)).toEqual([
+      'RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND',
+    ]);
+    expect(grantRequiredPaletteUnlocks(1)).toEqual([
+      'RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND',
+    ]);
+    expect(grantRequiredPaletteUnlocks(1)).toEqual([]);
+    expect(readProfileValue<string[]>('wj.unlocks', 1)).toEqual([
+      'DOG', 'UNKNOWN', 'RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND',
+    ]);
+    expect(readProfileValue<string[]>('wj.unlocks', 2)).toEqual(['ALIEN']);
+    expect(reveals).toBe(0);
+    unsubscribe();
+  });
 });
 
 describe('chromatic unlocks — checkWordPlayed', () => {
@@ -74,6 +100,59 @@ describe('chromatic unlocks — checkWordPlayed', () => {
     expect(checkWordPlayed('turtle')?.id).toBe('TURTLE');
     expect(checkWordPlayed('TURTLE')).toBeNull(); // already played
     expect(checkWordPlayed('banana')).toBeNull(); // not an unlock word
+  });
+});
+
+describe('chromatic unlocks — reveal events', () => {
+  it('keeps natural reveals singular and accepts one atomic required-Palette reveal', () => {
+    const events: UnlockRevealEvent[] = [];
+    const unsubscribe = unlockBus.subscribe((event) => events.push(event));
+    const natural = UNLOCKS.find((def) => def.id === 'RED')!;
+    writeProfileValue('wj.unlocks', 1, ['RED']);
+    const added = new Set(grantRequiredPaletteUnlocks(1));
+    const aggregate = {
+      type: 'requiredPalette' as const,
+      defs: REQUIRED_PALETTE_UNLOCKS.filter((def) => added.has(def.id)),
+    };
+
+    unlockBus.emit(natural);
+    unlockBus.emit(aggregate);
+
+    expect(events).toEqual([natural, aggregate]);
+    expect(events).toHaveLength(2);
+    expect(aggregate.defs.map((def) => def.id)).toEqual([
+      'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND',
+    ]);
+    unsubscribe();
+  });
+
+  it('queues an aggregate as one 2.6-second reveal and applies presentation before one fanfare', () => {
+    const source = readFileSync('src/ui/components/ChromaticReveal.tsx', 'utf8');
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8');
+    const playCss = readFileSync('src/ui/styles/play.css', 'utf8');
+    const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
+    const applyAt = source.indexOf('applyPresentation();');
+    const fanfareAt = source.indexOf("audio.play('clearFanfare')");
+    const queueAt = source.indexOf('setQueue((q) => [...q, event]);');
+    const aggregateAt = source.indexOf('{aggregate ? (');
+    const naturalAt = source.indexOf(') : (', aggregateAt);
+    const aggregateMarkup = source.slice(aggregateAt, naturalAt);
+    expect(source).toContain('useState<UnlockRevealEvent[]>([])');
+    expect(source).toContain('createPortal(');
+    expect(source).toContain('document.body');
+    expect(source).toContain('defs.some((def) => def.effect.kind === \'audio\')');
+    expect(aggregateMarkup).toContain("t('unlock.requiredPalette')");
+    expect(aggregateMarkup).not.toContain('chroma-body');
+    expect(aggregateMarkup).not.toContain('active.word');
+    expect(source.match(/audio\.play\('clearFanfare'\)/g)).toHaveLength(1);
+    expect(source).toContain('setTimeout(() => setQueue((q) => q.slice(1)), 2600)');
+    expect(applyAt).toBeLessThan(fanfareAt);
+    expect(fanfareAt).toBeLessThan(queueAt);
+    const revealZ = Number(css.match(/\.chroma-reveal\s*\{[^}]*z-index:\s*(\d+);/s)?.[1]);
+    const pauseZ = Number(playCss.match(/\.pause-overlay\s*\{[^}]*z-index:\s*(\d+);/s)?.[1]);
+    const tooltipZ = Number(tokens.match(/--z-tooltip:\s*(\d+);/)?.[1]);
+    expect(revealZ).toBeGreaterThan(pauseZ);
+    expect(revealZ).toBeLessThan(tooltipZ);
   });
 });
 

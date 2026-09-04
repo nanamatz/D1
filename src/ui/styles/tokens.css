@@ -16,8 +16,6 @@
   --chips: #8f9295; /* BLUE; unlock-blue → #3fa7f5; Buy/Redeem actions */
   --mult: #8a8785; /* RED; unlock-red → #f5504e; Sell actions */
   --gold: #b0aca4; /* YELLOW; unlock-yellow → #f0b23e */
-  --score-flame-outer: #a9a9a9; /* YELLOW; unlock-yellow → #FF9F0E */
-  --score-flame-core: #c3c3c3; /* YELLOW; unlock-yellow → #FFC222 */
   --tile-face: #e9e8e4; /* YELLOW (warm cream); unlock-yellow → #f4eddf */
   --tile-ink: #2b2620; /* neutral (near-black) */
   /* Base-score letter inks. Neutral defaults preserve luminance until their
@@ -219,8 +217,6 @@
   --pos-verb-linking: #ff7b4d;
 }
 :root.unlock-yellow {
-  --score-flame-outer: #FF9F0E;
-  --score-flame-core: #FFC222;
   --gold: #f0b23e; /* money, gold UI, target-cross/score-keyboard accents */
   --suit-slang: #f09437;
   --tile-face: #f4eddf; /* warm ivory tile face returns */

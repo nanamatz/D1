@@ -14,18 +14,30 @@ import {
   recordWinCount,
 } from '../lifetime';
 import { useSettings } from '../settings';
+import {
+  WINDOW_RESOLUTION_PRESETS,
+  selectedWindowResolution,
+  useWindowVideo,
+  type WindowResolutionPresetId,
+} from '../windowVideo';
 import { audio } from '../audio';
 import { isEmojiUnlocked, loadEmojiUnlockProgress } from '../emojiUnlocks';
 import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { THIRD_PARTY_NOTICES } from '../legalNotices';
 import { voicedKeys } from '../mascots';
+import {
+  activeUnlocks,
+  grantRequiredPaletteUnlocks,
+  REQUIRED_PALETTE_UNLOCKS,
+  unlockBus,
+} from '../unlocks';
 import { Collection } from './Collection';
 import { Tooltip } from './Tooltip';
 import { UiIcon } from './UiIcon';
 
 type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
-type Tab = 'game' | 'video' | 'graphics' | 'audio';
+type Tab = 'game' | 'video' | 'audio';
 type StatsTab = 'overview' | 'words' | 'jokers';
 type CreditsTab = 'team' | 'visuals' | 'audio' | 'fonts';
 
@@ -52,6 +64,8 @@ interface Props {
   onNewRun?: () => void;
   /** In-run only (pause menu): leave to the main menu, run kept in memory. */
   onMainMenu?: () => void;
+  /** Keep an active run's terminal recap limited to unlocks earned by play. */
+  onPaletteUnlock?: (ids: readonly string[]) => void;
 }
 
 /**
@@ -60,7 +74,7 @@ interface Props {
  * pause-menu only — they render just when their handler is supplied, so opening
  * Options from the main menu still shows the plain Settings/Stats/Collection set.
  */
-export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
+export function Options({ lexicon, onBack, onNewRun, onMainMenu, onPaletteUnlock }: Props) {
   const { t } = useI18n();
   const [view, setView] = useState<View>('root');
   const previousView = useRef<View>(view);
@@ -117,7 +131,9 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu }: Props) {
   }
   return (
     <div className="screen options">
-      {view === 'settings' && <SettingsView />}
+      {view === 'settings' && (
+        <SettingsView {...(onPaletteUnlock ? { onPaletteUnlock } : {})} />
+      )}
       {view === 'stats' && <StatsView lexicon={lexicon} />}
       {view === 'credits' && <CreditsView />}
       <button className="btn back-bar" onClick={back}>
@@ -215,17 +231,51 @@ export function Toggle({
 }
 
 // ---------- Settings ----------
-function SettingsView() {
+function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly string[]) => void }) {
   const { t, lang, setLang } = useI18n();
   const { settings, set } = useSettings();
+  const windowVideo = useWindowVideo();
   const [tab, setTab] = useState<Tab>('game');
+  const [paletteArmed, setPaletteArmed] = useState(false);
+  const [paletteComplete, setPaletteComplete] = useState(
+    () => REQUIRED_PALETTE_UNLOCKS.every((def) => activeUnlocks().has(def.id)),
+  );
+
+  const selectTab = (next: Tab) => {
+    setPaletteArmed(false);
+    setTab(next);
+  };
+  const unlockPalette = () => {
+    if (!paletteArmed) {
+      setPaletteArmed(true);
+      return;
+    }
+    const added = grantRequiredPaletteUnlocks();
+    onPaletteUnlock?.(added);
+    if (added.length > 0) {
+      const addedSet = new Set(added);
+      unlockBus.emit({
+        type: 'requiredPalette',
+        defs: REQUIRED_PALETTE_UNLOCKS.filter((def) => addedSet.has(def.id)),
+      });
+    }
+    setPaletteComplete(true);
+    setPaletteArmed(false);
+  };
+  const resolution = windowVideo.state ? selectedWindowResolution(windowVideo.state) : null;
+  const resolutionValue = windowVideo.state
+    ? resolution ?? 'custom'
+    : 'automatic';
+  const fullscreen = windowVideo.desktop
+    ? windowVideo.state?.fullscreen ?? false
+    : settings.fullscreen;
 
   return (
     <>
       <h2 className="scr-title">{t('options.settings')}</h2>
       <div className="tabs" role="tablist" aria-label={t('options.settings')}>
-        {(['game', 'video', 'graphics', 'audio'] as Tab[]).map((x) => (
-          <button key={x} role="tab" aria-selected={x === tab} aria-controls={`settings-${x}`} className={['tab', x === tab ? 'on' : ''].filter(Boolean).join(' ')} onClick={() => setTab(x)}>
+        {(['game', 'video', 'audio'] as Tab[]).map((x) => (
+          <button key={x} role="tab" aria-selected={x === tab} aria-controls={`settings-${x}`} className={['tab', x === tab ? 'on' : ''].filter(Boolean).join(' ')} onClick={() => selectTab(x)}>
             {t(`settings.tab.${x}`)}
           </button>
         ))}
@@ -291,15 +341,73 @@ function SettingsView() {
                 </button>
               </div>
             </Tooltip>
+            <div className="set-row palette-unlock-row">
+              <span className="set-label">{t('settings.paletteUnlock.label')}</span>
+              <button
+                className="btn exchange sm"
+                disabled={paletteComplete}
+                onClick={unlockPalette}
+              >
+                {t(paletteComplete
+                  ? 'settings.paletteUnlock.complete'
+                  : paletteArmed
+                    ? 'settings.paletteUnlock.confirm'
+                    : 'settings.paletteUnlock.action')}
+              </button>
+            </div>
+            {paletteArmed && (
+              <p className="set-note palette-unlock-warning" role="alert">
+                {t('settings.paletteUnlock.confirmNotice')}
+              </p>
+            )}
         </div>
 
         <div id="settings-video" role="tabpanel" aria-hidden={tab !== 'video'} className={['set-tabpanel', tab === 'video' ? 'on' : ''].filter(Boolean).join(' ')}>
+            <Tooltip title={t('settings.resolution')} body={t('settings.tooltip.resolution')} touchPin disabled={tab !== 'video'}>
+              <div className="set-row">
+                <span className="set-label">{t('settings.resolution')}</span>
+                <select
+                  className="resolution-select"
+                  aria-label={t('settings.resolution')}
+                  value={resolutionValue}
+                  disabled={!windowVideo.desktop || !windowVideo.state || windowVideo.state.fullscreen}
+                  onChange={(event) => windowVideo.setResolution(event.currentTarget.value as WindowResolutionPresetId)}
+                >
+                  {!windowVideo.state && (
+                    <option value="automatic">
+                      {windowVideo.desktop ? '—' : t('settings.resolutionAutomatic')}
+                    </option>
+                  )}
+                  {windowVideo.state && !resolution && (
+                    <option value="custom">
+                      {t('settings.resolutionCustom', {
+                        width: windowVideo.state.width,
+                        height: windowVideo.state.height,
+                      })}
+                    </option>
+                  )}
+                  {windowVideo.state && WINDOW_RESOLUTION_PRESETS.map((preset) => (
+                    <option
+                      key={preset.id}
+                      value={preset.id}
+                      disabled={!windowVideo.state!.availablePresetIds.includes(preset.id)}
+                    >
+                      {preset.width}×{preset.height}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Tooltip>
             <Toggle
               label={t('settings.fullscreen')}
               tooltip={t('settings.tooltip.fullscreen')}
               tooltipDisabled={tab !== 'video'}
-              on={settings.fullscreen}
+              on={fullscreen}
               onChange={(v) => {
+                if (windowVideo.desktop) {
+                  windowVideo.setFullscreen(v);
+                  return;
+                }
                 if (v) {
                   document.documentElement.requestFullscreen?.().catch(() => set('fullscreen', false));
                 } else if (document.fullscreenElement) {
@@ -316,12 +424,9 @@ function SettingsView() {
               max={120}
               onChange={(v) => set('uiScale', v)}
             />
-        </div>
-
-        <div id="settings-graphics" role="tabpanel" aria-hidden={tab !== 'graphics'} className={['set-tabpanel', tab === 'graphics' ? 'on' : ''].filter(Boolean).join(' ')}>
-          <Toggle label={t('settings.crtEnabled')} tooltip={t('settings.tooltip.crtEnabled')} tooltipDisabled={tab !== 'graphics'} on={settings.crtEnabled} onChange={(v) => set('crtEnabled', v)} />
-          <Slider label={t('settings.crtIntensity')} tooltip={t('settings.tooltip.crtIntensity')} tooltipDisabled={tab !== 'graphics'} value={settings.crtIntensity} min={0} max={100} onChange={(v) => set('crtIntensity', v)} />
-          <Toggle label={t('settings.crtBloom')} tooltip={t('settings.tooltip.crtBloom')} tooltipDisabled={tab !== 'graphics'} on={settings.crtBloom} onChange={(v) => set('crtBloom', v)} />
+          <Toggle label={t('settings.crtEnabled')} tooltip={t('settings.tooltip.crtEnabled')} tooltipDisabled={tab !== 'video'} on={settings.crtEnabled} onChange={(v) => set('crtEnabled', v)} />
+          <Slider label={t('settings.crtIntensity')} tooltip={t('settings.tooltip.crtIntensity')} tooltipDisabled={tab !== 'video'} value={settings.crtIntensity} min={0} max={100} onChange={(v) => set('crtIntensity', v)} />
+          <Toggle label={t('settings.crtBloom')} tooltip={t('settings.tooltip.crtBloom')} tooltipDisabled={tab !== 'video'} on={settings.crtBloom} onChange={(v) => set('crtBloom', v)} />
         </div>
 
         <div id="settings-audio" role="tabpanel" aria-hidden={tab !== 'audio'} className={['set-tabpanel', tab === 'audio' ? 'on' : ''].filter(Boolean).join(' ')}>

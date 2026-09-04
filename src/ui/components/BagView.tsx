@@ -6,8 +6,8 @@ import { isVowel } from '../../engine/types';
 import { useI18n } from '../i18n';
 import { tileTooltip } from '../game';
 import { tutorialBus } from '../tutorial';
-import { pouchArt } from '../pouchArt';
 import { richText } from '../richtext';
+import { PouchCard } from './ObjectCards';
 import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
 
@@ -162,19 +162,23 @@ export function BagWidget({
           body={t(`pouch.${run.pouchId}.desc`)}
           disabled={open || hovered}
         >
-          <button
-            type="button"
+          <PouchCard
+            id={run.pouchId}
+            imageClassName="pouch-art"
             className={['pouch-widget', open ? 'open' : ''].filter(Boolean).join(' ')}
-            aria-label={t('bagview.title')}
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            aria-controls="pouch-contents-dialog"
-            onClick={() => setOpen((value) => !value)}
-            onFocus={showSummary}
-            onBlur={() => setHovered(false)}
           >
-            <img className="pouch-art" src={pouchArt(run.pouchId)} alt="" aria-hidden />
-          </button>
+            <button
+              type="button"
+              className="pouch-widget-select"
+              aria-label={t('bagview.title')}
+              aria-expanded={open}
+              aria-haspopup="dialog"
+              aria-controls="pouch-contents-dialog"
+              onClick={() => setOpen((value) => !value)}
+              onFocus={showSummary}
+              onBlur={() => setHovered(false)}
+            />
+          </PouchCard>
         </Tooltip>
         <span className="pouch-count">
           {remaining}/{total}

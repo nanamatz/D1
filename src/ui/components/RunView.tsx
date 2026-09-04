@@ -32,6 +32,7 @@ import { BagWidget } from './BagView';
 import { RunInfo } from './RunInfo';
 import { Options } from './Options';
 import { GuidedIntro } from './GuidedIntro';
+import { PaletteGuide } from './PaletteGuide';
 import { DeskObjects } from './DeskObjects';
 import { PackOpening } from './PackOpening';
 import { BossIntro } from './BossIntro';
@@ -324,7 +325,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           onOpenOptions={() => setPaused(true)}
           screenshake={settings.screenshake}
           reducedMotion={settings.reducedMotion}
-          resolutionActive={phase === 'playing' && g.state.pendingEnd && blind.projectedScore >= blind.target}
+          resolutionActive={((phase === 'playing' && g.state.pendingEnd) || phase === 'cashout') && blind.projectedScore >= blind.target}
           mode={sidebarMode}
         />
         <main className="main">
@@ -483,6 +484,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
       {/* D-3 · ambient desk objects in the viewport margins — cosmetic, only while
           actively playing (not during the guided intro or a pause menu). */}
       <DeskObjects active={phase === 'playing' && !introOpen && !paused} />
+      <PaletteGuide g={g} blocked={paused || showInfo || introOpen} />
       {(phase === 'playing' || phase === 'shop' || phase === 'blindselect') && paused && createPortal((
         <div className="overlay pause-overlay">
           <div className="overlay-card pause-modal">
@@ -491,6 +493,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
               onBack={() => setPaused(false)}
               onNewRun={onNewRun}
               onMainMenu={onExit}
+              onPaletteUnlock={g.absorbPaletteUnlocks}
             />
           </div>
         </div>

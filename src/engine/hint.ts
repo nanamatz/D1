@@ -45,6 +45,16 @@ export function findSpellableWords(
     ? (prepareWordSubmission(hand, lexicon, context.run, context.blind).ctx.spellingTiles ?? hand)
     : hand;
   const physicalById = new Map(hand.map((tile) => [tile.id, tile]));
+  const forcedId = context?.blind.forcedTileId ?? null;
+  const forcedPhysical = forcedId ? physicalById.get(forcedId) : undefined;
+  if (forcedId && !forcedPhysical) return [];
+  const forcedPrepared = forcedId
+    ? spellingTiles.find((tile) => tile.id === forcedId)
+    : undefined;
+  const forcedLetter = forcedPhysical && forcedPhysical.letter !== null && forcedPhysical.material !== 'stone'
+    ? forcedPrepared?.letter
+    : undefined;
+  if (forcedPhysical && forcedPhysical.letter !== null && forcedPhysical.material !== 'stone' && !forcedLetter) return [];
   const byLetter = new Map<Letter, Tile[]>();
   for (const t of spellingTiles) {
     if (t.letter === null) continue; // a Stone tile can spell nothing (GDD §2.2)
@@ -58,6 +68,11 @@ export function findSpellableWords(
       tileBaseChips(physicalById.get(b.id) ?? b) -
       tileBaseChips(physicalById.get(a.id) ?? a),
     );
+    if (letter === forcedLetter) {
+      const forcedIndex = tiles.findIndex((tile) => tile.id === forcedId);
+      if (forcedIndex < 0) return [];
+      tiles.unshift(...tiles.splice(forcedIndex, 1));
+    }
     avail.set(letter, tiles.length);
   }
 
@@ -77,6 +92,7 @@ export function findSpellableWords(
       }
     }
     if (!ok) continue;
+    if (forcedLetter && !need.has(forcedLetter)) continue;
     const entry = lexicon.lookup(word);
     // Only real dictionary words reach here (they came from lexicon.words()), so
     // the length bonus always applies — same rule as the live pipeline (GDD §3.1).

@@ -7,10 +7,7 @@ import { RECORD_IDS } from '../../engine/records';
 import type { PouchId, RecordId, VoucherId } from '../../engine/types';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { jokerDescKey, voucherDescKey } from '../descriptions';
-import { jokerArt } from '../jokerArt';
 import { mascotVariantArt } from '../mascots';
-import { pouchArt } from '../pouchArt';
-import { recordArt } from '../recordArt';
 import { UNLOCKS } from '../unlocks';
 import type { UnlockNotice } from '../unlockRecap';
 import { voucherArt } from '../voucherArt';
@@ -21,6 +18,7 @@ import { UiIcon } from './UiIcon';
 import { VoucherCard } from './VoucherCard';
 import { WooDakMascot } from './WooDakMascot';
 import { Pager } from './Pager';
+import { EmojiTileCard, PouchCard, RecordCard } from './ObjectCards';
 
 interface Props {
   g: UseGame;
@@ -65,13 +63,18 @@ export function UnlockRecap({ g, notices }: Props) {
     }
     if (notice.category === 'emoji') {
       const def = JOKER_REGISTRY.get(notice.id);
-      const art = jokerArt(notice.id);
-      if (!def || !art) return [];
+      if (!def) return [];
       return [{
         key: `emoji:${def.id}`,
         title: lang === 'ko' ? def.nameKo : def.nameEn,
         body: t(jokerDescKey(def.id)),
-        visual: <img className="unlock-recap-joker" src={art} alt="" />,
+        visual: (
+          <EmojiTileCard
+            id={def.id}
+            className="unlock-recap-joker"
+            imageClassName="unlock-recap-joker-art"
+          />
+        ),
       }];
     }
     if (notice.category === 'voucher') {
@@ -93,7 +96,7 @@ export function UnlockRecap({ g, notices }: Props) {
         key: `pouch:${id}`,
         title: t(`pouch.${id}.name`),
         body: t(`pouch.${id}.desc`),
-        visual: <img className="unlock-recap-object" src={pouchArt(id)} alt="" />,
+        visual: <PouchCard id={id} className="unlock-recap-object" />,
       }];
     }
     if (notice.category === 'record') {
@@ -109,10 +112,10 @@ export function UnlockRecap({ g, notices }: Props) {
           pouch: t(`pouch.${pouchId}.name`),
         })}\n${t(`pouch.${pouchId}.desc`)}`,
         visual: (
-          <span className="unlock-recap-pair">
-            <img src={recordArt(id)} alt="" />
-            <img src={pouchArt(pouchId)} alt="" />
-          </span>
+          <div className="unlock-recap-pair">
+            <RecordCard id={id} className="unlock-recap-pair-object" />
+            <PouchCard id={pouchId} className="unlock-recap-pair-object" />
+          </div>
         ),
       }];
     }
@@ -129,10 +132,10 @@ export function UnlockRecap({ g, notices }: Props) {
         `${t(`record.${def.recordId}.name`)}: ${t(`record.${def.recordId}.desc`)}`,
       ].join('\n'),
       visual: (
-        <span className="unlock-recap-pair">
-          <img src={pouchArt(def.pouchId)} alt="" />
-          <img src={recordArt(def.recordId)} alt="" />
-        </span>
+        <div className="unlock-recap-pair">
+          <PouchCard id={def.pouchId} className="unlock-recap-pair-object" />
+          <RecordCard id={def.recordId} className="unlock-recap-pair-object" />
+        </div>
       ),
     }];
   });
@@ -158,7 +161,7 @@ export function UnlockRecap({ g, notices }: Props) {
           {visibleCards.map((card) => (
             <Tooltip key={card.key} title={card.title} body={card.body} touchPin>
               <div className="unlock-recap-card" tabIndex={0} aria-label={card.title}>
-                <span className="unlock-recap-visual">{card.visual}</span>
+                <div className="unlock-recap-visual">{card.visual}</div>
                 <strong>{card.title}</strong>
               </div>
             </Tooltip>

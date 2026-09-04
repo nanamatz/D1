@@ -10,6 +10,7 @@ import { resetStorageCache } from '../src/ui/storage';
 import type { UseGame } from '../src/ui/useGame';
 import {
   acknowledgeUnlockLedger,
+  absorbPaletteUnlockBaseline,
   createUnlockLedger,
   decodeUnlockNotice,
   finalizeUnlockLedger,
@@ -83,6 +84,28 @@ describe('integrated unlock recap ledger', () => {
     expect(pendingUnlocks(finalized).map((notice) => notice.id)).toEqual(['MUSIC', 'RED']);
   });
 
+  it('absorbs Settings Palette grants into baseline without hiding natural unlocks', () => {
+    const absorbed = absorbPaletteUnlockBaseline([
+      'baseline:emoji:miser',
+      'RED',
+      'pending:palette:YELLOW',
+      'DOG',
+      'pending:voucher:novel',
+      'recap-ready',
+    ], ['RED', 'YELLOW', 'MUSIC', 'DOG', 'NOT_REAL']);
+    expect(absorbed).toContain('baseline:palette:RED');
+    expect(absorbed).toContain('baseline:palette:YELLOW');
+    expect(absorbed).toContain('baseline:palette:MUSIC');
+    expect(absorbed).not.toContain('RED');
+    expect(absorbed).not.toContain('pending:palette:YELLOW');
+    expect(absorbed).toContain('DOG');
+    expect(absorbed).toContain('pending:voucher:novel');
+    expect(absorbed).toContain('recap-ready');
+    expect(pendingUnlocks(finalizeUnlockLedger(absorbed, newRun('bulk'), [
+      'palette:RED', 'palette:YELLOW', 'palette:MUSIC', 'palette:DOG', 'voucher:novel',
+    ])).map((notice) => notice.id)).toEqual(['novel', 'DOG']);
+  });
+
   it('applies custom-seed and Challenge category eligibility', () => {
     const ledger = ['baseline:palette:RED'];
     const snapshot = [
@@ -130,7 +153,7 @@ describe('integrated unlock recap ledger', () => {
     for (const category of ['palette', 'emoji', 'voucher', 'pouch', 'record', 'challenge']) {
       expect(source).toMatch(new RegExp(`notice\\.category [!=]== '${category}'`));
     }
-    for (const resolver of ['jokerArt(', 'voucherArt(', 'pouchArt(', 'recordArt(', 'mascotVariantArt(']) {
+    for (const resolver of ['voucherArt(', 'mascotVariantArt(', '<EmojiTileCard', '<PouchCard', '<RecordCard']) {
       expect(source).toContain(resolver);
     }
     expect(source).toContain('<Tooltip');
@@ -203,6 +226,22 @@ describe('integrated unlock recap ledger', () => {
     expect(freeze).toBeGreaterThan(record);
   });
 
+  it('durably writes an active run Palette baseline before publishing React state', () => {
+    const useGame = readFileSync('src/ui/useGame.ts', 'utf8');
+    const start = useGame.indexOf('const absorbPaletteUnlocks = useCallback');
+    const end = useGame.indexOf('\n  }, []);', start);
+    const action = useGame.slice(start, end);
+    expect(action).toContain('const prev = stateRef.current');
+    expect(action).toContain('if (prev.runStarted) writeRun(serializeRun(next))');
+    expect(action.indexOf('writeRun(serializeRun(next))')).toBeLessThan(action.indexOf('setState(next)'));
+  });
+
+  it('emits the Settings aggregate reveal only after its recap baseline callback', () => {
+    const options = readFileSync('src/ui/components/Options.tsx', 'utf8');
+    expect(options.indexOf('onPaletteUnlock?.(added)'))
+      .toBeLessThan(options.indexOf('unlockBus.emit({'));
+  });
+
   it('treats the Chapter 38 endpoint as a win in the recap mascot copy', () => {
     const recap = readFileSync('src/ui/components/UnlockRecap.tsx', 'utf8');
     expect(recap).toContain(
@@ -242,5 +281,39 @@ describe('integrated unlock recap ledger', () => {
     expect(css).toMatch(/\.unlock-recap > p\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);
     expect(css).toMatch(/\.unlock-recap-card strong\s*\{[^}]*font-size:\s*var\(--fs-xl\)/s);
     expect(css).toMatch(/\.unlock-recap-overlay \.go-mascot \.mascot-bubble\s*\{[^}]*width:\s*max-content;[^}]*max-width:\s*260px;[^}]*font-size:\s*var\(--fs-2xl\)/s);
+  });
+
+  it('keeps the recap shell static while every physical reward owns object motion', () => {
+    const recap = readFileSync('src/ui/components/UnlockRecap.tsx', 'utf8');
+    expect(recap).not.toContain('<TiltCard');
+    expect(recap).toContain('<EmojiTileCard');
+    expect(recap).toContain('<VoucherCard');
+    expect(recap).toContain('<PouchCard');
+    expect(recap).toContain('<RecordCard');
+    expect(recap).toContain('<div className="unlock-recap-pair">');
+
+    const render = (notices: Parameters<typeof UnlockRecap>[0]['notices']) =>
+      renderToStaticMarkup(createElement(
+        I18nProvider,
+        null,
+        createElement(UnlockRecap, { g: recapGame, notices }),
+      ));
+    for (const notices of [
+      [{ category: 'emoji', id: 'miser' }] as const,
+      [{ category: 'voucher', id: 'novel' }] as const,
+      [{ category: 'pouch', id: 'blue' }] as const,
+    ]) {
+      const html = render(notices);
+      expect(html.match(/motion-card/g)).toHaveLength(1);
+      expect(html.match(/tilt-sheen/g)).toHaveLength(1);
+    }
+    for (const notices of [
+      [{ category: 'record', contextId: 'yellow', id: 'redLp' }] as const,
+      [{ category: 'challenge', id: 'risingQuota' }] as const,
+    ]) {
+      const html = render(notices);
+      expect(html.match(/motion-card/g)).toHaveLength(2);
+      expect(html.match(/tilt-sheen/g)).toHaveLength(2);
+    }
   });
 });

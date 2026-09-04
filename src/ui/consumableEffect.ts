@@ -1,4 +1,5 @@
 import { LETTER_HAND_REGISTRY, letterHandLevel } from '../engine/letterHands';
+import { FABLE_REGISTRY, isFableId } from '../engine/fables';
 import type {
   ChanceResult,
   ConsumableId,
@@ -31,6 +32,8 @@ export interface ConsumableEffectEvent {
   addedJokers: OwnedJoker[];
   addedConsumables: ConsumableId[];
   goldDelta: number;
+  /** Presentation-only Shop Use Now ledger; mechanics already committed atomically. */
+  moneyDeltas: number[];
   handSizeDelta: number;
   patternLevelsGained: number;
   wordHandProgress: WordHandProgress[];
@@ -58,6 +61,7 @@ export function buildConsumableEffect(
   before: RunState,
   after: RunState,
   chanceResults: readonly ChanceResult[] = [],
+  moneyDeltas: readonly number[] = [],
 ): ConsumableEffectEvent {
   const beforeTiles = new Map(before.bag.map((tile) => [tile.id, tile]));
   const afterTiles = new Map(after.bag.map((tile) => [tile.id, tile]));
@@ -76,6 +80,7 @@ export function buildConsumableEffect(
     addedJokers: subtractBy(after.jokers, before.jokers, jokerKey),
     addedConsumables: subtractBy(after.consumables, before.consumables, String),
     goldDelta: after.gold - before.gold,
+    moneyDeltas: moneyDeltas.filter((delta) => delta !== 0),
     handSizeDelta: after.handSize - before.handSize,
     patternLevelsGained: Object.entries(after.patternLevels).reduce(
       (sum, [pattern, level]) =>
@@ -95,6 +100,19 @@ export function buildConsumableEffect(
   };
 }
 
+/** Ordered, nonzero presentation beats for money-gaining Fables bought with Use Now. */
+export function shopUseNowMoneyDeltas(
+  id: ConsumableId,
+  price: number,
+  beforeUse: RunState,
+  afterUse: RunState,
+): number[] {
+  if (!isFableId(id)) return [];
+  const kind = FABLE_REGISTRY.get(id)?.effect.kind;
+  if (kind !== 'doubleGold' && kind !== 'jokerSellGold') return [];
+  return [-price, afterUse.gold - beforeUse.gold].filter((delta) => delta !== 0);
+}
+
 type Listener = (event: ConsumableEffectEvent) => void;
 
 class ConsumableEffectBus {
@@ -110,8 +128,9 @@ class ConsumableEffectBus {
     before: RunState,
     after: RunState,
     chanceResults: readonly ChanceResult[] = [],
+    moneyDeltas: readonly number[] = [],
   ): void {
-    const event = buildConsumableEffect(id, before, after, chanceResults);
+    const event = buildConsumableEffect(id, before, after, chanceResults, moneyDeltas);
     this.listeners.forEach((listener) => listener(event));
   }
 }

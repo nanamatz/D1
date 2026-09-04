@@ -254,7 +254,7 @@ export function App() {
       case 'collection':
         return <Collection lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'options':
-        return <Options lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
+        return <Options lexicon={g.getLexicon()} onBack={() => setScreen('menu')} onPaletteUnlock={g.absorbPaletteUnlocks} />;
       case 'profile':
         return <Profile lexicon={g.getLexicon()} onBack={() => setScreen('menu')} />;
       case 'deskLab':

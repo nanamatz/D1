@@ -9,6 +9,7 @@ import { newRun } from '../src/engine/run';
 import type { Letter, Tile } from '../src/engine/types';
 import { mergeSubmitResult } from '../src/sim/full-run-balance';
 import { bossDescription } from '../src/ui/descriptions';
+import { formatScore } from '../src/ui/formatScore';
 import { resolve } from '../src/ui/i18n';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
@@ -98,12 +99,49 @@ describe('D1 UI contract wiring', () => {
   });
 
   it('formats Chips, Mult, money, prices, and sell values through the 10m formatter', () => {
-    expect(source('src/ui/components/Sidebar.tsx')).toContain('formatScore(chips)');
-    expect(source('src/ui/components/Sidebar.tsx')).toContain('formatScore(mult)');
+    const sidebar = source('src/ui/components/Sidebar.tsx');
+    const css = source('src/ui/styles/play.css');
+    expect(sidebar).toContain('const chipsText = formatScore(chips)');
+    expect(sidebar).toContain('const multText = formatScore(mult)');
+    expect(sidebar).toContain("text.length <= 7 ? 'normal' : text.length <= 9 ? 'compact' : 'dense'");
+    expect(sidebar).toContain('aria-label={`${t(\'patternLevel.chips\')}: ${chipsText}`}');
+    expect(sidebar).toContain('aria-label={`${t(\'patternLevel.mult\')}: ${multText}`}');
+    expect(css).toMatch(/\.scorebox-value\s*\{[^}]*max-width:\s*100%[^}]*white-space:\s*nowrap[^}]*overflow:\s*hidden/s);
+    expect(css.match(/\.scorebox \.box\s*\{[^}]*\}/s)?.[0]).not.toMatch(/overflow:\s*hidden/);
+    expect(css).toContain('.scorebox-value.normal { font-size: var(--readout-size); }');
+    expect(css).toContain('.scorebox-value.compact { font-size: 38px; }');
+    expect(css).toContain('.scorebox-value.dense { font-size: 30px; }');
     expect(source('src/ui/components/MoneyValue.tsx')).toContain('formatScore(value)');
     expect(source('src/ui/components/MoneyValue.tsx')).toContain('formatScore(Math.abs(pop.delta))');
     expect(source('src/ui/components/Shop.tsx')).toContain('${formatScore(price)}');
     expect(source('src/ui/components/JokerShelf.tsx')).toContain('formatScore(consumableSellValue');
+  });
+
+  it('keeps ScoreBox length tiers deterministic at large-number boundaries', () => {
+    const classify = (value: number) => {
+      const text = formatScore(value);
+      return [text, text.length <= 7 ? 'normal' : text.length <= 9 ? 'compact' : 'dense'];
+    };
+
+    expect(classify(999_999)).toEqual(['999,999', 'normal']);
+    expect(classify(1_000_000)).toEqual(['1,000,000', 'compact']);
+    expect(classify(9_999_999)).toEqual(['9,999,999', 'compact']);
+    expect(classify(10_000_000)).toEqual(['1e7', 'normal']);
+    expect(classify(-1_000_000)).toEqual(['-1,000,000', 'dense']);
+    expect(classify(1_000_000.4)).toEqual(['1,000,000', 'compact']);
+    expect(classify(Number.POSITIVE_INFINITY)).toEqual(['—', 'normal']);
+  });
+
+  it('renders the active Run Info challenge as a conditional full-width pixel banner', () => {
+    const runInfo = source('src/ui/components/RunInfo.tsx');
+    const css = source('src/ui/styles/screens.css');
+    expect(runInfo).toContain('run.challengeId &&');
+    expect(runInfo.indexOf('className="ov-head"')).toBeLessThan(runInfo.indexOf('className="ri-challenge"'));
+    expect(runInfo.indexOf('className="ri-challenge"')).toBeLessThan(runInfo.indexOf('className="ri-tabs"'));
+    expect(css).toMatch(
+      /\.ri-challenge\s*\{[^}]*width:\s*100%[^}]*min-height:\s*56px[^}]*margin:\s*0 0 12px[^}]*padding:\s*10px 16px[^}]*border:\s*3px solid var\(--gold\)[^}]*font-size:\s*22px/s,
+    );
+    expect(css).toContain('.ri-challenge::before,');
   });
 
   it('retains signed money motion and assigns distinct action colours', () => {

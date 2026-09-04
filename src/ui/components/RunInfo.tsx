@@ -22,6 +22,7 @@ import { VoucherCard } from './VoucherCard';
 import { voucherArt } from '../voucherArt';
 import { PatternIcon, UiIcon } from './UiIcon';
 import { isLetterHandDiscovered } from '../lifetime';
+import { PatternExampleTray } from './PatternExample';
 
 interface Props {
   run: RunState;
@@ -98,8 +99,19 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                   // at the pattern's current level, updating as Constellation cards level it.
                   const cm = patternChipsMult(p, run.patternLevels[p]);
                   return (
-                    <Tooltip key={p} title={t(`pattern.${p}`)} body={t(`patterndesc.${p}`)} down>
-                      <div className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}>
+                    <Tooltip
+                      key={p}
+                      title={t(`pattern.${p}`)}
+                      body={t(`patterndesc.${p}`)}
+                      content={<PatternExampleTray pattern={p} />}
+                      down
+                      touchPin
+                      viewportContain
+                    >
+                      <div
+                        className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}
+                        tabIndex={0}
+                      >
                         <span className="pl">Lv {run.patternLevels[p]}</span>
                         <PatternIcon pattern={p} />
                         <span className="pn">{t(`pattern.${p}`)}</span>

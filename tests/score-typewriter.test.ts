@@ -2,12 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { BALANCE } from '../src/engine/balance';
 import {
   crossedScoreTarget,
+  SCORE_TYPEWRITER_LED_COLORS,
   SCORE_TYPEWRITER_KEYCAPS,
+  SCORE_TYPEWRITER_SIZE_VARIATION,
   scoreTypewriterClearPeak,
   scoreTypewriterClearRepeatMs,
   scoreTypewriterEventDelta,
   scoreTypewriterKeySequence,
+  scoreTypewriterKeySizeVariation,
   scoreTypewriterKeyTiming,
+  scoreTypewriterLedSlot,
   scoreTypewriterLiveTotal,
   scoreTypewriterPeakTier,
   scoreTypewriterPrimaryKey,
@@ -91,7 +95,7 @@ describe('Score Typewriter strength', () => {
     expect(scoreTypewriterPeakTier(0, 0, 10, 100, Number.NaN)).toBe(0);
   });
 
-  it('resets normal/cashout lifecycle while retaining a clear peak through resolution', () => {
+  it('retains a clear peak through resolution and resets when resolution ends', () => {
     expect(scoreTypewriterClearPeak(0, false, false, 0)).toBe(0);
     const clearPeak = scoreTypewriterClearPeak(0, true, true, 3);
     expect(clearPeak).toBe(3);
@@ -138,6 +142,36 @@ describe('Score Typewriter strength', () => {
     }
     expect(scoreTypewriterKeySequence(ids[1]!, 8, 'Enter')).toEqual(sequences[1]);
     expect(sequences[0]).not.toEqual(sequences[1]);
+  });
+
+  it('assigns every physical key one stable six-colour LED slot and covers the rainbow at Tiers 5–6', () => {
+    expect(SCORE_TYPEWRITER_LED_COLORS).toHaveLength(6);
+    expect(new Set(SCORE_TYPEWRITER_LED_COLORS)).toHaveLength(6);
+    expect(SCORE_TYPEWRITER_KEYCAPS.map((_, index) => scoreTypewriterLedSlot(index)))
+      .toEqual(SCORE_TYPEWRITER_KEYCAPS.map((_, index) => index % 6));
+
+    for (const beatId of ['settle-42', 'clear:1-0:7:0', 'clear:1-0:7:1']) {
+      for (const tier of [5, 6] as const) {
+        const count = BALANCE.scoreTypewriter.visualKeyCounts[tier];
+        const sequence = scoreTypewriterKeySequence(beatId, count, 'Enter');
+        expect(scoreTypewriterKeySequence(beatId, count, 'Enter')).toEqual(sequence);
+        expect(new Set(sequence.map(scoreTypewriterLedSlot)))
+          .toEqual(new Set(SCORE_TYPEWRITER_LED_COLORS.map((_, slot) => slot)));
+      }
+    }
+  });
+
+  it('varies smoke and flame scale per key by a deterministic ±5%', () => {
+    const scales = [0, 1, 2, 40].map((keyIndex) =>
+      scoreTypewriterKeySizeVariation('settle-42', keyIndex),
+    );
+    expect(SCORE_TYPEWRITER_SIZE_VARIATION).toBe(0.05);
+    expect(scales.every((scale) => scale >= 0.95 && scale <= 1.05)).toBe(true);
+    expect(new Set(scales).size).toBeGreaterThan(1);
+    expect(scoreTypewriterKeySizeVariation('settle-42', 1))
+      .toBe(scoreTypewriterKeySizeVariation('settle-42', 1));
+    expect(scoreTypewriterKeySizeVariation('settle-42', 1))
+      .not.toBe(scoreTypewriterKeySizeVariation('settle-43', 1));
   });
 
   it('rejects invalid submission scores and targets', () => {

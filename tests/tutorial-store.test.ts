@@ -126,6 +126,10 @@ describe('guided intro flag (A-1)', () => {
     expect(spotlight).toContain("window.addEventListener('blur', hide)");
     expect(spotlight).toContain('className="tutorial-mouse-cue"');
     expect(spotlight).toContain('aria-hidden="true"');
+    expect(spotlight).toContain('createPortal(');
+    expect(spotlight).toContain('document.body');
+    const spotRule = css.match(/\.intro-spot\s*\{([^}]*)\}/s)?.[1] ?? '';
+    expect(spotRule).not.toMatch(/transition\s*:[^;}]*(?:top|left|width|height)/);
     expect(css).toMatch(/\.tutorial-mouse-cue\s*\{[^}]*width:\s*40px;[^}]*height:\s*40px;[^}]*pointer-events:\s*none;/s);
     expect(css).toContain('@media (hover: hover) and (pointer: fine)');
     expect(css).toContain('.force-reduced-motion .tutorial-mouse-cue { animation: none; }');
@@ -151,7 +155,17 @@ describe('guided intro copy coverage', () => {
 
   it('teaches the ordinary mark-then-Discard action in both locales', () => {
     expect(en['intro.step.discard.body']).toMatch(/right-click.*mark.*Discard button/i);
-    expect(ko['intro.step.discard.body']).toMatch(/우클릭.*표시.*버리기 버튼/);
+    expect(ko['intro.step.discard.body']).toMatch(/강조된.*우클릭.*버릴 타일.*버리기 버튼/);
     expect(INTRO_STEPS.map((step) => step.advance)).toEqual(['next', 'discarded', 'staged', 'played']);
+  });
+
+  it('uses player-facing highlighted targets and the real submit button name', () => {
+    expect(en['intro.step.build.body']).toMatch(/highlighted.*Y, E, L, L, O, W/i);
+    expect(en['intro.step.build.body']).not.toMatch(/protected/i);
+    expect(en['intro.step.submit.body']).toContain('Play word');
+    expect(ko['intro.step.build.body']).toMatch(/강조된.*Y, E, L, L, O, W/);
+    expect(ko['intro.step.build.body']).not.toContain('보호된 타일');
+    expect(ko['intro.step.submit.body']).toContain('단어 내기를 눌러');
+    expect(ko['intro.step.submit.body']).not.toContain('플레이를 눌러');
   });
 });

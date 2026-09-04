@@ -128,7 +128,7 @@ describe('Sweet Turtles boot splash', () => {
   });
 
   it('documents the mixer exception, autoplay caveat, timing, and original synthesis', () => {
-    expect(gdd).toContain('developer ident is the sole audio exception');
+    expect(gdd).toContain('developer ident is fully separate from that mixer');
     expect(gdd).toContain('never imports, reads, or obeys the gameplay mixer');
     expect(uiDesign).toContain('ready logo or text fallback becomes one viewport-sized accessible button surface');
     expect(uiDesign).toContain('1600–3600ms locks the front for exactly two seconds');

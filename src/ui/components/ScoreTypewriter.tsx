@@ -6,15 +6,26 @@ import scoreTypewriterArt from '../assets/score-typewriter-chassis.png';
 import { motionOff, usePrefersReducedMotion } from '../motion';
 import {
   crossedScoreTarget,
+  SCORE_TYPEWRITER_LED_COLORS,
+  SCORE_TYPEWRITER_PANEL_LED_PHASES_MS,
   SCORE_TYPEWRITER_KEYCAPS,
   scoreTypewriterClearPeak,
   scoreTypewriterClearRepeatMs,
   scoreTypewriterKeySequence,
+  scoreTypewriterKeySizeVariation,
   scoreTypewriterKeyTiming,
+  scoreTypewriterLedSlot,
+  scoreTypewriterPanelLedOrder,
   scoreTypewriterShake,
   scheduleScoreTypewriterClearRepeats,
   type ScoreTypewriterTier,
 } from '../scoreTypewriter';
+
+const TYPEWRITER_CHASSIS_SMOKE_POINTS = [
+  [8, 34, -40], [18, 46, -180], [29, 28, -320], [40, 52, -110],
+  [50, 35, -250], [61, 47, -390], [72, 29, -80], [82, 43, -220],
+  [92, 35, -360], [24, 61, -60], [55, 59, -200], [85, 58, -340],
+] as const;
 
 interface Props {
   active: boolean;
@@ -186,6 +197,7 @@ export function ScoreTypewriter({
         visualCount,
       ),
     ]));
+    const panelLedOrder = scoreTypewriterPanelLedOrder(presentationBeatId);
     return (
       <div className="score-typewriter">
         <div key={machineKey} className="typewriter-machine">
@@ -193,12 +205,15 @@ export function ScoreTypewriter({
           <div className="typewriter-keys">
             {SCORE_TYPEWRITER_KEYCAPS.map((keycap, keyIndex) => {
               const timing = keyTiming.get(keyIndex);
+              const ledSlot = scoreTypewriterLedSlot(keyIndex);
+              const keySizeVariation = scoreTypewriterKeySizeVariation(presentationBeatId, keyIndex);
               return (
                 <button
                   key={keycap.id}
                   type="button"
                   className={`typewriter-key role-${keycap.role}${timing ? ' is-pressed' : ''}`}
                   data-key-id={keycap.id}
+                  data-led-slot={ledSlot}
                   disabled
                   tabIndex={-1}
                   aria-hidden="true"
@@ -207,6 +222,9 @@ export function ScoreTypewriter({
                     '--key-y': `${keycap.y}%`,
                     '--key-w': `${keycap.w}%`,
                     '--key-h': `${keycap.h}%`,
+                    '--key-led': SCORE_TYPEWRITER_LED_COLORS[ledSlot],
+                    '--key-smoke-scale': String(keySizeVariation * (presentationTier === 6 ? 1.35 : 1)),
+                    '--key-flame-scale': String(keySizeVariation * (presentationTier === 6 ? 1.25 : 1)),
                     ...(timing ? {
                       '--key-delay': `${timing.delayMs}ms`,
                       '--key-duration': `${timing.durationMs}ms`,
@@ -218,23 +236,29 @@ export function ScoreTypewriter({
               );
             })}
           </div>
-          <div className="typewriter-smoke"><i /><i /><i /></div>
-          <div className="typewriter-flame">
-            <svg
-              viewBox="0 0 16 20"
-              preserveAspectRatio="xMidYMid meet"
-              shapeRendering="crispEdges"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <rect className="typewriter-flame-outer" x="6" y="0" width="4" height="2" />
-              <rect className="typewriter-flame-outer" x="4" y="2" width="8" height="2" />
-              <rect className="typewriter-flame-outer" x="2" y="4" width="12" height="4" />
-              <rect className="typewriter-flame-outer" x="0" y="8" width="4" height="8" />
-              <rect className="typewriter-flame-outer" x="8" y="8" width="8" height="8" />
-              <rect className="typewriter-flame-outer" x="0" y="16" width="16" height="4" />
-              <rect className="typewriter-flame-core" x="8" y="6" width="4" height="8" />
-            </svg>
+          <div className="typewriter-panel-leds" aria-hidden="true">
+            {['red', 'yellow', 'green'].map((color, index) => (
+              <i
+                key={color}
+                className={`typewriter-panel-led typewriter-panel-led-${color}`}
+                style={{ animationDelay: `${SCORE_TYPEWRITER_PANEL_LED_PHASES_MS[panelLedOrder[index] ?? index]}ms` }}
+              />
+            ))}
+          </div>
+          <div className="typewriter-chassis-smoke" aria-hidden="true">
+            {TYPEWRITER_CHASSIS_SMOKE_POINTS.map(([x, y, delay], index) => (
+              <i
+                key={index}
+                style={{
+                  '--chassis-smoke-x': `${x}%`,
+                  '--chassis-smoke-y': `${y}%`,
+                  '--chassis-smoke-delay': `${delay}ms`,
+                  '--chassis-smoke-scale': String(
+                    scoreTypewriterKeySizeVariation(presentationBeatId, index),
+                  ),
+                } as CSSProperties}
+              />
+            ))}
           </div>
           <div className="typewriter-pop">POP!</div>
         </div>

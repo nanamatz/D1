@@ -136,27 +136,38 @@ it.
 ## Window and resolution policy
 
 The existing fit-scale system in `src/ui/styles/tokens.css` already scales the
-board against both axes. **No CSS changes.** The shell only chooses window
-sizes.
+board against both axes. The shell only chooses window sizes; Settings styles
+the native selector but does not change the board geometry.
 
-- **Default size:** 1600×1000 content. The board's design size is 1440×912 and
-  `--fit-scale` is `min(1, …)`, so at this window size it reads exactly 1.0 and
-  pixel art renders unscaled with headroom to spare. If `screen.workAreaSize` is
-  smaller, open scaled down to fit — the window must never open off-screen on a
-  1366×768 laptop.
+- **Default size:** 1600×900 content. The board's design size is 1440×988, so
+  the existing two-axis `--fit-scale` reduces it slightly to fit this common
+  16:9 window without clipping. If `screen.workAreaSize` is smaller, open scaled
+  down further — the window must never open off-screen on a 1366×768 laptop.
 - **Minimum size:** 960×600, where `--fit-scale` bottoms out at ≈0.66. Below
   that the pixel font stops being legible. The floor prevents "I shrank it and
   can't read anything" reports.
 - **No aspect-ratio lock.** Free resize plus fit-scale already works, and
   locking would fight the user's window management. Leftover space is filled by
   the background outside the board.
-- **Fullscreen:** starts windowed; `F11` toggles. Ordinary fullscreen, not
-  exclusive, so alt-tab is instant.
+- **Video presets (added 2026-09-03):** Settings offers 960×600, 1280×800,
+  1600×900, and 1920×1080 as equal windowed **content-size** choices with no
+  Recommended marker. A preset is unavailable when content plus the measured
+  native frame would exceed the active display's work area. Manual resizing is
+  reported as Custom. Selecting an available preset while maximized restores,
+  sizes, and centres the window. The renderer uses a context-isolated preload
+  bridge; the main process validates the preset whitelist and requesting main
+  frame. Browsers expose no resize bridge and show browser-managed Automatic.
+- **Fullscreen:** starts windowed; `F11` and Settings toggle the same native
+  state. Resolution is disabled until fullscreen ends, which restores the prior
+  windowed bounds. This is ordinary fullscreen, not exclusive, so alt-tab is
+  instant.
 - **Window state** (`window-state.js`): size, position, maximized, and
   fullscreen persist to JSON under `%APPDATA%` and restore on next launch. On
   restore, **validate the saved position against currently connected displays**
   and fall back to the default position if it lies outside them — otherwise
   unplugging a monitor opens the window where nobody can see it.
+  `window-state.json` remains the sole resolution authority; `wj.settings` does
+  not duplicate it.
 - **No white flash:** create with `show: false`, display on `ready-to-show`, and
   set `backgroundColor` to the game's dark background.
 - **DPI:** at 150% Windows scaling, `100vw` is still in CSS pixels, so fit-scale

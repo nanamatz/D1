@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { findSpellableWords } from '../src/engine/hint';
 import { makeLexicon } from '../src/engine/lexicon';
+import { startBlind, submitWord } from '../src/engine/loop';
+import { createOwnedJoker } from '../src/engine/jokers';
+import { makeRng } from '../src/engine/rng';
+import { newRun } from '../src/engine/run';
 import type { Letter, Tile } from '../src/engine/types';
 
 let idc = 0;
@@ -48,5 +52,89 @@ describe('P2-1 — per-hand word solver (Magnifier)', () => {
 
   it('returns nothing when no word is spellable', () => {
     expect(findSpellableWords(hand('XZ'), lex, 3)).toEqual([]);
+  });
+
+  it('reserves the exact forced physical letter and filters unrelated words', () => {
+    const run = newRun('nokdo-hint-letter');
+    const tiles = hand('AAT').map((tile, index) => index === 0
+      ? { ...tile, bonusChips: 100 }
+      : tile);
+    const forcedId = tiles[1]!.id;
+    const blind = {
+      ...startBlind(run, makeRng(run.seed)),
+      hand: tiles,
+      forcedTileId: forcedId,
+    };
+    const words = makeLexicon([], {
+      a: { suit: 'standard', pos: ['article'] },
+      at: { suit: 'standard', pos: ['preposition'] },
+      t: { suit: 'standard', pos: ['noun'] },
+    });
+
+    const before = JSON.stringify({ run, blind });
+    const first = findSpellableWords(tiles, words, 3, { run, blind });
+    expect(first.map((hint) => hint.word)).toEqual(['at', 'a']);
+    expect(first.every((hint) => hint.tileIds.includes(forcedId))).toBe(true);
+    expect(first.find((hint) => hint.word === 'a')!.tileIds).toEqual([forcedId]);
+    expect(findSpellableWords(tiles, words, 3, { run, blind })).toEqual(first);
+    expect(JSON.stringify({ run, blind })).toBe(before);
+  });
+
+  it('reserves a rule-transformed forced tile by its physical id', () => {
+    const run = newRun('nokdo-hint-transformed');
+    run.jokers = [createOwnedJoker(run, 'alphabetPoet')];
+    const tiles = hand('ZCT');
+    const forcedId = tiles[0]!.id;
+    const blind = {
+      ...startBlind(run, makeRng(run.seed)),
+      hand: tiles,
+      forcedTileId: forcedId,
+    };
+    const words = makeLexicon([], {
+      cat: { suit: 'standard', pos: ['noun'] },
+    });
+
+    expect(findSpellableWords(tiles, words, 3, { run, blind })).toEqual([
+      expect.objectContaining({ word: 'cat', tileIds: [tiles[1]!.id, forcedId, tiles[2]!.id] }),
+    ]);
+  });
+
+  it('omits a forced Stone from advisory spelling without changing submission scoring', () => {
+    const words = makeLexicon([], {
+      cat: { suit: 'standard', pos: ['noun'] },
+    });
+    const letters = hand('CAT');
+    const stone: Tile = {
+      id: 'forced-stone',
+      letter: null,
+      material: 'stone',
+      font: 'medium',
+    };
+    const tiles = [stone, ...letters];
+    const run = newRun('nokdo-hint-stone');
+    const blind = {
+      ...startBlind(run, makeRng(run.seed)),
+      hand: tiles,
+      forcedTileId: stone.id,
+    };
+    const [hint] = findSpellableWords(tiles, words, 3, { run, blind });
+
+    expect(hint).toMatchObject({ word: 'cat', tileIds: letters.map((tile) => tile.id) });
+    expect(submitWord(
+      blind,
+      run,
+      words,
+      [stone.id, ...hint!.tileIds],
+      makeRng('nokdo-hint-stone-submit'),
+    ).submission.isGibberish).toBe(true);
+
+    const tongueRun = { ...run, jokers: [createOwnedJoker(run, 'stoneTongue')] };
+    expect(submitWord(
+      blind,
+      tongueRun,
+      words,
+      [stone.id, ...hint!.tileIds],
+      makeRng('nokdo-hint-stone-tongue-submit'),
+    ).submission.isGibberish).toBe(false);
   });
 });

@@ -570,7 +570,7 @@
 .shop-offer-action-secondary .btn {
   min-width: 96px;
 }
-.shop-offer-action .btn,
+.shop-offer .shop-offer-action .btn,
 .consumable-menu.bare button {
   min-width: 82px;
 }
@@ -1749,6 +1749,18 @@
   box-shadow: var(--shadow);
   position: relative; /* anchor the +N/×N pop (item 6) */
 }
+.scorebox-value {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.scorebox-value.normal { font-size: var(--readout-size); }
+.scorebox-value.compact { font-size: 38px; }
+.scorebox-value.dense { font-size: 30px; }
 /* Score Keyboard (GDD §7.1): persistent left-margin pixel machine. It reacts
    inside the existing settle beat and never owns completion timing. */
 .score-typewriter-dock {
@@ -1775,7 +1787,7 @@
   contain: layout paint;
 }
 :root:has(.screen-stack.transitioning) .score-typewriter-dock { visibility: hidden; }
-:root.world-mono .score-typewriter-dock { filter: grayscale(1); }
+:root.world-mono .score-typewriter-dock :is(.typewriter-art, .typewriter-pop) { filter: grayscale(1); }
 .score-typewriter {
   position: absolute;
   left: 50%;
@@ -1842,60 +1854,142 @@
   line-height: .9;
   text-align: center;
   text-shadow: 1px 1px 0 #050708;
-  overflow: hidden;
+  overflow: visible;
   appearance: none;
+}
+.typewriter-key::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 1px);
+  width: clamp(7px, .72vw, 14px);
+  height: clamp(7px, .72vw, 14px);
+  opacity: 0;
+  background: #606a70;
+  border: max(1px, .08vw) solid #20292e;
+  box-shadow: -5px -2px 0 #606a70, 5px -5px 0 #606a70, 0 -8px 0 -1px #7a858a;
+  transform: translateX(-50%) scale(var(--key-smoke-scale, 1));
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+.typewriter-key::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 1px);
+  width: clamp(7px, .7vw, 14px);
+  height: clamp(10px, 1.1vw, 22px);
+  opacity: 0;
+  background: #fff4bb;
+  box-shadow: -4px 4px 0 var(--key-led), 4px 4px 0 var(--key-led), 0 8px 0 var(--key-led);
+  transform: translateX(-50%) scale(var(--key-flame-scale, 1));
+  transform-origin: 50% 100%;
+  pointer-events: none;
 }
 .typewriter-key:disabled {
   opacity: 1;
 }
+.typewriter-panel-leds {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.typewriter-panel-led {
+  position: absolute;
+  left: var(--panel-led-x);
+  top: 21.2%;
+  width: 1.55%;
+  height: 3.8%;
+  opacity: 0;
+  background: var(--panel-led-color);
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+}
+.typewriter-panel-led-red { --panel-led-x: 83.1%; --panel-led-color: #ff365c; }
+.typewriter-panel-led-yellow { --panel-led-x: 85.9%; --panel-led-color: #ffe04b; }
+.typewriter-panel-led-green { --panel-led-x: 88.6%; --panel-led-color: #45e06f; }
+.typewriter-tier-5 { --panel-led-low: .14; --panel-led-scale: 1.25; --panel-led-glow: 9px; --panel-led-burst: 2px; --panel-led-side-left: -5px; --panel-led-side-right: 5px; }
+.typewriter-tier-6 { --panel-led-low: .2; --panel-led-scale: 1.45; --panel-led-glow: 14px; --panel-led-burst: 4px; --panel-led-side-left: -7px; --panel-led-side-right: 7px; }
+.typewriter-tier-5.is-active .typewriter-panel-led,
+.typewriter-tier-6.is-active .typewriter-panel-led {
+  opacity: 1;
+  animation: typewriter-panel-led-jackpot var(--typewriter-beat) steps(1, end) infinite;
+}
+.typewriter-tier-5.is-clear-held .typewriter-panel-led,
+.typewriter-tier-6.is-clear-held .typewriter-panel-led {
+  opacity: 1;
+  animation: typewriter-panel-led-jackpot var(--typewriter-ambient-speed) steps(1, end) infinite;
+}
+.typewriter-chassis-smoke {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.typewriter-chassis-smoke i {
+  position: absolute;
+  left: var(--chassis-smoke-x);
+  top: var(--chassis-smoke-y);
+  width: clamp(6px, .5vw, 10px);
+  height: clamp(6px, .5vw, 10px);
+  opacity: 0;
+  background: #737d82;
+  border: max(1px, .08vw) solid #343c40;
+  box-shadow: -5px -3px 0 #737d82, 4px -7px 0 -1px #8a9499;
+  transform: translate(-50%, -50%) scale(var(--chassis-smoke-scale, 1));
+  transform-origin: 50% 100%;
+}
+.typewriter-tier-6 .typewriter-chassis-smoke i {
+  width: clamp(9px, .75vw, 15px);
+  height: clamp(9px, .75vw, 15px);
+  background: #3d454a;
+  border-color: #181e22;
+  box-shadow: -7px -4px 0 #3d454a, 6px -9px 0 -1px #50595e, 0 -14px 0 -2px #2b3236;
+}
+.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7),
+.typewriter-tier-6.is-active .typewriter-chassis-smoke i {
+  animation: typewriter-chassis-smoke var(--typewriter-beat) steps(5, end) both;
+  animation-delay: var(--chassis-smoke-delay);
+}
+.typewriter-tier-5.is-clear-held .typewriter-chassis-smoke i:nth-child(-n+7),
+.typewriter-tier-6.is-clear-held .typewriter-chassis-smoke i {
+  animation: typewriter-chassis-smoke var(--typewriter-ambient-speed) steps(5, end) infinite;
+  animation-delay: var(--chassis-smoke-delay);
+}
 .score-typewriter-dock.is-active .typewriter-key.is-pressed {
+  z-index: 1;
   animation: typewriter-key var(--key-duration) steps(2, end) both;
   animation-delay: var(--key-delay);
 }
-.typewriter-smoke,
-.typewriter-flame,
+.typewriter-tier-4.is-active .typewriter-key.is-pressed::before,
+.typewriter-tier-5.is-active .typewriter-key.is-pressed::before,
+.typewriter-tier-6.is-active .typewriter-key.is-pressed::before {
+  animation: typewriter-key-smoke var(--key-duration) steps(4, end) both;
+  animation-delay: var(--key-delay);
+}
+.typewriter-tier-5.is-active .typewriter-key.is-pressed::after,
+.typewriter-tier-6.is-active .typewriter-key.is-pressed::after {
+  animation: typewriter-key-flame var(--key-duration) steps(3, end) both;
+  animation-delay: var(--key-delay);
+}
+.typewriter-tier-5.target-punched .typewriter-key[data-key-id="Enter"]::after,
+.typewriter-tier-6.target-punched .typewriter-key[data-key-id="Enter"]::after {
+  animation: typewriter-key-flame var(--typewriter-target-cue) steps(3, end) both;
+}
+.typewriter-tier-6 .typewriter-key::after {
+  box-shadow:
+    -5px 5px 0 var(--key-led),
+    5px 5px 0 var(--key-led),
+    0 10px 0 var(--key-led),
+    8px -4px 0 -1px var(--key-led);
+}
+.typewriter-tier-6 .typewriter-key::before {
+  background: #3d454a;
+  border-color: #181e22;
+  box-shadow: -7px -3px 0 #3d454a, 7px -7px 0 #3d454a, 0 -11px 0 -1px #50595e;
+}
 .typewriter-pop { opacity: 0; }
-.typewriter-smoke {
-  position: absolute;
-  z-index: 6;
-  left: 62%;
-  top: 34%;
-}
-.typewriter-smoke i {
-  position: absolute;
-  width: clamp(6px, .8vw, 16px);
-  aspect-ratio: 1;
-  background: #606a70;
-  border: max(1px, .08vw) solid #20292e;
-}
-.typewriter-smoke i:nth-child(2) { translate: 70% -90%; }
-.typewriter-smoke i:nth-child(3) { translate: -55% -155%; }
-.typewriter-tier-4.is-active .typewriter-smoke,
-.typewriter-tier-5.is-active .typewriter-smoke,
-.typewriter-tier-6.is-active .typewriter-smoke {
-  opacity: 1;
-  animation: typewriter-smoke var(--typewriter-beat) steps(4, end) both;
-}
-.typewriter-flame {
-  position: absolute;
-  z-index: 7;
-  left: 53%;
-  top: 27%;
-  width: 20%;
-  height: 32%;
-}
-.typewriter-flame svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.typewriter-flame-outer { fill: var(--score-flame-outer); stroke: none; }
-.typewriter-flame-core { fill: var(--score-flame-core); stroke: none; }
-.typewriter-tier-5.is-active .typewriter-flame,
-.typewriter-tier-6.is-active .typewriter-flame {
-  opacity: 1;
-  animation: typewriter-meltdown var(--typewriter-beat) steps(3, end) both;
-}
 .score-typewriter-dock.is-clear-held .typewriter-machine::after {
   opacity: var(--typewriter-ambient-low);
   animation: typewriter-ambient-hold var(--typewriter-ambient-speed) steps(2, end) infinite;
@@ -1969,8 +2063,13 @@
     translate: 0 2px;
     scale: .94;
     background: #25231c;
-    border-color: #665e49;
-    box-shadow: inset 1px 1px 0 rgba(190, 178, 137, .16), 0 0 0 #050708;
+    border-color: var(--key-led);
+    box-shadow:
+      inset 1px 1px 0 rgba(255, 255, 255, .22),
+      -2px 0 0 var(--key-led),
+      2px 0 0 var(--key-led),
+      0 -2px 0 var(--key-led),
+      0 2px 0 var(--key-led);
   }
 }
 @keyframes typewriter-enter-strike {
@@ -1979,16 +2078,52 @@
     translate: 0 3px;
     scale: .9;
     background: #4a3b1d;
-    border-color: var(--gold);
-    box-shadow: inset 1px 2px 0 #17120a, 0 0 5px var(--gold);
+    border-color: var(--key-led);
+    box-shadow:
+      inset 1px 2px 0 #17120a,
+      -2px 0 0 var(--key-led),
+      2px 0 0 var(--key-led),
+      0 -2px 0 var(--key-led),
+      0 2px 0 var(--key-led);
   }
 }
-@keyframes typewriter-smoke { 0% { translate: 0 8px; } 100% { translate: 0 -22px; opacity: 0; } }
-@keyframes typewriter-meltdown { 0%, 35% { scale: .65; } 70% { scale: 1.15; } 100% { scale: .75; opacity: 0; } }
+@keyframes typewriter-key-smoke {
+  0%, 24% { opacity: 0; translate: 0 7px; }
+  42%, 76% { opacity: .92; translate: 0 -4px; }
+  100% { opacity: 0; translate: 0 -22px; }
+}
+@keyframes typewriter-key-flame {
+  0%, 20% { opacity: 0; translate: 0 5px; }
+  38%, 82% { opacity: 1; translate: 0 -5px; }
+  100% { opacity: 0; translate: 0 -14px; }
+}
+@keyframes typewriter-chassis-smoke {
+  0%, 14% { opacity: 0; translate: 0 8px; }
+  34%, 72% { opacity: .76; translate: 0 -5px; }
+  100% { opacity: 0; translate: 0 -24px; }
+}
 @keyframes typewriter-label-hit { 0%, 55% { opacity: 0; translate: -50% 10px; } 70% { opacity: 1; translate: -50% 0; scale: 1.3; } 100% { opacity: 0; translate: -50% -14px; } }
 @keyframes typewriter-ambient-hold {
   0%, 100% { opacity: var(--typewriter-ambient-low); }
   50% { opacity: var(--typewriter-ambient-high); }
+}
+@keyframes typewriter-panel-led-jackpot {
+  0%, 18%, 42%, 66%, 90%, 100% {
+    opacity: var(--panel-led-low);
+    transform: translate(-50%, -50%) scale(.85);
+    box-shadow: none;
+  }
+  7%, 27%, 51%, 75%, 95% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(var(--panel-led-scale));
+    box-shadow:
+      0 0 var(--panel-led-glow) var(--panel-led-color),
+      0 0 0 var(--panel-led-burst) var(--panel-led-color),
+      var(--panel-led-side-left) 0 0 -1px var(--panel-led-color),
+      var(--panel-led-side-right) 0 0 -1px var(--panel-led-color),
+      var(--panel-led-side-left) 0 var(--panel-led-glow) var(--panel-led-color),
+      var(--panel-led-side-right) 0 var(--panel-led-glow) var(--panel-led-color);
+  }
 }
 .score-typewriter-dock.target-punched .typewriter-key[data-key-id="Enter"] {
   animation: typewriter-enter-strike var(--typewriter-target-cue) steps(4, end) both !important;
@@ -2015,12 +2150,21 @@
   border-color: var(--gold);
   box-shadow: inset 1px 1px 0 #8d7435, 0 0 5px var(--gold);
 }
-.score-typewriter-dock.is-reduced .typewriter-smoke,
-.score-typewriter-dock.is-reduced .typewriter-flame,
 .score-typewriter-dock.is-reduced .typewriter-pop,
-.force-reduced-motion .score-typewriter-dock .typewriter-smoke,
-.force-reduced-motion .score-typewriter-dock .typewriter-flame,
+.score-typewriter-dock.is-reduced .typewriter-chassis-smoke,
 .force-reduced-motion .score-typewriter-dock .typewriter-pop { display: none; }
+.force-reduced-motion .score-typewriter-dock .typewriter-chassis-smoke { display: none; }
+.score-typewriter-dock.is-reduced .typewriter-key::before,
+.force-reduced-motion .score-typewriter-dock .typewriter-key::before { display: none; }
+.score-typewriter-dock.is-reduced .typewriter-key::after,
+.force-reduced-motion .score-typewriter-dock .typewriter-key::after { display: none; }
+.score-typewriter-dock.is-reduced.typewriter-tier-5 .typewriter-panel-led,
+.score-typewriter-dock.is-reduced.typewriter-tier-6 .typewriter-panel-led,
+.force-reduced-motion .score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led,
+.force-reduced-motion .score-typewriter-dock.typewriter-tier-6 .typewriter-panel-led {
+  opacity: .32;
+  animation: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .score-typewriter-dock * { animation: none !important; }
   .score-typewriter-dock .typewriter-machine::after { animation: none !important; }
@@ -2034,9 +2178,19 @@
     border-color: var(--gold);
     box-shadow: inset 1px 1px 0 #8d7435, 0 0 5px var(--gold);
   }
-  .score-typewriter-dock .typewriter-smoke,
-  .score-typewriter-dock .typewriter-flame,
-  .score-typewriter-dock .typewriter-pop { display: none; }
+  .score-typewriter-dock .typewriter-pop,
+  .score-typewriter-dock .typewriter-chassis-smoke { display: none; }
+  .score-typewriter-dock .typewriter-key::before { display: none; }
+  .score-typewriter-dock .typewriter-key::after { display: none; }
+  .score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led,
+  .score-typewriter-dock.typewriter-tier-6 .typewriter-panel-led { opacity: .32; animation: none; }
+}
+@media (forced-colors: active) {
+  .score-typewriter-dock .typewriter-key { --key-led: transparent !important; }
+  .score-typewriter-dock .typewriter-key::before,
+  .score-typewriter-dock .typewriter-key::after,
+  .score-typewriter-dock .typewriter-chassis-smoke,
+  .score-typewriter-dock .typewriter-panel-led { display: none; }
 }
 
 /* D-3 · ambient desk objects (UI_DESIGN §4.8). The pixel-art cup and call bell are
@@ -3115,6 +3269,62 @@
   top: 100%;
   animation: moneyDrop 0.7s ease-in forwards;
 }
+.money-ledger {
+  min-width: 112px;
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-family: var(--readout-font);
+  font-size: var(--ds-sm);
+}
+.money-ledger-live {
+  position: fixed;
+  z-index: 72;
+  transform: translate(-50%, -100%);
+}
+.money-ledger-beat {
+  grid-area: 1 / 1;
+  padding: 3px 10px;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  background: var(--inset);
+  color: var(--gold);
+  line-height: 1;
+  opacity: 0;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .45);
+  white-space: nowrap;
+  animation-delay: var(--money-ledger-delay);
+  animation-duration: 700ms;
+  animation-fill-mode: both;
+  animation-timing-function: steps(6, end);
+}
+.money-ledger-beat.down { animation-name: money-ledger-spend; }
+.money-ledger-beat.up { animation-name: money-ledger-gain; }
+@keyframes money-ledger-spend {
+  0% { opacity: 0; transform: translateY(-14px) scale(.72); }
+  18%, 68% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(18px) scale(.86); }
+}
+@keyframes money-ledger-gain {
+  0% { opacity: 0; transform: translateY(16px) scale(.72); }
+  18%, 68% { opacity: 1; transform: translateY(0) scale(1.08); }
+  100% { opacity: 0; transform: translateY(-22px) scale(.9); }
+}
+.money-ledger.is-reduced,
+.force-reduced-motion .money-ledger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.money-ledger.is-reduced .money-ledger-beat,
+.force-reduced-motion .money-ledger .money-ledger-beat {
+  position: static;
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
 @keyframes moneyDrop {
   0% {
     opacity: 0;
@@ -3126,6 +3336,28 @@
   100% {
     opacity: 0;
     transform: translate(-50%, 18px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .money-ledger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .money-ledger .money-ledger-beat {
+    position: static;
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .money-ledger-beat {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    text-shadow: none;
   }
 }
 /* item 7: the scorebox no longer pulses/shakes during settle — the floating +N/×N

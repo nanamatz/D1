@@ -5,7 +5,7 @@ import type { PouchId, RunState, VoucherId } from '../engine/types';
 import { collectionSize } from './collection';
 import { EMOJI_UNLOCK_RULES, loadEmojiUnlockProgress } from './emojiUnlocks';
 import { loadLifetime, recordWinsForPouch } from './lifetime';
-import { UNLOCKS, activeUnlocks } from './unlocks';
+import { REQUIRED_PALETTE_UNLOCKS, UNLOCKS, activeUnlocks } from './unlocks';
 import { VOUCHER_UNLOCK_RULES, loadVoucherProgress } from './voucherProgress';
 
 export type UnlockCategory = 'palette' | 'emoji' | 'voucher' | 'pouch' | 'record' | 'challenge';
@@ -22,6 +22,7 @@ const CATEGORIES: readonly UnlockCategory[] = [
 ];
 const categorySet = new Set<string>(CATEGORIES);
 const paletteIds = new Set(UNLOCKS.map((def) => def.id));
+const requiredPaletteIds = new Set(REQUIRED_PALETTE_UNLOCKS.map((def) => def.id));
 const emojiIds = new Set(EMOJI_UNLOCK_RULES.map((rule) => rule.id));
 const voucherIds = new Set(VOUCHER_UNLOCK_RULES.map((rule) => rule.id));
 const pouchIds = new Set(POUCH_DEFS.filter((def) => def.unlock.kind !== 'default').map((def) => def.id));
@@ -115,6 +116,26 @@ export function sanitizeUnlockLedger(value: unknown): string[] {
 
 export function createUnlockLedger(snapshot: readonly string[] = captureUnlockSnapshot()): string[] {
   return dedupe(snapshot).map((key) => `${BASE}${key}`);
+}
+
+/** Treat Settings-granted Palette ids as pre-run state, never earned-run recap cards. */
+export function absorbPaletteUnlockBaseline(
+  ledger: readonly string[],
+  ids: readonly string[],
+): string[] {
+  const keys = new Set(ids.filter((id) => requiredPaletteIds.has(id)).map((id) => `palette:${id}`));
+  if (keys.size === 0) return sanitizeUnlockLedger(ledger);
+  const kept = sanitizeUnlockLedger(ledger).filter((value) => {
+    if (paletteIds.has(value)) return !keys.has(`palette:${value}`);
+    if (value.startsWith(BASE)) return !keys.has(value.slice(BASE.length));
+    if (value.startsWith(PENDING)) return !keys.has(value.slice(PENDING.length));
+    return true;
+  });
+  return dedupe([
+    ...kept.filter((value) => value.startsWith(BASE)),
+    ...[...keys].map((key) => `${BASE}${key}`),
+    ...kept.filter((value) => !value.startsWith(BASE)),
+  ]);
 }
 
 /** Upgrade palette-only legacy saves without claiming unrelated historic unlocks as new. */

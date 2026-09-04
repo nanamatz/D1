@@ -7,10 +7,42 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-/** Design board is 1440x912; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
-export const DEFAULT_SIZE = { width: 1600, height: 1000 };
+/** Design board is 1440x988; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
+export const DEFAULT_SIZE = { width: 1600, height: 900 };
 /** Below this --fit-scale bottoms out near 0.66 and the pixel font stops being legible. */
 export const MIN_SIZE = { width: 960, height: 600 };
+
+export const RESOLUTION_PRESETS = Object.freeze({
+  '960x600': { width: 960, height: 600 },
+  '1280x800': { width: 1280, height: 800 },
+  '1600x900': { width: 1600, height: 900 },
+  '1920x1080': { width: 1920, height: 1080 },
+});
+
+/** Reject arbitrary dimensions at the renderer/main trust boundary. */
+export function resolutionPreset(id) {
+  return typeof id === 'string' && Object.hasOwn(RESOLUTION_PRESETS, id)
+    ? RESOLUTION_PRESETS[id]
+    : null;
+}
+
+/** A content-size preset is available only when its decorated window fits. */
+export function presetFitsWorkArea(content, workArea, frame) {
+  return content.width + Math.max(0, frame.width) <= workArea.width
+    && content.height + Math.max(0, frame.height) <= workArea.height;
+}
+
+/** Centre a known-fitting decorated window inside a display work area. */
+export function centeredOuterBounds(content, workArea, frame) {
+  const width = content.width + Math.max(0, frame.width);
+  const height = content.height + Math.max(0, frame.height);
+  return {
+    x: workArea.x + Math.max(0, Math.round((workArea.width - width) / 2)),
+    y: workArea.y + Math.max(0, Math.round((workArea.height - height) / 2)),
+    width,
+    height,
+  };
+}
 
 /** A window must show at least this much of itself on some display to count as visible. */
 const MIN_VISIBLE = { width: 120, height: 60 };

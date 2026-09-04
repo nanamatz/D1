@@ -1,5 +1,5 @@
 /**
- * Storage bridge. The ONLY thing the renderer gets beyond the DOM.
+ * Storage and window bridge. The ONLY thing the renderer gets beyond the DOM.
  *
  * Must be .cjs: the repo is "type": "module", but a sandboxed preload has to be
  * CommonJS — Electron does not support an ESM preload when sandbox: true.
@@ -26,5 +26,13 @@ contextBridge.exposeInMainWorld('wj', {
   },
   onSaveStatus: (listener) => {
     ipcRenderer.on('wj:save-status', (_event, ok) => listener(ok));
+  },
+  getWindowVideoState: () => ipcRenderer.invoke('wj:window-video:get'),
+  setWindowResolution: (id) => ipcRenderer.invoke('wj:window-video:set-resolution', id),
+  setWindowFullscreen: (enabled) => ipcRenderer.invoke('wj:window-video:set-fullscreen', enabled),
+  onWindowVideoState: (listener) => {
+    const handler = (_event, state) => listener(state);
+    ipcRenderer.on('wj:window-video-state', handler);
+    return () => ipcRenderer.removeListener('wj:window-video-state', handler);
   },
 });

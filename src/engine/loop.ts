@@ -547,9 +547,9 @@ export function prepareWordSubmission(
 /**
  * Layer 1 & 2: accumulate chips per tile, apply the suit mult, let jokers mutate
  * (wordScoring), settle chips × mult — recording an ordered ScoreEvent log along
- * the way. Jokers are emitted one at a time so each contribution is a captured
- * delta; the additive/independent nature of wordScoring hooks makes this
- * identical to the batch emit.
+ * the way. Jokers are emitted one at a time so each owner's scoring edition
+ * lands before its intrinsic wordScoring contribution and both remain ordered
+ * captured deltas.
  */
 function scoreSubmission(
   prepared: PreparedWordSubmission,
@@ -782,6 +782,10 @@ function scoreSubmission(
       if (fontEffect === 'goldPlay') {
         const gold = BALANCE.fontEffectValues.goldPlay.gold;
         materialGold += gold;
+        events.push({
+          kind: 'font', font: t.font, effect: 'goldPlay', tileId: t.id,
+          chipsDelta: 0, multDelta: 0, goldDelta: gold,
+        });
         for (const joker of run.jokers) {
           const beforeChips = ctx.chips;
           const beforeMult = ctx.mult;
@@ -802,10 +806,6 @@ function scoreSubmission(
           }
           pushGrowthEvents(events, growth, t.id);
         }
-        events.push({
-          kind: 'font', font: t.font, effect: 'goldPlay', tileId: t.id,
-          chipsDelta: 0, multDelta: 0, goldDelta: gold,
-        });
       } else if (fontEffect === 'chipPlay') {
         const bonus = BALANCE.fontEffectValues.chipPlay.chips;
         ctx.chips += bonus;
@@ -906,6 +906,17 @@ function scoreSubmission(
   for (const joker of run.jokers) {
     // Ultrasound disables the whole Emoji Tile, including its edition.
     if (joker.state.bossDisabled === 1) continue;
+    const jokerEdition = joker.edition ?? 'base';
+    const jokerEditionDelta = applyEdition(ctx, jokerEdition);
+    if (jokerEditionDelta) {
+      events.push({
+        kind: 'edition',
+        edition: jokerEdition,
+        jokerId: joker.defId,
+        ...(joker.instanceId !== undefined ? { jokerInstanceId: joker.instanceId } : {}),
+        ...jokerEditionDelta,
+      });
+    }
     const beforeChips = ctx.chips;
     const beforeMult = ctx.mult;
     const beforeScore = ctx.scoreBonus ?? 0;
@@ -944,17 +955,6 @@ function scoreSubmission(
       });
     }
     pushGrowthEvents(events, growth);
-    const jokerEdition = joker.edition ?? 'base';
-    const jokerEditionDelta = applyEdition(ctx, jokerEdition);
-    if (jokerEditionDelta) {
-      events.push({
-        kind: 'edition',
-        edition: jokerEdition,
-        jokerId: joker.defId,
-        ...(joker.instanceId !== undefined ? { jokerInstanceId: joker.instanceId } : {}),
-        ...jokerEditionDelta,
-      });
-    }
   }
 
   for (const tile of held) {
@@ -1242,7 +1242,6 @@ export function submitWord(
     scoringRun.bag = scoringRun.bag.map((tile) => grownById.get(tile.id) ?? tile);
   }
   if (destroyedTileIds.length > 0) {
-    const settle = events.at(-1)?.kind === 'settle' ? events.pop() : undefined;
     for (const tileId of destroyedTileIds) {
       scoringRun.bag = scoringRun.bag.filter((tile) => tile.id !== tileId);
       const growth = defaultJokerBus.emit(
@@ -1250,9 +1249,17 @@ export function submitWord(
         { run: scoringRun, count: 1 },
         scoringRun.jokers,
       );
-      pushGrowthEvents(events, growth, tileId);
+      const growthEvents: ScoreEvent[] = [];
+      pushGrowthEvents(growthEvents, growth, tileId);
+      const destructionIndex = events.findIndex((event) =>
+        event.kind === 'material' &&
+        event.tileId === tileId &&
+        event.chanceResults?.some((result) =>
+          result.label === 'destruction' && result.outcome === 'destroyed'
+        ),
+      );
+      events.splice(destructionIndex + 1, 0, ...growthEvents);
     }
-    if (settle) events.push(settle);
   }
   // Economy drain: Bond charges once per hand played, regardless of tile count.
   const bossGoldDrain = boss?.goldPerWord ? -boss.goldPerWord : 0;
@@ -1303,14 +1310,26 @@ export function submitWord(
     }
     if (settle) events.push(settle);
     if (createdTiles.length > 0) {
-      const settle = events.at(-1)?.kind === 'settle' ? events.pop() : undefined;
+      const growthByTile = new Map<string, ScoreEvent[]>();
       for (const tile of createdTiles) {
         const growth = defaultJokerBus.emit(
           'tilesCreated', { run: scoringRun, count: 1 }, scoringRun.jokers,
         );
-        pushGrowthEvents(events, growth, tile.id);
+        const growthEvents: ScoreEvent[] = [];
+        pushGrowthEvents(growthEvents, growth, tile.id);
+        growthByTile.set(tile.id, growthEvents);
       }
-      if (settle) events.push(settle);
+      const creatorEvents = events.filter(
+        (event): event is Extract<ScoreEvent, { kind: 'joker' }> =>
+          event.kind === 'joker' && (event.createdTileIds?.length ?? 0) > 0,
+      );
+      for (const creatorEvent of creatorEvents) {
+        const growthEvents = creatorEvent.createdTileIds!.flatMap(
+          (tileId) => growthByTile.get(tileId) ?? [],
+        );
+        const creatorIndex = events.indexOf(creatorEvent);
+        events.splice(creatorIndex + 1, 0, ...growthEvents);
+      }
     }
   }
 

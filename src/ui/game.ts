@@ -179,10 +179,7 @@ export function tileTooltip(tile: Tile, t: TFull) {
   // Stone has no glyph — title falls back to its material name so the card is identifiable.
   const title = tileGlyph(tile) || t(`material.${tile.material}`);
   const body = tile.material === 'wood'
-    ? t('tile.woodChips', {
-        letter: tileValue(tile),
-        wood: tile.woodBonusChips ?? BALANCE.materials.wood.baseChips,
-      })
+    ? t('tile.woodChips', { n: tileTooltipChips(tile) })
     : t('tile.chips', { n: tileTooltipChips(tile) });
   return { title, body, tags, sub };
 }

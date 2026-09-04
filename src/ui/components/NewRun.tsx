@@ -10,12 +10,11 @@ import type { BlindKind, ChallengeId, PouchId, RecordId } from '../../engine/typ
 import { useI18n } from '../i18n';
 import { loadChallengeProgress, loadLifetime, recordWinsForPouch } from '../lifetime';
 import { pouchUnlockWordCount } from '../profile';
-import { pouchArt } from '../pouchArt';
-import { recordArt } from '../recordArt';
 import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
 import { UiIcon } from './UiIcon';
 import { formatScore } from '../formatScore';
+import { PouchCard, RecordCard } from './ObjectCards';
 
 /** Summary of the persisted run behind the Continue tab. */
 export interface ContinueInfo {
@@ -236,23 +235,24 @@ function ChallengeBody({
   const challenge = challengeDef(challengeId);
   const mastered = completed.size === CHALLENGE_DEFS.length;
 
-  const loadout = (kind: 'pouch' | 'record', id: PouchId | RecordId, src: string) => {
+  const loadout = (kind: 'pouch' | 'record', id: PouchId | RecordId) => {
     const name = t(`${kind}.${id}.name`);
     const cumulative = kind === 'record' && id !== 'whiteLp' ? t('newrun.cumulative') : '';
+    const props = {
+      className: ['run-choice-art', `run-choice-art-${kind}`].join(' '),
+      role: 'img',
+      tabIndex: 0,
+      'aria-label': name,
+    } as const;
     return (
       <Tooltip
         title={name}
         body={[t(`${kind}.${id}.desc`), cumulative].filter(Boolean).join('\n')}
         down
       >
-        <div
-          className={['run-choice-art', `run-choice-art-${kind}`].join(' ')}
-          role="img"
-          tabIndex={0}
-          aria-label={name}
-        >
-          <img src={src} alt="" />
-        </div>
+        {kind === 'pouch'
+          ? <PouchCard id={id as PouchId} {...props} />
+          : <RecordCard id={id as RecordId} {...props} />}
       </Tooltip>
     );
   };
@@ -295,9 +295,9 @@ function ChallengeBody({
             <p>{t(`challenge.${challenge.id}.desc`)}</p>
           </div>
           <div className="challenge-loadout">
-            {loadout('pouch', challenge.pouchId, pouchArt(challenge.pouchId))}
+            {loadout('pouch', challenge.pouchId)}
             <span aria-hidden>+</span>
-            {loadout('record', challenge.recordId, recordArt(challenge.recordId))}
+            {loadout('record', challenge.recordId)}
           </div>
           <div className="challenge-effects">
             <p><b>{t(`pouch.${challenge.pouchId}.name`)}</b> — {richText(t(`pouch.${challenge.pouchId}.desc`))}</p>
@@ -365,7 +365,6 @@ function NewRunBody({
     kind: 'pouch' | 'record',
     id: PouchId | RecordId,
     unlocked: boolean,
-    src: string,
   ) => {
     const name = t(`${kind}.${id}.name`);
     const body = t(`${kind}.${id}.desc`);
@@ -385,15 +384,27 @@ function NewRunBody({
           body={[body, unlock, cumulative].filter(Boolean).join('\n')}
           down
         >
-          <div
-            className={['run-choice-art', `run-choice-art-${kind}`].join(' ')}
-            role="img"
-            tabIndex={0}
-            aria-label={title}
-          >
-            <img src={src} alt="" />
-            {!unlocked && <span className="run-choice-lock" aria-hidden />}
-          </div>
+          {kind === 'pouch' ? (
+            <PouchCard
+              id={id as PouchId}
+              className="run-choice-art run-choice-art-pouch"
+              role="img"
+              tabIndex={0}
+              aria-label={title}
+            >
+              {!unlocked && <span className="run-choice-lock" aria-hidden />}
+            </PouchCard>
+          ) : (
+            <RecordCard
+              id={id as RecordId}
+              className="run-choice-art run-choice-art-record"
+              role="img"
+              tabIndex={0}
+              aria-label={title}
+            >
+              {!unlocked && <span className="run-choice-lock" aria-hidden />}
+            </RecordCard>
+          )}
         </Tooltip>
         <div className="run-choice-copy">
           <h2 className="run-choice-title" aria-live="polite">{title}</h2>
@@ -417,7 +428,7 @@ function NewRunBody({
           onSelect={setPouchId}
           name={(id) => t(`pouch.${id}.name`)}
         >
-          {choice('pouch', pouchId, pouchUnlocked, pouchArt(pouchId))}
+          {choice('pouch', pouchId, pouchUnlocked)}
         </Carousel>
 
         <Carousel
@@ -429,7 +440,7 @@ function NewRunBody({
           name={(id) => t(`record.${id}.name`)}
           disabled={!pouchUnlocked}
         >
-          {choice('record', recordId, recordUnlocked, recordArt(recordId))}
+          {choice('record', recordId, recordUnlocked)}
         </Carousel>
 
       </div>

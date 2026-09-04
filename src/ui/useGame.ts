@@ -92,7 +92,7 @@ import {
   type GamblerId,
 } from '../engine/gamblers';
 import { packFableFxBus } from './packFableFx';
-import { consumableEffectBus } from './consumableEffect';
+import { consumableEffectBus, shopUseNowMoneyDeltas } from './consumableEffect';
 import { jokerChanceEffectBus } from './jokerChanceEffect';
 import {
   bossRerollLimit,
@@ -117,6 +117,7 @@ import { GROWTH_POP_MS } from './timing';
 import { newRunObservationId } from './runObservation';
 import {
   acknowledgeUnlockLedger,
+  absorbPaletteUnlockBaseline,
   captureUnlockSnapshot,
   createUnlockLedger,
   finalizeUnlockLedger,
@@ -506,6 +507,8 @@ export interface UseGame {
   markSettleComplete: () => void;
   continueEndless: () => void;
   acknowledgeUnlocks: () => void;
+  /** Fold Settings-granted presentation ids into this run's recap baseline. */
+  absorbPaletteUnlocks: (ids: readonly string[]) => void;
   endRun: () => void;
   newGame: () => void;
   /** Start a fresh run with the New Run screen's pouch, record, and seed choices. */
@@ -1701,7 +1704,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // just replaces the enhancement — no confirm modal (feedback: players learn by doing,
   // GDD §2.4 revised 2026-07-28).
   const applyConsumable = useCallback(
-    (prev: GameState, id: ConsumableId): GameState => {
+    (prev: GameState, id: ConsumableId, shopPrice?: number): GameState => {
       // Consumables are usable on the board AND in the shop (feedback #3), except
       // tile-targeting and blind-only Fables, which must be held for a blind.
       if ((prev.phase !== 'playing' && prev.phase !== 'shop') || !prev.run.consumables.includes(id)) {
@@ -1760,7 +1763,15 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         recordPouchUnlockChanges(prev.run, result.run);
         recordEmojiUnlockEvent({ kind: 'consumableUsed', run: result.run, family: 'fable' });
         recordEditionedJokers(result.run);
-        consumableEffectBus.emit(id, prev.run, result.run, result.chanceResults);
+        consumableEffectBus.emit(
+          id,
+          prev.run,
+          result.run,
+          result.chanceResults,
+          shopPrice === undefined
+            ? []
+            : shopUseNowMoneyDeltas(id, shopPrice, prev.run, result.run),
+        );
         const hint = result.requestHint
           ? findSpellableWords(blind.hand, getLexicon(), 3, { run: result.run, blind })
           : prev.hint;
@@ -1865,7 +1876,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       audio.play('purchase');
       const pattern = CONSUMABLE_PATTERN[id];
       const from = pattern ? (paid.run.patternLevels[pattern] ?? 1) : 0;
-      const next = applyConsumable(paid, id);
+      const next = applyConsumable(paid, id, item.price);
       if (pattern && next !== paid && next.run.patternLevels[pattern] !== paid.run.patternLevels[pattern]) {
         patternLevelBus.emit({
           cardId: id as import('../engine/constellations').ConstellationId,
@@ -2239,6 +2250,16 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     recordEmojiUnlockEvent({ kind: 'newRun', run: next.run });
     setState(next);
   }, [cancelPackTransactions]);
+  const absorbPaletteUnlocks = useCallback((ids: readonly string[]) => {
+    if (ids.length === 0) return;
+    const prev = stateRef.current;
+    const runUnlocks = absorbPaletteUnlockBaseline(prev.runUnlocks, ids);
+    if (runUnlocks.join('\n') === prev.runUnlocks.join('\n')) return;
+    const next = { ...prev, runUnlocks };
+    // The profile grant and its run-recap baseline must survive the same immediate reload.
+    if (prev.runStarted) writeRun(serializeRun(next));
+    setState(next);
+  }, []);
 
   return {
     state,
@@ -2320,6 +2341,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     markSettleComplete,
     continueEndless,
     acknowledgeUnlocks,
+    absorbPaletteUnlocks,
     endRun,
     newGame,
     startRun,

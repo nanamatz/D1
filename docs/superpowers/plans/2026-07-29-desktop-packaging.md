@@ -467,7 +467,7 @@ Create `desktop/main.js`:
  * and UI policy do not belong here.
  *
  * The board scales itself: src/ui/styles/tokens.css computes --fit-scale from
- * the viewport against a 1440x912 design board, capped at 1. So this file only
+ * the viewport against a 1440x988 design board, capped at 1. So this file only
  * chooses window sizes; it never touches layout.
  */
 import { app, BrowserWindow, Menu, globalShortcut, screen } from 'electron';
@@ -479,8 +479,8 @@ const DIR = path.dirname(fileURLToPath(import.meta.url));
 /** localStorage lives in %APPDATA%/<appName>/. Renaming this orphans every save. */
 app.setName('Play the World');
 
-/** Design board is 1440x912; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
-const DEFAULT_SIZE = { width: 1600, height: 1000 };
+/** Design board is 1440x988; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
+const DEFAULT_SIZE = { width: 1600, height: 900 };
 /** Below this --fit-scale bottoms out near 0.66 and the pixel font stops being legible. */
 const MIN_SIZE = { width: 960, height: 600 };
 
@@ -538,7 +538,7 @@ app.on('window-all-closed', () => app.quit());
 Run: `npm run build && npm run desktop:run`
 
 Expected, all of which must hold:
-1. A window opens at 1600×1000 (or the work area, if smaller) with **no white flash** — the dark background shows first.
+1. A window opens at 1600×900 (or the work area, if smaller) with **no white flash** — the dark background shows first.
 2. The game renders: art, styles, and all four fonts.
 3. **No menu bar.**
 4. A blind can be played — submit a word and see it score.
@@ -577,7 +577,7 @@ git commit -m "feat(desktop): Electron shell loading the built app offline"
 **Interfaces:**
 - Consumes: `DEFAULT_SIZE` / `MIN_SIZE` semantics from Task 4 (redefined here as the authoritative source; Task 4's local constants are removed).
 - Produces:
-  - `DEFAULT_SIZE: { width: 1600, height: 1000 }`
+  - `DEFAULT_SIZE: { width: 1600, height: 900 }`
   - `MIN_SIZE: { width: 960, height: 600 }`
   - `defaultBounds(workArea: Rect) => Rect` — centred, clamped to the work area
   - `isVisibleOn(bounds: Rect, displays: {workArea: Rect}[]) => boolean`
@@ -700,8 +700,8 @@ Create `desktop/window-state.js`:
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-/** Design board is 1440x912; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
-export const DEFAULT_SIZE = { width: 1600, height: 1000 };
+/** Design board is 1440x988; at this size --fit-scale reads exactly 1 (it is min(1, ...)). */
+export const DEFAULT_SIZE = { width: 1600, height: 900 };
 /** Below this --fit-scale bottoms out near 0.66 and the pixel font stops being legible. */
 export const MIN_SIZE = { width: 960, height: 600 };
 
@@ -796,7 +796,7 @@ In `desktop/main.js`: delete the local `DEFAULT_SIZE` and `MIN_SIZE` constants, 
  * and UI policy do not belong here.
  *
  * The board scales itself: src/ui/styles/tokens.css computes --fit-scale from
- * the viewport against a 1440x912 design board, capped at 1. So this file only
+ * the viewport against a 1440x988 design board, capped at 1. So this file only
  * chooses window sizes; it never touches layout.
  */
 import { app, BrowserWindow, Menu, globalShortcut, screen } from 'electron';

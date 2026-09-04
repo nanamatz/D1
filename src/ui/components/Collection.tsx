@@ -39,7 +39,6 @@ import {
 import { useI18n } from '../i18n';
 import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
-import { pouchArt } from '../pouchArt';
 import { loadLifetime } from '../lifetime';
 import { recordArt } from '../recordArt';
 import {
@@ -59,9 +58,9 @@ import { voucherCollectionCopy } from '../voucherCollection';
 import { GAMBLER_CARDS } from '../gamblerArt';
 import { CardArt, type CardFamily } from './CardArt';
 import { TiltCard } from './TiltCard';
+import { EmojiTileCard, PouchCard } from './ObjectCards';
 import { useSettings } from '../settings';
 import { UiIcon } from './UiIcon';
-import { jokerArt } from '../jokerArt';
 import { audio } from '../audio';
 import { richText } from '../richtext';
 import { SKIP_REWARD_IDS } from '../../engine/skipRewards';
@@ -529,7 +528,6 @@ function JokersView() {
     <>
       <div className="card-grid joker-collection-grid">
         {visible.map((def) => {
-          const art = jokerArt(def.id);
           const unlocked = isEmojiUnlocked(def.id, progress);
           const sticker = stickers[def.id];
           return (
@@ -552,12 +550,12 @@ function JokersView() {
               {...(unlocked ? { rarity: def.rarity } : {})}
               down
             >
-              <TiltCard
-                idle
+              <EmojiTileCard
+                id={def.id}
+                imageClassName="cc-joker-art"
                 className={`emoji-tile-collection${unlocked ? '' : ' locked'}`}
                 tabIndex={0}
               >
-                {art && <img className="cc-joker-art" src={art} alt="" />}
                 {unlocked && sticker && (
                   <img
                     className="joker-record-sticker"
@@ -567,7 +565,7 @@ function JokersView() {
                   />
                 )}
                 {!unlocked && <span className="emoji-tile-lock" aria-hidden="true" />}
-              </TiltCard>
+              </EmojiTileCard>
             </Tooltip>
           );
         })}
@@ -621,7 +619,6 @@ function FontsView() {
 
 function EditionsView() {
   const { t } = useI18n();
-  const art = jokerArt('bookworm');
   return (
     <div className="edition-collection-scroll">
       <div className="edition-collection-grid">
@@ -633,14 +630,13 @@ function EditionsView() {
             down
           >
             <div className="swatch">
-              <TiltCard
-                idle
+              <EmojiTileCard
+                id="bookworm"
+                imageClassName="cc-joker-art"
                 className={`emoji-tile-collection emoji-tile-image-only edition-${edition}`}
                 tabIndex={0}
                 aria-label={t(`edition.${edition}`)}
-              >
-                {art && <img className="cc-joker-art" src={art} alt="" />}
-              </TiltCard>
+              />
               <span className="sw-name">{t(`edition.${edition}`)}</span>
             </div>
           </Tooltip>
@@ -958,15 +954,15 @@ function PouchesView() {
             body={[body, unlock].filter(Boolean).join('\n')}
             down
           >
-            <div
+            <PouchCard
+              id={id}
               className="run-choice-art collection-pouch-art"
               role="img"
               tabIndex={0}
               aria-label={unlocked ? name : t('newrun.locked')}
             >
-              <img src={pouchArt(id)} alt="" />
               {!unlocked && <span className="run-choice-lock" aria-hidden />}
-            </div>
+            </PouchCard>
           </Tooltip>
           <div className="run-choice-copy">
             <h3 className="run-choice-title" aria-live="polite">

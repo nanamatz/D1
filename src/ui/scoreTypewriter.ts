@@ -182,7 +182,42 @@ export const SCORE_TYPEWRITER_KEYCAPS: readonly KeyboardKeyDef[] = [
 ];
 
 export const SCORE_TYPEWRITER_SAMPLE_COUNT = 32;
+export const SCORE_TYPEWRITER_LED_COLORS = [
+  '#ff365c',
+  '#ff8a2b',
+  '#ffe04b',
+  '#45e06f',
+  '#38bdf8',
+  '#b86cff',
+] as const;
+export const SCORE_TYPEWRITER_PANEL_LED_PHASES_MS = [-120, -280, -440] as const;
+export const SCORE_TYPEWRITER_SIZE_VARIATION = 0.05;
 const SCORE_TYPEWRITER_ENTER_INDEX = SCORE_TYPEWRITER_KEYCAPS.findIndex(({ id }) => id === 'Enter');
+
+/** Fixed physical-key rainbow slot; it never depends on unlock progress or a beat. */
+export function scoreTypewriterLedSlot(keyIndex: number): number {
+  return Math.max(0, Math.floor(keyIndex)) % SCORE_TYPEWRITER_LED_COLORS.length;
+}
+
+/** Stable per-key scale variation shared by smoke and flame (±5%). */
+export function scoreTypewriterKeySizeVariation(beatId: string, keyIndex: number): number {
+  const unit = scoreTypewriterBeatHash(
+    `${beatId}:size:${Math.max(0, Math.floor(keyIndex))}`,
+  ) / 0xffffffff;
+  return 1 + (unit * 2 - 1) * SCORE_TYPEWRITER_SIZE_VARIATION;
+}
+
+/** Stable random-looking phase order for the three chassis indicators. */
+export function scoreTypewriterPanelLedOrder(beatId: string): number[] {
+  const order = [0, 1, 2];
+  let state = scoreTypewriterBeatHash(`${beatId}:panel-led-order`) || 0x9e3779b9;
+  for (let index = order.length - 1; index > 0; index -= 1) {
+    state = nextHash(state);
+    const swapIndex = state % (index + 1);
+    [order[index], order[swapIndex]] = [order[swapIndex]!, order[index]!];
+  }
+  return order;
+}
 
 /** Stable physical-key voice; unknown ids use the main Enter key's sample. */
 export function scoreTypewriterSampleIndex(keyId: string): number {
@@ -384,8 +419,20 @@ export function scoreTypewriterKeySequence(
   const primaryIndex = primaryKeyId === undefined
     ? -1
     : SCORE_TYPEWRITER_KEYCAPS.findIndex(({ id }) => id === primaryKeyId);
-  if (take === 0 || primaryIndex < 0) return keys.slice(0, take);
-  return [primaryIndex, ...keys.filter((index) => index !== primaryIndex).slice(0, take - 1)];
+  if (take === 0) return [];
+  const selected = primaryIndex < 0 ? [] : [primaryIndex];
+  const fill = keys.filter((index) => index !== primaryIndex);
+  if (take >= BALANCE.scoreTypewriter.visualKeyCounts[5]) {
+    const covered = new Set(selected.map(scoreTypewriterLedSlot));
+    for (let slot = 0; slot < SCORE_TYPEWRITER_LED_COLORS.length; slot += 1) {
+      if (covered.has(slot)) continue;
+      const match = fill.findIndex((keyIndex) => scoreTypewriterLedSlot(keyIndex) === slot);
+      if (match < 0) continue;
+      selected.push(fill.splice(match, 1)[0]!);
+      covered.add(slot);
+    }
+  }
+  return [...selected, ...fill].slice(0, take);
 }
 
 /** Per-button timing; every selected key finishes inside the existing score beat. */

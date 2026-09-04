@@ -3,6 +3,7 @@
  *
  * The game begins DESATURATED and SILENT; playing specific words permanently
  * unlocks presentation layers (a color group, an audio bus, or a mascot skin).
+ * Settings may also grant the six color/audio essentials with one aggregate reveal.
  * Persistent PER PROFILE (via storage.ts — a save key,
  * so on desktop it lives in the save files), data-driven: adding a future unlock
  * is adding a row to UNLOCKS — never a hard-coded word check in a component
@@ -16,6 +17,7 @@ import {
   activeProfile,
   readProfileValue,
   remove as removeKey,
+  writeProfileValue,
   writeValue,
   type ProfileSlot,
 } from './storage';
@@ -48,11 +50,16 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { id: 'TURTLE', word: 'TURTLE', effect: { kind: 'mascot', variant: 'turtle' } },
 ];
 
+/** The six presentation essentials Settings may grant without touching mascots. */
+export const REQUIRED_PALETTE_UNLOCKS = UNLOCKS.filter(
+  (def) => def.effect.kind === 'color' || def.effect.kind === 'audio',
+);
+
 const BY_WORD = new Map(UNLOCKS.map((u) => [u.word, u]));
 const KEY = 'wj.unlocks';
 export const PRESENTATION_CHANGED_EVENT = 'wj:presentation-changed';
 
-/** The set of ids the player has actually PLAYED (celebrated + recorded). */
+/** The set of unlocked ids, from natural play or the limited Settings grant. */
 export function loadPlayed(slot: ProfileSlot = activeProfile()): Set<string> {
   return new Set(readProfileValue<string[]>(KEY, slot) ?? []);
 }
@@ -61,8 +68,9 @@ export function isPlayed(id: string): boolean {
   return loadPlayed().has(id);
 }
 
-function savePlayed(set: Set<string>): void {
-  writeValue(KEY, [...set]);
+function savePlayed(set: Set<string>, slot: ProfileSlot = activeProfile()): void {
+  if (slot === activeProfile()) writeValue(KEY, [...set]);
+  else writeProfileValue(KEY, slot, [...set]);
 }
 
 export function markPlayed(id: string): void {
@@ -70,6 +78,20 @@ export function markPlayed(id: string): void {
   if (set.has(id)) return;
   set.add(id);
   savePlayed(set);
+}
+
+/** Grant only missing color/audio essentials to one profile. The helper itself is bus-silent. */
+export function grantRequiredPaletteUnlocks(
+  slot: ProfileSlot = activeProfile(),
+): string[] {
+  const played = loadPlayed(slot);
+  const added = REQUIRED_PALETTE_UNLOCKS
+    .filter((def) => !played.has(def.id))
+    .map((def) => def.id);
+  if (added.length === 0) return [];
+  for (const id of added) played.add(id);
+  savePlayed(played, slot);
+  return added;
 }
 
 export function playedCount(slot: ProfileSlot = activeProfile()): number {
@@ -80,7 +102,7 @@ export function resetUnlocks(): void {
   removeKey(KEY);
 }
 
-/** The active profile's actually discovered unlock ids. */
+/** The active profile's unlocked presentation ids. */
 export function activeUnlocks(): Set<string> {
   return loadPlayed();
 }
@@ -163,13 +185,20 @@ export function checkWordPlayed(word: string): UnlockDef | null {
   return u;
 }
 
-/** Celebration bus — decouples the trigger site from the reveal host (audio-singleton shape). */
+export interface RequiredPaletteReveal {
+  type: 'requiredPalette';
+  defs: readonly UnlockDef[];
+}
+
+export type UnlockRevealEvent = UnlockDef | RequiredPaletteReveal;
+
+/** Celebration bus — decouples trigger sites from the reveal host (audio-singleton shape). */
 class UnlockBus {
-  private subs = new Set<(def: UnlockDef) => void>();
-  emit(def: UnlockDef): void {
-    for (const fn of this.subs) fn(def);
+  private subs = new Set<(event: UnlockRevealEvent) => void>();
+  emit(event: UnlockRevealEvent): void {
+    for (const fn of this.subs) fn(event);
   }
-  subscribe(fn: (def: UnlockDef) => void): () => void {
+  subscribe(fn: (event: UnlockRevealEvent) => void): () => void {
     this.subs.add(fn);
     return () => { this.subs.delete(fn); };
   }

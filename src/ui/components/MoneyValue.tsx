@@ -1,22 +1,139 @@
-import { useEffect, useRef, useState } from 'react';
-import { motionOff as reducedMotion } from '../motion';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
+import { consumableEffectBus } from '../consumableEffect';
 import { formatScore } from '../formatScore';
+import { motionOff as reducedMotion } from '../motion';
+
+export const MONEY_LEDGER_BEAT_MS = 720;
+const MONEY_LEDGER_LAST_BEAT_MS = 700;
+const MONEY_LEDGER_REDUCED_MS = 2400;
+
+export function moneyDeltaText(delta: number): string {
+  return delta < 0
+    ? `-$${formatScore(Math.abs(delta))}`
+    : `+$${formatScore(delta)}`;
+}
+
+/** Real Shop Use Now ledger renderer, also reused by the rotating Laboratory. */
+export function MoneyLedger({
+  deltas,
+  sequence = 0,
+  reduced = false,
+  className = '',
+  style,
+}: {
+  deltas: readonly number[];
+  sequence?: number;
+  reduced?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const visible = deltas.filter((delta) => delta !== 0);
+  if (visible.length === 0) return null;
+  return (
+    <span
+      className={['money-ledger', reduced ? 'is-reduced' : '', className].filter(Boolean).join(' ')}
+      data-sequence={sequence}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      style={style}
+    >
+      {visible.map((delta, index) => (
+        <span
+          className={['money-ledger-beat', delta < 0 ? 'down' : 'up'].join(' ')}
+          key={`${index}-${delta}`}
+          style={{ '--money-ledger-delay': `${index * MONEY_LEDGER_BEAT_MS}ms` } as CSSProperties}
+        >
+          {moneyDeltaText(delta)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+interface QueuedLedger {
+  id: number;
+  deltas: number[];
+  reduced: boolean;
+  left: number;
+  top: number;
+}
+
+export function resolveMoneyLedgerEvent(
+  currentGold: number,
+  eventGold: number,
+  deltas: readonly number[],
+  presentLedger: boolean,
+): { suppressValue: number | null; ledgerDeltas: number[] } {
+  const visible = deltas.filter((delta) => delta !== 0);
+  return {
+    suppressValue: visible.length > 0 && eventGold !== currentGold ? eventGold : null,
+    ledgerDeltas: presentLedger ? visible : [],
+  };
+}
 
 /**
- * A gold readout ($N) that floats a delta pop whenever the amount changes (item 3),
- * mirroring the score-box pops. An increase shows +$N and rises (same animation as the
- * score pops); a decrease shows −$N (never "+−N", item 5) and drops with its own
- * animation. Honors reduced-motion (updates the number, no pop).
+ * A gold readout ($N) that floats ordinary net changes. Money-gaining Fables
+ * bought with Shop Use Now instead show the event's ordered cost/full-payout
+ * ledger above the shared consumable vignette; the underlying state stays atomic.
  */
-export function MoneyValue({ value }: { value: number }) {
+export function MoneyValue({
+  value,
+  presentLedger = false,
+}: {
+  value: number;
+  /** Exactly one co-mounted Shop readout owns the signed Use Now ledger. */
+  presentLedger?: boolean;
+}) {
+  const anchor = useRef<HTMLSpanElement>(null);
   const prev = useRef(value);
   const idRef = useRef(0);
+  const suppressValue = useRef<number | null>(null);
   const [pop, setPop] = useState<{ delta: number; id: number } | null>(null);
+  const [ledgerQueue, setLedgerQueue] = useState<QueuedLedger[]>([]);
+  const activeLedger = ledgerQueue[0] ?? null;
+
+  useEffect(() => consumableEffectBus.on((event) => {
+    const presentation = resolveMoneyLedgerEvent(
+      prev.current,
+      event.run.gold,
+      event.moneyDeltas,
+      presentLedger,
+    );
+    if (presentation.suppressValue !== null) suppressValue.current = presentation.suppressValue;
+    if (presentation.ledgerDeltas.length === 0) return;
+    const rect = anchor.current?.getBoundingClientRect();
+    idRef.current += 1;
+    setLedgerQueue((queue) => [...queue, {
+      id: idRef.current,
+      deltas: presentation.ledgerDeltas,
+      reduced: reducedMotion(),
+      left: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
+      top: rect ? Math.max(64, rect.top - 8) : 96,
+    }]);
+  }), [presentLedger]);
+
+  useEffect(() => {
+    if (!activeLedger) return;
+    const duration = activeLedger.reduced
+      ? MONEY_LEDGER_REDUCED_MS
+      : (activeLedger.deltas.length - 1) * MONEY_LEDGER_BEAT_MS + MONEY_LEDGER_LAST_BEAT_MS;
+    const timer = window.setTimeout(
+      () => setLedgerQueue((queue) => queue.slice(1)),
+      duration,
+    );
+    return () => window.clearTimeout(timer);
+  }, [activeLedger]);
 
   useEffect(() => {
     if (prev.current === value) return;
     const delta = value - prev.current;
     prev.current = value;
+    if (suppressValue.current === value) {
+      suppressValue.current = null;
+      return;
+    }
     if (reducedMotion() || delta === 0) return;
     idRef.current += 1;
     const id = idRef.current;
@@ -26,7 +143,7 @@ export function MoneyValue({ value }: { value: number }) {
   }, [value]);
 
   return (
-    <span className="money money-wrap">
+    <span ref={anchor} className="money money-wrap">
       ${formatScore(value)}
       {pop && (
         <span key={pop.id} className={['money-pop', pop.delta < 0 ? 'down' : 'up'].join(' ')}>
@@ -34,6 +151,17 @@ export function MoneyValue({ value }: { value: number }) {
             ? `-$${formatScore(Math.abs(pop.delta))}`
             : `+$${formatScore(pop.delta)}`}
         </span>
+      )}
+      {activeLedger && typeof document !== 'undefined' && createPortal(
+        <MoneyLedger
+          key={activeLedger.id}
+          deltas={activeLedger.deltas}
+          sequence={activeLedger.id}
+          reduced={activeLedger.reduced}
+          className="money-ledger-live"
+          style={{ left: activeLedger.left, top: activeLedger.top }}
+        />,
+        document.body,
       )}
     </span>
   );

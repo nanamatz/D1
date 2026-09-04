@@ -34,9 +34,31 @@ describe('Options completion regressions', () => {
     const component = readFileSync(new URL('../src/ui/components/Options.tsx', import.meta.url), 'utf8');
     const css = readFileSync(new URL('../src/ui/styles/screens.css', import.meta.url), 'utf8');
     expect(component).not.toMatch(/\shidden=\{tab !==/);
-    expect(component.match(/aria-hidden=\{tab !==/g)).toHaveLength(4);
+    expect(component.match(/aria-hidden=\{tab !==/g)).toHaveLength(3);
+    expect(component).toContain("(['game', 'video', 'audio'] as Tab[])");
+    expect(component).not.toContain('settings-graphics');
     expect(css).toMatch(/\.set-tabpanel\s*\{[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;/);
     expect(css).toMatch(/\.set-tabpanel\.on\s*\{[\s\S]*visibility:\s*visible;[\s\S]*pointer-events:\s*auto;/);
+  });
+
+  it('keeps every visual control in Video after Resolution', () => {
+    const component = readFileSync(new URL('../src/ui/components/Options.tsx', import.meta.url), 'utf8');
+    const video = component.slice(
+      component.indexOf('id="settings-video"'),
+      component.indexOf('id="settings-audio"'),
+    );
+    const labels = [
+      'settings.resolution',
+      'settings.fullscreen',
+      'settings.uiScale',
+      'settings.crtEnabled',
+      'settings.crtIntensity',
+      'settings.crtBloom',
+    ];
+    for (const label of labels) expect(video.indexOf(label)).toBeGreaterThanOrEqual(0);
+    for (let index = 1; index < labels.length; index += 1) {
+      expect(video.indexOf(labels[index]!)).toBeGreaterThan(video.indexOf(labels[index - 1]!));
+    }
   });
 
   it('keeps dividers between tooltip-wrapped Settings rows', () => {

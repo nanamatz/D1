@@ -12,9 +12,8 @@ import { useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
-import { recordArt } from '../recordArt';
 import { PatternIcon } from './UiIcon';
-import { TiltCard } from './TiltCard';
+import { RecordCard } from './ObjectCards';
 import { Tooltip } from './Tooltip';
 import { richText } from '../richtext';
 import { isLetterHandDiscovered } from '../lifetime';
@@ -53,6 +52,8 @@ const fmtSigned = (value: number): string =>
   `${value >= 0 ? '+' : ''}${Number.isInteger(value) ? value : value.toFixed(2)}`;
 const fmtScoreSigned = (value: number): string =>
   `${value >= 0 ? '+' : ''}${formatScore(value)}`;
+const scoreValueClass = (text: string): 'normal' | 'compact' | 'dense' =>
+  text.length <= 7 ? 'normal' : text.length <= 9 ? 'compact' : 'dense';
 
 /** Selected-tile status text, in Balatro's hand-name position (E-9). */
 function StatusLine({
@@ -277,6 +278,8 @@ export function Sidebar({
   // (UI_DESIGN §4.1, B).
   const chips = mode === 'blind' ? (bonusActive ? bonusChips : settle.active ? settle.chips : 0) : 0;
   const mult = mode === 'blind' ? (bonusActive ? bonusMult : settle.active ? settle.mult : 0) : 0;
+  const chipsText = formatScore(chips);
+  const multText = formatScore(mult);
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   const bossEmblemRef = useRef<HTMLDivElement>(null);
   const bossName = boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : '';
@@ -411,14 +414,14 @@ export function Sidebar({
                     run.recordId !== 'whiteLp' && t('newrun.cumulative'),
                   ].filter(Boolean).join('\n')}
                 >
-                  <TiltCard
+                  <RecordCard
+                    id={run.recordId}
+                    imageClassName="target-record"
                     className="target-record-card"
                     role="img"
                     aria-label={t(`record.${run.recordId}.name`)}
                     tabIndex={0}
-                  >
-                    <img className="target-record" src={recordArt(run.recordId)} alt="" />
-                  </TiltCard>
+                  />
                 </Tooltip>
                 <span className="target">{formatScore(blind.target)}</span>
               </span>
@@ -481,9 +484,13 @@ export function Sidebar({
           className={['scorebox', (settle.active || bonusActive) && 'settling', landing && 'landing']
             .filter(Boolean)
             .join(' ')}
+          role="group"
+          aria-label={`${t('patternLevel.chips')} × ${t('patternLevel.mult')}`}
         >
-          <span className="box c">
-            {formatScore(chips)}
+          <span className="box c" role="img" aria-label={`${t('patternLevel.chips')}: ${chipsText}`}>
+            <span className={`scorebox-value ${scoreValueClass(chipsText)}`} aria-hidden>
+              {chipsText}
+            </span>
             {settle.scorePop && settle.scorePop.chips !== 0 && (
               <span key={`c${settle.scorePop.id}`} className="box-pop chip">
                 <span className="chip-diamond" aria-hidden />
@@ -495,8 +502,10 @@ export function Sidebar({
             )}
           </span>
           <span className="x">×</span>
-          <span className="box m">
-            {formatScore(mult)}
+          <span className="box m" role="img" aria-label={`${t('patternLevel.mult')}: ${multText}`}>
+            <span className={`scorebox-value ${scoreValueClass(multText)}`} aria-hidden>
+              {multText}
+            </span>
             {settle.scorePop && settle.scorePop.mult !== 0 && (
               <span key={`m${settle.scorePop.id}`} className="box-pop">
                 {settle.scorePop.multOp === 'mul' ? '×' : '+'}

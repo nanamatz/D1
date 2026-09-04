@@ -42,8 +42,8 @@ import { canUseUnheldGambler, isGamblerId } from '../../engine/gamblers';
 import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { TileView } from './Tile';
-import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
+import { EmojiTileCard } from './ObjectCards';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { audio } from '../audio';
@@ -183,7 +183,6 @@ export function Shop({ g }: { g: UseGame }) {
     icon?: UiIconId;
     name: string;
     desc: string;
-    jokerArt?: string | undefined;
     rarity?: JokerRarity | undefined;
     classification?: TooltipClassification | undefined;
     tags?: readonly TooltipTag[];
@@ -202,7 +201,6 @@ export function Shop({ g }: { g: UseGame }) {
           ? grownValue(def, undefined, t, g.state.run.bag.length, g.state.run) ?? undefined
           : undefined,
         rarity: def?.rarity,
-        jokerArt: jokerArt(item.id),
       };
     }
     if (item.kind === 'tile') {
@@ -272,7 +270,7 @@ export function Shop({ g }: { g: UseGame }) {
         </button>
         <div className="shop-gold">
           <span className="label">{t('shop.title')}</span>
-          <MoneyValue value={run.gold} />
+          <MoneyValue value={run.gold} presentLedger />
         </div>
         <ShopMascot />
       </aside>
@@ -341,15 +339,11 @@ export function Shop({ g }: { g: UseGame }) {
                         <TileView tile={item.tile} tilt={false} />
                       </div>
                     ) : item.kind === 'joker' ? (
-                      m.jokerArt
-                        ? (
-                            <img
-                              className="shop-joker-art"
-                              src={m.jokerArt}
-                              alt=""
-                            />
-                          )
-                        : null
+                      <EmojiTileCard
+                        id={item.id}
+                        motion={false}
+                        imageClassName="shop-joker-art"
+                      />
                     ) : (
                       <div
                         className={[

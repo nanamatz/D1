@@ -5,6 +5,7 @@ import { tilesByIds } from '../game';
 import { INTRO_STEPS, TUTORIAL_WORD, markIntroSeen } from '../tutorial';
 import { SpotlightBubble } from './SpotlightBubble';
 import type { UseGame } from '../useGame';
+import { isPlayed } from '../unlocks';
 
 /**
  * Guided first-run lesson (rebuilt 2026-07-21). A scripted, learn-by-doing walkthrough:
@@ -27,6 +28,9 @@ export function GuidedIntro({
   const { t } = useI18n();
   const cur = INTRO_STEPS[step]!;
   const last = step === INTRO_STEPS.length - 1;
+  const bodyKey = isPlayed('YELLOW') && (cur.key === 'frame' || cur.key === 'submit')
+    ? `intro.step.${cur.key}.bodyUnlocked`
+    : `intro.step.${cur.key}.body`;
 
   const finish = () => { markIntroSeen(); onClose(); };
   const advance = () => { if (last) finish(); else onStepChange(step + 1); };
@@ -64,7 +68,7 @@ export function GuidedIntro({
   return (
     <SpotlightBubble target={cur.selector} mascot="woodak" passthrough={!!gated}>
       <div className="intro-title">{t(`intro.step.${cur.key}.title`)}</div>
-      <p className="intro-body">{richText(t(`intro.step.${cur.key}.body`))}</p>
+      <p className="intro-body">{richText(t(bodyKey))}</p>
       <div className="intro-actions">
         <button className="btn sm intro-skip" onClick={finish}>{t('intro.skip')}</button>
         <span className="intro-dots">{step + 1} / {INTRO_STEPS.length}</span>

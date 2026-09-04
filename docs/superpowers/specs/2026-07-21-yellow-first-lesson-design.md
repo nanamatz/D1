@@ -65,14 +65,23 @@ first six physical IDs as YELLOW and opening-order index 6 as the sole safe spar
 
 Lock lives entirely in the UI (engine untouched). Pouch/Run-info remain reachable.
 
-### 4. Rebuild the intro (interactive script)
+### 4. Rebuild the intro (interactive script; dynamic target revision 2026-09-03)
 
 `INTRO_STEPS` (tutorial.ts) becomes 4 steps, each with an `advance` mode:
 1. `frame` — selector `.round-panel`, advance `'next'`.
-2. `discard` — selector `.stage`, advance `'discarded'` (auto only after the target enters
-   `discardedThisBlind`).
-3. `build` — selector `.hand`, advance `'staged'` (auto when `selected` spells the lock word).
-4. `submit` — selector `.play-btn`, advance `'played'` (auto when a word is played).
+2. `discard` — dynamic selector `.tutorial-action-target`, advance `'discarded'`: the spare is
+   targeted for right-click, then enabled Discard is targeted for left-click (auto only after the
+   spare enters `discardedThisBlind`).
+3. `build` — dynamic selector `.tutorial-action-target`, advance `'staged'`: the target moves
+   through the next exact Y→E→L→L→O→W physical ID (auto when `selected` spells the lock word).
+4. `submit` — dynamic selector `.tutorial-action-target`, advance `'played'`: enabled Play is the
+   target (auto when a word is played).
+
+This dynamic target list supersedes the original fixed `.stage`/`.hand`/`.play-btn` selectors.
+`SpotlightBubble` remains portalled to `document.body`, re-queries and measures the target every
+animation frame, and draws the box at the live viewport rect plus 8px padding. The box has no
+positional transition: target replacement and the tile FLIP are followed on the next paint without
+hover or a fixed timing guess.
 
 `GuidedIntro` reads `g` (game state) to auto-advance: on `build`, advance when
 `stagedWord(g) === 'YELLOW'`; on `submit`, advance when a play has happened (selected cleared /
@@ -103,6 +112,7 @@ gated-step hint string (`intro.hint.discard/build/submit`) shown where Next woul
   spends one budget, records one discarded tile, and returns the same replacement for the same seed.
 - Lock logic unit (pure helper): `nextLetter(selectedLetters, 'YELLOW')` returns Y→E→L→L→O→W and
   `null` when complete; `stagedWord` maps selected ids to the word.
-- Visual: fresh profile → first blind deals YELLOW plus spares; only the seventh tile can be
-  right-click marked, Discard commits it, then only Y is clickable, then E…; sort/drag stay
-  disabled; Play lights only at YELLOW; submit → yellow wash → board unlocks at 252/300.
+- Visual: fresh profile → first blind deals YELLOW plus spares; the live spotlight immediately
+  follows only the seventh tile for right-click, then Discard, then Y→E→L→L→O→W, then Play without
+  pointer hover; its box stays at the target rect plus 8px during resize and FLIP motion. Sort/drag
+  stay disabled; Play lights only at YELLOW; submit → yellow wash → board unlocks at 252/300.

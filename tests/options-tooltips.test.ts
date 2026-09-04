@@ -8,21 +8,23 @@ const locales = ['en', 'ko'].map((lang) => JSON.parse(
 ) as Record<string, string>);
 
 describe('Settings tooltip coverage', () => {
-  it('ships paired descriptions for all 13 value settings', () => {
+  it('ships paired descriptions for all 14 value settings', () => {
     for (const locale of locales) {
-      expect(Object.keys(locale).filter((key) => key.startsWith('settings.tooltip.'))).toHaveLength(13);
+      expect(Object.keys(locale).filter((key) => key.startsWith('settings.tooltip.'))).toHaveLength(14);
       expect(Object.keys(locale).filter((key) => key.startsWith('settings.audition.'))).toHaveLength(0);
     }
     expect(source.match(/tooltipDisabled={tab !==/g)).toHaveLength(11);
-    expect(source.match(/disabled={tab !==/g)).toHaveLength(2);
+    expect(source.match(/disabled={tab !==/g)).toHaveLength(3);
   });
 
-  it('accounts for every one of the 16 native Settings focus targets', () => {
+  it('accounts for every one of the 18 native Settings focus targets', () => {
     const sliders = source.match(/<Slider\b/g)?.length ?? 0;
     const toggles = source.match(/<Toggle\b/g)?.length ?? 0;
     const speedChoices = 2;
     const languageChoices = 1;
     const muteChoices = 2;
+    const resolutionChoices = 1;
+    const paletteChoices = 1;
 
     expect(sliders).toBe(5);
     expect(toggles).toBe(6);
@@ -37,7 +39,10 @@ describe('Settings tooltip coverage', () => {
       expect(locale['settings.audioNote']).toMatch(/^(Audio|오디오)$/);
       expect(locale['settings.mute']).toMatch(/^(Mute|음소거)$/);
     }
-    expect(sliders + toggles + speedChoices + languageChoices + muteChoices).toBe(16);
+    expect(source).toContain('className="resolution-select"');
+    expect(source).toContain('className="btn exchange sm"');
+    expect(sliders + toggles + speedChoices + languageChoices + muteChoices
+      + resolutionChoices + paletteChoices).toBe(18);
   });
 
   it('aligns both audio buses on the same responsive four-column grid', () => {

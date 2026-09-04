@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -47,6 +48,10 @@ interface Props {
   disabled?: boolean;
   /** Touch pointer-up toggles a pinned tooltip without consuming the control click. */
   touchPin?: boolean;
+  /** Optional rich content rendered below the ordinary description. */
+  content?: ReactNode;
+  /** Keep this tooltip vertically inside the physical viewport. */
+  viewportContain?: boolean;
   children?: ReactNode;
 }
 
@@ -76,6 +81,7 @@ const TOOLTIP_DETAIL_PRIORITY: Record<TooltipDetailKind, number> = {
 
 type TooltipMode = 'hover' | 'focus' | 'touch';
 const TOOLTIP_MODE_PRIORITY: Record<TooltipMode, number> = { hover: 0, focus: 1, touch: 1 };
+const PORTAL_HOVER_BRIDGE_MS = 120;
 let activeTooltip: { id: string; mode: TooltipMode; close: () => void } | null = null;
 
 const claimTooltip = (id: string, mode: TooltipMode, close: () => void): boolean => {
@@ -229,11 +235,14 @@ export function Tooltip({
   anchorRef: externalAnchorRef,
   disabled = false,
   touchPin = false,
+  content,
+  viewportContain = false,
   children,
 }: Props) {
   const { t } = useI18n();
   const anchorRef = useRef<HTMLSpanElement>(null);
   const cardRef = useRef<HTMLSpanElement>(null);
+  const hoverHideTimerRef = useRef<number | null>(null);
   const tooltipId = useId();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -251,7 +260,27 @@ export function Tooltip({
     || referencedEditionTips(supplementCopy, t).length > 0
     || referencedTermTips(supplementCopy, t).length > 0;
 
+  const clearHoverHide = () => {
+    if (hoverHideTimerRef.current === null) return;
+    window.clearTimeout(hoverHideTimerRef.current);
+    hoverHideTimerRef.current = null;
+  };
+  const hideHover = () => {
+    clearHoverHide();
+    setHovered(false);
+    releaseTooltip(tooltipId, 'hover');
+  };
+  const scheduleHoverHide = () => {
+    if (!viewportContain) {
+      hideHover();
+      return;
+    }
+    clearHoverHide();
+    hoverHideTimerRef.current = window.setTimeout(hideHover, PORTAL_HOVER_BRIDGE_MS);
+  };
+
   const close = () => {
+    clearHoverHide();
     setHovered(false);
     setFocused(false);
     setTouchPinned(false);
@@ -284,12 +313,9 @@ export function Tooltip({
     if (!node || disabled) return;
     const showHover = () => {
       if (!claimTooltip(tooltipId, 'hover', close)) return;
+      clearHoverHide();
       setPosition(locate());
       setHovered(true);
-    };
-    const hideHover = () => {
-      setHovered(false);
-      releaseTooltip(tooltipId, 'hover');
     };
     const showFocus = (event: FocusEvent) => {
       const focusTarget = event.target;
@@ -318,18 +344,19 @@ export function Tooltip({
       setTouchPinned((pinned) => !pinned);
     };
     node.addEventListener('pointerenter', showHover);
-    node.addEventListener('pointerleave', hideHover);
+    node.addEventListener('pointerleave', scheduleHoverHide);
     node.addEventListener('pointerdown', press);
     node.addEventListener('pointerup', release);
     node.addEventListener('focusin', showFocus);
     node.addEventListener('focusout', hideFocus);
     return () => {
       node.removeEventListener('pointerenter', showHover);
-      node.removeEventListener('pointerleave', hideHover);
+      node.removeEventListener('pointerleave', scheduleHoverHide);
       node.removeEventListener('pointerdown', press);
       node.removeEventListener('pointerup', release);
       node.removeEventListener('focusin', showFocus);
       node.removeEventListener('focusout', hideFocus);
+      clearHoverHide();
       releaseTooltip(tooltipId);
     };
   }, [disabled, down, externalAnchorRef, touchPin]);
@@ -346,7 +373,8 @@ export function Tooltip({
     if (!touchPinned) return;
     const node = anchor();
     const closeOutside = (event: PointerEvent) => {
-      if (!node?.contains(event.target as Node | null)) close();
+      const eventTarget = event.target as Node | null;
+      if (!node?.contains(eventTarget) && !cardRef.current?.contains(eventTarget)) close();
     };
     document.addEventListener('pointerdown', closeOutside);
     return () => {
@@ -363,7 +391,7 @@ export function Tooltip({
     return () => window.removeEventListener('keydown', closeOnEscape, true);
   }, [open, tooltipId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     let frame = 0;
     const card = cardRef.current;
@@ -376,6 +404,22 @@ export function Tooltip({
       if (next && card) {
         card.style.setProperty('--tt-x', `${next.x}px`);
         card.style.setProperty('--tt-y', `${next.y}px`);
+        if (viewportContain) {
+          const targetRect = target()?.getBoundingClientRect();
+          if (targetRect) {
+            const height = card.offsetHeight;
+            const below = window.innerHeight - targetRect.bottom - 10;
+            const above = targetRect.top - 10;
+            const placeBelow = down
+              ? below >= height || below >= above
+              : above < height && below > above;
+            const preferredTop = placeBelow
+              ? targetRect.bottom + 10
+              : targetRect.top - height - 10;
+            const top = Math.max(8, Math.min(preferredTop, window.innerHeight - height - 8));
+            card.style.setProperty('--tt-contained-y', `${top}px`);
+          }
+        }
         if (supplement) {
           const rect = card.getBoundingClientRect();
           const leftSpace = rect.left - supplementGap - 8;
@@ -390,7 +434,7 @@ export function Tooltip({
     };
     track();
     return () => cancelAnimationFrame(frame);
-  }, [down, open]);
+  }, [down, open, viewportContain]);
 
   useEffect(() => {
     if (!open) return;
@@ -422,8 +466,11 @@ export function Tooltip({
         grade ? 'pack' : '',
         compact ? 'tile-tt' : '',
         hasSupplement ? 'has-sub' : '',
+        viewportContain ? 'viewport-contained' : '',
       ].filter(Boolean).join(' ')}
       role="tooltip"
+      onPointerEnter={viewportContain ? clearHoverHide : undefined}
+      onPointerLeave={viewportContain ? scheduleHoverHide : undefined}
       style={{
         '--tt-x': `${position.x}px`,
         '--tt-y': `${position.y}px`,
@@ -433,6 +480,7 @@ export function Tooltip({
       <span className="tt-desc">
         <span className="tt-body">{richText(stripTooltipPeriods(body))}</span>
         {extra && <span className="tt-extra">{richText(stripTooltipPeriods(extra))}</span>}
+        {content}
         <TooltipSupplement body={body} sub={sub} />
       </span>
       {rarity && <span className={['tt-rarity', rarity].join(' ')}>{t(`rarity.${rarity}`)}</span>}

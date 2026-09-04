@@ -276,6 +276,60 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     expect(audio.scoreTypewriterKey).toHaveBeenCalledWith('Enter', true);
   });
 
+  it('keeps one clear scheduler across cashout entry and cancels it on Collect', () => {
+    const common = {
+      primaryKeyId: 'Enter',
+      liveTotal: 1_000,
+      target: 100,
+      blindKey: '1-0',
+      settleId: 9,
+      gameSpeed: 1,
+      screenshake: 0,
+      reducedMotion: false,
+      resolutionActive: true,
+    } satisfies Partial<Props>;
+
+    renderUntilStable({
+      ...common,
+      active: true,
+      tier: 3,
+      beatId: 'score-9-4',
+      holdActive: false,
+    } as Props);
+    renderUntilStable({
+      ...common,
+      active: false,
+      tier: 0,
+      beatId: 'score-0',
+      holdActive: true,
+    } as Props);
+    vi.advanceTimersByTime(0);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(1);
+
+    // Playing -> live Fee Settlement keeps the same props that own the scheduler.
+    renderUntilStable({
+      ...common,
+      active: false,
+      tier: 0,
+      beatId: 'score-0',
+      holdActive: true,
+    } as Props);
+    vi.advanceTimersByTime(0);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(1);
+
+    // Collect -> Shop drops resolutionActive and synchronously clears future work.
+    renderUntilStable({
+      ...common,
+      active: false,
+      tier: 0,
+      beatId: 'score-0',
+      resolutionActive: false,
+      holdActive: false,
+    } as Props);
+    vi.advanceTimersByTime(10_000);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(1);
+  });
+
   it('does not fire a target cue for a transient pre-boss crossing rejected by the engine', () => {
     const common = {
       active: false,

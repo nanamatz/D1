@@ -88,7 +88,9 @@ interchangeably. Confirm `../D1-release/win-unpacked/Play the World.exe` exists.
 values outside the repository; the shown explicit check also rejects the real
 AppID literal from tracked source and the artifact. Launch the
 packaged executable and verify start, save, quit, resume, fullscreen, audio,
-input, and offline play. The artifact check verifies the unpacked build has
+input, and offline play. In Video, verify all four windowed content-size choices,
+disabled presets on a smaller work area, Custom after manual resize, maximized
+selection, F11 synchronization, and restoration after fullscreen. The artifact check verifies the unpacked build has
 the Windows x64 native module plus `steam_api64.dll` and no `steam_appid.txt`.
 Never commit or package a real AppID; production reads only the AppID supplied by
 the Steam launch environment, while development AppIDs stay external.

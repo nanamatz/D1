@@ -47,8 +47,8 @@ import { TiltCard } from './TiltCard';
 import { consumableClassification } from '../cardClassification';
 import { useEntering } from './ScreenTransition';
 import { packFableFxBus } from '../packFableFx';
-import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
+import { EmojiTileCard } from './ObjectCards';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
 import { unlockedEmojiSet } from '../emojiUnlocks';
@@ -140,9 +140,11 @@ function OptionCard({
         {option.kind === 'tile' ? (
           <TileView tile={option.tile} />
         ) : option.kind === 'joker' ? (
-          jokerArt(option.id)
-            ? <img className="pack-joker-art" src={jokerArt(option.id)} alt="" />
-            : null
+          <EmojiTileCard
+            id={option.id}
+            motion={false}
+            imageClassName="pack-joker-art"
+          />
         ) : option.kind === 'punctuation' && isConstellationId(option.id) ? (
           <CardArt family="constellation"
             id={option.id}

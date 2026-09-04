@@ -23,8 +23,8 @@ import { isConstellationId } from '../../engine/constellations';
 import { isGamblerId } from '../../engine/gamblers';
 import { consumableClassification } from '../cardClassification';
 import { useShelfDrag } from '../drag';
-import { jokerArt } from '../jokerArt';
 import { CardArt } from './CardArt';
+import { EmojiTileCard } from './ObjectCards';
 import { mascotSrc } from '../mascots';
 import { UiIcon } from './UiIcon';
 import type { UiIconId } from '../uiIcons';
@@ -366,7 +366,6 @@ export function JokerShelf({
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
             const name = lang === 'ko' ? def.nameKo : def.nameEn;
-            const art = jokerArt(def.id);
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
             const growthPop = growthPops.find((pop) =>
               pop.jokerId === def.id && (pop.jokerInstanceId !== undefined
@@ -451,9 +450,11 @@ export function JokerShelf({
                   down
                   status={bossDisabled ? 'disabled' : undefined}
                 >
-                  <TiltCard
+                  <EmojiTileCard
+                    id={def.id}
+                    {...(jokersFaceDown ? { artSrc: mascotSrc('woodak') } : {})}
+                    imageClassName={jokersFaceDown ? 'joker-art joker-back-mascot' : 'joker-art'}
                     key={visiblePop?.id ?? 'idle'}
-                    idle
                     className={className}
                   >
                     {onSellJoker && (
@@ -465,11 +466,6 @@ export function JokerShelf({
                         aria-expanded={jokerMenuIdx === i}
                         onClick={() => setJokerMenuIdx(jokerMenuIdx === i ? null : i)}
                       />
-                    )}
-                    {jokersFaceDown ? (
-                      <img className="joker-art joker-back-mascot" src={mascotSrc('woodak')} alt="" />
-                    ) : (
-                      art && <img className="joker-art" src={art} alt="" />
                     )}
                     {onSellJoker && jokerMenuIdx === i && (
                       <div className="consumable-menu bare" role="menu">
@@ -493,7 +489,7 @@ export function JokerShelf({
                         </button>
                       </div>
                     )}
-                  </TiltCard>
+                  </EmojiTileCard>
                 </Tooltip>
                 {firing && visiblePop && (
                   <JokerPop

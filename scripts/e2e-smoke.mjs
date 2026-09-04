@@ -187,6 +187,7 @@ async function run() {
         state: {}
       }));
       envelope.state.run.jokerSlots = ids.length;
+      envelope.state.run.discoveredPatterns = ['complex'];
       envelope.state.blind.jokersFaceDown = true;
       localStorage.setItem('wj.run', JSON.stringify(envelope));
     })()`);
@@ -226,6 +227,127 @@ async function run() {
     }
     await assertContained('.main', '.frame', 'Eight-card main column');
     await assertContained('.consumables-col', '.frame', 'Eight-card consumable shelf');
+
+    // Run Info's long Complex example uses a scrollable, interactive body portal.
+    // Exercise real pointer events: touch input inside the portal must not count as
+    // an outside dismissal, and pointer travel from anchor to portal gets the
+    // documented 120ms bridge before it finally closes on portal leave.
+    await click('.sidenav-btn.info');
+    await waitFor(`document.querySelector('.runinfo')`, 'Run Info');
+    win.setContentSize(960, 220);
+    await waitFor(`window.innerWidth === 960 && window.innerHeight === 220`, 'short tooltip viewport');
+    const complexAnchorReady = await evaluate(`(() => {
+      const row = [...document.querySelectorAll('.ri-pat')]
+        .find((candidate) => candidate.querySelector('.pn')?.textContent?.trim() === 'Complex');
+      const anchor = row?.closest('.tt-anchor');
+      if (!(anchor instanceof HTMLElement)) return false;
+      anchor.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
+      return true;
+    })()`);
+    if (!complexAnchorReady) throw new Error('Missing discovered Complex pattern row');
+    await waitFor(
+      `document.querySelector('.tt-card.tt-portal.viewport-contained')`,
+      'Complex example tooltip',
+    );
+    const tooltipLayout = await evaluate(`(() => {
+      const card = document.querySelector('.tt-card.tt-portal.viewport-contained');
+      if (!(card instanceof HTMLElement)) return null;
+      const rect = card.getBoundingClientRect();
+      const style = getComputedStyle(card);
+      const before = card.scrollTop;
+      card.scrollTop = Math.min(32, card.scrollHeight - card.clientHeight);
+      return {
+        top: rect.top,
+        bottom: rect.bottom,
+        viewport: window.innerHeight,
+        pointerEvents: style.pointerEvents,
+        touchAction: style.touchAction,
+        overflowY: style.overflowY,
+        scrollable: card.scrollHeight > card.clientHeight,
+        scrolled: card.scrollTop > before,
+      };
+    })()`);
+    if (!tooltipLayout
+      || tooltipLayout.top < 7
+      || tooltipLayout.bottom > tooltipLayout.viewport - 7
+      || tooltipLayout.pointerEvents !== 'auto'
+      || tooltipLayout.touchAction !== 'pan-y'
+      || tooltipLayout.overflowY !== 'auto'
+      || !tooltipLayout.scrollable
+      || !tooltipLayout.scrolled) {
+      throw new Error(`Complex tooltip viewport/scroll interaction failed: ${JSON.stringify(tooltipLayout)}`);
+    }
+    await evaluate(`(() => {
+      const card = document.querySelector('.tt-card.tt-portal.viewport-contained');
+      if (!(card instanceof HTMLElement)) return;
+      card.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
+      card.click();
+    })()`);
+    await delay(150);
+    if (!await evaluate(`document.querySelector('.tt-card.tt-portal.viewport-contained') !== null`)) {
+      throw new Error('Pointer input inside the pinned tooltip dismissed it as outside input');
+    }
+    await evaluate(`(() => {
+      const row = [...document.querySelectorAll('.ri-pat')]
+        .find((candidate) => candidate.querySelector('.pn')?.textContent?.trim() === 'Complex');
+      row?.closest('.tt-anchor')
+        ?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
+    })()`);
+    await waitFor(
+      `!document.querySelector('.tt-card.tt-portal.viewport-contained')`,
+      'touch-pinned Complex tooltip close',
+    );
+    await evaluate(`(() => {
+      const row = [...document.querySelectorAll('.ri-pat')]
+        .find((candidate) => candidate.querySelector('.pn')?.textContent?.trim() === 'Complex');
+      const anchor = row?.closest('.tt-anchor');
+      if (!(anchor instanceof HTMLElement)) return;
+      anchor.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    })()`);
+    await waitFor(
+      `document.querySelector('.tt-card.tt-portal.viewport-contained')`,
+      'hovered Complex tooltip',
+    );
+    await evaluate(`(() => {
+      const card = document.querySelector('.tt-card.tt-portal.viewport-contained');
+      const row = [...document.querySelectorAll('.ri-pat')]
+        .find((candidate) => candidate.querySelector('.pn')?.textContent?.trim() === 'Complex');
+      const anchor = row?.closest('.tt-anchor');
+      if (!(anchor instanceof HTMLElement) || !(card instanceof HTMLElement)) return;
+      anchor.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+      card.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
+    })()`);
+    await delay(150);
+    if (!await evaluate(`document.querySelector('.tt-card.tt-portal.viewport-contained') !== null`)) {
+      throw new Error('Anchor-to-portal hover bridge closed the tooltip early');
+    }
+    await evaluate(`document.querySelector('.tt-card.tt-portal.viewport-contained')
+      ?.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, pointerType: 'mouse' }))`);
+    await waitFor(
+      `!document.querySelector('.tt-card.tt-portal.viewport-contained')`,
+      'hover bridge timer cleanup',
+      2_000,
+    );
+    await click('.ri-tabs .ri-tab:nth-child(2)');
+    await waitFor(`document.querySelector('.ri-hands .tt-anchor')`, 'Word Hands tab');
+    await evaluate(`document.querySelector('.ri-hands .tt-anchor')
+      ?.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }))`);
+    await waitFor(
+      `document.querySelector('.tt-card.tt-portal:not(.viewport-contained)')`,
+      'ordinary tooltip',
+    );
+    const ordinaryPointerEvents = await evaluate(
+      `getComputedStyle(document.querySelector('.tt-card.tt-portal:not(.viewport-contained)')).pointerEvents`,
+    );
+    if (ordinaryPointerEvents !== 'none') {
+      throw new Error(`Ordinary tooltip became interactive: ${ordinaryPointerEvents}`);
+    }
+    await evaluate(`document.querySelector('.ri-hands .tt-anchor')
+      ?.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }))`);
+    await waitFor(`!document.querySelector('.tt-card.tt-portal')`, 'ordinary tooltip close');
+    await click('.runinfo .ov-close');
+    win.setContentSize(1366, 768);
+    await waitFor(`window.innerWidth === 1366 && window.innerHeight === 768`, 'restored smoke viewport');
 
     // Promote saved resting state to a valid settlement fixture. This isolates UI
     // navigation from balance numbers while still exercising real persistence.

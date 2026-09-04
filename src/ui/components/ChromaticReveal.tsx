@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n';
 import { audio } from '../audio';
-import { applyPresentation, unlockBus, type UnlockDef } from '../unlocks';
+import {
+  applyPresentation,
+  unlockBus,
+  type RequiredPaletteReveal,
+  type UnlockDef,
+  type UnlockRevealEvent,
+} from '../unlocks';
 import { mascotVariantArt } from '../mascots';
 
 /** The mascot portrait for a mascot unlock that has art (else null). */
@@ -24,24 +31,29 @@ function washGroup(def: UnlockDef): string | null {
   return def.effect.kind === 'color' ? def.effect.group : null;
 }
 
+function isRequiredPaletteReveal(event: UnlockRevealEvent): event is RequiredPaletteReveal {
+  return 'type' in event && event.type === 'requiredPalette';
+}
+
 /**
  * Chromatic-unlock celebration host (feature-02 C-1). Mounted once in App;
  * subscribes to the unlock bus and plays a one-shot reveal (color washes in /
- * audio fades up) the first time each unlock word is played. Applying the
- * presentation activates the new layer; the wash sells it.
+ * audio fades up) for natural word unlocks or one atomic Settings aggregate.
+ * Applying the presentation activates the new layer; the wash sells it.
  */
 export function ChromaticReveal() {
   const { t } = useI18n();
-  const [queue, setQueue] = useState<UnlockDef[]>([]);
+  const [queue, setQueue] = useState<UnlockRevealEvent[]>([]);
 
   useEffect(() => {
-    return unlockBus.subscribe((def) => {
-      // Activate the newly-played layer immediately (token swap / bus enable),
-      // then reveal it. `applyPresentation` reads the freshly-persisted played set.
+    return unlockBus.subscribe((event) => {
+      // Activate the persisted layers immediately, then reveal the one event.
       applyPresentation();
-      // If this unlock turned on audio, a fanfare now "fades up" the new bus.
-      if (def.effect.kind === 'audio' || audio.isBusEnabled('sfx')) audio.play('clearFanfare');
-      setQueue((q) => [...q, def]);
+      const defs = isRequiredPaletteReveal(event) ? event.defs : [event];
+      if (defs.some((def) => def.effect.kind === 'audio') || audio.isBusEnabled('sfx')) {
+        audio.play('clearFanfare');
+      }
+      setQueue((q) => [...q, event]);
     });
   }, []);
 
@@ -53,12 +65,13 @@ export function ChromaticReveal() {
     return () => clearTimeout(timer);
   }, [active]);
 
-  if (!active) return null;
-  const group = washGroup(active);
-  const art = mascotArt(active);
+  if (!active || typeof document === 'undefined') return null;
+  const aggregate = isRequiredPaletteReveal(active);
+  const group = aggregate ? null : washGroup(active);
+  const art = aggregate ? null : mascotArt(active);
   const dismiss = () => setQueue((q) => q.slice(1));
 
-  return (
+  return createPortal(
     <div
       className={['chroma-reveal', group ? `wash-${group}` : 'wash-audio'].join(' ')}
       role="dialog"
@@ -66,10 +79,17 @@ export function ChromaticReveal() {
       onClick={dismiss}
     >
       <div className="chroma-card">
-        {art && <img className="chroma-mascot" src={art} alt="" />}
-        <div className="chroma-word">{active.word}</div>
-        <div className="chroma-body">{t(bodyKey(active))}</div>
+        {aggregate ? (
+          <div className="chroma-word">{t('unlock.requiredPalette')}</div>
+        ) : (
+          <>
+            {art && <img className="chroma-mascot" src={art} alt="" />}
+            <div className="chroma-word">{active.word}</div>
+            <div className="chroma-body">{t(bodyKey(active))}</div>
+          </>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

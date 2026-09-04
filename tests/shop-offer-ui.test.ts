@@ -34,6 +34,10 @@ describe('image-first shop offers', () => {
     expect(css).toMatch(
       /\.shop-offer-action-secondary\s*\{[^}]*top:\s*50%[^}]*left:\s*calc\(100% \+ 12px\)/s,
     );
+    expect(css).toMatch(
+      /\.shop-offer \.shop-offer-action \.btn,\s*\.consumable-menu\.bare button\s*\{[^}]*min-width:\s*82px/s,
+    );
+    expect(css).toMatch(/\.btn\.blue,\s*\.btn\.red\s*\{[^}]*min-width:\s*152px/s);
   });
 
   it('attaches price to the shared art card and reveals the action only on selection', () => {
