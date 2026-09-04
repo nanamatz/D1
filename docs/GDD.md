@@ -244,10 +244,10 @@ Common Emoji Tile that pays on the base is renamed **Ceramic Artisan / 도자기
 |---|---|---|---|
 | `goldPlay` | tile scores in a played word | +$3 | Gold Seal (verbatim) |
 | `chipPlay` | tile scores in a played word | +30 Chips | adapted (Blue Seal's planet-generation has no clean analog; value borrows Bonus-card's +30) |
-| `retriggerPlay` | tile scores in a played word | retrigger this tile's scoring contribution once | Red Seal (verbatim) — the reserved retrigger, spent here |
+| `retriggerPlay` | tile has an eligible played or held scoring effect | retrigger every eligible scoring effect on this tile once | Red Seal (verbatim) — the reserved retrigger, spent here |
 | `discardGain` | tile is discarded | gain 1 random consumable; **requires a free consumable slot**, otherwise nothing | Purple Seal (tarot→consumable) |
 
-Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 emoji tiles); `retriggerPlay` composes with any other retrigger sources rather than being special-cased; `discardGain` joins the discard-economy axis. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2.
+Rules: "scores in a played word" **includes gibberish** (tile-level effects fire whenever the tile scores, consistent with materials and layer-1 emoji tiles); `retriggerPlay` composes with any other retrigger sources rather than being special-cased. When a Black tile is held, it repeats that physical tile's eligible held-tile Emoji and material scoring bundle once, without adding held base-letter or edition scoring; an otherwise inert held Black tile emits no retrigger. `discardGain` joins the discard-economy axis. Values follow the same Balatro-verbatim-then-tune philosophy as §2.2. (changed 2026-09-04)
 
 **Font ↔ effect mapping (confirmed 2026-07-27).** Assigned so that a glyph's visual weight predicts its effect's character — the heavier the ink, the more it does to the score:
 
@@ -256,7 +256,7 @@ Rules: "scores in a played word" **includes gibberish** (tile-level effects fire
 | Light Italic | `goldPlay` — +$3 when the tile scores | the lightest touch pays out sideways, in money rather than score |
 | Void (`bold` internally) | `chipPlay` — +30 Chips when the tile scores | extra ink consumes the glyph's negative space, matching the additive score bonus |
 | Inline | `discardGain` — gain 1 consumable when discarded (needs a free slot) | the hollow glyph has something inside it |
-| Black | `retriggerPlay` — retrigger the tile's scoring contribution once | the heaviest ink prints twice |
+| Black | `retriggerPlay` — retrigger every eligible scoring effect on the tile once | the heaviest ink prints twice |
 
 Implemented as a `fontEffects` table in `balance.ts` keyed by font id (`lightItalic`/`bold`/`inline`/`black` → effect id); tooltips read from it, never hard-coded. The persisted `bold` id displays as **Void / 보이드** for save compatibility. Reassignment stays a one-line data change.
 
@@ -1139,7 +1139,7 @@ also available through the surrounding tooltip and accessible label.
 |---:|---|---|
 | 1 | The North Wind and the Sun | Magnifier: show up to 3 spellable words in the current hand. Under Nokdo Script it reserves the exact forced physical letter tile; a forced Stone is omitted from the advisory spelling/tile ids so suggestions use the remaining letters, without changing the Stone submission's normal gibberish scoring. |
 | 2 | The Boy Who Cried Wolf | Create the last Fable or Constellation card used this run; Use/Use now stays disabled until one has been used this run |
-| 3 | The Ant and the Grasshopper | Create up to 2 random Fable cards while slots are available |
+| 3 | The Ant and the Grasshopper | Create up to 2 random other Fable cards while slots are available; this card is excluded from its own pool |
 | 4 | The Golden Axe and the Silver Axe | Turn 2 selected tiles into Lead Plate |
 | 5 | The Fox and the Crane | Turn 1 selected tile into Stone |
 | 6 | The Tortoise and the Hare | Turn 2 selected tiles into Polished |

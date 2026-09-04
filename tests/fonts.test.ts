@@ -121,6 +121,47 @@ describe('font play effects in the scoring pipeline (GDD §2.3)', () => {
     expect(r.submission.settledScore).toBe(78);
   });
 
+  it('retriggerPlay repeats Brass while held', () => {
+    const word = wordTiles('cat');
+    const held = { ...tile(fontFor('retriggerPlay'), 'held-black-brass'), material: 'brass' as const };
+    const run = { ...newRun('held-black-brass'), bag: [...word, held] };
+    const blind = { ...startBlind(run, makeRng(run.seed)), hand: [...word, held], bag: [] };
+    const r = submitWord(blind, run, lex, word.map((entry) => entry.id), makeRng('held-score'));
+    const heldEvents = r.events.filter((event) =>
+      'tileId' in event && event.tileId === held.id &&
+      (event.kind === 'material' || event.kind === 'font'));
+
+    expect(heldEvents).toEqual([
+      expect.objectContaining({ kind: 'material', material: 'brass', tileId: held.id, multFactor: BALANCE.materials.brass.multFactor }),
+      expect.objectContaining({ kind: 'font', effect: 'retriggerPlay', tileId: held.id }),
+      expect.objectContaining({ kind: 'material', material: 'brass', tileId: held.id, multFactor: BALANCE.materials.brass.multFactor }),
+    ]);
+    expect(r.submission.settledScore).toBe(135);
+  });
+
+  it('retriggerPlay repeats held-tile Emoji effects', () => {
+    const word = wordTiles('cat');
+    const held = tile(fontFor('retriggerPlay'), 'held-black-joker');
+    const run = { ...newRun('held-black-joker'), bag: [...word, held] };
+    run.jokers = [{ defId: 'fullDesk', edition: 'base', state: {} }];
+    const blind = { ...startBlind(run, makeRng(run.seed)), hand: [...word, held], bag: [] };
+    const r = submitWord(blind, run, lex, word.map((entry) => entry.id), makeRng('held-score'));
+
+    expect(r.events.filter((event) =>
+      event.kind === 'joker' && event.jokerId === 'fullDesk' && event.tileId === held.id,
+    )).toHaveLength(2);
+  });
+
+  it('does not announce a held retrigger when the tile has no held effect', () => {
+    const word = wordTiles('cat');
+    const held = { ...tile(fontFor('retriggerPlay'), 'held-black-empty'), edition: 'rainbow' as const };
+    const run = { ...newRun('held-black-empty'), bag: [...word, held] };
+    const blind = { ...startBlind(run, makeRng(run.seed)), hand: [...word, held], bag: [] };
+    const r = submitWord(blind, run, lex, word.map((entry) => entry.id), makeRng('held-score'));
+
+    expect(r.events.filter((event) => 'tileId' in event && event.tileId === held.id)).toEqual([]);
+  });
+
   it('font play effects fire on gibberish too (GDD §2.3 rule)', () => {
     const r = submit(wordTiles('tac', { 0: fontFor('chipPlay') })); // not in lexicon
     expect(r.submission.isGibberish).toBe(true);

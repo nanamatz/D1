@@ -957,7 +957,8 @@ function scoreSubmission(
     pushGrowthEvents(events, growth);
   }
 
-  for (const tile of held) {
+  const scoreHeldTile = (tile: Tile): boolean => {
+    const eventCount = events.length;
     for (const joker of run.jokers) {
       const beforeChips = ctx.chips;
       const beforeMult = ctx.mult;
@@ -986,6 +987,20 @@ function scoreSubmission(
     }
     for (const beat of applyHeldMaterials(ctx, [tile])) {
       events.push({ kind: 'material', ...beat });
+    }
+    return events.length > eventCount;
+  };
+
+  for (const tile of held) {
+    const scored = scoreHeldTile(tile);
+    if (scored && fontEffectOf(tile.font) === 'retriggerPlay') {
+      for (let trigger = 0; trigger < BALANCE.fontEffectValues.retriggerPlay.extraTriggers; trigger++) {
+        events.push({
+          kind: 'font', font: tile.font, effect: 'retriggerPlay', tileId: tile.id,
+          chipsDelta: 0, multDelta: 0, goldDelta: 0,
+        });
+        scoreHeldTile(tile);
+      }
     }
   }
 

@@ -113,10 +113,39 @@ describe('Fable registry', () => {
     expect(useFable('fable9', { ...high.run, gold: 50 }, high.blind, [], zeroRng).run.gold).toBe(70);
   });
 
-  it('creates up to two random cards using the slots freed by consuming itself', () => {
+  it('excludes itself while allowing duplicate other Fables', () => {
     const { run, blind } = setup('fable3');
-    const result = useFable('fable3', run, blind, [], zeroRng);
-    expect(result.run.consumables).toEqual(['fable1', 'fable1']);
+    let intCalls = 0;
+    const formerSelfIndexRng: Rng = {
+      ...zeroRng,
+      int: (max) => {
+        intCalls += 1;
+        expect(max).toBe(FABLE_IDS.length - 1);
+        return 2;
+      },
+    };
+    const result = useFable('fable3', run, blind, [], formerSelfIndexRng);
+    expect(result.run.consumables).toEqual(['fable4', 'fable4']);
+    expect(result.run.consumables).not.toContain('fable3');
+    expect(intCalls).toBe(2);
+
+    intCalls = 0;
+    const oneSlot = useFable('fable3', { ...run, consumableSlots: 1 }, blind, [], formerSelfIndexRng);
+    expect(oneSlot.run.consumables).toEqual(['fable4']);
+    expect(intCalls).toBe(1);
+
+    const seeded = useFable('fable3', run, blind, [], makeRng('fable3-create')).run.consumables;
+    expect(useFable('fable3', run, blind, [], makeRng('fable3-create')).run.consumables)
+      .toEqual(seeded);
+    expect(seeded).not.toContain('fable3');
+
+    const unavailable = { ...run, consumables: [] };
+    const noRng: Rng = {
+      ...zeroRng,
+      int: () => { throw new Error('failed use must not consume RNG'); },
+    };
+    const failed = useFable('fable3', unavailable, blind, [], noRng);
+    expect(failed).toMatchObject({ ok: false, run: unavailable, blind });
   });
 
   it('creates distinct seeded Constellation cards in available consumable slots', () => {

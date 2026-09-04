@@ -324,7 +324,10 @@ Priority order — implement top-down, cut from the bottom if time-boxed:
    Settings changes never replay an in-flight submission: its speed is snapshotted at start, screen-shake changes affect only later hits, Reduced Motion ON cancels outstanding work and switches immediately to the fixed 700ms static branch, and OFF applies from the next submission.
    “Per actual application” applies uniformly to every per-letter, material,
    font, position, and held-tile Emoji effect: the running axes mutate on that
-   tile's beat, and a full-tile retrigger repeats every applicable effect.
+   tile's beat, and a full-tile retrigger repeats every applicable effect. For a
+   held Black tile, that means its held-tile Emoji hooks and material repeat in
+   their existing order; held base Chips and editions remain inactive, and an
+   otherwise inert tile emits no retrigger beat. (changed 2026-09-04)
    **Briefcase adds the final axis beat** (GDD §12.2): after every ordinary
    word hook, show a balance-scale stamp and tween the Chips and Mult boxes from
    their final values to their exact shared arithmetic mean, then multiply.

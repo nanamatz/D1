@@ -464,7 +464,7 @@ export function useFable(
   else if (effect.kind === 'copyLast') {
     nextRun = { ...nextRun, consumables: [...nextRun.consumables, run.lastFableOrConstellation!] };
   } else if (effect.kind === 'createFable') {
-    nextRun = addRandomConsumables(nextRun, FABLE_IDS, 2, rng);
+    nextRun = addRandomConsumables(nextRun, FABLE_IDS.filter((candidate) => candidate !== id), 2, rng);
   } else if (effect.kind === 'createConstellation') {
     nextRun = addDistinctRandomConsumables(nextRun, CONSTELLATION_IDS, 2, rng);
   } else if (effect.kind === 'material') {
