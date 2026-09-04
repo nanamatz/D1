@@ -189,7 +189,6 @@
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
-  height: 248px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -266,7 +265,6 @@
 }
 .sidebar-blindselect .blind-badge {
   border-color: var(--chips);
-  min-height: 218px;
   position: relative;
   display: grid;
   place-items: center;
@@ -1500,6 +1498,8 @@
 /* Blind badge (playtest-06): a horizontally centered row — kind emblem left,
    target/reward stats panel right. */
 .blind-badge {
+  height: 264px;
+  flex: 0 0 264px;
   background: var(--badge-bg);
   border-radius: 12px;
   padding: 10px;

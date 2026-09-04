@@ -67,6 +67,13 @@ describe('persistent Balatro-style run table', () => {
     expect(playCss).toMatch(/\.shop-sign-lights i\s*\{[^}]*display:\s*none/s);
   });
 
+  it('keeps the sidebar content height identical across play, Shop, and Blind Select', () => {
+    expect(playCss).toMatch(/\.blind-badge\s*\{[^}]*height:\s*264px[^}]*flex:\s*0 0 264px/s);
+    expect(playCss).not.toMatch(/\.sidebar-shop \.blind-badge\s*\{[^}]*height:/s);
+    expect(playCss).not.toMatch(/\.sidebar-blindselect \.blind-badge\s*\{[^}]*min-height:/s);
+    expect(24 + 36 + 264 + 148 + 484).toBe(956);
+  });
+
   it('caps UI scale to a fixed-height board that cannot scroll the viewport', () => {
     expect(tokensCss).toContain('--board-h: 988px');
     expect(tokensCss).toContain('--fit-safe-y: 4px');
