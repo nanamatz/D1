@@ -26,6 +26,7 @@ describe('Steam ownership renderer boundary', () => {
     const en = JSON.parse(readFileSync('locales/en.json', 'utf8'));
     const ko = JSON.parse(readFileSync('locales/ko.json', 'utf8'));
     const ja = JSON.parse(readFileSync('locales/ja.json', 'utf8'));
+    const zhCN = JSON.parse(readFileSync('locales/zh-CN.json', 'utf8'));
     expect(app).toContain('<SteamOwnershipNotice />');
     expect(modal).toContain('role="dialog"');
     expect(modal).toContain('aria-labelledby="steam-owner-title"');
@@ -47,6 +48,7 @@ describe('Steam ownership renderer boundary', () => {
       expect(en[key]).toBeTruthy();
       expect(ko[key]).toBeTruthy();
       expect(ja[key]).toBeTruthy();
+      expect(zhCN[key]).toBeTruthy();
     }
   });
 

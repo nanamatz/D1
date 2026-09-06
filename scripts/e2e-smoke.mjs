@@ -154,7 +154,7 @@ async function run() {
     await page.reload();
     await waitFor(`document.querySelector('.menu-play')`, 'menu after pattern fixture');
     await click('.menu-play');
-    await waitFor(`document.querySelector('.continue-card')`, 'pattern fixture Continue card');
+    await waitFor(`document.querySelector('.continue-content')`, 'pattern fixture Continue panel');
     await click('.newrun .play-run');
     await waitFor(`document.querySelector('[data-tile-id="smoke-i"]')`, 'pattern fixture hand');
 
@@ -196,7 +196,7 @@ async function run() {
     await page.reload();
     await waitFor(`document.querySelector('.menu-play')`, 'menu after reload');
     await click('.menu-play');
-    await waitFor(`document.querySelector('.continue-card')`, 'Continue card');
+    await waitFor(`document.querySelector('.continue-content')`, 'Continue panel');
     await click('.newrun .play-run');
     await waitFor(`document.querySelector('.hand [data-tile-id]')`, 'restored run');
     await waitFor(`document.querySelectorAll('.joker.face-down').length === 8`, 'eight face-down Emoji Tiles');
@@ -234,8 +234,8 @@ async function run() {
     // documented 120ms bridge before it finally closes on portal leave.
     await click('.sidenav-btn.info');
     await waitFor(`document.querySelector('.runinfo')`, 'Run Info');
-    win.setContentSize(960, 220);
-    await waitFor(`window.innerWidth === 960 && window.innerHeight === 220`, 'short tooltip viewport');
+    win.setContentSize(960, 160);
+    await waitFor(`window.innerWidth === 960 && window.innerHeight === 160`, 'short tooltip viewport');
     const complexAnchorReady = await evaluate(`(() => {
       const row = [...document.querySelectorAll('.ri-pat')]
         .find((candidate) => candidate.querySelector('.pn')?.textContent?.trim() === 'Complex');
@@ -328,19 +328,21 @@ async function run() {
       'hover bridge timer cleanup',
       2_000,
     );
+    win.setContentSize(960, 768);
+    await waitFor(`window.innerWidth === 960 && window.innerHeight === 768`, 'ordinary tooltip viewport');
     await click('.ri-tabs .ri-tab:nth-child(2)');
     await waitFor(`document.querySelector('.ri-hands .tt-anchor')`, 'Word Hands tab');
     await evaluate(`document.querySelector('.ri-hands .tt-anchor')
       ?.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }))`);
     await waitFor(
-      `document.querySelector('.tt-card.tt-portal:not(.viewport-contained)')`,
+      `document.querySelector('.tt-card.tt-portal.viewport-contained')`,
       'ordinary tooltip',
     );
     const ordinaryPointerEvents = await evaluate(
-      `getComputedStyle(document.querySelector('.tt-card.tt-portal:not(.viewport-contained)')).pointerEvents`,
+      `getComputedStyle(document.querySelector('.tt-card.tt-portal.viewport-contained')).pointerEvents`,
     );
-    if (ordinaryPointerEvents !== 'none') {
-      throw new Error(`Ordinary tooltip became interactive: ${ordinaryPointerEvents}`);
+    if (ordinaryPointerEvents !== 'auto') {
+      throw new Error(`Ordinary tooltip lost portal interaction: ${ordinaryPointerEvents}`);
     }
     await evaluate(`document.querySelector('.ri-hands .tt-anchor')
       ?.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }))`);
@@ -376,7 +378,7 @@ async function run() {
     await page.reload();
     await waitFor(`document.querySelector('.menu-play')`, 'menu before settlement');
     await click('.menu-play');
-    await waitFor(`document.querySelector('.continue-card')`, 'settlement Continue card');
+    await waitFor(`document.querySelector('.continue-content')`, 'settlement Continue panel');
     await click('.newrun .play-run');
     await waitFor(`document.querySelector('.cashout-overlay')`, 'Fee Settlement');
     await click('.cashout .btn.cash');

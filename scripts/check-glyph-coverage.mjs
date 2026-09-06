@@ -5,7 +5,7 @@
  * subset the family publishes (Devanagari and Vietnamese for Baloo, Cyrillic for
  * Jost, Cyrillic/Vietnamese/latin-ext plus 120 CJK chunks for Noto Sans KR) —
  * 554 files and 9.26 MB for the original English/Korean build. The app now
- * imports explicit Latin, Korean, and Japanese subsets only.
+ * imports explicit Latin, Korean, Japanese, and Simplified Chinese subsets only.
  *
  * Narrowing subsets is exactly the change that silently loses glyphs: a missing
  * range does not fail the build, it renders tofu in a CJK locale. So this
@@ -51,6 +51,9 @@ const BLOCKS = [
   { name: 'Japanese kanji', via: '@fontsource/noto-sans-jp/japanese-*.css', ranges: [
     [0x3400, 0x4dbf], [0x4e00, 0x9fff], [0xf900, 0xfaff],
   ] },
+  { name: 'Simplified Chinese', via: '@fontsource/noto-sans-sc/chinese-simplified-*.css', ranges: [
+    [0x2e80, 0x2fdf], [0x3400, 0x4dbf], [0x4e00, 0x9fff], [0xf900, 0xfaff],
+  ] },
   // Geometric/technical glyphs the UI draws itself (including the
   // letterless-Stone sentinel). These are NOT in any imported subset and
   // fall back to the OS symbol font by design — `tokens.css` sets an explicit
@@ -71,7 +74,7 @@ function displayedCharacters() {
   const add = (text, where) => {
     for (const ch of String(text)) if (!chars.has(ch)) chars.set(ch, where);
   };
-  for (const locale of ['en', 'ko', 'ja']) {
+  for (const locale of ['en', 'ko', 'ja', 'zh-CN']) {
     const table = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
     for (const [key, value] of Object.entries(table)) add(value, `${locale}.json:${key}`);
   }

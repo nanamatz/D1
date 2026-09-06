@@ -88,7 +88,7 @@ Version 0.2 — systems expansion
 
 **Core concept.** A roguelite where you score with *word combinations* instead of poker hands. Players use *alphabet tiles* instead of cards, and the structure of Balatro — deck, suits, enhancements, jokers, blinds, antes — is ported into the grammar of a word game. Built on a Scrabble-style letter-scoring base, it differentiates itself with two meta-layers Balatro does not have: the **register suit** and the **part-of-speech / sentence system**.
 
-**Language.** English (confirmed).
+**Language.** English, Korean, Japanese, and Simplified Chinese interface localization.
 **Art direction.** Pixel-art with a CRT finish, in the Balatro lineage (the earlier "ceramic letterpress, deliberately un-Balatro" direction is retired). Tile materials/fonts (§2.2–2.3) and the publishing-world fiction (§1.2) are unchanged in *design* — only their *rendering style* is pixel-art. Full visual spec in `docs/UI_DESIGN.md`; a pixel-art shop mascot — 삐약이 (Piyak), the tuxedo cat proprietor — lives in the Stationery Shop (`src/ui/assets/piyak.png`). A second mascot, **우땅 (WooDak)** — a pixel-art orangutan and the player's ally/editor-mentor — appears on the run-end screen with tips and discovery mentions and hosts every tutorial encounter except Piyak's shop greeting (`src/ui/assets/woodak.png`). A broader notification role is not currently specified.
 **Special characters.** Excluded as playable tiles (punctuation-shaped pattern levels return as Constellation cards; see §10). *Re-examined and re-affirmed in playtest-05 D:* wildcard/blank tiles and `?`/`!` mood-marker tiles were both explored and **dropped**, because each duplicated a system we already have — alphabet sculpting now belongs to Fable #16 and the pouch's draft-flavored tools; mood markers overlap the Constellation cards and would force a large change to the §5 pattern system. Revisit only if a concrete need appears that no existing system covers.
 
@@ -2053,10 +2053,11 @@ never reaches renderer state, UI copy, or logs. (Ownership added 2026-08-25.)
 The very first Steam-owned UI uses the valid machine-local `wj.lang` choice when
 present. Otherwise, only a successfully initialized packaged Windows Steam session
 may supply a main-process-sanitized startup hint: Steam `koreana`/`korean` maps to
-Korean, `japanese` maps to Japanese, `english` maps to English, and every unsupported
-or failed lookup falls back to English. The renderer receives only `en|ko|ja`, never the raw Steam locale or
+Korean, `japanese` maps to Japanese, `schinese` maps to Simplified Chinese,
+`english` maps to English, and every unsupported or failed lookup falls back to
+English. The renderer receives only `en|ko|ja|zh-CN`, never the raw Steam locale or
 Steam id. Detection is not persisted; only an explicit in-game language change
 writes `wj.lang`. Web, direct-EXE, and Steam-initialization-failure launches retain
-the saved choice or English. (Japanese localization added 2026-09-06.)
+the saved choice or English. (Japanese and Simplified Chinese localization added 2026-09-06.)
 
 > **Score Keyboard jackpot/smoke follow-up (changed 2026-09-03).** Red/yellow/green panel LEDs use the existing deterministic random-looking order with rapid hard-edged jackpot pulses. Each overlay centre aligns with its painted indicator while the light projects wider horizontal rays. Tier 4–6 smoke rises above each pressed key; key smoke and flame retain deterministic 0.95–1.05 variation on larger visible bases, while Tier 6 applies ×1.35 smoke and ×1.25 flame base multipliers. Tier 5 adds seven small smoke sources distributed over the keyboard chassis; Tier 6 uses all twelve, larger and dark gray. This is particle CSS, never one large smoke image.

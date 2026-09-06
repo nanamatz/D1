@@ -4,6 +4,7 @@ import { LETTER_HAND_REGISTRY } from '../src/engine/letterHands';
 import en from '../locales/en.json';
 import ja from '../locales/ja.json';
 import ko from '../locales/ko.json';
+import zhCN from '../locales/zh-CN.json';
 
 describe('Run Info Word Hands reference', () => {
   it('renders a dedicated tab from the headless registry', () => {
@@ -51,10 +52,12 @@ describe('Run Info Word Hands reference', () => {
     expect(styles).toContain('.ri-use-count {');
   });
 
-  it('provides both-locale condition copy for every registered hand', () => {
+  it('provides condition copy in every locale for each registered hand', () => {
     for (const { id } of LETTER_HAND_REGISTRY) {
       expect(en).toHaveProperty(`letterhand.${id}.desc`);
       expect(ko).toHaveProperty(`letterhand.${id}.desc`);
+      expect(ja).toHaveProperty(`letterhand.${id}.desc`);
+      expect(zhCN).toHaveProperty(`letterhand.${id}.desc`);
     }
   });
 

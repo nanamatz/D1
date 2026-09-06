@@ -7,6 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, type ReactN
 import en from '../../locales/en.json';
 import ko from '../../locales/ko.json';
 import ja from '../../locales/ja.json';
+import zhCN from '../../locales/zh-CN.json';
 import { usePersistedState } from './hooks';
 import { steamLanguageHint } from './storage';
 
@@ -14,6 +15,7 @@ export const LANGUAGES = [
   { id: 'en', label: 'English', locale: 'en-US' },
   { id: 'ko', label: '한국어', locale: 'ko-KR' },
   { id: 'ja', label: '日本語', locale: 'ja-JP' },
+  { id: 'zh-CN', label: '简体中文', locale: 'zh-CN' },
 ] as const;
 export type Lang = (typeof LANGUAGES)[number]['id'];
 export const isLang = (value: unknown): value is Lang =>
@@ -22,6 +24,7 @@ const DICTS: Record<Lang, Record<string, string>> = {
   en: en as Record<string, string>,
   ko: ko as Record<string, string>,
   ja: ja as Record<string, string>,
+  'zh-CN': zhCN as Record<string, string>,
 };
 
 export type TParams = Record<string, string | number>;

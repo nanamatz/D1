@@ -53,6 +53,9 @@ export function normalizeSteamLanguage(value) {
       return 'ko';
     case 'japanese':
       return 'ja';
+    case 'schinese':
+    case 'simplified chinese':
+      return 'zh-CN';
     case 'english':
     default:
       return 'en';

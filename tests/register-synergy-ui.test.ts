@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import ja from '../locales/ja.json';
+import zhCN from '../locales/zh-CN.json';
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -26,7 +27,7 @@ describe('register synergy UI provenance', () => {
   });
 
   it('keeps all names and factor labels paired in every locale', () => {
-    for (const locale of [en, ko, ja] as Record<string, string>[]) {
+    for (const locale of [en, ko, ja, zhCN] as Record<string, string>[]) {
       for (const id of ['harmony', 'contrast', 'whiplash', 'mishmash']) {
         expect(locale[`registerSynergy.${id}`]).toBeTruthy();
       }

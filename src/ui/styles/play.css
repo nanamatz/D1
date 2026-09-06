@@ -40,7 +40,7 @@
   left: 50%;
   transform: translateX(-50%);
   color: #fff;
-  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+  font-family: 'Jersey 10', var(--cjk-font), 'Noto Sans KR', sans-serif;
   font-size: clamp(44px, 5vw, 76px);
   font-weight: 700;
   line-height: 1;
@@ -1187,7 +1187,7 @@
   max-width: 150px;
   transform: translateX(-50%);
   color: #9cffb2;
-  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+  font-family: 'Jersey 10', var(--cjk-font), 'Noto Sans KR', sans-serif;
   font-size: 21px;
   line-height: 1;
   text-align: center;
@@ -1228,7 +1228,7 @@
   top: -28px;
   transform: translateX(-50%);
   color: #9cffb2;
-  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+  font-family: 'Jersey 10', var(--cjk-font), 'Noto Sans KR', sans-serif;
   font-size: 36px;
   text-shadow: 0 3px 0 #092514, 0 0 12px currentColor;
 }
@@ -1322,7 +1322,7 @@
 }
 .boss-intro-name {
   margin-top: 2px;
-  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR';
+  font-family: 'Jersey 10', var(--cjk-font), 'Noto Sans KR';
   font-size: var(--ds-xl);
   line-height: 1;
 }
@@ -2697,7 +2697,7 @@
   left: 61%;
   top: 58%;
   color: #17291d;
-  font-family: 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+  font-family: var(--cjk-font), 'Noto Sans KR', sans-serif;
   font-size: clamp(8px, 0.7vw, 11px);
   font-weight: 700;
   letter-spacing: 0.04em;

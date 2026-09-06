@@ -43,9 +43,13 @@ Use these common properties for every row:
 - Progress Stat and Unlock Value: exactly as listed below
 - Achieved and unachieved icons: language-neutral
 
-The ready-to-import Japanese achievement tokens live in
-`steam/achievement-localization/achievement_loc_japanese.vdf`, alongside the
-existing Korean VDF. Keep both synchronized with the table below.
+The ready-to-import Japanese and Simplified Chinese achievement tokens live in
+`steam/achievement-localization/achievement_loc_japanese.vdf` and
+`steam/achievement-localization/achievement_loc_schinese.vdf`, alongside the
+existing Korean VDF. Keep all three synchronized with the table below. The
+Simplified Chinese stat display names are 标准游戏完成数, 标准游戏胜利数,
+获胜字袋数, 获胜唱片数, 获胜字袋–唱片组合数, 已完成挑战数,
+已贴纸表情牌数, and 唱片贴纸等级数, in table order.
 
 | API ID | English name | Korean name | Japanese name | English description | Korean description | Japanese description | Progress Stat | Unlock Value |
 |---|---|---|---|---|---|---|---|---:|
@@ -112,7 +116,7 @@ for all ages and audiences under Steam's
    `desktop/steam-achievements.js`.
 2. Upload all 16 achieved and 16 unachieved icons and inspect them at Steam's
    smallest preview size.
-3. Preview English, Korean, and Japanese independently; check truncation and punctuation.
+3. Preview English, Korean, Japanese, and Simplified Chinese independently; check truncation and punctuation.
 4. In Store Page Info, select `Steam Achievements` under `Supported Features`.
 5. Publish the stat, achievement, and Store Page Info changes before assigning
    the beta BuildID.

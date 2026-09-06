@@ -245,6 +245,8 @@ markup, and matching locales keep the same placeholders and highlight axes.
 Japanese copy uses concise game-UI phrasing rather than literal English syntax.
 Its fixed gameplay glossary includes チップ, 倍率, ブラインド, 資金, ポーチ,
 レコード, 文型, レジスター, and デタラメ.
+Simplified Chinese copy follows the same concise game-UI rule and uses 筹码,
+倍率, 盲注, 稿费, 字袋, 唱片, 句型, 语域, and 乱码.
 Every rendered Emoji Tile, Voucher, Deadline boss, and Gambler-card name resolves
 through `object.<family>.<id>` locale keys; UI components never choose only
 `nameEn`/`nameKo`, so adding a language extends the same registry path.

@@ -9,7 +9,7 @@ import { I18nProvider } from './ui/i18n';
 // pull EVERY unicode subset @fontsource publishes — Devanagari and Vietnamese
 // for Baloo, Cyrillic for Jost, Cyrillic/Vietnamese/latin-ext for Noto Sans KR —
 // which is how the build ended up shipping 554 font files. The game renders
-// English, Korean, and Japanese, so it needs `latin` everywhere plus the named
+// English, Korean, Japanese, and Simplified Chinese, so it needs `latin` everywhere plus the named
 // CJK subsets on Noto. Adding a language means adding its subset deliberately.
 import '@fontsource/baloo-2/latin-500.css';
 import '@fontsource/baloo-2/latin-600.css';
@@ -28,6 +28,8 @@ import '@fontsource/noto-sans-kr/latin-500.css';
 import '@fontsource/noto-sans-kr/latin-700.css';
 import '@fontsource/noto-sans-jp/japanese-500.css';
 import '@fontsource/noto-sans-jp/japanese-700.css';
+import '@fontsource/noto-sans-sc/chinese-simplified-500.css';
+import '@fontsource/noto-sans-sc/chinese-simplified-700.css';
 import './ui/styles/tokens.css';
 import './ui/styles/play.css';
 import './ui/styles/screens.css';
