@@ -15,6 +15,17 @@ describe('Japanese localization style', () => {
     expect(ja['rarity.uncommon']).toBe('アンコモン');
     expect(ja['tutorial.firstGibberish.title']).toBe('デタラメ');
     expect(ja['runinfo.title']).toBe('ラン情報');
+    expect(ja['gameover.bestWord']).toBe('最高のワード');
+    expect(ja['gameover.wordsPlayed']).toBe('プレイしたワード');
+    expect(ja['gameover.unlocked']).toBe('このランで解放');
+    expect(ja['collection.joker.recordStickerDesc']).toContain('チャプター8');
+    expect(ja['pouch.coinPurse.desc']).toContain('各文字タイルの枚数');
+    expect(ja['settings.tooltip.uiScale']).toContain('画面内に収まるよう調整');
+    expect(ja['settings.tooltip.fullscreen']).not.toContain('全画面表示または全画面表示');
+    expect(ja['settings.tooltip.crtEnabled']).not.toContain('CRT パス');
+    for (const id of ['lucky', 'fiveColor', 'golden', 'leather'] as const) {
+      expect(ja[`pouch.${id}.unlock`]).toContain('ポーチで勝利');
+    }
     expect(Object.values(ja).join('\n')).not.toMatch(
       /癌|性病|マルチ(?:ルト)?|チップス|手数料|盲目|上司|音域|パウチ|リセマラ|再ロール|\[n:(?:あ|○)\]|\[a:(?:あ|私)\]| with /u,
     );

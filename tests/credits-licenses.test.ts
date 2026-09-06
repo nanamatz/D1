@@ -12,19 +12,7 @@ const noticeCoversAudioFile = (notices: string, file: string): boolean => {
   return index >= Number(range[1]) && index <= Number(range[2]);
 };
 
-describe('Credits legal notices', () => {
-  it('uses the approved localized production and legal copy', () => {
-    const en = JSON.parse(text('locales/en.json')) as Record<string, string>;
-    const ko = JSON.parse(text('locales/ko.json')) as Record<string, string>;
-    expect(en['credits.audio']).toBe('All BGM and most sound effects are generated at runtime from oscillator, noise, and sequencer recipes designed and implemented for this game with assistance from ChatGPT and Claude.');
-    expect(en['credits.audioSource']).toBe('Pack-opening, reroll, and chip-laying, stacking, handling, and collision sounds use samples from Casino Audio 1.1 by Kenney Vleugels (Kenney.nl), released under CC0 1.0. The Score Keyboard keypress set was user-provided on 2026-09-02; its license was not supplied and must be verified before distribution.');
-    expect(ko['credits.audioSource']).toBe('팩 개봉, 새로고침, 칩 놓기·쌓기·다루기·충돌 소리는 Kenney Vleugels(Kenney.nl)의 Casino Audio 1.1 샘플을 사용하며 CC0 1.0으로 공개되었습니다. 점수 키보드 타건음 세트는 2026년 9월 2일 사용자에게 제공받았으며 라이선스 정보가 제공되지 않았습니다. 배포 전에 반드시 확인해야 합니다.');
-    expect(en['credits.visuals']).toContain('they do not grant or imply rights in third-party material');
-    expect(en['credits.legal.open']).toBe('Legal Notices');
-    expect(ko['credits.legal.open']).toBe('법적 고지');
-    expect(ko['credits.legal.verbatim']).toBe('라이선스 원문은 변경 없이 영어로 표시됩니다.');
-  });
-
+describe('Shipped legal notices', () => {
   it('locks shipped software/font versions and required notice signatures', () => {
     const lock = JSON.parse(text('package-lock.json')) as {
       packages: Record<string, { version?: string }>;
@@ -74,34 +62,26 @@ describe('Credits legal notices', () => {
     const audio = text('src/ui/audio.ts');
     const imports = [...audio.matchAll(/from '\.\.\/\.\.\/Audio\/([^']+\.(?:ogg|wav))'/g)]
       .map((match) => match[1]!);
-    const notices = [
-      text('public/licenses/THIRD_PARTY_NOTICES.txt'),
-      text('src/ui/legalNotices.ts'),
-    ];
+    const notices = text('public/licenses/THIRD_PARTY_NOTICES.txt');
     expect(imports).toHaveLength(49);
     expect(new Set(imports)).toHaveLength(imports.length);
     for (const file of imports) {
-      for (const notice of notices) expect(noticeCoversAudioFile(notice, file), file).toBe(true);
+      expect(noticeCoversAudioFile(notices, file), file).toBe(true);
     }
     const audioLicenses = text('assets/AUDIO_LICENSES.md');
     expect(audioLicenses).not.toContain('CC0 / original');
     expect(audioLicenses).toContain('© 2026 SweetTurtles — all rights reserved');
   });
 
-  it('ships static notices through Vite public assets without navigation or fetch', () => {
+  it('ships static notices through Vite public assets', () => {
     const component = text('src/ui/components/Options.tsx');
-    const css = text('src/ui/styles/screens.css');
     const spec = text('docs/screens-spec.md');
     const vite = text('vite.config.ts');
-    expect(component).toContain('<details className="cr-legal">');
-    expect(component).toContain('<summary>{t(\'credits.legal.open\')}</summary>');
+    expect(component).toContain("{t('settings.legalNotices')}");
+    expect(component).toContain('aria-labelledby="legal-notices-title"');
     expect(component).toContain('<pre>{THIRD_PARTY_NOTICES}</pre>');
     expect(component).not.toMatch(/fetch\(|window\.open|location\.href/);
-    expect(css).toMatch(/\.cr-legal-body\s*\{[^}]*max-height:[^}]*overflow:\s*auto;/s);
-    expect(spec).toContain('original runtime-synthesized BGM/most SFX from the 17 local Kenney');
-    expect(spec).toContain('plus the 32\nlocal Score Keyboard samples user-provided on 2026-09-02');
-    expect(spec).toContain('native **Legal Notices** disclosure');
-    expect(spec).not.toContain('all SFX/BGM are original runtime synthesis');
+    expect(spec).toContain('bottom of Settings opens the bundled third-party notices');
     expect(vite).not.toMatch(/publicDir\s*:\s*false/);
     expect(text('LICENSE')).toContain('Copyright © 2026 SweetTurtles. All rights reserved.');
     expect(text('LICENSE')).toContain('public/licenses');

@@ -26,6 +26,7 @@ import { LANGUAGES, objectName, useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { THIRD_PARTY_NOTICES } from '../legalNotices';
 import { voicedKeys } from '../mascots';
+import { useModalFocus } from '../useModalFocus';
 import {
   activeUnlocks,
   grantRequiredPaletteUnlocks,
@@ -36,12 +37,9 @@ import { Collection } from './Collection';
 import { Tooltip } from './Tooltip';
 import { UiIcon } from './UiIcon';
 
-type View = 'root' | 'settings' | 'stats' | 'credits' | 'collection';
+type View = 'root' | 'settings' | 'stats' | 'collection';
 type Tab = 'game' | 'video' | 'audio';
 type StatsTab = 'overview' | 'words' | 'jokers';
-type CreditsTab = 'team' | 'visuals' | 'audio' | 'fonts';
-
-const CREDIT_TABS: readonly CreditsTab[] = ['team', 'visuals', 'audio', 'fonts'];
 
 export function collectionProgressPercent(
   collection: WordCollection,
@@ -69,8 +67,8 @@ interface Props {
 }
 
 /**
- * Options root → Settings / New Run / Main Menu / Statistics / Collection /
- * Credits (spec §2.10–2.12; order per playtest-06 #4). New Run and Main Menu are
+ * Options root → Settings / New Run / Main Menu / Statistics / Collection
+ * (spec §2.10–2.12; order per playtest-06 #4). New Run and Main Menu are
  * pause-menu only — they render just when their handler is supplied, so opening
  * Options from the main menu still shows the plain Settings/Stats/Collection set.
  */
@@ -108,9 +106,6 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu, onPaletteUnlock
           <button className="btn exchange" onClick={() => setView('collection')}>
             {t('options.collection')}
           </button>
-          <button className="btn exchange" onClick={() => setView('credits')}>
-            {t('options.credits')}
-          </button>
         </div>
         <button className="btn back-bar" onClick={onBack}>
           {t('common.back')}
@@ -135,7 +130,6 @@ export function Options({ lexicon, onBack, onNewRun, onMainMenu, onPaletteUnlock
         <SettingsView {...(onPaletteUnlock ? { onPaletteUnlock } : {})} />
       )}
       {view === 'stats' && <StatsView lexicon={lexicon} />}
-      {view === 'credits' && <CreditsView />}
       <button className="btn back-bar" onClick={back}>
         {t('common.back')}
       </button>
@@ -237,6 +231,9 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
   const windowVideo = useWindowVideo();
   const [tab, setTab] = useState<Tab>('game');
   const [paletteArmed, setPaletteArmed] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
+  const legalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(legalRef, legalOpen ? 'legal-notices' : null);
   const [paletteComplete, setPaletteComplete] = useState(
     () => REQUIRED_PALETTE_UNLOCKS.every((def) => activeUnlocks().has(def.id)),
   );
@@ -470,6 +467,34 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
             />
         </div>
       </div>
+      <button className="btn exchange sm legal-notices-button" onClick={() => setLegalOpen(true)}>
+        {t('settings.legalNotices')}
+      </button>
+      {legalOpen && createPortal(
+        <div className="overlay legal-notices-overlay">
+          <div
+            ref={legalRef}
+            className="overlay-card legal-notices"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="legal-notices-title"
+            tabIndex={-1}
+          >
+            <div className="ov-head">
+              <h3 id="legal-notices-title">{t('settings.legalNotices')}</h3>
+              <button
+                className="ov-close"
+                onClick={() => setLegalOpen(false)}
+                aria-label={t('common.close')}
+              >
+                ✕
+              </button>
+            </div>
+            <pre>{THIRD_PARTY_NOTICES}</pre>
+          </div>
+        </div>,
+        document.body,
+      )}
     </>
   );
 }
@@ -575,79 +600,5 @@ function Stat({ k, v, muted }: { k: string; v: string | number; muted?: boolean 
       <span className="k">{k}</span>
       <span className="v">{v}</span>
     </div>
-  );
-}
-
-// ---------- Credits ----------
-function CreditsView() {
-  const { t } = useI18n();
-  const [tab, setTab] = useState<CreditsTab>('team');
-  return (
-    <>
-      <h2 className="scr-title">{t('options.credits')}</h2>
-      <div className="panel credits">
-        {/* Same bang treatment as the main-menu logotype (.lt-bang). */}
-        <p className="cr-title">
-          Play the Wor<span className="lt-bang">!</span>d
-        </p>
-        <p>{t('credits.tagline')}</p>
-        <div className="ri-tabs cr-tabs" role="tablist" aria-label={t('options.credits')}>
-          {CREDIT_TABS.map((id) => (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={tab === id}
-              aria-controls={`credits-${id}`}
-              className={['ri-tab', tab === id ? 'active' : ''].filter(Boolean).join(' ')}
-              onClick={() => setTab(id)}
-            >
-              {t(`credits.tab.${id}`)}
-            </button>
-          ))}
-        </div>
-        <div id={`credits-${tab}`} className="cr-body" role="tabpanel">
-          {tab === 'team' && (
-            <>
-              <div className="cr-row"><span>{t('credits.planning')}</span><b>SweetTurtles</b></div>
-              <div className="cr-row"><span>{t('credits.development')}</span><b>SweetTurtles</b></div>
-              <p className="cr-dim">{t('credits.aiDisclosure')}</p>
-            </>
-          )}
-          {tab === 'visuals' && (
-            <>
-              <p>{t('credits.visuals')}</p>
-              <p className="cr-dim">{t('credits.aiTools')}</p>
-            </>
-          )}
-          {tab === 'audio' && (
-            <>
-              <p>{t('credits.audio')}</p>
-              <p className="cr-dim">{t('credits.audioSource')}</p>
-              <p className="cr-dim">{t('credits.aiTools')}</p>
-            </>
-          )}
-          {tab === 'fonts' && (
-            <>
-              <div className="cr-fonts">
-                <p><b>Jost</b><span>The Jost Project Authors</span></p>
-                <p><b>Noto Sans KR</b><span>Google Inc.</span></p>
-                <p><b>Baloo 2</b><span>The Baloo 2 Project Authors</span></p>
-                <p><b>Jersey 10</b><span>The Soft Type Project Authors</span></p>
-              </div>
-              <p className="cr-dim">{t('credits.fontSource')}</p>
-            </>
-          )}
-        </div>
-        <details className="cr-legal">
-          <summary>{t('credits.legal.open')}</summary>
-          <div className="cr-legal-body">
-            <p>{t('credits.legal.intro')}</p>
-            <p className="cr-dim">{t('credits.legal.verbatim')}</p>
-            <pre>{THIRD_PARTY_NOTICES}</pre>
-          </div>
-        </details>
-        <p className="cr-copyright">© 2026 SweetTurtles</p>
-      </div>
-    </>
   );
 }

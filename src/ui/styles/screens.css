@@ -1896,8 +1896,7 @@ body:has(.menu)::after {
   }
 }
 /* Same face, colour and shadow as the word below it — the two lines are one
-   logotype, not a caption over a title. Only the size differs. (The credits title
-   already renders the whole name this way.) */
+   logotype, not a caption over a title. Only the size differs. */
 .lt-play {
   font-family: 'Jersey 10';
   font-size: var(--ds-sm);
@@ -4364,6 +4363,25 @@ body.force-reduced-motion:has(.menu)::after {
 .set-tabpanel > .tt-anchor:last-child > .set-row {
   border-bottom: none;
 }
+.legal-notices-button {
+  align-self: center;
+}
+.legal-notices {
+  max-width: 760px;
+  height: min(720px, 86vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.legal-notices pre {
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-dim);
+  font: 600 var(--fs-xs)/1.4 var(--body-font);
+}
 .set-label {
   font-weight: 700;
   font-size: var(--fs-md);
@@ -4591,89 +4609,6 @@ body.force-reduced-motion:has(.menu)::after {
 .muted-stat .v {
   color: var(--ink-dim);
 }
-.credits {
-  width: min(520px, 94vw);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.cr-title {
-  font-family: 'Jersey 10';
-  font-size: var(--ds-xl);
-  color: var(--gold);
-}
-.cr-dim {
-  color: var(--ink-dim);
-  font-size: var(--fs-md);
-}
-.cr-tabs {
-  width: 100%;
-  margin: 4px 0 0;
-}
-.cr-tabs .ri-tab {
-  padding-inline: 5px;
-}
-.cr-body {
-  min-height: 150px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  text-align: left;
-}
-.cr-row,
-.cr-fonts p {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 8px 10px;
-  background: var(--inset);
-  border: 1px solid var(--inset-edge);
-  border-radius: var(--r-sm);
-}
-.cr-row span,
-.cr-fonts span {
-  color: var(--ink-dim);
-}
-.cr-fonts {
-  display: grid;
-  gap: 6px;
-}
-.cr-legal {
-  min-width: 0;
-  max-width: 100%;
-  border-top: 1px dashed var(--inset-edge);
-  padding-top: 8px;
-}
-.cr-legal summary {
-  color: var(--gold);
-  font-weight: 900;
-  cursor: pointer;
-}
-.cr-legal-body {
-  max-height: min(280px, 35vh);
-  overflow: auto;
-  padding: 8px 4px 0;
-}
-.cr-legal-body pre {
-  min-width: 0;
-  max-width: 100%;
-  margin: 8px 0 0;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
-  color: var(--ink-dim);
-  font: 600 var(--fs-xs)/1.35 var(--body-font);
-}
-.cr-copyright {
-  margin: 0;
-  color: var(--ink-dim);
-  font-size: var(--fs-xs);
-  text-align: center;
-}
-
 /* ---------- in-run overlays (spec §2.4, §2.8) ---------- */
 .sidebar-nav {
   display: flex;

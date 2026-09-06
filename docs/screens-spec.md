@@ -49,7 +49,6 @@ Main Menu ─ Play ─→ New Run ─→ PERSISTENT RUN TABLE
     ├─ Collection (도감)
     └─ Options ─┬─ Settings (Game / Video / Audio tabs)
                 ├─ Statistics (Overview / Words / Emoji Tiles tabs)
-                └─ Credits
 Persistent in-run surfaces: sidebar · Emoji Tile/consumable shelves · pouch
 In-run overlays: Run Info · Fee Settlement · pause menu
 ```
@@ -480,7 +479,7 @@ Comic-Book-gated Fable mixing, and Deer-in-Constellation routes ship per GDD
 **Omitted by design (no equivalent — do not add):** Seals as a separate category (their roles are absorbed into the font layer — GDD §2.3 seal-port).
 
 ### 2.10 Options root
-Buttons: **Settings · Statistics · Collection · Credits**. There is no Help screen (removed 2026-08-01: the glossary duplicated the in-play encounter popups and tooltips, which stay the only explainer surfaces). The guided tutorial has no replay button. (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
+Buttons: **Settings · Statistics · Collection**. There is no Help screen (removed 2026-08-01: the glossary duplicated the in-play encounter popups and tooltips, which stay the only explainer surfaces). The guided tutorial has no replay button. (Balatro's "deck customization" → our tile-skin customization is **[PLACEHOLDER: omit button entirely for now]**.)
 
 ### 2.11 Settings
 Mascot selection does not live here. It is owned by **Collection → Mascots**, so
@@ -509,24 +508,13 @@ per-Chapter loss histogram.
 **Words** lists only genuinely played collection entries with plays, intrinsic Chips, and first discovery date in bounded 50-row pages; the collection is loaded once and sorting begins only when this tab opens. Reveal All never fabricates plays. **Emoji Tiles** lists the production roster and each definition's finalized blinds completed while owned. Copies count once per blind, locked names remain `???`, skipped blinds do not count, and developer-only Primordial is excluded.
 Run-end totals use a persisted UI-only run observation id plus the profile lifetime's last completion token and cumulative pattern/Emoji Tile baselines. Reloading Game Over, retrying a blind-stat write, or continuing Endless therefore cannot add runs, wins, patterns, or owned-blind counts twice; replaying the same custom seed still creates a distinct observation id and remains a separate run.
 
-### 2.13 Credits
+### 2.13 Credits (removed 2026-09-06)
 
-The Credits panel uses four compact, accessible tabs so attribution never
-overflows the shell screen: **Team · Visuals · Audio · Fonts**. Team names
-SweetTurtles for game design/planning, development, and art direction, with an AI-use
-disclosure. Visuals disclose the ChatGPT/Claude-assisted generation and editing
-workflow without implying rights in third-party material. Audio distinguishes
-original runtime-synthesized BGM/most SFX from the 17 local Kenney Casino Audio
-1.1 samples used for pack, reroll, and chip sounds under CC0 1.0, plus the 32
-local Score Keyboard samples user-provided on 2026-09-02 whose license must be
-verified before distribution. Fonts list
-Jost, Noto Sans KR, Baloo 2, and Jersey 10 with their exact authorship and SIL
-OFL 1.1 source information. A tab-independent native **Legal Notices** disclosure
-shows the bundled English license texts in a bounded internal scroller, followed
-by `© 2026 SweetTurtles`; it uses no fetch, CDN, link navigation, or new window.
-The distributable copies live under `public/licenses/` so browser and `file://`
-desktop builds carry the same version-locked software, font, audio, and lexical
-notices.
+There is no Credits button or screen. A compact **Legal Notices** button at the
+bottom of Settings opens the bundled third-party notices in a labelled, focus-
+trapped modal. The same notices remain under `public/licenses/` for browser and
+`file://` desktop distributions; the modal uses no fetch, link navigation, or new
+window (changed 2026-09-06).
 
 ## 3. Build notes
 
