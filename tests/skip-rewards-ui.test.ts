@@ -42,11 +42,12 @@ describe('Blind Select skip presentation', () => {
     expect(pendingSkippedTagIndices(2, [0, 1])).toEqual([0, 1]);
     expect(pendingSkippedTagIndices(2, [0])).toEqual([]);
     expect(view).toContain("const redeemingNextBlind = phase === 'playing'");
+    expect(view).toContain("redeeming: redeemingNextBlind && offer.id !== 'scarletTag'");
     expect(view).toContain("!isNextShopSkipReward(offer.id)");
     expect(view).toContain('blindselect.tagApplied');
-    expect(view).toContain('disabled={tagDisabled}');
-    expect(view).toContain('tilt={!tagDisabled}');
-    expect(view).toContain('tabIndex={tagDisabled ? -1 : 0}');
+    expect(view).toContain('disabled={tagRedeeming}');
+    expect(view).toContain('tilt={!tagRedeeming}');
+    expect(view).toContain('tabIndex={tagRedeeming ? -1 : 0}');
     expect(runView).toContain('<SkippedTagStack g={g} />');
     expect(runInfo).toContain('className="bs-skipped-stamp"');
     expect(css).toMatch(/\.run-tag-stack\s*\{[^}]*bottom:[^;}]+;[^}]*flex-direction:\s*column-reverse/s);

@@ -3,13 +3,14 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const FILES = {
   en: 'locales/en.json',
   ko: 'locales/ko.json',
+  ja: 'locales/ja.json',
 };
 const TAG = /\[([mcbnkage$pCURLGvrw]):([^\]\r\n]+)\]/gu;
 const TAG_LIKE = /\[[A-Za-z$]+:/u;
 const PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9_]*)\}/gu;
 const NUMBER = /(?:×\s*[+−-]?\d+(?:\.\d+)?|[+−-]?\d+(?:\.\d+)?%?)/gu;
-const PERIOD = /\.(?!\d)/gu;
-const HAS_PERIOD = /\.(?!\d)/u;
+const PERIOD = /\.(?!\d)|[。．]/gu;
+const HAS_PERIOD = /\.(?!\d)|[。．]/u;
 const PROSE_PREFIX =
   /^(?:bossdesc|patterndesc|packdesc|consumabledesc|jokerdesc|voucherdesc|materialdesc|fontdesc|fonteffectdesc|editiondesc)\./u;
 const PROSE_SUFFIX = /\.(?:body|warning|desc|tooltip)$/u;
@@ -57,35 +58,33 @@ if (process.argv.includes('--fix')) {
 
 const errors = [];
 const englishKeys = Object.keys(dictionaries.en);
-const koreanKeys = Object.keys(dictionaries.ko);
-for (const key of englishKeys.filter((key) => !(key in dictionaries.ko))) {
-  errors.push(`Missing Korean key: ${key}`);
-}
-for (const key of koreanKeys.filter((key) => !(key in dictionaries.en))) {
-  errors.push(`Missing English key: ${key}`);
+for (const [lang, dictionary] of Object.entries(dictionaries)) {
+  if (lang === 'en') continue;
+  for (const key of englishKeys.filter((key) => !(key in dictionary))) {
+    errors.push(`Missing ${lang} key: ${key}`);
+  }
+  for (const key of Object.keys(dictionary).filter((key) => !(key in dictionaries.en))) {
+    errors.push(`Unexpected ${lang} key: ${key}`);
+  }
 }
 
-for (const key of englishKeys.filter((candidate) => candidate in dictionaries.ko)) {
+for (const key of englishKeys) {
   const en = dictionaries.en[key];
-  const ko = dictionaries.ko[key];
-  if (typeof en !== 'string' || typeof ko !== 'string') {
-    errors.push(`Locale values must be strings: ${key}`);
-    continue;
-  }
-
-  const enPlaceholders = signature(en, PLACEHOLDER);
-  const koPlaceholders = signature(ko, PLACEHOLDER);
-  if (enPlaceholders !== koPlaceholders) {
-    errors.push(`Placeholder mismatch ${key}: en=[${enPlaceholders}] ko=[${koPlaceholders}]`);
-  }
-
-  const enTags = signature(en, TAG);
-  const koTags = signature(ko, TAG);
-  if (enTags !== koTags) {
-    errors.push(`Highlight mismatch ${key}: en=[${enTags}] ko=[${koTags}]`);
-  }
-
-  for (const [lang, value] of [['en', en], ['ko', ko]]) {
+  for (const [lang, value] of Object.entries(dictionaries).map(([lang, dict]) => [lang, dict[key]])) {
+    if (typeof value !== 'string') {
+      errors.push(`Locale value must be a string: ${lang}.${key}`);
+      continue;
+    }
+    const enPlaceholders = signature(en, PLACEHOLDER);
+    const placeholders = signature(value, PLACEHOLDER);
+    if (enPlaceholders !== placeholders) {
+      errors.push(`Placeholder mismatch ${key}: en=[${enPlaceholders}] ${lang}=[${placeholders}]`);
+    }
+    const enTags = signature(en, TAG);
+    const tags = signature(value, TAG);
+    if (enTags !== tags) {
+      errors.push(`Highlight mismatch ${key}: en=[${enTags}] ${lang}=[${tags}]`);
+    }
     const withoutTags = value.replace(TAG, '');
     if (TAG_LIKE.test(withoutTags)) errors.push(`Invalid highlight tag ${lang}.${key}`);
     if (isProse(key) && HAS_PERIOD.test(value)) {
@@ -102,4 +101,4 @@ if (errors.length > 0) {
   throw new Error(`Locale check failed (${errors.length})\n${errors.join('\n')}`);
 }
 
-console.log(`Locales OK: ${englishKeys.length} paired keys, aligned variables/highlights/prose`);
+console.log(`Locales OK: ${englishKeys.length} keys across ${Object.keys(FILES).length} languages, aligned variables/highlights/prose`);

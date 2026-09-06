@@ -40,7 +40,7 @@
   left: 50%;
   transform: translateX(-50%);
   color: #fff;
-  font-family: 'Jersey 10', 'Noto Sans KR', sans-serif;
+  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
   font-size: clamp(44px, 5vw, 76px);
   font-weight: 700;
   line-height: 1;
@@ -1187,7 +1187,7 @@
   max-width: 150px;
   transform: translateX(-50%);
   color: #9cffb2;
-  font-family: 'Jersey 10', 'Noto Sans KR', sans-serif;
+  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
   font-size: 21px;
   line-height: 1;
   text-align: center;
@@ -1228,7 +1228,7 @@
   top: -28px;
   transform: translateX(-50%);
   color: #9cffb2;
-  font-family: 'Jersey 10', 'Noto Sans KR', sans-serif;
+  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
   font-size: 36px;
   text-shadow: 0 3px 0 #092514, 0 0 12px currentColor;
 }
@@ -1322,7 +1322,7 @@
 }
 .boss-intro-name {
   margin-top: 2px;
-  font-family: 'Jersey 10', 'Noto Sans KR';
+  font-family: 'Jersey 10', 'Noto Sans JP', 'Noto Sans KR';
   font-size: var(--ds-xl);
   line-height: 1;
 }
@@ -1695,6 +1695,7 @@
    caption rather than a heading (cf. the reference mock). */
 .blind-badge .tlabel {
   font-size: var(--fs-xl);
+  line-height: 1;
   font-weight: 700;
   color: var(--ink);
 }
@@ -1816,7 +1817,7 @@
   opacity: 0;
   pointer-events: none;
 }
-.score-typewriter-dock.is-active .typewriter-machine {
+.score-typewriter.is-active .typewriter-machine {
   animation: typewriter-body-hit var(--typewriter-beat) steps(4, end) both;
 }
 .typewriter-art {
@@ -1877,11 +1878,14 @@
   position: absolute;
   left: 50%;
   bottom: calc(100% + 1px);
-  width: clamp(7px, .7vw, 14px);
-  height: clamp(10px, 1.1vw, 22px);
+  width: clamp(4px, calc(var(--typewriter-width) * .0435), 14px);
+  height: clamp(6px, calc(var(--typewriter-width) * .0696), 22px);
   opacity: 0;
   background: #fff4bb;
-  box-shadow: -4px 4px 0 var(--key-led), 4px 4px 0 var(--key-led), 0 8px 0 var(--key-led);
+  box-shadow:
+    calc(var(--typewriter-width) * -.0174) calc(var(--typewriter-width) * .0174) 0 var(--key-led),
+    calc(var(--typewriter-width) * .0174) calc(var(--typewriter-width) * .0174) 0 var(--key-led),
+    0 calc(var(--typewriter-width) * .0348) 0 var(--key-led);
   transform: translateX(-50%) scale(var(--key-flame-scale, 1));
   transform-origin: 50% 100%;
   pointer-events: none;
@@ -1909,10 +1913,10 @@
 .typewriter-panel-led-red { --panel-led-x: 83.1%; --panel-led-color: #ff365c; }
 .typewriter-panel-led-yellow { --panel-led-x: 85.9%; --panel-led-color: #ffe04b; }
 .typewriter-panel-led-green { --panel-led-x: 88.6%; --panel-led-color: #45e06f; }
-.typewriter-tier-5 { --panel-led-low: .14; --panel-led-scale: 1.25; --panel-led-glow: 9px; --panel-led-burst: 2px; --panel-led-side-left: -5px; --panel-led-side-right: 5px; }
-.typewriter-tier-6 { --panel-led-low: .2; --panel-led-scale: 1.45; --panel-led-glow: 14px; --panel-led-burst: 4px; --panel-led-side-left: -7px; --panel-led-side-right: 7px; }
-.typewriter-tier-5.is-active .typewriter-panel-led,
-.typewriter-tier-6.is-active .typewriter-panel-led {
+.typewriter-tier-5 { --panel-led-low: .14; --panel-led-scale: 1.25; --panel-led-glow: calc(var(--typewriter-width) * .0391); --panel-led-burst: calc(var(--typewriter-width) * .0087); --panel-led-side-left: calc(var(--typewriter-width) * -.0217); --panel-led-side-right: calc(var(--typewriter-width) * .0217); }
+.typewriter-tier-6 { --panel-led-low: .2; --panel-led-scale: 1.45; --panel-led-glow: calc(var(--typewriter-width) * .0609); --panel-led-burst: calc(var(--typewriter-width) * .0174); --panel-led-side-left: calc(var(--typewriter-width) * -.0304); --panel-led-side-right: calc(var(--typewriter-width) * .0304); }
+.score-typewriter.typewriter-tier-5.is-active .typewriter-panel-led,
+.score-typewriter.typewriter-tier-6.is-active .typewriter-panel-led {
   opacity: 1;
   animation: typewriter-panel-led-jackpot var(--typewriter-beat) steps(1, end) infinite;
 }
@@ -1947,8 +1951,8 @@
   border-color: #181e22;
   box-shadow: -7px -4px 0 #3d454a, 6px -9px 0 -1px #50595e, 0 -14px 0 -2px #2b3236;
 }
-.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7),
-.typewriter-tier-6.is-active .typewriter-chassis-smoke i {
+.score-typewriter.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7),
+.score-typewriter.typewriter-tier-6.is-active .typewriter-chassis-smoke i {
   animation: typewriter-chassis-smoke var(--typewriter-beat) steps(5, end) both;
   animation-delay: var(--chassis-smoke-delay);
 }
@@ -1957,19 +1961,19 @@
   animation: typewriter-chassis-smoke var(--typewriter-ambient-speed) steps(5, end) infinite;
   animation-delay: var(--chassis-smoke-delay);
 }
-.score-typewriter-dock.is-active .typewriter-key.is-pressed {
+.score-typewriter.is-active .typewriter-key.is-pressed {
   z-index: 1;
   animation: typewriter-key var(--key-duration) steps(2, end) both;
   animation-delay: var(--key-delay);
 }
-.typewriter-tier-4.is-active .typewriter-key.is-pressed::before,
-.typewriter-tier-5.is-active .typewriter-key.is-pressed::before,
-.typewriter-tier-6.is-active .typewriter-key.is-pressed::before {
+.score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::before,
+.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::before,
+.score-typewriter.typewriter-tier-6.is-active .typewriter-key.is-pressed::before {
   animation: typewriter-key-smoke var(--key-duration) steps(4, end) both;
   animation-delay: var(--key-delay);
 }
-.typewriter-tier-5.is-active .typewriter-key.is-pressed::after,
-.typewriter-tier-6.is-active .typewriter-key.is-pressed::after {
+.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::after,
+.score-typewriter.typewriter-tier-6.is-active .typewriter-key.is-pressed::after {
   animation: typewriter-key-flame var(--key-duration) steps(3, end) both;
   animation-delay: var(--key-delay);
 }
@@ -1979,10 +1983,10 @@
 }
 .typewriter-tier-6 .typewriter-key::after {
   box-shadow:
-    -5px 5px 0 var(--key-led),
-    5px 5px 0 var(--key-led),
-    0 10px 0 var(--key-led),
-    8px -4px 0 -1px var(--key-led);
+    calc(var(--typewriter-width) * -.0217) calc(var(--typewriter-width) * .0217) 0 var(--key-led),
+    calc(var(--typewriter-width) * .0217) calc(var(--typewriter-width) * .0217) 0 var(--key-led),
+    0 calc(var(--typewriter-width) * .0435) 0 var(--key-led),
+    calc(var(--typewriter-width) * .0348) calc(var(--typewriter-width) * -.0174) 0 calc(var(--typewriter-width) * -.0043) var(--key-led);
 }
 .typewriter-tier-6 .typewriter-key::before {
   background: #3d454a;
@@ -2041,8 +2045,8 @@
   white-space: nowrap;
 }
 .typewriter-pop { left: 58%; top: 48%; }
-.typewriter-tier-5.is-active .typewriter-pop,
-.typewriter-tier-6.is-active .typewriter-pop {
+.score-typewriter.typewriter-tier-5.is-active .typewriter-pop,
+.score-typewriter.typewriter-tier-6.is-active .typewriter-pop {
   animation: typewriter-label-hit var(--typewriter-beat) steps(4, end) both;
 }
 @keyframes typewriter-body-hit {
@@ -2093,9 +2097,9 @@
   100% { opacity: 0; translate: 0 -22px; }
 }
 @keyframes typewriter-key-flame {
-  0%, 20% { opacity: 0; translate: 0 5px; }
-  38%, 82% { opacity: 1; translate: 0 -5px; }
-  100% { opacity: 0; translate: 0 -14px; }
+  0%, 20% { opacity: 0; translate: 0 calc(var(--typewriter-width) * .0217); }
+  38%, 82% { opacity: 1; translate: 0 calc(var(--typewriter-width) * -.0217); }
+  100% { opacity: 0; translate: 0 calc(var(--typewriter-width) * -.0609); }
 }
 @keyframes typewriter-chassis-smoke {
   0%, 14% { opacity: 0; translate: 0 8px; }
@@ -2693,7 +2697,7 @@
   left: 61%;
   top: 58%;
   color: #17291d;
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: 'Noto Sans JP', 'Noto Sans KR', sans-serif;
   font-size: clamp(8px, 0.7vw, 11px);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -3591,6 +3595,9 @@
 }
 .consumables .consumable-slot.hover-locked {
   z-index: 3;
+}
+.jokers.jokers-overlap .joker-slot.hover-locked {
+  z-index: 7;
 }
 .joker {
   width: var(--shop-card-w);
@@ -5655,9 +5662,6 @@
   width: var(--shop-card-w);
   height: 100%;
 }
-.consumable-slot > .tt-anchor > .consumable-select {
-  z-index: 3;
-}
 /* The second/right held card sits against the shelf boundary. Right-align its
    downward tooltip so neither the main card nor its optional sub-card is clipped
    by the board's right-side layer. */
@@ -5692,7 +5696,8 @@
   border-radius: 8px;
   padding: 5px 14px;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .consumable-menu button:hover {
   background: var(--badge-bg);
@@ -5779,6 +5784,10 @@
 .shelf-col {
   display: flex;
   flex-direction: column;
+}
+.shelf-col:has(.menu-open) {
+  position: relative;
+  z-index: 24;
 }
 .jokers-col {
   flex: 1 1 auto;
@@ -5877,6 +5886,7 @@
   text-align: center;
   font-weight: 700;
   font-size: var(--fs-lg);
+  line-height: 1;
   letter-spacing: 0.12em;
   color: #fff;
   background: linear-gradient(180deg, var(--kind-a), var(--kind-b));
@@ -5936,6 +5946,7 @@
 .round-score-value {
   flex: none;
   white-space: nowrap;
+  font-weight: 400;
 }
 
 .joker.boss-disabled-entering {
@@ -6020,8 +6031,20 @@
   flex: 0 0 52px;
   font-weight: 700;
   font-size: var(--fs-lg);
-  line-height: 1;
+  line-height: 1.2;
   color: var(--ink-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sb-status-label {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6029,8 +6052,16 @@
 .sb-status.score-transfer {
   font-family: var(--readout-font);
   font-size: var(--readout-size);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-dim);
+  color: var(--ink);
+  transform-origin: center;
+  animation: score-transfer-in 260ms cubic-bezier(.2, 1.4, .4, 1);
+}
+@keyframes score-transfer-in {
+  0% { opacity: 0; transform: scale(.55); }
+  65% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
 }
 /* Headline owns Pattern/Unison/Mixed. Supplemental rows stay source-grouped. */
 .bonus-parts {
@@ -6089,20 +6120,34 @@
     text-shadow: none;
   }
 }
-.sb-status.loud {
+.sb-status-tag.loud {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 44px;
+  max-height: 52px;
   color: #15242c;
-  border-radius: 6px;
-  padding: 1px 10px;
-  display: inline-block;
+  border-radius: 12px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+  font-size: calc(var(--fs-lg) * 1.4);
 }
-.sb-status.loud.formal {
+.sb-status-tag.loud.formal {
   background: var(--suit-formal);
 }
-.sb-status.loud.slang {
+.sb-status-tag.loud.slang {
   background: var(--suit-slang);
 }
-.sb-status.loud.vulgar {
+.sb-status-tag.loud.vulgar {
   background: var(--suit-vulgar);
+}
+@media (forced-colors: active) {
+  .sb-status-tag.loud {
+    color: ButtonText;
+    background: ButtonFace;
+    border: 1px solid ButtonText;
+  }
 }
 /* playtest-06 ref layout:
      ┌────────┬─────────┬─────────┐
@@ -6257,6 +6302,7 @@
   .box-pop,
   .bonus-fly,
   .bonus-parts,
+  .sb-status.score-transfer,
   .scorebox.landing .box,
   .tile.polished::after {
     animation: none;

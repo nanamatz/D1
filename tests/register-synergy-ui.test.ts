@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
+import ja from '../locales/ja.json';
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -24,8 +25,8 @@ describe('register synergy UI provenance', () => {
     expect(css).toContain('.round-pattern.finalized-pattern.register-synergy { color: var(--chips); }');
   });
 
-  it('keeps all names and factor labels paired in English and Korean', () => {
-    for (const locale of [en, ko] as Record<string, string>[]) {
+  it('keeps all names and factor labels paired in every locale', () => {
+    for (const locale of [en, ko, ja] as Record<string, string>[]) {
       for (const id of ['harmony', 'contrast', 'whiplash', 'mishmash']) {
         expect(locale[`registerSynergy.${id}`]).toBeTruthy();
       }

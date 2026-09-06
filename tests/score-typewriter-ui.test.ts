@@ -235,7 +235,7 @@ describe('Score Keyboard presentation contract', () => {
     expect(component).toContain('crossedScoreTarget(');
     expect(component).toContain("audio.scoreTypewriterKey('Enter', true)");
     expect(component).not.toContain("audio.play('deskBell')");
-    expect(component).toContain('durationMs: BALANCE.scoreTypewriter.targetCueMs / beatSpeed');
+    expect(component).toContain('durationMs: BALANCE.scoreTypewriter.targetCueMs');
     expect(component).not.toContain('DING!');
     expect(component).not.toContain('typewriter-ding');
     expect(css).not.toContain('.typewriter-ding');
@@ -246,25 +246,33 @@ describe('Score Keyboard presentation contract', () => {
     expect(audio).toMatch(/deskEnter:\s*\{[\s\S]*?textured:\s*true/);
   });
 
-  it('reuses speed, shake, reduced motion, and SFX without extending settle timing', () => {
+  it('keeps fixed keyboard timing while reusing shake, reduced motion, and SFX', () => {
     expect(component).toContain('audio.scoreTypewriterKey(keyId)');
     expect(component).toContain("'--typewriter-shake'");
     expect(component).toContain('scoreTypewriterShake(screenshake, displayTier)');
     expect(component).toContain('presentationBeatId,');
     expect(component).toContain('presentationPrimaryKeyId,');
-    expect(component).toContain('const machine = useMemo(() => {');
+    expect(component).toContain('const machines = useMemo(() => {');
     const memoizedMachine = component.slice(
-      component.indexOf('const machine = useMemo(() => {'),
+      component.indexOf('const machines = useMemo(() => {'),
       component.indexOf("if (typeof document === 'undefined') return null;"),
     );
     expect(memoizedMachine).toContain('SCORE_TYPEWRITER_KEYCAPS.map');
     expect(memoizedMachine).not.toContain('liveTotal');
+    expect(component).toContain('data-presentation-beat-id={layer.active ? layer.id : undefined}');
+    expect(component).toContain('shake: scoreTypewriterShake(screenshakeRef.current, presentationTier)');
+    expect(component).toContain("style={{ '--typewriter-shake': String(layer.shake) } as CSSProperties}");
+    expect(component).toContain('const dockTier = displayTier > 0 && (heldPeak > 0 || reduce || targetPunch)');
+    expect(component).toContain('presentationTimers.current.forEach(clearTimeout)');
     expect(component).toContain('BALANCE.scoreTypewriter.visualKeyCounts[presentationTier]');
     expect(component).toContain('BALANCE.scoreTypewriter.audibleKeyCounts[presentationTier]');
     expect(component).toContain("'--key-duration': `${timing.durationMs}ms`");
     expect(css).toContain('.score-typewriter-dock.is-reduced');
     expect(css).toContain('.force-reduced-motion .score-typewriter-dock');
-    expect(css).toContain('.score-typewriter-dock.is-active .typewriter-key.is-pressed');
+    expect(css).toContain('.score-typewriter.is-active .typewriter-key.is-pressed');
+    expect(css).toContain('.score-typewriter.is-active .typewriter-machine');
+    expect(css).not.toMatch(/^\.typewriter-tier-[1-6]\.is-active/m);
+    expect(css).not.toContain('.score-typewriter-dock.is-active .typewriter-machine');
     expect(css).toContain('.score-typewriter-dock.is-reduced .typewriter-key.is-pressed');
     const keyWellRule = css.slice(css.indexOf('.typewriter-keys {'), css.indexOf('.typewriter-key {'));
     expect(keyWellRule).not.toContain('display: grid');
@@ -293,7 +301,8 @@ describe('Score Keyboard presentation contract', () => {
     expect(helper).not.toContain('Math.random');
     expect(helper).not.toContain("from '../engine/rng'");
     expect(helper).not.toContain('RunState');
-    expect(component).toContain('const beatSnapshot = useRef({ beatId, speed: gameSpeed, reduce: requestedReduce })');
+    expect(component).toContain('const beatSnapshot = useRef({ beatId, reduce: requestedReduce })');
+    expect(component).not.toContain('gameSpeed');
     expect(component).toContain('Reduced Motion ON cancels this beat immediately; OFF waits for the next id.');
     expect(component).not.toContain('[active, beatId, gameSpeed, reduce, tier]');
     expect(component).not.toContain('settleDurationMs');
@@ -328,7 +337,7 @@ describe('Score Keyboard presentation contract', () => {
   });
 
   it('raises one settle-local peak and repeats full beats only during clear resolution', () => {
-    expect(settle).toContain('settleSpeed: number');
+    expect(settle).not.toContain('settleSpeed: number');
     expect(settle).toContain('settleReduced: boolean');
     expect(settle).toContain('let typewriterTierPeak: ScoreTypewriterTier = 0');
     expect(settle).toContain('scoreTypewriterPeakTier(');
@@ -338,7 +347,7 @@ describe('Score Keyboard presentation contract', () => {
     expect(settle).toContain('primaryKeyId: scoreTypewriterPrimaryKey(e, typewriterTiles)');
     expect(settle).toContain("tiles: [...(submission?.tiles ?? []), ...heldTiles]");
     expect(sidebar).toContain("primaryKeyId={settle.typewriterBeat?.primaryKeyId ?? 'Enter'}");
-    expect(sidebar).toContain('gameSpeed={settle.typewriterBeat?.speed ?? settle.settleSpeed}');
+    expect(sidebar).not.toContain('gameSpeed=');
     expect(sidebar).toContain('reducedMotion={reducedMotion || settle.settleReduced}');
     expect(runView).toContain('target={blind.target}');
     expect(runView).toContain('sentenceAssist={blind.previewHidden');
@@ -363,12 +372,12 @@ describe('Score Keyboard presentation contract', () => {
     expect(component).toContain('scheduleScoreTypewriterClearRepeats(');
     expect(component).toContain('useLayoutEffect(() => {');
     expect(component).toContain('if (heldPeak === 0 || reduce)');
-    expect(component).toContain('scoreTypewriterClearRepeatMs(heldPeak, beatSpeed)');
+    expect(component).toContain('scoreTypewriterClearRepeatMs(heldPeak)');
     expect(component).toContain('`clear:${blindKey}:${settleId}:${clearCycle}`');
     expect(component).toContain("const presentationPrimaryKeyId = clearRepeating ? 'Enter' : primaryKeyId");
     expect(component).toContain("clearRepeating && 'is-clear-cycle'");
     expect(component).toContain("if (clearRepeating && index === 0) {");
-    expect(component).toContain('const displayTier = active ? tier : heldPeak');
+    expect(component).toContain('const displayTier = latestLayer?.tier ?? (active ? tier : heldPeak)');
     expect(css).toContain('animation: typewriter-ambient-hold var(--typewriter-ambient-speed) steps(2, end) infinite');
     expect(css).not.toContain('typewriter-smoke-hold');
     expect(css).not.toContain('typewriter-flame-hold');
@@ -403,15 +412,15 @@ describe('Score Keyboard presentation contract', () => {
     expect(component).toContain("'--key-led': SCORE_TYPEWRITER_LED_COLORS[ledSlot]");
     expect(component).toContain('className="typewriter-panel-leds"');
     expect(component).toContain("['red', 'yellow', 'green'].map");
-    expect(component).toContain('scoreTypewriterPanelLedOrder(presentationBeatId)');
+    expect(component).toContain('scoreTypewriterPanelLedOrder(layer.id)');
     expect(component).toContain('SCORE_TYPEWRITER_PANEL_LED_PHASES_MS[panelLedOrder[index] ?? index]');
     expect(SCORE_TYPEWRITER_PANEL_LED_PHASES_MS).toEqual([-120, -280, -440]);
     expect(SCORE_TYPEWRITER_SIZE_VARIATION).toBe(0.05);
     expect(scoreTypewriterKeySizeVariation('beat-a', 0)).toBeGreaterThanOrEqual(0.95);
     expect(scoreTypewriterKeySizeVariation('beat-a', 0)).toBeLessThanOrEqual(1.05);
-    expect(component).toContain('const keySizeVariation = scoreTypewriterKeySizeVariation(presentationBeatId, keyIndex)');
-    expect(component).toContain("'--key-smoke-scale': String(keySizeVariation * (presentationTier === 6 ? 1.35 : 1))");
-    expect(component).toContain("'--key-flame-scale': String(keySizeVariation * (presentationTier === 6 ? 1.25 : 1))");
+    expect(component).toContain('const keySizeVariation = scoreTypewriterKeySizeVariation(layer.id, keyIndex)');
+    expect(component).toContain("'--key-smoke-scale': String(keySizeVariation * (layer.tier === 6 ? 1.35 : 1))");
+    expect(component).toContain("'--key-flame-scale': String(keySizeVariation * (layer.tier === 6 ? 1.25 : 1))");
     expect(component).not.toContain('className="typewriter-smoke"');
     expect(component).toContain('className="typewriter-chassis-smoke"');
     expect(component).toContain('TYPEWRITER_CHASSIS_SMOKE_POINTS.map');
@@ -431,19 +440,19 @@ describe('Score Keyboard presentation contract', () => {
     expect(css).toContain('@keyframes typewriter-key-smoke');
     expect(css).not.toContain('.typewriter-smoke');
     expect(css).not.toContain('@keyframes typewriter-smoke');
-    expect(css).toContain('.typewriter-tier-4.is-active .typewriter-key.is-pressed::before');
+    expect(css).toContain('.score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::before');
     expect(css).toContain('.typewriter-key::after');
-    expect(css).toContain('width: clamp(7px, .7vw, 14px)');
-    expect(css).toContain('height: clamp(10px, 1.1vw, 22px)');
-    expect(css).toContain('box-shadow: -4px 4px 0 var(--key-led), 4px 4px 0 var(--key-led), 0 8px 0 var(--key-led)');
-    expect(css).toContain('.typewriter-tier-5.is-active .typewriter-key.is-pressed::after');
-    expect(css).toContain('.typewriter-tier-6.is-active .typewriter-key.is-pressed::after');
+    expect(css).toContain('width: clamp(4px, calc(var(--typewriter-width) * .0435), 14px)');
+    expect(css).toContain('height: clamp(6px, calc(var(--typewriter-width) * .0696), 22px)');
+    expect(css).toContain('calc(var(--typewriter-width) * -.0174) calc(var(--typewriter-width) * .0174) 0 var(--key-led)');
+    expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::after');
+    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-key.is-pressed::after');
     expect(css).toContain('animation: typewriter-key-flame var(--key-duration) steps(3, end) both');
     expect(css).toContain('animation-delay: var(--key-delay)');
     expect(css).not.toContain('.typewriter-tier-6 .typewriter-key { --key-flame-scale: 1.25; }');
-    expect(css).toContain('8px -4px 0 -1px var(--key-led)');
-    expect(css).toContain('.typewriter-tier-5.is-active .typewriter-pop');
-    expect(css).toContain('.typewriter-tier-6.is-active .typewriter-pop');
+    expect(css).toContain('calc(var(--typewriter-width) * .0348) calc(var(--typewriter-width) * -.0174) 0 calc(var(--typewriter-width) * -.0043) var(--key-led)');
+    expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-pop');
+    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-pop');
     expect(css).not.toContain('typewriter-rainbow-ring');
     expect(css).not.toContain('typewriter-jackpot-sparks');
     expect(css).not.toContain('typewriter-jackpot-spark');
@@ -451,21 +460,23 @@ describe('Score Keyboard presentation contract', () => {
     expect(css).toContain('.typewriter-panel-led-red { --panel-led-x: 83.1%; --panel-led-color: #ff365c; }');
     expect(css).toContain('.typewriter-panel-led-yellow { --panel-led-x: 85.9%; --panel-led-color: #ffe04b; }');
     expect(css).toContain('.typewriter-panel-led-green { --panel-led-x: 88.6%; --panel-led-color: #45e06f; }');
-    expect(css).toContain('--panel-led-side-left: -5px; --panel-led-side-right: 5px;');
-    expect(css).toContain('--panel-led-side-left: -7px; --panel-led-side-right: 7px;');
+    expect(css).toContain('--panel-led-glow: calc(var(--typewriter-width) * .0391)');
+    expect(css).toContain('--panel-led-glow: calc(var(--typewriter-width) * .0609)');
+    expect(css).toContain('--panel-led-side-left: calc(var(--typewriter-width) * -.0217); --panel-led-side-right: calc(var(--typewriter-width) * .0217);');
+    expect(css).toContain('--panel-led-side-left: calc(var(--typewriter-width) * -.0304); --panel-led-side-right: calc(var(--typewriter-width) * .0304);');
     expect(css).toContain('var(--panel-led-side-left) 0 var(--panel-led-glow) var(--panel-led-color)');
     expect(css).toContain('var(--panel-led-side-right) 0 var(--panel-led-glow) var(--panel-led-color)');
     expect(css).not.toContain('0 0 0 1px #17120f');
-    expect(css).toContain('.typewriter-tier-5.is-active .typewriter-panel-led');
-    expect(css).toContain('.typewriter-tier-6.is-active .typewriter-panel-led');
+    expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-panel-led');
+    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-panel-led');
     expect(css).toContain('.typewriter-tier-5.is-clear-held .typewriter-panel-led');
     expect(css).toContain('.typewriter-tier-6.is-clear-held .typewriter-panel-led');
     expect(css).toContain('animation: typewriter-panel-led-jackpot var(--typewriter-beat) steps(1, end) infinite');
     expect(css).toContain('animation: typewriter-panel-led-jackpot var(--typewriter-ambient-speed) steps(1, end) infinite');
     expect(css).toContain('@keyframes typewriter-panel-led-jackpot');
     expect(css).not.toContain('@keyframes typewriter-panel-led-blink');
-    expect(css).toContain('.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7)');
-    expect(css).toContain('.typewriter-tier-6.is-active .typewriter-chassis-smoke i');
+    expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7)');
+    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-chassis-smoke i');
     expect(css).toContain('.typewriter-tier-5.is-clear-held .typewriter-chassis-smoke i:nth-child(-n+7)');
     expect(css).toContain('.typewriter-tier-6.is-clear-held .typewriter-chassis-smoke i');
     expect(css).toContain('background: #3d454a');

@@ -39,9 +39,17 @@ interface Props {
   settleId?: number;
   resolutionActive?: boolean;
   holdActive?: boolean;
-  gameSpeed: number;
   screenshake: number;
   reducedMotion: boolean;
+  preview?: boolean;
+}
+
+interface PresentationLayer {
+  id: string;
+  tier: ScoreTypewriterTier;
+  primaryKeyId: string;
+  clearRepeating: boolean;
+  shake: number;
 }
 
 /** Persistent, non-interactive score feedback in the viewport's left margin. */
@@ -57,28 +65,49 @@ export function ScoreTypewriter({
   settleId = 0,
   resolutionActive = false,
   holdActive = false,
-  gameSpeed,
   screenshake,
   reducedMotion,
+  preview = false,
 }: Props) {
   const osReduce = usePrefersReducedMotion();
   const requestedReduce = reducedMotion || osReduce || motionOff();
-  const beatSnapshot = useRef({ beatId, speed: gameSpeed, reduce: requestedReduce });
+  const beatSnapshot = useRef({ beatId, reduce: requestedReduce });
   if (beatSnapshot.current.beatId !== beatId) {
-    beatSnapshot.current = { beatId, speed: gameSpeed, reduce: requestedReduce };
+    beatSnapshot.current = { beatId, reduce: requestedReduce };
   } else if (!beatSnapshot.current.reduce && requestedReduce) {
     // Reduced Motion ON cancels this beat immediately; OFF waits for the next id.
     beatSnapshot.current.reduce = true;
   }
-  const beatSpeed = beatSnapshot.current.speed;
   const reduce = beatSnapshot.current.reduce;
-  const beatMs = BALANCE.scoreTypewriter.beatMs / beatSpeed;
+  const beatMs = BALANCE.scoreTypewriter.beatMs;
   const previousTotal = useRef(liveTotal);
   const crossed = useRef(liveTotal >= target);
   const targetStrikeActive = useRef(false);
   const [targetPunch, setTargetPunch] = useState<{ id: number; durationMs: number } | null>(null);
   const [clearPeak, setClearPeak] = useState<ScoreTypewriterTier>(0);
   const [clearCycle, setClearCycle] = useState<number | null>(null);
+  const [presentationLayers, setPresentationLayers] = useState<PresentationLayer[]>([]);
+  const presentationTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const previousResolutionActive = useRef(resolutionActive);
+  const screenshakeRef = useRef(screenshake);
+  screenshakeRef.current = screenshake;
+
+  useLayoutEffect(() => {
+    setPresentationLayers([]);
+    return () => {
+      presentationTimers.current.forEach(clearTimeout);
+      presentationTimers.current.clear();
+    };
+  }, [blindKey, reduce]);
+
+  useLayoutEffect(() => {
+    const stopped = previousResolutionActive.current && !resolutionActive;
+    previousResolutionActive.current = resolutionActive;
+    if (!stopped) return;
+    presentationTimers.current.forEach(clearTimeout);
+    presentationTimers.current.clear();
+    setPresentationLayers([]);
+  }, [resolutionActive]);
 
   useEffect(() => {
     previousTotal.current = liveTotal;
@@ -100,10 +129,10 @@ export function ScoreTypewriter({
     targetStrikeActive.current = true;
     setTargetPunch((value) => ({
       id: (value?.id ?? 0) + 1,
-      durationMs: BALANCE.scoreTypewriter.targetCueMs / beatSpeed,
+      durationMs: BALANCE.scoreTypewriter.targetCueMs,
     }));
     audio.scoreTypewriterKey('Enter', true);
-  }, [beatSpeed, liveTotal, target, targetCueEnabled]);
+  }, [liveTotal, target, targetCueEnabled]);
 
   useEffect(() => {
     if (!targetPunch) return;
@@ -130,10 +159,10 @@ export function ScoreTypewriter({
       return;
     }
     return scheduleScoreTypewriterClearRepeats(
-      scoreTypewriterClearRepeatMs(heldPeak, beatSpeed),
+      scoreTypewriterClearRepeatMs(heldPeak),
       setClearCycle,
     );
-  }, [beatSpeed, blindKey, heldPeak, reduce, settleId]);
+  }, [blindKey, heldPeak, reduce, settleId]);
 
   const clearRepeating = heldPeak > 0 && clearCycle !== null && !reduce;
   const presentationActive = active || clearRepeating;
@@ -145,6 +174,28 @@ export function ScoreTypewriter({
 
   useLayoutEffect(() => {
     if (!presentationActive || presentationTier === 0 || reduce) return;
+    const layer = {
+      id: presentationBeatId,
+      tier: presentationTier,
+      primaryKeyId: presentationPrimaryKeyId,
+      clearRepeating,
+      shake: scoreTypewriterShake(screenshakeRef.current, presentationTier),
+    } satisfies PresentationLayer;
+    setPresentationLayers((current) => current.some(({ id }) => id === layer.id)
+      ? current
+      : [...current, layer]);
+
+    const schedule = (callback: () => void, delayMs: number) => {
+      const timer = setTimeout(() => {
+        presentationTimers.current.delete(timer);
+        callback();
+      }, delayMs);
+      presentationTimers.current.add(timer);
+    };
+    schedule(() => {
+      setPresentationLayers((current) => current.filter(({ id }) => id !== layer.id));
+    }, beatMs);
+
     const visualCount = BALANCE.scoreTypewriter.visualKeyCounts[presentationTier];
     const audibleCount = BALANCE.scoreTypewriter.audibleKeyCounts[presentationTier];
     const audibleSlots = Array.from(
@@ -156,7 +207,7 @@ export function ScoreTypewriter({
       visualCount,
       presentationPrimaryKeyId,
     );
-    const timers = audibleSlots.map((pressIndex, index) => setTimeout(() => {
+    audibleSlots.forEach((pressIndex, index) => schedule(() => {
       const keyId = SCORE_TYPEWRITER_KEYCAPS[keySequence[pressIndex] ?? -1]?.id ?? 'Enter';
       if (clearRepeating && index === 0) {
         audio.scoreTypewriterKey(keyId, true);
@@ -166,47 +217,64 @@ export function ScoreTypewriter({
       audio.scoreTypewriterKey(keyId);
     }, scoreTypewriterKeyTiming(
       presentationBeatId,
-      beatSpeed,
       presentationTier,
       pressIndex,
       visualCount,
     ).delayMs));
-    return () => timers.forEach(clearTimeout);
-  }, [beatSpeed, clearRepeating, presentationActive, presentationBeatId,
-    presentationPrimaryKeyId, presentationTier, reduce]);
+  }, [clearRepeating, presentationActive, presentationBeatId,
+    presentationPrimaryKeyId, presentationTier, reduce, beatMs, blindKey]);
 
   // The live target watcher above still runs for every count-up frame. The much
   // larger 101-key visual tree only changes when the current presentation beat does.
-  const machine = useMemo(() => {
-    const machineKey = presentationActive ? presentationBeatId : `idle-${blindKey}`;
-    const visualCount = presentationActive
-      ? BALANCE.scoreTypewriter.visualKeyCounts[presentationTier]
-      : 0;
-    const keySequence = scoreTypewriterKeySequence(
-      presentationBeatId,
-      visualCount,
-      presentationPrimaryKeyId,
-    );
-    const keyTiming = new Map(keySequence.map((keyIndex, pressIndex) => [
-      keyIndex,
-      scoreTypewriterKeyTiming(
-        presentationBeatId,
-        beatSpeed,
-        presentationTier,
-        pressIndex,
+  const machines = useMemo(() => {
+    const layers = presentationLayers.length > 0
+      ? presentationLayers.map((layer) => ({ ...layer, active: true }))
+      : [{
+          id: `idle-${blindKey}`,
+          tier: heldPeak,
+          primaryKeyId: 'Enter',
+          clearRepeating: false,
+          shake: scoreTypewriterShake(screenshake, active ? tier : heldPeak),
+          active: false,
+        } satisfies PresentationLayer & { active: boolean }];
+    return layers.map((layer) => {
+      const visualCount = layer.active
+        ? BALANCE.scoreTypewriter.visualKeyCounts[layer.tier]
+        : 0;
+      const keySequence = scoreTypewriterKeySequence(
+        layer.id,
         visualCount,
-      ),
-    ]));
-    const panelLedOrder = scoreTypewriterPanelLedOrder(presentationBeatId);
-    return (
-      <div className="score-typewriter">
-        <div key={machineKey} className="typewriter-machine">
-          <img className="typewriter-art" src={scoreTypewriterArt} alt="" />
-          <div className="typewriter-keys">
+        layer.primaryKeyId,
+      );
+      const keyTiming = new Map(keySequence.map((keyIndex, pressIndex) => [
+        keyIndex,
+        scoreTypewriterKeyTiming(
+          layer.id,
+          layer.tier,
+          pressIndex,
+          visualCount,
+        ),
+      ]));
+      const panelLedOrder = scoreTypewriterPanelLedOrder(layer.id);
+      return (
+        <div
+          key={layer.id}
+          className={[
+            'score-typewriter',
+            layer.active && 'is-active',
+            layer.clearRepeating && 'is-clear-cycle',
+            `typewriter-tier-${layer.tier}`,
+          ].filter(Boolean).join(' ')}
+          style={{ '--typewriter-shake': String(layer.shake) } as CSSProperties}
+          data-presentation-beat-id={layer.active ? layer.id : undefined}
+        >
+          <div className="typewriter-machine">
+            <img className="typewriter-art" src={scoreTypewriterArt} alt="" />
+            <div className="typewriter-keys">
             {SCORE_TYPEWRITER_KEYCAPS.map((keycap, keyIndex) => {
               const timing = keyTiming.get(keyIndex);
               const ledSlot = scoreTypewriterLedSlot(keyIndex);
-              const keySizeVariation = scoreTypewriterKeySizeVariation(presentationBeatId, keyIndex);
+              const keySizeVariation = scoreTypewriterKeySizeVariation(layer.id, keyIndex);
               return (
                 <button
                   key={keycap.id}
@@ -223,8 +291,8 @@ export function ScoreTypewriter({
                     '--key-w': `${keycap.w}%`,
                     '--key-h': `${keycap.h}%`,
                     '--key-led': SCORE_TYPEWRITER_LED_COLORS[ledSlot],
-                    '--key-smoke-scale': String(keySizeVariation * (presentationTier === 6 ? 1.35 : 1)),
-                    '--key-flame-scale': String(keySizeVariation * (presentationTier === 6 ? 1.25 : 1)),
+                    '--key-smoke-scale': String(keySizeVariation * (layer.tier === 6 ? 1.35 : 1)),
+                    '--key-flame-scale': String(keySizeVariation * (layer.tier === 6 ? 1.25 : 1)),
                     ...(timing ? {
                       '--key-delay': `${timing.delayMs}ms`,
                       '--key-duration': `${timing.durationMs}ms`,
@@ -254,35 +322,41 @@ export function ScoreTypewriter({
                   '--chassis-smoke-y': `${y}%`,
                   '--chassis-smoke-delay': `${delay}ms`,
                   '--chassis-smoke-scale': String(
-                    scoreTypewriterKeySizeVariation(presentationBeatId, index),
+                    scoreTypewriterKeySizeVariation(layer.id, index),
                   ),
                 } as CSSProperties}
               />
             ))}
+            </div>
+            <div className="typewriter-pop">POP!</div>
           </div>
-          <div className="typewriter-pop">POP!</div>
         </div>
-      </div>
-    );
-  }, [beatSpeed, blindKey, presentationActive, presentationBeatId,
-    presentationPrimaryKeyId, presentationTier]);
+      );
+    });
+  }, [active, blindKey, heldPeak, presentationLayers, screenshake, tier]);
 
-  if (typeof document === 'undefined') return null;
-  const displayTier = active ? tier : heldPeak;
+  if (typeof document === 'undefined' && !preview) return null;
+  const latestLayer = presentationLayers[presentationLayers.length - 1];
+  const displayTier = latestLayer?.tier ?? (active ? tier : heldPeak);
+  const hasPresentation = presentationLayers.length > 0;
+  const dockTier = displayTier > 0 && (heldPeak > 0 || reduce || targetPunch)
+    ? `typewriter-tier-${displayTier}`
+    : null;
   const style = {
     '--typewriter-beat': `${beatMs}ms`,
-    '--typewriter-target-cue': `${targetPunch?.durationMs ?? BALANCE.scoreTypewriter.targetCueMs / beatSpeed}ms`,
+    '--typewriter-target-cue': `${targetPunch?.durationMs ?? BALANCE.scoreTypewriter.targetCueMs}ms`,
     '--typewriter-shake': String(scoreTypewriterShake(screenshake, displayTier)),
   } as CSSProperties;
 
-  return createPortal(
+  const dock = (
     <div
       className={[
         'score-typewriter-dock',
-        presentationActive && presentationTier > 0 && 'is-active',
-        clearRepeating && 'is-clear-cycle',
+        preview && 'is-lab-preview',
+        hasPresentation && 'is-active',
+        (clearRepeating || latestLayer?.clearRepeating) && 'is-clear-cycle',
         heldPeak > 0 && 'is-clear-held',
-        `typewriter-tier-${displayTier}`,
+        dockTier,
         reduce && 'is-reduced',
         targetPunch && 'target-punched',
       ].filter(Boolean).join(' ')}
@@ -290,8 +364,8 @@ export function ScoreTypewriter({
       data-tier={displayTier}
       aria-hidden="true"
     >
-      {machine}
-    </div>,
-    document.body,
+      {machines}
+    </div>
   );
+  return preview ? dock : createPortal(dock, document.body);
 }

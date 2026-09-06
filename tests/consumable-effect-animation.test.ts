@@ -63,6 +63,42 @@ describe('shared consumable result animation', () => {
     expect(css).toContain('.cfx-created');
   });
 
+  it('keeps both global use presentations modal until their existing timers finish', () => {
+    const consumable = source('../src/ui/components/ConsumableEffect.tsx');
+    const constellation = source('../src/ui/components/PatternLevelUp.tsx');
+    const focus = source('../src/ui/useModalFocus.ts');
+    const css = source('../src/ui/styles/screens.css');
+    for (const component of [consumable, constellation]) {
+      expect(component).toContain('useModalFocus(');
+      expect(component).toContain('role="dialog"');
+      expect(component).toContain('aria-modal="true"');
+      expect(component).toContain('aria-labelledby=');
+      expect(component).toContain('tabIndex={-1}');
+    }
+    expect(focus).toContain("document.getElementById('root')");
+    expect(focus).toContain('sessionAppRoot.inert = true');
+    expect(focus).toContain("event.key === 'Escape'");
+    expect(focus).toContain("event.key !== 'Tab'");
+    expect(focus).toContain('event.stopImmediatePropagation()');
+    expect(focus).toContain('if (sessionPrevious?.isConnected) sessionPrevious.focus()');
+    expect(css).toMatch(/\.consumable-effect\s*\{[^}]*pointer-events:\s*auto/s);
+    expect(css).toMatch(/\.pattern-levelup\s*\{[^}]*pointer-events:\s*auto/s);
+  });
+
+  it('keeps overlapping modals locked as one session and isolates non-tooltip portals', () => {
+    const focus = source('../src/ui/useModalFocus.ts');
+    const css = source('../src/ui/styles/screens.css');
+    expect(focus).toContain('const modalStack: ModalEntry[] = []');
+    expect(focus).toContain('if (modalStack.length === 0) beginModalSession()');
+    expect(focus).toContain('if (modalStack.length === 0) endModalSession()');
+    expect(focus).toContain("window.addEventListener('pointerdown', trapPointer, true)");
+    expect(focus).toContain("document.addEventListener('focusin', trapFocus, true)");
+    expect(focus).toContain("target.closest('.tt-portal') !== null");
+    expect(focus).toContain("root.dataset.modalFocusTop = 'true'");
+    expect(css).toMatch(/\.consumable-effect\[data-modal-focus-top="true"\],[\s\S]*\.pattern-levelup\[data-modal-focus-top="true"\][^{]*\{[^}]*z-index:\s*calc\(var\(--z-tooltip\) \+ 3\)/);
+    expect(css).toMatch(/body:has\(> \.consumable-effect, > \.pattern-levelup\) > \.tt-portal\s*\{[^}]*z-index:\s*calc\(var\(--z-tooltip\) \+ 4\)/s);
+  });
+
   it('reports exact Word Hand levels and letter-tile edition changes for Fables 19 and 20', () => {
     const handRun = {
       ...newRun('fable-19-fx'),
@@ -122,7 +158,7 @@ describe('shared consumable result animation', () => {
   it('wraps Fable effect copy at word boundaries', () => {
     const styles = source('../src/ui/styles/screens.css');
     expect(styles).toMatch(/\.cfx-copy > p\s*\{[^}]*word-break:\s*keep-all;/s);
-    expect(styles).toMatch(/\.cfx-copy > p\s*\{[^}]*overflow-wrap:\s*normal;/s);
+    expect(styles).toMatch(/\.cfx-copy > p\s*\{[^}]*overflow-wrap:\s*anywhere;/s);
   });
 
   it('wires held, shop, and non-target pack consumables to the shared effect bus', () => {

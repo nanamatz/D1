@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { useI18n } from '../i18n';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { LANGUAGES, useI18n } from '../i18n';
 import { activeProfile } from '../storage';
 import type { Lexicon } from '../../engine/lexicon';
-import { loadMainMenuProfileBase, resolveMainMenuProfile } from '../profile';
+import { loadMainMenuProfileBase } from '../profile';
 
 interface Props {
   lexicon: Lexicon | null;
@@ -15,16 +16,18 @@ interface Props {
 
 /** Main Menu (spec §2.1). Our own logotype. */
 export function MainMenu({
-  lexicon, onPlay, onCollection, onOptions, onProfile, onDeskLab,
+  onPlay, onCollection, onOptions, onProfile, onDeskLab,
 }: Props) {
   const { t, lang, setLang } = useI18n();
   const slot = activeProfile();
-  const profileBase = useMemo(() => loadMainMenuProfileBase(slot), [slot]);
-  const profile = useMemo(
-    () => resolveMainMenuProfile(profileBase, lexicon),
-    [lexicon, profileBase],
-  );
+  const profile = useMemo(() => loadMainMenuProfileBase(slot), [slot]);
   const [quit, setQuit] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const languageDialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (languageOpen && !languageDialog.current?.open) languageDialog.current?.showModal();
+  }, [languageOpen]);
 
   // Quit: try to close the window (works in a script-opened window or a desktop
   // app shell); browsers block that for a normally-navigated tab, so we always
@@ -98,20 +101,49 @@ export function MainMenu({
             onClick={onProfile}
           >
             <span>{profile.name}</span>
-            {profile.title && (
-              <small className="menu-profile-title">{t(profile.title.localeKey)}</small>
-            )}
           </button>
         </div>
         <div className="menu-mini-card language">
           <button
             className="btn menu-mini-button"
-            onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}
+            onClick={() => setLanguageOpen(true)}
+            aria-haspopup="dialog"
           >
-            <span>{lang === 'ko' ? '한국어' : 'English'}</span>
+            <span>{LANGUAGES.find(({ id }) => id === lang)!.label}</span>
           </button>
         </div>
       </div>
+
+      {languageOpen && createPortal(
+        <dialog
+          ref={languageDialog}
+          className="language-modal"
+          aria-labelledby="language-modal-title"
+          onClose={() => setLanguageOpen(false)}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) event.currentTarget.close();
+          }}
+        >
+          <h2 id="language-modal-title">{t('settings.language')}</h2>
+          <div className="language-grid">
+            {LANGUAGES.map((choice) => (
+              <button
+                key={choice.id}
+                className="btn language-choice"
+                aria-pressed={lang === choice.id}
+                autoFocus={lang === choice.id}
+                onClick={() => setLang(choice.id)}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+          <button className="btn gold back-bar" onClick={() => languageDialog.current?.close()}>
+            {t('common.back')}
+          </button>
+        </dialog>,
+        document.body,
+      )}
     </div>
   );
 }

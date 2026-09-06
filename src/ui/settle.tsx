@@ -4,7 +4,7 @@
  * context so every part of the board animates in sync:
  *   scorebox (chips × mult, idle 0×0) · tray tiles (+N pops) · jokers (wiggle + pop).
  *
- * Game speed scales all timing; reduced motion collapses to an instant fill.
+ * Game speed scales ordered score-event spacing; reduced motion uses a fixed collapsed branch.
  * Pure presentation — reads the engine's event log, drives display with timers.
  */
 import {
@@ -23,6 +23,7 @@ import type {
   TileMaterial,
   WordSubmission,
 } from '../engine/types';
+import { BALANCE } from '../engine/balance';
 import { audio, type SfxName } from './audio';
 import { motionOff } from './motion';
 import {
@@ -213,8 +214,6 @@ export interface SettleView {
   active: boolean;
   chips: number;
   mult: number;
-  /** Submission-snapshotted game speed, retained through sentence BUILD/LAND. */
-  settleSpeed: number;
   /** Reduced Motion latched for this submission; OFF applies to the next one. */
   settleReduced: boolean;
   /** Running flat score applied after Chips × Mult. */
@@ -224,7 +223,6 @@ export interface SettleView {
     id: string;
     tier: ScoreTypewriterTier;
     delta: number;
-    speed: number;
     primaryKeyId: string;
   } | null;
   /** tile currently lifting for its own score or an Emoji Tile targeting it */
@@ -282,7 +280,6 @@ const IDLE: SettleView = {
   active: false,
   chips: 0,
   mult: 0,
-  settleSpeed: 1,
   settleReduced: false,
   flatScore: 0,
   typewriterBeat: null,
@@ -319,7 +316,7 @@ export function settlePresentationSnapshot(
   return previous;
 }
 
-// ms per beat at 1× speed; game speed (1/2×) scales this single timing source.
+// ms per score-event slot at 1×; game speed scales this cadence only.
 const BASE_STEP = 600;
 // Enhanced Emoji beats keep their longer separation relative to ordinary beats.
 const ENHANCED_JOKER_STEP = 1000;
@@ -328,10 +325,8 @@ const ENHANCED_JOKER_STEP = 1000;
 // real-time floor; settle completion uses the same duration helper below.
 const CHANCE_MATERIAL_STEP_MIN = 600;
 const TILE_CREATION_STEP_MIN = 480;
-const FINAL_HOLD = 650; // ms: hold the final tally before reset to idle (at 1× speed)
+const FINAL_HOLD = 650; // ms: fixed final-tally hold before reset to idle
 const REDUCED_HOLD = 700; // ms: instant-fill hold before reset (reduced motion)
-const PLAY_IMPACT_DURATION_1X = 650;
-const PLAY_IMPACT_DURATION_2X = 400;
 const PLAY_IMPACT_CONTACT_RATIO = 0.4;
 const PLAY_IMPACT_INTENSITY_BASE = 0.6;
 const PLAY_IMPACT_INTENSITY_STEP = 0.07;
@@ -361,12 +356,10 @@ export function playImpactFamily(material: TileMaterial): PlayImpactFamily {
 /** UI-only physical-play prologue before score beat zero. */
 export function playImpactDurationMs(
   tileCount: number,
-  speed: number,
   reduce: boolean,
 ): number {
   if (reduce || tileCount <= 0) return 0;
-  if (speed === 2) return PLAY_IMPACT_DURATION_2X;
-  return PLAY_IMPACT_DURATION_1X;
+  return BALANCE.playImpact.durationMs;
 }
 
 /** Row-level physical weight; seven or more tiles share the capped maximum. */
@@ -553,8 +546,8 @@ export function emojiTriggerSfx(
  * Total time (ms) the settle timeline runs for `events` at `speed`× — the single
  * source of truth for "settle complete". The round-clear / game-over UI is gated
  * on this signal, never on the raw final score (playtest-05 A; recurrence of 04
- * A-1). It scales with the number of scoring beats and with speed, so a long word
- * with many jokers is *seen* landing before the verdict fires.
+ * A-1). Only ordered score-event slots scale with speed; impact and final hold
+ * stay fixed so a long word with many jokers is *seen* landing before verdict.
  */
 export function settleDurationMs(
   events: readonly ScoreEvent[],
@@ -563,12 +556,12 @@ export function settleDurationMs(
   impactTileCount = 0,
 ): number {
   if (reduce) return REDUCED_HOLD;
-  const impact = playImpactDurationMs(impactTileCount, speed, false);
+  const impact = playImpactDurationMs(impactTileCount, false);
   const beats = events.filter((e) => e.kind !== 'settle').length;
   if (beats === 0) return impact;
   return impact + events
     .filter((event) => event.kind !== 'settle')
-    .reduce((total, event) => total + scaledBeatDurationMs(event, speed), 0) + FINAL_HOLD / speed;
+    .reduce((total, event) => total + scaledBeatDurationMs(event, speed), 0) + FINAL_HOLD;
 }
 
 /**
@@ -700,7 +693,6 @@ export function SettleProvider({
         active: true,
         chips,
         mult,
-        settleSpeed,
         settleReduced,
         flatScore,
         typewriterBeat: tier > 0
@@ -708,7 +700,6 @@ export function SettleProvider({
               id: `${settleId}-reduced`,
               tier,
               delta,
-              speed: settleSpeed,
               primaryKeyId: primaryKeyId ?? 'Enter',
             }
           : null,
@@ -724,7 +715,7 @@ export function SettleProvider({
       const off = setTimeout(() => {
         clearPlayImpactRow(impactRow);
         activeSettleIdRef.current = null;
-        setView({ ...IDLE, settleSpeed, settleReduced });
+        setView({ ...IDLE, settleReduced });
         onCompleteRef.current?.();
       }, settleDurationMs(events, settleSpeed, true, submission?.tiles.length ?? 0));
       return () => {
@@ -739,7 +730,7 @@ export function SettleProvider({
     const creationCleanups: Array<() => void> = [];
     const shakeCleanups: Array<() => void> = [];
     setCreatedTilesPending(beats, true);
-    setView({ ...IDLE, active: true, settleSpeed, settleReduced });
+    setView({ ...IDLE, active: true, settleReduced });
     let chips = 0;
     let mult = 0;
     let flatScore = 0;
@@ -748,7 +739,7 @@ export function SettleProvider({
     const destroyedTileIds = new Set<string>();
     let tickStep = 0;
 
-    const impactDuration = playImpactDurationMs(impactTiles.length, settleSpeed, false);
+    const impactDuration = playImpactDurationMs(impactTiles.length, false);
     const impactIntensity = playImpactIntensity(impactTiles.length);
     const contactAt = impactDuration * PLAY_IMPACT_CONTACT_RATIO;
     const contactVfxDuration = impactDuration - contactAt;
@@ -834,7 +825,7 @@ export function SettleProvider({
           } else if (e.kind === 'joker') {
             audio.play(emojiTriggerSfx(e));
             if (hasTileCreation(e)) {
-              creationCleanups.push(animateTileCreation(e, scaledBeatDurationMs(e, settleSpeed)));
+              creationCleanups.push(animateTileCreation(e, beatDurationMs(e)));
             }
             if (e.tileId) triggerTile(e.tileId);
           } else if (e.kind === 'font') {
@@ -873,7 +864,6 @@ export function SettleProvider({
             active: true,
             chips,
             mult,
-            settleSpeed,
             settleReduced,
             flatScore,
             typewriterBeat: typewriterTier > 0
@@ -881,7 +871,6 @@ export function SettleProvider({
                   id: `${settleId}-${i}`,
                   tier: typewriterTier,
                   delta: typewriterDelta,
-                  speed: settleSpeed,
                   primaryKeyId: scoreTypewriterPrimaryKey(e, typewriterTiles),
                 }
               : null,
@@ -1039,7 +1028,7 @@ export function SettleProvider({
         setCreatedTilesPending(beats, false);
         audio.play('totalRoll');
         activeSettleIdRef.current = null;
-        setView({ ...IDLE, settleSpeed, settleReduced });
+        setView({ ...IDLE, settleReduced });
         onCompleteRef.current?.();
       }, settleDurationMs(events, settleSpeed, false, submission?.tiles.length ?? 0)),
     );

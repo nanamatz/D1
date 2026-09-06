@@ -67,14 +67,21 @@ describe('endless chapter curve and finisher schedule', () => {
     expect(() => blindTarget(39, 'small')).toThrow(RangeError);
   });
 
-  it('formats unbounded score and money values with compact suffixes', () => {
+  it('formats score and money values with integers through the millions', () => {
     expect(formatScore(-0.4)).toBe('0');
     expect(formatScore(999.4)).toBe('999');
-    expect(formatScore(999.5)).toBe('1K');
-    expect(formatScore(1_299.4)).toBe('1.2K');
-    expect(formatScore(-1_299.4)).toBe('-1.2K');
-    expect(formatScore(999_999)).toBe('999.9K');
-    expect(formatScore(1_000_000)).toBe('1M');
+    expect(formatScore(999.5)).toBe('1,000');
+    expect(formatScore(1_000)).toBe('1,000');
+    expect(formatScore(1_299.4)).toBe('1,299');
+    expect(formatScore(-1_299.4)).toBe('-1,299');
+    expect(formatScore(999_999)).toBe('999,999');
+    expect(formatScore(1_000_000)).toBe('1,000,000');
+    expect(formatScore(9_999_999.4)).toBe('9,999,999');
+    expect(formatScore(9_999_999.5)).toBe('10M');
+    expect(formatScore(-9_999_999.5)).toBe('-9,999,999');
+    expect(formatScore(-9_999_999.6)).toBe('-10M');
+    expect(formatScore(10_000_000)).toBe('10M');
+    expect(formatScore(12_999_999)).toBe('12.9M');
     expect(formatScore(100_000_000)).toBe('100M');
     expect(formatScore(1_000_000_000)).toBe('1B');
     expect(formatScore(1e12)).toBe('1T');

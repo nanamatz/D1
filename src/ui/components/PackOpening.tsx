@@ -10,7 +10,7 @@ import {
   grownValue,
   jokerTooltip,
 } from '../descriptions';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { audio } from '../audio';
 import { motionOff } from '../motion';
 import { packArt } from '../packArt';
@@ -223,7 +223,7 @@ export function PackOpening({
   onSelectedCandidatesChange: (ids: string[]) => void;
   onInteractionLockChange: (locked: boolean) => void;
 }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const pack = g.state.pack;
   const entering = useEntering();
   // Shared open sequence (tear top → card spill → choices settle). Plays once per pack — this
@@ -439,7 +439,7 @@ export function PackOpening({
   const optionName = (o: PackOption): string => {
     if (o.kind === 'joker') {
       const def = JOKER_REGISTRY.get(o.id);
-      return def ? (lang === 'ko' ? def.nameKo : def.nameEn) : o.id;
+      return def ? objectName(t, 'joker', def.id) : o.id;
     }
     if (o.kind === 'tile') return o.tile.letter ?? NO_LETTER;
     return t(`consumable.${o.id}`); // consumable / punctuation

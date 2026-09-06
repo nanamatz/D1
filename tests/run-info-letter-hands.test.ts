@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { LETTER_HAND_REGISTRY } from '../src/engine/letterHands';
 import en from '../locales/en.json';
+import ja from '../locales/ja.json';
 import ko from '../locales/ko.json';
 
 describe('Run Info Word Hands reference', () => {
@@ -33,6 +34,14 @@ describe('Run Info Word Hands reference', () => {
     expect(tokens).toContain('.pattern-level-white { --pattern-level-color: var(--ink); }');
   });
 
+  it('keeps translated hand names on one row while the tooltip retains the full name', () => {
+    const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
+    expect(ja['letterhand.grandPalindrome']).toBe('大回文');
+    expect(styles).toMatch(
+      /\.ri-hand-copy > strong\s*\{[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/s,
+    );
+  });
+
   it('shows boxed run-use counts after both score readouts', () => {
     const source = readFileSync('src/ui/components/RunInfo.tsx', 'utf8');
     const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
@@ -57,5 +66,7 @@ describe('Run Info Word Hands reference', () => {
     expect(runInfo).not.toContain("richText(t(`letterhand.${hand.id}.desc`))");
     expect(readFileSync('src/ui/styles/screens.css', 'utf8')).toContain('.ri-hands .tt-anchor');
     expect(sidebar).toContain('isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)');
+    expect(sidebar).toContain('preview?.letterHand?.chips ?? 0');
+    expect(sidebar).toContain('preview?.letterHand?.mult ?? 0');
   });
 });

@@ -549,7 +549,7 @@ export type ShopItem = {
       id: string;
       edition?: JokerEdition;
       price: number;
-      /** Guaranteed rarity-tag stock stays beside ordinary items on reroll. */
+      /** Guaranteed rarity-tag stock retains its item slot on reroll. */
       rarityTag?: 'uncommonTag' | 'rareTag';
       /** Development-build fixture retained across rerolls of the first shop. */
       developerPinned?: true;

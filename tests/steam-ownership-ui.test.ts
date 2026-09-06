@@ -20,11 +20,12 @@ vi.mock('../src/ui/i18n', () => ({
 import { SteamOwnershipNotice } from '../src/ui/components/SteamOwnershipNotice';
 
 describe('Steam ownership renderer boundary', () => {
-  it('mounts one accessible non-identifying ownership modal with bilingual copy', () => {
+  it('mounts one accessible non-identifying ownership modal with localized copy', () => {
     const app = readFileSync('src/ui/App.tsx', 'utf8');
     const modal = readFileSync('src/ui/components/SteamOwnershipNotice.tsx', 'utf8');
     const en = JSON.parse(readFileSync('locales/en.json', 'utf8'));
     const ko = JSON.parse(readFileSync('locales/ko.json', 'utf8'));
+    const ja = JSON.parse(readFileSync('locales/ja.json', 'utf8'));
     expect(app).toContain('<SteamOwnershipNotice />');
     expect(modal).toContain('role="dialog"');
     expect(modal).toContain('aria-labelledby="steam-owner-title"');
@@ -45,6 +46,7 @@ describe('Steam ownership renderer boundary', () => {
     ]) {
       expect(en[key]).toBeTruthy();
       expect(ko[key]).toBeTruthy();
+      expect(ja[key]).toBeTruthy();
     }
   });
 

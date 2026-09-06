@@ -20,4 +20,9 @@ describe('non-game Escape navigation', () => {
     expect(repeatGuard).toBeGreaterThan(-1);
     expect(repeatGuard).toBeLessThan(runView.indexOf('setPaused((p) => !p)', repeatGuard));
   });
+
+  it('closes the pause portal before leaving the run', () => {
+    expect(runView).toMatch(/onNewRun=\{\(\) => \{\s*setPaused\(false\);\s*onNewRun\(\);/);
+    expect(runView).toMatch(/onMainMenu=\{\(\) => \{\s*setPaused\(false\);\s*onExit\(\);/);
+  });
 });

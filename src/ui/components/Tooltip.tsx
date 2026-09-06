@@ -37,7 +37,7 @@ interface Props {
   tags?: readonly TooltipTag[] | undefined;
   /** open the card downward instead of upward (shelf tooltips, E-7) */
   down?: boolean;
-  /** Additional definitions; one stays left, while 2+ fold the highest priority inline. */
+  /** Additional definitions; one prefers a side, while 2+ fold the highest priority inline. */
   sub?: TooltipDetail | readonly TooltipDetail[] | undefined;
   /** Compact letter-tile shape. */
   compact?: boolean;
@@ -155,6 +155,18 @@ export function supplementalTooltipWidth(detail: TooltipDetail): number {
   return 120 + Array.from(visibleCopy).length * 2;
 }
 
+export function supplementalTooltipPlacement(
+  leftSpace: number,
+  rightSpace: number,
+  width: number,
+  mustStack = false,
+): 'left' | 'right' | 'stack' {
+  if (mustStack) return 'stack';
+  if (leftSpace >= width) return 'left';
+  if (rightSpace >= width) return 'right';
+  return 'stack';
+}
+
 /** Secondary definitions shared by card and letter-tile tooltips. */
 export function TooltipSupplement({ body, sub }: SupplementProps) {
   const { t } = useI18n();
@@ -237,7 +249,7 @@ export function Tooltip({
   disabled = false,
   touchPin = false,
   content,
-  viewportContain = false,
+  viewportContain = true,
   children,
 }: Props) {
   const { t } = useI18n();
@@ -312,15 +324,34 @@ export function Tooltip({
   useEffect(() => {
     const node = anchor();
     if (!node || disabled) return;
-    const showHover = () => {
+    const suppressorAt = (event: PointerEvent) =>
+      document.elementFromPoint(event.clientX, event.clientY)
+        ?.closest('[data-tooltip-suppress]');
+    const showHover = (event?: PointerEvent) => {
+      if (event && suppressorAt(event)) {
+        hideHover();
+        return;
+      }
       if (!claimTooltip(tooltipId, 'hover', close)) return;
       clearHoverHide();
       setPosition(locate());
       setHovered(true);
     };
+    const syncHoverTarget = (event: PointerEvent) => {
+      if (suppressorAt(event)) {
+        hideHover();
+        return;
+      }
+      if (event.relatedTarget instanceof Element
+        && event.relatedTarget.closest('[data-tooltip-suppress]')) showHover(event);
+    };
     const showFocus = (event: FocusEvent) => {
       const focusTarget = event.target;
       if (!(focusTarget instanceof HTMLElement)) return;
+      if (focusTarget.closest('[data-tooltip-suppress]')) {
+        close();
+        return;
+      }
       setFocusedTarget(focusTarget);
       if (!focusTarget.matches(':focus-visible')) return;
       claimTooltip(tooltipId, 'focus', close);
@@ -345,6 +376,7 @@ export function Tooltip({
       setTouchPinned((pinned) => !pinned);
     };
     node.addEventListener('pointerenter', showHover);
+    node.addEventListener('pointerover', syncHoverTarget);
     node.addEventListener('pointerleave', scheduleHoverHide);
     node.addEventListener('pointerdown', press);
     node.addEventListener('pointerup', release);
@@ -352,6 +384,7 @@ export function Tooltip({
     node.addEventListener('focusout', hideFocus);
     return () => {
       node.removeEventListener('pointerenter', showHover);
+      node.removeEventListener('pointerover', syncHoverTarget);
       node.removeEventListener('pointerleave', scheduleHoverHide);
       node.removeEventListener('pointerdown', press);
       node.removeEventListener('pointerup', release);
@@ -401,6 +434,7 @@ export function Tooltip({
     if (!open) return;
     let frame = 0;
     const card = cardRef.current;
+    const unstackedHeight = card?.scrollHeight ?? 0;
     const supplement = card?.querySelector<HTMLElement>('.tt-sub-stack');
     const supplementGap = card
       ? Number.parseFloat(getComputedStyle(card).getPropertyValue('--tt-sub-gap'))
@@ -430,10 +464,24 @@ export function Tooltip({
           const rect = card.getBoundingClientRect();
           const leftSpace = rect.left - supplementGap - 8;
           const rightSpace = window.innerWidth - rect.right - supplementGap - 8;
-          card.classList.toggle(
-            'sub-right',
-            leftSpace < supplement.offsetWidth && rightSpace > leftSpace,
+          const style = getComputedStyle(card);
+          const minWidth = Number.parseFloat(style.getPropertyValue('--tt-min-w'));
+          const maxWidth = Number.parseFloat(style.getPropertyValue('--tt-w'));
+          const requestedWidth = Math.max(...Array.from(
+            supplement.children,
+            (child) => Number.parseFloat((child as HTMLElement).style.getPropertyValue('--tt-sub-w')),
+          ));
+          const width = Number.isFinite(requestedWidth)
+            ? Math.min(maxWidth, Math.max(minWidth, requestedWidth))
+            : supplement.offsetWidth;
+          const placement = supplementalTooltipPlacement(
+            leftSpace,
+            rightSpace,
+            width,
+            unstackedHeight > window.innerHeight - 16,
           );
+          card.classList.toggle('sub-stacked', placement === 'stack');
+          card.classList.toggle('sub-right', placement === 'right');
         }
       }
       frame = requestAnimationFrame(track);

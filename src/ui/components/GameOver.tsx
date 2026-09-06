@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART } from '../bossArt';
 import type { PatternId } from '../../engine/types';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { WooDakMascot } from './WooDakMascot';
 import { formatScore } from '../formatScore';
@@ -31,7 +31,7 @@ interface Props {
 
 /** Game Over — run summary + stats (spec §2.7). */
 export function GameOver({ g, onNewRun, onMainMenu }: Props) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { gameover, stats, seed } = g.state;
   const [copied, setCopied] = useState(false);
   if (!gameover) return null;
@@ -86,7 +86,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
           {boss ? (
             <span className="go-boss">
               <img className="go-boss-art" src={BOSS_ART[boss.id]} alt="" />{' '}
-              {lang === 'ko' ? boss.nameKo : boss.nameEn}
+              {objectName(t, 'boss', boss.id)}
             </span>
           ) : (
             <span className="go-boss">{t(`blind.${gameover.blindKind}`)}</span>

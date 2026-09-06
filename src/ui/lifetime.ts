@@ -31,7 +31,6 @@ import type { PatternId } from '../engine/types';
 import { BALANCE } from '../engine/balance';
 import { wordLetterChips } from '../engine/scoring';
 import { collectionHighlights, loadCollection, type Collection } from './collection';
-import { isProfileTitleId, type ProfileTitleId } from './profileTitles';
 import {
   aggregateSteamEligible,
   emptySteamEligible,
@@ -49,8 +48,6 @@ export interface Lifetime {
   unlockAllApplied: boolean;
   challengesDisabled: boolean;
   completedChallenges: ChallengeId[];
-  /** Cosmetic profile title stored by stable semantic id. */
-  equippedRegisterTitle: ProfileTitleId | null;
   runs: number;
   wins: number;
   currentWinStreak: number;
@@ -102,7 +99,6 @@ const emptyLifetime = (slot: ProfileSlot): Lifetime => ({
   unlockAllApplied: false,
   challengesDisabled: false,
   completedChallenges: [],
-  equippedRegisterTitle: null,
   runs: 0,
   wins: 0,
   currentWinStreak: 0,
@@ -291,7 +287,7 @@ function loadLifetimeForMutation(slot: ProfileSlot = activeProfile()): Lifetime 
 }
 
 function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Lifetime {
-  const stored = readProfileValue<Partial<Lifetime>>(KEY, slot);
+  const stored = readProfileValue<Partial<Lifetime> & { equippedRegisterTitle?: unknown }>(KEY, slot);
   const empty = emptyLifetime(slot);
   if (!stored) {
     const profileCreated = slot === 1 || profileHasData(slot);
@@ -301,6 +297,8 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
       profileName: profileCreated ? `P${slot}` : '',
     };
   }
+  const normalizedStored = { ...stored };
+  delete normalizedStored.equippedRegisterTitle;
   const profileCreated = stored.profileCreated ?? true;
   const storedName = typeof stored.profileName === 'string' ? stored.profileName.trim() : '';
   const storedBestWord = typeof stored.bestWord === 'string' ? stored.bestWord : '';
@@ -321,16 +319,13 @@ function normalizeLifetime(slot: ProfileSlot, collection: Collection | null): Li
   });
   return {
     ...empty,
-    ...stored,
+    ...normalizedStored,
     profileCreated,
     profileName: profileCreated ? storedName || `P${slot}` : '',
     unlockAllWarned: stored.unlockAllWarned === true,
     unlockAllApplied: stored.unlockAllApplied === true,
     challengesDisabled: stored.challengesDisabled === true,
     completedChallenges,
-    equippedRegisterTitle: isProfileTitleId(stored.equippedRegisterTitle)
-      ? stored.equippedRegisterTitle
-      : null,
     runs: safeCount(stored.runs),
     wins: safeCount(stored.wins),
     currentWinStreak: safeCount(stored.currentWinStreak),

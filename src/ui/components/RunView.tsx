@@ -491,8 +491,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
             <Options
               lexicon={lexicon}
               onBack={() => setPaused(false)}
-              onNewRun={onNewRun}
-              onMainMenu={onExit}
+              onNewRun={() => {
+                setPaused(false);
+                onNewRun();
+              }}
+              onMainMenu={() => {
+                setPaused(false);
+                onExit();
+              }}
               onPaletteUnlock={g.absorbPaletteUnlocks}
             />
           </div>

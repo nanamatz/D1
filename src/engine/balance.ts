@@ -70,15 +70,6 @@ export const BALANCE = {
   // ----- Suit base multipliers (GDD §3.1) -----
   suitMult: { standard: 1, formal: 10, slang: 5, vulgar: 7 },
 
-  // ----- Profile register-title discovery thresholds (GDD §3.1) -----
-  // Full-register mastery is derived from the current lexicon, not a number.
-  registerTitleThresholds: {
-    standard: [50, 100, 200, 500, 1_000, 10_000, 100_000],
-    formal: [10, 25, 50, 100, 250, 500, 1_000],
-    slang: [5, 10, 25, 50, 100, 250, 500],
-    vulgar: [1, 5, 10, 25, 50, 100, 200],
-  },
-
   // ----- Word length (GDD §3.1, 2026-07-30) — length ADDS to Mult, it does not
   //       multiply the suit multiplier: `chips × (suitMult + length × multPerLetter)`.
   //       Additive keeps the suit multiplier weighty instead of swamped. Valid words
@@ -99,6 +90,14 @@ export const BALANCE = {
     keyPressFloorMs: 24,
     keyRhythmJitter: 0.35,
     shakeFactors: [0, 0.1, 0.2, 0.45, 0.7, 1, 1] as const,
+  },
+
+  // ----- Word-score transfer (GDD §7.1; UI presentation only) -----
+  scoreTransfer: { holdMs: 500 },
+
+  // ----- Physical Play impact (GDD §7.1; UI presentation only) -----
+  playImpact: {
+    durationMs: 650,
   },
 
   // ----- Gibberish (GDD §6.4, decision b-2) -----

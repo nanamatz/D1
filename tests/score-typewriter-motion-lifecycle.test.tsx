@@ -86,6 +86,7 @@ import { BALANCE } from '../src/engine/balance';
 import {
   SCORE_TYPEWRITER_KEYCAPS,
   scoreTypewriterKeySequence,
+  scoreTypewriterKeyTiming,
 } from '../src/ui/scoreTypewriter';
 
 class FakeMediaQueryList {
@@ -104,6 +105,13 @@ class FakeMediaQueryList {
 
 const query = new FakeMediaQueryList();
 type Props = Parameters<typeof ScoreTypewriter>[0];
+type PresentationTreeLayer = {
+  props?: {
+    className?: string;
+    style?: Record<string, string>;
+    'data-presentation-beat-id'?: unknown;
+  };
+};
 
 function runEffects(layout: boolean): void {
   const selected = hooks.pending.filter((item) => item.layout === layout);
@@ -122,7 +130,6 @@ function renderUntilStable(props: Props): NonNullable<ReturnType<typeof ScoreTyp
     hooks.dirty = false;
     tree = ScoreTypewriter(props);
     runEffects(true);
-    if (hooks.dirty) continue;
     runEffects(false);
     if (!hooks.dirty) {
       if (tree === null) throw new Error('ScoreTypewriter unexpectedly rendered null');
@@ -130,6 +137,23 @@ function renderUntilStable(props: Props): NonNullable<ReturnType<typeof ScoreTyp
     }
   }
   throw new Error('ScoreTypewriter hook harness did not settle');
+}
+
+function presentationLayers(
+  tree: NonNullable<ReturnType<typeof ScoreTypewriter>>,
+): PresentationTreeLayer[] {
+  const children = Array.isArray(tree.props.children)
+    ? tree.props.children
+    : [tree.props.children];
+  return children as PresentationTreeLayer[];
+}
+
+function presentationBeatIds(
+  tree: NonNullable<ReturnType<typeof ScoreTypewriter>>,
+): string[] {
+  return presentationLayers(tree)
+    .map((child) => child.props?.['data-presentation-beat-id'])
+    .filter((id): id is string => typeof id === 'string');
 }
 
 function unmount(): void {
@@ -174,7 +198,6 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       target: 100,
       blindKey: '1-0',
       settleId: 7,
-      gameSpeed: 1,
       screenshake: 100,
       reducedMotion: false,
       resolutionActive: true,
@@ -187,7 +210,8 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       beatId: 'score-7-15',
       holdActive: false,
     } as Props);
-    expect(active.props.className).toContain('typewriter-tier-6');
+    expect(presentationLayers(active)[0]?.props?.className).toContain('typewriter-tier-6');
+    expect(active.props.className).not.toContain('typewriter-tier-6');
     expect(active.props.className).toContain('is-active');
     const repeating = renderUntilStable({
       ...common,
@@ -241,7 +265,6 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       settleId: 8,
       resolutionActive: true,
       holdActive: false,
-      gameSpeed: 1,
       screenshake: 0,
       reducedMotion: false,
     });
@@ -268,12 +291,118 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       settleId: 8,
       resolutionActive: true,
       holdActive: true,
-      gameSpeed: 1,
       screenshake: 0,
       reducedMotion: false,
     });
     vi.advanceTimersByTime(0);
     expect(audio.scoreTypewriterKey).toHaveBeenCalledWith('Enter', true);
+  });
+
+  it('lets an earlier fixed keyboard beat finish after a replacement arrives at 4x cadence', () => {
+    const common = {
+      primaryKeyId: 'KeyQ',
+      liveTotal: 10,
+      target: 1_000,
+      blindKey: '1-0',
+      settleId: 8,
+      resolutionActive: false,
+      holdActive: false,
+      screenshake: 0,
+      reducedMotion: false,
+    } satisfies Partial<Props>;
+    const firstBeatId = 'score-fast-first';
+    const secondBeatId = 'score-fast-second';
+    const firstTier = 6;
+
+    renderUntilStable({
+      ...common,
+      active: true,
+      tier: firstTier,
+      beatId: firstBeatId,
+    } as Props);
+    vi.advanceTimersByTime(150);
+
+    const visualCount = BALANCE.scoreTypewriter.visualKeyCounts[firstTier];
+    const remainingFirstAudio = Array.from(
+      { length: BALANCE.scoreTypewriter.audibleKeyCounts[firstTier] },
+      (_, index) => Math.floor(index * visualCount
+        / BALANCE.scoreTypewriter.audibleKeyCounts[firstTier]),
+    ).filter((pressIndex) => scoreTypewriterKeyTiming(
+      firstBeatId,
+      firstTier,
+      pressIndex,
+      visualCount,
+    ).delayMs > 150).length;
+    expect(remainingFirstAudio).toBeGreaterThan(0);
+
+    const overlapped = renderUntilStable({
+      ...common,
+      active: true,
+      tier: 1,
+      beatId: secondBeatId,
+    } as Props);
+    expect(presentationBeatIds(overlapped)).toEqual([firstBeatId, secondBeatId]);
+
+    vi.advanceTimersByTime(0);
+    audio.scoreTypewriterKey.mockClear();
+    vi.advanceTimersByTime(310);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(remainingFirstAudio);
+
+    const firstFinished = renderUntilStable({
+      ...common,
+      active: true,
+      tier: 1,
+      beatId: secondBeatId,
+    } as Props);
+    expect(presentationBeatIds(firstFinished)).toEqual([secondBeatId]);
+
+    vi.advanceTimersByTime(150);
+    const allFinished = renderUntilStable({
+      ...common,
+      active: false,
+      tier: 0,
+      beatId: 'score-idle',
+    } as Props);
+    expect(presentationBeatIds(allFinished)).toEqual([]);
+  });
+
+  it('keeps Tier 1 visuals and shake local when a Tier 6 beat overlaps it', () => {
+    const common = {
+      primaryKeyId: 'KeyQ',
+      liveTotal: 10,
+      target: 1_000,
+      blindKey: 'tier-overlap',
+      settleId: 11,
+      resolutionActive: false,
+      holdActive: false,
+      screenshake: 100,
+      reducedMotion: false,
+    } satisfies Partial<Props>;
+
+    renderUntilStable({
+      ...common,
+      active: true,
+      tier: 1,
+      beatId: 'tier-1-first',
+    } as Props);
+    vi.advanceTimersByTime(150);
+    const overlapped = renderUntilStable({
+      ...common,
+      active: true,
+      tier: 6,
+      beatId: 'tier-6-second',
+    } as Props);
+    const layers = presentationLayers(overlapped);
+
+    expect(presentationBeatIds(overlapped)).toEqual(['tier-1-first', 'tier-6-second']);
+    expect(layers[0]?.props?.className).toContain('typewriter-tier-1');
+    expect(layers[0]?.props?.className).not.toContain('typewriter-tier-6');
+    expect(layers[0]?.props?.style?.['--typewriter-shake'])
+      .toBe(String(BALANCE.scoreTypewriter.shakeFactors[1]));
+    expect(layers[1]?.props?.className).toContain('typewriter-tier-6');
+    expect(layers[1]?.props?.style?.['--typewriter-shake'])
+      .toBe(String(BALANCE.scoreTypewriter.shakeFactors[6]));
+    expect(overlapped.props.className).not.toContain('typewriter-tier-6');
   });
 
   it('keeps one clear scheduler across cashout entry and cancels it on Collect', () => {
@@ -283,7 +412,6 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       target: 100,
       blindKey: '1-0',
       settleId: 9,
-      gameSpeed: 1,
       screenshake: 0,
       reducedMotion: false,
       resolutionActive: true,
@@ -304,7 +432,9 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       holdActive: true,
     } as Props);
     vi.advanceTimersByTime(0);
-    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(1);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(2);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledWith('Enter', true);
+    const callsAtCashout = audio.scoreTypewriterKey.mock.calls.length;
 
     // Playing -> live Fee Settlement keeps the same props that own the scheduler.
     renderUntilStable({
@@ -315,7 +445,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       holdActive: true,
     } as Props);
     vi.advanceTimersByTime(0);
-    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(1);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(callsAtCashout);
 
     // Collect -> Shop drops resolutionActive and synchronously clears future work.
     renderUntilStable({
@@ -327,7 +457,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       holdActive: false,
     } as Props);
     vi.advanceTimersByTime(10_000);
-    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(1);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(callsAtCashout);
   });
 
   it('does not fire a target cue for a transient pre-boss crossing rejected by the engine', () => {
@@ -342,7 +472,6 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       settleId: 1,
       resolutionActive: false,
       holdActive: false,
-      gameSpeed: 1,
       screenshake: 0,
       reducedMotion: false,
     } satisfies Omit<Props, 'liveTotal'>;

@@ -14,7 +14,7 @@ import {
   letterHandStampCost,
 } from '../../engine/letterHands';
 import { bossDescription, voucherDescKey } from '../descriptions';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { patternLevelClass } from '../patternLevel';
 import { richText } from '../richtext';
 import { Tooltip } from './Tooltip';
@@ -57,7 +57,7 @@ const PATTERN_ORDER: PatternId[] = [
 
 /** Run Info overlay (spec §2.4): Pattern levels · Word Hands · Blinds · Vouchers. */
 export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('patterns');
 
   return (
@@ -192,7 +192,7 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                     {kind === 'boss' && boss && (
                       <div className="bs-boss">
                         <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
-                        <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
+                        <span className="bn">{objectName(t, 'boss', boss.id)}</span>
                         <span className="be">{richText(bossDescription(
                           boss.id,
                           t,
@@ -229,7 +229,7 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                 {run.vouchers.map((id) => {
                   const v = VOUCHER_REGISTRY.get(id);
                   if (!v) return null;
-                  const name = lang === 'ko' ? v.nameKo : v.nameEn;
+                  const name = objectName(t, 'voucher', v.id);
                   return (
                     <Tooltip key={id} title={name} body={t(voucherDescKey(id))} classification="voucher" down>
                       <VoucherCard name={name} artSrc={voucherArt(v.id)} />

@@ -94,6 +94,10 @@ describe('latest feedback regressions', () => {
     expect(play).toMatch(/\.jokers\.jokers-overlap\s*\{[^}]*gap:\s*0;/s);
     expect(play).toMatch(/\.jokers\.jokers-overlap \.joker-slot\s*\{[^}]*flex:\s*1 1 0;[^}]*width:\s*auto;/s);
     expect(play).toMatch(/\.jokers\.jokers-overlap \.joker-slot:last-child\s*\{[^}]*flex:\s*0 0 var\(--shop-card-w\)/s);
+    expect(shelf).toContain("row.querySelectorAll<HTMLElement>(':scope > .joker-slot')");
+    expect(shelf).toContain('event.clientX < slot.getBoundingClientRect().right');
+    expect(shelf).toContain("hoveredJokerIdx === i && 'hover-locked'");
+    expect(play).toMatch(/\.jokers\.jokers-overlap \.joker-slot\.hover-locked\s*\{[^}]*z-index:\s*7;/s);
   });
 
   it('portals enlarged shared tooltips above every product panel', () => {

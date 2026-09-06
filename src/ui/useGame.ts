@@ -530,6 +530,13 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   });
   const stateRef = useRef(state);
   stateRef.current = state;
+  // `settleId` resets between blinds, so the published sentence object is the
+  // second identity key; a stale LAND timer cannot match a later repeated id.
+  const sentenceFinalScoreRef = useRef<{
+    settleId: number;
+    sentenceBonus: SentenceBonusDisplay;
+    finalScore: number;
+  } | null>(null);
   useEffect(() => {
     const resumed = stateRef.current;
     if (resumed.runStarted) {
@@ -2054,53 +2061,89 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
   // Reduced Motion on (2026-07-31 audit VFX-01 / I-2).
   const prefersReduce = motionOff;
 
-  // BUILD — the last word's settle has landed. Publish the sentence bonus so the
-  // scorebox fills to its combined Chips × Mult, but HOLD the round number at committed
-  // (finalScore stays null → Sidebar's round target falls back to committedScore).
-  // Reduced motion collapses build+land: set finalScore now too. A zero bonus
-  // A zero bonus (no pattern or register bonus) skips the build — just set finalScore.
+  // BUILD — after the last word's post-settle hold and round transfer, publish the
+  // sentence bonus so the scorebox fills only after the word readout is gone.
+  // Reduced motion keeps the same static hold, then collapses build+land. A zero bonus
+  // (no pattern or register bonus) skips the build and sets finalScore at release.
+  // `settleId` owns this immutable score snapshot; later run/blind presentation
+  // churn cannot restart it. Reduced Motion alone may latch on before publish.
   useEffect(() => {
     if (!lexiconReady || !state.pendingEnd || !state.settleComplete) return;
     if (state.sentenceBonus !== null || state.finalScore !== null) return;
+    const settleId = state.settleId;
     const end = endBlind(state.blind, state.run, getLexicon());
     const pattern = end.judgment.match?.pattern ?? null;
     const level = pattern ? (state.run.patternLevels[pattern] ?? 1) : null;
     const hasBonus = end.bonus > 0;
-    const reduce = prefersReduce();
-    setState((prev) => {
-      if (!prev.pendingEnd || prev.sentenceBonus !== null || prev.finalScore !== null) return prev;
-      const sentenceBonus = hasBonus
-        ? {
-            chips: end.sentenceChips,
-            mult: end.sentenceMult,
-            pattern,
-            level,
-            ...end.breakdown,
-          }
-        : null;
-      // Reduced motion OR no bonus → land immediately (finalScore set now).
+    const reduceAtSettle = prefersReduce();
+    const sentenceBonus = hasBonus
+      ? {
+          chips: end.sentenceChips,
+          mult: end.sentenceMult,
+          pattern,
+          level,
+          ...end.breakdown,
+        }
+      : null;
+    const canPublish = () => {
+      const current = stateRef.current;
+      return current.settleId === settleId && current.pendingEnd &&
+        current.sentenceBonus === null && current.finalScore === null;
+    };
+    const publish = (reduce: boolean) => {
+      if (!canPublish()) return;
       const finalScore = reduce || !hasBonus ? end.finalScore : null;
-      return { ...prev, sentenceBonus, finalScore };
-    });
-  }, [lexiconReady, state.pendingEnd, state.settleComplete, state.sentenceBonus, state.finalScore, state.blind, state.run, getLexicon]);
+      sentenceFinalScoreRef.current = sentenceBonus && finalScore === null
+        ? { settleId, sentenceBonus, finalScore: end.finalScore }
+        : null;
+      setState((prev) => {
+        if (prev.settleId !== settleId || !prev.pendingEnd || prev.sentenceBonus !== null || prev.finalScore !== null) return prev;
+        return { ...prev, sentenceBonus, finalScore };
+      });
+    };
+    const wordGain = state.blind.committedScore - state.committedBefore;
+    if (!Number.isFinite(wordGain) || wordGain <= 0) {
+      publish(reduceAtSettle || prefersReduce());
+      return;
+    }
+    let transferId: ReturnType<typeof setTimeout> | undefined;
+    const afterHold = () => {
+      if (!canPublish()) return;
+      const reduce = reduceAtSettle || prefersReduce();
+      if (!reduce && hasBonus) {
+        transferId = setTimeout(() => publish(false), BONUS_LAND_MS);
+        return;
+      }
+      publish(reduce);
+    };
+    const holdId = setTimeout(afterHold, BALANCE.scoreTransfer.holdMs);
+    return () => {
+      clearTimeout(holdId);
+      if (transferId !== undefined) clearTimeout(transferId);
+    };
+  }, [lexiconReady, state.pendingEnd, state.settleComplete, state.settleId, state.sentenceBonus, state.finalScore, state.committedBefore]);
 
   // LAND — after the box has filled (BONUS_LAND_MS), publish finalScore so the
   // round number rolls committed → finalized. Only runs for a real bonus in full
   // motion (build set sentenceBonus, left finalScore null).
   useEffect(() => {
     if (!lexiconReady || !state.pendingEnd || state.sentenceBonus === null || state.finalScore !== null) return;
-    const end = endBlind(state.blind, state.run, getLexicon());
+    const snapshot = sentenceFinalScoreRef.current;
+    if (!snapshot || snapshot.settleId !== state.settleId || snapshot.sentenceBonus !== state.sentenceBonus) return;
     const id = setTimeout(
       () =>
         setState((prev) =>
-          prev.pendingEnd && prev.sentenceBonus !== null && prev.finalScore === null
-            ? { ...prev, finalScore: end.finalScore }
+          prev.settleId === snapshot.settleId &&
+          prev.pendingEnd &&
+          prev.sentenceBonus === snapshot.sentenceBonus &&
+          prev.finalScore === null
+            ? { ...prev, finalScore: snapshot.finalScore }
             : prev,
         ),
       BONUS_LAND_MS,
     );
     return () => clearTimeout(id);
-  }, [lexiconReady, state.pendingEnd, state.sentenceBonus, state.finalScore, state.blind, state.run, getLexicon]);
+  }, [lexiconReady, state.pendingEnd, state.settleId, state.sentenceBonus, state.finalScore]);
 
   // RESOLVE — the round number is fully updated (settle beats + bonus). Hold a short
   // beat so the cleared score is seen, then auto-resolve to Fee Settlement / Game Over

@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 import { usePersistedState, resetPersistedState } from '../src/ui/hooks';
-import { DEFAULT_SETTINGS, normalizeSettings, useSettings, type Settings } from '../src/ui/settings';
+import { DEFAULT_SETTINGS, GAME_SPEEDS, normalizeSettings, useSettings, type Settings } from '../src/ui/settings';
 
 const values = new Map<string, string>();
 const localStorage = {
@@ -46,10 +46,21 @@ describe('settings integrity', () => {
     });
   });
 
-  it('migrates legacy speed and master exactly once, then ignores stale master', () => {
+  it('preserves every supported numeric speed and rejects every other shape', () => {
+    expect(GAME_SPEEDS).toEqual([0.5, 1, 2, 4]);
+    for (const gameSpeed of GAME_SPEEDS) {
+      expect(normalizeSettings({ gameSpeed }).gameSpeed).toBe(gameSpeed);
+    }
+    for (const gameSpeed of [0, -1, 0.75, 3, 8, '2', '4', Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(normalizeSettings({ gameSpeed }).gameSpeed).toBe(1);
+    }
+    expect(normalizeSettings({ gameSpeed: 2 }).gameSpeed).toBe(2);
+  });
+
+  it('migrates legacy master exactly once, then ignores stale master', () => {
     const migrated = normalizeSettings({ gameSpeed: 4, master: 80, music: 70, sfx: 80 });
     expect(migrated).toMatchObject({
-      gameSpeed: 2,
+      gameSpeed: 4,
       music: 56,
       sfx: 64,
       musicMuted: false,

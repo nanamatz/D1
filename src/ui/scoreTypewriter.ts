@@ -345,10 +345,9 @@ export function scoreTypewriterShake(value: number, tier: ScoreTypewriterTier): 
   return setting * BALANCE.scoreTypewriter.shakeFactors[tier];
 }
 
-/** Clear-celebration cadence reuses the score beat and its clearing-submission speed snapshot. */
-export function scoreTypewriterClearRepeatMs(tier: ScoreTypewriterTier, speed: number): number {
-  const safeSpeed = Math.max(1, Number.isFinite(speed) ? speed : 1);
-  return BALANCE.scoreTypewriter.beatMs * BALANCE.scoreTypewriter.clearRepeatFactors[tier] / safeSpeed;
+/** Clear-celebration cadence stays at its fixed presentation timing. */
+export function scoreTypewriterClearRepeatMs(tier: ScoreTypewriterTier): number {
+  return BALANCE.scoreTypewriter.beatMs * BALANCE.scoreTypewriter.clearRepeatFactors[tier];
 }
 
 /** Immediate, self-scheduling presentation loop; cleanup stops every future cycle. */
@@ -438,18 +437,16 @@ export function scoreTypewriterKeySequence(
 /** Per-button timing; every selected key finishes inside the existing score beat. */
 export function scoreTypewriterKeyTiming(
   beatId: string,
-  speed: number,
   tier: ScoreTypewriterTier,
   pressIndex: number,
   pressCount: number,
 ): { delayMs: number; durationMs: number } {
-  const safeSpeed = Math.max(1, speed);
-  const beatMs = BALANCE.scoreTypewriter.beatMs / safeSpeed;
+  const beatMs = BALANCE.scoreTypewriter.beatMs;
   const durationMs = Math.min(
     beatMs,
     Math.max(
       BALANCE.scoreTypewriter.keyPressFloorMs,
-      BALANCE.scoreTypewriter.keyPressMs[tier] / safeSpeed,
+      BALANCE.scoreTypewriter.keyPressMs[tier],
     ),
   );
   const gapCount = Math.max(0, pressCount - 1);

@@ -217,7 +217,6 @@ describe('pouch and Record profile progress', () => {
       currentWinStreak: 0,
       bestWinStreak: 0,
       lastRunObservation: null,
-      equippedRegisterTitle: null,
       balance: { version: 1, runs: 0, wins: 0, lossesByChapter: {} },
     });
   });
@@ -342,16 +341,17 @@ describe('pouch and Record profile progress', () => {
     expect(loadLifetime(2).lastRunObservation?.id).toBe('profile-two');
   });
 
-  it('normalizes equipped profile-title ids without depending on translated names', () => {
+  it('ignores and omits the retired profile-title field', () => {
     localStorage.setItem('wj.lifetime', JSON.stringify({
+      runs: 4,
       equippedRegisterTitle: 'formal.professor',
     }));
-    expect(loadLifetime().equippedRegisterTitle).toBe('formal.professor');
-
-    localStorage.setItem('wj.lifetime', JSON.stringify({ equippedRegisterTitle: 'formal.unknown' }));
-    expect(loadLifetime().equippedRegisterTitle).toBeNull();
-    localStorage.setItem('wj.lifetime', JSON.stringify({ equippedRegisterTitle: 7 }));
-    expect(loadLifetime().equippedRegisterTitle).toBeNull();
+    const lifetime = loadLifetime();
+    expect(lifetime.runs).toBe(4);
+    expect(lifetime).not.toHaveProperty('equippedRegisterTitle');
+    writeLifetime(lifetime);
+    expect(JSON.parse(localStorage.getItem('wj.lifetime')!))
+      .not.toHaveProperty('equippedRegisterTitle');
   });
 
   it('keeps the Record ladder independent for every pouch', () => {

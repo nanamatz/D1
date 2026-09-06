@@ -1,7 +1,7 @@
 import { VOUCHER_REGISTRY } from '../engine/vouchers';
 import type { VoucherId } from '../engine/types';
 import { voucherDescKey } from './descriptions';
-import type { Lang } from './i18n';
+import { objectName, type Lang } from './i18n';
 
 export interface VoucherCollectionCopy {
   name: string;
@@ -15,7 +15,7 @@ export interface VoucherCollectionCopy {
 export function voucherCollectionCopy(
   id: VoucherId,
   locked: boolean,
-  lang: Lang,
+  _lang: Lang,
   t: (key: string) => string,
 ): VoucherCollectionCopy {
   if (locked) {
@@ -27,7 +27,7 @@ export function voucherCollectionCopy(
 
   const voucher = VOUCHER_REGISTRY.get(id)!;
   return {
-    name: lang === 'ko' ? voucher.nameKo : voucher.nameEn,
+    name: objectName(t, 'voucher', voucher.id),
     body: t(voucherDescKey(id)),
   };
 }

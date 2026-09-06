@@ -143,7 +143,7 @@ describe('New Run selector presentation', () => {
     expect(css).not.toMatch(/\.newrun-modal\s*\{[^}]*height:\s*(?:min\([^;]*100%|calc\(100%)/s);
     expect(css).toMatch(/\.newrun-content\s*\{[^}]*overflow-y:\s*auto/s);
     expect(css).not.toContain('scrollbar-gutter: stable');
-    expect(css).not.toContain('overflow-wrap: anywhere');
+    expect(css).toContain('overflow-wrap: anywhere');
     expect(css).toMatch(/\.continue-summary \.cs-seed\s*\{[^}]*overflow-x:\s*auto[^}]*white-space:\s*nowrap/s);
     expect(css).toMatch(/\.newrun-action-row\s*\{[^}]*min-height:\s*82px/s);
     expect(css).toMatch(/\.newrun-action-row \.play-run\s*\{[^}]*340px/s);
@@ -185,7 +185,7 @@ describe('New Run selector presentation', () => {
     expect(markup).toContain('run-choice-art run-choice-art-record continue-object-art');
     expect(markup).toContain(en['pouch.green.name']);
     expect(markup).toContain(en['record.redLp.name']);
-    expect(markup).toContain('1.2K / 5K');
+    expect(markup).toContain('1,234 / 5,000');
     expect(markup).toContain('$17');
     expect(markup).toContain('WORD · 999');
     expect(markup).toContain('CONTINUE-SEED');

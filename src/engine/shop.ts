@@ -317,8 +317,8 @@ export function applyPendingShopTags(
     consumed.add(tagIndex);
   });
 
-  // Guaranteed-rarity tags add inventory first, so a later edition tag can
-  // enhance that newly-added base Emoji Tile when ordinary stock has none.
+  // Guaranteed-rarity tags replace ordinary item stock, so a later edition
+  // tag can enhance that replacement without exceeding the shop slot count.
   tags.forEach((tag, tagIndex) => {
     const rarity = RARITY_TAGS[tag];
     if (!rarity) return;
@@ -330,14 +330,20 @@ export function applyPendingShopTags(
     );
     const def = pool.length > 0 ? pool[rng.int(pool.length)] : undefined;
     if (!def) return;
-    items.push({
+    const replacementIndex = items.findIndex((item) =>
+      !item || item.kind !== 'joker' || (!item.rarityTag && !item.developerPinned),
+    );
+    if (replacementIndex < 0 && items.length >= shopItemSlots(run)) return;
+    const taggedItem: ShopItem = {
       kind: 'joker',
       id: def.id,
       edition: 'base',
       price: 0,
       free: true,
       rarityTag: rarity === 'uncommon' ? 'uncommonTag' : 'rareTag',
-    });
+    };
+    if (replacementIndex < 0) items.push(taggedItem);
+    else items[replacementIndex] = taggedItem;
     consumed.add(tagIndex);
   });
 
@@ -587,7 +593,7 @@ export function rerollShop(
       ...shop,
       items: [
         ...rollItems(nextRun, rng, retainedIds, profileEligible)
-          .slice(0, Math.max(0, shopItemSlots(nextRun) - pinned.length)),
+          .slice(0, Math.max(0, shopItemSlots(nextRun) - retained.length)),
         ...pinned,
         ...tagged,
       ],

@@ -9,6 +9,7 @@ import { jokerTooltip, referencedEditionTips } from '../src/ui/descriptions';
 import {
   splitTooltipDetails,
   stripTooltipPeriods,
+  supplementalTooltipPlacement,
   supplementalTooltipWidth,
 } from '../src/ui/components/Tooltip';
 import type { Tile } from '../src/engine/types';
@@ -133,5 +134,12 @@ describe('feature-04 B — shared tile tooltip (3 axes, GDD §2.4)', () => {
     });
     expect(short).toBe(148);
     expect(long).toBeGreaterThan(short);
+  });
+
+  it('keeps supplements beside the card only when that side can contain them', () => {
+    expect(supplementalTooltipPlacement(300, 300, 280)).toBe('left');
+    expect(supplementalTooltipPlacement(120, 300, 280)).toBe('right');
+    expect(supplementalTooltipPlacement(120, 160, 280)).toBe('stack');
+    expect(supplementalTooltipPlacement(300, 300, 280, true)).toBe('stack');
   });
 });

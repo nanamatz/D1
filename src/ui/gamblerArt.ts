@@ -20,20 +20,20 @@ import sakeCup from '../../docs/Arts/Cards/Gambler/Vector/SakeCup-preview.png';
  * Effects and acquisition live in the engine; this file stays presentation-only.
  */
 export const GAMBLER_CARDS = [
-  { id: 'barnSwallow', nameEn: 'Barn Swallow', nameKo: '제비', art: barnSwallow },
-  { id: 'boar', nameEn: 'Boar', nameKo: '멧돼지', art: boar },
-  { id: 'bridge', nameEn: 'Bridge', nameKo: '다리', art: bridge },
-  { id: 'bushWarbler', nameEn: 'Bush Warbler', nameKo: '휘파람새', art: bushWarbler },
-  { id: 'butterflies', nameEn: 'Butterflies', nameKo: '나비', art: butterflies },
-  { id: 'craneAndSun', nameEn: 'Crane and Sun', nameKo: '학과 해', art: craneAndSun },
-  { id: 'cuckoo', nameEn: 'Cuckoo', nameKo: '뻐꾸기', art: cuckoo },
-  { id: 'curtain', nameEn: 'Curtain', nameKo: '휘장', art: curtain },
-  { id: 'deer', nameEn: 'Deer', nameKo: '사슴', art: deer },
-  { id: 'fullMoon', nameEn: 'Full Moon', nameKo: '보름달', art: fullMoon },
-  { id: 'geese', nameEn: 'Geese', nameKo: '기러기', art: geese },
-  { id: 'phoenix', nameEn: 'Phoenix', nameKo: '봉황', art: phoenix },
-  { id: 'rainman', nameEn: 'Rainman', nameKo: '우중인', art: rainman },
-  { id: 'sakeCup', nameEn: 'Sake Cup', nameKo: '사케 잔', art: sakeCup },
+  { id: 'barnSwallow', art: barnSwallow },
+  { id: 'boar', art: boar },
+  { id: 'bridge', art: bridge },
+  { id: 'bushWarbler', art: bushWarbler },
+  { id: 'butterflies', art: butterflies },
+  { id: 'craneAndSun', art: craneAndSun },
+  { id: 'cuckoo', art: cuckoo },
+  { id: 'curtain', art: curtain },
+  { id: 'deer', art: deer },
+  { id: 'fullMoon', art: fullMoon },
+  { id: 'geese', art: geese },
+  { id: 'phoenix', art: phoenix },
+  { id: 'rainman', art: rainman },
+  { id: 'sakeCup', art: sakeCup },
 ] as const;
 
 const ART: Readonly<Record<string, string>> = Object.fromEntries(

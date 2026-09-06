@@ -85,7 +85,7 @@ describe('Shop Use Now money-gaining Fable ledger', () => {
     expect(markup).toContain('is-reduced');
     expect(markup.indexOf('-$3')).toBeLessThan(markup.indexOf('+$10M'));
     expect(markup.match(/money-ledger-beat/g)).toHaveLength(2);
-    expect(moneyDeltaText(-1234)).toBe('-$1.2K');
+    expect(moneyDeltaText(-1234)).toBe('-$1,234');
   });
 
   it('gives the persistent Sidebar ledger ownership only in Shop mode', () => {

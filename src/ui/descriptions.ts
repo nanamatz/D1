@@ -1,7 +1,6 @@
 /**
- * Effect-text lookup for cards (spec §0 tooltip pattern). Names live on the
- * registries (nameEn/nameKo); the effect prose is i18n copy keyed by id, so it
- * translates and stays out of the engine.
+ * Effect-text lookup for cards (spec §0 tooltip pattern). Localized names and
+ * effect prose are i18n copy keyed by id, so they stay out of the engine.
  */
 import { BALANCE } from '../engine/balance';
 import type { JokerDef } from '../engine/events';

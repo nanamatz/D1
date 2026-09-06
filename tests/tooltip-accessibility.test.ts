@@ -33,10 +33,10 @@ describe('shared tooltip accessibility', () => {
     expect(pouch).toContain('<Tooltip');
   });
 
-  it('wraps every tooltip and pouch description at word boundaries', () => {
+  it('keeps words intact when possible and contains unbroken translated copy', () => {
     const css = source('src/ui/styles/screens.css');
     expect(css).toMatch(
-      /\.tt-card\.tt-portal,\s*\.select-desc,\s*\.pouch-selected-info p\s*\{[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*normal;/s,
+      /\.tt-card\.tt-portal,\s*\.select-desc,\s*\.pouch-selected-info p\s*\{[^}]*word-break:\s*keep-all;[^}]*overflow-wrap:\s*anywhere;/s,
     );
   });
 
@@ -59,6 +59,9 @@ describe('shared tooltip accessibility', () => {
     const tooltip = source('src/ui/components/Tooltip.tsx');
     expect(tooltip).toContain("{ hover: 0, focus: 1, touch: 1 }");
     expect(tooltip).toContain("if (!claimTooltip(tooltipId, 'hover', close)) return");
+    expect(tooltip).toContain("closest('[data-tooltip-suppress]')");
+    expect(tooltip).toContain("node.addEventListener('pointerover', syncHoverTarget)");
+    expect(tooltip).toContain("node.removeEventListener('pointerover', syncHoverTarget)");
     expect(tooltip).toContain('leaveFocusedTooltip(tooltipId)');
     const listenerCleanup = tooltip.slice(
       tooltip.indexOf("node.removeEventListener('pointerenter'"),
@@ -162,9 +165,14 @@ describe('shared tooltip accessibility', () => {
     expect(tooltip).toContain("TOOLTIP_DETAIL_PRIORITY[a.detail.kind ?? 'other']");
     expect(tooltip).toContain("classList.toggle(");
     expect(tooltip).toContain("'sub-right'");
+    expect(tooltip).toContain('const unstackedHeight = card?.scrollHeight ?? 0;');
+    expect(tooltip).toContain('unstackedHeight > window.innerHeight - 16');
+    expect(tooltip).not.toContain('card.scrollHeight > card.clientHeight');
     expect(css).not.toContain('.tt-card.tt-portal.has-sub');
     expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*right:\s*calc\(100% \+ var\(--tt-sub-gap\)\)/s);
     expect(css).toMatch(/\.tt-card\.tt-portal\.sub-right \.tt-sub-stack\s*\{[^}]*left:\s*calc\(100% \+ var\(--tt-sub-gap\)\)/s);
+    expect(css).toMatch(/\.tt-card\.tt-portal\.viewport-contained\.has-sub\s*\{[^}]*overflow-y:\s*visible/s);
+    expect(css).toMatch(/\.tt-card\.tt-portal\.viewport-contained\.has-sub\.sub-stacked\s*\{[^}]*overflow-y:\s*auto/s);
     expect(css).toMatch(/\.tt-sub-stack\s*\{[^}]*width:\s*max-content[^}]*max-width:\s*calc\(100vw - 16px\)/s);
     expect(css).toMatch(/\.tt-sub-card\s*\{[^}]*width:\s*min\([^}]*clamp\(var\(--tt-min-w\), var\(--tt-sub-w\), var\(--tt-w\)\)[^}]*padding:\s*7px 3px 6px/s);
     expect(css).not.toMatch(/\.tt-sub-card\s*\{[^}]*aspect-ratio/s);
@@ -176,7 +184,7 @@ describe('shared tooltip accessibility', () => {
     expect(tokens).toContain('--tt-w: 280px');
     expect(tokens).not.toContain('--tt-sub-w');
     expect(tokens).toContain('--tt-tag-w: 72%');
-    expect(tokens).toContain("--tt-copy-font: 'Jost', 'Noto Sans KR', sans-serif");
+    expect(tokens).toContain("--tt-copy-font: 'Jost', 'Noto Sans JP', 'Noto Sans KR', sans-serif");
     expect(css).toMatch(/\.tt-body\s*\{[^}]*font-family:\s*var\(--tt-copy-font\)[^}]*font-weight:\s*700/s);
     expect(css).not.toContain('.tt-card.down .tt-sub-card');
   });

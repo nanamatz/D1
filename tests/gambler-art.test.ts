@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { GAMBLER_CARDS } from '../src/ui/gamblerArt';
 import { FamilyCardArt } from '../src/ui/components/FamilyCardArt';
+import en from '../locales/en.json';
 
 describe('Gambler card artwork registry', () => {
   it('registers 14 runtime PNG derivatives backed by path-only SVG masters', () => {
@@ -39,7 +40,7 @@ describe('Gambler card artwork registry', () => {
     const card = GAMBLER_CARDS[0]!;
     const markup = renderToStaticMarkup(createElement(FamilyCardArt, {
       src: card.art,
-      title: card.nameEn,
+      title: en['object.gambler.barnSwallow'],
     }));
     expect(markup).toContain('viewBox="0 0 500 700"');
     expect(markup).toContain('family-card-svg-art');

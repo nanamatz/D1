@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BlindState, LetterHandId, PatternId, RunState } from '../../engine/types';
 import { BOSS_REGISTRY } from '../../engine/bosses';
+import { BALANCE } from '../../engine/balance';
 import { effectiveClearReward } from '../../engine/economy';
 import { sentenceTotal } from '../../engine/patterns';
 import type { StagePreview } from '../game';
@@ -8,7 +9,7 @@ import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
 import { motionOff } from '../motion';
 import { BONUS_LAND_MS, type SentenceBonusDisplay } from '../useGame';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { MoneyValue } from './MoneyValue';
 import { blindEmblem } from '../bossArt';
@@ -64,8 +65,8 @@ function StatusLine({
   discoveredLetterHands: ReadonlySet<LetterHandId>;
 }) {
   const { t } = useI18n();
-  if (!preview) return <div className="sb-status">&nbsp;</div>;
-  if (preview.blocked) return <div className="sb-status blocked">{t('boss.blockedWord')}</div>;
+  if (!preview) return <div className="sb-status"><span className="sb-status-label">&nbsp;</span></div>;
+  if (preview.blocked) return <div className="sb-status blocked"><span className="sb-status-label">{t('boss.blockedWord')}</span></div>;
   if (preview.isGibberish) {
     const lh = preview.letterHand
       ? ` · ${isLetterHandDiscovered(preview.letterHand.id, discoveredLetterHands)
@@ -74,8 +75,7 @@ function StatusLine({
       : '';
     return (
       <div className="sb-status warn">
-        {t('stage.notWord')}
-        {lh}
+        <span className="sb-status-label">{t('stage.notWord')}{lh}</span>
       </div>
     );
   }
@@ -86,8 +86,12 @@ function StatusLine({
       : '???'
     : t(`suit.${suit}`);
   return (
-    <div className={['sb-status', suit !== 'standard' ? `loud ${suit}` : ''].filter(Boolean).join(' ')}>
-      {label}
+    <div className={['sb-status', suit !== 'standard' ? 'tagged' : ''].filter(Boolean).join(' ')}>
+      {suit !== 'standard' ? (
+        <span className={`sb-status-tag loud ${suit}`}>
+          <span className="sb-status-label">{label}</span>
+        </span>
+      ) : <span className="sb-status-label">{label}</span>}
     </div>
   );
 }
@@ -248,38 +252,52 @@ export function Sidebar({
   resolutionActive = false,
   mode = 'blind',
 }: Props) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const showBlindResources = mode !== 'shop';
   const phasesLeft = showBlindResources ? blind.phasesTotal - blind.phasesUsed : 0;
   const settle = useSettleView();
   const reward = effectiveClearReward(run, blind.kind) + (blind.clearRewardBonus ?? 0);
+  const wordGain = blind.committedScore - committedBefore;
+  const hasWordTransfer = Number.isFinite(wordGain) && wordGain > 0;
+  const [releasedTransferId, setReleasedTransferId] = useState(() => settleComplete ? settleId : -1);
+  const transferHold = mode === 'blind' && settleComplete && hasWordTransfer && releasedTransferId !== settleId;
+  useEffect(() => {
+    if (mode !== 'blind' || !settleComplete) {
+      setReleasedTransferId(-1);
+      return;
+    }
+    if (!transferHold) return;
+    const id = setTimeout(() => setReleasedTransferId(settleId), BALANCE.scoreTransfer.holdMs);
+    return () => clearTimeout(id);
+  }, [mode, settleComplete, settleId, transferHold]);
   // A (playtest-04) + item 7: the ROUND score is committed ONLY and never decreases,
   // and it ALWAYS rolls up with the same eased count-up the sentence bonus uses — no
-  // more per-beat stepping. While a word's settle animates the scorebox, the round
-  // holds at the pre-word committed (committedBefore); when the settle lands it eases
-  // up to the new committed, and at blind end it eases on to the finalized score
+  // more per-beat stepping. While a word's score beats animate the scorebox, the round
+  // holds at the pre-word committed (committedBefore); when the settle lands it shows
+  // the final word score for a short hold, then eases up to the new committed. At blind
+  // end it eases on to the finalized score
   // ((committed + sentence Chips) × sentence Mult, 06 #1). The forecast stays separate and is never
   // folded into this number (that's the 04-A "score drops" bug).
   //
-  // The hold is gated on `settleComplete`, NOT settle.active: both settleComplete and
+  // The transfer is gated on `settleComplete`, NOT settle.active: both settleComplete and
   // the new committedScore are set in the SAME submit state update, so there is never
   // a frame where committedScore is new but the hold is off. settle.active flips a
   // frame later (a layout effect), which briefly targeted the new committed and made
   // the number jump up, drop to committedBefore, then roll again (the item-5 bug).
   const roundTarget =
     mode === 'blind'
-      ? finalScore ?? (settleComplete ? blind.committedScore : committedBefore)
+      ? finalScore ?? (settleComplete && !transferHold ? blind.committedScore : committedBefore)
       : 0;
   // Outside a blind the score readout is a fresh zero-state, not the tail of the
   // previous blind. Snap the reset so entering the shop cannot replay the final
   // score as a count-down/count-up animation.
-  const round = useCountUp(roundTarget, BONUS_LAND_MS, mode !== 'blind');
+  const round = useCountUp(roundTarget, BONUS_LAND_MS, mode !== 'blind' || !settleComplete);
   const settleReduced = reducedMotion || settle.settleReduced;
   const displayedRound = settleReduced ? roundTarget : round;
-  const transferActive = mode === 'blind' &&
+  const transferActive = mode === 'blind' && settleComplete && sentenceBonus === null && hasWordTransfer &&
     (finalScore === null || finalScore === blind.committedScore) && (
-    (settleReduced && !settleComplete) ||
-    (!settleReduced && settleComplete && round < blind.committedScore)
+    transferHold ||
+    (!settleReduced && round < blind.committedScore)
   );
   // The sentence result as a forecast — "if the sentence ends like this: +N".
   // At blind end, the scorebox shows the committed score plus sentence Chips on
@@ -296,20 +314,19 @@ export function Sidebar({
           - blind.committedScore,
       )
     : 0;
-  const bonusChips = useCountUp(
-    bonusActive ? blind.committedScore + sentenceBonus!.chips : 0,
-    BONUS_LAND_MS,
-  );
-  const bonusMult = useCountUp(bonusActive ? sentenceBonus!.mult : 0, BONUS_LAND_MS);
-  // Idle is 0 × 0; the box fills only during settle (or the bonus beat), then resets
-  // (UI_DESIGN §4.1, B).
-  const chips = mode === 'blind' ? (bonusActive ? bonusChips : settle.active ? settle.chips : 0) : 0;
-  const mult = mode === 'blind' ? (bonusActive ? bonusMult : settle.active ? settle.mult : 0) : 0;
+  // Ordinary word beats fill the box. Final sentence settlement keeps it at 0 × 0
+  // so the committed round score is never replayed as a Chips axis.
+  const chips = mode === 'blind'
+    ? (bonusActive ? 0 : settle.active ? settle.chips : preview?.letterHand?.chips ?? 0)
+    : 0;
+  const mult = mode === 'blind'
+    ? (bonusActive ? 0 : settle.active ? settle.mult : preview?.letterHand?.mult ?? 0)
+    : 0;
   const chipsText = formatScore(chips);
   const multText = formatScore(mult);
   const boss = blind.bossId ? BOSS_REGISTRY.get(blind.bossId) : undefined;
   const bossEmblemRef = useRef<HTMLDivElement>(null);
-  const bossName = boss ? (lang === 'ko' ? boss.nameKo : boss.nameEn) : '';
+  const bossName = boss ? objectName(t, 'boss', boss.id) : '';
   const bossEffect = boss
     ? bossDescription(boss.id, t, run, blind.deadLetter ?? '—')
     : '';
@@ -367,7 +384,6 @@ export function Sidebar({
         settleId={settleId}
         resolutionActive={resolutionActive}
         holdActive={resolutionActive && settleComplete}
-        gameSpeed={settle.typewriterBeat?.speed ?? settle.settleSpeed}
         screenshake={screenshake}
         reducedMotion={reducedMotion || settle.settleReduced}
       />
@@ -505,7 +521,7 @@ export function Sidebar({
           <ScoreTransferReadout
             committedBefore={committedBefore}
             committedScore={blind.committedScore}
-            round={settleReduced ? committedBefore : round}
+            round={settleReduced && transferHold ? committedBefore : round}
           />
         ) : (
           <StatusLine

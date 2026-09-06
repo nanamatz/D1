@@ -13,7 +13,7 @@ import {
   mostPlayedPattern,
   recordWinCount,
 } from '../lifetime';
-import { useSettings } from '../settings';
+import { GAME_SPEEDS, useSettings } from '../settings';
 import {
   WINDOW_RESOLUTION_PRESETS,
   selectedWindowResolution,
@@ -22,7 +22,7 @@ import {
 } from '../windowVideo';
 import { audio } from '../audio';
 import { isEmojiUnlocked, loadEmojiUnlockProgress } from '../emojiUnlocks';
-import { useI18n } from '../i18n';
+import { LANGUAGES, objectName, useI18n } from '../i18n';
 import { formatScore } from '../formatScore';
 import { THIRD_PARTY_NOTICES } from '../legalNotices';
 import { voicedKeys } from '../mascots';
@@ -290,11 +290,12 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
           <Tooltip title={t('settings.gameSpeed')} body={t('settings.tooltip.gameSpeed')} touchPin disabled={tab !== 'game'}>
             <div className="set-row">
               <span className="set-label">{t('settings.gameSpeed')}</span>
-              <div className="segmented">
-                {([1, 2] as const).map((s) => (
+              <div className="segmented" role="group" aria-label={t('settings.gameSpeed')}>
+                {GAME_SPEEDS.map((s) => (
                   <button
                     key={s}
                     className={['seg', s === settings.gameSpeed ? 'on' : ''].filter(Boolean).join(' ')}
+                    aria-pressed={s === settings.gameSpeed}
                     onClick={() => set('gameSpeed', s)}
                   >
                     {s}×
@@ -336,8 +337,11 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
             <Tooltip title={t('settings.language')} body={t('settings.tooltip.language')} touchPin disabled={tab !== 'game'}>
               <div className="set-row">
                 <span className="set-label">{t('settings.language')}</span>
-                <button className="btn exchange sm" onClick={() => setLang(lang === 'en' ? 'ko' : 'en')}>
-                  {lang === 'en' ? 'English' : '한국어'}
+                <button className="btn exchange sm" onClick={() => {
+                  const index = LANGUAGES.findIndex(({ id }) => id === lang);
+                  setLang(LANGUAGES[(index + 1) % LANGUAGES.length]!.id);
+                }}>
+                  {LANGUAGES.find(({ id }) => id === lang)!.label}
                 </button>
               </div>
             </Tooltip>
@@ -545,7 +549,7 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
         {collectionCount === 0 ? <p className="set-note">{t('stats.noWords')}</p> : (
           <table><thead><tr><th>{t('stats.word')}</th><th>{t('stats.plays')}</th><th>{t('stats.intrinsicChips')}</th><th>{t('stats.firstDiscovery')}</th></tr></thead>
             <tbody>{words.entries.map(([word, entry]) => (
-              <tr key={word}><td>{word.toUpperCase()}</td><td>{entry.plays}</td><td>{entry.bestScore}</td><td>{entry.firstPlayedAt ? new Date(entry.firstPlayedAt).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US') : '—'}</td></tr>
+              <tr key={word}><td>{word.toUpperCase()}</td><td>{entry.plays}</td><td>{entry.bestScore}</td><td>{entry.firstPlayedAt ? new Date(entry.firstPlayedAt).toLocaleDateString(LANGUAGES.find(({ id }) => id === lang)!.locale) : '—'}</td></tr>
             ))}</tbody></table>
         )}
         {words.pages > 1 && <div className="stats-pager">
@@ -558,7 +562,7 @@ function StatsView({ lexicon }: { lexicon: Lexicon }) {
         <table><thead><tr><th>{t('stats.emojiTile')}</th><th>{t('stats.blindsOwned')}</th></tr></thead>
           <tbody>{ALL_JOKERS.map((def) => {
             const unlocked = isEmojiUnlocked(def.id, snapshot.emojiProgress);
-            return <tr key={def.id}><td>{unlocked ? (lang === 'ko' ? def.nameKo : def.nameEn) : '???'}</td><td>{lt.jokerBlindsCompleted[def.id] ?? 0}</td></tr>;
+            return <tr key={def.id}><td>{unlocked ? objectName(t, 'joker', def.id) : '???'}</td><td>{lt.jokerBlindsCompleted[def.id] ?? 0}</td></tr>;
           })}</tbody></table>
       </div>}
     </>

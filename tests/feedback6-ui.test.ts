@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
+import ja from '../locales/ja.json';
 import { resolve } from '../src/ui/i18n';
 
 const source = (path: string) => readFileSync(path, 'utf8');
@@ -60,9 +61,9 @@ describe('latest feedback UI regressions', () => {
     expect(sidebar).not.toContain('stripRichText');
   });
 
-  it('interpolates the current Dead Letter in both localized boss tooltips', () => {
-    const dicts = { en, ko };
-    for (const lang of ['en', 'ko'] as const) {
+  it('interpolates the current Dead Letter in every localized boss tooltip', () => {
+    const dicts = { en, ko, ja };
+    for (const lang of ['en', 'ko', 'ja'] as const) {
       const description = resolve(dicts, lang, 'bossdesc.deadLetter', { letter: 'Q' });
       expect(description).toContain('Q');
       expect(description).not.toContain('{letter}');
@@ -75,6 +76,7 @@ describe('latest feedback UI regressions', () => {
     expect(component).toContain('after.mult - before.mult');
     expect(component).toContain('after.chips - before.chips');
     expect(component).toContain("<CardArt family=\"constellation\"");
+    expect(component).toContain('aria-labelledby="pattern-levelup-title"');
     expect(screens).toContain('@keyframes plu-shake');
     expect(screens).toContain('@keyframes plu-card-vanish');
   });

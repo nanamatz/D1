@@ -190,21 +190,21 @@ describe('richText — pack highlight tags', () => {
     expect(richText('plain copy')).toEqual(['plain copy']);
   });
 
-  it('keeps every highlighted tooltip phrase on one line as an atomic unit', () => {
+  it('keeps highlighted phrases together until viewport containment requires a break', () => {
     const css = readFileSync('src/ui/styles/screens.css', 'utf8');
-    expect(css).toMatch(/\.tt-body \[class\^='hl-'\][^{]*\{[^}]*white-space:\s*nowrap/s);
+    expect(css).toMatch(/\.tt-body \[class\^='hl-'\][^{]*\{[^}]*white-space:\s*normal[^}]*overflow-wrap:\s*anywhere/s);
   });
 
-  it('wraps all descriptive copy only at word boundaries', () => {
+  it('keeps words intact when possible and contains unbroken translated copy', () => {
     const tokens = readFileSync('src/ui/styles/tokens.css', 'utf8');
     const screens = readFileSync('src/ui/styles/screens.css', 'utf8');
     const play = readFileSync('src/ui/styles/play.css', 'utf8');
 
     expect(tokens).toMatch(
-      /body\s*\{[^}]*word-break:\s*keep-all[^}]*overflow-wrap:\s*normal[^}]*hyphens:\s*none/s,
+      /body\s*\{[^}]*word-break:\s*keep-all[^}]*overflow-wrap:\s*anywhere[^}]*hyphens:\s*none/s,
     );
     expect(`${tokens}\n${screens}\n${play}`).not.toMatch(
-      /word-break:\s*break-all|overflow-wrap:\s*(?:anywhere|break-word)|hyphens:\s*auto/,
+      /word-break:\s*break-all|overflow-wrap:\s*break-word|hyphens:\s*auto/,
     );
   });
 });

@@ -123,12 +123,12 @@ describe('D1 UI contract wiring', () => {
       return [text, text.length <= 7 ? 'normal' : text.length <= 9 ? 'compact' : 'dense'];
     };
 
-    expect(classify(999_999)).toEqual(['999.9K', 'normal']);
-    expect(classify(1_000_000)).toEqual(['1M', 'normal']);
-    expect(classify(9_999_999)).toEqual(['9.9M', 'normal']);
+    expect(classify(999_999)).toEqual(['999,999', 'normal']);
+    expect(classify(1_000_000)).toEqual(['1,000,000', 'compact']);
+    expect(classify(9_999_999)).toEqual(['9,999,999', 'compact']);
     expect(classify(10_000_000)).toEqual(['10M', 'normal']);
-    expect(classify(-1_000_000)).toEqual(['-1M', 'normal']);
-    expect(classify(1_000_000.4)).toEqual(['1M', 'normal']);
+    expect(classify(-1_000_000)).toEqual(['-1,000,000', 'dense']);
+    expect(classify(1_000_000.4)).toEqual(['1,000,000', 'compact']);
     expect(classify(Number.POSITIVE_INFINITY)).toEqual(['—', 'normal']);
   });
 

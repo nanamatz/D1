@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
+import ja from '../locales/ja.json';
 import ko from '../locales/ko.json';
 import type { RunState } from '../src/engine/types';
 import {
@@ -134,6 +135,20 @@ describe('shared consumable tooltip copy', () => {
       title: ko['tooltip.anagram.title'], body: ko['tooltip.anagram.body'], kind: 'other',
     }]);
     expect(referencedTermTips(en['jokerdesc.golem'], translate(en))).toEqual([]);
+  });
+
+  it('derives Japanese supplemental tooltips from localized effect copy', () => {
+    const translate = (dict: Record<string, string>) => (key: string | string[]) =>
+      dict[Array.isArray(key) ? key[0]! : key] ?? (Array.isArray(key) ? key[0]! : key);
+    const jaT = translate(ja);
+
+    expect(referencedFontTips(ja['jokerdesc.lightTouch'], jaT)[0]?.title)
+      .toBe(ja['font.lightItalic']);
+    expect(referencedMaterialTips(ja['bossdesc.medusa'], jaT)[0]?.title)
+      .toBe(ja['material.stone']);
+    expect(referencedEditionTips(ja['consumabledesc.fable15'], jaT)).toHaveLength(3);
+    expect(referencedTermTips(ja['jokerdesc.temurah'], jaT)[0]?.title)
+      .toBe(ja['tooltip.anagram.title']);
   });
 
   it('provides the live Fable 17 value only when applicable', () => {

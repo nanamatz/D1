@@ -17,6 +17,7 @@ export function formatScore(value: number): string {
     const mantissa = Math.trunc((abs / Math.pow(10, exponent)) * 10) / 10;
     return `${rounded < 0 ? '-' : ''}${mantissa}e${exponent}`;
   }
+  if (abs < 10_000_000) return rounded.toLocaleString('en-US');
   for (const [threshold, suffix] of SCORE_UNITS) {
     if (abs >= threshold) {
       const scaled = Math.trunc((abs / threshold) * 10) / 10;

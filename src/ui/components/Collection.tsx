@@ -36,7 +36,7 @@ import {
   jokerDescKey,
   materialDescription,
 } from '../descriptions';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { packGalleryPages } from '../packArt';
 import { packTooltip } from '../packTooltip';
 import { loadLifetime } from '../lifetime';
@@ -519,7 +519,7 @@ function WordsView({ lexicon }: { lexicon: Lexicon }) {
 
 // ---------- Jokers ----------
 function JokersView() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { page, pages, visible, setPage } = usePaged(ALL_JOKERS, JOKERS_PER_PAGE);
   const progress = loadEmojiUnlockProgress();
   const stickers = loadLifetime().jokerRecordStickers;
@@ -534,7 +534,7 @@ function JokersView() {
             <Tooltip
               key={def.id}
               title={unlocked
-                ? (lang === 'ko' ? def.nameKo : def.nameEn)
+                ? objectName(t, 'joker', def.id)
                 : t('collection.joker.undiscovered')}
               body={unlocked
                 ? t(jokerDescKey(def.id))
@@ -696,7 +696,7 @@ function VouchersView() {
 
 // ---------- Blinds ----------
 function BossesView() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const antes = Array.from({ length: 16 }, (_, index) => index + 1);
   return (
     <div className="bosses-split">
@@ -742,10 +742,10 @@ function BossesView() {
           {ALL_BOSS_IDS.map((id) => {
             const b = BOSS_REGISTRY.get(id)!;
             return (
-              <Tooltip key={id} title={lang === 'ko' ? b.nameKo : b.nameEn} body={t(bossDescKey(id))} down>
+              <Tooltip key={id} title={objectName(t, 'boss', b.id)} body={t(bossDescKey(id))} down>
                 <TiltCard idle className="coll-card boss-card">
                   <img className="boss-card-art" src={BOSS_ART[id]} alt="" />
-                  <span className="cc-name">{lang === 'ko' ? b.nameKo : b.nameEn}</span>
+                  <span className="cc-name">{objectName(t, 'boss', b.id)}</span>
                 </TiltCard>
               </Tooltip>
             );
@@ -1066,12 +1066,12 @@ function ConstellationsView() {
 }
 
 function GamblerCardsView() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   return (
     <CardFamilyView
       family="gambler"
       items={GAMBLER_CARDS}
-      name={(card) => (lang === 'ko' ? card.nameKo : card.nameEn)}
+      name={(card) => objectName(t, 'gambler', card.id)}
       body={(card) => t(consumableDescKey(card.id))}
     />
   );

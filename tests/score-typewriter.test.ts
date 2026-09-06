@@ -107,14 +107,11 @@ describe('Score Typewriter strength', () => {
     expect(scoreTypewriterClearPeak(3, finalPhaseLossResolution, false, 0)).toBe(0);
   });
 
-  it('uses the approved tier and snapshotted-speed clear-repeat intervals', () => {
+  it('uses fixed approved tier clear-repeat intervals', () => {
     expect(BALANCE.scoreTypewriter.clearRepeatFactors).toEqual([0, 2, 1.75, 1.5, 1.25, 1, 1]);
     expect([1, 2, 3, 4, 5, 6].map((tier) =>
-      scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier, 1),
+      scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier),
     )).toEqual([920, 805, 690, 575, 460, 460]);
-    expect([1, 2, 3, 4, 5, 6].map((tier) =>
-      scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier, 2),
-    )).toEqual([460, 402.5, 345, 287.5, 230, 230]);
   });
 
   it('starts clear cycle zero immediately, self-schedules, and cleans up exactly', () => {
@@ -285,32 +282,29 @@ describe('Score Typewriter strength', () => {
 
   it('uses deterministic uneven gaps and finishes every key inside its score beat', () => {
     const tiers: ScoreTypewriterTier[] = [1, 2, 3, 4, 5, 6];
-    for (const speed of [1, 2]) {
-      for (const tier of tiers) {
-        const count = BALANCE.scoreTypewriter.visualKeyCounts[tier];
-        const timings = Array.from(
-          { length: count },
-          (_, index) => scoreTypewriterKeyTiming('settle-42', speed, tier, index, count),
-        );
-        const beatMs = BALANCE.scoreTypewriter.beatMs / speed;
-        expect(new Set(timings.map(({ delayMs }) => delayMs)).size).toBe(count);
-        expect(timings[0]!.delayMs).toBe(0);
-        expect(timings.every((timing, index) =>
-          index === 0 || timing.delayMs > timings[index - 1]!.delayMs,
-        )).toBe(true);
-        expect(timings.at(-1)!.delayMs + timings.at(-1)!.durationMs).toBeLessThanOrEqual(beatMs);
-        expect(timings.every(({ durationMs }) => durationMs >= BALANCE.scoreTypewriter.keyPressFloorMs)).toBe(true);
-        expect(Array.from(
-          { length: count },
-          (_, index) => scoreTypewriterKeyTiming('settle-42', speed, tier, index, count),
-        )).toEqual(timings);
-      }
+    for (const tier of tiers) {
+      const count = BALANCE.scoreTypewriter.visualKeyCounts[tier];
+      const timings = Array.from(
+        { length: count },
+        (_, index) => scoreTypewriterKeyTiming('settle-42', tier, index, count),
+      );
+      const beatMs = BALANCE.scoreTypewriter.beatMs;
+      expect(new Set(timings.map(({ delayMs }) => delayMs)).size).toBe(count);
+      expect(timings[0]!.delayMs).toBe(0);
+      expect(timings.every((timing, index) =>
+        index === 0 || timing.delayMs > timings[index - 1]!.delayMs,
+      )).toBe(true);
+      expect(timings.at(-1)!.delayMs + timings.at(-1)!.durationMs).toBeLessThanOrEqual(beatMs);
+      expect(timings.every(({ durationMs }) => durationMs >= BALANCE.scoreTypewriter.keyPressFloorMs)).toBe(true);
+      expect(Array.from(
+        { length: count },
+        (_, index) => scoreTypewriterKeyTiming('settle-42', tier, index, count),
+      )).toEqual(timings);
     }
     const tierSix = Array.from(
       { length: BALANCE.scoreTypewriter.visualKeyCounts[6] },
       (_, index) => scoreTypewriterKeyTiming(
         'settle-42',
-        1,
         6,
         index,
         BALANCE.scoreTypewriter.visualKeyCounts[6],

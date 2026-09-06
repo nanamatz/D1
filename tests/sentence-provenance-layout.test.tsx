@@ -218,7 +218,7 @@ describe('grouped supplemental provenance', () => {
     expect(html).toContain('Effects');
     expect(html).toContain('+50 Chips');
     expect(html).toContain('×1.50 Mult');
-    expect(html).toContain('+7.8K Score');
+    expect(html).toContain('+7,890 Score');
   });
 
   it('keeps effect-only Broken Sentence values visible in Korean', () => {

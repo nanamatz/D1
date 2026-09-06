@@ -7,6 +7,7 @@ import { UnlockRecap } from '../src/ui/components/UnlockRecap';
 import { I18nProvider } from '../src/ui/i18n';
 import { loadLifetime, writeLifetime } from '../src/ui/lifetime';
 import { resetStorageCache } from '../src/ui/storage';
+import { uiIcon } from '../src/ui/uiIcons';
 import type { UseGame } from '../src/ui/useGame';
 import {
   acknowledgeUnlockLedger,
@@ -200,6 +201,29 @@ describe('integrated unlock recap ledger', () => {
     expect(html).toContain('autofocus=""');
   });
 
+  it('renders every color unlock as its full-color palette swatch', () => {
+    const styles = readFileSync('src/ui/styles/screens.css', 'utf8');
+    for (const [id, group, color] of [
+      ['RED', 'red', '#f5504e'],
+      ['YELLOW', 'yellow', '#f0b23e'],
+      ['GREEN', 'green', '#3c9b5c'],
+      ['BLUE', 'blue', '#3fa7f5'],
+    ] as const) {
+      const html = renderToStaticMarkup(createElement(
+        I18nProvider,
+        null,
+        createElement(UnlockRecap, {
+          g: recapGame,
+          notices: [{ category: 'palette', id }],
+        }),
+      ));
+
+      expect(html).toContain(`class="unlock-recap-swatch sw-${group}"`);
+      expect(html).toContain(`class="ui-icon" src="${uiIcon('palette')}"`);
+      expect(styles).toContain(`.unlock-recap-swatch.sw-${group} { background: ${color}; }`);
+    }
+  });
+
   it('returns null for notices that produce no cards without changing hook order', () => {
     const html = renderToStaticMarkup(createElement(
       I18nProvider,
@@ -302,18 +326,28 @@ describe('integrated unlock recap ledger', () => {
       [{ category: 'emoji', id: 'miser' }] as const,
       [{ category: 'voucher', id: 'novel' }] as const,
       [{ category: 'pouch', id: 'blue' }] as const,
+      [{ category: 'record', contextId: 'yellow', id: 'redLp' }] as const,
     ]) {
       const html = render(notices);
       expect(html.match(/motion-card/g)).toHaveLength(1);
       expect(html.match(/tilt-sheen/g)).toHaveLength(1);
     }
-    for (const notices of [
-      [{ category: 'record', contextId: 'yellow', id: 'redLp' }] as const,
-      [{ category: 'challenge', id: 'risingQuota' }] as const,
-    ]) {
-      const html = render(notices);
-      expect(html.match(/motion-card/g)).toHaveLength(2);
-      expect(html.match(/tilt-sheen/g)).toHaveLength(2);
-    }
+    const challenge = render([{ category: 'challenge', id: 'risingQuota' }]);
+    expect(challenge.match(/motion-card/g)).toHaveLength(2);
+    expect(challenge.match(/tilt-sheen/g)).toHaveLength(2);
+  });
+
+  it('shows Record unlocks without their Pouch', () => {
+    const html = renderToStaticMarkup(createElement(
+      I18nProvider,
+      null,
+      createElement(UnlockRecap, {
+        g: recapGame,
+        notices: [{ category: 'record', contextId: 'yellow', id: 'redLp' }],
+      }),
+    ));
+    expect(html).toContain('src="/src/ui/assets/records/red-lp.png"');
+    expect(html).not.toContain('src="/src/ui/assets/pouches/yellow-pouch.png"');
+    expect(html).not.toContain('unlock-recap-pair');
   });
 });

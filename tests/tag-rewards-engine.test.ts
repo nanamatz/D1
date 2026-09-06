@@ -232,9 +232,12 @@ describe('new blind-skip tags: next-shop effects', () => {
   it.each([
     ['uncommonTag', 'uncommon'],
     ['rareTag', 'rare'],
-  ] as const)('%s adds a free %s Emoji Tile', (tag, rarity) => {
+  ] as const)('%s replaces one item slot with a free %s Emoji Tile', (tag, rarity) => {
     const run = withDraftTag(tag, { pendingShopTags: [tag] });
-    const prepared = applyPendingShopTags(run, emptyShop(), makeRng(`shop-${tag}`));
+    const prepared = applyPendingShopTags(run, emptyShop({ items: [
+      { kind: 'consumable', id: 'magnifier', price: 3 },
+      { kind: 'consumable', id: 'fable1', price: 3 },
+    ] }), makeRng(`shop-${tag}`));
     const offered = prepared.shop.items.find(
       (item) => item?.kind === 'joker' && item.price === 0,
     );
@@ -242,18 +245,23 @@ describe('new blind-skip tags: next-shop effects', () => {
     expect(offered?.kind).toBe('joker');
     if (!offered || offered.kind !== 'joker') throw new Error('missing tagged Emoji Tile');
     expect(JOKER_REGISTRY.get(offered.id)?.rarity).toBe(rarity as JokerRarity);
+    expect(prepared.shop.items).toHaveLength(BALANCE.shop.itemSlots);
+    expect(prepared.shop.items.filter((item) => item?.kind === 'consumable')).toHaveLength(1);
     expect(prepared.run.pendingShopTags).toEqual([]);
     expect(prepared.appliedTags).toEqual([tag]);
   });
 
-  it('keeps appended rarity-tag offers while rerolling ordinary stock', () => {
+  it('keeps rarity-tag replacements within the slot cap while rerolling ordinary stock', () => {
     const run = withDraftTag('uncommonTag', {
       gold: 99,
-      pendingShopTags: ['uncommonTag', 'rareTag'],
+      pendingShopTags: ['uncommonTag'],
     });
     const prepared = applyPendingShopTags(
       run,
-      emptyShop({ items: [{ kind: 'consumable', id: 'magnifier', price: 3 }] }),
+      emptyShop({ items: [
+        { kind: 'consumable', id: 'magnifier', price: 3 },
+        { kind: 'consumable', id: 'fable1', price: 3 },
+      ] }),
       makeRng('rarity-tags-stock'),
     );
     const tagged = prepared.shop.items.filter(
@@ -266,6 +274,8 @@ describe('new blind-skip tags: next-shop effects', () => {
     );
 
     expect(rerolled.ok).toBe(true);
+    expect(prepared.shop.items).toHaveLength(BALANCE.shop.itemSlots);
+    expect(rerolled.shop.items).toHaveLength(BALANCE.shop.itemSlots);
     expect(rerolled.shop.items.slice(-tagged.length)).toEqual(tagged);
     expect(rerolled.shop.items.slice(0, -tagged.length)).not.toEqual(
       prepared.shop.items.slice(0, -tagged.length),

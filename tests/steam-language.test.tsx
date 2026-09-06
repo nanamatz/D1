@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
+import ja from '../locales/ja.json';
 import { SteamOwnershipNotice } from '../src/ui/components/SteamOwnershipNotice';
 import { resetPersistedState } from '../src/ui/hooks';
 import { I18nProvider, useI18n } from '../src/ui/i18n';
@@ -19,7 +20,7 @@ class MemStorage {
 }
 
 function installBridge(
-  languageHint: 'en' | 'ko',
+  languageHint: 'en' | 'ko' | 'ja',
   steamStatus: StorageBridge['steamStatus'] = 'claim-required',
 ) {
   (globalThis as { wj?: StorageBridge }).wj = {
@@ -56,6 +57,14 @@ describe('Steam startup language', () => {
     const html = renderNotice();
     expect(html).toContain(ko['steam.owner.claim-required.title']);
     expect(html).toContain(ko['steam.owner.accept']);
+    expect(localStorage.getItem('wj.lang')).toBeNull();
+  });
+
+  it('renders the first ownership decision in Japanese without persisting detection', () => {
+    installBridge('ja');
+    const html = renderNotice();
+    expect(html).toContain(ja['steam.owner.claim-required.title']);
+    expect(html).toContain(ja['steam.owner.accept']);
     expect(localStorage.getItem('wj.lang')).toBeNull();
   });
 

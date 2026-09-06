@@ -15,8 +15,11 @@ import { applyPresentation } from './unlocks';
 import { readValue } from './storage';
 import { isWooDakSkin, type WooDakSkin } from './mascotIds';
 
+export const GAME_SPEEDS = [0.5, 1, 2, 4] as const;
+export type GameSpeed = typeof GAME_SPEEDS[number];
+
 export interface Settings {
-  gameSpeed: 1 | 2;
+  gameSpeed: GameSpeed;
   screenshake: number; // 0..100
   reducedMotion: boolean;
   colorBlind: boolean;
@@ -64,8 +67,6 @@ export function readTips(): boolean {
   return normalizeSettings(readValue<unknown>(SETTINGS_KEY)).tips;
 }
 
-const SPEEDS: readonly Settings['gameSpeed'][] = [1, 2];
-
 /**
  * Merge a stored value onto the defaults and range-check every field.
  *
@@ -98,11 +99,10 @@ export function normalizeSettings(stored: unknown): Settings {
   const legacyMusic = num(parsed.music, 70, 0, 100);
   const legacySfx = num(parsed.sfx, 80, 0, 100);
   return {
-    gameSpeed: parsed.gameSpeed === 4
-      ? 2
-      : SPEEDS.includes(parsed.gameSpeed as Settings['gameSpeed'])
-        ? parsed.gameSpeed as Settings['gameSpeed']
-        : DEFAULT_SETTINGS.gameSpeed,
+    gameSpeed: typeof parsed.gameSpeed === 'number' &&
+      GAME_SPEEDS.includes(parsed.gameSpeed as GameSpeed)
+      ? parsed.gameSpeed as GameSpeed
+      : DEFAULT_SETTINGS.gameSpeed,
     screenshake: num(merged.screenshake, DEFAULT_SETTINGS.screenshake, 0, 100),
     uiScale: num(merged.uiScale, DEFAULT_SETTINGS.uiScale, 80, 120),
     crtIntensity: num(merged.crtIntensity, DEFAULT_SETTINGS.crtIntensity, 0, 100),

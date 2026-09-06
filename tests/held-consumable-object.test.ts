@@ -26,16 +26,24 @@ describe('held consumable foreground objects', () => {
 
   it('keeps actions inside the same TiltCard interaction object', () => {
     expect(shelf).toContain("jokerMenuOpen && 'menu-open'");
+    expect(shelf).not.toContain('disabled={jokerMenuOpen}');
+    expect(shelf).not.toContain('disabled={menuIdx === i}');
+    expect(shelf).toContain('down={!jokerMenuOpen}');
+    expect(shelf).toContain('down={menuIdx !== i}');
+    expect(shelf.match(/data-tooltip-suppress="true"/g)).toHaveLength(2);
     expect(shelf).toMatch(
       /className=\{className\}[\s\S]*className="owned-object-select"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>/,
     );
     expect(shelf).toMatch(
-      /className="consumable-object"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>[\s\S]*className="owned-object-select consumable-select"/,
+      /className="consumable-object"[\s\S]*className="owned-object-select consumable-select"[\s\S]*className="consumable-menu bare"[\s\S]*<\/TiltCard>/,
     );
     expect(css).not.toMatch(
       /\.consumable-slot\.menu-open > \.tt-anchor > \.consumable-select\s*\{[^}]*pointer-events:\s*none;/s,
     );
     expect(css).toContain('.consumables .consumable-slot.menu-open');
+    expect(css).toMatch(
+      /\.shelf-col:has\(\.menu-open\)\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*24;/s,
+    );
     expect(css).toContain('.consumable-slot.menu-open .consumable-object-art');
     expect(css).toContain('.consumable-object > .consumable-menu.bare');
     expect(css).toMatch(
@@ -62,12 +70,16 @@ describe('held consumable foreground objects', () => {
     expect(shelf).toContain('const jokerKey = owned.instanceId ?? owned');
     expect(shelf).toContain('const jokerMenuOpen = jokerMenuKey === jokerKey');
     expect(shelf).toContain('aria-expanded={jokerMenuOpen}');
-    expect(shelf).toContain('setJokerMenuKey(jokerMenuOpen ? null : jokerKey)');
+    expect(shelf).toMatch(
+      /setMenuIdx\(null\);\s*setJokerMenuKey\(jokerMenuOpen \? null : jokerKey\);/,
+    );
     expect(shelf).toMatch(
       /onKeyDown=\{\(e\) => \{\s*if \(e\.key !== 'Escape' \|\| !jokerMenuOpen\) return;\s*e\.stopPropagation\(\);\s*setJokerMenuKey\(null\);/,
     );
     expect(shelf).toContain('aria-expanded={menuIdx === i}');
-    expect(shelf).toContain('setMenuIdx(menuIdx === i ? null : i)');
+    expect(shelf).toMatch(
+      /setJokerMenuKey\(null\);\s*setMenuIdx\(menuIdx === i \? null : i\);/,
+    );
     expect(shelf).toMatch(
       /className="owned-object-select consumable-select"[\s\S]*?if \(e\.key !== 'Escape'\) return;\s*e\.stopPropagation\(\);\s*setMenuIdx\(null\);/,
     );

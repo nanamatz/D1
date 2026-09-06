@@ -3,7 +3,7 @@ import { kindForIndex } from '../../engine/progression';
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BOSS_ART, blindEmblem } from '../bossArt';
 import { bossDescription } from '../descriptions';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { bossRerollLimit, bossRerollPrice } from '../../engine/vouchers';
 import { useEffect, useState } from 'react';
@@ -33,7 +33,7 @@ type DisplaySkipTag = {
  * pre-rolled, fully disclosed Editorial Perk (GDD §8.2).
  */
 export function BlindSelect({ g }: { g: UseGame }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { run, blind } = g.state;
   const [leaving, setLeaving] = useState(false);
   const [autoRedeeming, setAutoRedeeming] = useState<SkipRewardOffer | null>(null);
@@ -98,7 +98,7 @@ export function BlindSelect({ g }: { g: UseGame }) {
               {kind === 'boss' && boss && (
                 <div className="bs-boss">
                   <img className="bs-boss-art" src={BOSS_ART[boss.id]} alt="" />
-                  <span className="bn">{lang === 'ko' ? boss.nameKo : boss.nameEn}</span>
+                  <span className="bn">{objectName(t, 'boss', boss.id)}</span>
                   <span className="be">{richText(bossDescription(
                     boss.id,
                     t,
@@ -234,7 +234,7 @@ export function SkippedTagStack({ g }: { g: UseGame }) {
       .map(({ blindIndex, offer }) => ({
         key: `blind-${blindIndex}`,
         offer,
-        redeeming: redeemingNextBlind,
+        redeeming: redeemingNextBlind && offer.id !== 'scarletTag',
         shopRedemption: false,
       }))
     : [];

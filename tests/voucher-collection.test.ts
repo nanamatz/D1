@@ -38,7 +38,7 @@ describe('Voucher Collection disclosure', () => {
   it('still reveals unlocked voucher names and effects', () => {
     const t = translate(ko as Record<string, string>);
     const copy = voucherCollectionCopy('novel', false, 'ko', t);
-    expect(copy.name).toBe(VOUCHER_REGISTRY.get('novel')!.nameKo);
+    expect(copy.name).toBe(t('object.voucher.novel'));
     expect(copy.body).toBe(t(voucherDescKey('novel')));
   });
 });

@@ -1,44 +1,37 @@
 import { readFileSync } from 'node:fs';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { DeskEncounterLab } from '../src/ui/components/DeskEncounterLab';
-import { I18nProvider } from '../src/ui/i18n';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 
 const source = (path: string): string => readFileSync(path, 'utf8');
 
 describe('rotating developer laboratory', () => {
-  it('shows the current production word-score transfer as one deterministic sample', () => {
-    const markup = renderToStaticMarkup(createElement(
-      I18nProvider,
-      null,
-      createElement(DeskEncounterLab, { onBack: () => undefined }),
-    ));
-
-    expect(markup.match(/desk-lab-card desk-lab-score-card/g)).toHaveLength(1);
-    expect(markup).toContain(en['desk.lab.scoreTransfer.title']);
-    expect(markup).toContain('production word score transferring into the round total');
-    expect(markup).toContain('<strong>67</strong>');
-    expect(markup).toContain('class="sb-status score-transfer" aria-hidden="true">15</div>');
-    expect(markup).toContain(en['desk.lab.replay']);
+  it('shows the current production Score Keyboard flame and LED preview', () => {
+    const lab = source('src/ui/components/DeskEncounterLab.tsx');
+    expect(lab.match(/desk-lab-card desk-lab-score-card/g)).toHaveLength(1);
+    expect(en['desk.lab.scoreFeedback.title']).toBe('Score Feedback Flame & LEDs');
+    expect(en['desk.lab.scoreFeedback.body']).toContain('production Score Keyboard effect');
+    expect(lab).toContain('<ScoreTypewriter');
+    expect(lab).toContain('aria-pressed={tier === 6}');
+    expect(en['desk.lab.replay']).toBe('Replay');
   });
 
-  it('reuses the production readout with UI-local 67 → 82 state', () => {
+  it('reuses the production ScoreTypewriter with UI-local Tier 5/6 state', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
-    expect(lab).toContain("import { ScoreTransferReadout } from './Sidebar'");
-    expect(lab).toContain('const [target, setTarget] = useState(67)');
-    expect(lab).toContain('useCountUp(target, BONUS_LAND_MS)');
-    expect(lab).toContain('setTarget(82)');
-    expect(lab).toContain('<ScoreTransferReadout committedBefore={67} committedScore={82} round={round} />');
-    expect(lab).toContain('<ScoreTransferPreview key={replay} />');
+    const component = source('src/ui/components/ScoreTypewriter.tsx');
+    expect(lab).toContain("import { ScoreTypewriter } from './ScoreTypewriter'");
+    expect(lab).toContain('const [tier, setTier] = useState<5 | 6>(6)');
+    expect(lab).toContain('beatId={`lab-${tier}-${replay}`}');
+    expect(lab).toContain('<button className="btn" aria-pressed={tier === 5}');
+    expect(lab).toContain('<button className="btn" aria-pressed={tier === 6}');
+    expect(component).toContain("preview && 'is-lab-preview'");
+    expect(component).toContain('return preview ? dock : createPortal(dock, document.body)');
     expect(lab).not.toContain('MoneyValue');
     for (const locale of [en, ko]) {
       expect(locale['desk.lab.title']).toBeTruthy();
       expect(locale['desk.lab.subtitle']).toBeTruthy();
-      expect(locale['desk.lab.scoreTransfer.title']).toBeTruthy();
-      expect(locale['desk.lab.scoreTransfer.body']).toBeTruthy();
+      expect(locale['desk.lab.scoreFeedback.title']).toBeTruthy();
+      expect(locale['desk.lab.scoreFeedback.body']).toBeTruthy();
       expect(locale['desk.lab.replay']).toBeTruthy();
     }
     expect(en['desk.lab.subtitle']).toBe(
@@ -68,9 +61,9 @@ describe('rotating developer laboratory', () => {
   it('has no retired preview, engine simulation, persistence, settings, or RNG path', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
     for (const retired of [
-      'MoneyValue', 'MoneyLedger', 'DeskObjects', 'sampleKind', 'LAB_MONEY_DELTAS', 'ScoreTypewriter', 'DESK_KINDS',
+      'MoneyValue', 'MoneyLedger', 'DeskObjects', 'sampleKind', 'LAB_MONEY_DELTAS', 'ScoreTransferReadout', 'DESK_KINDS',
       'HIDDEN_PATTERN_IDS', 'PatternExampleTray',
-      'setTimeout', 'requestAnimationFrame', 'storage', 'useSettings', 'rng',
+      'requestAnimationFrame', 'storage', 'useSettings', 'rng',
       'role="tablist"', 'role="tabpanel"',
     ]) expect(lab).not.toContain(retired);
   });
@@ -91,6 +84,7 @@ describe('rotating developer laboratory', () => {
     expect(css).toMatch(/@media \(max-width: 900px\)[\s\S]*?\.desk-lab-grid\s*\{\s*grid-template-columns:\s*1fr;/);
     expect(css).toMatch(/@media \(forced-colors: active\)[\s\S]*?\.desk-lab-card,[\s\S]*?\.desk-lab-score-stage\s*\{\s*border-color:\s*CanvasText;/);
     expect(css).toMatch(/\.desk-lab-card\s*\{[^}]*min-width:\s*0;[^}]*overflow:\s*hidden;/s);
-    expect(css).toMatch(/\.desk-lab-score-stage\s*\{[^}]*min-height:\s*160px;[^}]*place-items:\s*center;/s);
+    expect(css).toMatch(/\.desk-lab-score-stage\s*\{[^}]*min-height:\s*500px;[^}]*place-items:\s*center;/s);
+    expect(css).toMatch(/\.score-typewriter-dock\.is-lab-preview\s*\{[^}]*--typewriter-width:\s*min\(230px, 22vw, 38vh\);[^}]*position:\s*relative;/s);
   });
 });

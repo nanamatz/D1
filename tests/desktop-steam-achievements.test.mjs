@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   STEAM_ACHIEVEMENTS,
@@ -42,12 +43,20 @@ describe('desktop Steam achievement boundary', () => {
       .toMatchObject({ std_runs: 3, std_wins: 2 });
   });
 
-  it('sanitizes Steam languages to the two renderer locales', () => {
+  it('sanitizes Steam languages to the three renderer locales', () => {
     expect(normalizeSteamLanguage(' Koreana ')).toBe('ko');
     expect(normalizeSteamLanguage('KOREAN')).toBe('ko');
     expect(normalizeSteamLanguage('english')).toBe('en');
+    expect(normalizeSteamLanguage('japanese')).toBe('ja');
     expect(normalizeSteamLanguage('german')).toBe('en');
     expect(normalizeSteamLanguage(null)).toBe('en');
+  });
+
+  it('ships all Japanese achievement localization tokens', () => {
+    const vdf = readFileSync('steam/achievement-localization/achievement_loc_japanese.vdf', 'utf8');
+    expect(vdf).toContain('"Language"\t"japanese"');
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
   });
 
   it('initializes only from a packaged Windows x64 Steam launch AppID', async () => {

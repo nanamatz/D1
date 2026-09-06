@@ -69,6 +69,8 @@ describe('persistent Balatro-style run table', () => {
 
   it('keeps the sidebar content height identical across play, Shop, and Blind Select', () => {
     expect(playCss).toMatch(/\.blind-badge\s*\{[^}]*height:\s*264px[^}]*flex:\s*0 0 264px/s);
+    expect(playCss).toMatch(/\.blind-badge \.kind\s*\{[^}]*line-height:\s*1/s);
+    expect(playCss).toMatch(/\.blind-badge \.tlabel\s*\{[^}]*line-height:\s*1/s);
     expect(playCss).not.toMatch(/\.sidebar-shop \.blind-badge\s*\{[^}]*height:/s);
     expect(playCss).not.toMatch(/\.sidebar-blindselect \.blind-badge\s*\{[^}]*min-height:/s);
     expect(24 + 36 + 264 + 148 + 484).toBe(956);
@@ -110,6 +112,15 @@ describe('persistent Balatro-style run table', () => {
     const gutter = (viewportWidth - boardWidth) / 2;
     expect(gutter).toBeCloseTo(120, 3);
     expect(gutter + boardWidth).toBeCloseTo(1320, 3);
+  });
+
+  it('keeps the transition provider topology stable for the outgoing screen', () => {
+    expect(transition).toContain(
+      '<TransitionContext.Provider value={false}>{outgoing.node}</TransitionContext.Provider>',
+    );
+    expect(transition).toContain(
+      '<TransitionContext.Provider value={transitioning}>{children}</TransitionContext.Provider>',
+    );
   });
 
   it('reserves the live pattern line before the second word completes a pattern', () => {

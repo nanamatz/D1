@@ -61,6 +61,17 @@ describe('Options completion regressions', () => {
     }
   });
 
+  it('renders the four game speeds as one responsive labelled choice', () => {
+    const component = readFileSync(new URL('../src/ui/components/Options.tsx', import.meta.url), 'utf8');
+    const css = readFileSync(new URL('../src/ui/styles/screens.css', import.meta.url), 'utf8');
+    expect(component).toContain("import { GAME_SPEEDS, useSettings } from '../settings'");
+    expect(component).toContain('GAME_SPEEDS.map((s) =>');
+    expect(component).toContain('role="group" aria-label={t(\'settings.gameSpeed\')}');
+    expect(component).toContain('aria-pressed={s === settings.gameSpeed}');
+    expect(css).toMatch(/\.segmented\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\);[^}]*width:\s*min\(100%, 240px\);/s);
+    expect(css).toMatch(/\.seg\s*\{[^}]*min-width:\s*0;/s);
+  });
+
   it('keeps dividers between tooltip-wrapped Settings rows', () => {
     const css = readFileSync(new URL('../src/ui/styles/screens.css', import.meta.url), 'utf8');
     expect(css).not.toMatch(/\.set-row:last-child\s*\{/);

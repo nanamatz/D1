@@ -11,7 +11,7 @@ import { mascotVariantArt } from '../mascots';
 import { UNLOCKS } from '../unlocks';
 import type { UnlockNotice } from '../unlockRecap';
 import { voucherArt } from '../voucherArt';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import type { UseGame } from '../useGame';
 import { Tooltip } from './Tooltip';
 import { UiIcon } from './UiIcon';
@@ -38,7 +38,7 @@ function paletteBodyKey(id: string): string {
 }
 
 export function UnlockRecap({ g, notices }: Props) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [page, setPage] = useState(0);
   const cards = notices.flatMap((notice) => {
     if (notice.category === 'palette') {
@@ -54,7 +54,7 @@ export function UnlockRecap({ g, notices }: Props) {
             'unlock-recap-swatch',
             def.effect.kind === 'color' ? `sw-${def.effect.group}` : '',
           ].filter(Boolean).join(' ')}>
-            {def.effect.kind === 'audio' && (
+            {def.effect.kind === 'color' ? <UiIcon name="palette" /> : def.effect.kind === 'audio' && (
               <UiIcon name={def.effect.bus === 'music' ? 'music' : 'speaker'} />
             )}
           </span>
@@ -66,7 +66,7 @@ export function UnlockRecap({ g, notices }: Props) {
       if (!def) return [];
       return [{
         key: `emoji:${def.id}`,
-        title: lang === 'ko' ? def.nameKo : def.nameEn,
+        title: objectName(t, 'joker', def.id),
         body: t(jokerDescKey(def.id)),
         visual: (
           <EmojiTileCard
@@ -81,7 +81,7 @@ export function UnlockRecap({ g, notices }: Props) {
       const id = notice.id as VoucherId;
       const def = VOUCHER_REGISTRY.get(id);
       if (!def || def.tier !== 'upgrade') return [];
-      const name = lang === 'ko' ? def.nameKo : def.nameEn;
+      const name = objectName(t, 'voucher', def.id);
       return [{
         key: `voucher:${id}`,
         title: name,
@@ -108,15 +108,8 @@ export function UnlockRecap({ g, notices }: Props) {
       return [{
         key: `record:${pouchId}:${id}`,
         title: t(`record.${id}.name`),
-        body: `${t(`record.${id}.desc`)}\n${t('unlockRecap.recordContext', {
-          pouch: t(`pouch.${pouchId}.name`),
-        })}\n${t(`pouch.${pouchId}.desc`)}`,
-        visual: (
-          <div className="unlock-recap-pair">
-            <RecordCard id={id} className="unlock-recap-pair-object" />
-            <PouchCard id={pouchId} className="unlock-recap-pair-object" />
-          </div>
-        ),
+        body: t(`record.${id}.desc`),
+        visual: <RecordCard id={id} className="unlock-recap-object" />,
       }];
     }
     if (notice.category !== 'challenge' || !isChallengeId(notice.id) || notice.id === 'redPen') {

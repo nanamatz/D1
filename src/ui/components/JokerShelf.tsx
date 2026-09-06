@@ -10,7 +10,7 @@ import {
   grownValue,
   jokerTooltip,
 } from '../descriptions';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { audio } from '../audio';
 import { motionOff } from '../motion';
 import { formatScore } from '../formatScore';
@@ -122,10 +122,11 @@ export function JokerShelf({
   bonusJokerTriggers = [],
   settleComplete = true,
 }: Props) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const settle = useSettleView();
   const emojiSlotLimit = jokerSlotLimit(run);
   const [menuIdx, setMenuIdx] = useState<number | null>(null);
+  const [hoveredJokerIdx, setHoveredJokerIdx] = useState<number | null>(null);
   const [hoveredConsumableIdx, setHoveredConsumableIdx] = useState<number | null>(null);
   const [jokerMenuKey, setJokerMenuKey] = useState<number | RunState['jokers'][number] | null>(null);
   const disabledIndex = run.jokers.findIndex((owned) => owned.state.bossDisabled === 1);
@@ -361,13 +362,24 @@ export function JokerShelf({
           <div
             className={`jokers${run.jokers.length > 5 ? ' jokers-overlap' : ''}`}
             ref={jokersRef}
+            onPointerMove={(event) => {
+              const row = jokersRef.current;
+              if (!row || run.jokers.length <= 5) {
+                setHoveredJokerIdx(null);
+                return;
+              }
+              const slots = [...row.querySelectorAll<HTMLElement>(':scope > .joker-slot')];
+              const index = slots.findIndex((slot) => event.clientX < slot.getBoundingClientRect().right);
+              setHoveredJokerIdx(index < 0 ? slots.length - 1 : index);
+            }}
+            onPointerLeave={() => setHoveredJokerIdx(null)}
           >
           {run.jokers.map((owned, i) => {
             const def = JOKER_REGISTRY.get(owned.defId);
             if (!def) return null;
             const jokerKey = owned.instanceId ?? owned;
             const jokerMenuOpen = jokerMenuKey === jokerKey;
-            const name = lang === 'ko' ? def.nameKo : def.nameEn;
+            const name = objectName(t, 'joker', def.id);
             const tip = jokerTooltip(def.id, owned.edition ?? 'base', t);
             const growthPop = growthPops.find((pop) =>
               pop.jokerId === def.id && (pop.jokerInstanceId !== undefined
@@ -431,6 +443,7 @@ export function JokerShelf({
                 className={[
                   'joker-slot',
                   jokerMenuOpen && 'menu-open',
+                  hoveredJokerIdx === i && 'hover-locked',
                   jokerLeaving && 'leave-sell',
                   arriving?.zone === 'joker' && i >= arriving.from && 'slot-arriving',
                 ].filter(Boolean).join(' ')}
@@ -449,7 +462,7 @@ export function JokerShelf({
                         sub: tip.sub,
                       }
                     : {})}
-                  down
+                  down={!jokerMenuOpen}
                   status={bossDisabled ? 'disabled' : undefined}
                 >
                   <EmojiTileCard
@@ -471,11 +484,18 @@ export function JokerShelf({
                         aria-label={jokersFaceDown ? t('boss.faceDownJoker') : name}
                         aria-haspopup="menu"
                         aria-expanded={jokerMenuOpen}
-                        onClick={() => setJokerMenuKey(jokerMenuOpen ? null : jokerKey)}
+                        onClick={() => {
+                          setMenuIdx(null);
+                          setJokerMenuKey(jokerMenuOpen ? null : jokerKey);
+                        }}
                       />
                     )}
                     {onSellJoker && jokerMenuOpen && (
-                      <div className="consumable-menu bare" role="menu">
+                      <div
+                        className="consumable-menu bare"
+                        role="menu"
+                        data-tooltip-suppress="true"
+                      >
                         <button
                           className="sell"
                           role="menuitem"
@@ -558,7 +578,7 @@ export function JokerShelf({
               extra={consumableTooltipExtra(c, run, t)}
               classification={consumableClassification(c)}
               sub={consumableAxisTip(c, t) ?? undefined}
-              down
+              down={menuIdx !== i}
             >
               <TiltCard
                 idle
@@ -595,10 +615,30 @@ export function JokerShelf({
                     <UiIcon name={CONSUMABLE_ICON[c] ?? 'document'} className="object-ui-icon" />
                   )}
                 </div>
+                <button
+                  type="button"
+                  className="owned-object-select consumable-select"
+                  aria-label={t(`consumable.${c}`)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuIdx === i}
+                  onClick={() => {
+                    setJokerMenuKey(null);
+                    setMenuIdx(menuIdx === i ? null : i);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Escape') return;
+                    e.stopPropagation();
+                    setMenuIdx(null);
+                  }}
+                />
                 {menuIdx === i && (
                   // Keep actions inside TiltCard so pointer tilt transforms the
                   // card and buttons as one attached interaction object.
-                  <div className="consumable-menu bare" role="menu">
+                  <div
+                    className="consumable-menu bare"
+                    role="menu"
+                    data-tooltip-suppress="true"
+                  >
                     <button
                       className="sell"
                       role="menuitem"
@@ -637,19 +677,6 @@ export function JokerShelf({
                   </div>
                 )}
               </TiltCard>
-              <button
-                type="button"
-                className="owned-object-select consumable-select"
-                aria-label={t(`consumable.${c}`)}
-                aria-haspopup="menu"
-                aria-expanded={menuIdx === i}
-                onClick={() => setMenuIdx(menuIdx === i ? null : i)}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Escape') return;
-                  e.stopPropagation();
-                  setMenuIdx(null);
-                }}
-              />
             </Tooltip>
           </div>
         ))}

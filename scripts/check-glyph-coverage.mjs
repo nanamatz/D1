@@ -4,11 +4,11 @@
  * The build used to import @fontsource's per-weight aggregates, which pull EVERY
  * subset the family publishes (Devanagari and Vietnamese for Baloo, Cyrillic for
  * Jost, Cyrillic/Vietnamese/latin-ext plus 120 CJK chunks for Noto Sans KR) —
- * 554 files and 9.26 MB for a game that renders English and Korean. Narrowing to
- * `latin-*` and `korean-*` cut that to 13 files / 1.20 MB.
+ * 554 files and 9.26 MB for the original English/Korean build. The app now
+ * imports explicit Latin, Korean, and Japanese subsets only.
  *
  * Narrowing subsets is exactly the change that silently loses glyphs: a missing
- * range does not fail the build, it renders tofu in the Korean locale. So this
+ * range does not fail the build, it renders tofu in a CJK locale. So this
  * asserts the inverse of what the fonts contain — that every character the app
  * can actually display stays inside the Unicode blocks our imported subsets are
  * defined to cover. Adding copy in a new script fails here rather than shipping.
@@ -45,6 +45,12 @@ const BLOCKS = [
   { name: 'Hangul jamo (compatibility)', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x3130, 0x318f]] },
   { name: 'Hangul jamo', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x1100, 0x11ff]] },
   { name: 'CJK punctuation', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x3000, 0x303f]] },
+  { name: 'Japanese kana', via: '@fontsource/noto-sans-jp/japanese-*.css', ranges: [
+    [0x3040, 0x30ff], [0x31f0, 0x31ff], [0xff00, 0xffef],
+  ] },
+  { name: 'Japanese kanji', via: '@fontsource/noto-sans-jp/japanese-*.css', ranges: [
+    [0x3400, 0x4dbf], [0x4e00, 0x9fff], [0xf900, 0xfaff],
+  ] },
   // Geometric/technical glyphs the UI draws itself (including the
   // letterless-Stone sentinel). These are NOT in any imported subset and
   // fall back to the OS symbol font by design — `tokens.css` sets an explicit
@@ -65,7 +71,7 @@ function displayedCharacters() {
   const add = (text, where) => {
     for (const ch of String(text)) if (!chars.has(ch)) chars.set(ch, where);
   };
-  for (const locale of ['en', 'ko']) {
+  for (const locale of ['en', 'ko', 'ja']) {
     const table = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
     for (const [key, value] of Object.entries(table)) add(value, `${locale}.json:${key}`);
   }

@@ -17,7 +17,7 @@ import {
   jokerTooltip,
   voucherDescKey,
 } from '../descriptions';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { tileTooltip } from '../game';
 import type { UseGame } from '../useGame';
 import {
@@ -139,7 +139,7 @@ const VOUCHER_REDEEM_MS = 720;
 
 /** The shop screen between blinds (GDD §9.2). Buy/sell/reroll, then Next blind. */
 export function Shop({ g }: { g: UseGame }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { run, shop } = g.state;
   const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
   const [redeemingVoucher, setRedeemingVoucher] = useState<'base' | 'bonus' | null>(null);
@@ -192,7 +192,7 @@ export function Shop({ g }: { g: UseGame }) {
       const def = JOKER_REGISTRY.get(item.id);
       const tip = jokerTooltip(item.id, item.edition ?? 'base', t);
       return {
-        name: def ? (lang === 'ko' ? def.nameKo : def.nameEn) : item.id,
+        name: def ? objectName(t, 'joker', def.id) : item.id,
         desc: tip.body,
         tags: tip.tags,
         sub: tip.sub,
@@ -384,12 +384,12 @@ export function Shop({ g }: { g: UseGame }) {
                 return (
                   <Tooltip
                     key={slot}
-                    title={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                    title={objectName(t, 'voucher', voucher.id)}
                     body={t(voucherDescKey(voucher.id))}
                     classification="voucher"
                   >
                     <ShopOffer
-                      label={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                      label={objectName(t, 'voucher', voucher.id)}
                       price={voucher.price}
                       selected={selectedOffer === offerKey}
                       actionLabel={t('shop.redeem')}
@@ -403,7 +403,7 @@ export function Shop({ g }: { g: UseGame }) {
                       onAction={() => redeemVoucher(slot, voucher.price)}
                     >
                       <VoucherCard
-                        name={lang === 'ko' ? voucher.nameKo : voucher.nameEn}
+                        name={objectName(t, 'voucher', voucher.id)}
                         artSrc={voucherArt(voucher.id)}
                         redeeming={redeemingVoucher === slot}
                         motion={false}

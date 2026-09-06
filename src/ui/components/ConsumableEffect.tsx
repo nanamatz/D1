@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { isConstellationId } from '../../engine/constellations';
 import { isFableId } from '../../engine/fables';
@@ -12,13 +12,14 @@ import {
   jokerTooltip,
 } from '../descriptions';
 import { tileTooltip } from '../game';
-import { useI18n } from '../i18n';
+import { objectName, useI18n } from '../i18n';
 import { jokerArt } from '../jokerArt';
 import { richText } from '../richtext';
 import { CardArt, type CardFamily } from './CardArt';
 import { ChanceBadges } from './ChanceBadges';
 import { TileView } from './Tile';
 import { Tooltip } from './Tooltip';
+import { useModalFocus } from '../useModalFocus';
 
 const EFFECT_DURATION_MS = 2400;
 
@@ -30,8 +31,10 @@ const familyOf = (id: ConsumableId): CardFamily | null =>
 
 /** Shared result vignette for consumables without a bespoke sequence. */
 export function ConsumableEffect() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [active, setActive] = useState<(ConsumableEffectEvent & { sequence: number }) | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogRef, active?.sequence ?? null);
 
   useEffect(() => {
     let sequence = 0;
@@ -93,7 +96,7 @@ export function ConsumableEffect() {
     return (
       <Tooltip
         key={`${mode}-${joker.defId}-${index}`}
-        title={lang === 'ko' ? def.nameKo : def.nameEn}
+        title={objectName(t, 'joker', def.id)}
         body={tip.body}
         extra={grownValue(def, joker, t, active.run.bag.length, active.run)}
         rarity={def.rarity}
@@ -128,7 +131,16 @@ export function ConsumableEffect() {
   };
 
   return createPortal(
-    <div className="consumable-effect" key={active.sequence} aria-live="polite">
+    <div
+      ref={dialogRef}
+      className="consumable-effect"
+      key={active.sequence}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="consumable-effect-title"
+      aria-live="polite"
+      tabIndex={-1}
+    >
       <div className={`cfx-stage${family ? '' : ' cfx-no-source'}`}>
         {family && (
           <Tooltip
@@ -142,7 +154,7 @@ export function ConsumableEffect() {
           </Tooltip>
         )}
         <div className="cfx-copy">
-          <strong>{t(`consumable.${active.id}`)}</strong>
+          <strong id="consumable-effect-title">{t(`consumable.${active.id}`)}</strong>
           <p>{richText(consumableTooltipBody(active.id, t))}</p>
           <ChanceBadges results={active.chanceResults} />
           <div className="cfx-results">

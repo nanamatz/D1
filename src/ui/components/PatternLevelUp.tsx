@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { patternChipsMult } from '../../engine/patterns';
 import { audio } from '../audio';
@@ -6,6 +6,7 @@ import { useI18n } from '../i18n';
 import { patternLevelBus, patternLevelClass, type PatternLevelEvent } from '../patternLevel';
 import { CardArt } from './CardArt';
 import { PatternIcon } from './UiIcon';
+import { useModalFocus } from '../useModalFocus';
 
 const PATTERN_LEVEL_DURATION_MS = 3500;
 
@@ -17,6 +18,8 @@ const PATTERN_LEVEL_DURATION_MS = 3500;
 export function PatternLevelUp() {
   const { t } = useI18n();
   const [evt, setEvt] = useState<(PatternLevelEvent & { id: number }) | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogRef, evt?.id ?? null);
 
   useEffect(() => {
     let n = 0;
@@ -47,9 +50,14 @@ export function PatternLevelUp() {
 
   return createPortal(
     <div
+      ref={dialogRef}
       className={['pattern-levelup', patternLevelClass(evt.to)].join(' ')}
       key={evt.id}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pattern-levelup-title"
       aria-live="polite"
+      tabIndex={-1}
     >
       <div className="plu-stage">
         <div className="plu-source">
@@ -57,7 +65,7 @@ export function PatternLevelUp() {
           <span className="plu-dissolve" aria-hidden />
         </div>
         <div className="plu-score">
-          <div className="plu-name">
+          <div className="plu-name" id="pattern-levelup-title">
             <PatternIcon pattern={evt.pattern} />
             {t(`pattern.${evt.pattern}`)}
           </div>

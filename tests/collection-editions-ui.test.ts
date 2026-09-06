@@ -72,6 +72,31 @@ describe('Edition Collection page', () => {
     expect(enhanced).not.toContain('role="tablist"');
   });
 
+  it('keeps enhanced-tile spacing independent of localized label length', () => {
+    const css = readFileSync(
+      new URL('../src/ui/styles/screens.css', import.meta.url),
+      'utf8',
+    );
+
+    expect(css).toMatch(
+      /\.swatch-grid > \.tt-anchor\s*\{[^}]*flex:\s*0 0 96px;[^}]*min-width:\s*0;/s,
+    );
+    expect(css).toMatch(
+      /\.sw-name\s*\{[^}]*width:\s*100%;[^}]*text-align:\s*center;[^}]*overflow-wrap:\s*anywhere;/s,
+    );
+  });
+
+  it('keeps boss cards equal-height when localized names wrap', () => {
+    const css = readFileSync(
+      new URL('../src/ui/styles/screens.css', import.meta.url),
+      'utf8',
+    );
+
+    expect(css).toMatch(
+      /\.boss-card \.cc-name\s*\{[^}]*height:\s*2\.3em;[^}]*overflow:\s*hidden;[^}]*overflow-wrap:\s*anywhere;[^}]*-webkit-line-clamp:\s*2;/s,
+    );
+  });
+
   it('shows all 30 Tags as a two-page 5×3 image grid with shared interaction', () => {
     const component = readFileSync(
       new URL('../src/ui/components/Collection.tsx', import.meta.url),

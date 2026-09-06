@@ -10,6 +10,7 @@ import {
   foldScoreTypewriterEvents,
 } from '../src/ui/settle';
 import type { ScoreEvent, TileMaterial } from '../src/engine/types';
+import { BALANCE } from '../src/engine/balance';
 
 /**
  * playtest-05 A: the round-clear UI is gated on the settlement-sequence completion
@@ -39,17 +40,22 @@ describe('settleDurationMs — the clear signal tracks the settle length', () =>
     expect(long).toBeGreaterThan(short);
   });
 
-  it('scales inversely with game speed', () => {
+  it('scales only score-event slots with game speed', () => {
     const at1x = settleDurationMs(play(6, 2), 1, false);
-    const at2x = settleDurationMs(play(6, 2), 2, false);
-    expect(at2x).toBeCloseTo(at1x / 2);
+    const fixedHold = 650;
+    expect(settleDurationMs(play(6, 2), 0.5, false) - fixedHold)
+      .toBeCloseTo((at1x - fixedHold) * 2);
+    expect(settleDurationMs(play(6, 2), 2, false) - fixedHold)
+      .toBeCloseTo((at1x - fixedHold) / 2);
+    expect(settleDurationMs(play(6, 2), 4, false) - fixedHold)
+      .toBeCloseTo((at1x - fixedHold) / 4);
   });
 
-  it.each([[1, 600], [2, 300]])(
+  it.each([[0.5, 1200], [1, 600], [2, 300], [4, 150]])(
     'runs an ordinary score beat at %ix in %ims',
     (speed, duration) => {
       const oneBeat = settleDurationMs([tile('t0'), settle()], speed, false);
-      expect(oneBeat - 650 / speed).toBe(duration);
+      expect(oneBeat - 650).toBe(duration);
     },
   );
 
@@ -61,8 +67,10 @@ describe('settleDurationMs — the clear signal tracks the settle length', () =>
   });
 
   it('reduced motion is a constant hold, independent of beat count', () => {
-    expect(settleDurationMs(play(2), 1, true)).toBe(700);
-    expect(settleDurationMs(play(12, 5), 2, true)).toBe(700);
+    for (const speed of [0.5, 1, 2, 4]) {
+      expect(settleDurationMs(play(2), speed, true)).toBe(700);
+      expect(settleDurationMs(play(12, 5), speed, true)).toBe(700);
+    }
   });
 
   it('is zero when there are no scoring beats (nothing to wait for)', () => {
@@ -84,18 +92,18 @@ describe('settle presentation snapshot', () => {
     let snapshot = settlePresentationSnapshot(
       { settleId: 0, speed: 1, reduced: false },
       7,
-      2,
+      4,
       false,
     );
-    snapshot = settlePresentationSnapshot(snapshot, 7, 1, true);
-    expect(snapshot).toEqual({ settleId: 7, speed: 2, reduced: true });
+    snapshot = settlePresentationSnapshot(snapshot, 7, 0.5, true);
+    expect(snapshot).toEqual({ settleId: 7, speed: 4, reduced: true });
 
     snapshot = settlePresentationSnapshot(snapshot, 7, 1, false);
-    expect(snapshot).toEqual({ settleId: 7, speed: 2, reduced: true });
+    expect(snapshot).toEqual({ settleId: 7, speed: 4, reduced: true });
 
-    expect(settlePresentationSnapshot(snapshot, 8, 1, false)).toEqual({
+    expect(settlePresentationSnapshot(snapshot, 8, 0.5, false)).toEqual({
       settleId: 8,
-      speed: 1,
+      speed: 0.5,
       reduced: false,
     });
   });
@@ -171,43 +179,49 @@ describe('reduced Score Typewriter fold', () => {
 });
 
 describe('physical Play impact prologue', () => {
+  it('keeps the fixed duration in BALANCE', () => {
+    expect(BALANCE.playImpact.durationMs).toBe(650);
+  });
+
   it.each([
     [1, 1, 650], [2, 1, 650], [10, 1, 650], [18, 1, 650],
-    [1, 2, 400], [2, 2, 400], [10, 2, 400], [18, 2, 400],
-  ])('scales %i tiles at %ix to %ims', (tiles, speed, duration) => {
-    expect(playImpactDurationMs(tiles, speed, false)).toBe(duration);
+    [1, 2, 650], [2, 2, 650], [10, 2, 650], [18, 2, 650],
+    [1, 0.5, 650], [2, 0.5, 650], [10, 0.5, 650], [18, 0.5, 650],
+    [1, 4, 650], [2, 4, 650], [10, 4, 650], [18, 4, 650],
+  ])('keeps %i tiles at %sx fixed to %ims', (tiles, _speed, duration) => {
+    expect(playImpactDurationMs(tiles, false)).toBe(duration);
   });
 
   it('adds the prologue before beat zero and removes it for reduced motion', () => {
     const base = settleDurationMs(play(1), 1, false);
     expect(base).toBe(1850); // two 600ms score beats + 650ms final hold
     expect(settleDurationMs(play(1), 1, false, 1)).toBe(base + 650);
-    expect(playImpactDurationMs(10, 1, true)).toBe(0);
-    expect(playImpactDurationMs(0, 1, false)).toBe(0);
+    expect(playImpactDurationMs(10, true)).toBe(0);
+    expect(playImpactDurationMs(0, false)).toBe(0);
   });
 
-  it.each([[1, 650], [2, 400]])(
-    'adds fixed impact + beats + hold to the single completion source at %ix',
-    (speed, impact) => {
+  it.each([0.5, 1, 2, 4])(
+    'adds fixed impact + beats + hold to the single completion source at %sx',
+    (speed) => {
       expect(settleDurationMs([tile('t0'), settle()], speed, false, 18)).toBe(
-        impact + 600 / speed + 650 / speed,
+        650 + 600 / speed + 650,
       );
-      expect(playImpactDurationMs(18, speed, true)).toBe(0);
+      expect(playImpactDurationMs(18, true)).toBe(0);
     },
   );
 
   it('keeps the rigid slam duration independent of word length', () => {
-    for (const speed of [1, 2]) {
-      expect(playImpactDurationMs(18, speed, false)).toBe(
-        playImpactDurationMs(1, speed, false),
+    for (const speed of [0.5, 1, 2, 4]) {
+      expect(playImpactDurationMs(18, false)).toBe(
+        playImpactDurationMs(1, false),
       );
     }
   });
 
-  it.each([[1, 650], [2, 400]])(
-    'gives a settle-only debuffed play exactly one group slam at %ix',
-    (speed, duration) => {
-      expect(settleDurationMs([settle()], speed, false, 10)).toBe(duration);
+  it.each([0.5, 1, 2, 4])(
+    'gives a settle-only debuffed play exactly one group slam at %sx',
+    (speed) => {
+      expect(settleDurationMs([settle()], speed, false, 10)).toBe(650);
     },
   );
 
@@ -264,6 +278,8 @@ describe('physical Play impact prologue', () => {
     expect(settleSource).toContain('shakeCleanups.forEach((cleanup) => cleanup());');
     expect(settleSource).toContain('cleanups.forEach((cleanup) => cleanup());');
     expect(settleSource).toContain('const sourceAnimation = source?.animate(');
+    expect(settleSource).toContain('animateTileCreation(e, beatDurationMs(e))');
+    expect(settleSource).not.toContain('animateTileCreation(e, scaledBeatDurationMs(e, settleSpeed))');
     expect(settleSource).toContain('cleanups.push(() => sourceAnimation.cancel());');
     expect(settleSource).toContain('let landingAnimation: Animation | null = null;');
     expect(settleSource).toContain('landingAnimation = target.animate(');
@@ -305,7 +321,7 @@ describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', 
     expect(settleDurationMs(beats, 1, false)).toBeGreaterThan(settleDurationMs(beats, 2, false));
   });
 
-  it.each([1, 2])('keeps Lead Plate probability results readable at %i×', (speed) => {
+  it.each([0.5, 1, 2, 4])('keeps Lead Plate probability results readable at %s×', (speed) => {
     const lead: ScoreEvent = {
       kind: 'material',
       material: 'leadPlate',
@@ -314,7 +330,9 @@ describe('settleDurationMs — material beats extend the timeline (GDD §2.2)', 
       multDelta: 0,
       chanceResults: [{ chance: 0.5, label: 'mult', outcome: 'failure' }],
     };
-    expect(settleDurationMs([lead, settle()], speed, false)).toBe(600 + 650 / speed);
+    expect(settleDurationMs([lead, settle()], speed, false)).toBe(
+      Math.max(600 / speed, 600) + 650,
+    );
     if (speed > 1) {
       expect(settleDurationMs([lead, settle()], speed, false)).toBeGreaterThan(
         settleDurationMs([material('plain'), settle()], speed, false),
@@ -341,7 +359,7 @@ describe('settleDurationMs — enhanced Emoji Tile beats stay readable', () => {
     );
   });
 
-  it.each([[1, 1000], [2, 500], [4, 250]])(
+  it.each([[0.5, 2000], [1, 1000], [2, 500], [4, 250]])(
     'scales its longer slot at %ix to %ims',
     (speed, duration) => {
       const enhanced: ScoreEvent = {
@@ -351,13 +369,13 @@ describe('settleDurationMs — enhanced Emoji Tile beats stay readable', () => {
         chipsDelta: 20,
         multDelta: 0,
       };
-      expect(settleDurationMs([enhanced, settle()], speed, false) - 650 / speed).toBe(duration);
+      expect(settleDurationMs([enhanced, settle()], speed, false) - 650).toBe(duration);
     },
   );
 });
 
 describe('settleDurationMs — tile creation stays visible at high speed', () => {
-  it.each([[1, 600], [2, 480], [4, 480]])(
+  it.each([[0.5, 1200], [1, 600], [2, 480], [4, 480]])(
     'holds a Counterfeit copy beat at %i× for %ims',
     (speed, duration) => {
     const copy: ScoreEvent = {
@@ -368,7 +386,7 @@ describe('settleDurationMs — tile creation stays visible at high speed', () =>
       sourceTileId: 'source',
       createdTileIds: ['copy'],
     };
-      expect(settleDurationMs([copy, settle()], speed, false)).toBe(duration + 650 / speed);
+      expect(settleDurationMs([copy, settle()], speed, false)).toBe(duration + 650);
     },
   );
 });
