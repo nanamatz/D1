@@ -20,6 +20,7 @@ describe('main-menu language modal', () => {
     expect(i18n).toContain("{ id: 'es-ES', label: 'Español (España)', locale: 'es-ES' }");
     expect(i18n).toContain("{ id: 'fr-FR', label: 'Français', locale: 'fr-FR' }");
     expect(i18n).toContain("{ id: 'ru-RU', label: 'Русский', locale: 'ru-RU' }");
+    expect(i18n).toContain("{ id: 'pl-PL', label: 'Polski', locale: 'pl-PL' }");
     expect(menu).toContain('aria-pressed={lang === choice.id}');
     expect(menu).toContain("onClose={() => setLanguageOpen(false)}");
   });

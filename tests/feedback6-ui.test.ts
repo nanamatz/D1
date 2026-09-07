@@ -10,6 +10,7 @@ import de from '../locales/de.json';
 import esES from '../locales/es-ES.json';
 import frFR from '../locales/fr-FR.json';
 import ruRU from '../locales/ru-RU.json';
+import plPL from '../locales/pl-PL.json';
 import { resolve } from '../src/ui/i18n';
 
 const source = (path: string) => readFileSync(path, 'utf8');
@@ -69,8 +70,8 @@ describe('latest feedback UI regressions', () => {
   });
 
   it('interpolates the current Dead Letter in every localized boss tooltip', () => {
-    const dicts = { en, ko, ja, 'zh-CN': zhCN, 'zh-TW': zhTW, 'pt-BR': ptBR, de, 'es-ES': esES, 'fr-FR': frFR, 'ru-RU': ruRU };
-    for (const lang of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'ru-RU'] as const) {
+    const dicts = { en, ko, ja, 'zh-CN': zhCN, 'zh-TW': zhTW, 'pt-BR': ptBR, de, 'es-ES': esES, 'fr-FR': frFR, 'ru-RU': ruRU, 'pl-PL': plPL };
+    for (const lang of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'ru-RU', 'pl-PL'] as const) {
       const description = resolve(dicts, lang, 'bossdesc.deadLetter', { letter: 'Q' });
       expect(description).toContain('Q');
       expect(description).not.toContain('{letter}');

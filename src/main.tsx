@@ -9,17 +9,26 @@ import { I18nProvider } from './ui/i18n';
 // pull EVERY unicode subset @fontsource publishes — Devanagari and Vietnamese
 // for Baloo, Cyrillic for Jost, Cyrillic/Vietnamese/latin-ext for Noto Sans KR —
 // which is how the build ended up shipping 554 font files. The game renders
-// English, Korean, Japanese, Simplified/Traditional Chinese, and Russian, so it needs `latin` everywhere plus the named
-// CJK/Cyrillic subsets. Adding a language means adding its subset deliberately.
+// English, Korean, Japanese, Simplified/Traditional Chinese, Russian, and Polish, so it needs `latin` everywhere plus the named
+// Latin Extended/CJK/Cyrillic subsets. Adding a language means adding its subset deliberately.
 import '@fontsource/baloo-2/latin-500.css';
 import '@fontsource/baloo-2/latin-600.css';
 import '@fontsource/baloo-2/latin-700.css';
+import '@fontsource/baloo-2/latin-ext-500.css';
+import '@fontsource/baloo-2/latin-ext-600.css';
+import '@fontsource/baloo-2/latin-ext-700.css';
 import '@fontsource/jersey-10/latin-400.css';
+import '@fontsource/jersey-10/latin-ext-400.css';
 import '@fontsource/jost/latin-300.css';
 import '@fontsource/jost/latin-300-italic.css';
 import '@fontsource/jost/latin-500.css';
 import '@fontsource/jost/latin-700.css';
 import '@fontsource/jost/latin-900.css';
+import '@fontsource/jost/latin-ext-300.css';
+import '@fontsource/jost/latin-ext-300-italic.css';
+import '@fontsource/jost/latin-ext-500.css';
+import '@fontsource/jost/latin-ext-700.css';
+import '@fontsource/jost/latin-ext-900.css';
 import '@fontsource/jost/cyrillic-300.css';
 import '@fontsource/jost/cyrillic-300-italic.css';
 import '@fontsource/jost/cyrillic-500.css';
@@ -31,6 +40,8 @@ import '@fontsource/noto-sans-kr/korean-500.css';
 import '@fontsource/noto-sans-kr/korean-700.css';
 import '@fontsource/noto-sans-kr/latin-500.css';
 import '@fontsource/noto-sans-kr/latin-700.css';
+import '@fontsource/noto-sans-kr/latin-ext-500.css';
+import '@fontsource/noto-sans-kr/latin-ext-700.css';
 import '@fontsource/noto-sans-kr/cyrillic-500.css';
 import '@fontsource/noto-sans-kr/cyrillic-700.css';
 import '@fontsource/noto-sans-jp/japanese-500.css';
