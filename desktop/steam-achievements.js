@@ -67,6 +67,8 @@ export function normalizeSteamLanguage(value) {
       return 'de';
     case 'spanish':
       return 'es-ES';
+    case 'french':
+      return 'fr-FR';
     case 'english':
     default:
       return 'en';

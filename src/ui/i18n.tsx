@@ -12,6 +12,7 @@ import zhTW from '../../locales/zh-TW.json';
 import ptBR from '../../locales/pt-BR.json';
 import de from '../../locales/de.json';
 import esES from '../../locales/es-ES.json';
+import frFR from '../../locales/fr-FR.json';
 import { usePersistedState } from './hooks';
 import { steamLanguageHint } from './storage';
 
@@ -24,6 +25,7 @@ export const LANGUAGES = [
   { id: 'pt-BR', label: 'Português (Brasil)', locale: 'pt-BR' },
   { id: 'de', label: 'Deutsch', locale: 'de-DE' },
   { id: 'es-ES', label: 'Español (España)', locale: 'es-ES' },
+  { id: 'fr-FR', label: 'Français', locale: 'fr-FR' },
 ] as const;
 export type Lang = (typeof LANGUAGES)[number]['id'];
 export const isLang = (value: unknown): value is Lang =>
@@ -37,6 +39,7 @@ const DICTS: Record<Lang, Record<string, string>> = {
   'pt-BR': ptBR as Record<string, string>,
   de: de as Record<string, string>,
   'es-ES': esES as Record<string, string>,
+  'fr-FR': frFR as Record<string, string>,
 };
 
 export type TParams = Record<string, string | number>;

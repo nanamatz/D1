@@ -9,6 +9,7 @@ import zhTW from '../locales/zh-TW.json';
 import ptBR from '../locales/pt-BR.json';
 import de from '../locales/de.json';
 import esES from '../locales/es-ES.json';
+import frFR from '../locales/fr-FR.json';
 import { SteamOwnershipNotice } from '../src/ui/components/SteamOwnershipNotice';
 import { resetPersistedState } from '../src/ui/hooks';
 import { I18nProvider, useI18n } from '../src/ui/i18n';
@@ -25,7 +26,7 @@ class MemStorage {
 }
 
 function installBridge(
-  languageHint: 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'pt-BR' | 'de' | 'es-ES',
+  languageHint: 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'pt-BR' | 'de' | 'es-ES' | 'fr-FR',
   steamStatus: StorageBridge['steamStatus'] = 'claim-required',
 ) {
   (globalThis as { wj?: StorageBridge }).wj = {
@@ -110,6 +111,14 @@ describe('Steam startup language', () => {
     const html = renderNotice();
     expect(html).toContain(esES['steam.owner.claim-required.title']);
     expect(html).toContain(esES['steam.owner.accept']);
+    expect(localStorage.getItem('wj.lang')).toBeNull();
+  });
+
+  it('renders the first ownership decision in French without persisting detection', () => {
+    installBridge('fr-FR');
+    const html = renderNotice();
+    expect(html).toContain(frFR['steam.owner.claim-required.title']);
+    expect(html).toContain(frFR['steam.owner.accept']);
     expect(localStorage.getItem('wj.lang')).toBeNull();
   });
 
