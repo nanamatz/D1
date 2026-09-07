@@ -27,5 +27,8 @@ describe('French localization', () => {
     expect(frFR['intro.step.frame.bodyUnlocked']).toContain('YELLOW');
     expect(frFR['jokerdesc.misbound']).toContain('[m:+0.5 Mult]');
     expect(Object.values(frFR).join('\n')).not.toMatch(/ZXQTAG|ZXQPH|QXZ|▁|<\s*x\d+\s*>/i);
+    expect(Object.values(frFR).join('\n')).not.toMatch(
+      /\b(default-font|sentence pattern|hand size|part-of-speech|in 1,000|twice|6th|Vowel Flush)\b/i,
+    );
   });
 });

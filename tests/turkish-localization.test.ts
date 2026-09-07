@@ -24,8 +24,10 @@ describe('Turkish localization', () => {
     expect(trTR['btn.play']).toBe('Kelimeyi oyna');
     expect(trTR['settings.fullscreen']).toBe('Tam ekran');
     expect(trTR['intro.step.frame.bodyUnlocked']).toContain('YELLOW');
-    expect(trTR['jokerdesc.misbound']).toContain('[m:+0.5 Mult]');
-    expect(Object.values(trTR).join('\n')).not.toMatch(/ZXQTAG|ZXQPH|QXZ|<\s*x\d+\s*>/i);
+    expect(trTR['jokerdesc.misbound']).toContain('[m:+0.5 Çarpan]');
+    expect(Object.values(trTR).join('\n')).not.toMatch(
+      /ZXQTAG|ZXQPH|QXZ|<\s*x\d+\s*>|CreateCreate|AddAdd|Tamam Complete|Bütün Hepsi|Yemin ederim|Hemen derhal|Emoji Kaplama|⁇/i,
+    );
   });
 
   it('keeps corrected Turkish labels free of duplicated machine translation', () => {

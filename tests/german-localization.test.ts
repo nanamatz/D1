@@ -27,5 +27,8 @@ describe('German localization', () => {
     expect(de['intro.step.frame.bodyUnlocked']).toContain('YELLOW');
     expect(de['jokerdesc.misbound']).toContain('[m:+0.5 Mult]');
     expect(Object.values(de).join('\n')).not.toMatch(/ZXQPH|QXZ|<\s*x\d+\s*>/i);
+    expect(Object.values(de).join('\n')).not.toMatch(
+      /\b(default-font|stationery shop|in 1,000|twice|Vowel Flush|Mishmash|Whiplash)\b/i,
+    );
   });
 });

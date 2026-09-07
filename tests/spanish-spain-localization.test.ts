@@ -28,5 +28,8 @@ describe('Spanish (Spain) localization', () => {
     expect(esES['jokerdesc.misbound']).toContain('[m:+0.5 Mult]');
     expect(Object.values(esES).join('\n')).not.toMatch(/ZXQTAG|ZXQPH|QXZ|<\s*x\d+\s*>/i);
     expect(Object.values(esES).join('\n')).not.toMatch(/\b(computadora|celular|ustedes)\b/i);
+    expect(Object.values(esES).join('\n')).not.toMatch(
+      /\b(debuffed|hand size|part-of-speech|in 1,000|6-letter|Pattern mult|Vowel Flush)\b/i,
+    );
   });
 });

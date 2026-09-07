@@ -25,7 +25,9 @@ describe('Polish localization', () => {
     expect(plPL['settings.fullscreen']).toBe('Pełny ekran');
     expect(plPL['record.greenLp.desc']).toBe('Cele rosną szybciej z każdym rozdziałem');
     expect(plPL['intro.step.frame.bodyUnlocked']).toContain('YELLOW');
-    expect(plPL['jokerdesc.misbound']).toContain('[m:+0.5 Mult]');
-    expect(Object.values(plPL).join('\n')).not.toMatch(/ZXQTAG|ZXQPH|QXZ|▁|\?\?<\s*x\d+\s*>/i);
+    expect(plPL['jokerdesc.misbound']).toContain('[m:+0.5 Mnożnik]');
+    expect(Object.values(plPL).join('\n')).not.toMatch(
+      /ZXQTAG|ZXQPH|QXZ|▁|\?\?<\s*x\d+\s*>|Przewodniczący|woof of|It just|potext|rozdziały rozdziały|A new friend stirs/i,
+    );
   });
 });
