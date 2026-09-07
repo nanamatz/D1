@@ -31,4 +31,8 @@ describe('main-menu language modal', () => {
     expect(css).toMatch(/@media \(max-width: 620px\)[\s\S]*\.language-grid\s*{\s*grid-template-columns:\s*1fr;/);
     expect(css).toMatch(/\.language-modal \.back-bar\s*{[^}]*width:\s*100%;[^}]*margin-inline:\s*auto;/s);
   });
+
+  it('wraps long active-language labels inside the compact menu card', () => {
+    expect(css).toMatch(/\.menu-mini-card\.language \.menu-mini-button\s*{[^}]*font-size:\s*21px;[^}]*overflow-wrap:\s*normal;[^}]*text-align:\s*center;[^}]*word-break:\s*normal;[^}]*white-space:\s*normal;/s);
+  });
 });

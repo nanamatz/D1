@@ -75,6 +75,29 @@ async function run() {
     }
   }
 
+  async function assertLanguageWordsIntact(expected) {
+    const layout = await evaluate(`(() => {
+      const label = document.querySelector('.menu-mini-card.language .menu-mini-button > span');
+      const button = label?.closest('button');
+      const text = label?.firstChild;
+      if (!(label instanceof HTMLElement) || !(button instanceof HTMLElement) || !(text instanceof Text)) return null;
+      const words = text.data.split(/\\s+/);
+      let offset = 0;
+      const wordLines = words.map((word) => {
+        const start = text.data.indexOf(word, offset);
+        offset = start + word.length;
+        const range = document.createRange();
+        range.setStart(text, start);
+        range.setEnd(text, offset);
+        return range.getClientRects().length;
+      });
+      return { text: text.data, wordLines, clipped: label.scrollWidth > button.clientWidth };
+    })()`);
+    if (!layout || layout.text !== expected || layout.clipped || layout.wordLines.some((lines) => lines !== 1)) {
+      throw new Error(`Language label split or clipped: ${JSON.stringify(layout)}`);
+    }
+  }
+
   try {
     await win.loadFile(path.join(ROOT, 'dist', 'index.html'));
     await waitFor(`document.querySelector('.menu-play')`, 'main menu');
@@ -98,6 +121,16 @@ async function run() {
     })()`);
     await page.reload();
     await waitFor(`document.querySelector('.menu-play')`, 'configured main menu');
+
+    for (const [locale, label] of [['pt-BR', 'Português (Brasil)'], ['es-ES', 'Español (España)']]) {
+      await evaluate(`localStorage.setItem('wj.lang', JSON.stringify(${JSON.stringify(locale)}))`);
+      await page.reload();
+      await waitFor(`document.querySelector('.menu-play')`, `${locale} main menu`);
+      await assertLanguageWordsIntact(label);
+    }
+    await evaluate(`localStorage.setItem('wj.lang', JSON.stringify('en'))`);
+    await page.reload();
+    await waitFor(`document.querySelector('.menu-play')`, 'English main menu');
 
     // Menu -> Collection -> one real card gallery.
     await click('.menu-collection');

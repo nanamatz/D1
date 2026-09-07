@@ -2071,7 +2071,12 @@ body.force-reduced-motion:has(.menu)::after {
   align-items: center;
   justify-content: center;
   padding-inline: 4px;
-  white-space: nowrap;
+  font-size: 21px;
+  line-height: 1.05;
+  overflow-wrap: normal;
+  text-align: center;
+  word-break: normal;
+  white-space: normal;
 }
 
 .language-modal {

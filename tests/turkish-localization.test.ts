@@ -27,4 +27,13 @@ describe('Turkish localization', () => {
     expect(trTR['jokerdesc.misbound']).toContain('[m:+0.5 Mult]');
     expect(Object.values(trTR).join('\n')).not.toMatch(/ZXQTAG|ZXQPH|QXZ|<\s*x\d+\s*>/i);
   });
+
+  it('keeps corrected Turkish labels free of duplicated machine translation', () => {
+    expect(trTR['material.polished']).toBe('Cilalı');
+    expect(trTR['consumabledesc.fable6']).toContain('Cilalı');
+    expect(trTR['profile.empty']).toBe('Boş');
+    expect(trTR['record.yellowLp.name']).toBe('Sarı LP');
+    expect(trTR['collection.mascot.selected']).toBe('Seçili');
+    expect(trTR['consumabledesc.fable15']).not.toContain('A A A');
+  });
 });
