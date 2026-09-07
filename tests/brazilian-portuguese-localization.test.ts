@@ -15,6 +15,7 @@ describe('Brazilian Portuguese localization', () => {
 
   it('uses the approved game glossary and Brazilian UI style', () => {
     expect(ptBR['chance.label.mult']).toBe('Mult.');
+    expect(ptBR['record.greenLp.desc']).toBe('Alvos crescem mais por Capítulo');
     expect(ptBR['chance.label.gold']).toBe('Cachê');
     expect(ptBR['tutorial.firstGibberish.title']).toBe('Sem sentido');
     expect(ptBR['tutorial.firstJoker.title']).toBe('Peça de Emoji');
