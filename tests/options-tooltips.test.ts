@@ -4,7 +4,7 @@ import { GAME_SPEEDS } from '../src/ui/settings';
 
 const source = readFileSync('src/ui/components/Options.tsx', 'utf8');
 const css = readFileSync('src/ui/styles/screens.css', 'utf8');
-const locales = ['en', 'ko', 'ja', 'zh-CN', 'zh-TW'].map((lang) => JSON.parse(
+const locales = ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR'].map((lang) => JSON.parse(
   readFileSync(`locales/${lang}.json`, 'utf8'),
 ) as Record<string, string>);
 
@@ -37,8 +37,8 @@ describe('Settings tooltip coverage', () => {
     expect(source).toContain("ariaLabel: t('settings.sfxMute')");
     expect(source).toContain('aria-label={mute.ariaLabel}');
     for (const locale of locales) {
-      expect(locale['settings.audioNote']).toMatch(/^(Audio|오디오|オーディオ|音频|音訊)$/);
-      expect(locale['settings.mute']).toMatch(/^(Mute|음소거|ミュート|静音|靜音)$/);
+      expect(locale['settings.audioNote']).toMatch(/^(Audio|오디오|オーディオ|音频|音訊|Áudio)$/);
+      expect(locale['settings.mute']).toMatch(/^(Mute|음소거|ミュート|静音|靜音|Silenciar)$/);
     }
     expect(source).toContain('className="resolution-select"');
     expect(source).toContain('className="btn exchange sm"');

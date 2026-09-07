@@ -147,6 +147,9 @@ describe('desktop backend (bridge present)', () => {
     bridge.languageHint = 'zh-TW';
     expect(steamLanguageHint()).toBe('zh-TW');
 
+    bridge.languageHint = 'pt-BR';
+    expect(steamLanguageHint()).toBe('pt-BR');
+
     (bridge as unknown as { languageHint?: string }).languageHint = 'koreana';
     expect(steamLanguageHint()).toBeUndefined();
     expect(JSON.stringify(bridge)).not.toContain('steamId64');

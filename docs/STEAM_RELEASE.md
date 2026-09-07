@@ -43,12 +43,13 @@ executable remain `Play the World` and `Play the World.exe`; changing the
 internal name would orphan existing saves.
 
 Under Supported Platforms, select **Windows only**. Do not select macOS, Linux +
-SteamOS, or Android. Claim only English, Korean, Japanese, Simplified Chinese, and Traditional Chinese **Interface** support; do not
+SteamOS, or Android. Claim only English, Korean, Japanese, Simplified Chinese, Traditional Chinese, and Brazilian Portuguese **Interface** support; do not
 claim Full Audio or Subtitles. Do not advertise any unimplemented Steam feature.
 Import `steam/achievement-localization/achievement_loc_japanese.vdf` when publishing
 the Japanese achievement names and descriptions, and
 `steam/achievement-localization/achievement_loc_schinese.vdf` for Simplified Chinese, and
-`steam/achievement-localization/achievement_loc_tchinese.vdf` for Traditional Chinese.
+`steam/achievement-localization/achievement_loc_tchinese.vdf` for Traditional Chinese, and
+`steam/achievement-localization/achievement_loc_brazilian.vdf` for Brazilian Portuguese.
 
 ### Windows system requirements
 
@@ -186,8 +187,8 @@ auto-bind, positive legacy accept/decline, malformed owner fail-closed, owner
 write failure, and primary-to-backup recovery. Repeat Cloud-file tests with
 separate Windows users to distinguish byte isolation from statistics isolation.
 On a clean machine-language profile, launch with Steam language `koreana`, `japanese`,
-`schinese`, `tchinese`, and `english` and confirm the first ownership prompt is Korean, Japanese,
-Simplified Chinese, Traditional Chinese, and English respectively
+`schinese`, `tchinese`, `brazilian`, and `english` and confirm the first ownership prompt is Korean, Japanese,
+Simplified Chinese, Traditional Chinese, Brazilian Portuguese, and English respectively
 with no language flash. Confirm an existing valid `wj.lang` overrides Steam, an
 unsupported or throwing Steam language falls back to English without disabling the
 Steam session, and detection does not write `wj.lang`. Direct-EXE and web launches
