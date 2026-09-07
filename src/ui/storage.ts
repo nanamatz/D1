@@ -57,7 +57,7 @@ export interface StorageBridge {
   syncSteam?(payload: import('./steamAchievements').SteamStatPayload): void;
   steamStatus?: SteamOwnershipStatus;
   /** Sanitized main-process bootstrap hint; never a raw Steam locale. */
-  languageHint?: 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'pt-BR' | 'de';
+  languageHint?: 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'pt-BR' | 'de' | 'es-ES';
   decideSteamClaim?(decision: 'accept' | 'decline'): void;
   onSteamStatus?(listener: (status: SteamOwnershipStatus) => void): void;
 }
@@ -100,9 +100,9 @@ export function steamSyncAvailable(): boolean {
   return typeof getBridge()?.syncSteam === 'function';
 }
 
-export function steamLanguageHint(): 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'pt-BR' | 'de' | undefined {
+export function steamLanguageHint(): 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'pt-BR' | 'de' | 'es-ES' | undefined {
   const hint = getBridge()?.languageHint;
-  return hint === 'en' || hint === 'ko' || hint === 'ja' || hint === 'zh-CN' || hint === 'zh-TW' || hint === 'pt-BR' || hint === 'de'
+  return hint === 'en' || hint === 'ko' || hint === 'ja' || hint === 'zh-CN' || hint === 'zh-TW' || hint === 'pt-BR' || hint === 'de' || hint === 'es-ES'
     ? hint : undefined;
 }
 

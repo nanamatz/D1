@@ -4,7 +4,7 @@ import { GAME_SPEEDS } from '../src/ui/settings';
 
 const source = readFileSync('src/ui/components/Options.tsx', 'utf8');
 const css = readFileSync('src/ui/styles/screens.css', 'utf8');
-const locales = ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de'].map((lang) => JSON.parse(
+const locales = ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES'].map((lang) => JSON.parse(
   readFileSync(`locales/${lang}.json`, 'utf8'),
 ) as Record<string, string>);
 
