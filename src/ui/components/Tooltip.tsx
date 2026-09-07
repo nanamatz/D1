@@ -52,6 +52,8 @@ interface Props {
   content?: ReactNode;
   /** Keep this tooltip vertically inside the physical viewport. */
   viewportContain?: boolean;
+  /** Let the tooltip panel itself receive pointer input (Run Info pattern examples only). */
+  interactive?: boolean;
   children?: ReactNode;
 }
 
@@ -250,6 +252,7 @@ export function Tooltip({
   touchPin = false,
   content,
   viewportContain = true,
+  interactive = false,
   children,
 }: Props) {
   const { t } = useI18n();
@@ -284,7 +287,7 @@ export function Tooltip({
     releaseTooltip(tooltipId, 'hover');
   };
   const scheduleHoverHide = () => {
-    if (!viewportContain) {
+    if (!interactive) {
       hideHover();
       return;
     }
@@ -393,7 +396,7 @@ export function Tooltip({
       clearHoverHide();
       releaseTooltip(tooltipId);
     };
-  }, [disabled, down, externalAnchorRef, touchPin]);
+  }, [disabled, down, externalAnchorRef, interactive, touchPin]);
 
   useEffect(() => {
     if (!open) {
@@ -521,10 +524,11 @@ export function Tooltip({
         compact ? 'tile-tt' : '',
         hasSupplement ? 'has-sub' : '',
         viewportContain ? 'viewport-contained' : '',
+        interactive ? 'interactive' : '',
       ].filter(Boolean).join(' ')}
       role="tooltip"
-      onPointerEnter={viewportContain ? clearHoverHide : undefined}
-      onPointerLeave={viewportContain ? scheduleHoverHide : undefined}
+      onPointerEnter={interactive ? clearHoverHide : undefined}
+      onPointerLeave={interactive ? scheduleHoverHide : undefined}
       style={{
         '--tt-x': `${position.x}px`,
         '--tt-y': `${position.y}px`,

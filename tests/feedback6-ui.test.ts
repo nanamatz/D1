@@ -4,6 +4,7 @@ import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 import ja from '../locales/ja.json';
 import zhCN from '../locales/zh-CN.json';
+import zhTW from '../locales/zh-TW.json';
 import { resolve } from '../src/ui/i18n';
 
 const source = (path: string) => readFileSync(path, 'utf8');
@@ -63,8 +64,8 @@ describe('latest feedback UI regressions', () => {
   });
 
   it('interpolates the current Dead Letter in every localized boss tooltip', () => {
-    const dicts = { en, ko, ja, 'zh-CN': zhCN };
-    for (const lang of ['en', 'ko', 'ja', 'zh-CN'] as const) {
+    const dicts = { en, ko, ja, 'zh-CN': zhCN, 'zh-TW': zhTW };
+    for (const lang of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW'] as const) {
       const description = resolve(dicts, lang, 'bossdesc.deadLetter', { letter: 'Q' });
       expect(description).toContain('Q');
       expect(description).not.toContain('{letter}');

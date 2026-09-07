@@ -20,7 +20,10 @@ describe('Shipped legal notices', () => {
     expect(lock.packages['node_modules/react']?.version).toBe('18.3.1');
     expect(lock.packages['node_modules/react-dom']?.version).toBe('18.3.1');
     expect(lock.packages['node_modules/scheduler']?.version).toBe('0.23.2');
-    for (const id of ['jost', 'noto-sans-kr', 'baloo-2', 'jersey-10']) {
+    for (const id of [
+      'jost', 'noto-sans-jp', 'noto-sans-kr', 'noto-sans-sc', 'noto-sans-tc',
+      'baloo-2', 'jersey-10',
+    ]) {
       expect(lock.packages[`node_modules/@fontsource/${id}`]?.version).toBe('5.3.0');
     }
 

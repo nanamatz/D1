@@ -206,12 +206,12 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     const active = renderUntilStable({
       ...common,
       active: true,
-      tier: 6,
+      tier: 5,
       beatId: 'score-7-15',
       holdActive: false,
     } as Props);
-    expect(presentationLayers(active)[0]?.props?.className).toContain('typewriter-tier-6');
-    expect(active.props.className).not.toContain('typewriter-tier-6');
+    expect(presentationLayers(active)[0]?.props?.className).toContain('typewriter-tier-5');
+    expect(active.props.className).not.toContain('typewriter-tier-5');
     expect(active.props.className).toContain('is-active');
     const repeating = renderUntilStable({
       ...common,
@@ -221,7 +221,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       holdActive: true,
     } as Props);
     expect(repeating.props.className).toContain('is-clear-cycle');
-    expect(repeating.props.className).toContain('typewriter-tier-6');
+    expect(repeating.props.className).toContain('typewriter-tier-5');
     expect(repeating.props.className).toContain('is-active');
     expect(query.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
     expect(vi.getTimerCount()).toBeGreaterThan(0);
@@ -239,7 +239,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     expect(reduced.props.className).toContain('is-clear-held');
     expect(reduced.props.className).toContain('is-reduced');
     expect(reduced.props.className).not.toContain('is-clear-cycle');
-    expect(reduced.props['data-tier']).toBe(6);
+    expect(reduced.props['data-tier']).toBe(5);
     expect(vi.getTimerCount()).toBe(0);
 
     vi.advanceTimersByTime(10_000);
@@ -312,7 +312,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     } satisfies Partial<Props>;
     const firstBeatId = 'score-fast-first';
     const secondBeatId = 'score-fast-second';
-    const firstTier = 6;
+    const firstTier = 5;
 
     renderUntilStable({
       ...common,
@@ -345,8 +345,21 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
 
     vi.advanceTimersByTime(0);
     audio.scoreTypewriterKey.mockClear();
+    const secondVisualCount = BALANCE.scoreTypewriter.visualKeyCounts[1];
+    const remainingSecondAudio = Array.from(
+      { length: BALANCE.scoreTypewriter.audibleKeyCounts[1] },
+      (_, index) => Math.floor(index * secondVisualCount
+        / BALANCE.scoreTypewriter.audibleKeyCounts[1]),
+    ).filter((pressIndex) => scoreTypewriterKeyTiming(
+      secondBeatId,
+      1,
+      pressIndex,
+      secondVisualCount,
+    ).delayMs > 0).length;
     vi.advanceTimersByTime(310);
-    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(remainingFirstAudio);
+    expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(
+      remainingFirstAudio + remainingSecondAudio,
+    );
 
     const firstFinished = renderUntilStable({
       ...common,
@@ -366,7 +379,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     expect(presentationBeatIds(allFinished)).toEqual([]);
   });
 
-  it('keeps Tier 1 visuals and shake local when a Tier 6 beat overlaps it', () => {
+  it('keeps Tier 1 visuals and shake local when a Tier 5 beat overlaps it', () => {
     const common = {
       primaryKeyId: 'KeyQ',
       liveTotal: 10,
@@ -389,20 +402,20 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
     const overlapped = renderUntilStable({
       ...common,
       active: true,
-      tier: 6,
-      beatId: 'tier-6-second',
+      tier: 5,
+      beatId: 'tier-5-second',
     } as Props);
     const layers = presentationLayers(overlapped);
 
-    expect(presentationBeatIds(overlapped)).toEqual(['tier-1-first', 'tier-6-second']);
+    expect(presentationBeatIds(overlapped)).toEqual(['tier-1-first', 'tier-5-second']);
     expect(layers[0]?.props?.className).toContain('typewriter-tier-1');
-    expect(layers[0]?.props?.className).not.toContain('typewriter-tier-6');
+    expect(layers[0]?.props?.className).not.toContain('typewriter-tier-5');
     expect(layers[0]?.props?.style?.['--typewriter-shake'])
       .toBe(String(BALANCE.scoreTypewriter.shakeFactors[1]));
-    expect(layers[1]?.props?.className).toContain('typewriter-tier-6');
+    expect(layers[1]?.props?.className).toContain('typewriter-tier-5');
     expect(layers[1]?.props?.style?.['--typewriter-shake'])
-      .toBe(String(BALANCE.scoreTypewriter.shakeFactors[6]));
-    expect(overlapped.props.className).not.toContain('typewriter-tier-6');
+      .toBe(String(BALANCE.scoreTypewriter.shakeFactors[5]));
+    expect(overlapped.props.className).not.toContain('typewriter-tier-5');
   });
 
   it('keeps one clear scheduler across cashout entry and cancels it on Collect', () => {

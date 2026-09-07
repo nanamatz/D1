@@ -121,7 +121,7 @@ describe('reduced Score Typewriter fold', () => {
       chips: 40,
       mult: 1,
       flatScore: 0,
-      tier: 6,
+      tier: 5,
       delta: 10,
       primaryKeyId: 'KeyA',
     });

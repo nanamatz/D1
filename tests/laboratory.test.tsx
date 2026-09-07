@@ -6,24 +6,24 @@ import ko from '../locales/ko.json';
 const source = (path: string): string => readFileSync(path, 'utf8');
 
 describe('rotating developer laboratory', () => {
-  it('shows the current production Score Keyboard flame and LED preview', () => {
+  it('shows every production Score Keyboard tier', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
     expect(lab.match(/desk-lab-card desk-lab-score-card/g)).toHaveLength(1);
-    expect(en['desk.lab.scoreFeedback.title']).toBe('Score Feedback Flame & LEDs');
+    expect(en['desk.lab.scoreFeedback.title']).toBe('Score Keyboard Tiers 1–5');
     expect(en['desk.lab.scoreFeedback.body']).toContain('production Score Keyboard effect');
     expect(lab).toContain('<ScoreTypewriter');
-    expect(lab).toContain('aria-pressed={tier === 6}');
+    expect(lab).toContain('const TIERS = [1, 2, 3, 4, 5]');
     expect(en['desk.lab.replay']).toBe('Replay');
   });
 
-  it('reuses the production ScoreTypewriter with UI-local Tier 5/6 state', () => {
+  it('reuses the production ScoreTypewriter with UI-local Tier 1–5 state', () => {
     const lab = source('src/ui/components/DeskEncounterLab.tsx');
     const component = source('src/ui/components/ScoreTypewriter.tsx');
     expect(lab).toContain("import { ScoreTypewriter } from './ScoreTypewriter'");
-    expect(lab).toContain('const [tier, setTier] = useState<5 | 6>(6)');
+    expect(lab).toContain('const [tier, setTier] = useState<ScoreTypewriterTier>(1)');
     expect(lab).toContain('beatId={`lab-${tier}-${replay}`}');
-    expect(lab).toContain('<button className="btn" aria-pressed={tier === 5}');
-    expect(lab).toContain('<button className="btn" aria-pressed={tier === 6}');
+    expect(lab).toContain('{TIERS.map((value) => (');
+    expect(lab).toContain('aria-pressed={tier === value}');
     expect(component).toContain("preview && 'is-lab-preview'");
     expect(component).toContain('return preview ? dock : createPortal(dock, document.body)');
     expect(lab).not.toContain('MoneyValue');
@@ -81,6 +81,8 @@ describe('rotating developer laboratory', () => {
     expect(menu).toContain("t('menu.deskLab')");
     expect(lab).toContain('className="btn desk-lab-back"');
     expect(css).toMatch(/\.desk-lab-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 680px\)/s);
+    expect(css).toMatch(/\.desk-lab-score-controls\s*\{[^}]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)/s);
+    expect(css).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.desk-lab-score-controls\s*\{\s*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/s);
     expect(css).toMatch(/@media \(max-width: 900px\)[\s\S]*?\.desk-lab-grid\s*\{\s*grid-template-columns:\s*1fr;/);
     expect(css).toMatch(/@media \(forced-colors: active\)[\s\S]*?\.desk-lab-card,[\s\S]*?\.desk-lab-score-stage\s*\{\s*border-color:\s*CanvasText;/);
     expect(css).toMatch(/\.desk-lab-card\s*\{[^}]*min-width:\s*0;[^}]*overflow:\s*hidden;/s);

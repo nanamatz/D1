@@ -506,6 +506,7 @@ body {
 }
 :root:lang(ko) { --cjk-font: 'Noto Sans KR'; }
 :root:lang(zh-CN) { --cjk-font: 'Noto Sans SC'; }
+:root:lang(zh-TW) { --cjk-font: 'Noto Sans TC'; }
 body {
   font-family: 'Baloo 2', var(--cjk-font), 'Noto Sans KR', sans-serif;
   color: var(--ink);

@@ -43,12 +43,14 @@ describe('desktop Steam achievement boundary', () => {
       .toMatchObject({ std_runs: 3, std_wins: 2 });
   });
 
-  it('sanitizes Steam languages to the four renderer locales', () => {
+  it('sanitizes Steam languages to the five renderer locales', () => {
     expect(normalizeSteamLanguage(' Koreana ')).toBe('ko');
     expect(normalizeSteamLanguage('KOREAN')).toBe('ko');
     expect(normalizeSteamLanguage('english')).toBe('en');
     expect(normalizeSteamLanguage('japanese')).toBe('ja');
     expect(normalizeSteamLanguage('schinese')).toBe('zh-CN');
+    expect(normalizeSteamLanguage('tchinese')).toBe('zh-TW');
+    expect(normalizeSteamLanguage('traditional chinese')).toBe('zh-TW');
     expect(normalizeSteamLanguage('german')).toBe('en');
     expect(normalizeSteamLanguage(null)).toBe('en');
   });
@@ -63,6 +65,13 @@ describe('desktop Steam achievement boundary', () => {
   it('ships all Simplified Chinese achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_schinese.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"schinese"');
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+  });
+
+  it('ships all Traditional Chinese achievement localization tokens', () => {
+    const vdf = readFileSync('steam/achievement-localization/achievement_loc_tchinese.vdf', 'utf8');
+    expect(vdf).toContain('"Language"\t"tchinese"');
     expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
     expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
   });

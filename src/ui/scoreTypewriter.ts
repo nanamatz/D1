@@ -1,7 +1,7 @@
 import { BALANCE } from '../engine/balance';
 import type { ScoreEvent } from '../engine/types';
 
-export type ScoreTypewriterTier = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type ScoreTypewriterTier = 0 | 1 | 2 | 3 | 4 | 5;
 
 export type KeyboardKeyRole = 'main' | 'function' | 'nav' | 'numpad';
 
@@ -273,14 +273,13 @@ export function scoreTypewriterTier(
     return 0;
   }
   const ratio = settledScore / target;
-  const [tier1, tier2, tier3, tier4, tier5, tier6] = BALANCE.scoreTypewriter.ratioThresholds;
+  const [tier1, tier2, tier3, tier4, tier5] = BALANCE.scoreTypewriter.ratioThresholds;
   if (ratio < tier1) return 0;
   if (ratio < tier2) return 1;
   if (ratio < tier3) return 2;
   if (ratio < tier4) return 3;
   if (ratio < tier5) return 4;
-  if (ratio < tier6) return 5;
-  return 6;
+  return 5;
 }
 
 /** Raise, but never lower, the tier after a local increase; assist alone cannot activate it. */
@@ -421,7 +420,7 @@ export function scoreTypewriterKeySequence(
   if (take === 0) return [];
   const selected = primaryIndex < 0 ? [] : [primaryIndex];
   const fill = keys.filter((index) => index !== primaryIndex);
-  if (take >= BALANCE.scoreTypewriter.visualKeyCounts[5]) {
+  if (take >= BALANCE.scoreTypewriter.visualKeyCounts[4]) {
     const covered = new Set(selected.map(scoreTypewriterLedSlot));
     for (let slot = 0; slot < SCORE_TYPEWRITER_LED_COLORS.length; slot += 1) {
       if (covered.has(slot)) continue;

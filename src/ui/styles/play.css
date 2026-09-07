@@ -294,12 +294,12 @@
 }
 .blindselect-prompt {
   display: block;
-  max-width: 300px;
+  max-width: none;
   margin: auto;
   font-family: var(--ctl-font);
-  font-size: clamp(34px, 2.8vw, 48px);
+  font-size: clamp(18px, 1.55vw, 22px);
   line-height: 1.18;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 .blindselect-caret {
   color: var(--chips);
@@ -1765,7 +1765,7 @@
 /* Score Keyboard (GDD §7.1): persistent left-margin pixel machine. It reacts
    inside the existing settle beat and never owns completion timing. */
 .score-typewriter-dock {
-  --typewriter-beat: 460ms;
+  --typewriter-beat: 418ms;
   --typewriter-key-beat: 230ms;
   --typewriter-run-scale: min(var(--ui-scale, 1), var(--run-fit-scale, 1));
   --typewriter-gutter: calc((100vw - var(--board-max) * var(--typewriter-run-scale)) / 2);
@@ -1913,15 +1913,15 @@
 .typewriter-panel-led-red { --panel-led-x: 83.1%; --panel-led-color: #ff365c; }
 .typewriter-panel-led-yellow { --panel-led-x: 85.9%; --panel-led-color: #ffe04b; }
 .typewriter-panel-led-green { --panel-led-x: 88.6%; --panel-led-color: #45e06f; }
-.typewriter-tier-5 { --panel-led-low: .14; --panel-led-scale: 1.25; --panel-led-glow: calc(var(--typewriter-width) * .0391); --panel-led-burst: calc(var(--typewriter-width) * .0087); --panel-led-side-left: calc(var(--typewriter-width) * -.0217); --panel-led-side-right: calc(var(--typewriter-width) * .0217); }
-.typewriter-tier-6 { --panel-led-low: .2; --panel-led-scale: 1.45; --panel-led-glow: calc(var(--typewriter-width) * .0609); --panel-led-burst: calc(var(--typewriter-width) * .0174); --panel-led-side-left: calc(var(--typewriter-width) * -.0304); --panel-led-side-right: calc(var(--typewriter-width) * .0304); }
-.score-typewriter.typewriter-tier-5.is-active .typewriter-panel-led,
-.score-typewriter.typewriter-tier-6.is-active .typewriter-panel-led {
+.typewriter-tier-4 { --panel-led-low: .14; --panel-led-scale: 1.25; --panel-led-glow: calc(var(--typewriter-width) * .0391); --panel-led-burst: calc(var(--typewriter-width) * .0087); --panel-led-side-left: calc(var(--typewriter-width) * -.0217); --panel-led-side-right: calc(var(--typewriter-width) * .0217); }
+.typewriter-tier-5 { --panel-led-low: .2; --panel-led-scale: 1.45; --panel-led-glow: calc(var(--typewriter-width) * .0609); --panel-led-burst: calc(var(--typewriter-width) * .0174); --panel-led-side-left: calc(var(--typewriter-width) * -.0304); --panel-led-side-right: calc(var(--typewriter-width) * .0304); }
+.score-typewriter.typewriter-tier-4.is-active .typewriter-panel-led,
+.score-typewriter.typewriter-tier-5.is-active .typewriter-panel-led {
   opacity: 1;
   animation: typewriter-panel-led-jackpot var(--typewriter-beat) steps(1, end) infinite;
 }
-.typewriter-tier-5.is-clear-held .typewriter-panel-led,
-.typewriter-tier-6.is-clear-held .typewriter-panel-led {
+.typewriter-tier-4.is-clear-held .typewriter-panel-led,
+.typewriter-tier-5.is-clear-held .typewriter-panel-led {
   opacity: 1;
   animation: typewriter-panel-led-jackpot var(--typewriter-ambient-speed) steps(1, end) infinite;
 }
@@ -1944,20 +1944,20 @@
   transform: translate(-50%, -50%) scale(var(--chassis-smoke-scale, 1));
   transform-origin: 50% 100%;
 }
-.typewriter-tier-6 .typewriter-chassis-smoke i {
+.typewriter-tier-5 .typewriter-chassis-smoke i {
   width: clamp(9px, .75vw, 15px);
   height: clamp(9px, .75vw, 15px);
   background: #3d454a;
   border-color: #181e22;
   box-shadow: -7px -4px 0 #3d454a, 6px -9px 0 -1px #50595e, 0 -14px 0 -2px #2b3236;
 }
-.score-typewriter.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7),
-.score-typewriter.typewriter-tier-6.is-active .typewriter-chassis-smoke i {
+.score-typewriter.typewriter-tier-4.is-active .typewriter-chassis-smoke i:nth-child(-n+7),
+.score-typewriter.typewriter-tier-5.is-active .typewriter-chassis-smoke i {
   animation: typewriter-chassis-smoke var(--typewriter-beat) steps(5, end) both;
   animation-delay: var(--chassis-smoke-delay);
 }
-.typewriter-tier-5.is-clear-held .typewriter-chassis-smoke i:nth-child(-n+7),
-.typewriter-tier-6.is-clear-held .typewriter-chassis-smoke i {
+.typewriter-tier-4.is-clear-held .typewriter-chassis-smoke i:nth-child(-n+7),
+.typewriter-tier-5.is-clear-held .typewriter-chassis-smoke i {
   animation: typewriter-chassis-smoke var(--typewriter-ambient-speed) steps(5, end) infinite;
   animation-delay: var(--chassis-smoke-delay);
 }
@@ -1966,29 +1966,29 @@
   animation: typewriter-key var(--key-duration) steps(2, end) both;
   animation-delay: var(--key-delay);
 }
+.score-typewriter.typewriter-tier-3.is-active .typewriter-key.is-pressed::before,
 .score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::before,
-.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::before,
-.score-typewriter.typewriter-tier-6.is-active .typewriter-key.is-pressed::before {
+.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::before {
   animation: typewriter-key-smoke var(--key-duration) steps(4, end) both;
   animation-delay: var(--key-delay);
 }
-.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::after,
-.score-typewriter.typewriter-tier-6.is-active .typewriter-key.is-pressed::after {
+.score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::after,
+.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::after {
   animation: typewriter-key-flame var(--key-duration) steps(3, end) both;
   animation-delay: var(--key-delay);
 }
-.typewriter-tier-5.target-punched .typewriter-key[data-key-id="Enter"]::after,
-.typewriter-tier-6.target-punched .typewriter-key[data-key-id="Enter"]::after {
+.typewriter-tier-4.target-punched .typewriter-key[data-key-id="Enter"]::after,
+.typewriter-tier-5.target-punched .typewriter-key[data-key-id="Enter"]::after {
   animation: typewriter-key-flame var(--typewriter-target-cue) steps(3, end) both;
 }
-.typewriter-tier-6 .typewriter-key::after {
+.typewriter-tier-5 .typewriter-key::after {
   box-shadow:
     calc(var(--typewriter-width) * -.0217) calc(var(--typewriter-width) * .0217) 0 var(--key-led),
     calc(var(--typewriter-width) * .0217) calc(var(--typewriter-width) * .0217) 0 var(--key-led),
     0 calc(var(--typewriter-width) * .0435) 0 var(--key-led),
     calc(var(--typewriter-width) * .0348) calc(var(--typewriter-width) * -.0174) 0 calc(var(--typewriter-width) * -.0043) var(--key-led);
 }
-.typewriter-tier-6 .typewriter-key::before {
+.typewriter-tier-5 .typewriter-key::before {
   background: #3d454a;
   border-color: #181e22;
   box-shadow: -7px -3px 0 #3d454a, 7px -7px 0 #3d454a, 0 -11px 0 -1px #50595e;
@@ -2002,37 +2002,31 @@
   --typewriter-ambient-low: .16;
   --typewriter-ambient-high: .24;
   --typewriter-ambient-glow: 3px;
-  --typewriter-ambient-speed: 900ms;
+  --typewriter-ambient-speed: 818ms;
 }
 .typewriter-tier-2.is-clear-held {
-  --typewriter-ambient-low: .25;
-  --typewriter-ambient-high: .36;
-  --typewriter-ambient-glow: 5px;
-  --typewriter-ambient-speed: 760ms;
-}
-.typewriter-tier-3.is-clear-held {
   --typewriter-ambient-low: .36;
   --typewriter-ambient-high: .5;
   --typewriter-ambient-glow: 8px;
-  --typewriter-ambient-speed: 640ms;
+  --typewriter-ambient-speed: 582ms;
 }
-.typewriter-tier-4.is-clear-held {
+.typewriter-tier-3.is-clear-held {
   --typewriter-ambient-low: .48;
   --typewriter-ambient-high: .64;
   --typewriter-ambient-glow: 11px;
-  --typewriter-ambient-speed: 560ms;
+  --typewriter-ambient-speed: 509ms;
 }
-.typewriter-tier-5.is-clear-held {
+.typewriter-tier-4.is-clear-held {
   --typewriter-ambient-low: .62;
   --typewriter-ambient-high: .82;
   --typewriter-ambient-glow: 15px;
-  --typewriter-ambient-speed: 460ms;
+  --typewriter-ambient-speed: 418ms;
 }
-.typewriter-tier-6.is-clear-held {
+.typewriter-tier-5.is-clear-held {
   --typewriter-ambient-low: .72;
   --typewriter-ambient-high: .92;
   --typewriter-ambient-glow: 18px;
-  --typewriter-ambient-speed: 400ms;
+  --typewriter-ambient-speed: 364ms;
 }
 .typewriter-pop {
   position: absolute;
@@ -2045,8 +2039,8 @@
   white-space: nowrap;
 }
 .typewriter-pop { left: 58%; top: 48%; }
-.score-typewriter.typewriter-tier-5.is-active .typewriter-pop,
-.score-typewriter.typewriter-tier-6.is-active .typewriter-pop {
+.score-typewriter.typewriter-tier-4.is-active .typewriter-pop,
+.score-typewriter.typewriter-tier-5.is-active .typewriter-pop {
   animation: typewriter-label-hit var(--typewriter-beat) steps(4, end) both;
 }
 @keyframes typewriter-body-hit {
@@ -2064,12 +2058,12 @@
     box-shadow: inset 1px 1px 0 #77756d, 1px 1px 0 #050708;
   }
   50% {
-    translate: 0 2px;
-    scale: .94;
-    background: #25231c;
+    translate: 0 4px;
+    scale: .86;
+    background: #0b0d0e;
     border-color: var(--key-led);
     box-shadow:
-      inset 1px 1px 0 rgba(255, 255, 255, .22),
+      inset 2px 3px 0 #050708,
       -2px 0 0 var(--key-led),
       2px 0 0 var(--key-led),
       0 -2px 0 var(--key-led),
@@ -2162,10 +2156,10 @@
 .force-reduced-motion .score-typewriter-dock .typewriter-key::before { display: none; }
 .score-typewriter-dock.is-reduced .typewriter-key::after,
 .force-reduced-motion .score-typewriter-dock .typewriter-key::after { display: none; }
+.score-typewriter-dock.is-reduced.typewriter-tier-4 .typewriter-panel-led,
 .score-typewriter-dock.is-reduced.typewriter-tier-5 .typewriter-panel-led,
-.score-typewriter-dock.is-reduced.typewriter-tier-6 .typewriter-panel-led,
-.force-reduced-motion .score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led,
-.force-reduced-motion .score-typewriter-dock.typewriter-tier-6 .typewriter-panel-led {
+.force-reduced-motion .score-typewriter-dock.typewriter-tier-4 .typewriter-panel-led,
+.force-reduced-motion .score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led {
   opacity: .32;
   animation: none;
 }
@@ -2186,8 +2180,8 @@
   .score-typewriter-dock .typewriter-chassis-smoke { display: none; }
   .score-typewriter-dock .typewriter-key::before { display: none; }
   .score-typewriter-dock .typewriter-key::after { display: none; }
-  .score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led,
-  .score-typewriter-dock.typewriter-tier-6 .typewriter-panel-led { opacity: .32; animation: none; }
+  .score-typewriter-dock.typewriter-tier-4 .typewriter-panel-led,
+  .score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led { opacity: .32; animation: none; }
 }
 @media (forced-colors: active) {
   .score-typewriter-dock .typewriter-key { --key-led: transparent !important; }

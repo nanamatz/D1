@@ -274,9 +274,11 @@
   top: var(--tt-contained-y, calc(var(--tt-y) + 10px));
   max-height: calc(100vh - 16px);
   overflow-y: auto;
+  transform: translateX(-50%);
+}
+.tt-card.tt-portal.viewport-contained.interactive {
   pointer-events: auto;
   touch-action: pan-y;
-  transform: translateX(-50%);
 }
 .tt-card.tt-portal.viewport-contained.has-sub {
   overflow-y: visible;
@@ -2096,7 +2098,7 @@ body.force-reduced-motion:has(.menu)::after {
 }
 .language-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -2225,8 +2227,8 @@ body.force-reduced-motion:has(.menu)::after {
   translate: none;
 }
 .desk-lab-score-controls {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 .desk-lab-score-controls .btn[aria-pressed="true"] {
@@ -2245,6 +2247,9 @@ body.force-reduced-motion:has(.menu)::after {
 }
 @media (max-width: 900px) {
   .desk-lab-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .desk-lab-score-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (forced-colors: active) {
   .desk-lab-card,

@@ -61,6 +61,7 @@ describe('persistent Balatro-style run table', () => {
     expect(sidebar).toContain('shop-sign-word');
     expect(sidebar).toContain('shop-sign-lights');
     expect(sidebar).toContain('blindselect-prompt');
+    expect(playCss).toMatch(/\.blindselect-prompt\s*\{[^}]*white-space:\s*nowrap/s);
     expect(playCss).toMatch(/\.shop-phase-panel\s*\{[^}]*overflow:\s*visible/s);
     expect(playCss).toContain('@keyframes shop-sign-idle');
     expect(playCss).toMatch(/\.shop-sign-lights\s*\{[^}]*inset:\s*8px[^}]*border:\s*5px dotted/s);

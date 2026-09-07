@@ -291,8 +291,8 @@ export function ScoreTypewriter({
                     '--key-w': `${keycap.w}%`,
                     '--key-h': `${keycap.h}%`,
                     '--key-led': SCORE_TYPEWRITER_LED_COLORS[ledSlot],
-                    '--key-smoke-scale': String(keySizeVariation * (layer.tier === 6 ? 1.35 : 1)),
-                    '--key-flame-scale': String(keySizeVariation * (layer.tier === 6 ? 1.25 : 1)),
+                    '--key-smoke-scale': String(keySizeVariation * (layer.tier === 5 ? 1.35 : 1)),
+                    '--key-flame-scale': String(keySizeVariation * (layer.tier === 5 ? 1.25 : 1)),
                     ...(timing ? {
                       '--key-delay': `${timing.delayMs}ms`,
                       '--key-duration': `${timing.durationMs}ms`,

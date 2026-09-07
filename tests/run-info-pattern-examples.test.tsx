@@ -96,6 +96,7 @@ describe('Run Info sentence-pattern examples', () => {
     const css = source('src/ui/styles/screens.css');
     expect(runInfo).toContain('touchPin');
     expect(runInfo).toContain('viewportContain');
+    expect(runInfo).toContain('interactive');
     expect(runInfo).toContain('tabIndex={0}');
     expect(runInfo).not.toMatch(/pattern-example-token[^>]*tabIndex/);
     expect(css).toMatch(/\.pattern-example-visual:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--gold\)/s);
@@ -106,9 +107,14 @@ describe('Run Info sentence-pattern examples', () => {
     const css = source('src/ui/styles/screens.css');
     expect(tooltip).toContain('content?: ReactNode');
     expect(tooltip).toContain('viewportContain?: boolean');
+    expect(tooltip).toContain('interactive?: boolean');
+    expect(tooltip).toContain('interactive = false');
     expect(tooltip).toContain("viewportContain ? 'viewport-contained' : ''");
+    expect(tooltip).toContain("interactive ? 'interactive' : ''");
+    expect(tooltip).toContain('onPointerEnter={interactive ? clearHoverHide : undefined}');
     expect(tooltip).toContain("card.style.setProperty('--tt-contained-y'");
     expect(css).toMatch(/\.tt-card\.tt-portal\.viewport-contained\s*\{[^}]*max-height:\s*calc\(100vh - 16px\)/s);
+    expect(css).toMatch(/\.tt-card\.tt-portal\.viewport-contained\.interactive\s*\{[^}]*pointer-events:\s*auto/s);
     expect(css).toContain('@media (forced-colors: active)');
   });
 });

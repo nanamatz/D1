@@ -341,8 +341,8 @@ async function run() {
     const ordinaryPointerEvents = await evaluate(
       `getComputedStyle(document.querySelector('.tt-card.tt-portal.viewport-contained')).pointerEvents`,
     );
-    if (ordinaryPointerEvents !== 'auto') {
-      throw new Error(`Ordinary tooltip lost portal interaction: ${ordinaryPointerEvents}`);
+    if (ordinaryPointerEvents !== 'none') {
+      throw new Error(`Ordinary tooltip intercepted pointer input: ${ordinaryPointerEvents}`);
     }
     await evaluate(`document.querySelector('.ri-hands .tt-anchor')
       ?.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }))`);

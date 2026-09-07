@@ -287,8 +287,8 @@ describe('Score Keyboard presentation contract', () => {
     expect(idleKeyRule).toContain('opacity: 1');
     expect(idleKeyRule).not.toContain('filter:');
     const pressFrames = css.slice(css.indexOf('@keyframes typewriter-key {'), css.indexOf('@keyframes typewriter-enter-strike'));
-    expect(pressFrames).toContain('translate: 0 2px');
-    expect(pressFrames).toContain('scale: .94');
+    expect(pressFrames).toContain('translate: 0 4px');
+    expect(pressFrames).toContain('scale: .86');
     expect(pressFrames).not.toContain('opacity:');
     expect(pressFrames).not.toContain('filter:');
     expect(pressFrames).toContain('border-color: var(--key-led)');
@@ -399,7 +399,7 @@ describe('Score Keyboard presentation contract', () => {
     );
   });
 
-  it('uses always-colour key LEDs, per-key Tier 5–6 flames, and no central flame', () => {
+  it('uses always-colour key LEDs, per-key Tier 4–5 flames, and no central flame', () => {
     expect(sidebar).not.toContain('burning');
     expect(css).not.toContain('.scorebox.burning');
     expect(css).not.toContain('--flame');
@@ -419,8 +419,8 @@ describe('Score Keyboard presentation contract', () => {
     expect(scoreTypewriterKeySizeVariation('beat-a', 0)).toBeGreaterThanOrEqual(0.95);
     expect(scoreTypewriterKeySizeVariation('beat-a', 0)).toBeLessThanOrEqual(1.05);
     expect(component).toContain('const keySizeVariation = scoreTypewriterKeySizeVariation(layer.id, keyIndex)');
-    expect(component).toContain("'--key-smoke-scale': String(keySizeVariation * (layer.tier === 6 ? 1.35 : 1))");
-    expect(component).toContain("'--key-flame-scale': String(keySizeVariation * (layer.tier === 6 ? 1.25 : 1))");
+    expect(component).toContain("'--key-smoke-scale': String(keySizeVariation * (layer.tier === 5 ? 1.35 : 1))");
+    expect(component).toContain("'--key-flame-scale': String(keySizeVariation * (layer.tier === 5 ? 1.25 : 1))");
     expect(component).not.toContain('className="typewriter-smoke"');
     expect(component).toContain('className="typewriter-chassis-smoke"');
     expect(component).toContain('TYPEWRITER_CHASSIS_SMOKE_POINTS.map');
@@ -440,19 +440,19 @@ describe('Score Keyboard presentation contract', () => {
     expect(css).toContain('@keyframes typewriter-key-smoke');
     expect(css).not.toContain('.typewriter-smoke');
     expect(css).not.toContain('@keyframes typewriter-smoke');
-    expect(css).toContain('.score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::before');
+    expect(css).toContain('.score-typewriter.typewriter-tier-3.is-active .typewriter-key.is-pressed::before');
     expect(css).toContain('.typewriter-key::after');
     expect(css).toContain('width: clamp(4px, calc(var(--typewriter-width) * .0435), 14px)');
     expect(css).toContain('height: clamp(6px, calc(var(--typewriter-width) * .0696), 22px)');
     expect(css).toContain('calc(var(--typewriter-width) * -.0174) calc(var(--typewriter-width) * .0174) 0 var(--key-led)');
+    expect(css).toContain('.score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::after');
     expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::after');
-    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-key.is-pressed::after');
     expect(css).toContain('animation: typewriter-key-flame var(--key-duration) steps(3, end) both');
     expect(css).toContain('animation-delay: var(--key-delay)');
-    expect(css).not.toContain('.typewriter-tier-6 .typewriter-key { --key-flame-scale: 1.25; }');
+    expect(css).not.toContain('.typewriter-tier-5 .typewriter-key { --key-flame-scale: 1.25; }');
     expect(css).toContain('calc(var(--typewriter-width) * .0348) calc(var(--typewriter-width) * -.0174) 0 calc(var(--typewriter-width) * -.0043) var(--key-led)');
+    expect(css).toContain('.score-typewriter.typewriter-tier-4.is-active .typewriter-pop');
     expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-pop');
-    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-pop');
     expect(css).not.toContain('typewriter-rainbow-ring');
     expect(css).not.toContain('typewriter-jackpot-sparks');
     expect(css).not.toContain('typewriter-jackpot-spark');
@@ -467,21 +467,21 @@ describe('Score Keyboard presentation contract', () => {
     expect(css).toContain('var(--panel-led-side-left) 0 var(--panel-led-glow) var(--panel-led-color)');
     expect(css).toContain('var(--panel-led-side-right) 0 var(--panel-led-glow) var(--panel-led-color)');
     expect(css).not.toContain('0 0 0 1px #17120f');
+    expect(css).toContain('.score-typewriter.typewriter-tier-4.is-active .typewriter-panel-led');
     expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-panel-led');
-    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-panel-led');
+    expect(css).toContain('.typewriter-tier-4.is-clear-held .typewriter-panel-led');
     expect(css).toContain('.typewriter-tier-5.is-clear-held .typewriter-panel-led');
-    expect(css).toContain('.typewriter-tier-6.is-clear-held .typewriter-panel-led');
     expect(css).toContain('animation: typewriter-panel-led-jackpot var(--typewriter-beat) steps(1, end) infinite');
     expect(css).toContain('animation: typewriter-panel-led-jackpot var(--typewriter-ambient-speed) steps(1, end) infinite');
     expect(css).toContain('@keyframes typewriter-panel-led-jackpot');
     expect(css).not.toContain('@keyframes typewriter-panel-led-blink');
-    expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-chassis-smoke i:nth-child(-n+7)');
-    expect(css).toContain('.score-typewriter.typewriter-tier-6.is-active .typewriter-chassis-smoke i');
-    expect(css).toContain('.typewriter-tier-5.is-clear-held .typewriter-chassis-smoke i:nth-child(-n+7)');
-    expect(css).toContain('.typewriter-tier-6.is-clear-held .typewriter-chassis-smoke i');
+    expect(css).toContain('.score-typewriter.typewriter-tier-4.is-active .typewriter-chassis-smoke i:nth-child(-n+7)');
+    expect(css).toContain('.score-typewriter.typewriter-tier-5.is-active .typewriter-chassis-smoke i');
+    expect(css).toContain('.typewriter-tier-4.is-clear-held .typewriter-chassis-smoke i:nth-child(-n+7)');
+    expect(css).toContain('.typewriter-tier-5.is-clear-held .typewriter-chassis-smoke i');
     expect(css).toContain('background: #3d454a');
     expect(css).toContain('width: clamp(9px, .75vw, 15px)');
-    for (const tier of [0, 1, 2, 3, 4]) {
+    for (const tier of [0, 1, 2, 3]) {
       expect(css).not.toContain(`.typewriter-tier-${tier}.is-active .typewriter-key.is-pressed::after`);
       expect(css).not.toContain(`.typewriter-tier-${tier}.is-active .typewriter-panel-led`);
     }
@@ -493,11 +493,11 @@ describe('Score Keyboard presentation contract', () => {
     expect(css).toContain('.score-typewriter-dock.is-reduced .typewriter-key::before,');
     expect(css).toContain('.score-typewriter-dock.is-reduced .typewriter-chassis-smoke,');
     expect(css).not.toContain('.score-typewriter-dock.is-reduced .typewriter-panel-led');
+    expect(css).toMatch(/\.score-typewriter-dock\.is-reduced\.typewriter-tier-4 \.typewriter-panel-led/);
     expect(css).toMatch(/\.score-typewriter-dock\.is-reduced\.typewriter-tier-5 \.typewriter-panel-led/);
-    expect(css).toMatch(/\.score-typewriter-dock\.is-reduced\.typewriter-tier-6 \.typewriter-panel-led/);
+    expect(css).toMatch(/\.force-reduced-motion \.score-typewriter-dock\.typewriter-tier-4 \.typewriter-panel-led/);
     expect(css).toMatch(/\.force-reduced-motion \.score-typewriter-dock\.typewriter-tier-5 \.typewriter-panel-led/);
-    expect(css).toMatch(/\.force-reduced-motion \.score-typewriter-dock\.typewriter-tier-6 \.typewriter-panel-led/);
-    for (const tier of [0, 1, 2, 3, 4]) {
+    for (const tier of [0, 1, 2, 3]) {
       expect(css).not.toContain(`.score-typewriter-dock.is-reduced.typewriter-tier-${tier} .typewriter-panel-led`);
       expect(css).not.toContain(`.force-reduced-motion .score-typewriter-dock.typewriter-tier-${tier} .typewriter-panel-led`);
     }
@@ -505,9 +505,9 @@ describe('Score Keyboard presentation contract', () => {
     expect(reducedMedia).toContain('.score-typewriter-dock .typewriter-key::before { display: none; }');
     expect(reducedMedia).toContain('.score-typewriter-dock .typewriter-key::after { display: none; }');
     expect(reducedMedia).toContain('.score-typewriter-dock .typewriter-chassis-smoke { display: none; }');
+    expect(reducedMedia).toContain('.score-typewriter-dock.typewriter-tier-4 .typewriter-panel-led');
     expect(reducedMedia).toContain('.score-typewriter-dock.typewriter-tier-5 .typewriter-panel-led');
-    expect(reducedMedia).toContain('.score-typewriter-dock.typewriter-tier-6 .typewriter-panel-led');
-    for (const tier of [0, 1, 2, 3, 4]) {
+    for (const tier of [0, 1, 2, 3]) {
       expect(reducedMedia).not.toContain(`.score-typewriter-dock.typewriter-tier-${tier} .typewriter-panel-led`);
     }
     expect(css).toContain('@media (forced-colors: active)');
@@ -518,6 +518,6 @@ describe('Score Keyboard presentation contract', () => {
     const worldMonoRule = ':root.world-mono .score-typewriter-dock :is(.typewriter-art, .typewriter-pop) { filter: grayscale(1); }';
     expect(css).toContain(worldMonoRule);
     expect(worldMonoRule).not.toContain('.typewriter-key');
-    expect(css).toMatch(/\.typewriter-tier-6\.is-clear-held\s*\{[\s\S]*?--typewriter-ambient-low:\s*\.72;[\s\S]*?--typewriter-ambient-high:\s*\.92;[\s\S]*?--typewriter-ambient-glow:\s*18px;[\s\S]*?--typewriter-ambient-speed:\s*400ms;/);
+    expect(css).toMatch(/\.typewriter-tier-5\.is-clear-held\s*\{[\s\S]*?--typewriter-ambient-low:\s*\.72;[\s\S]*?--typewriter-ambient-high:\s*\.92;[\s\S]*?--typewriter-ambient-glow:\s*18px;[\s\S]*?--typewriter-ambient-speed:\s*364ms;/);
   });
 });

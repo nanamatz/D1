@@ -56,6 +56,9 @@ export function normalizeSteamLanguage(value) {
     case 'schinese':
     case 'simplified chinese':
       return 'zh-CN';
+    case 'tchinese':
+    case 'traditional chinese':
+      return 'zh-TW';
     case 'english':
     default:
       return 'en';

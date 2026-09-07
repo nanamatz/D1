@@ -57,7 +57,7 @@ export interface StorageBridge {
   syncSteam?(payload: import('./steamAchievements').SteamStatPayload): void;
   steamStatus?: SteamOwnershipStatus;
   /** Sanitized main-process bootstrap hint; never a raw Steam locale. */
-  languageHint?: 'en' | 'ko' | 'ja' | 'zh-CN';
+  languageHint?: 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW';
   decideSteamClaim?(decision: 'accept' | 'decline'): void;
   onSteamStatus?(listener: (status: SteamOwnershipStatus) => void): void;
 }
@@ -100,9 +100,10 @@ export function steamSyncAvailable(): boolean {
   return typeof getBridge()?.syncSteam === 'function';
 }
 
-export function steamLanguageHint(): 'en' | 'ko' | 'ja' | 'zh-CN' | undefined {
+export function steamLanguageHint(): 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | undefined {
   const hint = getBridge()?.languageHint;
-  return hint === 'en' || hint === 'ko' || hint === 'ja' || hint === 'zh-CN' ? hint : undefined;
+  return hint === 'en' || hint === 'ko' || hint === 'ja' || hint === 'zh-CN' || hint === 'zh-TW'
+    ? hint : undefined;
 }
 
 let cache: Map<string, string> | null = null;

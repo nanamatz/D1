@@ -107,6 +107,7 @@ export function RunInfo({ run, blind, discoveredLetterHands, onClose }: Props) {
                       down
                       touchPin
                       viewportContain
+                      interactive
                     >
                       <div
                         className={['ri-pat', patternLevelClass(run.patternLevels[p])].join(' ')}

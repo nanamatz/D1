@@ -10,7 +10,7 @@ License: MIT License (see MIT.txt)
 FONTS
 Bundled locally through Fontsource 5.3.0 under the SIL Open Font License 1.1:
 - Jost — Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type/Jost)
-- Noto Sans KR — Google Inc.
+- Noto Sans JP / KR / SC / TC — Google Inc.
 - Baloo 2 — Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2)
 - Jersey 10 — Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey)
 See OFL-1.1.txt.

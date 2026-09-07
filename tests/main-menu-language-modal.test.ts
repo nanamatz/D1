@@ -14,12 +14,13 @@ describe('main-menu language modal', () => {
     expect(i18n).toContain("{ id: 'ko', label: '한국어', locale: 'ko-KR' }");
     expect(i18n).toContain("{ id: 'ja', label: '日本語', locale: 'ja-JP' }");
     expect(i18n).toContain("{ id: 'zh-CN', label: '简体中文', locale: 'zh-CN' }");
+    expect(i18n).toContain("{ id: 'zh-TW', label: '繁體中文', locale: 'zh-TW' }");
     expect(menu).toContain('aria-pressed={lang === choice.id}');
     expect(menu).toContain("onClose={() => setLanguageOpen(false)}");
   });
 
   it('uses an expandable desktop grid and a narrow-screen fallback', () => {
-    expect(css).toMatch(/\.language-grid\s*{[^}]*grid-template-columns:\s*repeat\(4, 1fr\)/s);
+    expect(css).toMatch(/\.language-grid\s*{[^}]*grid-template-columns:\s*repeat\(5, 1fr\)/s);
     expect(css).toMatch(/@media \(max-width: 620px\)[\s\S]*\.language-grid\s*{\s*grid-template-columns:\s*1fr;/);
     expect(css).toMatch(/\.language-modal \.back-bar\s*{[^}]*width:\s*100%;[^}]*margin-inline:\s*auto;/s);
   });
