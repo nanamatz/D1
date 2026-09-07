@@ -5,7 +5,7 @@
  * subset the family publishes (Devanagari and Vietnamese for Baloo, Cyrillic for
  * Jost, Cyrillic/Vietnamese/latin-ext plus 120 CJK chunks for Noto Sans KR) —
  * 554 files and 9.26 MB for the original English/Korean build. The app now
- * imports explicit Latin, Korean, Japanese, and Simplified/Traditional Chinese subsets only.
+ * imports explicit Latin, Cyrillic, Korean, Japanese, and Simplified/Traditional Chinese subsets only.
  *
  * Narrowing subsets is exactly the change that silently loses glyphs: a missing
  * range does not fail the build, it renders tofu in a CJK locale. So this
@@ -41,6 +41,7 @@ const BLOCKS = [
     [0x2122, 0x2122], [0x2191, 0x2193], [0x2212, 0x2212], [0x2215, 0x2215],
     [0xfeff, 0xfeff], [0xfffd, 0xfffd],
   ] },
+  { name: 'Cyrillic', via: '@fontsource/{jost,noto-sans-kr}/cyrillic-*.css', ranges: [[0x0400, 0x052f]] },
   { name: 'Hangul syllables', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0xac00, 0xd7a3]] },
   { name: 'Hangul jamo (compatibility)', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x3130, 0x318f]] },
   { name: 'Hangul jamo', via: '@fontsource/noto-sans-kr/korean-*.css', ranges: [[0x1100, 0x11ff]] },
@@ -74,7 +75,7 @@ function displayedCharacters() {
   const add = (text, where) => {
     for (const ch of String(text)) if (!chars.has(ch)) chars.set(ch, where);
   };
-  for (const locale of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR']) {
+  for (const locale of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'ru-RU']) {
     const table = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
     for (const [key, value] of Object.entries(table)) add(value, `${locale}.json:${key}`);
   }

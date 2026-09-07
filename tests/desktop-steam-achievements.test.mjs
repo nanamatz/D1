@@ -43,7 +43,7 @@ describe('desktop Steam achievement boundary', () => {
       .toMatchObject({ std_runs: 3, std_wins: 2 });
   });
 
-  it('sanitizes Steam languages to the nine renderer locales', () => {
+  it('sanitizes Steam languages to the ten renderer locales', () => {
     expect(normalizeSteamLanguage(' Koreana ')).toBe('ko');
     expect(normalizeSteamLanguage('KOREAN')).toBe('ko');
     expect(normalizeSteamLanguage('english')).toBe('en');
@@ -56,6 +56,7 @@ describe('desktop Steam achievement boundary', () => {
     expect(normalizeSteamLanguage('german')).toBe('de');
     expect(normalizeSteamLanguage('spanish')).toBe('es-ES');
     expect(normalizeSteamLanguage('french')).toBe('fr-FR');
+    expect(normalizeSteamLanguage('russian')).toBe('ru-RU');
     expect(normalizeSteamLanguage(null)).toBe('en');
   });
 
@@ -104,6 +105,13 @@ describe('desktop Steam achievement boundary', () => {
   it('ships all French achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_french.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"french"');
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+  });
+
+  it('ships all Russian achievement localization tokens', () => {
+    const vdf = readFileSync('steam/achievement-localization/achievement_loc_russian.vdf', 'utf8');
+    expect(vdf).toContain('"Language"\t"russian"');
     expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
     expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
   });

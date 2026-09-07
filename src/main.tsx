@@ -9,8 +9,8 @@ import { I18nProvider } from './ui/i18n';
 // pull EVERY unicode subset @fontsource publishes — Devanagari and Vietnamese
 // for Baloo, Cyrillic for Jost, Cyrillic/Vietnamese/latin-ext for Noto Sans KR —
 // which is how the build ended up shipping 554 font files. The game renders
-// English, Korean, Japanese, and Simplified/Traditional Chinese, so it needs `latin` everywhere plus the named
-// CJK subsets on Noto. Adding a language means adding its subset deliberately.
+// English, Korean, Japanese, Simplified/Traditional Chinese, and Russian, so it needs `latin` everywhere plus the named
+// CJK/Cyrillic subsets. Adding a language means adding its subset deliberately.
 import '@fontsource/baloo-2/latin-500.css';
 import '@fontsource/baloo-2/latin-600.css';
 import '@fontsource/baloo-2/latin-700.css';
@@ -20,12 +20,19 @@ import '@fontsource/jost/latin-300-italic.css';
 import '@fontsource/jost/latin-500.css';
 import '@fontsource/jost/latin-700.css';
 import '@fontsource/jost/latin-900.css';
+import '@fontsource/jost/cyrillic-300.css';
+import '@fontsource/jost/cyrillic-300-italic.css';
+import '@fontsource/jost/cyrillic-500.css';
+import '@fontsource/jost/cyrillic-700.css';
+import '@fontsource/jost/cyrillic-900.css';
 // Noto Sans KR is the Korean half of the `--ctl-font` stack; it also supplies
 // the latin fallback when Baloo/Jost are still loading.
 import '@fontsource/noto-sans-kr/korean-500.css';
 import '@fontsource/noto-sans-kr/korean-700.css';
 import '@fontsource/noto-sans-kr/latin-500.css';
 import '@fontsource/noto-sans-kr/latin-700.css';
+import '@fontsource/noto-sans-kr/cyrillic-500.css';
+import '@fontsource/noto-sans-kr/cyrillic-700.css';
 import '@fontsource/noto-sans-jp/japanese-500.css';
 import '@fontsource/noto-sans-jp/japanese-700.css';
 import '@fontsource/noto-sans-sc/chinese-simplified-500.css';

@@ -43,15 +43,16 @@ Use these common properties for every row:
 - Progress Stat and Unlock Value: exactly as listed below
 - Achieved and unachieved icons: language-neutral
 
-The ready-to-import Japanese, Simplified Chinese, Traditional Chinese, Brazilian Portuguese, German, Spanish, and French achievement tokens live in
+The ready-to-import Japanese, Simplified Chinese, Traditional Chinese, Brazilian Portuguese, German, Spanish, French, and Russian achievement tokens live in
 `steam/achievement-localization/achievement_loc_japanese.vdf` and
 `steam/achievement-localization/achievement_loc_schinese.vdf`, and
 `steam/achievement-localization/achievement_loc_tchinese.vdf`, and
 `steam/achievement-localization/achievement_loc_brazilian.vdf`, and
 `steam/achievement-localization/achievement_loc_german.vdf`, and
 `steam/achievement-localization/achievement_loc_spanish.vdf`, and
-`steam/achievement-localization/achievement_loc_french.vdf`, alongside the
-existing Korean VDF. Keep all eight synchronized with the table below. The
+`steam/achievement-localization/achievement_loc_french.vdf`,
+`steam/achievement-localization/achievement_loc_russian.vdf`, alongside the
+existing Korean VDF. Keep all nine synchronized with the table below. The
 Simplified Chinese stat display names are 标准游戏完成数, 标准游戏胜利数,
 获胜字袋数, 获胜唱片数, 获胜字袋–唱片组合数, 已完成挑战数,
 已贴纸表情牌数, and 唱片贴纸等级数, in table order.
@@ -121,7 +122,7 @@ for all ages and audiences under Steam's
    `desktop/steam-achievements.js`.
 2. Upload all 16 achieved and 16 unachieved icons and inspect them at Steam's
    smallest preview size.
-3. Preview English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Brazilian Portuguese, German, Spanish, and French independently; check truncation and punctuation.
+3. Preview English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Brazilian Portuguese, German, Spanish, French, and Russian independently; check truncation and punctuation.
 4. In Store Page Info, select `Steam Achievements` under `Supported Features`.
 5. Publish the stat, achievement, and Store Page Info changes before assigning
    the beta BuildID.

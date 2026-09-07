@@ -108,7 +108,7 @@ describe('POS tag chips', () => {
       expect((tokens.match(new RegExp(`--pos-${token}:`, 'g')) ?? []).length, token).toBe(2);
       expect(html).toContain(`class="pos-tag pos-${pos}"`);
     }
-    for (const lang of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR']) {
+    for (const lang of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'ru-RU']) {
       const locale = JSON.parse(readFileSync(`locales/${lang}.json`, 'utf8')) as Record<string, string>;
       const labels = Object.keys(mappings).map((pos) => locale[`pos.${pos}`]);
       expect(labels.every(Boolean), lang).toBe(true);
