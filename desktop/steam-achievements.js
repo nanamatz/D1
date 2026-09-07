@@ -73,6 +73,8 @@ export function normalizeSteamLanguage(value) {
       return 'ru-RU';
     case 'polish':
       return 'pl-PL';
+    case 'turkish':
+      return 'tr-TR';
     case 'english':
     default:
       return 'en';

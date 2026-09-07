@@ -43,7 +43,7 @@ describe('desktop Steam achievement boundary', () => {
       .toMatchObject({ std_runs: 3, std_wins: 2 });
   });
 
-  it('sanitizes Steam languages to the eleven renderer locales', () => {
+  it('sanitizes Steam languages to the twelve renderer locales', () => {
     expect(normalizeSteamLanguage(' Koreana ')).toBe('ko');
     expect(normalizeSteamLanguage('KOREAN')).toBe('ko');
     expect(normalizeSteamLanguage('english')).toBe('en');
@@ -58,6 +58,7 @@ describe('desktop Steam achievement boundary', () => {
     expect(normalizeSteamLanguage('french')).toBe('fr-FR');
     expect(normalizeSteamLanguage('russian')).toBe('ru-RU');
     expect(normalizeSteamLanguage('polish')).toBe('pl-PL');
+    expect(normalizeSteamLanguage('turkish')).toBe('tr-TR');
     expect(normalizeSteamLanguage(null)).toBe('en');
   });
 
@@ -120,6 +121,13 @@ describe('desktop Steam achievement boundary', () => {
   it('ships all Polish achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_polish.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"polish"');
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+  });
+
+  it('ships all Turkish achievement localization tokens', () => {
+    const vdf = readFileSync('steam/achievement-localization/achievement_loc_turkish.vdf', 'utf8');
+    expect(vdf).toContain('"Language"\t"turkish"');
     expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
     expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
   });

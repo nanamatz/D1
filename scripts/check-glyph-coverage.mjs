@@ -76,7 +76,7 @@ function displayedCharacters() {
   const add = (text, where) => {
     for (const ch of String(text)) if (!chars.has(ch)) chars.set(ch, where);
   };
-  for (const locale of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'ru-RU', 'pl-PL']) {
+  for (const locale of ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'ru-RU', 'pl-PL', 'tr-TR']) {
     const table = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
     for (const [key, value] of Object.entries(table)) add(value, `${locale}.json:${key}`);
   }

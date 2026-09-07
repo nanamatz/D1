@@ -12,6 +12,7 @@ const FILES = {
   'fr-FR': 'locales/fr-FR.json',
   'ru-RU': 'locales/ru-RU.json',
   'pl-PL': 'locales/pl-PL.json',
+  'tr-TR': 'locales/tr-TR.json',
 };
 const TAG = /\[([mcbnkage$pCURLGvrw]):([^\]\r\n]+)\]/gu;
 const TAG_LIKE = /\[[A-Za-z$]+:/u;
