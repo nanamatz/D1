@@ -5,8 +5,12 @@ import {
   backfillSteamEligible,
   emptySteamEligible,
   normalizeSteamEligible,
+  recordSteamEligibleHand,
   recordSteamEligibleRun,
+  recordSteamEligibleSentence,
+  recordSteamEligibleTiles,
 } from '../src/ui/steamAchievements';
+import type { BlindState, RunState, ScoreEvent, WordSubmission } from '../src/engine/types';
 import { initializeSteamAchievements, loadLifetime, writeLifetime } from '../src/ui/lifetime';
 import { resetStorageCache, type SteamOwnershipStatus, type StorageBridge } from '../src/ui/storage';
 
@@ -108,11 +112,12 @@ describe('Steam achievement evidence', () => {
     });
   });
 
-  it('syncs only at startup and the semantic run-end checkpoint', () => {
+  it('syncs at startup and semantic achievement checkpoints', () => {
     const source = readFileSync('src/ui/lifetime.ts', 'utf8');
     const writeBody = source.match(/export function writeLifetime[\s\S]*?\n}/)?.[0] ?? '';
     expect(writeBody).not.toContain('syncSteamProgress');
     expect(source).toMatch(/export function initializeSteamAchievements[\s\S]*?syncSteamProgress\(\)/);
+    expect(source).toMatch(/function updateSteamEligible[\s\S]*?syncSteamProgress\(\)/);
     expect(source).toMatch(/writeLifetime\(next\);\s*syncSteamProgress\(\)/);
   });
   it('backfills only conservative legacy provenance once', () => {
@@ -159,11 +164,65 @@ describe('Steam achievement evidence', () => {
       won: true, standard: true, pouchId: 'yellow', recordId: 'greenLp',
       jokerIds: ['bookworm', 'redPencil'], challengeId: 'redPen', challengeCompleted: true,
     });
-    expect(aggregateSteamEligible([one, two])).toEqual({
+    expect(aggregateSteamEligible([one, two])).toMatchObject({
       version: 1, std_runs: 2, std_wins: 2, pouches_won: 1, records_won: 2,
       pouch_record_pairs: 2, challenges_completed: 1, emoji_mastered: 2,
       emoji_record_sticker_tiers: 6,
     });
+  });
+
+  it('records the fourteen play achievements from their semantic evidence', () => {
+    const loaded = { id: 'loaded', letter: 'A', material: 'glass', font: 'black', edition: 'rainbow' };
+    const glass = { id: 'glass', letter: 'B', material: 'glass', font: 'medium', edition: 'base' };
+    const run = {
+      customSeed: false, challengeId: null, bag: [loaded, glass],
+      letterHandPlayCounts: { twin: 50 }, patternPlayCounts: { complex: 20 },
+    } as unknown as RunState;
+    const submission = {
+      tiles: [loaded, glass], text: 'AB', isGibberish: false, settledScore: 100_000_000,
+      suit: 'standard', posUsed: 'noun', destroyedTileIds: ['loaded', 'glass'],
+    } as WordSubmission;
+    const blind = {
+      phasesUsed: 5, phasesTotal: 5, projectedScore: 100, target: 100,
+    } as BlindState;
+    const events = ['a', 'b', 'c', 'd', 'e', 'e'].map((jokerId) => ({
+      kind: 'joker', jokerId, chipsDelta: 1, multDelta: 0,
+    })) as ScoreEvent[];
+
+    const beforeEnhancement = {
+      ...run,
+      bag: [{ ...loaded, edition: 'base' }, glass],
+    } as RunState;
+    let ledger = recordSteamEligibleTiles(emptySteamEligible(), beforeEnhancement, run);
+    ledger = recordSteamEligibleHand(ledger, {
+      run, blind, submission, events, standard: true, previousProjectedScore: 0,
+    });
+    const longWord = { ...submission, text: 'ABCDEFGHIJ', tiles: Array(10).fill(loaded) };
+    ledger = recordSteamEligibleSentence(ledger, {
+      sequence: [longWord, submission, submission, submission, submission, submission],
+      judgment: { match: { pattern: 'complex', rank: 12, absorbedModifiers: 0 }, unison: null },
+      patternCounts: { complex: 20 }, standard: true,
+    });
+    ledger = recordSteamEligibleRun(ledger, {
+      won: true, standard: true, handsPlayed: 30, rerollsUsed: 0,
+      patternCounts: run.patternPlayCounts, letterHandPlayCounts: run.letterHandPlayCounts,
+    });
+
+    expect(aggregateSteamEligible([ledger])).toMatchObject({
+      single_hand_score: 100_000_000, last_word_target: 1, long_read: 1,
+      longform: 1, perfect_syntax: 1, emoji_effects_one_hand: 5,
+      no_revisions: 1, under_30_hands: 1, glass_destroyed_one_hand: 2,
+      fully_loaded_tile: 1, pattern_run_max: 20, word_hand_run_max: 50,
+    });
+  });
+
+  it('does not count a fully loaded tile acquired already complete from a pack', () => {
+    const loaded = {
+      id: 'pack-loaded', letter: 'A', material: 'glass', font: 'black', edition: 'rainbow',
+    } as const;
+    const before = { bag: [] } as unknown as RunState;
+    const after = { bag: [loaded] } as unknown as RunState;
+    expect(recordSteamEligibleTiles(emptySteamEligible(), before, after).fullyLoadedTile).toBe(false);
   });
 
   it('clamps malformed and overflowing counters to Steam int32', () => {

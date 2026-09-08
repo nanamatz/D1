@@ -26,8 +26,10 @@ import {
 } from '../engine/challenges';
 import { ALL_JOKERS } from '../engine/jokers';
 import { KNOWLEDGE_LETTER_HAND_IDS, isKnowledgeLetterHand } from '../engine/letterHands';
-import type { ChallengeId, LetterHandId, PouchId, RecordId } from '../engine/types';
-import type { PatternId } from '../engine/types';
+import type {
+  BlindState, ChallengeId, LetterHandId, PatternId, PouchId, RecordId, RunState,
+  ScoreEvent, SentenceJudgment, WordSubmission,
+} from '../engine/types';
 import { BALANCE } from '../engine/balance';
 import { wordLetterChips } from '../engine/scoring';
 import { collectionHighlights, loadCollection, type Collection } from './collection';
@@ -35,7 +37,10 @@ import {
   aggregateSteamEligible,
   emptySteamEligible,
   normalizeSteamEligible,
+  recordSteamEligibleHand,
   recordSteamEligibleRun,
+  recordSteamEligibleSentence,
+  recordSteamEligibleTiles,
   type SteamEligibleV1,
 } from './steamAchievements';
 
@@ -358,6 +363,51 @@ function syncSteamProgress(): void {
   ));
 }
 
+function updateSteamEligible(
+  update: (ledger: SteamEligibleV1, lifetime: Lifetime) => SteamEligibleV1,
+): void {
+  if (!steamEvidenceEligible()) return;
+  const lifetime = loadLifetimeForMutation();
+  const steamEligible = update(lifetime.steamEligible, lifetime);
+  if (JSON.stringify(steamEligible) === JSON.stringify(lifetime.steamEligible)) return;
+  writeLifetime({ ...lifetime, steamEligible });
+  syncSteamProgress();
+}
+
+export function recordSteamHand(result: {
+  run: RunState;
+  blind: BlindState;
+  submission: WordSubmission;
+  events: readonly ScoreEvent[];
+  previousProjectedScore: number;
+}): void {
+  updateSteamEligible((ledger, lifetime) =>
+    lifetime.unlockAllApplied || result.run.customSeed ? ledger : recordSteamEligibleHand(ledger, {
+      ...result,
+      standard: result.run.challengeId == null,
+    }));
+}
+
+export function recordSteamSentence(result: {
+  run: RunState;
+  sequence: readonly WordSubmission[];
+  judgment: SentenceJudgment;
+  patternCounts: Partial<Record<PatternId, number>>;
+}): void {
+  updateSteamEligible((ledger, lifetime) =>
+    lifetime.unlockAllApplied || result.run.customSeed ? ledger : recordSteamEligibleSentence(ledger, {
+      ...result,
+      standard: result.run.challengeId == null,
+    }));
+}
+
+export function recordSteamTiles(before: RunState, after: RunState): void {
+  updateSteamEligible((ledger, lifetime) =>
+    lifetime.unlockAllApplied || after.customSeed
+      ? ledger
+      : recordSteamEligibleTiles(ledger, before, after));
+}
+
 export function initializeSteamAchievements(): () => void {
   const migrateMissingLedgers = () => {
     if (!steamEvidenceEligible()) return;
@@ -438,6 +488,9 @@ export interface RunResult {
   /** Production Emoji Tiles still owned after Chapter 8 blind-end hooks resolve. */
   jokerIds?: readonly string[];
   patternCounts?: Partial<Record<PatternId, number>>;
+  handsPlayed?: number;
+  rerollsUsed?: number;
+  letterHandPlayCounts?: RunState['letterHandPlayCounts'];
 }
 
 /** Fold one finished run into the lifetime record (idempotency is the caller's job). */
@@ -517,6 +570,10 @@ export function recordRunEnd(r: RunResult): void {
       ...(r.pouchId ? { pouchId: r.pouchId } : {}),
       ...(r.recordId ? { recordId: r.recordId } : {}),
       ...(r.jokerIds ? { jokerIds: r.jokerIds } : {}),
+      ...(r.handsPlayed !== undefined ? { handsPlayed: r.handsPlayed } : {}),
+      ...(r.rerollsUsed !== undefined ? { rerollsUsed: r.rerollsUsed } : {}),
+      ...(r.patternCounts ? { patternCounts: r.patternCounts } : {}),
+      ...(r.letterHandPlayCounts ? { letterHandPlayCounts: r.letterHandPlayCounts } : {}),
       ...(r.challengeId !== undefined ? { challengeId: r.challengeId } : {}),
       challengeCompleted,
     }) : lt.steamEligible,

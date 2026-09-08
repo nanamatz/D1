@@ -2018,7 +2018,7 @@ backfill from existing balance, Challenge, and sticker progress; Pouch/Record
 unlock backfill is omitted when Reveal All was applied. P1-P3 are aggregated by
 run/win sum, set union, and per-Emoji maximum sticker rank, with int32 clamping.
 
-The renderer sends one versioned payload containing exactly eight non-negative
+The renderer sends one versioned payload containing exactly twenty non-negative
 integer stats. The Electron main process validates the sender and fixed schema,
 then reconciles every value as `max(local, Steam)` so progress never decreases.
 It coalesces writes and retries independently of save health. Achievement ids
@@ -2034,6 +2034,39 @@ remain main-process-only and are unlocked through Steam Partner stat progress:
 | `challenges_completed` | `ACH_CHALLENGE_ACCEPTED` 1; `ACH_SIX_ASSIGNMENTS` 6 |
 | `emoji_mastered` | `ACH_FIRST_PROOF` 1; `ACH_EMOJI_BOARD` 25 |
 | `emoji_record_sticker_tiers` | `ACH_STICKER_ALBUM` 100 |
+| `single_hand_score` | `ACH_TEN_THOUSAND` 10,000; `ACH_MILLION_SELLER` 1,000,000; `ACH_WORLDWIDE_EDITION` 100,000,000 |
+| `last_word_target` | `ACH_THE_LAST_WORD` 1 |
+| `long_read` | `ACH_LONG_READ` 1 |
+| `longform` | `ACH_LONGFORM` 1 |
+| `perfect_syntax` | `ACH_PERFECT_SYNTAX` 1 |
+| `emoji_effects_one_hand` | `ACH_EMOTIONAL_OVERFLOW` 5 |
+| `no_revisions` | `ACH_NO_REVISIONS` 1 |
+| `under_30_hands` | `ACH_BEAT_THE_DEADLINE` 1 |
+| `glass_destroyed_one_hand` | `ACH_FRAGILE_BE_CAREFUL` 2 |
+| `fully_loaded_tile` | `ACH_FULLY_LOADED_TILE` 1 |
+| `pattern_run_max` | `ACH_PATTERN_SPECIALIST` 20 |
+| `word_hand_run_max` | `ACH_WORD_HAND_SPECIALIST` 50 |
+
+`ACH_CHALLENGE_ACCEPTED` and `ACH_SIX_ASSIGNMENTS` remain prepared but are held
+from public release while Challenge starts are DEV-only. Publish them only when
+the production Challenge entry point ships.
+
+The fourteen play achievements added 2026-09-08 use semantic evidence only.
+A hand is one submitted word. Its finalized individual score drives the three
+score thresholds; distinct scoring `jokerId` triggers drive Emotional Overflow;
+and only Glass tiles actually destroyed by that submission count for Fragile.
+The Last Word requires the target projection to cross the target on the blind's final
+available hand. Long Read, Longform, and Perfect Syntax are evaluated against the
+authoritative post-boss sentence sequence and require a real sentence-pattern
+match; Perfect Syntax is the highest-tier Complex pattern. Fully Loaded requires
+an existing physical Letter Tile to gain its missing enhancement axis and end with
+a non-base material, font, and edition at once; acquiring an already-complete Tile
+from a Pack does not count.
+No Revisions and Beat the Deadline require an unseeded, non-Challenge Standard
+Run win with zero shop/boss rerolls or at most 30 submitted hands respectively.
+The two Specialist achievements use the maximum count of one pattern/Word Hand
+inside one such Standard Run. Other play achievements may be earned in a genuine
+Challenge, but never through a custom seed or Profile Reveal All.
 
 No AppID or `steam_appid.txt` ships in the repository or depot; production uses
 only the AppID supplied by the Steam launch environment. Overlay forcing remains

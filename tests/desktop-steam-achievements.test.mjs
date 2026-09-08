@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   STEAM_ACHIEVEMENTS,
@@ -30,12 +30,43 @@ describe('desktop Steam achievement boundary', () => {
     ])).toThrow(/link-time/);
   });
   it('owns the fixed public registry and accepts only an exact versioned payload', () => {
-    expect(STEAM_ACHIEVEMENTS).toHaveLength(16);
+    expect(STEAM_ACHIEVEMENTS).toHaveLength(30);
     expect(new Set(STEAM_ACHIEVEMENTS.map(([, stat]) => stat))).toEqual(new Set(STEAM_STATS));
     expect(validateSteamPayload(payload())).toBe(true);
     expect(validateSteamPayload({ ...payload(), arbitrary: 1 })).toBe(false);
     expect(validateSteamPayload({ ...payload(), std_runs: -1 })).toBe(false);
     expect(validateSteamPayload({ ...payload(), std_runs: 1.5 })).toBe(false);
+  });
+
+  it('ships both source and upload icons for every public achievement', () => {
+    for (const [id] of STEAM_ACHIEVEMENTS) {
+      for (const state of ['achieved', 'unachieved']) {
+        expect(existsSync(`steam/graphical-assets/source/achievements/${id}_${state}.png`)).toBe(true);
+        expect(existsSync(`steam/graphical-assets/ready-to-upload/achievements/${id}_${state}.jpg`)).toBe(true);
+      }
+    }
+  });
+
+  it('ships all Korean achievement localization tokens', () => {
+    const vdf = readFileSync('steam/achievement-localization/achievement_loc_koreana.vdf', 'utf8');
+    expect(vdf).toContain('"Language"\t"koreana"');
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
+  });
+
+  it('ships Steamworks-ready localization files for all twelve languages', () => {
+    for (const language of [
+      'english', 'korean', 'japanese', 'schinese', 'tchinese', 'brazilian',
+      'german', 'spanish', 'french', 'russian', 'polish', 'turkish',
+    ]) {
+      const vdf = readFileSync(`steam/achievement-localization/ready-to-upload/4727440_loc_${language}.vdf`, 'utf8');
+      expect(vdf).toContain(`"Language"\t"${language}"`);
+      expect([...vdf.matchAll(/NEW_ACHIEVEMENT_9_(\d+)_NAME/g)].map((match) => Number(match[1])))
+        .toEqual([...Array(30).keys()]);
+      expect([...vdf.matchAll(/NEW_ACHIEVEMENT_9_(\d+)_DESC/g)].map((match) => Number(match[1])))
+        .toEqual([...Array(30).keys()]);
+      expect(vdf).not.toMatch(/^\+/m);
+    }
   });
 
   it('reconciles monotonically with remote Steam stats', () => {
@@ -65,71 +96,71 @@ describe('desktop Steam achievement boundary', () => {
   it('ships all Japanese achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_japanese.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"japanese"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all Simplified Chinese achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_schinese.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"schinese"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all Traditional Chinese achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_tchinese.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"tchinese"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all Brazilian Portuguese achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_brazilian.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"brazilian"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all German achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_german.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"german"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all European Spanish achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_spanish.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"spanish"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all French achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_french.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"french"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all Russian achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_russian.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"russian"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all Polish achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_polish.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"polish"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('ships all Turkish achievement localization tokens', () => {
     const vdf = readFileSync('steam/achievement-localization/achievement_loc_turkish.vdf', 'utf8');
     expect(vdf).toContain('"Language"\t"turkish"');
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(16);
-    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(16);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_NAME/g)).toHaveLength(30);
+    expect(vdf.match(/NEW_ACHIEVEMENT_9_\d+_DESC/g)).toHaveLength(30);
   });
 
   it('initializes only from a packaged Windows x64 Steam launch AppID', async () => {

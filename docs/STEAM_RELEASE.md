@@ -26,10 +26,12 @@ code signing, and Dynamic Cloud Sync are not implemented and must not be claimed
 
 ### Achievement Partner configuration
 
-Create the eight integer stats and link the 16 public achievements with
+Create the twenty integer stats and link 28 release achievements, keeping
+`ACH_CHALLENGE_ACCEPTED` and `ACH_SIX_ASSIGNMENTS` prepared but unpublished
+until Challenge starts are available in production. The complete 30-row setup uses
 Partner's automatic stat-progress unlocks. GDD §14 and
 `desktop/steam-achievements.js` are the authoritative ids and thresholds. Enter
-the localized copy and the 32 `256x256` JPG upload files from
+the localized copy and the 60 `256x256` JPG upload files from
 `docs/STEAM_PARTNER_CONFIG.md`; do not add renderer-side activation or expose
 arbitrary achievement ids through IPC. In Store Page Info, select
 `Steam Achievements` under `Supported Features`, then publish the stat,
@@ -41,6 +43,9 @@ also required to complete the release checklist.
 Use the public title `Play the Wor!d`. The internal application name and
 executable remain `Play the World` and `Play the World.exe`; changing the
 internal name would orphan existing saves.
+
+Use `docs/STEAM_STORE_DESCRIPTION_LOCALIZATION.md` for the localized
+About This Game copy in all 12 supported languages.
 
 Under Supported Platforms, select **Windows only**. Do not select macOS, Linux +
 SteamOS, or Android. Claim only English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Brazilian Portuguese, German, Spanish (Spain), French, Russian, Polish, and Turkish **Interface** support; do not

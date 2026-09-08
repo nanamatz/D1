@@ -14,6 +14,7 @@ import {
   drawBossFromCycle,
   enterBossBlind,
   reconcileBossHand,
+  sentenceSequenceForBlind,
 } from '../engine/bosses';
 import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from './tutorial';
 import { readTips } from './settings';
@@ -62,6 +63,9 @@ import {
   recordEndlessEnd,
   recordJokerBlindCounts,
   recordRunEnd,
+  recordSteamHand,
+  recordSteamSentence,
+  recordSteamTiles,
 } from './lifetime';
 import { LETTER_HAND_REGISTRY } from '../engine/letterHands';
 import { clearRun, loadRun, serializeRun, writeRun } from './persist';
@@ -203,6 +207,7 @@ const recordPouchUnlockChanges = (before: RunState, after: RunState): void => {
   if (destroyed.length > 0 || created.length > 0) {
     recordEmojiUnlockEvent({ kind: 'tileChanges', run: after, destroyed, created });
   }
+  recordSteamTiles(before, after);
 };
 
 /** Presentation payload for Emoji Tiles that resolved when Blind Select was confirmed. */
@@ -641,6 +646,9 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
             .filter((joker) => joker.state.destroyed !== 1)
             .map((joker) => joker.defId),
           patternCounts: state.stats.patternCounts,
+          handsPlayed: state.stats.wordsPlayed,
+          rerollsUsed: state.stats.rerollsUsed,
+          letterHandPlayCounts: state.run.letterHandPlayCounts,
         });
       }
       // recordRunEnd writes synchronously. Freeze the post-write delta into state so
@@ -666,8 +674,11 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
     state.run.customSeed,
     state.run.challengeId,
     state.run.jokers,
+    state.run.letterHandPlayCounts,
     state.stats.bestWord,
     state.stats.patternCounts,
+    state.stats.wordsPlayed,
+    state.stats.rerollsUsed,
     state.endlessBestScore,
   ]);
 
@@ -746,6 +757,12 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         jokerBlindCounts[id] = (jokerBlindCounts[id] ?? 0) + 1;
       }
       const stats: RunStats = { ...s.stats, patternCounts, jokerBlindCounts };
+      recordSteamSentence({
+        run: runWithPattern,
+        sequence: sentenceSequenceForBlind(s.blind),
+        judgment: final.judgment,
+        patternCounts: runWithPattern.patternPlayCounts,
+      });
       const roundedFinal = Math.round(settledScore);
       recordBestRoundScore(roundedFinal);
       const endlessBestScore = s.run.victorySecured
@@ -1997,6 +2014,13 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
           bossDiscarded: bossDiscardedTiles.length,
         });
       }
+      recordSteamHand({
+        run: nextRun,
+        blind,
+        submission,
+        events,
+        previousProjectedScore: prev.blind.projectedScore,
+      });
       const wordScore = letterChips(submission.tiles);
       const best = prev.stats.bestWord;
       const bestWord =
@@ -2271,7 +2295,13 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         ? startBlind(run, rng, { kind: 'boss', bossId })
         : prev.blind;
       audio.play('reroll');
-      return { ...prev, run, blind, rngCounter: prev.rngCounter + 1 };
+      return {
+        ...prev,
+        run,
+        blind,
+        stats: { ...prev.stats, rerollsUsed: prev.stats.rerollsUsed + 1 },
+        rngCounter: prev.rngCounter + 1,
+      };
     });
   }, []);
 

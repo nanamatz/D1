@@ -16,6 +16,20 @@ export const STEAM_ACHIEVEMENTS = Object.freeze([
   ['ACH_FIRST_PROOF', 'emoji_mastered', 1],
   ['ACH_EMOJI_BOARD', 'emoji_mastered', 25],
   ['ACH_STICKER_ALBUM', 'emoji_record_sticker_tiers', 100],
+  ['ACH_TEN_THOUSAND', 'single_hand_score', 10_000],
+  ['ACH_MILLION_SELLER', 'single_hand_score', 1_000_000],
+  ['ACH_WORLDWIDE_EDITION', 'single_hand_score', 100_000_000],
+  ['ACH_THE_LAST_WORD', 'last_word_target', 1],
+  ['ACH_LONG_READ', 'long_read', 1],
+  ['ACH_LONGFORM', 'longform', 1],
+  ['ACH_PERFECT_SYNTAX', 'perfect_syntax', 1],
+  ['ACH_EMOTIONAL_OVERFLOW', 'emoji_effects_one_hand', 5],
+  ['ACH_NO_REVISIONS', 'no_revisions', 1],
+  ['ACH_BEAT_THE_DEADLINE', 'under_30_hands', 1],
+  ['ACH_FRAGILE_BE_CAREFUL', 'glass_destroyed_one_hand', 2],
+  ['ACH_FULLY_LOADED_TILE', 'fully_loaded_tile', 1],
+  ['ACH_PATTERN_SPECIALIST', 'pattern_run_max', 20],
+  ['ACH_WORD_HAND_SPECIALIST', 'word_hand_run_max', 50],
 ]);
 
 export const STEAM_STATS = Object.freeze([
@@ -27,6 +41,18 @@ export const STEAM_STATS = Object.freeze([
   'challenges_completed',
   'emoji_mastered',
   'emoji_record_sticker_tiers',
+  'single_hand_score',
+  'last_word_target',
+  'long_read',
+  'longform',
+  'perfect_syntax',
+  'emoji_effects_one_hand',
+  'no_revisions',
+  'under_30_hands',
+  'glass_destroyed_one_hand',
+  'fully_loaded_tile',
+  'pattern_run_max',
+  'word_hand_run_max',
 ]);
 
 const PAYLOAD_KEYS = Object.freeze(['version', ...STEAM_STATS].sort());
