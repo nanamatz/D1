@@ -105,11 +105,15 @@ describe('Score Typewriter strength', () => {
     expect(scoreTypewriterClearPeak(3, finalPhaseLossResolution, false, 0)).toBe(0);
   });
 
-  it('runs every tier ten percent faster', () => {
+  it('runs every tier at the 1.5x typing cadence and repeats every selected clear key', () => {
     expect(BALANCE.scoreTypewriter.clearRepeatFactors).toEqual([0, 2, 1.5, 1.25, 1, 1]);
     expect([1, 2, 3, 4, 5].map((tier) =>
       scoreTypewriterClearRepeatMs(tier as ScoreTypewriterTier),
-    )).toEqual([836, 627, 522.5, 418, 418]);
+    )).toEqual([2, 1.5, 1.25, 1, 1].map((factor) => 418 / 1.5 * factor));
+    for (const tier of [1, 2, 3, 4, 5] as const) {
+      const count = BALANCE.scoreTypewriter.visualKeyCounts[tier];
+      expect(scoreTypewriterKeySequence(`clear:blind:1:${tier}`, count, 'Enter')).toHaveLength(count);
+    }
   });
 
   it('starts clear cycle zero immediately, self-schedules, and cleans up exactly', () => {
@@ -317,7 +321,8 @@ describe('Score Typewriter strength', () => {
       (1 + BALANCE.scoreTypewriter.keyRhythmJitter) /
       (1 - BALANCE.scoreTypewriter.keyRhythmJitter),
     );
-    expect(BALANCE.scoreTypewriter.keyPressMs).toEqual([0, 87, 69, 58, 51, 44]);
+    expect(BALANCE.scoreTypewriter.keyPressMs)
+      .toEqual([0, 87 / 1.5, 69 / 1.5, 58 / 1.5, 51 / 1.5, 44 / 1.5]);
   });
 
   it('normalizes screen shake and scales it monotonically by event tier', () => {

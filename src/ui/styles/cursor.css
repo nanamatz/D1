@@ -109,6 +109,18 @@
     cursor: var(--game-cursor-active) !important;
   }
 
+  /* Object-specific cursor declarations must not replace the mascot skin. */
+  .pouch-widget-select,
+  .bs-tag-icon,
+  .run-choice-art {
+    cursor: var(--game-cursor-hover) !important;
+  }
+  .pouch-widget-select:active,
+  .bs-tag-icon:active,
+  .run-choice-art:active {
+    cursor: var(--game-cursor-active) !important;
+  }
+
   /* Preserve operating-system semantic cursors for editing and special tools. */
   input:not([type]),
   input[type='text'],
@@ -127,11 +139,6 @@
   [contenteditable]:not([contenteditable='false']) {
     cursor: text !important;
   }
-  .bs-tag-icon,
-  .run-tag-icon,
-  .run-choice-art {
-    cursor: help !important;
-  }
   .desk-check-sign-zone {
     cursor: crosshair !important;
   }
@@ -145,13 +152,15 @@
   .joker-slot.grabbed {
     cursor: grabbing !important;
   }
-  button:disabled,
   input:disabled,
   select:disabled,
   [aria-disabled='true'],
-  .tile.locked,
-  .consumable-menu button:disabled {
+  .tile.locked {
     cursor: not-allowed !important;
+  }
+  button:disabled,
+  [role='button'][aria-disabled='true'] {
+    cursor: var(--game-cursor-normal) !important;
   }
   .shop-offer.empty .shop-offer-card,
   .pack-candidate-row .tile.locked,

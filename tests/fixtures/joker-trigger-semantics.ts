@@ -9,8 +9,8 @@ export const JOKER_TRIGGER_SEMANTICS = {
     'vowelChoir', 'consonantChoir', 'blackletterEngine', 'glassCannon',
     'loadedLeadDice', 'materialPrism', 'typeOrchestra', 'longFormSerial',
     'typesettingMachine', 'goldenType', 'counterfeit', 'twentyFifthBlessing', 'golem',
-    'zombie', 'bookworm', 'miser', 'pouchTag', 'bagCounter', 'fableHoard', 'outOfPrint',
-    'scrapDealer', 'exactingCritic', 'bookOfMargins', 'greatDepression', 'glassInsurance',
+    'zombie', 'bookworm', 'miser', 'bagCounter', 'fableHoard', 'exactingCritic',
+    'bookOfMargins', 'greatDepression', 'glassInsurance',
   ],
   storedGrowthApplyOnce: [
     'dullingPencil', 'threeLeafClover', 'scarletLetter', 'storyteller', 'beehiveTile',
@@ -29,9 +29,11 @@ export const JOKER_TRIGGER_SEMANTICS = {
     'gathering', 'hotOffThePress', 'houseStyle', 'hypocrite', 'iotaStroke', 'lastSort',
     'leftMargin', 'literaryJudge', 'longWordFan', 'mirrorImage', 'monomaterial',
     'nightOwl', 'oneVoice', 'pageNumber', 'peddler', 'plagiarist', 'pocketDictionary',
-    'porcelainCat', 'rightMargin', 'royalWe', 'sentenceOpener', 'shortAndSharp',
+    'porcelainCat', 'pouchTag', 'rightMargin', 'royalWe', 'scrapDealer',
+    'sentenceOpener', 'shortAndSharp',
     'stenographer', 'straightTalk', 'strawberryJam', 'syllableScale', 'temurah',
     'thirdParty', 'tipJar', 'tongueTwister', 'tyrant', 'uncensored', 'verbEngine',
+    'outOfPrint',
     'vowelMagnet', 'wastebasket',
   ],
   noTriggerRulePassive: [

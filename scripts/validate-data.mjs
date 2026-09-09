@@ -30,12 +30,12 @@ const dictionary = readFileSync(resolve(root, 'data/dictionary.txt'), 'utf8')
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
 const maxWordLength = 18;
-const dictionaryTarget = 172235; // ENABLE + tile grammar + 4 acronyms + 3 reviewed omissions
-const lexiconTarget = 172258; // dictionary + 23 retained pre-existing entries
+const dictionaryTarget = 172236; // ENABLE + tile grammar + 4 acronyms + 4 reviewed omissions
+const lexiconTarget = 172259; // dictionary + 23 retained pre-existing entries
 const curatedTarget = ['mvp', 'mvps', 'vip', 'vips'];
-const curatedValidityTarget = ['aint', 'christ', 'christmas'];
+const curatedValidityTarget = ['aint', 'christ', 'christmas', 'june'];
 const suits = new Set(['standard', 'formal', 'slang', 'vulgar']);
-const suitTargets = { standard: 168469, formal: 2669, slang: 880, vulgar: 240 };
+const suitTargets = { standard: 168470, formal: 2669, slang: 880, vulgar: 240 };
 const parts = new Set([
   'noun',
   'verbIntransitive',

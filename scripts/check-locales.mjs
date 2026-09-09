@@ -20,11 +20,14 @@ const PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9_]*)\}/gu;
 const NUMBER = /(?:×\s*[+−-]?\d+(?:\.\d+)?|[+−-]?\d+(?:\.\d+)?%?)/gu;
 const PERIOD = /\.(?!\d)|[。．]/gu;
 const HAS_PERIOD = /\.(?!\d)|[。．]/u;
+const SEMICOLON = /[;；]/gu;
+const HAS_SEMICOLON = /[;；]/u;
 const PROSE_PREFIX =
   /^(?:bossdesc|patterndesc|packdesc|consumabledesc|jokerdesc|voucherdesc|materialdesc|fontdesc|fonteffectdesc|editiondesc)\./u;
 const PROSE_SUFFIX = /\.(?:body|warning|desc|tooltip)$/u;
 
 const isProse = (key) => PROSE_PREFIX.test(key) || PROSE_SUFFIX.test(key) || /Body$/u.test(key);
+const isDescription = (key) => isProse(key) || /Desc$/u.test(key);
 const signature = (value, pattern, group = 1) =>
   [...value.matchAll(pattern)].map((match) => match[group]).sort().join(',');
 
@@ -42,7 +45,7 @@ function mapPlainText(value, transform) {
 function fixDescription(value) {
   let fixed = mapPlainText(value, (plain) =>
     plain.replace(NUMBER, (number) => `[n:${number}]`));
-  return fixed.replace(PERIOD, '');
+  return fixed.replace(PERIOD, '').replace(SEMICOLON, '');
 }
 
 const dictionaries = Object.fromEntries(
@@ -57,7 +60,9 @@ if (process.argv.includes('--fix')) {
     const fixed = Object.fromEntries(
       Object.entries(dictionaries[lang]).map(([key, value]) => [
         key,
-        isProse(key) ? fixDescription(value) : value,
+        isProse(key)
+          ? fixDescription(value)
+          : isDescription(key) ? value.replace(SEMICOLON, '') : value,
       ]),
     );
     dictionaries[lang] = fixed;
@@ -98,6 +103,9 @@ for (const key of englishKeys) {
     if (TAG_LIKE.test(withoutTags)) errors.push(`Invalid highlight tag ${lang}.${key}`);
     if (isProse(key) && HAS_PERIOD.test(value)) {
       errors.push(`Description contains a period ${lang}.${key}`);
+    }
+    if (isDescription(key) && HAS_SEMICOLON.test(value)) {
+      errors.push(`Description contains a semicolon ${lang}.${key}`);
     }
     if (isProse(key) && NUMBER.test(withoutTags)) {
       errors.push(`Unhighlighted number ${lang}.${key}`);

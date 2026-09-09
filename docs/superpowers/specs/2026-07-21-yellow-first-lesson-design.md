@@ -67,7 +67,7 @@ Lock lives entirely in the UI (engine untouched). Pouch/Run-info remain reachabl
 
 ### 4. Rebuild the intro (interactive script; dynamic target revision 2026-09-03)
 
-`INTRO_STEPS` (tutorial.ts) becomes 4 steps, each with an `advance` mode:
+`INTRO_STEPS` (tutorial.ts) becomes 5 steps (fifth step added 2026-09-09), each with an `advance` mode:
 1. `frame` — selector `.round-panel`, advance `'next'`.
 2. `discard` — dynamic selector `.tutorial-action-target`, advance `'discarded'`: the spare is
    targeted for right-click, then enabled Discard is targeted for left-click (auto only after the
@@ -75,7 +75,9 @@ Lock lives entirely in the UI (engine untouched). Pouch/Run-info remain reachabl
 3. `build` — dynamic selector `.tutorial-action-target`, advance `'staged'`: the target moves
    through the next exact Y→E→L→L→O→W physical ID (auto when `selected` spells the lock word).
 4. `submit` — dynamic selector `.tutorial-action-target`, advance `'played'`: enabled Play is the
-   target (auto when a word is played).
+   target (auto after that word's settlement completes).
+5. `palette`: selector `.palette-unlock-row .btn`, advance `'next'`; open the real in-run
+   Settings > Game screen and highlight Palette Convenience without activating it.
 
 This dynamic target list supersedes the original fixed `.stage`/`.hand`/`.play-btn` selectors.
 `SpotlightBubble` remains portalled to `document.body`, re-queries and measures the target every
@@ -84,12 +86,13 @@ positional transition: target replacement and the tile FLIP are followed on the 
 hover or a fixed timing guess.
 
 `GuidedIntro` reads `g` (game state) to auto-advance: on `build`, advance when
-`stagedWord(g) === 'YELLOW'`; on `submit`, advance when a play has happened (selected cleared /
-`lastPlayed` set). The Next button only shows for `'next'` steps; gated steps show a hint instead.
-`finish()` marks intro seen and closes (releasing the lock). Skip = finish early.
+`stagedWord(g) === 'YELLOW'`; on `submit`, advance when a new `settleId` reaches the
+authoritative settle-complete signal. The Next button only shows for `'next'` steps; gated steps show a hint instead.
+`finish()` marks intro seen and closes Settings (releasing the lock). Skip = finish early.
 
 On submit, the existing pipeline scores YELLOW at 252 and `ChromaticReveal` washes the yellow
-palette in. The 300 target remains uncleared, so the board unlocks and ordinary play continues.
+palette in. After settlement, Settings opens for the fifth step; Next or Skip returns to the
+uncleared 300-target board. The tutorial never presses or grants Palette Convenience itself.
 
 ### 5. Copy (i18n)
 
@@ -102,7 +105,7 @@ gated-step hint string (`intro.hint.discard/build/submit`) shown where Next woul
 - No sort or target steps; discard reuses the ordinary mark-then-button path without free use,
   refund, new engine event, run field, save key, or version.
 - No change to non-tutorial runs.
-- No new palette/Collection screen tour — the wash + reveal teach the concept.
+- No Collection tour or duplicate Settings UI; the fifth step reuses the production surface.
 
 ## Testing
 

@@ -4,7 +4,9 @@
  * Overlay wipe, Animal-Crossing feel: the outgoing screen stays fixed while the
  * incoming screen slides in from the RIGHT moving LEFT (one unified direction,
  * strict X axis) over it — hard pixel-crisp edge, a narrow leading-edge shadow for
- * the Z-depth step, and an Ease-Out Back curve that overshoots then settles.
+ * the Z-depth step, and an Ease-Out Back curve that overshoots then settles. The
+ * pane itself stays in viewport coordinates so its desk background does not move;
+ * its clip edge and content move together.
  *
  * The outgoing tree is kept MOUNTED under its original key for the duration, so it
  * never remounts or re-runs effects; it renders frozen at the props it last had
@@ -106,7 +108,9 @@ export function ScreenTransition({ screenKey, runFit = false, children }: Props)
           if (e.target === e.currentTarget) setOutgoing(null);
         }}
       >
-        <TransitionContext.Provider value={transitioning}>{children}</TransitionContext.Provider>
+        <div className="screen-pane-content">
+          <TransitionContext.Provider value={transitioning}>{children}</TransitionContext.Provider>
+        </div>
       </div>
     </div>
   );

@@ -26,6 +26,7 @@
 import type { ReactNode } from 'react';
 
 const TAG = /\[([mcbnkage$pCURLGvrw]):([^\]]*)\]/g;
+const PARENTHETICAL = /(\([^()\r\n]*\)|（[^（）\r\n]*）)/g;
 const SCORE_VALUE = /^(\s*(?:×\s*)?(?:[+-]?\{[^}]+\}|[+-]?\d+(?:\.\d+)?))(.*)$/;
 
 const CLASS: Record<string, string> = {
@@ -58,7 +59,7 @@ export const stripRichText = (text: string): string => text.replace(TAG, '$2');
  * unchanged, so an un-marked-up string (or one in a locale that hasn't been
  * tagged yet) still renders as plain prose.
  */
-export function richText(text: string): ReactNode[] {
+function taggedText(text: string, keyPrefix: string): ReactNode[] {
   const out: ReactNode[] = [];
   let last = 0;
   let key = 0;
@@ -70,7 +71,7 @@ export function richText(text: string): ReactNode[] {
     const score = (m[1] === 'm' || m[1] === 'c') ? value.match(SCORE_VALUE) : null;
     const factor = score?.[1]?.trimStart().startsWith('×') ?? false;
     out.push(
-      <span key={key++} className={CLASS[m[1]!]}>
+      <span key={`${keyPrefix}-${key++}`} className={CLASS[m[1]!]}>
         {score
           ? [
               <span key="value" className={factor ? 'hl-factor' : 'hl-value'}>{score[1]}</span>,
@@ -82,5 +83,20 @@ export function richText(text: string): ReactNode[] {
     last = at + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+export function richText(text: string): ReactNode[] {
+  const parts = text.split(PARENTHETICAL);
+  if (parts.length === 1) return taggedText(text, 'text');
+  const out: ReactNode[] = [];
+  parts.forEach((part, index) => {
+    if (index % 2 === 0) out.push(...taggedText(part, `text-${index}`));
+    else out.push(
+      <span key={`parenthetical-${index}`} className="tt-parenthetical">
+        {taggedText(part, `parenthetical-${index}`)}
+      </span>,
+    );
+  });
   return out;
 }

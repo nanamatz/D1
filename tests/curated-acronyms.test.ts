@@ -9,7 +9,7 @@ import { loadBrowserLexicon } from '../src/ui/lexicon.browser';
 
 const lexicon = loadStubLexicon();
 const surfaces = ['mvp', 'mvps', 'vip', 'vips'] as const;
-const validitySurfaces = ['aint', 'christ', 'christmas'] as const;
+const validitySurfaces = ['aint', 'christ', 'christmas', 'june'] as const;
 
 function tiles(word: string): Tile[] {
   return [...word.toUpperCase()].map((letter, index) => ({
@@ -117,6 +117,7 @@ describe('reviewed curated validity omissions', () => {
     expect(curated.slice(1)).toEqual(expect.arrayContaining([
       expect.objectContaining({ word: 'christ', suit: 'standard', pos: ['noun'] }),
       expect.objectContaining({ word: 'christmas', suit: 'standard', pos: ['noun'] }),
+      expect.objectContaining({ word: 'june', suit: 'standard', pos: ['noun'] }),
     ]));
   });
 

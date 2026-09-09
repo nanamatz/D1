@@ -89,20 +89,21 @@ describe('guided intro flag (A-1)', () => {
     expect(hasSeenIntro()).toBe(false);
   });
 
-  it('INTRO_STEPS is the 4-step YELLOW lesson, each with a key and a selector', () => {
-    expect(INTRO_STEPS.length).toBe(4);
+  it('INTRO_STEPS is the 5-step YELLOW and Palette lesson, each with a key and a selector', () => {
+    expect(INTRO_STEPS.length).toBe(5);
     for (const s of INTRO_STEPS) {
       expect(s.key).toBeTruthy();
       expect(s.selector.startsWith('.')).toBe(true);
     }
     // keys are unique
-    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(4);
-    expect(INTRO_STEPS.map((s) => s.advance)).toEqual(['next', 'discarded', 'staged', 'played']);
+    expect(new Set(INTRO_STEPS.map((s) => s.key)).size).toBe(5);
+    expect(INTRO_STEPS.map((s) => s.advance)).toEqual(['next', 'discarded', 'staged', 'played', 'next']);
     expect(INTRO_STEPS.map((s) => s.selector)).toEqual([
       '.round-panel',
       '.tutorial-action-target',
       '.tutorial-action-target',
       '.tutorial-action-target',
+      '.palette-unlock-row .btn',
     ]);
   });
 
@@ -140,8 +141,8 @@ describe('guided intro copy coverage', () => {
   it('every intro step + button has copy in both locales', () => {
     for (const loc of [en, ko] as Record<string, string>[]) {
       for (const s of INTRO_STEPS) {
-        expect(loc).toHaveProperty(`intro.step.${s.key}.title`);
-        expect(loc).toHaveProperty(`intro.step.${s.key}.body`);
+        expect(loc).toHaveProperty(s.key === 'palette' ? 'settings.paletteUnlock.label' : `intro.step.${s.key}.title`);
+        expect(loc).toHaveProperty(s.key === 'palette' ? 'settings.paletteUnlock.confirmNotice' : `intro.step.${s.key}.body`);
       }
       for (const k of ['intro.next', 'intro.skip', 'intro.done']) {
         expect(loc).toHaveProperty(k);
@@ -156,7 +157,7 @@ describe('guided intro copy coverage', () => {
   it('teaches the ordinary mark-then-Discard action in both locales', () => {
     expect(en['intro.step.discard.body']).toMatch(/right-click.*mark.*Discard button/i);
     expect(ko['intro.step.discard.body']).toMatch(/강조된.*우클릭.*버릴 타일.*버리기 버튼/);
-    expect(INTRO_STEPS.map((step) => step.advance)).toEqual(['next', 'discarded', 'staged', 'played']);
+    expect(INTRO_STEPS.map((step) => step.advance)).toEqual(['next', 'discarded', 'staged', 'played', 'next']);
   });
 
   it('uses player-facing highlighted targets and the real submit button name', () => {
@@ -167,5 +168,13 @@ describe('guided intro copy coverage', () => {
     expect(ko['intro.step.build.body']).not.toContain('보호된 타일');
     expect(ko['intro.step.submit.body']).toContain('단어 내기를 눌러');
     expect(ko['intro.step.submit.body']).not.toContain('플레이를 눌러');
+  });
+
+  it('opens the production Settings view for the final Palette Convenience spotlight', () => {
+    const runView = readFileSync('src/ui/components/RunView.tsx', 'utf8');
+    const options = readFileSync('src/ui/components/Options.tsx', 'utf8');
+    expect(runView).toContain("INTRO_STEPS[nextStep]?.key === 'palette'");
+    expect(runView).toContain("? 'settings' : 'root'");
+    expect(options).toContain("useState<View>(initialView)");
   });
 });

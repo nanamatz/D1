@@ -161,6 +161,30 @@ describe('reduced Score Typewriter fold', () => {
     expect(assisted.tier).toBe(1);
   });
 
+  it('starts Will feedback once from the final halved axes', () => {
+    const folded = foldScoreTypewriterEvents([
+      { kind: 'suit', suit: 'standard', mult: 2 },
+      { kind: 'tile', tileId: 'a', letter: 'A', chips: 100 },
+      {
+        kind: 'boss',
+        bossId: 'will',
+        chipsDelta: -50,
+        multDelta: -1,
+        chipsFactor: 0.5,
+        multFactor: 0.5,
+      },
+    ], 40);
+
+    expect(folded).toEqual({
+      chips: 50,
+      mult: 1,
+      flatScore: 0,
+      tier: 2,
+      delta: 50,
+      primaryKeyId: 'Break',
+    });
+  });
+
   it('resolves frozen held-tile ids for Brass and tile-bound Emoji beats', () => {
     const tileLookup = [
       { id: 'submitted', letter: 'A' },
@@ -269,6 +293,9 @@ describe('physical Play impact prologue', () => {
     expect(settleSource).toContain('const { speed: settleSpeed, reduced: settleReduced }');
     expect(settleSource).toContain('const screenShakeRef = useRef(screenShake);');
     expect(settleSource).toContain('screenShakeRef.current = screenShake;');
+    expect(settleSource).toContain('const initialSettleIdRef = useRef(settleId === 0 ? null : settleId);');
+    expect(settleSource).toContain('initialSettleIdRef.current = null;');
+    expect(settleSource).toMatch(/if \(initialSettleIdRef\.current === settleId\) \{[\s\S]*?setView\(IDLE\);[\s\S]*?onCompleteRef\.current\?\.\(\);[\s\S]*?return;/);
     expect(settleSource).toContain('const reduce = reducedMotion || motionOff();');
     expect(settleSource).toContain('!previous.reduce &&');
     expect(settleSource).toContain('activeSettleIdRef.current === settleId');

@@ -1,7 +1,7 @@
 /**
  * Bosses (GDD §8.3) — data + hooks, like jokers. Each boss attacks one system
  * (readable), is build-dependent (a check), and has counterplay. This is the
- * publishing-frame roster of 15 ordinary bosses plus 6 finishers; effects plug in at fixed
+ * publishing-frame roster of 18 ordinary bosses plus 7 finishers; effects plug in at fixed
  * points in the loop pipeline:
  *   handSizeDelta   → shrink the opening draw before the hand is dealt (Budget Book)
  *   targetMult      → scale the blind target (Wanted)
@@ -26,6 +26,7 @@ import type {
   BlindState,
   RunState,
   SentenceScoringContext,
+  POS,
   WordScoringContext,
   WordSubmission,
   Tile,
@@ -85,6 +86,13 @@ export interface BossDef {
 /** Current Chapter length floor enforced by Stereotype Plate. */
 export const stereotypePlateMinimumLength = (run: RunState): number =>
   Math.max(0, ...(run.wordsThisAnte ?? []).map((word) => word.length));
+
+const hasPOS = (
+  submission: WordSubmission,
+  env: BossScoringEnv,
+  matches: (pos: POS) => boolean,
+): boolean => !submission.isGibberish
+  && (env.lexicon.lookup(submission.text)?.pos.some(matches) ?? false);
 
 const BOSSES: readonly BossDef[] = [
   // 1. Wanted (수배 전단): XL blind — target ×2.
@@ -149,18 +157,35 @@ const BOSSES: readonly BossDef[] = [
   // 10. Burnt Paper (그을린 종이): all verbs debuffed (score 0).
   {
     id: 'burntPaper', nameEn: 'Burnt Paper', nameKo: '그을린 종이', emoji: '🕯️',
-    debuffs: (submission, env) => {
-      if (submission.isGibberish) return false;
-      const entry = env.lexicon.lookup(submission.text);
-      return entry !== null && entry.pos.some(isVerb);
-    },
+    debuffs: (submission, env) => hasPOS(submission, env, isVerb),
   },
-  // 11. White Paper (백지): all vulgar words debuffed (score 0).
+  // 11–14. POS-family attacks: a match in any registered POS debuffs the word.
+  {
+    id: 'familyPhoto', nameEn: 'Family Photo', nameKo: '가족 사진', emoji: '▧',
+    debuffs: (submission, env) => hasPOS(
+      submission, env, (pos) => pos === 'adjective' || pos === 'adverb',
+    ),
+  },
+  {
+    id: 'noSmokingSign', nameEn: 'No Smoking Sign', nameKo: '금연 표지판', emoji: '🚭',
+    debuffs: (submission, env) => hasPOS(submission, env, (pos) => pos === 'noun'),
+  },
+  {
+    id: 'wifiZone', nameEn: 'Wi-Fi Zone', nameKo: '와이파이 존', emoji: '⌁',
+    debuffs: (submission, env) => hasPOS(
+      submission, env, (pos) => pos === 'preposition' || pos === 'conjunction',
+    ),
+  },
+  {
+    id: 'transparentPaper', nameEn: 'Transparent Paper', nameKo: '투명한 종이', emoji: '◇',
+    debuffs: (submission, env) => hasPOS(submission, env, (pos) => pos === 'interjection'),
+  },
+  // 15. White Paper (백지): all vulgar words debuffed (score 0).
   {
     id: 'whitePaper', nameEn: 'White Paper', nameKo: '백지', emoji: '📄',
     debuffs: (submission) => submissionHasSuit(submission, 'vulgar'),
   },
-  // 12. Will (유서): base chips and mult halved.
+  // 16. Will (유서): base chips and mult halved.
   {
     id: 'will', nameEn: 'Will', nameKo: '유서', emoji: '🪦',
     scoreFactors: { chips: BALANCE.boss.willScale, mult: BALANCE.boss.willScale },
@@ -200,14 +225,6 @@ const BOSSES: readonly BossDef[] = [
       submission.text.toUpperCase().includes(env.blind.deadLetter),
   },
   {
-    id: 'stereotypePlate',
-    nameEn: 'Stereotype Plate',
-    nameKo: '스테레오타입 판',
-    emoji: '▤',
-    blocks: (submission, env) =>
-      submissionLength(submission) < stereotypePlateMinimumLength(env.run),
-  },
-  {
     id: 'orphanLine',
     nameEn: 'Orphan Line',
     nameKo: '고아행',
@@ -235,6 +252,15 @@ const disableRandomJoker = (run: RunState, blind: BlindState, rng: Rng) => {
 };
 
 const FINISHERS: readonly BossDef[] = [
+  {
+    id: 'stereotypePlate',
+    nameEn: 'Stereotype Plate',
+    nameKo: '스테레오타입 판',
+    emoji: '▤',
+    clearReward: BALANCE.boss.finisherReward,
+    blocks: (submission, env) =>
+      submissionLength(submission) < stereotypePlateMinimumLength(env.run),
+  },
   {
     id: 'cleaningSign',
     nameEn: 'Cleaning Sign',

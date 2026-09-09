@@ -24,6 +24,9 @@ describe('main-menu language modal', () => {
     expect(i18n).toContain("{ id: 'tr-TR', label: 'Türkçe', locale: 'tr-TR' }");
     expect(menu).toContain('aria-pressed={lang === choice.id}');
     expect(menu).toContain("onClose={() => setLanguageOpen(false)}");
+    expect(menu).toContain('if (choice.id === lang) return;');
+    expect(menu).toContain('setLang(choice.id);');
+    expect(menu).toContain('window.location.reload();');
   });
 
   it('uses an expandable desktop grid and a narrow-screen fallback', () => {
@@ -32,7 +35,11 @@ describe('main-menu language modal', () => {
     expect(css).toMatch(/\.language-modal \.back-bar\s*{[^}]*width:\s*100%;[^}]*margin-inline:\s*auto;/s);
   });
 
-  it('wraps long active-language labels inside the compact menu card', () => {
-    expect(css).toMatch(/\.menu-mini-card\.language \.menu-mini-button\s*{[^}]*font-size:\s*21px;[^}]*overflow-wrap:\s*normal;[^}]*text-align:\s*center;[^}]*word-break:\s*normal;[^}]*white-space:\s*normal;/s);
+  it('wraps only the compact active-language label before parentheses', () => {
+    expect(menu).toContain("label.replace(' (', '\\n(')");
+    expect(menu).toContain('languageLabel(LANGUAGES.find(({ id }) => id === lang)!.label)');
+    expect(menu).toContain('{choice.label}');
+    expect(css).toMatch(/\.menu-mini-card\.language \.menu-mini-button\s*{[^}]*white-space:\s*pre-line;/s);
+    expect(css).not.toMatch(/\.language-choice\s*{[^}]*white-space:\s*pre-line;/s);
   });
 });

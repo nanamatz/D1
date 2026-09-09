@@ -19,7 +19,7 @@ const MODAL_SELECTOR = '.overlay, [role="dialog"], .boss-intro';
 
 export interface PaletteGuideSessionState {
   observationId: string;
-  ante: number;
+  blindKey: string;
   visit: number;
   handledVisits: Set<number>;
 }
@@ -31,22 +31,22 @@ let currentPaletteGuideSession: PaletteGuideSessionState | null = null;
 export function paletteGuideSessionFor(
   current: PaletteGuideSessionState | null,
   observationId: string,
-  ante: number,
+  blindKey: string,
 ): PaletteGuideSessionState {
   if (!current || current.observationId !== observationId) {
-    return { observationId, ante, visit: 0, handledVisits: new Set<number>() };
+    return { observationId, blindKey, visit: 0, handledVisits: new Set<number>() };
   }
-  syncPaletteGuideVisit(current, ante);
+  syncPaletteGuideVisit(current, blindKey);
   return current;
 }
 
-/** Increment only when the displayed Chapter number changes, including a later revisit. */
+/** Increment when the active blind changes, including a later revisit. */
 export function syncPaletteGuideVisit(
   session: PaletteGuideSessionState,
-  ante: number,
+  blindKey: string,
 ): number {
-  if (session.ante !== ante) {
-    session.ante = ante;
+  if (session.blindKey !== blindKey) {
+    session.blindKey = blindKey;
     session.visit += 1;
   }
   return session.visit;
@@ -93,7 +93,7 @@ export function nextPaletteGuide(
   return next;
 }
 
-/** A non-blocking, once-per-Chapter-visit reminder after the first ordinary settle. */
+/** A non-blocking, once-per-blind reminder after the first ordinary settle. */
 export function PaletteGuide({ g, blocked }: { g: UseGame; blocked: boolean }) {
   const { t } = useI18n();
   const { settings } = useSettings();
@@ -117,7 +117,7 @@ export function PaletteGuide({ g, blocked }: { g: UseGame; blocked: boolean }) {
   currentPaletteGuideSession = paletteGuideSessionFor(
     currentPaletteGuideSession,
     g.state.observationId,
-    g.state.run.ante,
+    `${g.state.run.ante}:${g.state.run.blindIndex}`,
   );
   const session = currentPaletteGuideSession;
   const visit = session.visit;
@@ -259,6 +259,7 @@ export function PaletteGuide({ g, blocked }: { g: UseGame; blocked: boolean }) {
   }, []);
 
   if (!notice || typeof document === 'undefined') return null;
+  const message = t('paletteGuide.unlock', { word: notice.word });
   return createPortal(
     <div className="palette-guide-live" role="status" aria-live="polite">
       <button
@@ -268,14 +269,14 @@ export function PaletteGuide({ g, blocked }: { g: UseGame; blocked: boolean }) {
           exiting && 'is-exiting',
           reducedMotion && 'is-reduced',
         ].filter(Boolean).join(' ')}
-        aria-label={`${t(`paletteGuide.${notice.id}`)} ${t('paletteGuide.close', { word: notice.word })}`}
+        aria-label={`${message} ${t('paletteGuide.close', { word: notice.word })}`}
         onClick={dismiss}
         onMouseEnter={() => { hovered.current = true; pauseAutoDismiss(); }}
         onMouseLeave={() => { hovered.current = false; resumeAutoDismiss(); }}
         onFocus={() => { focused.current = true; pauseAutoDismiss(); }}
         onBlur={() => { focused.current = false; resumeAutoDismiss(); }}
       >
-        {t(`paletteGuide.${notice.id}`)}
+        {message}
       </button>
     </div>,
     document.body,

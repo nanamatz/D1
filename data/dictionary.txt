@@ -79728,6 +79728,7 @@ junctions
 junctural
 juncture
 junctures
+june
 jungle
 jungled
 junglelike

@@ -15,14 +15,13 @@ describe('Settings tooltip coverage', () => {
       expect(Object.keys(locale).filter((key) => key.startsWith('settings.audition.'))).toHaveLength(0);
     }
     expect(source.match(/tooltipDisabled={tab !==/g)).toHaveLength(11);
-    expect(source.match(/disabled={tab !==/g)).toHaveLength(3);
+    expect(source.match(/disabled={tab !==/g)).toHaveLength(2);
   });
 
-  it('accounts for every one of the 20 native Settings focus targets', () => {
+  it('accounts for every one of the 19 native Settings focus targets', () => {
     const sliders = source.match(/<Slider\b/g)?.length ?? 0;
     const toggles = source.match(/<Toggle\b/g)?.length ?? 0;
     const speedChoices = GAME_SPEEDS.length;
-    const languageChoices = 1;
     const muteChoices = 2;
     const resolutionChoices = 1;
     const paletteChoices = 1;
@@ -42,8 +41,10 @@ describe('Settings tooltip coverage', () => {
     }
     expect(source).toContain('className="resolution-select"');
     expect(source).toContain('className="btn exchange sm"');
-    expect(sliders + toggles + speedChoices + languageChoices + muteChoices
-      + resolutionChoices + paletteChoices).toBe(20);
+    expect(source).not.toContain("setLang(");
+    expect(source).not.toContain("settings.tooltip.language");
+    expect(sliders + toggles + speedChoices + muteChoices
+      + resolutionChoices + paletteChoices).toBe(19);
   });
 
   it('aligns both audio buses on the same responsive four-column grid', () => {

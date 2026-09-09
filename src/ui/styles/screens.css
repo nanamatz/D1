@@ -338,6 +338,11 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+.tt-parenthetical,
+.tt-parenthetical [class^='hl-'],
+.tt-parenthetical [class*=' hl-'] {
+  white-space: nowrap;
+}
 .tt-extra {
   font-family: var(--tt-copy-font);
   font-size: var(--fs-md);
@@ -1081,8 +1086,7 @@
   padding-inline: 8px;
   font-size: var(--fs-md);
   max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 .bs-skip-zone {
   width: 100%;
@@ -1516,10 +1520,27 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
+}
+.shop-rail-actions {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 12px;
+  min-width: 0;
 }
 .shop-rail .next-blind,
 .shop-rail .reroll-btn {
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: 10px;
+  line-height: 1.05;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.shop-rail .reroll-btn .hl-money {
+  color: var(--gold);
+  font-size: 1.5em;
 }
 .shop-main {
   display: flex;
@@ -1813,6 +1834,17 @@ body.cb-safe .tile.hint {
   background: var(--gold);
   color: #173226;
 }
+.back-bar::before,
+.desk-lab-back::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 14px;
+  margin-right: 10px;
+  vertical-align: -2px;
+  background: currentColor;
+  clip-path: polygon(0 50%, 40% 0, 40% 30%, 100% 30%, 100% 70%, 40% 70%, 40% 100%);
+}
 .badge {
   position: absolute;
   top: -8px;
@@ -2076,7 +2108,7 @@ body.force-reduced-motion:has(.menu)::after {
   overflow-wrap: normal;
   text-align: center;
   word-break: normal;
-  white-space: normal;
+  white-space: pre-line;
 }
 
 .language-modal {
@@ -4482,12 +4514,14 @@ body.force-reduced-motion:has(.menu)::after {
   z-index: calc(var(--z-tooltip) - 1);
   top: 24px;
   right: 24px;
-  width: min(360px, calc(100vw - 48px));
+  width: fit-content;
+  max-width: calc(100vw - 48px);
   pointer-events: none;
 }
 .palette-guide {
   position: relative;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   padding: 14px 40px 14px 16px;
   border: 2px solid var(--gold);
   border-radius: 0;
@@ -4498,6 +4532,7 @@ body.force-reduced-motion:has(.menu)::after {
   font-weight: 700;
   line-height: 1.35;
   text-align: left;
+  white-space: normal;
   cursor: pointer;
   pointer-events: auto;
   animation: palette-guide-enter 240ms steps(6, end) both;
@@ -5248,6 +5283,7 @@ body.force-reduced-motion:has(.menu)::after {
   position: relative;
   width: 100%;
   min-height: var(--board-h);
+  min-height: max(var(--board-h), calc(100dvh / var(--root-zoom)));
   margin: 0 auto;
 }
 /* Mask the incoming panel while it sits off-screen. `clip` rather than `hidden` so
@@ -5261,6 +5297,7 @@ body.force-reduced-motion:has(.menu)::after {
 .screen-pane {
   width: 100%;
   min-height: var(--board-h);
+  min-height: max(var(--board-h), calc(100dvh / var(--root-zoom)));
   background: transparent;
 }
 /* Each retained transition pane keeps its own fit snapshot. CSS zoom already
@@ -5268,6 +5305,7 @@ body.force-reduced-motion:has(.menu)::after {
    compensation and offset the centred run. */
 .screen-pane.run-fit {
   zoom: var(--run-relative-scale);
+  min-height: max(var(--board-h), calc(100dvh / var(--run-zoom)));
 }
 /* Outgoing: frozen in place, beneath the incoming panel, and inert. */
 .screen-pane.screen-out {
@@ -5300,10 +5338,22 @@ body.force-reduced-motion:has(.menu)::after {
    the overshoot-settle went by too fast to read (playtest-06 item 2). If this
    changes, keep MAX_TRANSITION_MS in ScreenTransition.tsx above it. */
 .screen-pane.screen-in.screen-anim {
+  animation: screenRevealIn 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  will-change: clip-path;
+  background: var(--world-background);
+  filter: drop-shadow(-8px 0 6px rgba(0, 0, 0, 0.38));
+}
+.screen-pane.screen-in.screen-anim > .screen-pane-content {
   animation: screenSlideIn 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
   will-change: transform;
-  background: var(--bg-desk);
-  box-shadow: -8px 0 6px -3px rgba(0, 0, 0, 0.38);
+}
+@keyframes screenRevealIn {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    clip-path: inset(0);
+  }
 }
 @keyframes screenSlideIn {
   from {
@@ -5317,7 +5367,11 @@ body.force-reduced-motion:has(.menu)::after {
   .screen-pane.screen-in.screen-anim {
     animation: screenFadeIn 0.22s ease backwards;
     will-change: opacity;
-    box-shadow: none;
+    filter: none;
+  }
+  .screen-pane.screen-in.screen-anim > .screen-pane-content {
+    animation: none;
+    will-change: auto;
   }
 }
 @keyframes screenFadeIn {
@@ -5433,7 +5487,7 @@ body.force-reduced-motion:has(.menu)::after {
 }
 .intro-wrap {
   position: fixed;
-  width: min(360px, 88vw);
+  width: min(480px, 92vw);
   pointer-events: auto;
 }
 .intro-wrap.center {
@@ -5444,14 +5498,14 @@ body.force-reduced-motion:has(.menu)::after {
 .intro-bubble { text-align: left; }
 .intro-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
 .intro-body { font-size: var(--fs-lg); line-height: 1.5; margin-bottom: 10px; }
-.intro-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.intro-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.intro-skip-progress { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .intro-dots { flex: none; white-space: nowrap; font-size: 12px; opacity: 0.7; }
 /* Gated steps (build / submit) replace the Next button with a hint — the player advances by
    doing the action, not clicking. Sits where Next would, right-aligned. */
-.intro-hint { font-size: var(--fs-lg); font-style: italic; opacity: 0.8; text-align: right; }
-/* Skip is otherwise near-invisible (transparent .btn on the dark card) — give it a
-   clearly-visible gold fill with dark text, distinct from the blue primary "Next". */
-.btn.intro-skip {
+.intro-hint { flex: 1 1 220px; font-size: var(--fs-lg); font-style: italic; opacity: 0.8; text-align: right; }
+/* Keep progression gold and the optional Skip action blue. */
+.btn.intro-next {
   background: var(--gold);
   color: #173226;
 }

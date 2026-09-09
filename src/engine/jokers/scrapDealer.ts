@@ -14,14 +14,9 @@ export const scrapDealer: JokerDef = {
   hooks: {
     wordScoring: ({ run, ctx, scoreBeats }) => {
       const mult = scrapDealerMult(run);
-      const triggerCount = Math.round(mult / BALANCE.jokers.scrapDealer.factorPerBrass);
-      for (let index = 0; index < triggerCount; index += 1) {
-        ctx.mult += BALANCE.jokers.scrapDealer.factorPerBrass;
-        scoreBeats?.push({
-          chipsDelta: 0,
-          multDelta: BALANCE.jokers.scrapDealer.factorPerBrass,
-        });
-      }
+      if (mult === 0) return;
+      ctx.mult += mult;
+      scoreBeats?.push({ chipsDelta: 0, multDelta: mult });
     },
   },
 };

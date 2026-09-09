@@ -16,6 +16,10 @@ import memoirs from './assets/bosses/T_Memoirs.png';
 import budgetBook from './assets/bosses/T_BudgetBook.png';
 import contract from './assets/bosses/T_Contract.png';
 import burntPaper from './assets/bosses/T_BurntPaper.png';
+import familyPhoto from './assets/bosses/T_FamilyPhoto.png';
+import noSmokingSign from './assets/bosses/T_NoSmokingSign.png';
+import wifiZone from './assets/bosses/T_WifiZone.png';
+import transparentPaper from './assets/bosses/T_TransparentPaper.png';
 import whitePaper from './assets/bosses/T_WhitePaper.png';
 import will from './assets/bosses/T_will.png';
 import deadLetter from './assets/bosses/T_DeadLetter.png';
@@ -42,6 +46,10 @@ export const BOSS_ART: Record<string, string> = {
   budgetBook,
   contract,
   burntPaper,
+  familyPhoto,
+  noSmokingSign,
+  wifiZone,
+  transparentPaper,
   whitePaper,
   will,
   deadLetter,

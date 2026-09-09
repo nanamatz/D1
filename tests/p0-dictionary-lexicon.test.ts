@@ -19,9 +19,9 @@ describe('P0-1 — real validity dictionary', () => {
   });
 
   it('contains the 18-letter ENABLE pool plus documented exceptions', () => {
-    expect(lex.size).toBe(172258);
+    expect(lex.size).toBe(172259);
     expect(lex.registerTotals).toEqual({
-      standard: 168469,
+      standard: 168470,
       formal: 2669,
       slang: 880,
       vulgar: 240,
@@ -33,6 +33,10 @@ describe('P0-1 — real validity dictionary', () => {
 
   it('includes UREMIA with its noun POS', () => {
     expect(lex.lookup('uremia')).toMatchObject({ suit: 'standard', pos: ['noun'] });
+  });
+
+  it('includes the reviewed month noun JUNE', () => {
+    expect(lex.lookup('june')).toMatchObject({ suit: 'standard', pos: ['noun'] });
   });
 
   it('keeps the documented register boundary examples stable', () => {

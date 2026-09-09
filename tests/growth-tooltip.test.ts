@@ -35,23 +35,32 @@ const LIVE_GROWTH_IDS = [
 
 const SPLIT_PERFORMANCE_IDS = [
   'bookOfMargins',
-  'dullingPencil',
-  'dryingInk',
-  'foldingManuscript',
-  'shuriken',
   'tyrant',
 ] as const;
 
+const CURRENT_VALUE_ONLY_IDS = [
+  'beehiveTile', 'dullingPencil', 'dryingInk',
+  'foldingManuscript', 'shuriken', 'wordHunter',
+] as const;
+
+const LOCALE_FILES = [
+  'de', 'en', 'es-ES', 'fr-FR', 'ja', 'ko',
+  'pl-PL', 'pt-BR', 'ru-RU', 'tr-TR', 'zh-CN', 'zh-TW',
+] as const;
+
 describe('scaling Emoji Tile tooltip value', () => {
-  it('separates standalone performance values from their descriptions in both locales', () => {
-    for (const locale of [en, ko] as const) {
-      const copy = locale as Record<string, string>;
+  it('separates standalone performance values from their descriptions in every locale', () => {
+    for (const locale of LOCALE_FILES) {
+      const copy = JSON.parse(readFileSync(`locales/${locale}.json`, 'utf8')) as Record<string, string>;
       const split = [...JOKER_REGISTRY.keys()]
         .filter((id) => copy[`jokerdesc.${id}`]?.includes('\n'))
         .sort();
       expect(split).toEqual([...SPLIT_PERFORMANCE_IDS].sort());
       for (const id of JOKER_REGISTRY.keys()) {
         expect(copy[`jokerdesc.${id}`], id).toBeTypeOf('string');
+      }
+      for (const id of CURRENT_VALUE_ONLY_IDS) {
+        expect(copy[`jokerdesc.${id}`], id).not.toMatch(/^\[(?:c|m|p):/);
       }
     }
     expect(readFileSync('src/ui/styles/screens.css', 'utf8'))
@@ -108,6 +117,10 @@ describe('scaling Emoji Tile tooltip value', () => {
       defId: dullingPencil.id,
       state: { chips: 95 },
     }, t('en'))).toBe('(Currently [c:+95] Chips)');
+    const run = newRun('shuriken-decay-tooltip');
+    expect(grownValue(JOKER_REGISTRY.get('shuriken')!, {
+      defId: 'shuriken', state: { factor: 1.93 },
+    }, t('en'), undefined, run)).toBe('(Currently [m:×1.93] Mult)');
   });
 
   it('shows Folding Manuscript current hand size', () => {

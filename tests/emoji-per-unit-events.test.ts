@@ -6,6 +6,10 @@ import { makeRng } from '../src/engine/rng';
 import { newRun } from '../src/engine/run';
 import type { BlindState, Letter, RunState, Tile } from '../src/engine/types';
 import { JOKER_TRIGGER_SEMANTICS } from './fixtures/joker-trigger-semantics';
+import { pouchTagChips } from '../src/engine/jokers/pouchTag';
+import { scrapDealerMult } from '../src/engine/jokers/scrapDealer';
+import { extinctLetterCount } from '../src/engine/jokers/outOfPrint';
+import { BALANCE } from '../src/engine/balance';
 
 let serial = 0;
 const tiles = (word: string): Tile[] => [...word].map((letter) => ({
@@ -42,11 +46,43 @@ describe('per-qualifying-unit Emoji Tile events', () => {
     expect(Object.fromEntries(Object.entries(JOKER_TRIGGER_SEMANTICS).map(
       ([kind, ids]) => [kind, ids.length],
     ))).toEqual({
-      atomicImmediate: 51,
+      atomicImmediate: 48,
       storedGrowthApplyOnce: 36,
-      booleanOrAggregate: 54,
+      booleanOrAggregate: 57,
       noTriggerRulePassive: 9,
     });
+  });
+
+  it('emits one aggregate score beat for Emoji Tiles that already show a current total', () => {
+    const pouchRun = runWith('pouchTag');
+    const pouchBlind = startBlind(pouchRun, makeRng('aggregate-pouch'));
+    expect(beats(play(pouchBlind, pouchRun, 'cat'), 'pouchTag')).toEqual([
+      expect.objectContaining({ chipsDelta: pouchTagChips(pouchBlind.bag.length), multDelta: 0 }),
+    ]);
+
+    const scrapRun = runWith('scrapDealer');
+    scrapRun.bag = scrapRun.bag.map((tile, index) => index < 3
+      ? { ...tile, material: 'brass' as const }
+      : tile);
+    expect(beats(
+      play(startBlind(scrapRun, makeRng('aggregate-scrap')), scrapRun, 'cat'),
+      'scrapDealer',
+    )).toEqual([
+      expect.objectContaining({ chipsDelta: 0, multDelta: scrapDealerMult(scrapRun) }),
+    ]);
+
+    const printRun = runWith('outOfPrint');
+    printRun.bag = printRun.bag.filter((tile) => tile.letter !== 'Q' && tile.letter !== 'Z');
+    const gone = extinctLetterCount(printRun.bag);
+    expect(beats(
+      play(startBlind(printRun, makeRng('aggregate-print')), printRun, 'cat'),
+      'outOfPrint',
+    )).toEqual([
+      expect.objectContaining({
+        chipsDelta: gone * BALANCE.jokers.outOfPrint.chipsPerLetter,
+        multDelta: gone * BALANCE.jokers.outOfPrint.multPerLetter,
+      }),
+    ]);
   });
 
   it('Gematria emits 1, 2, then 3 independent +15 events for CAT', () => {

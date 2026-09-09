@@ -341,7 +341,9 @@ describe('Score Keyboard presentation contract', () => {
     expect(settle).toContain('settleReduced: boolean');
     expect(settle).toContain('let typewriterTierPeak: ScoreTypewriterTier = 0');
     expect(settle).toContain('scoreTypewriterPeakTier(');
-    expect(settle).toContain('typewriterDelta > 0 ? typewriterTierPeak : 0');
+    expect(settle).toContain('!delayTypewriterUntilFinal && typewriterDelta > 0');
+    expect(settle).toContain("id: `${settleId}-will-final`");
+    expect(settle).toContain('}, elapsed)');
     expect(settle).not.toContain('submission.settledScore');
     expect(settle).not.toContain('submissionTier');
     expect(settle).toContain('primaryKeyId: scoreTypewriterPrimaryKey(e, typewriterTiles)');
@@ -378,11 +380,10 @@ describe('Score Keyboard presentation contract', () => {
     expect(component).toContain("clearRepeating && 'is-clear-cycle'");
     expect(component).toContain("if (clearRepeating && index === 0) {");
     expect(component).toContain('const displayTier = latestLayer?.tier ?? (active ? tier : heldPeak)');
-    expect(css).toContain('animation: typewriter-ambient-hold var(--typewriter-ambient-speed) steps(2, end) infinite');
+    expect(css).not.toContain('.typewriter-machine::after');
     expect(css).not.toContain('typewriter-smoke-hold');
     expect(css).not.toContain('typewriter-flame-hold');
     expect(css).toContain('.score-typewriter-dock.is-clear-cycle .typewriter-key[data-key-id="Enter"]');
-    expect(css).toContain('.score-typewriter-dock.is-reduced .typewriter-machine::after');
     expect(css).toContain('.score-typewriter-dock.is-reduced.is-clear-held .typewriter-key[data-key-id="Enter"]');
     expect(component).not.toContain('triggerScreenShake');
     expect(sidebar).not.toContain('sentenceTier');
@@ -518,6 +519,7 @@ describe('Score Keyboard presentation contract', () => {
     const worldMonoRule = ':root.world-mono .score-typewriter-dock :is(.typewriter-art, .typewriter-pop) { filter: grayscale(1); }';
     expect(css).toContain(worldMonoRule);
     expect(worldMonoRule).not.toContain('.typewriter-key');
-    expect(css).toMatch(/\.typewriter-tier-5\.is-clear-held\s*\{[\s\S]*?--typewriter-ambient-low:\s*\.72;[\s\S]*?--typewriter-ambient-high:\s*\.92;[\s\S]*?--typewriter-ambient-glow:\s*18px;[\s\S]*?--typewriter-ambient-speed:\s*364ms;/);
+    expect(css).toMatch(/\.typewriter-tier-5\.is-clear-held\s*\{[^}]*--typewriter-ambient-speed:\s*243ms;/);
+    expect(css).not.toContain('--typewriter-ambient-glow');
   });
 });

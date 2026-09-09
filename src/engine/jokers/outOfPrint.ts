@@ -29,14 +29,11 @@ export const outOfPrint: JokerDef = {
     wordScoring: ({ run, ctx, scoreBeats }) => {
       const gone = extinctLetterCount(run.bag);
       if (gone === 0) return;
-      for (let index = 0; index < gone; index += 1) {
-        ctx.chips += BALANCE.jokers.outOfPrint.chipsPerLetter;
-        ctx.mult += BALANCE.jokers.outOfPrint.multPerLetter;
-        scoreBeats?.push({
-          chipsDelta: BALANCE.jokers.outOfPrint.chipsPerLetter,
-          multDelta: BALANCE.jokers.outOfPrint.multPerLetter,
-        });
-      }
+      const chips = gone * BALANCE.jokers.outOfPrint.chipsPerLetter;
+      const mult = gone * BALANCE.jokers.outOfPrint.multPerLetter;
+      ctx.chips += chips;
+      ctx.mult += mult;
+      scoreBeats?.push({ chipsDelta: chips, multDelta: mult });
     },
   },
 };

@@ -48,6 +48,7 @@ import type { UiIconId } from '../uiIcons';
 import { audio } from '../audio';
 import { shopEmojiSet, unlockedEmojiSet } from '../emojiUnlocks';
 import { formatScore } from '../formatScore';
+import { richText } from '../richtext';
 
 interface ShopOfferProps {
   label: string;
@@ -253,20 +254,22 @@ export function Shop({ g }: { g: UseGame }) {
       aria-busy={!!redeemingVoucher}
     >
       <aside className="shop-rail">
-        <button
-          className="btn play next-blind"
-          disabled={!!redeemingVoucher}
-          onClick={() => leavePanel(g.leaveShop)}
-        >
-          {t('shop.next')}
-        </button>
-        <button
-          className="btn green reroll-btn"
-          disabled={!!redeemingVoucher || run.gold < cost}
-          onClick={g.reroll}
-        >
-          {t('shop.reroll', { cost: formatScore(cost) })}
-        </button>
+        <div className="shop-rail-actions">
+          <button
+            className="btn play next-blind"
+            disabled={!!redeemingVoucher}
+            onClick={() => leavePanel(g.leaveShop)}
+          >
+            {t('shop.next')}
+          </button>
+          <button
+            className="btn green reroll-btn"
+            disabled={!!redeemingVoucher || run.gold < cost}
+            onClick={g.reroll}
+          >
+            {richText(t('shop.reroll', { cost: `[$:$${formatScore(cost)}]` }))}
+          </button>
+        </div>
         <ShopMascot />
       </aside>
 

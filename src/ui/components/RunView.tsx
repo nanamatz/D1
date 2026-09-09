@@ -167,6 +167,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     if (phase !== 'playing' && phase !== 'shop' && phase !== 'blindselect') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.repeat) return;
+      if (introOpen) return;
       // Never steal ESC from a text field (e.g. the collection's search box).
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
@@ -177,7 +178,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase, showInfo]);
+  }, [introOpen, phase, showInfo]);
 
   // Guided first-run lesson: opens once, on entry into the playing board — but ONLY for a run
   // that bootstrapped as the tutorial (showIntro), so its hand is rigged for the YELLOW lock.
@@ -460,10 +461,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           g={g}
           step={introStep}
           discardTargetId={introDeal?.discardTargetId ?? null}
-          onStepChange={setIntroStep}
+          onStepChange={(nextStep) => {
+            setIntroStep(nextStep);
+            if (INTRO_STEPS[nextStep]?.key === 'palette') setPaused(true);
+          }}
           onClose={() => {
             setIntroOpen(false);
             setIntroDeal(null);
+            setPaused(false);
           }}
         />
       )}
@@ -490,6 +495,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           <div className="overlay-card pause-modal">
             <Options
               lexicon={lexicon}
+              initialView={introOpen && INTRO_STEPS[introStep]?.key === 'palette' ? 'settings' : 'root'}
               onBack={() => setPaused(false)}
               onNewRun={() => {
                 setPaused(false);

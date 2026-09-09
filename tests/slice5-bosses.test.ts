@@ -10,11 +10,14 @@ import { stagePreview } from '../src/ui/game';
 import type { BlindState, Letter, RunState, Tile } from '../src/engine/types';
 
 const lex = makeLexicon(['bright'], {
+  bright: { suit: 'standard', pos: ['adjective', 'adverb'] },
   cat: { suit: 'standard', pos: ['noun'] },
   damn: { suit: 'vulgar', pos: ['interjection'] },
   run: { suit: 'standard', pos: ['verbIntransitive'] },
   edict: { suit: 'formal', pos: ['noun'] },
   yo: { suit: 'slang', pos: ['interjection'] },
+  under: { suit: 'standard', pos: ['preposition'] },
+  and: { suit: 'standard', pos: ['conjunction'] },
 });
 
 let idc = 0;
@@ -73,6 +76,25 @@ describe('slice5 bosses — scoring effects', () => {
     expect(play(bossBlind(r, 'burntPaper'), r, 'run').submission.settledScore).toBe(0);
     expect(play(bossBlind(r, 'burntPaper'), r, 'cat').submission.settledScore).toBeGreaterThan(0);
   });
+  it.each([
+    ['familyPhoto', 'bright'],
+    ['noSmokingSign', 'cat'],
+    ['wifiZone', 'under'],
+    ['wifiZone', 'and'],
+    ['transparentPaper', 'yo'],
+  ])('%s debuffs its matching POS (%s)', (bossId, word) => {
+    const r = bossRun();
+    const result = play(bossBlind(r, bossId), r, word);
+    expect(result.submission.debuffed).toBe(true);
+    expect(result.submission.settledScore).toBe(0);
+  });
+  it.each(['familyPhoto', 'noSmokingSign', 'wifiZone', 'transparentPaper'])(
+    '%s leaves an unrelated verb untouched',
+    (bossId) => {
+      const r = bossRun();
+      expect(play(bossBlind(r, bossId), r, 'run').submission.settledScore).toBeGreaterThan(0);
+    },
+  );
   it('Will (유서): base chips & mult halved (CAT 15 chips × (1.0 + length 3) = 4.0 mult → halved 7.5 × 2.0 = 15)', () => {
     const r = bossRun();
     // CAT = 15 chips; standard ×1.0 + length 3 => mult 4.0 before Will halves both:

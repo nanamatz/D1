@@ -487,6 +487,7 @@ export function foldScoreTypewriterEvents(
   tiles: readonly { id: string; letter: string | null }[] = [],
   sentenceAssist = 0,
 ): ScoreTypewriterEventFold {
+  const willEvent = events.find((event) => event.kind === 'boss' && event.bossId === 'will');
   let chips = 0;
   let mult = 0;
   let flatScore = 0;
@@ -514,6 +515,13 @@ export function foldScoreTypewriterEvents(
       primaryKeyId = scoreTypewriterPrimaryKey(event, tiles);
       delta = candidateDelta;
     }
+  }
+  if (willEvent) {
+    delta = scoreTypewriterEventDelta(0, 0, 0, chips, mult, flatScore);
+    tier = delta > 0
+      ? scoreTypewriterPeakTier(0, 0, delta, target, sentenceAssist)
+      : 0;
+    primaryKeyId = tier > 0 ? scoreTypewriterPrimaryKey(willEvent, tiles) : null;
   }
   return { chips, mult, flatScore, tier, delta, primaryKeyId };
 }
@@ -614,6 +622,9 @@ export function SettleProvider({
   // Latest onComplete, read from the timeline effect without retriggering it.
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  // A non-zero id on first mount belongs to a timeline completed (or abandoned)
+  // before RunView was left. Continue must not replay it from the beginning.
+  const initialSettleIdRef = useRef(settleId === 0 ? null : settleId);
   const screenShakeRef = useRef(screenShake);
   screenShakeRef.current = screenShake;
   const activeSettleIdRef = useRef<number | null>(null);
@@ -657,6 +668,16 @@ export function SettleProvider({
   // useLayoutEffect (not useEffect) so the settle activates BEFORE paint — the
   // round number never flashes the final committed value for a frame (A-1).
   useLayoutEffect(() => {
+    if (initialSettleIdRef.current !== null && initialSettleIdRef.current !== settleId) {
+      initialSettleIdRef.current = null;
+    }
+    if (initialSettleIdRef.current === settleId) {
+      activeSettleIdRef.current = null;
+      impactContactSettleIdRef.current = null;
+      setView(IDLE);
+      onCompleteRef.current?.();
+      return;
+    }
     if (settleId === 0 || (beats.length === 0 && !submission)) {
       activeSettleIdRef.current = null;
       impactContactSettleIdRef.current = null;
@@ -735,6 +756,9 @@ export function SettleProvider({
     let mult = 0;
     let flatScore = 0;
     let typewriterTierPeak: ScoreTypewriterTier = 0;
+    const delayTypewriterUntilFinal = beats.some(
+      (event) => event.kind === 'boss' && event.bossId === 'will',
+    );
     const pops: Record<string, number> = {};
     const destroyedTileIds = new Set<string>();
     let tickStep = 0;
@@ -795,7 +819,7 @@ export function SettleProvider({
           );
           const beforeLocal = Math.max(0, prevChips * prevMult + prevFlatScore);
           const afterLocal = Math.max(0, chips * mult + flatScore);
-          if (typewriterDelta > 0) {
+          if (!delayTypewriterUntilFinal && typewriterDelta > 0) {
             typewriterTierPeak = scoreTypewriterPeakTier(
               typewriterTierPeak,
               beforeLocal,
@@ -804,7 +828,9 @@ export function SettleProvider({
               typewriterSentenceAssist,
             );
           }
-          const typewriterTier = typewriterDelta > 0 ? typewriterTierPeak : 0;
+          const typewriterTier = !delayTypewriterUntilFinal && typewriterDelta > 0
+            ? typewriterTierPeak
+            : 0;
           if (chips !== prevChips) audio.chips(chips - prevChips);
           if (tileWasDestroyed(e)) destroyedTileIds.add(e.tileId);
           // SFX (work order B): fire inside the speed-scaled beat timer so the
@@ -1020,6 +1046,28 @@ export function SettleProvider({
         }, startsAt),
       );
     });
+
+    if (delayTypewriterUntilFinal) {
+      const finalFeedback = foldScoreTypewriterEvents(
+        beats,
+        target,
+        typewriterTiles,
+        typewriterSentenceAssist,
+      );
+      if (finalFeedback.tier > 0) {
+        timers.push(setTimeout(() => {
+          setView((current) => ({
+            ...current,
+            typewriterBeat: {
+              id: `${settleId}-will-final`,
+              tier: finalFeedback.tier,
+              delta: finalFeedback.delta,
+              primaryKeyId: finalFeedback.primaryKeyId ?? 'Break',
+            },
+          }));
+        }, elapsed));
+      }
+    }
 
     // Hold the final tally briefly, then reset to idle 0×0 (B step 1) and signal
     // completion — the round-clear UI is gated on this, not the raw score (05 A).

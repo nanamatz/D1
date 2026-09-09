@@ -157,13 +157,17 @@ describe('WooDak-skin hand cursors', () => {
     expect(fine.indexOf('var(--game-cursor-active)')).toBeLessThan(fine.indexOf('cursor: text'));
     expect(fine).toMatch(/input\[type='range'\][\s\S]*cursor:\s*var\(--game-cursor-hover\)/);
     expect(fine).not.toMatch(/(?:^|\n)\s*input,\s*\n[\s\S]*?cursor:\s*text/);
-    for (const semantic of ['text', 'help', 'crosshair', 'grabbing', 'not-allowed']) {
+    for (const semantic of ['text', 'crosshair', 'grabbing', 'not-allowed']) {
       expect(fine).toContain(`cursor: ${semantic} !important;`);
     }
+    expect(fine).not.toContain('cursor: help !important;');
     expect(fine).toMatch(/\.tile\.draggable\s*\{\s*cursor:\s*var\(--game-cursor-hover\) !important;/);
     expect(fine).toMatch(/\.tile\.draggable:active,\s*\.tile\.grabbed\s*\{\s*cursor:\s*var\(--game-cursor-active\) !important;/);
     expect(fine).not.toContain('cursor: grab !important;');
     expect(fine).toMatch(/\.joker-slot\.grabbed \*\s*\{\s*cursor:\s*grabbing !important;/);
+    expect(fine).toMatch(/\.pouch-widget-select,\s*\.bs-tag-icon,\s*\.run-choice-art\s*\{\s*cursor:\s*var\(--game-cursor-hover\) !important;/);
+    expect(fine).toMatch(/\.pouch-widget-select:active,\s*\.bs-tag-icon:active,\s*\.run-choice-art:active\s*\{\s*cursor:\s*var\(--game-cursor-active\) !important;/);
+    expect(fine).toMatch(/button:disabled,\s*\[role='button'\]\[aria-disabled='true'\]\s*\{\s*cursor:\s*var\(--game-cursor-normal\) !important;/);
 
     const forcedColors = block(css, '@media (forced-colors: active)');
     expect(forcedColors).toContain('--game-cursor-normal: default !important;');

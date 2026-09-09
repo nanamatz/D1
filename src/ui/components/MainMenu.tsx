@@ -14,6 +14,8 @@ interface Props {
   onDeskLab: () => void;
 }
 
+const languageLabel = (label: string) => label.replace(' (', '\n(');
+
 /** Main Menu (spec §2.1). Our own logotype. */
 export function MainMenu({
   onPlay, onCollection, onOptions, onProfile, onDeskLab,
@@ -109,7 +111,7 @@ export function MainMenu({
             onClick={() => setLanguageOpen(true)}
             aria-haspopup="dialog"
           >
-            <span>{LANGUAGES.find(({ id }) => id === lang)!.label}</span>
+            <span>{languageLabel(LANGUAGES.find(({ id }) => id === lang)!.label)}</span>
           </button>
         </div>
       </div>
@@ -132,7 +134,11 @@ export function MainMenu({
                 className="btn language-choice"
                 aria-pressed={lang === choice.id}
                 autoFocus={lang === choice.id}
-                onClick={() => setLang(choice.id)}
+                onClick={() => {
+                  if (choice.id === lang) return;
+                  setLang(choice.id);
+                  window.location.reload();
+                }}
               >
                 {choice.label}
               </button>

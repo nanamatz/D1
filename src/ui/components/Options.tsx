@@ -58,6 +58,7 @@ export function collectionProgressPercent(
 interface Props {
   lexicon: Lexicon;
   onBack: () => void;
+  initialView?: View;
   /** In-run only (pause menu): abandon this run and go to New Run. */
   onNewRun?: () => void;
   /** In-run only (pause menu): leave to the main menu, run kept in memory. */
@@ -72,9 +73,9 @@ interface Props {
  * pause-menu only — they render just when their handler is supplied, so opening
  * Options from the main menu still shows the plain Settings/Stats/Collection set.
  */
-export function Options({ lexicon, onBack, onNewRun, onMainMenu, onPaletteUnlock }: Props) {
+export function Options({ lexicon, onBack, initialView = 'root', onNewRun, onMainMenu, onPaletteUnlock }: Props) {
   const { t } = useI18n();
-  const [view, setView] = useState<View>('root');
+  const [view, setView] = useState<View>(initialView);
   const previousView = useRef<View>(view);
 
   useEffect(() => {
@@ -226,7 +227,7 @@ export function Toggle({
 
 // ---------- Settings ----------
 function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly string[]) => void }) {
-  const { t, lang, setLang } = useI18n();
+  const { t, lang } = useI18n();
   const { settings, set } = useSettings();
   const windowVideo = useWindowVideo();
   const [tab, setTab] = useState<Tab>('game');
@@ -331,17 +332,6 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
               on={settings.tips}
               onChange={(v) => set('tips', v)}
             />
-            <Tooltip title={t('settings.language')} body={t('settings.tooltip.language')} touchPin disabled={tab !== 'game'}>
-              <div className="set-row">
-                <span className="set-label">{t('settings.language')}</span>
-                <button className="btn exchange sm" onClick={() => {
-                  const index = LANGUAGES.findIndex(({ id }) => id === lang);
-                  setLang(LANGUAGES[(index + 1) % LANGUAGES.length]!.id);
-                }}>
-                  {LANGUAGES.find(({ id }) => id === lang)!.label}
-                </button>
-              </div>
-            </Tooltip>
             <div className="set-row palette-unlock-row">
               <span className="set-label">{t('settings.paletteUnlock.label')}</span>
               <button

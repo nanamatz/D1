@@ -356,7 +356,7 @@ describe('Score Keyboard OS Reduced Motion lifecycle', () => {
       pressIndex,
       secondVisualCount,
     ).delayMs > 0).length;
-    vi.advanceTimersByTime(310);
+    vi.advanceTimersByTime(250);
     expect(audio.scoreTypewriterKey).toHaveBeenCalledTimes(
       remainingFirstAudio + remainingSecondAudio,
     );

@@ -44,16 +44,24 @@ describe('endless chapter curve and finisher schedule', () => {
     expect(bossPoolForAnte(16)).toBe('finisher');
     expect(bossPoolForAnte(24)).toBe('finisher');
     expect(FINISHER_BOSS_IDS).toContain(drawBoss(makeRng('finisher'), 'finisher'));
-    expect(CORE_BOSS_IDS).toHaveLength(15);
-    expect(FINISHER_BOSS_IDS).toHaveLength(6);
-    expect(FINISHER_BOSS_IDS).toEqual(expect.arrayContaining(['cleaningSign', 'medusa']));
-    expect(CORE_BOSS_IDS).not.toEqual(expect.arrayContaining(['cleaningSign', 'medusa']));
+    expect(CORE_BOSS_IDS).toHaveLength(18);
+    expect(CORE_BOSS_IDS).toEqual(expect.arrayContaining([
+      'familyPhoto', 'noSmokingSign', 'wifiZone', 'transparentPaper',
+    ]));
+    expect(FINISHER_BOSS_IDS).toHaveLength(7);
+    expect(FINISHER_BOSS_IDS).toEqual(expect.arrayContaining([
+      'cleaningSign', 'medusa', 'stereotypePlate',
+    ]));
+    expect(CORE_BOSS_IDS).not.toEqual(expect.arrayContaining([
+      'cleaningSign', 'medusa', 'stereotypePlate',
+    ]));
   });
 
   it('keeps an already scheduled finisher after an ante-reducing voucher', () => {
     expect(bossPoolForId('blueprint')).toBe('finisher');
     expect(bossPoolForId('cleaningSign')).toBe('finisher');
     expect(bossPoolForId('medusa')).toBe('finisher');
+    expect(bossPoolForId('stereotypePlate')).toBe('finisher');
   });
 
   it('stays finite and increasing through chapter 38, then stops explicitly', () => {
@@ -158,6 +166,7 @@ describe('finisher boss hooks', () => {
     expect(effectiveClearReward(run, 'boss', 'vitalSign')).toBe(8);
     expect(effectiveClearReward(run, 'boss', 'cleaningSign')).toBe(8);
     expect(effectiveClearReward(run, 'boss', 'medusa')).toBe(8);
+    expect(effectiveClearReward(run, 'boss', 'stereotypePlate')).toBe(8);
   });
 
   it('Ultrasound disables exactly one Emoji Tile and clears the marker at blind end', () => {

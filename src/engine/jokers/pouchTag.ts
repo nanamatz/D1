@@ -11,11 +11,10 @@ export const pouchTag: JokerDef = {
   emoji: '🏷️', rarity: 'common', layer: 3, price: BALANCE.jokerPrice.common,
   hooks: {
     wordScoring: ({ blind, ctx, scoreBeats }) => {
-      const steps = Math.floor(blind.bag.length / BALANCE.jokers.pouchTag.tilesPerStep);
-      for (let index = 0; index < steps; index += 1) {
-        ctx.chips += BALANCE.jokers.pouchTag.chipsPerStep;
-        scoreBeats?.push({ chipsDelta: BALANCE.jokers.pouchTag.chipsPerStep, multDelta: 0 });
-      }
+      const chips = pouchTagChips(blind.bag.length);
+      if (chips === 0) return;
+      ctx.chips += chips;
+      scoreBeats?.push({ chipsDelta: chips, multDelta: 0 });
     },
   },
 };

@@ -290,8 +290,7 @@ describe('2026-08-26 Emoji Tile revision', () => {
     expect(result.events.filter(
       (event) => event.kind === 'joker' && event.jokerId === 'scrapDealer',
     )).toEqual([
-      expect.objectContaining({ multDelta: BALANCE.jokers.scrapDealer.factorPerBrass }),
-      expect.objectContaining({ multDelta: BALANCE.jokers.scrapDealer.factorPerBrass }),
+      expect.objectContaining({ multDelta: 2 * BALANCE.jokers.scrapDealer.factorPerBrass }),
     ]);
   });
 

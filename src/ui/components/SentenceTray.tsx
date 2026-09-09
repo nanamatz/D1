@@ -172,7 +172,6 @@ export function SentenceTray({ blind, judgment, lexicon, patternLevels }: Props)
   const eligible = sentenceSequenceForBlind(blind);
   return (
     <div className="tray">
-      <div className="label">{t('tray.title')}</div>
       {blind.sequence.length === 0 && <span className="empty">{t('tray.empty')}</span>}
       {blind.sequence.map((sub, i) => (
         <SubmittedWord

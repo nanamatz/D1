@@ -9,8 +9,8 @@ export const cubism: JokerDef = {
   growthDisplay: { kind: 'mult', stateKey: 'factor', initial: BALANCE.jokers.cubism.baseFactor },
   multOperation: 'multiply',
   hooks: {
-    materialScored: ({ tile, triggerIndex, chanceResults = [] }, self) => {
-      if (triggerIndex === 0 && tile.material === 'leadPlate' &&
+    materialScored: ({ tile, chanceResults = [] }, self) => {
+      if (tile.material === 'leadPlate' &&
           chanceResults.some((result) => result.outcome === 'success')) {
         self.state.factor = (self.state.factor ?? BALANCE.jokers.cubism.baseFactor) +
           BALANCE.jokers.cubism.factorPerLeadPlate;

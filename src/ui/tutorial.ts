@@ -87,7 +87,7 @@ const INTRO_KEY = 'wj.tutorialIntro';
  * The scripted first-run lesson (2026-07-21): the opening hand is rigged to contain this
  * word's letters so the guided steps can teach discard → build → submit. The blind target is NOT
  * lowered — it stays the normal ante-1 value (300), so submitting YELLOW (252 chips) teaches
- * the Palette and ends the lesson, then the board unlocks and the player plays on to clear.
+ * the Palette before the lesson's final Settings highlight, then the board unlocks and the player plays on to clear.
  * The word MUST be a valid dictionary + colour-unlock word so submitting it teaches the
  * Palette. YELLOW = Y,E,L,L,O,W (Twin on the two L's).
  */
@@ -112,6 +112,7 @@ export const INTRO_STEPS: readonly IntroStep[] = [
   { key: 'discard', selector: '.tutorial-action-target', advance: 'discarded' },
   { key: 'build', selector: '.tutorial-action-target', advance: 'staged' },
   { key: 'submit', selector: '.tutorial-action-target', advance: 'played' },
+  { key: 'palette', selector: '.palette-unlock-row .btn', advance: 'next' },
 ];
 
 export interface TutorialDeal {

@@ -156,7 +156,7 @@ export function SpotlightBubble({
   // Place the bubble adjacent to the target but ALWAYS clamped inside the viewport, so
   // a tall/high target can't push it (and its advance button) off-screen. Centered w/o
   // a rect (handled by the `.center` class). See spotlightPos.ts.
-  const WRAP_W = 360;
+  const WRAP_W = Math.min(480, window.innerWidth * 0.92);
   const wrapStyle: CSSProperties | undefined = rect
     ? placeSpotlightBubble(rect, WRAP_W, wrapH, { w: window.innerWidth, h: window.innerHeight })
     : undefined;

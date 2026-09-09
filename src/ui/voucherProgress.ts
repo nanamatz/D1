@@ -99,7 +99,7 @@ export const VOUCHER_UNLOCK_RULES: readonly VoucherUnlockRule[] = [
   { id: 'pictureDiary', conditionEn: 'Reduce hand size to 8', conditionKo: '핸드 크기를 8장으로 감소', met: (p) => p.lowestHandSize !== null && p.lowestHandSize <= BALANCE.voucher.unlockTargets.pictureDiary },
   { id: 'encyclopedia', conditionEn: 'Buy 20 tiles from the Stationery Shop', conditionKo: '문방구에서 타일 20장 구매', met: (p) => p.tilesBought >= BALANCE.voucher.unlockTargets.encyclopedia },
   { id: 'householdLedger', conditionEn: 'Reach maximum interest for 10 consecutive rounds', conditionKo: '10라운드 연속 최대 이자 획득', met: (p) => p.maxInterestStreak >= BALANCE.voucher.unlockTargets.householdLedger },
-  { id: 'portrait', conditionEn: 'Discover all 15 regular boss blinds', conditionKo: '일반 보스 블라인드 15종 발견', met: (p) => CORE_BOSS_IDS.filter((id) => p.bossesSeen.includes(id)).length >= BALANCE.voucher.unlockTargets.portrait },
+  { id: 'portrait', conditionEn: 'Discover all 18 regular boss blinds', conditionKo: '일반 보스 블라인드 18종 발견', met: (p) => CORE_BOSS_IDS.filter((id) => p.bossesSeen.includes(id)).length >= BALANCE.voucher.unlockTargets.portrait },
   { id: 'couponBook', conditionEn: 'Spend $2,500 in Stationery Shops', conditionKo: '문방구에서 총 $2,500 지출', met: (p) => p.goldSpent >= BALANCE.voucher.unlockTargets.couponBook },
   { id: 'oldBook', conditionEn: 'Win a run', conditionKo: '8장 마감 승리', met: (p) => p.wins >= BALANCE.voucher.unlockTargets.oldBook },
   { id: 'kungfuManual', conditionEn: 'Use Blank Paper 10 times', conditionKo: '백지 10회 사용', met: (p) => p.blankPaperUses >= BALANCE.voucher.unlockTargets.kungfuManual },

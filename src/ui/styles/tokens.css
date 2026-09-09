@@ -10,6 +10,11 @@
      fills the tokens don't reach. Raster object art uses #unlock-chroma; badge/kind
      fills already use the grouped tokens below. Info is never colour-only (a11y). */
   --bg-desk: #383a39; /* GREEN group; unlock-green → #22443b */
+  --world-background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 8%, rgba(255, 255, 255, 0.05), transparent 55%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.5), transparent 60%),
+    var(--bg-desk);
   --panel: #2a2d30; /* BLUE (slate chrome); unlock-blue → #20303b */
   --panel-edge: #4a4d51; /* BLUE; unlock-blue → #39505e */
   --ink: #edeae2; /* neutral (near-white) */
@@ -420,6 +425,9 @@
    QUIET (.sidenav-btn / .tab / .car-arrow / .filter-pill / .langbtn) — inset
    surface, dim ink, hairline edge. This recipe was copy-pasted verbatim across
    all five before this. */
+button {
+  white-space: nowrap;
+}
 .btn,
 .sidenav-btn,
 .tab,
@@ -513,13 +521,17 @@ body {
   word-break: keep-all;
   overflow-wrap: anywhere;
   hyphens: none;
+  -webkit-user-select: none;
+  user-select: none;
   /* Mockup body: a fine dithered scanline band + stepped vignette over the desk
      colour, on the pixel grid. */
-  background:
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse at 50% 8%, rgba(255, 255, 255, 0.05), transparent 55%),
-    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.5), transparent 60%),
-    var(--bg-desk);
+  background: var(--world-background);
   min-height: 100%;
   image-rendering: pixelated;
+}
+input,
+textarea,
+[contenteditable]:not([contenteditable='false']) {
+  -webkit-user-select: text;
+  user-select: text;
 }

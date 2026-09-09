@@ -1765,7 +1765,7 @@
 /* Score Keyboard (GDD §7.1): persistent left-margin pixel machine. It reacts
    inside the existing settle beat and never owns completion timing. */
 .score-typewriter-dock {
-  --typewriter-beat: 418ms;
+  --typewriter-beat: 279ms;
   --typewriter-key-beat: 230ms;
   --typewriter-run-scale: min(var(--ui-scale, 1), var(--run-fit-scale, 1));
   --typewriter-gutter: calc((100vw - var(--board-max) * var(--typewriter-run-scale)) / 2);
@@ -1802,20 +1802,6 @@
   position: absolute;
   inset: 0;
   transform-origin: 50% 50%;
-}
-.typewriter-machine::after {
-  content: '';
-  position: absolute;
-  z-index: 3;
-  left: 5%;
-  top: 28%;
-  width: 90%;
-  height: 48%;
-  box-sizing: border-box;
-  border: 2px solid var(--gold);
-  box-shadow: 0 0 var(--typewriter-ambient-glow, 0) var(--gold);
-  opacity: 0;
-  pointer-events: none;
 }
 .score-typewriter.is-active .typewriter-machine {
   animation: typewriter-body-hit var(--typewriter-beat) steps(4, end) both;
@@ -1994,39 +1980,20 @@
   box-shadow: -7px -3px 0 #3d454a, 7px -7px 0 #3d454a, 0 -11px 0 -1px #50595e;
 }
 .typewriter-pop { opacity: 0; }
-.score-typewriter-dock.is-clear-held .typewriter-machine::after {
-  opacity: var(--typewriter-ambient-low);
-  animation: typewriter-ambient-hold var(--typewriter-ambient-speed) steps(2, end) infinite;
-}
 .typewriter-tier-1.is-clear-held {
-  --typewriter-ambient-low: .16;
-  --typewriter-ambient-high: .24;
-  --typewriter-ambient-glow: 3px;
-  --typewriter-ambient-speed: 818ms;
+  --typewriter-ambient-speed: 545ms;
 }
 .typewriter-tier-2.is-clear-held {
-  --typewriter-ambient-low: .36;
-  --typewriter-ambient-high: .5;
-  --typewriter-ambient-glow: 8px;
-  --typewriter-ambient-speed: 582ms;
+  --typewriter-ambient-speed: 388ms;
 }
 .typewriter-tier-3.is-clear-held {
-  --typewriter-ambient-low: .48;
-  --typewriter-ambient-high: .64;
-  --typewriter-ambient-glow: 11px;
-  --typewriter-ambient-speed: 509ms;
+  --typewriter-ambient-speed: 339ms;
 }
 .typewriter-tier-4.is-clear-held {
-  --typewriter-ambient-low: .62;
-  --typewriter-ambient-high: .82;
-  --typewriter-ambient-glow: 15px;
-  --typewriter-ambient-speed: 418ms;
+  --typewriter-ambient-speed: 279ms;
 }
 .typewriter-tier-5.is-clear-held {
-  --typewriter-ambient-low: .72;
-  --typewriter-ambient-high: .92;
-  --typewriter-ambient-glow: 18px;
-  --typewriter-ambient-speed: 364ms;
+  --typewriter-ambient-speed: 243ms;
 }
 .typewriter-pop {
   position: absolute;
@@ -2101,10 +2068,6 @@
   100% { opacity: 0; translate: 0 -24px; }
 }
 @keyframes typewriter-label-hit { 0%, 55% { opacity: 0; translate: -50% 10px; } 70% { opacity: 1; translate: -50% 0; scale: 1.3; } 100% { opacity: 0; translate: -50% -14px; } }
-@keyframes typewriter-ambient-hold {
-  0%, 100% { opacity: var(--typewriter-ambient-low); }
-  50% { opacity: var(--typewriter-ambient-high); }
-}
 @keyframes typewriter-panel-led-jackpot {
   0%, 18%, 42%, 66%, 90%, 100% {
     opacity: var(--panel-led-low);
@@ -2132,8 +2095,6 @@
 
 .score-typewriter-dock.is-reduced *,
 .force-reduced-motion .score-typewriter-dock * { animation: none !important; }
-.score-typewriter-dock.is-reduced .typewriter-machine::after,
-.force-reduced-motion .score-typewriter-dock .typewriter-machine::after { animation: none !important; }
 .score-typewriter-dock.is-reduced .typewriter-key.is-pressed,
 .force-reduced-motion .score-typewriter-dock .typewriter-key.is-pressed {
   background: #161b1c;
@@ -2165,7 +2126,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .score-typewriter-dock * { animation: none !important; }
-  .score-typewriter-dock .typewriter-machine::after { animation: none !important; }
   .score-typewriter-dock .typewriter-key.is-pressed {
     background: #161b1c;
     border-color: #50565a;
@@ -5690,8 +5650,7 @@
   border-radius: 8px;
   padding: 5px 14px;
   cursor: pointer;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 .consumable-menu button:hover {
   background: var(--badge-bg);

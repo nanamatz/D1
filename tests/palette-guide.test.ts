@@ -35,31 +35,31 @@ describe('Palette guide', () => {
     })).toBe('skip');
   });
 
-  it('treats a rolled-back Chapter number and its later return as new visits', () => {
+  it('treats each blind, including a later revisit, as a new visit', () => {
     const session: PaletteGuideSessionState = {
       observationId: 'run-a',
-      ante: 5,
+      blindKey: '5:0',
       visit: 0,
       handledVisits: new Set([0]),
     };
-    expect(syncPaletteGuideVisit(session, 5)).toBe(0);
-    expect(syncPaletteGuideVisit(session, 5)).toBe(0);
-    expect(syncPaletteGuideVisit(session, 4)).toBe(1);
+    expect(syncPaletteGuideVisit(session, '5:0')).toBe(0);
+    expect(syncPaletteGuideVisit(session, '5:0')).toBe(0);
+    expect(syncPaletteGuideVisit(session, '5:1')).toBe(1);
     expect(session.handledVisits.has(1)).toBe(false);
     session.handledVisits.add(1);
-    expect(syncPaletteGuideVisit(session, 5)).toBe(2);
+    expect(syncPaletteGuideVisit(session, '5:0')).toBe(2);
     expect(session.handledVisits.has(2)).toBe(false);
   });
 
   it('rotates hints across runs while replacing the previous run visit tracker', () => {
     const seen = new Set<string>();
-    let current = paletteGuideSessionFor(null, 'run-a', 1);
+    let current = paletteGuideSessionFor(null, 'run-a', '1:0');
     current.handledVisits.add(0);
     expect(nextPaletteGuide(new Set(), seen)?.id).toBe('RED');
 
-    const sameRun = paletteGuideSessionFor(current, 'run-a', 1);
+    const sameRun = paletteGuideSessionFor(current, 'run-a', '1:0');
     expect(sameRun).toBe(current);
-    const nextRun = paletteGuideSessionFor(current, 'run-b', 1);
+    const nextRun = paletteGuideSessionFor(current, 'run-b', '1:0');
     expect(nextRun).not.toBe(current);
     expect(nextRun.handledVisits.size).toBe(0);
     expect(nextPaletteGuide(new Set(), seen)?.id).toBe('YELLOW');
@@ -103,13 +103,27 @@ describe('Palette guide', () => {
     expect(source).toContain('const HOLD_MS = 6000');
     expect(source).toContain('const ENTER_MS = 240');
     expect(source).toContain('const EXIT_MS = 180');
-    expect(source).toContain('aria-label={`${t(`paletteGuide.${notice.id}`)}');
+    expect(source).toContain("const message = t('paletteGuide.unlock', { word: notice.word })");
+    expect(source).toContain('aria-label={`${message}');
     expect(source).toContain("const MODAL_SELECTOR = '.overlay, [role=\"dialog\"], .boss-intro'");
     expect(css).toMatch(/\.palette-guide-live\s*\{[^}]*position:\s*fixed;[^}]*top:\s*24px;[^}]*right:\s*24px;/s);
     expect(css).toMatch(/\.palette-guide-live\s*\{[^}]*z-index:\s*calc\(var\(--z-tooltip\) - 1\);/s);
+    expect(css).toMatch(/\.palette-guide-live\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*calc\(100vw - 48px\);/s);
+    expect(css).toMatch(/\.palette-guide\s*\{[^}]*width:\s*auto;[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/s);
     expect(css).toContain('.palette-guide.is-reduced');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).toContain('.force-reduced-motion .palette-guide');
+  });
+
+  it('uses one short localized template instead of six long per-word sentences', () => {
+    const ids = ['RED', 'YELLOW', 'GREEN', 'BLUE', 'MUSIC', 'SOUND'];
+    for (const file of ['de', 'en', 'es-ES', 'fr-FR', 'ja', 'ko', 'pl-PL', 'pt-BR', 'ru-RU', 'tr-TR', 'zh-CN', 'zh-TW']) {
+      const locale = JSON.parse(readFileSync(`locales/${file}.json`, 'utf8')) as Record<string, string>;
+      expect(locale['paletteGuide.unlock']).toContain('{word}');
+      for (const id of ids) expect(locale[`paletteGuide.${id}`]).toBeUndefined();
+    }
+    const ko = JSON.parse(readFileSync('locales/ko.json', 'utf8')) as Record<string, string>;
+    expect(ko['paletteGuide.unlock']).toBe('“{word}”로 해금');
   });
 
   it('cleans timers and subscriptions without RNG or observing its own insertion', () => {

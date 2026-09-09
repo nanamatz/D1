@@ -191,7 +191,7 @@ describe('2026-08-12 requested Emoji Tiles', () => {
     );
   });
 
-  it('Cubism gains ×0.25 when an original Lead Plate effect succeeds', () => {
+  it('Cubism gains ×0.25 whenever a Lead Plate effect succeeds', () => {
     const run = newRun('cubism');
     run.jokers = [owned(run, 'cubism')];
     const blind = startBlind(run, makeRng('cubism'));
@@ -213,7 +213,7 @@ describe('2026-08-12 requested Emoji Tiles', () => {
     );
   });
 
-  it('Cubism ignores retrigger-only Lead Plate successes', () => {
+  it('Cubism counts a retrigger-only Lead Plate success and reports its growth', () => {
     const run = newRun('cubism-retrigger-only');
     run.jokers = [owned(run, 'cubism')];
     const blind = startBlind(run, makeRng('cubism-retrigger-only'));
@@ -226,13 +226,18 @@ describe('2026-08-12 requested Emoji Tiles', () => {
         sourceId: 'leadPlate', chance: 0.5, outcome: 'failure', label: 'mult',
       }],
     }, run.jokers);
-    bus.emit('materialScored', {
+    const growth = bus.emit('materialScored', {
       run, blind, ctx, tile: lead, triggerIndex: 1,
       chipsDelta: 0, multDelta: 0, goldDelta: 0, grewWood: false,
       chanceResults: [{
         sourceId: 'leadPlate', chance: 0.5, outcome: 'success', label: 'mult',
       }],
     }, run.jokers);
-    expect(run.jokers[0]!.state.factor).toBe(BALANCE.jokers.cubism.baseFactor);
+    expect(run.jokers[0]!.state.factor).toBe(
+      BALANCE.jokers.cubism.baseFactor + BALANCE.jokers.cubism.factorPerLeadPlate,
+    );
+    expect(growth).toEqual([expect.objectContaining({
+      jokerId: 'cubism', kind: 'mult', delta: BALANCE.jokers.cubism.factorPerLeadPlate,
+    })]);
   });
 });
