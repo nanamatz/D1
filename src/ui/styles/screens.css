@@ -1835,7 +1835,8 @@ body.cb-safe .tile.hint {
   color: #173226;
 }
 .back-bar::before,
-.desk-lab-back::before {
+.desk-lab-back::before,
+.endless-mode-btn::after {
   content: '';
   display: inline-block;
   width: 18px;
@@ -1844,6 +1845,11 @@ body.cb-safe .tile.hint {
   vertical-align: -2px;
   background: currentColor;
   clip-path: polygon(0 50%, 40% 0, 40% 30%, 100% 30%, 100% 70%, 40% 70%, 40% 100%);
+}
+.endless-mode-btn::after {
+  margin-right: 0;
+  margin-left: 10px;
+  transform: rotate(180deg);
 }
 .badge {
   position: absolute;

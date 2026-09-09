@@ -50,7 +50,7 @@ Version 0.2 — systems expansion
 - Changed 2026-08-18: register base Mult is Standard ×1, Formal ×10, Slang ×5, and Vulgar ×7. Formal becomes the highest-authority reward while Vulgar's former jackpot is moderated (§3.1).
 - Changed 2026-08-22: the curated acronym families MVP and VIP ship as the four noun surfaces `mvp`, `mvps`, `vip`, and `vips`. Punctuation and unlisted initialisms remain invalid; the canonical offline source is `lexicon-pipeline/curated-abbreviations.json` (§3.2).
 - Changed 2026-09-02: exact reviewed validity omissions now include apostrophe-free `aint` as Slang with the auxiliary/linking-verb POS convention; Negative recognizes it as AIN'T. `christ` and `christmas` remain Standard nouns without admitting proper names or generating derivatives (§3.2, §5.2).
-- Changed 2026-08-06: sentence-pattern base Mult is compressed to ×1/×2/×3/×4 by rank band while base Chips stay unchanged. Every Constellation level now adds its fixed Chips increment and +1 Mult linearly; the former ×1.5 geometric growth is retired (§5.2–§5.4).
+- Changed 2026-09-09: sentence-pattern base Mult is rebalanced from the weakest pattern's ×2 baseline into narrow ×2/×3/×4 rank bands; each successive Constellation level-up grows both its Chips and Mult increment by ×1.5 (§5.2–§5.4).
 - Changed 2026-08-07: sentence-pattern construction difficulty is classified independently from payout rank. Easy/Medium/Hard Constellation levels add +15/+30/+45 Chips respectively while every pattern continues to gain +1 Mult (§5.2–§5.4).
 - Changed 2026-08-07: Deer and Phoenix are Ink-Pack-only jackpots at 0.3% per choice each. The other 12 Gambler Cards roll uniformly; Lucky Pouch shop and starting-card routes, plus Comic Book replacements, exclude both jackpots (§9.3, §10.3, §12.2).
 - Changed 2026-08-07: The Cowherd and the Weaver Girl keeps its 25% success chance, then selects Gray/Violet/Rainbow at 50%/35%/15% (§10.1).
@@ -373,7 +373,7 @@ This is the game's poker hand table: the hierarchy from weak to strong, per-patt
 
 ### 5.2 The Twelve Patterns (weak → strong)
 
-Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, and Unison Chips add first; an active mixed-register synergy multiplies that combined Chips axis and is materialized as sentence Chips; post-pattern hooks then add Chips or multiply Mult. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult is deliberately compressed to ×1/×2/×3/×4 by rank band so an unupgraded pattern does not decide the blind by itself. Every level-up adds the pattern's construction-difficulty tier Chips increment (**Easy +15 · Medium +30 · Hard +45**) and +1 Mult linearly (`BALANCE.patternLevelGrowthFactor = 1`); therefore the current Chips/Mult and every displayed level-up delta remain natural numbers. Rank remains payout precedence, not a proxy for construction difficulty.
+Every pattern owns a base **[Chips × Mult]** pair (Balatro-hand style). At sentence finalization, the blind's committed score becomes the current Chips axis: pattern, modifier, and Unison Chips add first; an active mixed-register synergy multiplies that combined Chips axis and is materialized as sentence Chips; post-pattern hooks then add Chips or multiply Mult. This makes structural scoring scale with a late-game build instead of remaining a fixed additive payout. Base Mult uses the weakest Outcry as its ×2 floor, then stays within narrow ×2/×3/×4 rank bands so the strongest base pattern's committed-score gain is approximately three times the weakest rather than orders of magnitude larger. The first level-up adds the pattern's construction-difficulty tier Chips increment (**Easy +15 · Medium +30 · Hard +45**) and +1 Mult; each later level-up grows both increments by ×1.5 (`BALANCE.patternLevelGrowthFactor = 1.5`). Current totals and displayed level-up deltas are rounded to natural numbers. Rank remains payout precedence, not a proxy for construction difficulty. (changed 2026-09-09)
 
 ```
 rawSentenceChips    = patternChips + 15 × absorbedModifiers + unisonChips
@@ -403,22 +403,22 @@ word settles, and Unison-only finals do not show it. The finalized headline and
 supplemental rows remain through LAND, verdict, and live Fee Settlement, then
 Collect clears the UI-only snapshot in the Shop transition.
 
-| # | Pattern | Difficulty | POS skeleton | Example | Min. phases | Base (Chips × Mult) | Per level (+Chips, +Mult) |
+| # | Pattern | Difficulty | POS skeleton | Example | Min. phases | Base (Chips × Mult) | First level-up (+Chips, +Mult) |
 |---|---|---|---|---|---|---|---|
-| 1 | Outcry | Easy | Interjection alone | SHH / WOW | 1 | 25 × 1 | +15, +1 |
-| 2 | Simple | Easy | Noun + Verb | BIRDS FLY | 2 | 35 × 1 | +15, +1 |
-| 3 | Imperative | Easy | Verb + Noun | EAT FISH | 2 | 40 × 1 | +15, +1 |
+| 1 | Outcry | Easy | Interjection alone | SHH / WOW | 1 | 25 × 2 | +15, +1 |
+| 2 | Simple | Easy | Noun + Verb | BIRDS FLY | 2 | 35 × 2 | +15, +1 |
+| 3 | Imperative | Easy | Verb + Noun | EAT FISH | 2 | 40 × 2 | +15, +1 |
 | 4 | Transitive | Medium | Noun + Verb + Noun | CAT EATS FISH | 3 | 50 × 2 | +30, +1 |
 | 5 | Negative | Medium | subject + predicate containing a negative marker or contraction | SHE ISNT HERE | 3+ | 55 × 2 | +30, +1 |
 | 6 | Interrogative | Easy | interrogative/auxiliary opener + subject/predicate | ARE YOU READY | 2+ | 60 × 2 | +15, +1 |
 | 7 | Descriptive | Medium | Noun + linking V + Adj | PIZZA SEEMS TASTY | 3 | 75 × 3 | +30, +1 |
-| 8 | Chant | Hard | Same verb ×2+ | EAT EAT | 2+ | 90 × 3, **+10 Chips per repeat beyond the 2nd** | +45, +1 (repeat bonus +10/level) |
+| 8 | Chant | Hard | Same verb ×2+ | EAT EAT | 2+ | 90 × 3, **+10 Chips per repeat beyond the 2nd** | +45, +1 (first repeat-bonus increment +10) |
 | 9 | Object Complement (5형식) | Hard | Noun + selected TV + Noun + Noun/Adj | I MADE HIM HAPPY | 4 | 115 × 3 | +45, +1 |
 | 10 | Ditransitive | Hard | Noun + controlled giving V + Noun + Noun | I GIVE HIM FISH | 4 | 135 × 3 | +45, +1 |
 | 11 | Compound | Hard | [clause] + Conj + [clause] | CATS RUN AND DOGS SLEEP | 5+ | 165 × 4 | +45, +1 |
 | 12 | Complex | Hard | subordinator + [clause] + [clause] | BECAUSE IT RAINED I STAYED HOME | 5+ | 195 × 4 | +45, +1 |
 
-(Values live in `balance.ts` under `patterns`; changed 2026-08-21 to follow the approved construction-difficulty rank, with the bottom five patterns raised by +10 base Chips. Difficulty-tier level growth remains unchanged.)
+(Values live in `balance.ts` under `patterns`; construction-difficulty tiers set the first increment, then the shared ×1.5 factor accelerates later increments.)
 
 **Run Info discovery (changed 2026-08-30).** Object Complement (5형식),
 Ditransitive (수여문), and Complex (복문) are hidden in **Run Info → Patterns**
@@ -482,7 +482,7 @@ Note on Vulgar stacking: suit base ×7 plus Unison-Vulgar ×2 remains a strong d
 
 ### 5.4 Constellation Mapping (level-up consumables)
 
-Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. Leveling is **linear**: each use adds the §5.2 right-column's difficulty-tier Chips increment and +1 Mult.
+Each pattern pairs 1:1 with a Constellation card (§10.2), Balatro-Planet style. The first use adds the §5.2 right-column's difficulty-tier Chips increment and +1 Mult; every later use grows both increments by ×1.5, with displayed totals and deltas rounded to natural numbers.
 
 **Visual mapping (added 2026-07-30).** Each pattern reuses the zodiac mark
 engraved at the top of its paired card as its pictogram: Outcry ♎, Simple ♈,
@@ -491,7 +491,7 @@ Chant ♒, Object Complement ♏, Ditransitive ♋, Compound ♍, Complex ♓. P
 status, preview, Run Info, settlement, run summary, and Constellation tooltips
 all show this same mark, so the mapping is readable before effect prose.
 
-| Constellation | Levels up | Increment per level |
+| Constellation | Levels up | First level-up increment |
 |---|---|---|
 | Libra / 천칭자리 | Outcry | +15 Chips, +1 Mult |
 | Aries / 양자리 | Simple | +15 Chips, +1 Mult |
@@ -500,7 +500,7 @@ all show this same mark, so the mapping is readable before effect prose.
 | Capricorn / 염소자리 | Negative | +30 Chips, +1 Mult |
 | Sagittarius / 궁수자리 | Interrogative | +15 Chips, +1 Mult |
 | Taurus / 황소자리 | Descriptive | +30 Chips, +1 Mult |
-| Aquarius / 물병자리 | Chant | +45 Chips, +1 Mult (repeat bonus +10 Chips/level) |
+| Aquarius / 물병자리 | Chant | +45 Chips, +1 Mult (first repeat-bonus increment +10 Chips) |
 | Scorpio / 전갈자리 | Object Complement | +45 Chips, +1 Mult |
 | Cancer / 게자리 | Ditransitive | +45 Chips, +1 Mult |
 | Virgo / 처녀자리 | Compound | +45 Chips, +1 Mult |
@@ -734,7 +734,7 @@ All v0.1 uses of "ante" in the scoring chapter meant "blind" and are corrected t
 
 ### 8.2 Scaling & Run Length
 
-Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**. **A run's victory point is Chapter 8, followed by optional Endless Mode.** Clearing the Chapter-8 Deadline opens the Published screen. **New Run** ends the run; **Endless Mode →** preserves the already-earned win and continues through the normal Fee Settlement → shop flow into Chapter 9.
+Balatro-mirrored: per-ante base score with **Small ×1 / Big ×1.5 / Boss ×2**. **A run's victory point is Chapter 8, followed by optional Endless Mode.** Clearing the Chapter-8 Deadline opens the Published screen. **New Run** ends the run; **Endless Mode** preserves the already-earned win and continues through the normal Fee Settlement → shop flow into Chapter 9. Its right-facing arrow is the shared Back CSS pixel shape rotated 180 degrees, never part of localized copy.
 
 For an active Challenge, that same Chapter-8 Deadline clear is its sole
 completion boundary. Endless play, a later loss, abandoning, and skipped blinds
@@ -1163,7 +1163,7 @@ the sole feedback for either card.
 
 ### 10.2 Constellation Cards (Planet-equivalent) — pattern level-up, 12
 
-One per sentence pattern, 1:1 (full mapping and increments in §5.4). Using a Constellation card permanently levels its pattern: each use adds the pattern's fixed Chips increment and +1 Mult (§5.2). Specializing into the most-played patterns is the intended play.
+One per sentence pattern, 1:1 (full mapping and increments in §5.4). Using a Constellation card permanently levels its pattern: the first use adds its listed Chips increment and +1 Mult, and every later use grows both increments by ×1.5 (§5.2). Specializing into the most-played patterns is the intended play.
 
 **Use sequence (changed 2026-07-29).** The used card shakes while the score
 panel presents the pattern's current Mult and Chips. The green `+Mult` increment

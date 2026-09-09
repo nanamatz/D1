@@ -158,6 +158,7 @@ describe('integrated unlock recap ledger', () => {
       expect(source).toContain(resolver);
     }
     expect(source).toContain('<Tooltip');
+    expect(source).toContain("rarity={'rarity' in card ? card.rarity as JokerRarity : undefined}");
     expect(source).toContain('tabIndex={0}');
     expect(source).toContain('aria-label={card.title}');
     expect(source).toContain('role="dialog" aria-modal aria-labelledby="unlock-recap-title"');

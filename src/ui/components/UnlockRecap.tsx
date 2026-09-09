@@ -4,7 +4,7 @@ import { challengeDef, isChallengeId } from '../../engine/challenges';
 import { JOKER_REGISTRY } from '../../engine/jokers';
 import { POUCH_IDS } from '../../engine/pouches';
 import { RECORD_IDS } from '../../engine/records';
-import type { PouchId, RecordId, VoucherId } from '../../engine/types';
+import type { JokerRarity, PouchId, RecordId, VoucherId } from '../../engine/types';
 import { VOUCHER_REGISTRY } from '../../engine/vouchers';
 import { jokerDescKey, voucherDescKey } from '../descriptions';
 import { mascotVariantArt } from '../mascots';
@@ -68,6 +68,7 @@ export function UnlockRecap({ g, notices }: Props) {
         key: `emoji:${def.id}`,
         title: objectName(t, 'joker', def.id),
         body: t(jokerDescKey(def.id)),
+        rarity: def.rarity,
         visual: (
           <EmojiTileCard
             id={def.id}
@@ -152,7 +153,13 @@ export function UnlockRecap({ g, notices }: Props) {
         <p>{t('unlockRecap.body')}</p>
         <div className="unlock-recap-grid">
           {visibleCards.map((card) => (
-            <Tooltip key={card.key} title={card.title} body={card.body} touchPin>
+            <Tooltip
+              key={card.key}
+              title={card.title}
+              body={card.body}
+              rarity={'rarity' in card ? card.rarity as JokerRarity : undefined}
+              touchPin
+            >
               <div className="unlock-recap-card" tabIndex={0} aria-label={card.title}>
                 <div className="unlock-recap-visual">{card.visual}</div>
                 <strong>{card.title}</strong>

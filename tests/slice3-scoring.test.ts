@@ -28,16 +28,16 @@ const jm = (
 //         × (patternMult × unisonMult)
 
 describe('slice3 scoring — pattern Chips add, then pattern Mult multiplies (GDD §5.2)', () => {
-  it('Outcry: 25 × 1 = +25', () => {
-    expect(finalizeScore(0, jm('outcry'), LV()).total).toBe(25);
+  it('Outcry: 25 × 2 = 50', () => {
+    expect(finalizeScore(0, jm('outcry'), LV()).total).toBe(50);
   });
 
-  it('Imperative: (10 + 40) × 1 = 50', () => {
-    expect(finalizeScore(10, jm('imperative'), LV()).total).toBe(50);
+  it('Imperative: (10 + 40) × 2 = 100', () => {
+    expect(finalizeScore(10, jm('imperative'), LV()).total).toBe(100);
   });
 
-  it('Simple: (50 + 35) × 1 = 85', () => {
-    expect(finalizeScore(50, jm('simple'), LV()).total).toBe(85);
+  it('Simple: (50 + 35) × 2 = 170', () => {
+    expect(finalizeScore(50, jm('simple'), LV()).total).toBe(170);
   });
 
   it('Transitive: (100 + 50) × 2 = 300', () => {
@@ -74,8 +74,8 @@ describe('slice3 scoring — pattern Chips add, then pattern Mult multiplies (GD
 });
 
 describe('slice3 scoring — modifiers add +15 chips each, uniformly (GDD §5.1 rule 3)', () => {
-  it('Simple with 2 mods: (35 + 15·2) × 1 = 65', () => {
-    expect(finalizeScore(0, jm('simple', { absorbed: 2 }), LV()).total).toBe(65);
+  it('Simple with 2 mods: (35 + 15·2) × 2 = 130', () => {
+    expect(finalizeScore(0, jm('simple', { absorbed: 2 }), LV()).total).toBe(130);
   });
 
   it('Transitive with 3 mods: (50 + 15·3) × 2 = 190', () => {
@@ -108,14 +108,14 @@ describe('slice3 scoring — Unison folds into the formula (GDD §5.3)', () => {
     expect(finalizeScore(100, jm('transitive', { unison: 'slang' }), LV()).total).toBe(450);
   });
 
-  it('Imperative + Standard unison: (40 + 50) × 1 = 90', () => {
-    expect(finalizeScore(0, jm('imperative', { unison: 'standard' }), LV()).total).toBe(90);
+  it('Imperative + Standard unison: (40 + 50) × 2 = 180', () => {
+    expect(finalizeScore(0, jm('imperative', { unison: 'standard' }), LV()).total).toBe(180);
   });
 });
 
 describe('slice3 scoring — leveling raises both Chips and Mult (GDD §5.4)', () => {
-  it('Imperative at level 2: (40+15) × (1+1) = 110', () => {
-    expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(110);
+  it('Imperative at level 2: (40+15) × (2+1) = 165', () => {
+    expect(finalizeScore(0, jm('imperative'), LV({ imperative: 2 })).total).toBe(165);
   });
 
   it('Descriptive at level 2: (100 + 75+30) × (3+1) = 820', () => {

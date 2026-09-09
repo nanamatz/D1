@@ -401,7 +401,8 @@ its recap baseline is durable; its synthetic ids and Reveal All bulk grants neve
 enter the recap.
 
 One screen with three framings: **loss** — red "Game Over", defeated-by panel;
-**Chapter-8 win** — gold "출간 완료!/Published!" with **Endless Mode →** in the
+**Chapter-8 win** — gold "출간 완료!/Published!" with **Endless Mode** and a
+right-facing CSS pixel arrow made by rotating the shared Back arrow in the
 action row; **post-win end** — "Endless Run Ended" (or "Beyond Publication!" for
 the Chapter-38 endpoint). Endless Mode routes into the already-earned win's Fee
 Settlement → shop flow. New Run/Main Menu instead finish and clear that run.

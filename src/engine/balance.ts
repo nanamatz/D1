@@ -138,16 +138,16 @@ export const BALANCE = {
   } as Record<Exclude<TileFont, 'medium'>, FontEffectId>,
 
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
-  //       Every pattern owns a base [chips × mult]; each level adds a fixed
-  //       difficulty-tier Chips increment and +1 Mult. At sentence settlement,
+  //       Every pattern owns a base [chips × mult]; each level's increment
+  //       grows geometrically by patternLevelGrowthFactor. At sentence settlement,
   //       Chips add to the committed blind score and Mult multiplies that combined
   //       Chips axis. Chant additionally adds `repeatChips` per repeat beyond the
-  //       2nd (`repeatFloor`), itself +`repeatLevelChips` per level. -----
+  //       2nd (`repeatFloor`), with the same geometric level growth. -----
   patternDifficultyLevelChips,
   patterns: {
-    outcry:       { rank: 1, difficulty: 'easy', baseChips: 25, baseMult: 1, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
-    simple:       { rank: 2, difficulty: 'easy', baseChips: 35, baseMult: 1, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
-    imperative:   { rank: 3, difficulty: 'easy', baseChips: 40, baseMult: 1, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    outcry:       { rank: 1, difficulty: 'easy', baseChips: 25, baseMult: 2, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    simple:       { rank: 2, difficulty: 'easy', baseChips: 35, baseMult: 2, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
+    imperative:   { rank: 3, difficulty: 'easy', baseChips: 40, baseMult: 2, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
     transitive:   { rank: 4, difficulty: 'medium', baseChips: 50, baseMult: 2, levelChips: patternDifficultyLevelChips.medium, levelMult: 1 },
     negative:     { rank: 5, difficulty: 'medium', baseChips: 55, baseMult: 2, levelChips: patternDifficultyLevelChips.medium, levelMult: 1 },
     interrogative:{ rank: 6, difficulty: 'easy', baseChips: 60, baseMult: 2, levelChips: patternDifficultyLevelChips.easy, levelMult: 1 },
@@ -158,7 +158,7 @@ export const BALANCE = {
     compound:         { rank: 11, difficulty: 'hard', baseChips: 165, baseMult: 4, levelChips: patternDifficultyLevelChips.hard, levelMult: 1 },
     complex:          { rank: 12, difficulty: 'hard', baseChips: 195, baseMult: 4, levelChips: patternDifficultyLevelChips.hard, levelMult: 1 },
   } as const,
-  patternLevelGrowthFactor: 1,
+  patternLevelGrowthFactor: 1.5,
 
   /** modifier absorption bonus (GDD §5.1 rule 3): +chips per absorbed modifier,
    *  uniform on the Chips side for every pattern (the old multiply-pattern variant is gone). */

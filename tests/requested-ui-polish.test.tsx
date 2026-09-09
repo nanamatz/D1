@@ -63,11 +63,15 @@ describe('requested UI polish', () => {
 
   it('uses one decorative pixel icon instead of localized Back arrows', () => {
     const screens = source('src/ui/styles/screens.css');
+    const gameOver = source('src/ui/components/GameOver.tsx');
     for (const file of ['de', 'en', 'es-ES', 'fr-FR', 'ja', 'ko', 'pl-PL', 'pt-BR', 'ru-RU', 'tr-TR', 'zh-CN', 'zh-TW']) {
       const locale = JSON.parse(source(`locales/${file}.json`)) as Record<string, string>;
       expect(locale['common.back']).not.toMatch(/^[‹←<¶]/);
+      expect(locale['gameover.endless']).not.toContain('→');
     }
-    expect(screens).toMatch(/\.back-bar::before,\s*\.desk-lab-back::before\s*\{[^}]*content:\s*'';[^}]*clip-path:\s*polygon/s);
+    expect(screens).toMatch(/\.back-bar::before,\s*\.desk-lab-back::before,\s*\.endless-mode-btn::after\s*\{[^}]*content:\s*'';[^}]*clip-path:\s*polygon/s);
+    expect(screens).toMatch(/\.endless-mode-btn::after\s*\{[^}]*transform:\s*rotate\(180deg\)/s);
+    expect(gameOver).toContain('className="btn gold endless-mode-btn"');
   });
 
   it('keeps localized tutorial actions inside a wider wrapping row', () => {

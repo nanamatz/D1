@@ -142,15 +142,15 @@ describe('150 Emoji Tile board verification', () => {
 
   it('reports a deterministic illegal-blind failure with its boss context', () => {
     const result = simulateRun(
-      'board-v1:global:7',
+      'board-v1:global:329',
       lexicon,
       solver,
       freshCohort(1, false, 8),
     );
-    expect(result).toMatchObject({ reachedChapter: 7, blindFailure: true });
+    expect(result).toMatchObject({ reachedChapter: 8, blindFailure: true });
     expect(result.blindFailureContexts).toContainEqual({
-      seed: 'board-v1:global:7',
-      chapter: 7,
+      seed: 'board-v1:global:329',
+      chapter: 8,
       blindIndex: 2,
       bossId: 'stereotypePlate',
       focalJokerId: null,
@@ -168,17 +168,17 @@ describe('150 Emoji Tile board verification', () => {
 
     expect(explicitPlay).toEqual(omitted);
     expect(omitted).toMatchObject({
-      reachedChapter: 7,
+      reachedChapter: 6,
       won: false,
       endlessComplete: false,
-      blindFailure: true,
-      finalGold: 90,
+      blindFailure: false,
+      finalGold: 35,
       chapter8Score: null,
       chapter8Target: null,
-      furthestBlind: 21,
-      terminalScoreTarget: 0.6411916666666667,
-      playedBlinds: 21,
-      shops: 20,
+      furthestBlind: 18,
+      terminalScoreTarget: 0.2621022727272727,
+      playedBlinds: 18,
+      shops: 17,
     });
   }, 10_000);
 

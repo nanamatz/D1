@@ -54,9 +54,9 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     // EATS settled = 12 × (1.0 + 4) = 60; FISH settled = 30 × (1.0 + 4) = 150
     // committed = 60 + 150 = 210. Sentence bonus is unaffected by word length
     // (pattern/unison values are fixed in BALANCE, not derived from letter chips):
-    // both standard → Unison standard (+50 chips); Imperative base 40 chips × mult 1.
+    // both standard → Unison standard (+50 chips); Imperative base 40 chips × mult 2.
     expect(b.committedScore).toBe(210);
-    expect(b.projectedScore).toBe(300); // (210 + 40 + 50) × 1
+    expect(b.projectedScore).toBe(600); // (210 + 40 + 50) × 2
   });
 
   it('builds a Transitive sentence across phases and multiplies the total', () => {

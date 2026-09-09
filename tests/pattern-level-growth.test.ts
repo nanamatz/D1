@@ -4,12 +4,15 @@ import { patternChipsMult } from '../src/engine/patterns';
 import { patternLevelTone } from '../src/ui/patternLevel';
 
 describe('sentence-pattern level growth', () => {
-  it('uses fixed Chips increments and +1 Mult per level', () => {
-    expect(BALANCE.patternLevelGrowthFactor).toBe(1);
+  it('grows each next Chips and Mult increment by 1.5×', () => {
+    expect(BALANCE.patternLevelGrowthFactor).toBe(1.5);
+    expect(Object.values(BALANCE.patterns).map((pattern) => pattern.baseMult)).toEqual([
+      2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4,
+    ]);
     expect(BALANCE.patterns.simple).toMatchObject({
       difficulty: 'easy', levelChips: 15, levelMult: 1,
     });
-    expect(patternChipsMult('simple', 3)).toEqual({ chips: 65, mult: 3 });
+    expect(patternChipsMult('simple', 3)).toEqual({ chips: 73, mult: 5 });
   });
 
   it('classifies construction difficulty independently from payout rank', () => {
@@ -37,19 +40,19 @@ describe('sentence-pattern level growth', () => {
 
   it('keeps representative Easy/Medium/Hard curves at Lv1, Lv5, and Lv10', () => {
     expect([1, 5, 10].map((level) => patternChipsMult('outcry', level))).toEqual([
-      { chips: 25, mult: 1 },
-      { chips: 85, mult: 5 },
-      { chips: 160, mult: 10 },
+      { chips: 25, mult: 2 },
+      { chips: 147, mult: 10 },
+      { chips: 1148, mult: 77 },
     ]);
     expect([1, 5, 10].map((level) => patternChipsMult('descriptive', level))).toEqual([
       { chips: 75, mult: 3 },
-      { chips: 195, mult: 7 },
-      { chips: 345, mult: 12 },
+      { chips: 319, mult: 11 },
+      { chips: 2322, mult: 78 },
     ]);
     expect([1, 5, 10].map((level) => patternChipsMult('complex', level))).toEqual([
       { chips: 195, mult: 4 },
-      { chips: 375, mult: 8 },
-      { chips: 600, mult: 13 },
+      { chips: 561, mult: 12 },
+      { chips: 3565, mult: 79 },
     ]);
   });
 
@@ -65,10 +68,10 @@ describe('sentence-pattern level growth', () => {
       return null;
     };
 
-    expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets[0])).toBe(6);
-    expect(firstLevelAtLeast('imperative', BALANCE.anteBaseTargets[0])).toBe(5);
-    expect(firstLevelAtLeast('simple', BALANCE.anteBaseTargets[0])).toBe(6);
-    expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets.at(-1)!)).toBe(5);
+    expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets[0])).toBe(4);
+    expect(firstLevelAtLeast('imperative', BALANCE.anteBaseTargets[0])).toBe(4);
+    expect(firstLevelAtLeast('simple', BALANCE.anteBaseTargets[0])).toBe(4);
+    expect(firstLevelAtLeast('outcry', BALANCE.anteBaseTargets.at(-1)!)).toBe(3);
   });
 
   it('keeps every level value and level-up delta a natural number', () => {
@@ -80,8 +83,8 @@ describe('sentence-pattern level growth', () => {
     expect(one).toEqual({ chips: base.baseChips, mult: base.baseMult });
     expect(two.chips - one.chips).toBe(base.levelChips);
     expect(two.mult - one.mult).toBe(base.levelMult);
-    expect(three.chips - two.chips).toBe(base.levelChips);
-    expect(three.mult - two.mult).toBe(base.levelMult);
+    expect(three.chips - two.chips).toBeGreaterThan(two.chips - one.chips);
+    expect(three.mult - two.mult).toBeGreaterThan(two.mult - one.mult);
 
     for (const id of Object.keys(BALANCE.patterns) as (keyof typeof BALANCE.patterns)[]) {
       let previous = patternChipsMult(id, 1);

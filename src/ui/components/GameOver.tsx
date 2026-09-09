@@ -161,7 +161,7 @@ export function GameOver({ g, onNewRun, onMainMenu }: Props) {
 
       <div className="go-actions">
         {won && (
-          <button className="btn gold" onClick={g.continueEndless} autoFocus>
+          <button className="btn gold endless-mode-btn" onClick={g.continueEndless} autoFocus>
             {t('gameover.endless')}
           </button>
         )}

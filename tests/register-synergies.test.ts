@@ -109,7 +109,7 @@ describe('register synergy scoring', () => {
     }, levels);
     expect(result.sentenceChips).toBe(68.75);
     expect(result.registerSynergyChipsFactor).toBe(1.25);
-    expect(result.total).toBe(168.75);
+    expect(result.total).toBe(168.75 * BALANCE.patterns.simple.baseMult);
   });
 
   it('includes absorbed modifier Chips in the multiplied base axis', () => {
@@ -122,7 +122,10 @@ describe('register synergy scoring', () => {
       unison: null,
       registerSynergy: { id: 'harmony', chipsFactor: 1.25 },
     }, levels);
-    expect(result.total).toBe((100 + 35 + 2 * BALANCE.modifierAbsorption.chips) * 1.25);
+    expect(result.total).toBe(
+      (100 + 35 + 2 * BALANCE.modifierAbsorption.chips) *
+      1.25 * BALANCE.patterns.simple.baseMult,
+    );
   });
 
   it.each([

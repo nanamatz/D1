@@ -494,7 +494,7 @@
   "voice.woodak.won": "恭喜！你的手稿终于成为一本书了。",
   "gameover.endlessEndedTitle": "无尽本局结束",
   "gameover.endlessCompleteTitle": "超越出版！",
-  "gameover.endless": "无尽模式 →",
+  "gameover.endless": "无尽模式",
   "gameover.wonBy": "已击败最终首领盲注",
   "gameover.score": "得分 {score} / {target}",
   "gameover.wonReached": "全部 {ante} 章已通关",
