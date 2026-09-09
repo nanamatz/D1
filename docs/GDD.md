@@ -2004,8 +2004,8 @@ precedence over natural-completion presentation.
 
 **Discoverability (C-5; Settings finale changed 2026-09-09).** New Collection category **팔레트 (Palette)** — locked entries are grey silhouettes with a letter-count hint ("R _ _"), unlocked entries show the word in its group color. The first-run tutorial is a scripted, **hard-locked YELLOW lesson**: the opening hand is rigged to contain Y‑E‑L‑L‑O‑W. A WooDak coach-mark frames the grey world, then teaches the ordinary two-action discard before word-building. All gated steps reuse one dynamic `.tutorial-action-target`: the first spare shows right-click until marked, enabled Discard then shows left-click, each next protected Y→E→L→L→O→W physical ID shows left-click, and enabled Play shows left-click. The coach-mark stays portalled to `document.body`, reads the live viewport rect every animation frame, applies 8px padding, and uses no positional tween, so changing or animated targets are followed on the next paint without hover. Fine mouse pointers alone get a neutral 40×40 CSS mouse cue just outside and within 48px of the live spotlight rect; it is static under Reduced Motion and remains legible in `world-mono`. Only successful ordinary discard state advances; a completed prior discard or impossible discard safely resumes at build. The yellow palette washes in after YELLOW is submitted; once that settlement completes, the real Settings > Game screen opens and a fifth coach-mark highlights Palette Convenience. Next or Skip returns to play without pressing the button or granting unlocks. All unrelated input stays locked, and Skip releases the lock without leaving an uncommitted mark. The target is **not** lowered — it remains 300, so YELLOW (252 under §3.1) does **not** clear the blind. This remains UI policy over generic `openingLetters` and ordinary `discardTiles`; it adds no engine tutorial state. `tests/yellow-lesson.test.ts` guards the physical-ID, real-discard, determinism, and target invariants. See `docs/superpowers/specs/2026-07-21-yellow-first-lesson-design.md`.
 
-**Required-Palette reminder (C-5, frequency changed 2026-09-09).** After the guided YELLOW
-lesson is complete, Tips-on play may show one non-blocking reminder after
+**Required-Palette reminder (C-5, setting changed 2026-09-09).** After the guided YELLOW
+lesson is complete, the machine-local Settings → Game **Palette Guide** toggle defaults On and may show one non-blocking reminder after
 each blind's first normal settle. Only still-locked RED/YELLOW/GREEN/BLUE/MUSIC/SOUND
 rows participate, in registry order, with session-only circulation that does not
 repeat until all locked candidates have appeared. Visible copy uses one short localized
@@ -2018,7 +2018,7 @@ whose width shrink-wraps its localized text and close mark, with a viewport-safe
 maximum for unusually long translations:
 click/Enter/Space dismisses it, hover/focus pauses the six-second hold, and its
 240ms entrance/180ms exit travel is removed by either Reduced Motion source.
-Unlock, Tips-off, screen exit, and unmount clear it immediately. It is separate
+Switching Palette Guide Off immediately clears an active or queued reminder and prevents later reminders until switched On again; the general Tutorial Tips toggle no longer controls it. Unlock, screen exit, and unmount also clear it immediately. It is separate
 from `tutorialBus`, `ENCOUNTERS`, `wj.tutorial`, engine RNG, and `RunState`.
 If Settings already granted YELLOW on a fresh profile, the hard-locked controls
 lesson still runs but its frame and submit copy describe scoring rather than

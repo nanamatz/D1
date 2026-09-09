@@ -332,6 +332,13 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
               on={settings.tips}
               onChange={(v) => set('tips', v)}
             />
+            <Toggle
+              label={t('settings.paletteGuide')}
+              tooltip={t('settings.tooltip.paletteGuide')}
+              tooltipDisabled={tab !== 'game'}
+              on={settings.paletteGuide}
+              onChange={(v) => set('paletteGuide', v)}
+            />
             <div className="set-row palette-unlock-row">
               <span className="set-label">{t('settings.paletteUnlock.label')}</span>
               <button

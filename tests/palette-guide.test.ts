@@ -70,10 +70,10 @@ describe('Palette guide', () => {
     expect(source).not.toContain('new Map<string, PaletteGuideSessionState>');
   });
 
-  it('requires tips, completed intro, playing settle-complete state, and no blockers', () => {
+  it('requires the Palette Guide setting, completed intro, playing settle-complete state, and no blockers', () => {
     const ready = {
       sameVisit: true,
-      tips: true,
+      paletteGuide: true,
       introSeen: true,
       phase: 'playing',
       settleComplete: true,
@@ -83,7 +83,7 @@ describe('Palette guide', () => {
     };
     expect(canShowPaletteGuide(ready)).toBe(true);
     for (const patch of [
-      { tips: false }, { introSeen: false }, { phase: 'shop' }, { settleComplete: false },
+      { paletteGuide: false }, { introSeen: false }, { phase: 'shop' }, { settleComplete: false },
       { pendingEnd: true }, { blindEntryEffects: true }, { blocked: true }, { sameVisit: false },
     ]) expect(canShowPaletteGuide({ ...ready, ...patch })).toBe(false);
   });
@@ -100,6 +100,7 @@ describe('Palette guide', () => {
     expect(source).toContain('onFocus');
     expect(source).toContain('onBlur');
     expect(source).toContain('usePrefersReducedMotion');
+    expect(source).toContain("if (!settings.paletteGuide || !notice || typeof document === 'undefined') return null;");
     expect(source).toContain('const HOLD_MS = 6000');
     expect(source).toContain('const ENTER_MS = 240');
     expect(source).toContain('const EXIT_MS = 180');

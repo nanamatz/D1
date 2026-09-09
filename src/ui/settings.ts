@@ -24,6 +24,7 @@ export interface Settings {
   reducedMotion: boolean;
   colorBlind: boolean;
   tips: boolean;
+  paletteGuide: boolean;
   fullscreen: boolean;
   uiScale: number; // 80..120 (%)
   crtEnabled: boolean;
@@ -43,6 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   colorBlind: false,
   tips: true,
+  paletteGuide: true,
   fullscreen: false,
   uiScale: 100,
   crtEnabled: true,
@@ -117,6 +119,7 @@ export function normalizeSettings(stored: unknown): Settings {
     reducedMotion: bool(merged.reducedMotion, DEFAULT_SETTINGS.reducedMotion),
     colorBlind: bool(merged.colorBlind, DEFAULT_SETTINGS.colorBlind),
     tips: bool(merged.tips, DEFAULT_SETTINGS.tips),
+    paletteGuide: bool(merged.paletteGuide, DEFAULT_SETTINGS.paletteGuide),
     fullscreen: bool(merged.fullscreen, DEFAULT_SETTINGS.fullscreen),
     crtEnabled: bool(merged.crtEnabled, DEFAULT_SETTINGS.crtEnabled),
     crtBloom: bool(merged.crtBloom, DEFAULT_SETTINGS.crtBloom),

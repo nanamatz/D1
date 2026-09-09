@@ -9,16 +9,16 @@ const locales = ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr
 ) as Record<string, string>);
 
 describe('Settings tooltip coverage', () => {
-  it('ships paired descriptions for all 14 value settings', () => {
+  it('ships paired descriptions for all 15 value settings', () => {
     for (const locale of locales) {
-      expect(Object.keys(locale).filter((key) => key.startsWith('settings.tooltip.'))).toHaveLength(14);
+      expect(Object.keys(locale).filter((key) => key.startsWith('settings.tooltip.'))).toHaveLength(15);
       expect(Object.keys(locale).filter((key) => key.startsWith('settings.audition.'))).toHaveLength(0);
     }
-    expect(source.match(/tooltipDisabled={tab !==/g)).toHaveLength(11);
+    expect(source.match(/tooltipDisabled={tab !==/g)).toHaveLength(12);
     expect(source.match(/disabled={tab !==/g)).toHaveLength(2);
   });
 
-  it('accounts for every one of the 19 native Settings focus targets', () => {
+  it('accounts for every one of the 20 native Settings focus targets', () => {
     const sliders = source.match(/<Slider\b/g)?.length ?? 0;
     const toggles = source.match(/<Toggle\b/g)?.length ?? 0;
     const speedChoices = GAME_SPEEDS.length;
@@ -27,7 +27,7 @@ describe('Settings tooltip coverage', () => {
     const paletteChoices = 1;
 
     expect(sliders).toBe(5);
-    expect(toggles).toBe(6);
+    expect(toggles).toBe(7);
     expect(source).toContain('GAME_SPEEDS.map((s) =>');
     expect(source).not.toContain("settings.master");
     expect(source.match(/type="checkbox"/g)).toHaveLength(1);
@@ -44,7 +44,7 @@ describe('Settings tooltip coverage', () => {
     expect(source).not.toContain("setLang(");
     expect(source).not.toContain("settings.tooltip.language");
     expect(sliders + toggles + speedChoices + muteChoices
-      + resolutionChoices + paletteChoices).toBe(19);
+      + resolutionChoices + paletteChoices).toBe(20);
   });
 
   it('aligns both audio buses on the same responsive four-column grid', () => {

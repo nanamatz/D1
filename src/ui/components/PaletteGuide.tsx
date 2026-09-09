@@ -66,7 +66,7 @@ export function paletteGuideSettleDecision(input: {
 
 export function canShowPaletteGuide(input: {
   sameVisit: boolean;
-  tips: boolean;
+  paletteGuide: boolean;
   introSeen: boolean;
   phase: string;
   settleComplete: boolean;
@@ -74,7 +74,7 @@ export function canShowPaletteGuide(input: {
   blindEntryEffects: boolean;
   blocked: boolean;
 }): boolean {
-  return input.sameVisit && input.tips && input.introSeen && input.phase === 'playing' &&
+  return input.sameVisit && input.paletteGuide && input.introSeen && input.phase === 'playing' &&
     input.settleComplete && !input.pendingEnd && !input.blindEntryEffects && !input.blocked;
 }
 
@@ -202,7 +202,7 @@ export function PaletteGuide({ g, blocked }: { g: UseGame; blocked: boolean }) {
 
   const available = canShowPaletteGuide({
     sameVisit: pendingVisit === visit,
-    tips: settings.tips,
+    paletteGuide: settings.paletteGuide,
     introSeen: hasSeenIntro(),
     phase: g.state.phase,
     settleComplete: g.state.settleComplete,
@@ -258,7 +258,7 @@ export function PaletteGuide({ g, blocked }: { g: UseGame; blocked: boolean }) {
     clearExitTimer();
   }, []);
 
-  if (!notice || typeof document === 'undefined') return null;
+  if (!settings.paletteGuide || !notice || typeof document === 'undefined') return null;
   const message = t('paletteGuide.unlock', { word: notice.word });
   return createPortal(
     <div className="palette-guide-live" role="status" aria-live="polite">

@@ -23,6 +23,7 @@ describe('settings integrity', () => {
       ...DEFAULT_SETTINGS,
       tips: false,
     });
+    expect(normalizeSettings({ paletteGuide: false }).paletteGuide).toBe(false);
     expect(normalizeSettings({
       gameSpeed: 3,
       uiScale: 999,
