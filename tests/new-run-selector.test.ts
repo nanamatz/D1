@@ -162,7 +162,7 @@ describe('New Run selector presentation', () => {
     expect(action).toContain('className="seed-input"');
     expect(css).toMatch(/\.newrun-panel:has\(\.newrun-action-row\.seeded\)\s*\{[^}]*116px/s);
     expect(css).toMatch(/\.newrun-action-row\s*\{[^}]*grid-template-rows:\s*28px minmax\(0, 1fr\)/s);
-    expect(css).toMatch(/\.newrun-action-row\s*\{[^}]*gap:\s*12px/s);
+    expect(css).toMatch(/\.newrun-action-row\s*\{[^}]*gap:\s*24px/s);
     expect(css).toMatch(/\.newrun-action-row\.seeded\s*\{[^}]*grid-template-rows:\s*40px minmax\(0, 1fr\)/s);
     expect(css).not.toMatch(/\.seed-controls\s*\{[^}]*flex-direction:\s*column/s);
   });

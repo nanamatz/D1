@@ -3058,7 +3058,7 @@ body.force-reduced-motion:has(.menu)::after {
   display: grid;
   grid-template-rows: 28px minmax(0, 1fr);
   place-items: center;
-  gap: 12px;
+  gap: 24px;
 }
 .newrun-action-row.seeded {
   grid-template-rows: 40px minmax(0, 1fr);
