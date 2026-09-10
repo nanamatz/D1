@@ -102,10 +102,10 @@ describe('richText — pack highlight tags', () => {
       null,
       richText('[m:+4 Mult] [c:+30 Chips] [m:×1.5 Mult] [c:×3 칩]'),
     ));
-    expect(markup).toContain('<span class="hl-mult"><span class="hl-value">+4</span> Mult</span>');
-    expect(markup).toContain('<span class="hl-chips"><span class="hl-value">+30</span> Chips</span>');
-    expect(markup).toContain('<span class="hl-mult"><span class="hl-factor">×1.5</span> Mult</span>');
-    expect(markup).toContain('<span class="hl-chips"><span class="hl-factor">×3</span> 칩</span>');
+    expect(markup).toContain('<span class="hl-mult"><span class="hl-value">+4</span> Mult</span>');
+    expect(markup).toContain('<span class="hl-chips"><span class="hl-value">+30</span> Chips</span>');
+    expect(markup).toContain('<span class="hl-mult"><span class="hl-factor">×1.5</span> Mult</span>');
+    expect(markup).toContain('<span class="hl-chips"><span class="hl-factor">×3</span> 칩</span>');
   });
 
   it('highlights only the numeric part of a tile Chips contribution', () => {
@@ -116,9 +116,29 @@ describe('richText — pack highlight tags', () => {
     expect(koText).toBe('[c:+9 개의 칩]');
     expect(enText).toBe('[c:+9 Chips]');
     expect(markup).toBe(
-      '<span><span class="hl-chips"><span class="hl-value">+9</span> 개의 칩</span></span>',
+      '<span><span class="hl-chips"><span class="hl-value">+9</span> 개의 칩</span></span>',
     );
     expect(stripRichText(koText)).toBe('+9 개의 칩');
+  });
+
+  it('keeps each requested Emoji Tile score and its Korean axis word together', () => {
+    const ids = [
+      'syllableScale', 'monomaterial', 'rareEarth', 'vowelMagnet', 'everydayHero',
+      'alliterationSticker', 'scarletLetter', 'alphabeticalOrder', 'livingType',
+      'wordHunter', 'materialPrism', 'vowelChoir', 'alphabetPress', 'anonymous',
+      'outOfPrint', 'stargazer', 'rewrite', 'cleanCopy', 'oneVoice', 'storyteller',
+    ];
+    for (const id of ids) {
+      const copy = LOCALES.ko[`jokerdesc.${id}`]!;
+      const scores = [...copy.matchAll(/\[([mc]):([^\]]+)\]/g)];
+      expect(scores.length, id).toBeGreaterThan(0);
+      for (const [, tag, score] of scores) {
+        const unit = score!.match(/(칩|배수)$/)?.[1];
+        expect(unit, id).toBeTruthy();
+        const markup = renderToStaticMarkup(createElement('span', null, richText(`[${tag}:${score}]`)));
+        expect(markup, id).toContain(` ${unit}`);
+      }
+    }
   });
 
   it('leaves axis words without a numeric value uncoloured', () => {
@@ -193,6 +213,7 @@ describe('richText — pack highlight tags', () => {
   it('keeps highlighted phrases together until viewport containment requires a break', () => {
     const css = readFileSync('src/ui/styles/screens.css', 'utf8');
     expect(css).toMatch(/\.tt-body \[class\^='hl-'\][^{]*\{[^}]*white-space:\s*normal[^}]*overflow-wrap:\s*anywhere/s);
+    expect(css).toMatch(/\.tt-desc \.hl-mult,[^{]*\.tt-desc \.hl-chips\s*\{[^}]*white-space:\s*nowrap[^}]*overflow-wrap:\s*normal/s);
   });
 
   it('keeps words intact when possible and contains unbroken translated copy', () => {

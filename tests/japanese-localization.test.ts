@@ -31,12 +31,14 @@ describe('Japanese localization style', () => {
     );
   });
 
-  it('keeps character voices distinct and the alien lexicon unchanged', () => {
+  it('keeps character voices distinct and transliterates Egoji in katakana', () => {
     expect(ja['voice.dog.won']).toContain('ワン');
     expect(ja['voice.ghost.won']).toContain('〜');
     expect(ja['voice.turtle.won']).toContain('統計');
     for (const key of Object.keys(en).filter((key) => key.startsWith('voice.alien.'))) {
-      expect(ja[key as keyof typeof ja]).toBe(en[key as keyof typeof en]);
+      expect(ja[key as keyof typeof ja]).not.toBe(en[key as keyof typeof en]);
+      expect(ja[key as keyof typeof ja]).toMatch(/[ァ-ヶ]/);
+      expect(ja[key as keyof typeof ja]).not.toMatch(/(?:An'ka|mi'ren|shi'mela)/i);
     }
   });
 

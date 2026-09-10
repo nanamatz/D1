@@ -1952,6 +1952,10 @@
   animation: typewriter-key var(--key-duration) steps(2, end) both;
   animation-delay: var(--key-delay);
 }
+.score-typewriter:is(.typewriter-tier-1, .typewriter-tier-2).is-active .typewriter-key.is-pressed {
+  animation-name: typewriter-key-low;
+  animation-timing-function: steps(3, end);
+}
 .score-typewriter.typewriter-tier-3.is-active .typewriter-key.is-pressed::before,
 .score-typewriter.typewriter-tier-4.is-active .typewriter-key.is-pressed::before,
 .score-typewriter.typewriter-tier-5.is-active .typewriter-key.is-pressed::before {
@@ -2027,6 +2031,27 @@
   50% {
     translate: 0 4px;
     scale: .86;
+    background: #0b0d0e;
+    border-color: var(--key-led);
+    box-shadow:
+      inset 2px 3px 0 #050708,
+      -2px 0 0 var(--key-led),
+      2px 0 0 var(--key-led),
+      0 -2px 0 var(--key-led),
+      0 2px 0 var(--key-led);
+  }
+}
+@keyframes typewriter-key-low {
+  0%, 100% {
+    translate: 0;
+    scale: 1;
+    background: #141819;
+    border-color: #575755;
+    box-shadow: inset 1px 1px 0 #77756d, 1px 1px 0 #050708;
+  }
+  28%, 78% {
+    translate: 0 6px;
+    scale: .78;
     background: #0b0d0e;
     border-color: var(--key-led);
     box-shadow:

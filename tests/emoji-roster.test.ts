@@ -356,11 +356,16 @@ describe('Uncommon — §11.3', () => {
     const run = runWith('comboArtist');
     const base = blindFor(run);
     const changed = { ...base, sequence: [submission('yo', { suit: 'slang' })] };
-    expect(play(run, changed, submission('cat')).mult).toBe(1 + BALANCE.jokers.comboArtist.mult);
+    const changedWord = submission('cat');
+    const changedScore = ctxFor(changedWord);
+    changedScore.chips = 10;
+    bus.emit('wordScoring', { run, blind: changed, ctx: changedScore }, run.jokers);
+    expect(changedScore.chips).toBe(10 * BALANCE.jokers.comboArtist.chipsFactor);
+    expect(changedScore.mult).toBe(1);
     const same = { ...base, sequence: [submission('dog')] };
-    expect(play(run, same, submission('cat')).mult).toBe(1);
+    expect(play(run, same, submission('cat')).chips).toBe(0);
     const hole = { ...base, sequence: [submission('zzq', { gibberish: true })] };
-    expect(play(run, hole, submission('cat')).mult).toBe(1);
+    expect(play(run, hole, submission('cat')).chips).toBe(0);
   });
 
   it('Correction Mark needs at least one shared POS tag; gibberish breaks the chain', () => {

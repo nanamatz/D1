@@ -93,6 +93,16 @@ const INTRO_KEY = 'wj.tutorialIntro';
  */
 export const TUTORIAL_WORD = 'YELLOW';
 
+/** Resume-safe UI-only gate for the deferred Shop finale. */
+export function tutorialPalettePending(
+  showIntro: boolean,
+  sequence: readonly { text: string }[],
+  introSeen: boolean,
+): boolean {
+  return showIntro && !introSeen &&
+    sequence.some((word) => word.text.toUpperCase() === TUTORIAL_WORD);
+}
+
 /** How an intro step advances: a Next button, or automatically when the player performs
  *  the gated action (stages the full word / plays a word). */
 export type IntroAdvance = 'next' | 'discarded' | 'staged' | 'played';

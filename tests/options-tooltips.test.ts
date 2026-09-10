@@ -9,13 +9,15 @@ const locales = ['en', 'ko', 'ja', 'zh-CN', 'zh-TW', 'pt-BR', 'de', 'es-ES', 'fr
 ) as Record<string, string>);
 
 describe('Settings tooltip coverage', () => {
-  it('ships paired descriptions for all 15 value settings', () => {
+  it('ships paired descriptions for all 15 value settings below their controls', () => {
     for (const locale of locales) {
       expect(Object.keys(locale).filter((key) => key.startsWith('settings.tooltip.'))).toHaveLength(15);
       expect(Object.keys(locale).filter((key) => key.startsWith('settings.audition.'))).toHaveLength(0);
     }
     expect(source.match(/tooltipDisabled={tab !==/g)).toHaveLength(12);
-    expect(source.match(/disabled={tab !==/g)).toHaveLength(2);
+    expect(source.match(/disabled={tab !==/g)).toHaveLength(3);
+    expect(source.match(/<Tooltip\b[^>]*\bdown\b/g)).toHaveLength(5);
+    expect(source.match(/t\('settings\.paletteUnlock\.confirmNotice'\)/g)).toHaveLength(2);
   });
 
   it('accounts for every one of the 20 native Settings focus targets', () => {

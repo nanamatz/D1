@@ -4,6 +4,11 @@
 **Status:** Approved
 **Bundle:** A of 5 (see "Batch context" below)
 
+> **Egoji localization policy extended 2026-09-10:** the alien-only/no-subtitle
+> decision and fixed lexicon below remain current. Latin-script locales share
+> the canonical Roman orthography; Korean, Japanese, Russian, Simplified Chinese,
+> and Traditional Chinese transliterate the same alien lines in their local script.
+
 ## Batch context
 
 The user delivered a 17-item polish request spanning six independent subsystems.
@@ -63,8 +68,9 @@ independently carries the same information (`materialdesc.*`, `fontdesc.*`,
 `bossdesc.*`, `voucherdesc.*`, `packdesc.*`), so nothing is permanently lost, and
 because selecting 이고지 is a deliberate opt-in the player can reverse in
 Collection → Mascots at any time. The lexicon remains shared, but its written
-form is locale-specific: Romanized alien in English and fixed Hangul alien
-transliterations in Korean (changed 2026-08-31).
+form is locale-specific: canonical Roman alien in Latin-script locales, Hangul
+in Korean, katakana in Japanese, Cyrillic in Russian, and simplified/traditional
+Han transliterations in the two Chinese locales (extended 2026-09-10).
 
 ## Part A — Character names (item 3)
 
@@ -89,7 +95,7 @@ other three romanised names (WooDak / Nurungi / Egoya / Egoji).
 | **삐약** Piyak | Shop proprietor. Unchanged. Fixed role, never re-skinned. | `~다냥`, sly merchant |
 | **누렁이** Nurungi | Loyal dog. Addresses the player as **주인님**. Short declaratives, unconditional encouragement even on a loss. | `~다멍!` |
 | **이고야** Egoya | Tricky, mischievous ghost. Informal speech (반말), teases and needles, trails off. Delivers the information but wrapped in a jab or a riddle. | `~지롱`, `~시지~`, `…` |
-| **이고지** Egoji | Alien. **Alien speech only, no subtitle.** Uses a consistent alien lexicon so the lines read as a real language rather than noise. | Same lexicon; Roman EN / Hangul KO |
+| **이고지** Egoji | Alien. **Alien speech only, no subtitle.** Uses a consistent alien lexicon so the lines read as a real language rather than noise. | Same lexicon; locale-script transliteration |
 | **느무보** Nemubo | Crisp scholar. Formal 격식체, cites exact figures and terms, no filler. | `~습니다` |
 
 ### Approved tone samples
@@ -130,9 +136,9 @@ A fixed glossary is what makes the speech read as *"의미는 있는 말"*. Ever
 line MUST be built from it; do not invent a new token for a concept that already
 has one. Extend the table (in this spec) if a new concept is needed.
 
-The complete fixed orthography is below. Each Roman token maps to exactly one
-Hangul token; changing or adding a token requires updating this table, both
-locale rows, and the paired lexicon tests in the same change.
+The canonical Roman/Hangul reference pair is below. Each Roman token maps to
+exactly one Hangul token; changing or adding a token requires updating this
+table, every locale row, and the transliteration tests in the same change.
 
 | Roman | Hangul | Roman | Hangul |
 |---|---|---|---|
@@ -168,11 +174,11 @@ locale rows, and the paired lexicon tests in the same change.
 | `zin'ka` | `진'카` | `zk'tha` | `즈크'타` |
 | `zor'ga` | `조르'가` | — | — |
 
-The semantic lexicon and token order are language-neutral, but the approved
-orthography is not: `en` uses the Roman tokens above and `ko` uses one fixed
-Hangul transliteration per token. Marker kinds and placeholders remain aligned;
-marker payloads are localized too (`[c:chi]` → `[c:치]`). There is still no
-subtitle or ordinary-language translation.
+The semantic lexicon and token order are language-neutral. Latin-script locales
+use the Roman tokens above; `ko`, `ja`, `ru-RU`, `zh-CN`, and `zh-TW` use fixed
+Hangul, katakana, Cyrillic, simplified-Han, and traditional-Han transliterations.
+Marker kinds and placeholders remain aligned; marker payloads are transliterated
+too (`[c:chi]` → `[c:치]`). There is still no subtitle or natural-language dialogue.
 
 ### Line inventory
 
@@ -266,7 +272,7 @@ tutorial.<id>.title           ← stays (a term, not dialogue)
 intro.step.*                  ← stays (first-run WooDak, unreachable by skins)
 
 new: voice.{dog,ghost,alien,turtle}.{won,discovery,tip.*,enc.*}   23 lines each
-     (alien shares one lexicon but uses Roman EN and fixed Hangul KO orthography)
+     (alien shares one lexicon with locale-script transliterations)
 ```
 
 `WooDakMascot.pickLine` currently returns full keys (`'woodak.tip.reroll'`); it
@@ -314,8 +320,8 @@ Per the spec-conflict protocol, the docs land with the code.
     (`src/ui/mascots.ts`) — **never write a `voice.*` locale key at a call site**.
     Adding a mascot voice = adding `voice.<skin>.*` rows, and a missing line falls
     back to WooDak's. 이고지 (alien) speaks untranslated alien only, from the fixed
-    lexicon in the 2026-07-23 spec; English uses Romanized tokens and Korean uses
-    fixed Hangul transliterations, with no subtitle."*
+    lexicon in the 2026-07-23 spec; each locale uses its applicable fixed
+    transliteration, with no subtitle."*
 
 ## Testing
 
@@ -326,12 +332,12 @@ Per the spec-conflict protocol, the docs land with the code.
 2. **Fallback** — `voicedKeys('won')` for a non-default skin returns the skin key
    first and `voice.woodak.won` second; `t()` on a chain whose first key is absent
    returns the second key's string, not the raw key.
-3. **Alien orthography** — all 23 Korean `voice.alien.*` strings differ from
-   English, contain no ASCII letters after control markup/placeholders are removed,
-   and use only the approved fixed Hangul transliteration for each English token.
-4. **Alien structure + lexicon** — marker kinds and placeholders match between
-   locales; every English token appears in the approved glossary and the fallback
-   chain remains unchanged. This keeps the language self-consistent as lines are added.
+3. **Alien orthography** — Latin-script locales share the canonical Roman rows;
+   Korean, Japanese, Russian, and Chinese rows differ from English and use their
+   approved local writing system after control markup/placeholders are removed.
+4. **Alien structure + lexicon** — marker kinds and placeholders match across all
+   locales; the fallback chain remains unchanged. This keeps the language
+   self-consistent as lines are added.
 5. **No orphans** — the set of `voice.*` line ids in the locales equals the set the
    code can request: `unlocked`, `won`, `discovery`, `tip.reroll|discard|shop|0..4`, and
    `enc.<id>` for exactly the ids in `ENCOUNTERS` with the matching `mascot` role.

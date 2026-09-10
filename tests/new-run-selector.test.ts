@@ -149,6 +149,24 @@ describe('New Run selector presentation', () => {
     expect(css).toMatch(/\.newrun-action-row \.play-run\s*\{[^}]*340px/s);
   });
 
+  it('keeps every seeded-run control in the fixed action area', () => {
+    const component = source('src/ui/components/NewRun.tsx');
+    const css = source('src/ui/styles/screens.css');
+    const actionStart = component.indexOf('className={[\'newrun-action-row\'');
+    const body = component.slice(component.indexOf('className="newrun-content newrun-body"'), actionStart);
+    const action = component.slice(actionStart, component.indexOf('className="newrun-note-row"', actionStart));
+
+    expect(body).not.toContain('className="seed-toggle"');
+    expect(body).not.toContain('className="seed-input"');
+    expect(action).toContain('className="seed-toggle"');
+    expect(action).toContain('className="seed-input"');
+    expect(css).toMatch(/\.newrun-panel:has\(\.newrun-action-row\.seeded\)\s*\{[^}]*116px/s);
+    expect(css).toMatch(/\.newrun-action-row\s*\{[^}]*grid-template-rows:\s*28px minmax\(0, 1fr\)/s);
+    expect(css).toMatch(/\.newrun-action-row\s*\{[^}]*gap:\s*12px/s);
+    expect(css).toMatch(/\.newrun-action-row\.seeded\s*\{[^}]*grid-template-rows:\s*40px minmax\(0, 1fr\)/s);
+    expect(css).not.toMatch(/\.seed-controls\s*\{[^}]*flex-direction:\s*column/s);
+  });
+
   it('renders committed Continue facts with real objects and preserves a saved Challenge in production', () => {
     const markup = renderToStaticMarkup(createElement(
       I18nProvider,

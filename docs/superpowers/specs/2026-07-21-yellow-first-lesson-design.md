@@ -76,8 +76,9 @@ Lock lives entirely in the UI (engine untouched). Pouch/Run-info remain reachabl
    through the next exact Y→E→L→L→O→W physical ID (auto when `selected` spells the lock word).
 4. `submit` — dynamic selector `.tutorial-action-target`, advance `'played'`: enabled Play is the
    target (auto after that word's settlement completes).
-5. `palette`: selector `.palette-unlock-row .btn`, advance `'next'`; open the real in-run
-   Settings > Game screen and highlight Palette Convenience without activating it.
+5. `palette`: selector `.palette-unlock-row .btn`, advance `'next'`; after Fee Settlement is
+   collected and the first Shop is visible, open the real in-run Settings > Game screen and
+   highlight Palette Convenience without activating it. Closing this step queues the Shop guide.
 
 This dynamic target list supersedes the original fixed `.stage`/`.hand`/`.play-btn` selectors.
 `SpotlightBubble` remains portalled to `document.body`, re-queries and measures the target every
@@ -88,11 +89,15 @@ hover or a fixed timing guess.
 `GuidedIntro` reads `g` (game state) to auto-advance: on `build`, advance when
 `stagedWord(g) === 'YELLOW'`; on `submit`, advance when a new `settleId` reaches the
 authoritative settle-complete signal. The Next button only shows for `'next'` steps; gated steps show a hint instead.
-`finish()` marks intro seen and closes Settings (releasing the lock). Skip = finish early.
+`finish()` marks intro seen and closes Settings. Skip = finish early. Completing the submit step
+releases the lock without marking the intro seen; a Continue reconstructs that pending finale from
+the tutorial marker plus the submitted YELLOW rather than persisting another flag.
 
 On submit, the existing pipeline scores YELLOW at 252 and `ChromaticReveal` washes the yellow
-palette in. After settlement, Settings opens for the fifth step; Next or Skip returns to the
-uncleared 300-target board. The tutorial never presses or grants Palette Convenience itself.
+palette in. After settlement, the player continues on the unchanged 300-target board. Once the
+blind is cleared and Fee Settlement's Collect action opens the first Shop, Settings opens for the
+fifth step; Next or Skip returns to that Shop and only then shows `shopFirstVisit`. The tutorial
+never presses or grants Palette Convenience itself. (finale timing changed 2026-09-10)
 
 ### 5. Copy (i18n)
 
@@ -118,4 +123,5 @@ gated-step hint string (`intro.hint.discard/build/submit`) shown where Next woul
 - Visual: fresh profile → first blind deals YELLOW plus spares; the live spotlight immediately
   follows only the seventh tile for right-click, then Discard, then Y→E→L→L→O→W, then Play without
   pointer hover; its box stays at the target rect plus 8px during resize and FLIP motion. Sort/drag
-  stay disabled; Play lights only at YELLOW; submit → yellow wash → board unlocks at 252/300.
+  stay disabled; Play lights only at YELLOW; submit → yellow wash → board unlocks at 252/300;
+  clear → Fee Settlement Collect → Shop → Palette Convenience guide → Shop guide.

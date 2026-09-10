@@ -151,6 +151,38 @@
   padding: 16px 44px;
 }
 
+/* Native checkbox semantics with the cabinet's hard-edged pixel treatment. */
+input[type='checkbox'] {
+  appearance: none;
+  display: inline-grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 3px solid var(--inset-edge);
+  border-radius: 0;
+  background: #0f1b22;
+  box-shadow: inset -3px -3px 0 #071015, 3px 3px 0 rgba(0, 0, 0, .42);
+}
+input[type='checkbox']::after {
+  content: '';
+  width: 6px;
+  height: 11px;
+  border: solid var(--gold);
+  border-width: 0 4px 4px 0;
+  transform: translateY(-1px) rotate(45deg) scale(0);
+  transform-origin: center;
+}
+input[type='checkbox']:checked {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 20%, #0f1b22);
+}
+input[type='checkbox']:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); }
+input[type='checkbox']:hover:not(:disabled) { border-color: var(--gold); }
+input[type='checkbox']:focus-visible { outline: 3px solid var(--chips); outline-offset: 3px; }
+input[type='checkbox']:disabled { opacity: .5; }
+
 /* ---------- shared anchored tooltip (spec §0) ---------- */
 .tt-anchor {
   position: relative;
@@ -337,6 +369,11 @@
 .tt-body [class*=' hl-'] {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+.tt-desc .hl-mult,
+.tt-desc .hl-chips {
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 .tt-parenthetical,
 .tt-parenthetical [class^='hl-'],
@@ -2570,6 +2607,9 @@ body.force-reduced-motion:has(.menu)::after {
   grid-template-rows: minmax(0, 1fr) 82px 32px;
   gap: 8px;
 }
+.newrun-panel:has(.newrun-action-row.seeded) {
+  grid-template-rows: minmax(0, 1fr) 116px 32px;
+}
 .newrun-content {
   min-height: 0;
   overflow-y: auto;
@@ -3016,14 +3056,25 @@ body.force-reduced-motion:has(.menu)::after {
 .newrun-action-row {
   min-height: 82px;
   display: grid;
+  grid-template-rows: 28px minmax(0, 1fr);
   place-items: center;
+  gap: 12px;
+}
+.newrun-action-row.seeded {
+  grid-template-rows: 40px minmax(0, 1fr);
+}
+.newrun-action-row.seeded .seed-input {
+  flex: 1 1 420px;
+  min-width: 0;
+  max-width: 420px;
+  height: 40px;
 }
 .seed-controls {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding-bottom: 4px;
+  width: min(540px, 100%);
 }
 .play-run {
   width: min(340px, 94vw);
@@ -3113,9 +3164,6 @@ body.force-reduced-motion:has(.menu)::after {
   .continue-summary {
     grid-column: 1 / -1;
   }
-  .seed-controls {
-    flex-direction: column;
-  }
 }
 @media (max-height: 760px) {
   .newrun {
@@ -3124,6 +3172,12 @@ body.force-reduced-motion:has(.menu)::after {
 }
 
 @media (forced-colors: active) {
+  input[type='checkbox'] {
+    border-color: ButtonText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  input[type='checkbox']:checked::after { border-color: Highlight; }
   .newrun-modal,
   .continue-object-row,
   .continue-summary,
@@ -3582,10 +3636,19 @@ body.force-reduced-motion:has(.menu)::after {
   right: -9px;
   width: 54px;
   height: 54px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  filter: url(#unlock-chroma) drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.72));
+}
+.emoji-tile-collection > .tt-anchor:has(.joker-record-sticker) {
+  position: static;
+}
+.joker-record-sticker img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: url(#unlock-chroma) drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.72));
-  pointer-events: none;
 }
 .emoji-tile-lock {
   position: absolute;
@@ -4324,6 +4387,13 @@ body.force-reduced-motion:has(.menu)::after {
   border-radius: 14px;
   box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.2);
 }
+.card-family-partial {
+  display: flex;
+  justify-content: space-evenly;
+}
+.card-family-partial > .tt-anchor {
+  width: min(160px, calc((100% - 64px) / 5));
+}
 .shop-consumable-art {
   width: 64px;
   height: 84px;
@@ -4346,6 +4416,12 @@ body.force-reduced-motion:has(.menu)::after {
     grid-template-columns: repeat(3, minmax(68px, 1fr));
     gap: 10px;
     padding: 10px;
+  }
+  .card-family-partial {
+    display: grid;
+  }
+  .card-family-partial > .tt-anchor {
+    width: auto;
   }
   .card-family-placeholder-grid {
     grid-template-columns: repeat(3, minmax(72px, 1fr));
@@ -4490,7 +4566,6 @@ body.force-reduced-motion:has(.menu)::after {
   overflow-wrap: anywhere;
   font-size: var(--fs-sm);
 }
-.audio-mute input { accent-color: var(--gold); }
 @media (max-width: 480px) {
   .resolution-select { width: min(220px, 56vw); }
   .audio-set-row {

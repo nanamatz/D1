@@ -94,7 +94,9 @@ export function ScreenTransition({ screenKey, runFit = false, children }: Props)
           className={['screen-pane', 'screen-out', outgoing.runFit && 'run-fit'].filter(Boolean).join(' ')}
           aria-hidden="true"
         >
-          <TransitionContext.Provider value={false}>{outgoing.node}</TransitionContext.Provider>
+          <div className="screen-pane-content">
+            <TransitionContext.Provider value={false}>{outgoing.node}</TransitionContext.Provider>
+          </div>
         </div>
       )}
       <div

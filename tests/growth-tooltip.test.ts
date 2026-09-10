@@ -35,6 +35,7 @@ const LIVE_GROWTH_IDS = [
 
 const SPLIT_PERFORMANCE_IDS = [
   'bookOfMargins',
+  'dadaist',
   'tyrant',
 ] as const;
 
@@ -65,6 +66,19 @@ describe('scaling Emoji Tile tooltip value', () => {
     }
     expect(readFileSync('src/ui/styles/screens.css', 'utf8'))
       .toMatch(/\.tt-body\s*\{[^}]*white-space:\s*pre-line/s);
+  });
+
+  it('keeps every Emoji Tile Chips/Mult amount and unit in one score tag', () => {
+    const scoreOnly = /^\s*(?:[×x]\s*)?[+-]?(?:\d+(?:\.\d+)?|\{[^}]+\})\s*$/;
+    for (const locale of LOCALE_FILES) {
+      const copy = JSON.parse(readFileSync(`locales/${locale}.json`, 'utf8')) as Record<string, string>;
+      for (const [key, value] of Object.entries(copy)) {
+        if (!key.startsWith('jokerdesc.') && !key.startsWith('joker.current')) continue;
+        for (const match of value.matchAll(/\[([mc]):([^\]]*)\]/g)) {
+          expect(scoreOnly.test(match[2]!), `${locale}/${key}: ${match[0]}`).toBe(false);
+        }
+      }
+    }
   });
 
   it('covers every accumulating or decaying Emoji Tile in the live-value roster', () => {
@@ -103,24 +117,24 @@ describe('scaling Emoji Tile tooltip value', () => {
 
   it('shows the initial value before the first trigger and the live value afterward', () => {
     expect(grownValue(stargazer, { defId: stargazer.id, state: {} }, t('ko')))
-      .toBe('(현재 [m:×1] 배수)');
+      .toBe('(현재 [m:×1 배수])');
     expect(grownValue(stargazer, { defId: stargazer.id, state: { factor: 1.3 } }, t('en')))
-      .toBe('(Currently [m:×1.3] Mult)');
+      .toBe('(Currently [m:×1.3 Mult])');
   });
 
   it('shows a decaying value below its initial value', () => {
     expect(grownValue(dryingInk, {
       defId: dryingInk.id,
       state: { mult: BALANCE.jokers.dryingInk.mult - 1 },
-    }, t('en'))).toBe('(Currently [m:+14] Mult)');
+    }, t('en'))).toBe('(Currently [m:+14 Mult])');
     expect(grownValue(dullingPencil, {
       defId: dullingPencil.id,
       state: { chips: 95 },
-    }, t('en'))).toBe('(Currently [c:+95] Chips)');
+    }, t('en'))).toBe('(Currently [c:+95 Chips])');
     const run = newRun('shuriken-decay-tooltip');
     expect(grownValue(JOKER_REGISTRY.get('shuriken')!, {
       defId: 'shuriken', state: { factor: 1.93 },
-    }, t('en'), undefined, run)).toBe('(Currently [m:×1.93] Mult)');
+    }, t('en'), undefined, run)).toBe('(Currently [m:×1.93 Mult])');
   });
 
   it('shows Folding Manuscript current hand size', () => {
@@ -136,7 +150,7 @@ describe('scaling Emoji Tile tooltip value', () => {
     expect(grownValue(handScholar, {
       defId: handScholar.id,
       state: {},
-    }, t('en'), undefined, run)).toBe('(Currently [m:×2] Mult)');
+    }, t('en'), undefined, run)).toBe('(Currently [m:×2 Mult])');
   });
 
   it('supports additive Chips growth with a +0 initial row', () => {
@@ -146,24 +160,24 @@ describe('scaling Emoji Tile tooltip value', () => {
       growthDisplay: { kind: 'chips', stateKey: 'chips', initial: 0 } as const,
     };
     expect(grownValue(chipsGrowth, undefined, t('ko')))
-      .toBe('(현재 [c:+0] 칩)');
+      .toBe('(현재 [c:+0 칩])');
     expect(grownValue(bloodTypeA, { defId: bloodTypeA.id, state: { chips: 24 } }, t('ko')))
-      .toBe('(현재 [c:+24] 칩)');
+      .toBe('(현재 [c:+24 칩])');
     expect(grownValue(blacksmith, undefined, t('en')))
-      .toBe('(Currently [c:+0] Chips)');
+      .toBe('(Currently [c:+0 Chips])');
   });
 
   it('shows Storyteller current additive Mult', () => {
     expect(grownValue(storyteller, {
       defId: storyteller.id,
       state: { mult: 3 * BALANCE.jokers.storyteller.multPerFable },
-    }, t('ko'))).toBe('(현재 [m:+3] 배수)');
+    }, t('ko'))).toBe('(현재 [m:+3 배수])');
 
     const run = { ...newRun('storyteller-late-tooltip'), fablesUsed: 2 };
     expect(grownValue(storyteller, {
       defId: storyteller.id,
       state: {},
-    }, t('en'), undefined, run)).toBe('(Currently [m:+2] Mult)');
+    }, t('en'), undefined, run)).toBe('(Currently [m:+2 Mult])');
   });
 
   it('derives Scrap Dealer current Mult from permanent Brass tiles', () => {
@@ -173,24 +187,35 @@ describe('scaling Emoji Tile tooltip value', () => {
       : tile);
     const def = JOKER_REGISTRY.get('scrapDealer')!;
     expect(grownValue(def, { defId: def.id, state: {} }, t('en'), undefined, run))
-      .toBe('(Currently [m:+0.4] Mult)');
+      .toBe('(Currently [m:+0.4 Mult])');
+  });
+
+  it('derives Peddler current Mult from owned Emoji Tile sell values', () => {
+    const run = newRun('peddler-tooltip');
+    run.jokers = [
+      { defId: 'peddler', edition: 'base', state: {} },
+      { defId: 'storyteller', edition: 'base', state: {} },
+    ];
+    const def = JOKER_REGISTRY.get('peddler')!;
+    expect(grownValue(def, run.jokers[0], t('en'), undefined, run))
+      .toBe('(Currently [m:+4 Mult])');
   });
 
   it('shows Pouch Tag Chips from the live remaining-tile count', () => {
     expect(grownValue(pouchTag, undefined, t('ko'), 17))
-      .toBe('(현재 [c:+15] 칩)');
+      .toBe('(현재 [c:+15 칩])');
     expect(grownValue(pouchTag, undefined, t('en'), 4))
-      .toBe('(Currently [c:+0] Chips)');
+      .toBe('(Currently [c:+0 Chips])');
   });
 
   it('shows Discarded Draft and Out of Print current values', () => {
     expect(grownValue(discardedDraft, {
       defId: discardedDraft.id, state: { chips: 12 },
-    }, t('en'))).toBe('(Currently [c:+12] Chips)');
+    }, t('en'))).toBe('(Currently [c:+12 Chips])');
 
     const run = newRun('out-of-print-tooltip');
     run.bag = run.bag.filter((tile) => tile.letter !== 'Q' && tile.letter !== 'Z');
     expect(grownValue(outOfPrint, { defId: outOfPrint.id, state: {} }, t('ko'), undefined, run))
-      .toBe('(현재 [c:+100] 칩 및 [m:+16] 배수)');
+      .toBe('(현재 [c:+100 칩] 및 [m:+16 배수])');
   });
 });

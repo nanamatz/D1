@@ -75,7 +75,7 @@ function taggedText(text: string, keyPrefix: string): ReactNode[] {
         {score
           ? [
               <span key="value" className={factor ? 'hl-factor' : 'hl-value'}>{score[1]}</span>,
-              score[2],
+              score[2]?.replace(/^\s+/, '\u00a0') ?? '',
             ]
           : value}
       </span>,

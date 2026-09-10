@@ -118,6 +118,16 @@ describe('2026-08-05 additional content', () => {
   it('uses the requested multiplier values and tooltip copy', () => {
     expect(BALANCE.jokers.consonantChoir.factorPerDuplicate).toBe(1.5);
     expect(BALANCE.jokers.fableHoard.factorPerConsumable).toBe(1.5);
+    expect(BALANCE.jokers.comboArtist.chipsFactor).toBe(2);
+    expect(BALANCE.jokers.vowelChoir.factorPerVowel).toBe(1.5);
+    expect(BALANCE.jokers.materialPrism.factorPerMaterial).toBe(1.5);
+    expect(BALANCE.jokers.typeOrchestra.factorPerFont).toBe(1.5);
+    expect(BALANCE.jokers.typesettingMachine.factorPerTile).toBe(1.5);
+    expect(BALANCE.jokers.golem.multPerStone).toBe(12);
+    expect(ko['jokerdesc.typeOrchestra'])
+      .toBe('단어의 서로 다른 [e:폰트]마다 [m:×1.5 배수]');
+    expect(en['jokerdesc.typeOrchestra'])
+      .toBe('Each different [e:font] in the word gives [m:×1.5 Mult]');
     expect(ko['jokerdesc.noiseCancelling']).toContain('[m:+0.25 배수]');
     expect(ko['jokerdesc.noiseCancelling']).not.toContain('+×0.25');
     expect(en['jokerdesc.noiseCancelling']).toContain('[m:+0.25 Mult]');
@@ -305,5 +315,24 @@ describe('2026-08-05 additional content', () => {
     const result = submitWord(blind, run, lex, [played.id], makeRng('dummy-data-play'));
     expect(result.submission.scoringLength).toBe(3);
     expect(result.events).toContainEqual(expect.objectContaining({ kind: 'wordLength', letters: 3 }));
+  });
+
+  it('Dummy Data makes a four-letter word trigger Long-form Serial once', () => {
+    const run = newRun('dummy-long-form');
+    run.jokers = [owned('dummyData'), owned('longFormSerial')];
+    const hand = [...'ABLE'].map((letter, index) => tile(`dummy-long-${index}`, letter as Letter));
+    const blind = { ...startBlind(run, makeRng('dummy-long-form')), hand };
+    const result = submitWord(
+      blind,
+      run,
+      makeLexicon(['able'], {}),
+      hand.map((entry) => entry.id),
+      makeRng('dummy-long-form-play'),
+    );
+
+    expect(result.submission.scoringLength).toBe(6);
+    expect(result.events.filter((event) =>
+      event.kind === 'joker' && event.jokerId === 'longFormSerial'))
+      .toEqual([expect.objectContaining({ multFactor: BALANCE.jokers.longFormSerial.factorPerLetter })]);
   });
 });

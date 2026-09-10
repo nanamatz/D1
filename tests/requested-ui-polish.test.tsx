@@ -42,6 +42,16 @@ describe('requested UI polish', () => {
     expect(screens).toMatch(/\.screen-pane\.screen-in\.screen-anim > \.screen-pane-content\s*\{[^}]*animation:\s*screenSlideIn/s);
     expect(screens).toMatch(/@keyframes screenRevealIn\s*\{[\s\S]*?clip-path:\s*inset\(0 0 0 100%\)[\s\S]*?clip-path:\s*inset\(0\)/s);
     expect(screens).toMatch(/\.screen-pane\s*\{[^}]*min-height:\s*max\(var\(--board-h\), calc\(100dvh \/ var\(--root-zoom\)\)\)/s);
+    expect(transition.match(/<div className="screen-pane-content">/g)).toHaveLength(2);
+  });
+
+  it('skins every native checkbox with one accessible pixel-art treatment', () => {
+    const screens = source('src/ui/styles/screens.css');
+    expect(screens).toMatch(/input\[type='checkbox'\]\s*\{[^}]*appearance:\s*none[^}]*border-radius:\s*0/s);
+    expect(screens).toMatch(/input\[type='checkbox'\]::after\s*\{[^}]*border-width:\s*0 4px 4px 0/s);
+    expect(screens).toContain("input[type='checkbox']:checked::after");
+    expect(screens).toContain("input[type='checkbox']:focus-visible");
+    expect(screens).toMatch(/@media \(forced-colors: active\)[\s\S]*?input\[type='checkbox'\]/);
   });
 
   it('removes action arrows and keeps one marked-up reroll dollar sign', () => {

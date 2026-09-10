@@ -8,6 +8,8 @@ import { MATERIAL_REGISTRY } from '../engine/materials';
 import { extinctLetterCount } from '../engine/jokers/outOfPrint';
 import { pouchTagChips } from '../engine/jokers/pouchTag';
 import { scrapDealerMult } from '../engine/jokers/scrapDealer';
+import { peddlerMult } from '../engine/jokers/peddler';
+import { JOKER_REGISTRY } from '../engine/jokers';
 import type {
   ConsumableId,
   JokerEdition,
@@ -209,6 +211,11 @@ export function grownValue(
   }
   if (def.id === 'scrapDealer' && run) {
     return t('joker.currentMultAdd', { value: formatGrowth(scrapDealerMult(run)) });
+  }
+  if (def.id === 'peddler' && run) {
+    return t('joker.currentMultAdd', {
+      value: formatGrowth(peddlerMult(run, (id) => JOKER_REGISTRY.get(id))),
+    });
   }
   if (def.id === 'earthquake') {
     return t('joker.remainingUses', {

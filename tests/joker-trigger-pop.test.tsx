@@ -66,7 +66,8 @@ describe('Emoji Tile trigger popup', () => {
 
     expect(beats).toHaveLength(3);
     expect(beats.reduce((factor, beat) =>
-      factor * (beat.kind === 'joker' ? beat.multFactor ?? 1 : 1), 1)).toBe(1.953125);
+      factor * (beat.kind === 'joker' ? beat.multFactor ?? 1 : 1), 1))
+      .toBe(BALANCE.jokers.typeOrchestra.factorPerFont ** 3);
     for (let index = 0; index < beats.length; index += 1) {
       const beat = beats[index]!;
       expect(beat.kind === 'joker' ? beat.multFactor : undefined)

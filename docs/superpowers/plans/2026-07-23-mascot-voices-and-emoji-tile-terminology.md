@@ -1,11 +1,9 @@
 # Mascot Voices & Emoji Tile Terminology Implementation Plan
 
-> **Superseded note (2026-08-31):** this is the historical execution plan for
-> the original 2026-07-23 delivery. Its former requirement that Egoji's Korean
-> and English alien strings match exactly is retired. The live rule is the
-> normative design spec linked below: one fixed alien lexicon, Romanized English,
-> fixed Hangul Korean transliterations, and no subtitle. The Task 8 examples and
-> tests below are annotated to reflect that newer decision.
+> **Current note (2026-09-10):** this remains the historical execution plan for
+> the original 2026-07-23 delivery. The alien-only lexicon and no-subtitle rule
+> remain current; production now transliterates all 23 `voice.alien.*` lines into
+> each locale's applicable writing system instead of translating their meaning.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

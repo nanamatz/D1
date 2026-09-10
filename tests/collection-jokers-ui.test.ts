@@ -18,11 +18,16 @@ describe('Emoji Tile collection grid', () => {
     expect(component).toContain('className="joker-record-sticker"');
     expect(component).toContain('src={recordArt(sticker)}');
     expect(component).toContain("t('collection.joker.recordStickerDesc'");
+    expect(component).toContain('data-tooltip-suppress="true"');
+    expect(component).toContain('aria-label={t(\'collection.joker.recordSticker\')}');
+    expect(component).not.toContain('sub={unlocked && sticker');
+    expect(css).toMatch(/\.emoji-tile-collection > \.tt-anchor:has\(\.joker-record-sticker\)\s*\{[^}]*position:\s*static/s);
     expect(component).not.toContain("t('joker.unlockCondition'");
     expect(css).toMatch(/\.emoji-tile-collection\.locked \.cc-joker-art\s*\{[^}]*opacity:\s*0/s);
     expect(css).toMatch(
       /\.joker-record-sticker\s*\{[^}]*position:\s*absolute[^}]*right:\s*-9px/s,
     );
+    expect(css.match(/\.joker-record-sticker\s*\{[^}]*}/s)?.[0]).not.toContain('cursor:');
     expect(css).toMatch(
       /\.joker-collection-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5,\s*var\(--shop-card-w\)\)/s,
     );

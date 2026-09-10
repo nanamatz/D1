@@ -14,7 +14,9 @@ import { isPlayed } from '../unlocks';
  * when the player actually performs them — so the flow can't run ahead of the player and the
  * player can't run ahead of the flow. Submitting washes the yellow palette in (ChromaticReveal),
  * then the real Settings action is highlighted without activating it; the target stays at 300, so the board then unlocks and the
- * player plays on to clear. Skip finishes early and releases the lock (accessibility).
+ * player plays on to clear. After Fee Settlement is collected, the Shop opens the
+ * final Settings spotlight before its own first-visit guide. Skip finishes early
+ * and releases the lock (accessibility).
  */
 export function GuidedIntro({
   g, step, discardTargetId, onStepChange, onClose,
@@ -53,7 +55,8 @@ export function GuidedIntro({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur.advance, stagedWord]);
 
-  // 'played' step: settleId bumps on every submitted word — advance (== finish) on the play.
+  // 'played' step: settleId bumps on every submitted word — defer the Palette finale
+  // once the authoritative settlement signal lands.
   // Capture the baseline ONLY when the step changes (not when settleId changes), or the
   // comparison would re-baseline to the new value and never fire.
   const settleId = g.state.settleId;
@@ -63,6 +66,10 @@ export function GuidedIntro({
     if (cur.advance === 'played' && settleId !== baseSettle.current && g.state.settleComplete) advance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur.advance, settleId, g.state.settleComplete]);
+
+  // Keep the lesson's settle-complete progression gate, but retire the submit
+  // coach-mark as soon as its action has actually fired.
+  if (cur.advance === 'played' && settleId !== baseSettle.current) return null;
 
   const gated = cur.advance && cur.advance !== 'next';
 

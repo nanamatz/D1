@@ -164,7 +164,7 @@ export function Slider({
   };
 }) {
   return (
-    <Tooltip title={label} body={tooltip} touchPin disabled={tooltipDisabled}>
+    <Tooltip title={label} body={tooltip} down touchPin disabled={tooltipDisabled}>
       <div className={['set-row', mute && 'audio-set-row'].filter(Boolean).join(' ')}>
         <span className="set-label">{label}</span>
         <div className="set-control">
@@ -208,7 +208,7 @@ export function Toggle({
   tooltipDisabled: boolean;
 }) {
   return (
-    <Tooltip title={label} body={tooltip} touchPin disabled={tooltipDisabled}>
+    <Tooltip title={label} body={tooltip} down touchPin disabled={tooltipDisabled}>
       <div className="set-row">
         <span className="set-label">{label}</span>
         <button
@@ -285,7 +285,7 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
           tab order and the accessibility tree. */}
       <div className="panel set-panel">
         <div id="settings-game" role="tabpanel" aria-hidden={tab !== 'game'} className={['set-tabpanel', tab === 'game' ? 'on' : ''].filter(Boolean).join(' ')}>
-          <Tooltip title={t('settings.gameSpeed')} body={t('settings.tooltip.gameSpeed')} touchPin disabled={tab !== 'game'}>
+          <Tooltip title={t('settings.gameSpeed')} body={t('settings.tooltip.gameSpeed')} down touchPin disabled={tab !== 'game'}>
             <div className="set-row">
               <span className="set-label">{t('settings.gameSpeed')}</span>
               <div className="segmented" role="group" aria-label={t('settings.gameSpeed')}>
@@ -339,20 +339,28 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
               on={settings.paletteGuide}
               onChange={(v) => set('paletteGuide', v)}
             />
-            <div className="set-row palette-unlock-row">
-              <span className="set-label">{t('settings.paletteUnlock.label')}</span>
-              <button
-                className="btn exchange sm"
-                disabled={paletteComplete}
-                onClick={unlockPalette}
-              >
-                {t(paletteComplete
-                  ? 'settings.paletteUnlock.complete'
-                  : paletteArmed
-                    ? 'settings.paletteUnlock.confirm'
-                    : 'settings.paletteUnlock.action')}
-              </button>
-            </div>
+            <Tooltip
+              title={t('settings.paletteUnlock.label')}
+              body={t('settings.paletteUnlock.confirmNotice')}
+              down
+              touchPin
+              disabled={tab !== 'game'}
+            >
+              <div className="set-row palette-unlock-row">
+                <span className="set-label">{t('settings.paletteUnlock.label')}</span>
+                <button
+                  className="btn exchange sm"
+                  disabled={paletteComplete}
+                  onClick={unlockPalette}
+                >
+                  {t(paletteComplete
+                    ? 'settings.paletteUnlock.complete'
+                    : paletteArmed
+                      ? 'settings.paletteUnlock.confirm'
+                      : 'settings.paletteUnlock.action')}
+                </button>
+              </div>
+            </Tooltip>
             {paletteArmed && (
               <p className="set-note palette-unlock-warning" role="alert">
                 {t('settings.paletteUnlock.confirmNotice')}
@@ -361,7 +369,7 @@ function SettingsView({ onPaletteUnlock }: { onPaletteUnlock?: (ids: readonly st
         </div>
 
         <div id="settings-video" role="tabpanel" aria-hidden={tab !== 'video'} className={['set-tabpanel', tab === 'video' ? 'on' : ''].filter(Boolean).join(' ')}>
-            <Tooltip title={t('settings.resolution')} body={t('settings.tooltip.resolution')} touchPin disabled={tab !== 'video'}>
+            <Tooltip title={t('settings.resolution')} body={t('settings.tooltip.resolution')} down touchPin disabled={tab !== 'video'}>
               <div className="set-row">
                 <span className="set-label">{t('settings.resolution')}</span>
                 <select

@@ -407,6 +407,9 @@ function NewRunBody({
           {choice('record', recordId, recordUnlocked)}
         </Carousel>
 
+      </div>
+
+      <div className={['newrun-action-row', seeded && 'seeded'].filter(Boolean).join(' ')}>
         <div className="seed-controls">
           <label className="seed-toggle">
             <input type="checkbox" checked={seeded} onChange={(event) => setSeeded(event.target.checked)} />
@@ -423,9 +426,6 @@ function NewRunBody({
             />
           )}
         </div>
-      </div>
-
-      <div className="newrun-action-row">
         <button
           className="btn exchange big play-run"
           disabled={!canStart}

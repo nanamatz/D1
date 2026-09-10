@@ -2,6 +2,16 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
+import ja from '../locales/ja.json';
+import zhCN from '../locales/zh-CN.json';
+import zhTW from '../locales/zh-TW.json';
+import ptBR from '../locales/pt-BR.json';
+import de from '../locales/de.json';
+import esES from '../locales/es-ES.json';
+import frFR from '../locales/fr-FR.json';
+import ruRU from '../locales/ru-RU.json';
+import plPL from '../locales/pl-PL.json';
+import trTR from '../locales/tr-TR.json';
 import { resolve } from '../src/ui/i18n';
 import { voiceChain, WOODAK_SKINS } from '../src/ui/mascots';
 import { ENCOUNTERS } from '../src/ui/tutorial';
@@ -10,6 +20,20 @@ const EN = en as Record<string, string>;
 const KO = ko as Record<string, string>;
 
 const DICTS = { en: EN, ko: KO };
+const LOCALES: Record<string, Record<string, string>> = {
+  en: EN,
+  ko: KO,
+  ja: ja as Record<string, string>,
+  'zh-CN': zhCN as Record<string, string>,
+  'zh-TW': zhTW as Record<string, string>,
+  'pt-BR': ptBR as Record<string, string>,
+  de: de as Record<string, string>,
+  'es-ES': esES as Record<string, string>,
+  'fr-FR': frFR as Record<string, string>,
+  'ru-RU': ruRU as Record<string, string>,
+  'pl-PL': plPL as Record<string, string>,
+  'tr-TR': trTR as Record<string, string>,
+};
 
 describe('t() key chains', () => {
   it('returns the first present key in the chain', () => {
@@ -228,7 +252,6 @@ describe('skin voice completeness', () => {
     const markers = (s: string) => (s.match(/\[[a-z]:/g) ?? []).sort();
     for (const line of WOODAK_LINES) {
       for (const [name, dict] of [['en', EN], ['ko', KO]] as const) {
-        if (skin === 'alien') continue; // alien relabels markers in its own tongue
         expect(markers(dict[`voice.${skin}.${line}`]!), `${name} ${skin} ${line}`).toEqual(
           markers(dict[`voice.woodak.${line}`]!),
         );
@@ -237,113 +260,48 @@ describe('skin voice completeness', () => {
   });
 });
 
-/**
- * 이고지's fixed vocabulary. Every token in every `voice.alien.*` string must appear
- * here — that constraint is what makes the speech read as a real language rather
- * than noise, and it is the reason a new line cannot be improvised. If a line needs
- * a concept with no token, prefer rephrasing with existing vocabulary; add a row
- * only for a genuinely new concept, and record it in the design spec too.
- */
-const ALIEN_LEXICON: Record<string, string> = {
-  "an'ka": 'new', ao: 'vowel', "ar'ti": 'article/adjective', blin: 'blind',
-  "bou'nak": 'pouch', "chap'ta": 'chapter', chi: 'chips', "del'vo": 'discard',
-  "do'gan": 'collection/book', "em'ji": 'emoji', "fa'zen": 'phase', "flu'sha": 'flush',
-  "fon'ta": 'font', "glo'ba": 'gibberish', "gru'vak": 'big', "hol'na": 'hole',
-  "il'ma": 'see/look', "ka'lith": 'hand', "ka'shen": 'same', "kel'dan": 'money',
-  "kon'su": 'consumable', "kre'sha": 'grow', "ku'ren": 'fire/trigger', "lo'ren": 'late',
-  "ma'run": 'material', "mi'ren": 'you', "mor'ka": 'shop',
-  mul: 'multiplier', "nak'ta": 'draw', "ne'sha": 'rule', nu: 'not',
-  "nu'kha": 'none/did not', "nu'ven": 'few/small', "ol'dan": 'order', ollu: 'all',
-  "pa'tarn": 'pattern', "pen'ta": 'five', "qa'shi": 'score',
-  "re'rol": 'reroll', reth: 'remain/keep', "se'la": 'seal', "sen'tal": 'sentence',
-  shen: 'suit/color', "shi'mela": 'good', "ta'wen": 'two', thal: 'end',
-  tolun: 'word', "tor'un": 'tile', "tri'un": 'three', "u'nizn": 'unison',
-  unn: 'one', vai: 'void', "vau'cha": 'voucher', vell: 'when/if',
-  "vok'tu": 'change', vor: 'and/then', "vor'nak": 'achieved', "zar'ka": 'boss',
-  "zin'ka": 'twin', "zk'tha": 'joy', "zor'ga": 'hard/stiff',
-};
-
-/** One fixed Korean orthography for the same alien tokens; do not improvise spellings. */
-const KO_ALIEN_LEXICON: Record<string, string> = {
-  "an'ka": "안'카", ao: '아오', "ar'ti": "아르'티", blin: '블린',
-  "bou'nak": "부'낙", "chap'ta": "챕'타", chi: '치', "del'vo": "델'보",
-  "do'gan": "도'간", "em'ji": "엠'지", "fa'zen": "파'젠", "flu'sha": "플루'샤",
-  "fon'ta": "폰'타", "glo'ba": "글로'바", "gru'vak": "그루'바크", "hol'na": "홀'나",
-  "il'ma": "일'마", "ka'lith": "카'리스", "ka'shen": "카'셨", "kel'dan": "켈'단",
-  "kon'su": "콘'수", "kre'sha": "크레'샤", "ku'ren": "쿠'렌", "lo'ren": "로'렌",
-  "ma'run": "마'룬", "mi'ren": "미'렌", "mor'ka": "모르'카",
-  mul: '물', "nak'ta": "낙'타", "ne'sha": "네'샤", nu: '누',
-  "nu'kha": "누'카", "nu'ven": "누'벤", "ol'dan": "올'단", ollu: '올루',
-  "pa'tarn": "파'타른", "pen'ta": "펜'타", "qa'shi": "카'시",
-  "re'rol": "레'롤", reth: '레스', "se'la": "세'라", "sen'tal": "센'탈",
-  shen: '셨', "shi'mela": "시'멜라", "ta'wen": "타'웬", thal: '탈',
-  tolun: '톨룬', "tor'un": "토르'운", "tri'un": "트리'운", "u'nizn": "우'니즌",
-  unn: '운', vai: '바이', "vau'cha": "바우'차", vell: '벨',
-  "vok'tu": "보크'투", vor: '보르', "vor'nak": "보르'낙", "zar'ka": "자르'카",
-  "zin'ka": "진'카", "zk'tha": "즈크'타", "zor'ga": "조르'가",
-};
-
-/** Strip richtext markup, params and punctuation; return lowercase word tokens.
- *  Order matters: `{n}` and `[c:` must go before the generic punctuation strip, and
- *  the apostrophe is deliberately NOT stripped — it is part of every alien token. */
-function alienTokens(s: string): string[] {
-  return s
-    .replace(/\{n\}/g, ' ')
-    .replace(/\[[a-z]:/g, ' ')
-    .replace(/[.,!?:;=\]—…"×$0-9]/g, ' ')
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
 describe('이고지 (alien) speech', () => {
-  it('uses a distinct Hangul alien rendering for every Korean line', () => {
+  it('keeps one constructed lexicon instead of replacing it with natural dialogue', () => {
+    const romanLocales = ['en', 'pt-BR', 'de', 'es-ES', 'fr-FR', 'pl-PL', 'tr-TR'];
     for (const line of WOODAK_LINES) {
       const english = EN[`voice.alien.${line}`]!;
-      const korean = KO[`voice.alien.${line}`]!;
-      expect(korean, `alien ${line}`).not.toBe(english);
-      const visible = korean
-        .replace(/\[[a-z]:/g, '[')
-        .replace(/\{[a-z]+\}/gi, '');
-      expect(visible, `ko alien ${line}`).not.toMatch(/[A-Za-z]/);
-    }
-  });
-
-  it('preserves marker kinds and placeholders across languages', () => {
-    const markers = (copy: string) => [...copy.matchAll(/\[([a-z]):/g)].map((match) => match[1]);
-    const placeholders = (copy: string) => copy.match(/\{[a-z]+\}/gi) ?? [];
-    for (const line of WOODAK_LINES) {
-      const english = EN[`voice.alien.${line}`]!;
-      const korean = KO[`voice.alien.${line}`]!;
-      expect(markers(korean), `markers ${line}`).toEqual(markers(english));
-      expect(placeholders(korean), `placeholders ${line}`).toEqual(placeholders(english));
-    }
-  });
-
-  it('uses the fixed Korean orthography for the approved English lexicon', () => {
-    expect(Object.keys(KO_ALIEN_LEXICON).sort()).toEqual(Object.keys(ALIEN_LEXICON).sort());
-    for (const line of WOODAK_LINES) {
-      const englishTokens = alienTokens(EN[`voice.alien.${line}`]!);
-      expect(alienTokens(KO[`voice.alien.${line}`]!), `ko alien ${line}`).toEqual(
-        englishTokens.map((token) => KO_ALIEN_LEXICON[token]),
-      );
-    }
-  });
-
-  it('uses only approved lexicon tokens', () => {
-    const unknown = new Set<string>();
-    for (const line of WOODAK_LINES) {
-      for (const tok of alienTokens(EN[`voice.alien.${line}`]!)) {
-        if (!(tok in ALIEN_LEXICON)) unknown.add(`${tok} (in ${line})`);
+      expect(english.match(/[A-Za-z]+'[A-Za-z]+/g)?.length).toBeGreaterThanOrEqual(2);
+      for (const locale of romanLocales) {
+        expect(LOCALES[locale]![`voice.alien.${line}`], `${locale} alien ${line}`).toBe(english);
       }
     }
-    expect([...unknown]).toEqual([]);
   });
 
-  it('exercises most of the lexicon — an unused token is dead vocabulary', () => {
-    const used = new Set(WOODAK_LINES.flatMap((l) => alienTokens(EN[`voice.alien.${l}`]!)));
-    const unused = Object.keys(ALIEN_LEXICON).filter((k) => !used.has(k));
-    expect(unused, `unused lexicon entries: ${unused.join(', ')}`).toEqual([]);
+  it('transliterates that lexicon by locale while preserving markup', () => {
+    const markers = (copy: string) => [...copy.matchAll(/\[([a-z]):/g)].map((match) => match[1]);
+    const placeholders = (copy: string) => copy.match(/\{[a-z]+\}/gi) ?? [];
+    const scripts: Record<string, RegExp> = {
+      ko: /[가-힣]/,
+      ja: /[ァ-ヶ]/,
+      'zh-CN': /[\u4e00-\u9fff]/,
+      'zh-TW': /[\u4e00-\u9fff]/,
+      'ru-RU': /[\u0400-\u04ff]/,
+    };
+    for (const line of WOODAK_LINES) {
+      const english = EN[`voice.alien.${line}`]!;
+      for (const [locale, script] of Object.entries(scripts)) {
+        const dict = LOCALES[locale]!;
+        const copy = dict[`voice.alien.${line}`]!;
+        expect(copy, `${locale} alien ${line}`).toMatch(script);
+        expect(copy, `${locale} alien ${line}`).not.toBe(english);
+        expect(markers(copy), `${locale} markers ${line}`).toEqual(markers(english));
+        expect(placeholders(copy), `${locale} placeholders ${line}`).toEqual(placeholders(english));
+      }
+    }
+  });
+
+  it('keeps the complete localized line set in every locale', () => {
+    for (const [locale, dict] of Object.entries(LOCALES)) {
+      expect(
+        WOODAK_LINES.filter((line) => dict[`voice.alien.${line}`]),
+        `${locale} Egoji line count`,
+      ).toHaveLength(23);
+    }
   });
 });
 

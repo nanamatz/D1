@@ -297,6 +297,11 @@ describe('Score Keyboard presentation contract', () => {
     expect(pressFrames).toContain('0 -2px 0 var(--key-led)');
     expect(pressFrames).toContain('0 2px 0 var(--key-led)');
     expect(pressFrames).not.toContain('var(--gold)');
+    expect(css).toMatch(/\.score-typewriter:is\(\.typewriter-tier-1, \.typewriter-tier-2\)\.is-active \.typewriter-key\.is-pressed\s*\{[^}]*animation-name:\s*typewriter-key-low[^}]*steps\(3, end\)/s);
+    const lowPressFrames = css.slice(css.indexOf('@keyframes typewriter-key-low {'), css.indexOf('@keyframes typewriter-enter-strike'));
+    expect(lowPressFrames).toContain('28%, 78%');
+    expect(lowPressFrames).toContain('translate: 0 6px');
+    expect(lowPressFrames).toContain('scale: .78');
     expect(helper).toContain('Math.imul');
     expect(helper).not.toContain('Math.random');
     expect(helper).not.toContain("from '../engine/rng'");

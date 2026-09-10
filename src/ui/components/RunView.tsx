@@ -14,6 +14,7 @@ import {
   hasSeenIntro,
   isTutorialTilePrefix,
   markIntroSeen,
+  tutorialPalettePending,
   tutorialDeal,
   TUTORIAL_WORD,
   type TutorialDeal,
@@ -86,6 +87,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   const initializedTutorialBoards = useRef(new Set<string>());
   const noticeSequence = useRef(0);
   const [notAllowedNotice, setNotAllowedNotice] = useState<number | null>(null);
+  const paletteIntroPending = tutorialPalettePending(
+    g.state.showIntro,
+    blind.sequence,
+    hasSeenIntro(),
+  );
   const patternNotice = useFinalPatternNotice(
     phase,
     g.state.sentenceBonus,
@@ -188,8 +194,10 @@ export function RunView({ g, onExit, onNewRun }: Props) {
     if (phase !== 'playing' || !g.state.showIntro || hasSeenIntro() || !readTips()) return;
     const initKey = `${run.seed}:${run.ante}:${run.blindIndex}`;
     if (!claimTutorialInitialization(initializedTutorialBoards.current, initKey)) return;
-    if (blind.sequence.some((word) => word.text.toUpperCase() === TUTORIAL_WORD)) {
-      markIntroSeen();
+    if (paletteIntroPending) {
+      setIntroStep(INTRO_STEPS.length - 1);
+      setIntroDeal(null);
+      setIntroOpen(false);
       return;
     }
     const deal = tutorialDeal(blind);
@@ -233,7 +241,14 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   useEffect(() => {
     if (phase === 'shop' && g.state.shop) {
       audio.play('catMeow');
-      tutorialBus.fire('shopFirstVisit');
+      if (paletteIntroPending) {
+        setIntroStep(INTRO_STEPS.length - 1);
+        setIntroDeal(null);
+        setIntroOpen(true);
+        setPaused(true);
+      } else {
+        tutorialBus.fire('shopFirstVisit');
+      }
     }
     else if (phase === 'cashout') audio.play('clearFanfare');
     else if (phase === 'gameover') {
@@ -463,12 +478,18 @@ export function RunView({ g, onExit, onNewRun }: Props) {
           discardTargetId={introDeal?.discardTargetId ?? null}
           onStepChange={(nextStep) => {
             setIntroStep(nextStep);
-            if (INTRO_STEPS[nextStep]?.key === 'palette') setPaused(true);
+            if (INTRO_STEPS[nextStep]?.key === 'palette') {
+              setIntroOpen(false);
+              setIntroDeal(null);
+            }
           }}
           onClose={() => {
+            const showShopGuide = phase === 'shop' &&
+              INTRO_STEPS[introStep]?.key === 'palette';
             setIntroOpen(false);
             setIntroDeal(null);
             setPaused(false);
+            if (showShopGuide) tutorialBus.fire('shopFirstVisit');
           }}
         />
       )}

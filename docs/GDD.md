@@ -13,6 +13,7 @@ Version 0.2 — systems expansion
 
 **Changelog v0.1 → v0.2**
 
+- Changed 2026-09-10: the first-run Palette Convenience finale is deferred until Fee Settlement is collected and the first Shop is visible; its dismissal then queues the Shop first-visit guide. Combo Artist now gives ×2 Chips, Golem gives +12 Mult per Stone, and Vowel Choir, Material Prism, Type Orchestra, and Typesetting Machine use ×1.5 (respectively per distinct vowel, material, font, and non-base-font tile) (§§11, 13).
 - Terminology corrected: **blind** = one round; **ante** = 3 blinds (Small → Big → Boss). Former uses of "ante" in the scoring pipeline now read "blind".
 - New: **Sentence Pattern Table** (the game's "poker hand table") — 12 patterns, matching rules, Unison, and register synergies.
 - Changed 2026-08-27: mixed-register base synergies return beside Unison. Exact Standard+Formal, Slang+Vulgar, and Formal+Vulgar pairs trigger Harmony ×1.25 Chips, Contrast ×1.5 Chips, and Whiplash ×1.75 Chips; any 3+ final registers trigger Mishmash ×2 Chips. Unison has priority, and Hypocrite now amplifies Whiplash by ×3 Mult (§5.3, §11.4).
@@ -1360,12 +1361,12 @@ discarded Inline; Discarded Draft +7; Clean Copy +10; Full Desk +25; Bestseller
 Mark +13 once when consecutive words share any POS; Serial persistent +20 growth;
 Gematria +15 as one event per matching sentence word; Carte Blanche $2 discount;
 Alphabet Press ×1.5 per letter participating in an ascending consecutive run;
-Word Hunter base ×1/+0.1; Night Owl threshold 17; Golem +8 per Stone; Iota ×2 on
+Word Hunter base ×1/+0.1; Night Owl threshold 17; Golem +12 per Stone; Iota ×2 on
 I; Biochemistry +0.5 on a pre-play most-used Word Hand; and Misbound +0.5 on
 survival. Growth persists for the run unless an explicit scope says otherwise.
 
-**Type Orchestra (changed 2026-08-26).** If a submitted word contains at least
-two distinct fonts, every distinct font including Medium applies ×1.25 Mult once,
+**Type Orchestra (changed 2026-09-10).** If a submitted word contains at least
+two distinct fonts, every distinct font including Medium applies ×1.5 Mult once,
 on that font's first tile in word order. A one-font word does not trigger it.
 
 **Lifecycle/rule changes (2026-08-26).** Glass Insurance prevents every Glass
@@ -1420,7 +1421,7 @@ the complete 150-entry public roster.
 | C33 | Three-Leaf Clover · 세잎클로버 | At blind end, add $3 to this tile's sell value | 3 | ★ gold |
 | C49 | Megalith · 거석상 | On Blind Select confirmation, add one Stone tile to the pouch and current blind bag | 3 | tile generation |
 | C30 | The Scarlet Letter · 주홍 글자 | Gain +0.1 ×Mult for every physical A tile discarded this run, including discards before acquisition; its factor is synchronized to the run ledger and emits no neutral ×1 scoring beat at zero A | 1 | ×Mult |
-| C50 | Peddler · 행상인 | Add the total current sell value of all owned Emoji Tiles to word Mult | 1 | dynamic Mult |
+| C50 | Peddler · 행상인 | Add the total current sell value of all owned Emoji Tiles to word Mult; show that current total in its tooltip | 1 | dynamic Mult |
 | C51 | Storyteller · 이야기꾼 | Gain +1 Mult per Fable card used this run, including uses before acquisition | 1 | dynamic Mult |
 | C52 | Recycling · 리사이클링 | At each blind selection choose one seeded A–Z letter; gain $2 for every matching tile discarded | 3 | gold |
 | C53 | Beehive Tile · 벌집 타일 | Starts at +66 Chips; gain and apply +6 Chips whenever a six-letter word is played | 1 | ★ Chips |
@@ -1436,7 +1437,7 @@ the complete 150-entry public roster.
 | U5 | Voracious Reader | +5 Chips per total words made so far, accumulating | 1 | ★ |
 | U6 | Classicist | Each Formal word made permanently raises this tile's Mult by +8 | 2 | ★ |
 | U7 | Street Cred | Each Slang word made permanently raises Chips by +30 | 2 | ★ |
-| U8 | Combo Artist | +8 Mult if different suit from the previous word | 2 | — |
+| U8 | Combo Artist | ×2 Chips if different suit from the previous word | 2 | — |
 | U9 | Vowel Magnet | ×1.5 Mult if word has more vowels than consonants | 1 | — |
 | U10 | Equilibrist | +50 Chips and ×1.5 Mult if vowel and consonant counts are equal | 1 | — |
 | U45 | Noise Cancelling · 노이즈캔슬링 | Starts at ×1; gain +0.25 Mult per blind skipped this run | 1 | dynamic |
@@ -1476,7 +1477,7 @@ the complete 150-entry public roster.
 | R41 | Copy Editor · 카피 에디터 | While owned, Emoji Tiles, Fables, Constellations, and Gambler cards may repeat in shops and packs | 3 | rule change |
 | R51 | Dummy Data · 더미 데이터 | Increase the played word's effective length by 2 for length Mult, Longword, and word-length Emoji Tile checks | 1 | rule change |
 | R52 | Blacksmith · 대장간 | Starts at +0 Chips; whenever an existing letter tile receives a material, font, or edition enhancement, gain +10 Chips | 1 | ★ Chips · Start |
-| R55 | Golem · 골렘 | +8 Mult per Stone tile in the word | 1 | — |
+| R55 | Golem · 골렘 | +12 Mult per Stone tile in the word | 1 | — |
 | R56 | Temurah · 테무라 | If this word is a different anagram of the immediately previous word, ×5 Mult | 1 | — |
 | R57 | Alphabet Poet · 알파벳 시인 | Treat physical Z as A for spelling, lexicon, POS, register, Word Hand, and spelling-based Emoji Tile rules; preserve Z's physical identity, display, base Chips, material, font, and Z-specific conditions | 3 | rule change |
 | R58 | Iota Stroke · 이오타 획 | If the word contains I, ×2 Mult | 1 | — |
@@ -1855,8 +1856,9 @@ still qualifies; one destroyed or sold before that snapshot does not. Copies
 collapse to their shared definition id. The profile stores only the highest
 Record per Emoji Tile, and a higher sticker counts every lower cumulative tier.
 Collection -> Emoji Tiles renders that Record's existing art as a small
-upper-right sticker and explains the exact Record in the shared tooltip. The
-The Statistics total is therefore `150 Emoji Tiles × 8 Records = 1,200`.
+upper-right sticker. The sticker itself owns the Record tooltip; where its hit
+area overlaps the Emoji Tile, only the sticker tooltip opens. The Statistics
+total is therefore `150 Emoji Tiles × 8 Records = 1,200`.
 Stickers are profile-scoped mastery marks with no gameplay effect, never enter
 `RunState`, and custom-seed, Challenge, or post-victory Endless play cannot award them.
 Profile Reveal All exposes the current production roster but never fabricates
@@ -1944,6 +1946,8 @@ baseline writes; it never queues six individual word reveals.
 | SOUND | SFX bus enabled (wraps the SFX bus) |
 | ALIEN / GHOST / DOG / TURTLE | **WooDak ally skins** — selectable in **Collection → Mascots** once unlocked *and* art exists (moved from Settings → Game on 2026-07-29; registry `src/ui/mascots.ts`, resolver `mascotSrc`). The selected card is outlined and labeled; locked silhouettes cannot be selected. **All four shipped** (`alien.png`/`ghost.png`/`dog.png`/`turtle.png`). The selected, unlocked skin also supplies the game's normal/hover/active hand cursor; a locked, invalid, or missing-art selection falls back to WooDak, and Piyak never supplies a cursor. ALIEN/GHOST/TURTLE use original local character designs that visibly match their unlock theme while sharing only the project's pixel-art treatment; recognizable third-party character or arcade-sprite features are prohibited (art replaced 2026-08-02). Piyak (shop) is never re-skinned. (CAT retired from the roster, 2026-07-22.) Display names: DOG = 누렁이 / Nurungi, GHOST = 이고야 / Egoya, ALIEN = 이고지 / Egoji, TURTLE = 느무보 / Nemubo. Egoji keeps one fixed alien lexicon but renders it in Roman letters for English and Hangul for Korean, with no subtitle (changed 2026-08-31). The unlock **words** stay GHOST / ALIEN / DOG / TURTLE — the name is display copy (`mascot.<id>`), the word is the trigger. |
 
+> **Egoji alien-language localization (changed 2026-09-10).** Egoji's complete 23-line voice set retains one fixed constructed lexicon and never replaces it with natural-language dialogue or a subtitle. Latin-script locales share its canonical Roman orthography; Korean, Japanese, Russian, Simplified Chinese, and Traditional Chinese transliterate that same lexicon in Hangul, katakana, Cyrillic, simplified Han, and traditional Han respectively. This supersedes the older Roman/Hangul-only sentence in the ALIEN row above.
+
 **"Grayscale" = full token desaturation + progressive raster chroma + a monochrome guard (C-3, revised 2026-08-28).** The **whole** palette (chips, mult, gold, suits, tile faces, slate chrome, backgrounds) defaults to neutral **greys**, so the world starts *genuinely* black-and-white. Each color word restores its group's true hues via an `unlock-<group>` class on `<html>` (token swapping) with a wash animation — so the world re-colors **progressively** (RED→mult/vulgar/the tomato icon, YELLOW→gold/slang/warm tile faces, GREEN→desk/blind backgrounds, BLUE→chips/formal/standard suits + the slate UI chrome). Raster object art uses the same active set through the shared luminance-preserving `#unlock-chroma` matrix: Emoji Tiles, blind/Deadline emblems, Editorial Perk Tags, Vouchers, Packs, Fable/Constellation/Gambler cards, and Starting Pouch/Record art are grey at zero colors, restore only unlocked RGB channels for partial combinations, and return to their original masters at all four. The same asset follows this rule on every ordinary surface; locked silhouettes, boss-disabled states, and the Unlock Recap reward reveal remain authoritative overrides. Blind-badge and blind-kind colors already use `--badge-bg`/`--kind-*` palette tokens; they are not hard-coded exceptions. A **`world-mono` guard** additionally applies `filter: grayscale(1)` to the board *only while no color group is unlocked*, covering remaining hard-coded material-tile fills, and is dropped the moment any color is played. Native cursor images sit outside that filtered board, so every mascot hand has a matching monochrome derivative used while `world-mono` is present and switches to its colour master after the first colour group unlocks. The main `.frame` itself is transparent as of 2026-07-30; the former per-stage backdrops are retired. The fixed CRT overlay sits outside the greyscaled containers, so it is never affected. Names, shapes, textures, labels, and tooltips keep identity readable without color; the chips/mult info floor is therefore safe and the monochrome start remains playable.
 
 **Score Keyboard exception (changed 2026-09-02).** The Score Keyboard's per-key rainbow LEDs and flames deliberately ignore Palette progress and `world-mono`; its chassis and all other presentation remain under the normal monochrome model. This supersedes the earlier YELLOW-gated Score Keyboard accent wording in the table above.
@@ -2002,7 +2006,7 @@ upgraded-voucher unlock without using the escape hatch, the button is replaced
 by **Your world is complete / 당신의 세상이 완성됨**. The escape-hatch state takes
 precedence over natural-completion presentation.
 
-**Discoverability (C-5; Settings finale changed 2026-09-09).** New Collection category **팔레트 (Palette)** — locked entries are grey silhouettes with a letter-count hint ("R _ _"), unlocked entries show the word in its group color. The first-run tutorial is a scripted, **hard-locked YELLOW lesson**: the opening hand is rigged to contain Y‑E‑L‑L‑O‑W. A WooDak coach-mark frames the grey world, then teaches the ordinary two-action discard before word-building. All gated steps reuse one dynamic `.tutorial-action-target`: the first spare shows right-click until marked, enabled Discard then shows left-click, each next protected Y→E→L→L→O→W physical ID shows left-click, and enabled Play shows left-click. The coach-mark stays portalled to `document.body`, reads the live viewport rect every animation frame, applies 8px padding, and uses no positional tween, so changing or animated targets are followed on the next paint without hover. Fine mouse pointers alone get a neutral 40×40 CSS mouse cue just outside and within 48px of the live spotlight rect; it is static under Reduced Motion and remains legible in `world-mono`. Only successful ordinary discard state advances; a completed prior discard or impossible discard safely resumes at build. The yellow palette washes in after YELLOW is submitted; once that settlement completes, the real Settings > Game screen opens and a fifth coach-mark highlights Palette Convenience. Next or Skip returns to play without pressing the button or granting unlocks. All unrelated input stays locked, and Skip releases the lock without leaving an uncommitted mark. The target is **not** lowered — it remains 300, so YELLOW (252 under §3.1) does **not** clear the blind. This remains UI policy over generic `openingLetters` and ordinary `discardTiles`; it adds no engine tutorial state. `tests/yellow-lesson.test.ts` guards the physical-ID, real-discard, determinism, and target invariants. See `docs/superpowers/specs/2026-07-21-yellow-first-lesson-design.md`.
+**Discoverability (C-5; Shop finale changed 2026-09-10).** New Collection category **팔레트 (Palette)** — locked entries are grey silhouettes with a letter-count hint ("R _ _"), unlocked entries show the word in its group color. The first-run tutorial is a scripted, **hard-locked YELLOW lesson**: the opening hand is rigged to contain Y‑E‑L‑L‑O‑W. A WooDak coach-mark frames the grey world, then teaches the ordinary two-action discard before word-building. All gated steps reuse one dynamic `.tutorial-action-target`: the first spare shows right-click until marked, enabled Discard then shows left-click, each next protected Y→E→L→L→O→W physical ID shows left-click, and enabled Play shows left-click. The coach-mark stays portalled to `document.body`, reads the live viewport rect every animation frame, applies 8px padding, and uses no positional tween, so changing or animated targets are followed on the next paint without hover. Fine mouse pointers alone get a neutral 40×40 CSS mouse cue just outside and within 48px of the live spotlight rect; it is static under Reduced Motion and remains legible in `world-mono`. Only successful ordinary discard state advances; a completed prior discard or impossible discard safely resumes at build. The yellow palette washes in after YELLOW is submitted. The lesson lock then releases so the player can clear the unchanged 300 target. After Fee Settlement is collected and the first Shop is visible, the real in-run Settings > Game screen opens and a fifth coach-mark highlights Palette Convenience. Next or Skip closes that finale without pressing the button or granting unlocks, then queues the Shop first-visit guide on the same Shop screen. A Continue after playing YELLOW infers this pending UI-only finale from the tutorial run and its submitted-word history. All unrelated input stays locked during the four board steps, and Skip releases the lock without leaving an uncommitted mark. This remains UI policy over generic `openingLetters` and ordinary `discardTiles`; it adds no engine tutorial state or save key. `tests/yellow-lesson.test.ts` guards the physical-ID, real-discard, determinism, target, and deferred-guide invariants. See `docs/superpowers/specs/2026-07-21-yellow-first-lesson-design.md`.
 
 **Required-Palette reminder (C-5, setting changed 2026-09-09).** After the guided YELLOW
 lesson is complete, the machine-local Settings → Game **Palette Guide** toggle defaults On and may show one non-blocking reminder after
@@ -2116,5 +2120,7 @@ English. The renderer receives only `en|ko|ja|zh-CN|zh-TW|pt-BR|de|es-ES|fr-FR|r
 Steam id. Detection is not persisted; only an explicit in-game language change
 writes `wj.lang`. Web, direct-EXE, and Steam-initialization-failure launches retain
 the saved choice or English. (Japanese and Simplified Chinese localization added 2026-09-06; Traditional Chinese, Brazilian Portuguese, German, Spanish (Spain), French, Russian, Polish, and Turkish added 2026-09-07.)
+
+> **Score Keyboard low-tier feedback (changed 2026-09-10).** Tier 1 and Tier 2 slow their individual press windows to `150ms` and `120ms`, respectively, and hold a deeper `6px`/`.78` depressed pose so the keys read as physically pressed rather than as LED flicker. Tiers 3–5 retain `4px`/`.86` and their faster timings; event cadence, key/audio counts, repeat lifecycle, and settle timing do not change.
 
 > **Score Keyboard jackpot/smoke follow-up (changed 2026-09-03).** Red/yellow/green panel LEDs use the existing deterministic random-looking order with rapid hard-edged jackpot pulses. Each overlay centre aligns with its painted indicator while the light projects wider horizontal rays. Tier 3–5 smoke rises above each pressed key; key smoke and flame retain deterministic 0.95–1.05 variation on larger visible bases, while Tier 5 applies ×1.35 smoke and ×1.25 flame base multipliers. Tier 4 adds seven small smoke sources distributed over the keyboard chassis; Tier 5 uses all twelve, larger and dark gray. This is particle CSS, never one large smoke image.

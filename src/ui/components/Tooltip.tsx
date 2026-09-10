@@ -327,9 +327,11 @@ export function Tooltip({
   useEffect(() => {
     const node = anchor();
     if (!node || disabled) return;
-    const suppressorAt = (event: PointerEvent) =>
-      document.elementFromPoint(event.clientX, event.clientY)
+    const suppressorAt = (event: PointerEvent) => {
+      const suppressor = document.elementFromPoint(event.clientX, event.clientY)
         ?.closest('[data-tooltip-suppress]');
+      return suppressor === target() ? null : suppressor;
+    };
     const showHover = (event?: PointerEvent) => {
       if (event && suppressorAt(event)) {
         hideHover();
@@ -351,7 +353,8 @@ export function Tooltip({
     const showFocus = (event: FocusEvent) => {
       const focusTarget = event.target;
       if (!(focusTarget instanceof HTMLElement)) return;
-      if (focusTarget.closest('[data-tooltip-suppress]')) {
+      const suppressor = focusTarget.closest('[data-tooltip-suppress]');
+      if (suppressor && suppressor !== target()) {
         close();
         return;
       }

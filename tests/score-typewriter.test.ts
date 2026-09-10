@@ -322,7 +322,10 @@ describe('Score Typewriter strength', () => {
       (1 - BALANCE.scoreTypewriter.keyRhythmJitter),
     );
     expect(BALANCE.scoreTypewriter.keyPressMs)
-      .toEqual([0, 87 / 1.5, 69 / 1.5, 58 / 1.5, 51 / 1.5, 44 / 1.5]);
+      .toEqual([0, 150, 120, 58 / 1.5, 51 / 1.5, 44 / 1.5]);
+    expect(BALANCE.scoreTypewriter.keyPressMs[1]).toBeGreaterThan(
+      BALANCE.scoreTypewriter.keyPressMs[3],
+    );
   });
 
   it('normalizes screen shake and scales it monotonically by event tier', () => {

@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { hasSeen, markSeen, resetTutorial, seenCount, loadTutorial, ENCOUNTERS, tutorialBus, type EncounterId } from '../src/ui/tutorial';
-import { hasSeenIntro, markIntroSeen, resetIntro, INTRO_STEPS } from '../src/ui/tutorial';
+import {
+  hasSeenIntro,
+  markIntroSeen,
+  resetIntro,
+  INTRO_STEPS,
+  tutorialPalettePending,
+} from '../src/ui/tutorial';
 import en from '../locales/en.json';
 import ko from '../locales/ko.json';
 
@@ -107,6 +113,14 @@ describe('guided intro flag (A-1)', () => {
     ]);
   });
 
+  it('reconstructs the deferred Shop finale only for an unfinished tutorial run', () => {
+    const sequence = [{ text: 'yellow' }];
+    expect(tutorialPalettePending(true, sequence, false)).toBe(true);
+    expect(tutorialPalettePending(false, sequence, false)).toBe(false);
+    expect(tutorialPalettePending(true, sequence, true)).toBe(false);
+    expect(tutorialPalettePending(true, [{ text: 'red' }], false)).toBe(false);
+  });
+
   it('moves one dynamic spotlight between the exact left/right-click actions', () => {
     const stage = readFileSync('src/ui/components/StagePanel.tsx', 'utf8');
     const tile = readFileSync('src/ui/components/Tile.tsx', 'utf8');
@@ -134,6 +148,13 @@ describe('guided intro flag (A-1)', () => {
     expect(css).toMatch(/\.tutorial-mouse-cue\s*\{[^}]*width:\s*40px;[^}]*height:\s*40px;[^}]*pointer-events:\s*none;/s);
     expect(css).toContain('@media (hover: hover) and (pointer: fine)');
     expect(css).toContain('.force-reduced-motion .tutorial-mouse-cue { animation: none; }');
+  });
+
+  it('retires the submit coach-mark while YELLOW settles', () => {
+    const intro = readFileSync('src/ui/components/GuidedIntro.tsx', 'utf8');
+    expect(intro).toContain(
+      "if (cur.advance === 'played' && settleId !== baseSettle.current) return null;",
+    );
   });
 });
 
@@ -175,6 +196,8 @@ describe('guided intro copy coverage', () => {
     const options = readFileSync('src/ui/components/Options.tsx', 'utf8');
     expect(runView).toContain("INTRO_STEPS[nextStep]?.key === 'palette'");
     expect(runView).toContain("? 'settings' : 'root'");
+    expect(runView).toContain("phase === 'shop' &&");
+    expect(runView).toContain("if (showShopGuide) tutorialBus.fire('shopFirstVisit')");
     expect(options).toContain("useState<View>(initialView)");
   });
 });

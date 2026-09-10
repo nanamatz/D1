@@ -540,13 +540,6 @@ function JokersView() {
                 ? t(jokerDescKey(def.id))
                 : t('collection.joker.undiscoveredHint')}
               extra={unlocked ? grownValue(def, undefined, t) : null}
-              sub={unlocked && sticker ? {
-                title: t('collection.joker.recordSticker'),
-                body: t('collection.joker.recordStickerDesc', {
-                  record: t(`record.${sticker}.name`),
-                }),
-                kind: 'other',
-              } : undefined}
               {...(unlocked ? { rarity: def.rarity } : {})}
               down
             >
@@ -557,12 +550,22 @@ function JokersView() {
                 tabIndex={0}
               >
                 {unlocked && sticker && (
-                  <img
-                    className="joker-record-sticker"
-                    src={recordArt(sticker)}
-                    alt=""
-                    aria-hidden="true"
-                  />
+                  <Tooltip
+                    title={t('collection.joker.recordSticker')}
+                    body={t('collection.joker.recordStickerDesc', {
+                      record: t(`record.${sticker}.name`),
+                    })}
+                    down
+                  >
+                    <button
+                      type="button"
+                      className="joker-record-sticker"
+                      data-tooltip-suppress="true"
+                      aria-label={t('collection.joker.recordSticker')}
+                    >
+                      <img src={recordArt(sticker)} alt="" />
+                    </button>
+                  </Tooltip>
                 )}
                 {!unlocked && <span className="emoji-tile-lock" aria-hidden="true" />}
               </EmojiTileCard>
@@ -1019,7 +1022,10 @@ function CardFamilyView<T extends { id: string }>({
   const { page, pages, visible, setPage } = usePaged(items, CARDS_PER_PAGE);
   return (
     <div className={`${family}-collection`}>
-      <div className={`${family}-card-grid`}>
+      <div className={[
+        `${family}-card-grid`,
+        family !== 'fable' && visible.length < CARDS_PER_PAGE && 'card-family-partial',
+      ].filter(Boolean).join(' ')}>
         {visible.map((item) => (
           <Tooltip
             key={item.id}
