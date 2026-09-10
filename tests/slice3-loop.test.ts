@@ -74,24 +74,53 @@ describe('slice3 loop — projected now includes the sentence bonus (GDD §7.1)'
     expect(b.projectedScore).toBe(740); // (270 + 50 + 50) × 2
   });
 
-  it('a gibberish hole collapses the sentence bonus — projected falls back to committed', () => {
-    const { run } = freshBlind();
-    let b = startBlind(run, makeRng('s3'), { target: 1000 });
-    ({ blind: b } = play(b, run, 'cat'));
-    ({ blind: b } = play(b, run, 'zzz')); // not a word → hole
-    ({ blind: b } = play(b, run, 'fish'));
-    expect(b.projectedScore).toBe(b.committedScore); // no pattern survives the hole
+  it('compares hole-delimited sentences and applies only the winning segment bonus', () => {
+    const build = (run: RunState) => {
+      let blind = startBlind(run, makeRng('split-sentence'), { target: 1_000_000 });
+      for (const word of ['eats', 'fish', 'zzz', 'cat', 'run']) {
+        ({ blind } = play(blind, run, word));
+      }
+      return { blind, final: endBlind(blind, run, lex) };
+    };
+
+    const ordinary = build(newRun('split-ordinary'));
+    expect(ordinary.final.judgment.match?.pattern).toBe('imperative');
+    expect(ordinary.final.sequence.map((word) => word.text)).toEqual(['EATS', 'FISH']);
+
+    const specializedRun = newRun('split-specialized');
+    specializedRun.patternLevels.simple = 3;
+    const specialized = build(specializedRun);
+    expect(specialized.final.judgment.match?.pattern).toBe('simple');
+    expect(specialized.final.sequence.map((word) => word.text)).toEqual(['CAT', 'RUN']);
+    // CAT+RUN commits 96. Lv.3 Simple is 73 Chips ×5, plus Standard Unison +50:
+    // candidate 1,095, gain 999. Other words keep only their individual 300 points.
+    expect(specialized.blind.committedScore).toBe(396);
+    expect(specialized.final.bonus).toBe(999);
+    expect(specialized.final.finalScore).toBe(1_395);
+    expect(specialized.blind.projectedScore).toBe(specialized.final.finalScore);
   });
 
-  it('Broken Sentence clears from the live projection before a loss can resolve', () => {
-    const { run } = freshBlind(800);
+  it('leaves an all-gibberish history at individual word score only', () => {
+    const { run } = freshBlind();
     run.jokers = [{ defId: 'brokenSentence', state: {} }];
-    const { blind } = play(startBlind(run, makeRng('broken-live'), { target: 800 }), run, 'zzz');
+    const { blind } = play(startBlind(run, makeRng('holes-only'), { target: 800 }), run, 'zzz');
+    const final = endBlind(blind, run, lex);
 
-    // Gibberish ZZZ commits 90. With no sentence pattern, Broken Sentence adds
-    // 125 Chips and ×4 Mult: (90 + 125) × 4 = 860, already above the target.
-    expect(blind.committedScore).toBe(90);
-    expect(blind.projectedScore).toBe(860);
+    expect(final.bonus).toBe(0);
+    expect(blind.projectedScore).toBe(blind.committedScore);
+    expect(final.finalScore).toBe(blind.committedScore);
+  });
+
+  it('Broken Sentence clears from a valid no-pattern projection before a loss can resolve', () => {
+    const { run } = freshBlind(500);
+    run.jokers = [{ defId: 'brokenSentence', state: {} }];
+    const { blind } = play(startBlind(run, makeRng('broken-live'), { target: 500 }), run, 'cat');
+
+    expect(blind.committedScore).toBeLessThan(blind.target);
+    expect(blind.projectedScore).toBe(
+      (blind.committedScore + BALANCE.jokers.brokenSentence.chips) *
+        BALANCE.jokers.brokenSentence.mult,
+    );
 
     const final = endBlind(blind, run, lex);
     expect(final.finalScore).toBe(blind.projectedScore);

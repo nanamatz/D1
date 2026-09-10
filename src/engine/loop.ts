@@ -1116,11 +1116,12 @@ function scoreSubmission(
  *  Returns the post-hook breakdown so the UI can animate chips × mult (item 2). */
 function scoreSentence(
   committed: number,
-  sequence: readonly WordSubmission[],
+  scoringSequence: readonly WordSubmission[],
   judgment: SentenceJudgment,
   run: RunState,
   blind: BlindState,
   lexicon: Lexicon,
+  hooksEnabled = true,
 ): {
   total: number;
   sentenceChips: number;
@@ -1128,13 +1129,14 @@ function scoreSentence(
   breakdown: SentenceBonusBreakdown;
 } {
   const base = finalizeScore(committed, judgment, run.patternLevels);
-  const scoringSequence = sentenceSequenceForBlind(blind, sequence);
-  // Preserve the legacy empty-sequence Broken Sentence case; only an actual
-  // all-debuffed play history suppresses sentence hooks.
-  const hasEligibleSubmission = sequence.length === 0 ||
-    sequence.some((submission) => !submission.debuffed);
+  // Candidate comparison calls every sentence hook once per segment. Keep those
+  // probes pure even when Echo Chamber owns copied state.
+  const scoringRun: RunState = {
+    ...run,
+    jokers: run.jokers.map((joker) => ({ ...joker, state: { ...joker.state } })),
+  };
   const ctx: SentenceScoringContext = {
-    sequence: scoringSequence,
+    sequence: scoringSequence.slice(),
     match: judgment.match,
     unison: judgment.unison,
     registerSynergy: judgment.registerSynergy ?? null,
@@ -1144,16 +1146,16 @@ function scoreSentence(
     scoreBonus: 0,
     jokerTriggers: [],
   };
-  if (hasEligibleSubmission) {
+  if (hooksEnabled) {
     defaultJokerBus.emit(
       'sentenceScoring',
-      { run, blind, ctx, lookup: (word) => lexicon.lookup(word) },
-      run.jokers,
+      { run: scoringRun, blind, ctx, lookup: (word) => lexicon.lookup(word) },
+      scoringRun.jokers,
     );
   }
-  ctx.sentenceMult *= constellationPassiveFactor(run, ctx.match?.pattern ?? null);
+  ctx.sentenceMult *= constellationPassiveFactor(scoringRun, ctx.match?.pattern ?? null);
   // Boss sentence effects run after jokers (The Anarchist voids the bonus).
-  if (hasEligibleSubmission && blind.bossId) {
+  if (hooksEnabled && blind.bossId) {
     BOSS_REGISTRY.get(blind.bossId)?.sentenceScoring?.(ctx);
   }
   const effectChips = ctx.sentenceChips - base.sentenceChips;
@@ -1198,6 +1200,93 @@ function scoreSentence(
       pouchChipsDelta,
       pouchMultDelta,
     },
+  };
+}
+
+interface BestSentenceResult {
+  judgment: SentenceJudgment;
+  /** The hole-delimited sentence whose bonus won; empty when no sentence exists. */
+  sequence: WordSubmission[];
+  finalScore: number;
+  sentenceChips: number;
+  sentenceMult: number;
+  bonus: number;
+  breakdown: SentenceBonusBreakdown;
+}
+
+/** Split boss-eligible history at gibberish holes; holes score only as words. */
+function sentenceSegments(sequence: readonly WordSubmission[]): WordSubmission[][] {
+  const segments: WordSubmission[][] = [];
+  let current: WordSubmission[] = [];
+  for (const submission of sequence) {
+    if (submission.isGibberish) {
+      if (current.length > 0) segments.push(current);
+      current = [];
+    } else {
+      current.push(submission);
+    }
+  }
+  if (current.length > 0) segments.push(current);
+  return segments;
+}
+
+/**
+ * Score every hole-delimited sentence and keep one bonus. Later segments can
+ * recover from a hole, while the winning Mult never reaches words outside it.
+ */
+export function bestSentence(
+  blind: BlindState,
+  run: RunState,
+  lexicon: Lexicon,
+): BestSentenceResult {
+  const eligible = sentenceSequenceForBlind(blind);
+  const segments = sentenceSegments(eligible);
+  // Preserve the empty-blind Broken Sentence route. Once any submission exists,
+  // an all-hole/all-removed history has no sentence candidate to receive hooks.
+  if (segments.length === 0) {
+    const judgment = judgeSentence([], lexicon);
+    const scored = scoreSentence(
+      blind.committedScore,
+      [],
+      judgment,
+      run,
+      blind,
+      lexicon,
+      blind.sequence.length === 0,
+    );
+    return {
+      judgment,
+      sequence: [],
+      finalScore: scored.total,
+      sentenceChips: scored.sentenceChips,
+      sentenceMult: scored.sentenceMult,
+      bonus: scored.total - blind.committedScore,
+      breakdown: scored.breakdown,
+    };
+  }
+
+  const candidates = segments.map((sequence) => {
+    const judgment = judgeSentence(sequence, lexicon);
+    const segmentScore = sequence.reduce((sum, word) => sum + word.settledScore, 0);
+    const scored = scoreSentence(segmentScore, sequence, judgment, run, blind, lexicon);
+    return { judgment, sequence, scored, bonus: scored.total - segmentScore };
+  });
+  const winner = candidates.reduce((best, candidate) => {
+    if (candidate.bonus !== best.bonus) return candidate.bonus > best.bonus ? candidate : best;
+    const candidateRank = candidate.judgment.match?.rank ?? 0;
+    const bestRank = best.judgment.match?.rank ?? 0;
+    if (candidateRank !== bestRank) return candidateRank > bestRank ? candidate : best;
+    return candidate.sequence.length > best.sequence.length ? candidate : best;
+  });
+
+  return {
+    judgment: winner.judgment,
+    sequence: winner.sequence,
+    finalScore: blind.committedScore + winner.bonus,
+    sentenceChips: winner.scored.sentenceChips,
+    sentenceMult: winner.scored.sentenceMult,
+    bonus: winner.bonus,
+    breakdown: winner.scored.breakdown,
   };
 }
 
@@ -1428,12 +1517,10 @@ export function submitWord(
       postBossRun.jokers,
     );
   }
-  const committedScore = afterBlind.committedScore;
-  const sequence = afterBlind.sequence;
-
-  // Re-judge the WHOLE sequence and overwrite the projection (GDD §7.1) — the
-  // sentence bonus is a projection, never accumulated per phase.
-  const judgment = judgeSentence(sentenceSequenceForBlind(afterBlind, sequence), lexicon);
+  // Re-score every hole-delimited sentence and overwrite the single projection
+  // (GDD §7.1). Sentence bonuses are compared, never accumulated per phase.
+  const sentence = bestSentence(afterBlind, postBossRun, lexicon);
+  const judgment = sentence.judgment;
   const priorDiscoveredPatterns = postBossRun.discoveredPatterns ?? [];
   const matchedPattern = judgment.match?.pattern;
   const discoveredPatterns = !submission.debuffed &&
@@ -1442,14 +1529,7 @@ export function submitWord(
     !priorDiscoveredPatterns.includes(matchedPattern)
     ? [...priorDiscoveredPatterns, matchedPattern]
     : priorDiscoveredPatterns;
-  const projectedScore = scoreSentence(
-    committedScore,
-    sequence,
-    judgment,
-    postBossRun,
-    afterBlind,
-    lexicon,
-  ).total;
+  const projectedScore = sentence.finalScore;
 
   return {
     submission,
@@ -1476,13 +1556,15 @@ export function submitWord(
 
 export interface EndBlindResult {
   judgment: SentenceJudgment;
+  /** Hole-delimited sentence whose single bonus was finalized. */
+  sequence: WordSubmission[];
   /** the settled blind score after finalizing the sentence bonus (GDD §7.4) */
   finalScore: number;
   /** the sentence bonus' Chips side, post joker/boss hooks (item 2 animation) */
   sentenceChips: number;
   /** the sentence bonus' Mult side, post joker/boss hooks (item 2 animation) */
   sentenceMult: number;
-  /** score gained by applying the sentence Chips and Mult to the committed score */
+  /** score gained by applying sentence Chips and Mult to the winning candidate */
   bonus: number;
   /** visual source rows for modifiers, Unison, and post-pattern effects */
   breakdown: SentenceBonusBreakdown;
@@ -1494,20 +1576,20 @@ export interface EndBlindResult {
 }
 
 /**
- * Finalize the blind (GDD §7.4): judge the final sequence, add its Chips to the
- * committed score, and apply its Mult. Tiles need no explicit return — each blind
+ * Finalize the blind (GDD §7.4): score each hole-delimited candidate and add only
+ * the greatest sentence gain. Tiles need no explicit return — each blind
  * reshuffles the run's permanent bag from scratch, so used tiles are back next
  * blind automatically (§6.1, §6.6).
  */
 export function endBlind(blind: BlindState, run: RunState, lexicon: Lexicon): EndBlindResult {
-  const judgment = judgeSentence(sentenceSequenceForBlind(blind), lexicon);
-  const scored = scoreSentence(blind.committedScore, blind.sequence, judgment, run, blind, lexicon);
+  const scored = bestSentence(blind, run, lexicon);
   return {
-    judgment,
-    finalScore: scored.total,
+    judgment: scored.judgment,
+    sequence: scored.sequence,
+    finalScore: scored.finalScore,
     sentenceChips: scored.sentenceChips,
     sentenceMult: scored.sentenceMult,
-    bonus: scored.total - blind.committedScore,
+    bonus: scored.bonus,
     breakdown: scored.breakdown,
     phasesLeft: blind.phasesTotal - blind.phasesUsed,
     materialGold: collectBlindEndMaterials(blind.hand),

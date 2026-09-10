@@ -24,6 +24,7 @@ class MemStorage {
 const base: SentenceBonusDisplay = {
   chips: 0,
   mult: 1,
+  bonus: 0,
   pattern: null,
   level: null,
   modifierCount: 0,

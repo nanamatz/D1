@@ -4367,20 +4367,6 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
-.hole .pos {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -11px;
-  background: #0f1b22;
-  border: 1px solid #6b4a44;
-  color: #d8a99f;
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  border-radius: 8px;
-  padding: 0 8px;
-  white-space: nowrap;
-}
 .pattern-chip {
   margin-left: auto;
   background: #0f1b22;

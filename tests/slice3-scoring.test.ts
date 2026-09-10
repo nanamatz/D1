@@ -22,7 +22,7 @@ const jm = (
   unison: opts.unison ? { suit: opts.unison } : null,
 });
 
-// Every sentence adds its Chips to the committed blind score, then multiplies
+// Every candidate adds its Chips to its own settled word subtotal, then multiplies
 // that combined axis by sentence Mult.
 //   final = (committed + patternChips + 15·mods + unisonChips)
 //         × (patternMult × unisonMult)

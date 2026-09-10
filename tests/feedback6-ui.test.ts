@@ -141,7 +141,7 @@ describe('latest feedback UI regressions', () => {
     expect(tags).not.toContain('pos-marker');
     expect(tags).toContain('role="listitem"');
     expect(tray).toContain('sentenceSequenceForBlind(blind)');
-    expect(tray).toContain('judgment.compatiblePos?.[eligible.indexOf(sub)]');
+    expect(tray).toContain('judgment.compatiblePos?.[winner.indexOf(sub)]');
     expect(stage).toContain('<PosTags candidates={preview.pos} className="sp-pos" />');
     expect(play).toMatch(/\.pos-tags\s*\{[^}]*flex-wrap:\s*wrap/s);
     expect(play).toMatch(/\.pos-tags\s*\{[^}]*max-width:/s);

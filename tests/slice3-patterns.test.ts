@@ -190,7 +190,7 @@ describe('slice3 patterns — the twelve matchers (GDD §5.2)', () => {
 });
 
 describe('slice3 patterns — matching rules (GDD §5.1)', () => {
-  it('a gibberish hole voids all pattern matches (rule 1)', () => {
+  it('the low-level segment judge defensively rejects a gibberish hole', () => {
     const j = judgeSentence(seq(['CAT', { t: '???', gib: true }, 'FISH']), L);
     expect(j.match).toBeNull();
   });
@@ -265,7 +265,7 @@ describe('slice3 patterns — Unison bonus (GDD §5.3)', () => {
     expect(judgeSentence(seq([{ t: 'RUN', suit: 'slang' }]), L).unison).toBeNull();
   });
 
-  it('is voided by a gibberish hole (null suit breaks uniformity)', () => {
+  it('the low-level segment judge rejects a hole before Unison evaluation', () => {
     const j = judgeSentence(seq([{ t: 'EAT', suit: 'slang' }, { t: '?', gib: true }]), L);
     expect(j.unison).toBeNull();
   });

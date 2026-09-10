@@ -408,6 +408,7 @@ function blindCleared(
   progress: EmojiUnlockProgress,
   run: RunState,
   blind: BlindState,
+  sequence: readonly WordSubmission[],
   judgment: SentenceJudgment,
   interest: number,
   acrostic: boolean,
@@ -416,9 +417,8 @@ function blindCleared(
   raise(progress, 'spareDrawer', run.ante);
   if (tracker.noVulgar) raise(progress, 'civilTongue', run.ante);
 
-  const validSentence = blind.sequence.length > 0 &&
-    blind.sequence.every((word) => !word.isGibberish);
-  const styles = new Set(blind.sequence.flatMap((word) => submissionSuits(word)));
+  const validSentence = sequence.length > 0;
+  const styles = new Set(sequence.flatMap((word) => submissionSuits(word)));
   if (validSentence && styles.size >= target('comboArtist')) set(progress, 'comboArtist', styles.size);
   if (validSentence && judgment.unison) {
     add(progress, 'oneVoice');
@@ -472,6 +472,7 @@ export type EmojiUnlockEvent =
       kind: 'blindCleared';
       run: RunState;
       blind: BlindState;
+      sequence: readonly WordSubmission[];
       judgment: SentenceJudgment;
       interest: number;
       acrostic: boolean;
@@ -555,6 +556,7 @@ export function recordEmojiUnlockEvent(event: EmojiUnlockEvent): string[] {
           progress,
           event.run,
           event.blind,
+          event.sequence,
           event.judgment,
           event.interest,
           event.acrostic,

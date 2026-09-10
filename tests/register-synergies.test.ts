@@ -75,7 +75,7 @@ describe('register synergy judgment', () => {
     expect(tower.registerSynergy).toBeNull();
   });
 
-  it('voids every sentence judgment on a gibberish hole, regardless of effective tags', () => {
+  it('the low-level segment judge rejects a gibberish hole regardless of effective tags', () => {
     const result = judgment(
       word('noun', 'formal'),
       word('hole', null, ['vulgar'], true),

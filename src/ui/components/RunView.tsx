@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { judgeSentence } from '../../engine/patterns';
-import { sentenceSequenceForBlind } from '../../engine/bosses';
+import { bestSentence } from '../../engine/loop';
 import { stagePreview } from '../game';
 import type { UseGame } from '../useGame';
 import { useSettings } from '../settings';
@@ -273,7 +272,11 @@ export function RunView({ g, onExit, onNewRun }: Props) {
   // in hand, a pattern or register bonus lighting up in the tray).
   // The bus no-ops on already-seen/tips-off, so re-firing when a condition stays
   // true is harmless; we fire the moment each condition first becomes true.
-  const judgment = judgeSentence(sentenceSequenceForBlind(blind), lexicon);
+  const liveSentence = useMemo(
+    () => bestSentence(blind, run, lexicon),
+    [blind, run, lexicon],
+  );
+  const judgment = liveSentence.judgment;
   const hasMaterialTile = blind.hand.some((t) => t.material !== 'ceramic');
   const hasFontTile = blind.hand.some((t) => t.font !== 'medium');
   const hasPattern = judgment.match !== null;
@@ -421,6 +424,7 @@ export function RunView({ g, onExit, onNewRun }: Props) {
                 <SentenceTray
                   blind={blind}
                   judgment={judgment}
+                  winningSequence={liveSentence.sequence}
                   lexicon={lexicon}
                   patternLevels={run.patternLevels}
                 />

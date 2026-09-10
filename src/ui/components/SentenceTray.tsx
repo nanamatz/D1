@@ -61,6 +61,8 @@ function PatternChip({
 interface Props {
   blind: BlindState;
   judgment: SentenceJudgment;
+  /** Boss-eligible, hole-delimited sentence whose single bonus currently wins. */
+  winningSequence?: readonly WordSubmission[];
   lexicon: Lexicon;
   patternLevels: Record<PatternId, number>;
 }
@@ -128,7 +130,6 @@ function SubmittedWord({
       {suitTags}
       {tiles}
       <span className="gibberish-tag">{t('tray.gibberish')}</span>
-      <span className="pos">{t('tray.hole')}</span>
       {sub.debuffed && <span className="word-not-allowed">{t('boss.notAllowed')}</span>}
       {settling && <WordStamp />}
     </div>
@@ -165,11 +166,12 @@ function SubmittedWord({
 }
 
 /** The signature element: played words accumulating as a sentence (UI_DESIGN §2). */
-export function SentenceTray({ blind, judgment, lexicon, patternLevels }: Props) {
+export function SentenceTray({ blind, judgment, winningSequence, lexicon, patternLevels }: Props) {
   const { t } = useI18n();
   const settle = useSettleView();
   const last = blind.sequence.length - 1;
   const eligible = sentenceSequenceForBlind(blind);
+  const winner = winningSequence ?? eligible;
   return (
     <div className="tray">
       {blind.sequence.length === 0 && <span className="empty">{t('tray.empty')}</span>}
@@ -179,8 +181,8 @@ export function SentenceTray({ blind, judgment, lexicon, patternLevels }: Props)
           sub={sub}
           settling={settle.active && i === last}
           lexicon={lexicon}
-          activePos={judgment.match
-            ? (judgment.compatiblePos?.[eligible.indexOf(sub)] ?? null)
+          activePos={judgment.match && winner.includes(sub)
+            ? (judgment.compatiblePos?.[winner.indexOf(sub)] ?? null)
             : null}
         />
       ))}

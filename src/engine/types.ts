@@ -88,7 +88,7 @@ export interface LexiconEntry {
 
 /**
  * One phase's submission. A gibberish submission (GDD §6.4, decision b-2)
- * has suit = null and posUsed = null; it is a HOLE in the sentence sequence.
+ * has suit = null and posUsed = null; it is a HOLE separating sentence candidates.
  */
 export interface WordSubmission {
   tiles: Tile[];
@@ -162,9 +162,9 @@ export interface RegisterSynergyResult {
   chipsFactor: number;
 }
 
-/** Result of judging a whole sequence (GDD §5): best pattern + one register bonus. */
+/** Result of judging one hole-delimited sentence (GDD §5). */
 export interface SentenceJudgment {
-  /** the highest-rank matching pattern, or null (no match / a gibberish hole) */
+  /** the highest-rank matching pattern, or null when this segment has no match */
   match: PatternMatch | null;
   /** unison bonus if 2+ words share one suit, else null */
   unison: UnisonResult | null;
@@ -261,7 +261,7 @@ export interface SentenceScoringContext {
   match: PatternMatch | null;
   unison: UnisonResult | null;
   registerSynergy?: RegisterSynergyResult | null;
-  /** running blind total used as the sentence settlement's current Chips axis */
+  /** winning candidate's settled word subtotal used as its current Chips axis */
   totalBefore: number;
   /** Chips added to totalBefore after any register ×Chips gain is materialized. */
   sentenceChips: number;

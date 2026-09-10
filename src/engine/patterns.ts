@@ -2,10 +2,10 @@
  * Sentence pattern matching (GDD §5) — the game's "poker hand" table.
  *
  * Level-1 judgment only (GDD §4.1): assign each word a POS from its allowed set
- * and match the whole sequence against the twelve patterns. No external NLP.
+ * and match one hole-free sentence segment against the twelve patterns. No external NLP.
  *
  * Matching rules (§5.1):
- *   1. Whole-sequence match; a gibberish hole (§6.4) voids ALL matches.
+ *   1. Whole-segment match; the loop splits blind history at gibberish holes.
  *   2. Highest single pattern only.
  *   3. Modifiers (article/adjective/adverb) are flesh, not skeleton — absorbed,
  *      not skeleton-breaking; each absorbed modifier feeds the bonus (§5 scoring).
@@ -308,9 +308,9 @@ function judgeRegisterSynergy(
     : { id, chipsFactor: BALANCE.registerSynergies[id].chipsFactor };
 }
 
-/** Judge the whole sequence: best pattern + either Unison or one mixed-register synergy. */
+/** Judge one sentence segment: best pattern + either Unison or one mixed-register synergy. */
 export function judgeSentence(sequence: readonly WordSubmission[], lexicon: Lexicon): SentenceJudgment {
-  // Rule 1: any gibberish hole voids all pattern matches.
+  // Defensive guard: the loop splits on holes before calling this segment judge.
   const hasHole = sequence.some((w) => w.isGibberish);
   if (hasHole || sequence.length === 0) {
     return {
@@ -398,7 +398,7 @@ export interface FinalScore {
   total: number;
 }
 
-/** Apply sentence axes to the committed blind score (GDD §5.2). */
+/** Apply sentence axes to one candidate's settled word subtotal (GDD §5.2). */
 export const sentenceTotal = (totalBefore: number, chips: number, mult: number): number =>
   (totalBefore + chips) * mult;
 

@@ -14,7 +14,6 @@ import {
   drawBossFromCycle,
   enterBossBlind,
   reconcileBossHand,
-  sentenceSequenceForBlind,
 } from '../engine/bosses';
 import { tutorialBus, hasSeenIntro, TUTORIAL_WORD } from './tutorial';
 import { readTips } from './settings';
@@ -307,10 +306,12 @@ export interface GameState {
 }
 
 export interface SentenceBonusDisplay extends SentenceBonusBreakdown {
-  /** Sentence Chips added to the committed blind score. */
+  /** Sentence Chips added to the winning candidate's word subtotal. */
   chips: number;
   /** Sentence Mult applied after that Chips addition. */
   mult: number;
+  /** Exact winning-segment gain; never recompute it from the whole blind. */
+  bonus: number;
   pattern: PatternId | null;
   level: number | null;
 }
@@ -759,7 +760,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       const stats: RunStats = { ...s.stats, patternCounts, jokerBlindCounts };
       recordSteamSentence({
         run: runWithPattern,
-        sequence: sentenceSequenceForBlind(s.blind),
+        sequence: final.sequence,
         judgment: final.judgment,
         patternCounts: runWithPattern.patternPlayCounts,
       });
@@ -797,13 +798,14 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
         interestCap: interestCap(runWithPattern),
         handSize: s.blind.hand.length,
       });
-      const acrostic = s.blind.sequence.length > 0 &&
-        s.blind.sequence.every((word) => !word.isGibberish && word.text.length > 0) &&
-        getLexicon().isWord(s.blind.sequence.map((word) => word.text[0]!).join(''));
+      const acrostic = final.sequence.length > 0 &&
+        final.sequence.every((word) => word.text.length > 0) &&
+        getLexicon().isWord(final.sequence.map((word) => word.text[0]!).join(''));
       recordEmojiUnlockEvent({
         kind: 'blindCleared',
         run: runAfterJokers,
         blind: s.blind,
+        sequence: final.sequence,
         judgment: final.judgment,
         interest: outcome.earned.interest,
         acrostic,
@@ -2104,6 +2106,7 @@ export function useGame(getLexicon: () => Lexicon, lexiconReady: boolean): UseGa
       ? {
           chips: end.sentenceChips,
           mult: end.sentenceMult,
+          bonus: end.bonus,
           pattern,
           level,
           ...end.breakdown,

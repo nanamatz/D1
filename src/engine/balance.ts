@@ -140,7 +140,7 @@ export const BALANCE = {
   // ----- Sentence patterns (GDD §5.2) — unified base Chips × Mult (feature-02 A).
   //       Every pattern owns a base [chips × mult]; each level's increment
   //       grows geometrically by patternLevelGrowthFactor. At sentence settlement,
-  //       Chips add to the committed blind score and Mult multiplies that combined
+  //       Chips add to a candidate's word subtotal and Mult multiplies that combined
   //       Chips axis. Chant additionally adds `repeatChips` per repeat beyond the
   //       2nd (`repeatFloor`), with the same geometric level growth. -----
   patternDifficultyLevelChips,

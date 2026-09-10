@@ -3,7 +3,6 @@ import type { BlindState, LetterHandId, PatternId, RunState } from '../../engine
 import { BOSS_REGISTRY } from '../../engine/bosses';
 import { BALANCE } from '../../engine/balance';
 import { effectiveClearReward } from '../../engine/economy';
-import { sentenceTotal } from '../../engine/patterns';
 import type { StagePreview } from '../game';
 import { useSettleView } from '../settle';
 import { useCountUp } from '../useAnim';
@@ -299,21 +298,15 @@ export function Sidebar({
     transferHold ||
     (!settleReduced && round < blind.committedScore)
   );
-  // The sentence result as a forecast — "if the sentence ends like this: +N".
-  // At blind end, the scorebox shows the committed score plus sentence Chips on
-  // the Chips axis and the sentence Mult factor on the Mult axis.
+  // The winning sentence result as a forecast — "if the blind ends like this: +N".
+  // Final presentation keeps Chips × Mult at 0 × 0 and lands the exact gain.
   const bonusActive = mode === 'blind' && sentenceBonus !== null;
   const provenanceRows = bonusActive ? sentenceBonusSupplementRowCount(sentenceBonus) : 0;
   // The bonus is LANDING (round is rolling) once finalScore is published — the box
   // is full and its product flies onto the round total. During BUILD (finalScore
   // still null) the box is filling and the round holds.
   const landing = bonusActive && finalScore !== null;
-  const bonusTotal = bonusActive
-    ? Math.round(
-        sentenceTotal(blind.committedScore, sentenceBonus!.chips, sentenceBonus!.mult)
-          - blind.committedScore,
-      )
-    : 0;
+  const bonusTotal = bonusActive ? Math.round(sentenceBonus!.bonus) : 0;
   // Ordinary word beats fill the box. Final sentence settlement keeps it at 0 × 0
   // so the committed round score is never replayed as a Chips axis.
   const chips = mode === 'blind'
