@@ -295,7 +295,7 @@
   "tooltip.classification.constellation": "별자리",
   "tooltip.classification.gambler": "노름꾼",
   "tooltip.gibberish.title": "횡설수설",
-  "tooltip.gibberish.body": "보너스 배수 없이 점수를 얻고 새 문장 후보를 시작합니다",
+  "tooltip.gibberish.body": "점수는 얻지만 문장에 구멍을 냅니다",
   "tooltip.anagram.title": "애너그램",
   "tooltip.anagram.body": "같은 글자를 모두 사용해 순서만 바꿔 만든 다른 단어입니다",
   "tooltip.status.disabled": "비활성화됨",

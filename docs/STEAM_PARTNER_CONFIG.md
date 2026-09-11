@@ -78,7 +78,7 @@ Simplified Chinese stat display names are 标准游戏完成数, 标准游戏胜
 
 Steamworks upload-ready copies for all twelve supported languages, including English and Korean, live in
 `steam/achievement-localization/ready-to-upload/` and use the AppID filename format
-`4727440_loc_<language>.vdf`. Each file contains the complete ordered token range
+`<AppID>_loc_<language>.vdf`. Each file contains the complete ordered token range
 `NEW_ACHIEVEMENT_9_0` through `NEW_ACHIEVEMENT_9_29`.
 
 | API ID | English name | Korean name | Japanese name | English description | Korean description | Japanese description | Progress Stat | Unlock Value |

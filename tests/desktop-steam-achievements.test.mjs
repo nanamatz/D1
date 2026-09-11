@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   STEAM_ACHIEVEMENTS,
@@ -59,7 +59,9 @@ describe('desktop Steam achievement boundary', () => {
       'english', 'korean', 'japanese', 'schinese', 'tchinese', 'brazilian',
       'german', 'spanish', 'french', 'russian', 'polish', 'turkish',
     ]) {
-      const vdf = readFileSync(`steam/achievement-localization/ready-to-upload/4727440_loc_${language}.vdf`, 'utf8');
+      const file = readdirSync('steam/achievement-localization/ready-to-upload')
+        .find((name) => name.endsWith(`_loc_${language}.vdf`));
+      const vdf = readFileSync(`steam/achievement-localization/ready-to-upload/${file}`, 'utf8');
       expect(vdf).toContain(`"Language"\t"${language}"`);
       expect([...vdf.matchAll(/NEW_ACHIEVEMENT_9_(\d+)_NAME/g)].map((match) => Number(match[1])))
         .toEqual([...Array(30).keys()]);

@@ -6415,6 +6415,7 @@ body:has(> .consumable-effect, > .pattern-levelup) > .tt-portal {
   color: #65f08c;
   font-size: var(--ds-md);
   line-height: 1;
+  white-space: nowrap;
   opacity: 0;
   text-shadow: 0 3px 0 #15371d, 0 0 8px rgba(101, 240, 140, .55);
 }

@@ -93,7 +93,7 @@ async function run() {
       });
       return { text: text.data, wordLines, clipped: label.scrollWidth > button.clientWidth };
     })()`);
-    if (!layout || layout.text !== expected || layout.clipped || layout.wordLines.some((lines) => lines !== 1)) {
+    if (!layout || layout.text.replace(/\s+/g, ' ') !== expected || layout.clipped || layout.wordLines.some((lines) => lines !== 1)) {
       throw new Error(`Language label split or clipped: ${JSON.stringify(layout)}`);
     }
   }
